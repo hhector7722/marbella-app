@@ -14,8 +14,8 @@ const KDS_MAX_COLS = 4;
 /** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
 const KDS_MIN_CARD_PX = 200;
 
-/** Subir al cambiar `public/icons/comandera.png` (porta comandas). */
-const COMANDERA_PNG_VERSION = '20260418';
+/** Cache-bust al sustituir `public/icons/comandero.png` (porta comandas / riel). */
+const COMANDERO_PNG_VERSION = '20260412b';
 
 const KDS_BG = '#5A5D60';
 const KDS_FOOTER_BG = '#484b4e';
@@ -249,38 +249,32 @@ function KDSOrderRowsLayout({
                             key={`row-${row.map((o) => o.id).join('-')}-${rowIdx}`}
                             className="flex flex-col w-full min-w-0"
                         >
-                            {/* Porta comandas: mitad inferior detrás de las tarjetas, mitad superior delante (misma imagen comandera). */}
+                            {/*
+                              Porta comandas: una sola imagen (`comandero.png`) encima.
+                              Las comandas van debajo; margen negativo + z-index hace que el borde superior
+                              quede oculto tras el riel (efecto “sujeta comandas”).
+                            */}
                             <div
                                 className={cn(
-                                    'relative w-screen max-w-[100vw] shrink-0 overflow-visible',
-                                    'left-1/2 -translate-x-1/2',
-                                    'h-[min(44px,10vw)] min-h-[28px]'
+                                    'relative z-20 w-screen max-w-[100vw] shrink-0 overflow-visible',
+                                    'left-1/2 -translate-x-1/2'
                                 )}
                             >
                                 <img
-                                    src={`/icons/comandera.png?v=${COMANDERA_PNG_VERSION}`}
+                                    src={`/icons/comandero.png?v=${COMANDERO_PNG_VERSION}`}
                                     alt=""
-                                    className="pointer-events-none absolute left-1/2 top-0 z-[1] h-[200%] w-[132%] max-w-none -translate-x-1/2 select-none object-cover object-top"
-                                    style={{ clipPath: 'inset(55% 0 0 0)' }}
-                                    draggable={false}
-                                />
-                                <img
-                                    src={`/icons/comandera.png?v=${COMANDERA_PNG_VERSION}`}
-                                    alt=""
-                                    className="pointer-events-none absolute left-1/2 top-0 z-[30] h-[200%] w-[132%] max-w-none -translate-x-1/2 select-none object-cover object-top"
-                                    style={{ clipPath: 'inset(0 0 45% 0)' }}
+                                    className="pointer-events-none block h-auto w-full max-h-[min(160px,30vw)] select-none object-contain object-bottom"
                                     draggable={false}
                                 />
                             </div>
                             {/*
-                              Pegado al riel (pt-0). justify-evenly reparte hueco en filas con 1–4 comandas.
-                              items-start: la altura de fila = comanda más alta.
+                              justify-evenly: hueco en filas con 1–4 comandas. z-10 < riel para el “clip” visual.
                             */}
                             <div
                                 className={cn(
-                                    'relative z-[15] w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
+                                    'relative z-10 w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
                                     'flex flex-row flex-nowrap justify-evenly items-start',
-                                    '-mt-[clamp(18px,5vw,36px)] pt-1 px-1 sm:px-2 gap-0'
+                                    '-mt-[clamp(22px,6.5vw,52px)] pt-0 px-1 sm:px-2 gap-0'
                                 )}
                             >
                                 {row.map((order) => (
