@@ -132,8 +132,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         onCompletarComanda(order.id, order.id_ticket ?? null);
     }, [allCancelado, isCompleted, order.id, order.id_ticket, onCompletarComanda]);
 
-    // Solo mostrar pendientes y cancelados; los terminados se ocultan (quedan "hechos").
-    const lineasVisibles = (order.lineas || []).filter((l) => l.estado !== 'terminado');
+    // Todas las líneas visibles: pendientes, tachadas (terminado) y canceladas.
+    const lineasVisibles = order.lineas || [];
 
     // Agrupamiento de líneas: mismo nombre, notas y estado
     const groupedLines = lineasVisibles.reduce((acc, line) => {
@@ -267,7 +267,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                 className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 shadow-sm ${isCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
-                                            ? 'hover:bg-slate-50 cursor-pointer opacity-70'
+                                            ? 'hover:bg-emerald-50/80 cursor-pointer'
                                             : group.estado === 'cancelado'
                                                 ? 'opacity-60 cursor-not-allowed rounded-lg'
                                                 : 'hover:bg-slate-50 cursor-pointer active:scale-[0.98]'
@@ -306,7 +306,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                             </button>
 
                                             <span className={`flex-1 min-w-0 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
-                                                group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
+                                                group.estado === 'terminado' ? 'text-emerald-600 line-through decoration-emerald-600 decoration-2 [text-decoration-thickness:2px]' :
                                                     group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
                                                         'text-slate-900'
                                             }`}>
