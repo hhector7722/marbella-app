@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,8 +19,40 @@ export const kdsRailRowWrapperClass = 'relative isolate w-full min-w-0 pt-[52px]
  */
 export const kdsRailCardOverlapClass = '-mt-[17px] sm:-mt-[20px]';
 
+/** Metal superior: varios tonos + brillo + penumbra (más “foto” que ilustración plana). */
+const upperMetalStyle: CSSProperties = {
+    background:
+        'linear-gradient(168deg, #f7f8fa 0%, #e8ebf0 12%, #d1d7e1 35%, #b3bcc8 62%, #959eac 88%, #868f9e 100%)',
+    boxShadow: `
+        inset 0 2px 3px rgba(255,255,255,0.85),
+        inset 0 -18px 24px rgba(35,40,50,0.22),
+        0 8px 20px rgba(0,0,0,0.28),
+        0 2px 6px rgba(0,0,0,0.18)
+    `,
+};
+
+/** Labio inferior: bisel + contact shadow. */
+const lowerLipStyle: CSSProperties = {
+    background: 'linear-gradient(180deg, #c5ccd6 0%, #a8b0bc 38%, #8a929e 72%, #6f7784 100%)',
+    boxShadow: `
+        inset 0 2px 2px rgba(255,255,255,0.45),
+        inset 0 -3px 6px rgba(0,0,0,0.18),
+        0 -4px 12px rgba(0,0,0,0.15)
+    `,
+};
+
+/** Ranura: hueco con gradiente (no plano) y sombra interior profunda. */
+const grooveStyle: CSSProperties = {
+    background: 'linear-gradient(180deg, #0a0c10 0%, #151a22 35%, #1f262f 70%, #252d38 100%)',
+    boxShadow: `
+        inset 0 5px 10px rgba(0,0,0,0.75),
+        inset 0 -2px 3px rgba(255,255,255,0.06),
+        0 1px 0 rgba(255,255,255,0.12)
+    `,
+};
+
 /**
- * Porta comandas metálico claro: labio inferior detrás de la tarjeta, bloque superior + ranura delante.
+ * Porta comandas: capas y sombras para aspecto metálico más realista.
  */
 export function KdsCommandRail({ className }: { className?: string }) {
     return (
@@ -31,34 +64,42 @@ export function KdsCommandRail({ className }: { className?: string }) {
             )}
             aria-hidden
         >
-            {/* Labio inferior — detrás de la comanda (z-8) */}
+            {/* Labio inferior — detrás de la comanda */}
             <div
-                className={cn(
-                    'absolute inset-x-0 bottom-0 z-[8] rounded-t-[5px]',
-                    'h-[14px] sm:h-[16px]',
-                    'bg-gradient-to-b from-[#c4c9d2] via-[#adb3bf] to-[#959cab]',
-                    'shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-2px_3px_rgba(0,0,0,0.06),0_-3px_10px_rgba(0,0,0,0.1)]'
-                )}
+                className="absolute inset-x-0 bottom-0 z-[8] h-[14px] rounded-t-[6px] sm:h-[16px]"
+                style={lowerLipStyle}
+            />
+            {/* Sombra de contacto bajo el metal superior (suelo del porta) */}
+            <div
+                className="absolute inset-x-0 bottom-[12px] z-[9] h-[6px] bg-gradient-to-t from-black/25 to-transparent blur-[2px] sm:bottom-[14px]"
+                aria-hidden
             />
 
-            {/* Bloque superior + ranura — delante; tapa el borde superior de la comanda (z-25) */}
+            {/* Bloque superior */}
             <div
-                className={cn(
-                    'absolute inset-x-0 top-0 z-[25] rounded-b-[4px]',
-                    'h-[38px] sm:h-[42px]',
-                    'bg-gradient-to-b from-[#f3f4f6] via-[#e5e7eb] to-[#cdd2dc]',
-                    'shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-12px_16px_rgba(100,110,130,0.12),0_4px_14px_rgba(0,0,0,0.14)]'
-                )}
+                className="absolute inset-x-0 top-0 z-[25] h-[38px] overflow-hidden rounded-b-[5px] sm:h-[42px]"
+                style={upperMetalStyle}
             >
-                <div className="absolute left-[8%] right-[8%] top-2 h-px bg-white/75 sm:top-2.5" />
-                {/* Ranura negra: todo el ancho del bloque superior / porta comandas */}
+                {/* Brillo especular ancho (reflejo de luz) */}
                 <div
-                    className={cn(
-                        'absolute inset-x-0 bottom-0 bg-[#1a1f28]',
-                        'h-[6px] sm:h-[7px]',
-                        'shadow-[inset_0_3px_6px_rgba(0,0,0,0.82),0_1px_0_rgba(255,255,255,0.15)]'
-                    )}
+                    className="pointer-events-none absolute left-[6%] right-[6%] top-0 h-[42%] rounded-b-[40%] bg-gradient-to-b from-white/55 via-white/15 to-transparent"
+                    aria-hidden
                 />
+                {/* Oscurecido en la parte baja del bloque (antes de la ranura) */}
+                <div
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/14 to-transparent"
+                    aria-hidden
+                />
+                {/* Línea de bisel bajo el brillo */}
+                <div className="absolute left-[10%] right-[10%] top-[28%] h-px bg-gradient-to-r from-transparent via-white/50 to-transparent sm:top-[30%]" />
+
+                {/* Ranura */}
+                <div
+                    className="absolute inset-x-0 bottom-0 h-[6px] sm:h-[7px]"
+                    style={grooveStyle}
+                />
+                {/* Reflejo mínimo en el borde inferior de la ranura (metal pulido) */}
+                <div className="pointer-events-none absolute inset-x-[12%] bottom-[1px] h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
             </div>
         </div>
     );
