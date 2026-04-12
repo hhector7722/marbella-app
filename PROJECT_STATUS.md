@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-12 (KDS: notas cocina vs TPV)
+**Última actualización:** 2026-04-12 (KDS: número mesa Graduate + `KdsMesaNumber`)
+
+- [x] **KDS: número de mesa estilo dorsal (2026-04-12)**: Componente [`KdsMesaNumber.tsx`](src/components/kds/KdsMesaNumber.tsx) + fuente **Graduate** (`next/font/google` en [`kds-mesa-number.ts`](src/lib/fonts/kds-mesa-number.ts)): bloque deportivo, doble trazo CSS (counters blancos) y sombras de extrusión; sin logotipos. Usado desde [`CommandCard.tsx`](src/components/kds/CommandCard.tsx).
 
 - [x] **KDS: notas de artículo sin duplicar comanda (2026-04-12)**: Las notas editadas en cocina se guardan en `kds_order_lines.notas_cocina` (migración `20260419130000_kds_order_lines_notas_cocina.sql`). La columna `notas` sigue siendo la del TPV y la clave de `fncalcdelta`; escribir en `notas` desde el KDS rompía el delta y podía crear otra cabecera/líneas. UI: `useKDS.updateLineNotes` + `CommandCard` / pie resumen usan `combinedLineNotesForDisplay`.
 
