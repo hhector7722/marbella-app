@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Clock, Euro } from 'lucide-react';
 import { parseTPVDate, parseDBDate, formatLocalTime } from '@/utils/date-utils';
@@ -19,25 +19,22 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 
   return (
     <div className={`p-2 md:p-3 rounded-xl flex flex-col transition-all duration-300 h-fit ${estado.color} shadow-md`}>
-      <div className="flex justify-between items-center select-none gap-2">
-        <div className="min-w-0 flex flex-col">
-          <span className="text-[11px] md:text-sm font-black text-white whitespace-nowrap tracking-tight">
-            M {m.mesa}
-          </span>
-          {(m.nombre_cliente && String(m.nombre_cliente).trim()) ? (
-            <span className="text-[9px] md:text-[10px] font-semibold text-white/90 truncate max-w-[10rem] md:max-w-[14rem]">
-              {String(m.nombre_cliente).trim()}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="flex items-center gap-1.5 md:gap-2 flex-1 justify-end">
-          {/* ✨ Y AQUÍ PINTAMOS EL TOTAL CALCULADO */}
+      <div className="flex min-w-0 flex-row items-center justify-between gap-2 select-none">
+        <span className="shrink-0 text-[11px] md:text-sm font-black text-white tabular-nums tracking-tight">
+          M {m.mesa}
+        </span>
+        <span
+          className="min-w-0 flex-1 truncate px-1 text-center text-[10px] font-semibold leading-tight text-white/95 md:text-xs"
+          title={(m.nombre_cliente && String(m.nombre_cliente).trim()) || undefined}
+        >
+          {(m.nombre_cliente && String(m.nombre_cliente).trim()) ? String(m.nombre_cliente).trim() : '\u00a0'}
+        </span>
+        <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
           <span className="text-[11px] md:text-sm font-bold text-white flex items-center tabular-nums tracking-tight">
             {totalCalculado.toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
           </span>
-          <span className="text-[9px] md:text-[10px] font-bold flex items-center shrink-0 text-white/90">
-            <Clock size={10} className="mr-0.5" /> {estado.hora}
+          <span className="text-[9px] md:text-[10px] font-bold flex items-center text-white/90">
+            <Clock size={10} className="mr-0.5 shrink-0" /> {estado.hora}
           </span>
         </div>
       </div>
@@ -68,35 +65,65 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 export default function RadarSala() {
   const [mesas, setMesas] = useState<any[]>([]);
   const [ultimaAct, setUltimaAct] = useState<Date | null>(null);
+  /** Evita parpadeo: el TPV a veces manda el ticket ganador sin nombre en un ciclo; conservamos el último por id_ticket. */
+  const lastNombreByTicketRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const processData = (rawMesas: any[]) => {
-      // Deduplicar mesas: si hay varios tickets para la misma mesa, nos quedamos con el más reciente
-      const mesaMap = new Map();
-      
       const distinctMesas = (rawMesas || []).map(m => {
-        // Normalizamos el número de mesa para evitar duplicados por formato (99 vs "99 ")
         const mesaKey = String(m.mesa || '').trim();
         if (!mesaKey) return null;
 
-        // Filtrar mesas que no tienen productos con unidades > 0
         const hasProducts = m.productos?.some((p: any) => parseFloat(p.unidades) > 0);
         if (!hasProducts) return null;
 
         return { ...m, mesaKey };
-      }).filter(Boolean);
+      }).filter(Boolean) as Array<any & { mesaKey: string }>;
 
-      distinctMesas.forEach(m => {
-        const existing = mesaMap.get(m.mesaKey);
-        const currentTS = parseTPVDate(m.timestamp_tpv).getTime();
-        
-        // Si no existe o el actual es más reciente, sobreescribimos
-        if (!existing || currentTS > parseTPVDate(existing.timestamp_tpv).getTime()) {
-          mesaMap.set(m.mesaKey, m);
-        }
+      const byMesa = new Map<string, typeof distinctMesas>();
+      distinctMesas.forEach((m) => {
+        if (!byMesa.has(m.mesaKey)) byMesa.set(m.mesaKey, []);
+        byMesa.get(m.mesaKey)!.push(m);
       });
-      
-      const finalMesas = Array.from(mesaMap.values());
+
+      const finalMesas: any[] = [];
+      byMesa.forEach((group) => {
+        const sorted = [...group].sort(
+          (a, b) => parseTPVDate(b.timestamp_tpv).getTime() - parseTPVDate(a.timestamp_tpv).getTime()
+        );
+        const winner = sorted[0];
+        let nombre =
+          (winner.nombre_cliente && String(winner.nombre_cliente).trim()) || '';
+        if (!nombre) {
+          for (const row of sorted) {
+            const n = (row.nombre_cliente && String(row.nombre_cliente).trim()) || '';
+            if (n) {
+              nombre = n;
+              break;
+            }
+          }
+        }
+
+        const ticketKey = String(winner.id_ticket ?? winner.numero_documento ?? '').trim();
+        if (nombre) {
+          if (ticketKey) lastNombreByTicketRef.current[ticketKey] = nombre;
+        } else if (ticketKey && lastNombreByTicketRef.current[ticketKey]) {
+          nombre = lastNombreByTicketRef.current[ticketKey];
+        }
+
+        finalMesas.push({
+          ...winner,
+          nombre_cliente: nombre,
+        });
+      });
+
+      const presentTickets = new Set(
+        finalMesas.map((m) => String(m.id_ticket ?? m.numero_documento ?? ''))
+      );
+      Object.keys(lastNombreByTicketRef.current).forEach((k) => {
+        if (!presentTickets.has(k)) delete lastNombreByTicketRef.current[k];
+      });
+
       console.log(`[RadarSala] Data sync: ${rawMesas?.length || 0} raw entries -> ${finalMesas.length} unique tables.`);
       return finalMesas;
     };
