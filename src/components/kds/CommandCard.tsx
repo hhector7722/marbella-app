@@ -118,6 +118,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     };
 
     const orderTime = formatLocalTime(new Date(effectiveStart));
+    const mesaDisplay = (() => {
+        const mesaNum = parseInt(order.mesa || '');
+        if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
+        return order.mesa || '--';
+    })();
     const isFullyDone = (order.lineas?.length || 0) > 0 && order.lineas?.every(l => l.estado === 'terminado' || l.estado === 'cancelado');
 
     // Finalizar si todas las líneas vienen canceladas desde TPV (sin tachar en cocina); el caso terminado lo cubre useKDS.tacharProductos.
@@ -185,18 +190,26 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     {/* Mesa — columna izquierda */}
                     <div className="flex min-w-0 flex-1 justify-start">
                         <div className="flex min-w-0 flex-col items-start gap-0.5">
-                            <span
-                                className={cn(
-                                    // Calcomanía: negro sólido + contorno blanco generoso (sin asset PNG; escala con el mesa)
-                                    'inline-flex min-h-[48px] shrink-0 items-center justify-center px-0.5 py-0.5 text-5xl font-black uppercase leading-none tabular-nums tracking-tight text-black [paint-order:stroke_fill] [-webkit-text-stroke:5px_rgb(255_255_255)] sm:text-6xl sm:[-webkit-text-stroke:6px_rgb(255_255_255)] md:text-7xl md:[-webkit-text-stroke:7px_rgb(255_255_255)]',
-                                    isCompleted && 'text-slate-600 [-webkit-text-stroke:5px_rgb(255_255_255)] sm:[-webkit-text-stroke:6px_rgb(255_255_255)] md:[-webkit-text-stroke:6px_rgb(255_255_255)]'
-                                )}
-                            >
-                                {(() => {
-                                    const mesaNum = parseInt(order.mesa || '');
-                                    if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
-                                    return order.mesa || '--';
-                                })()}
+                            {/*
+                              Calcomanía tipo pegatina: capa inferior = solo trazo blanco grueso (relleno transparente)
+                              para que los “agujeros” del 0, 8, 9, 6 queden en blanco; capa superior = negro + trazo fino.
+                              El trazo sigue el contorno interior del glifo, rellenando counters.
+                            */}
+                            <span className="inline-grid min-h-[48px] shrink-0 place-items-center [grid-template-areas:'mesa'] px-0.5 py-0.5 font-sans">
+                                <span
+                                    className="pointer-events-none col-start-1 row-start-1 select-none text-center text-5xl font-black uppercase leading-none tabular-nums tracking-tight text-transparent [-webkit-text-stroke:11px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:mesa] sm:text-6xl sm:[-webkit-text-stroke:13px_rgb(255_255_255)] md:text-7xl md:[-webkit-text-stroke:15px_rgb(255_255_255)]"
+                                    aria-hidden
+                                >
+                                    {mesaDisplay}
+                                </span>
+                                <span
+                                    className={cn(
+                                        'relative z-10 col-start-1 row-start-1 text-center text-5xl font-black uppercase leading-none tabular-nums tracking-tight text-black [paint-order:stroke_fill] [-webkit-text-stroke:4px_rgb(255_255_255)] [grid-area:mesa] sm:text-6xl sm:[-webkit-text-stroke:5px_rgb(255_255_255)] md:text-7xl md:[-webkit-text-stroke:6px_rgb(255_255_255)]',
+                                        isCompleted && 'text-slate-600'
+                                    )}
+                                >
+                                    {mesaDisplay}
+                                </span>
                             </span>
                             {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
                                 <span className="max-w-[6.5rem] truncate text-[10px] font-bold uppercase leading-tight tracking-wide text-white/95 sm:max-w-[8rem] sm:text-xs">
