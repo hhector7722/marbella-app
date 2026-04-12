@@ -187,8 +187,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         <div className="flex min-w-0 flex-col items-start gap-0.5">
                             <span
                                 className={cn(
-                                    'inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-2xl border-[6px] border-white bg-white px-3 py-1.5 text-4xl font-black uppercase leading-none tabular-nums tracking-tight text-slate-900 shadow-[0_4px_0_rgba(0,0,0,0.06),0_12px_28px_rgba(0,0,0,0.18)] sm:px-5 sm:py-2 sm:text-5xl',
-                                    isCompleted && 'border-slate-200/90 bg-white/95 text-slate-600 shadow-[0_4px_0_rgba(0,0,0,0.04),0_8px_20px_rgba(0,0,0,0.1)]'
+                                    // Calcomanía: negro sólido + contorno blanco generoso (sin asset PNG; escala con el mesa)
+                                    'inline-flex min-h-[48px] shrink-0 items-center justify-center px-0.5 py-0.5 text-5xl font-black uppercase leading-none tabular-nums tracking-tight text-black [paint-order:stroke_fill] [-webkit-text-stroke:5px_rgb(255_255_255)] sm:text-6xl sm:[-webkit-text-stroke:6px_rgb(255_255_255)] md:text-7xl md:[-webkit-text-stroke:7px_rgb(255_255_255)]',
+                                    isCompleted && 'text-slate-600 [-webkit-text-stroke:5px_rgb(255_255_255)] sm:[-webkit-text-stroke:6px_rgb(255_255_255)] md:[-webkit-text-stroke:6px_rgb(255_255_255)]'
                                 )}
                             >
                                 {(() => {
