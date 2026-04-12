@@ -2,7 +2,7 @@
 
 **Última actualización:** 2026-04-12 (KDS: porta comandas `comandero.png`)
 
-- [x] **KDS porta comandas (2026-04-12)**: Riel con `/public/icons/comandero.png` (una sola capa, sin `comandera.png` duplicada con clipPath). Comandas debajo del riel; `z-20` en el riel y `z-10` en filas + `-mt` para que el borde superior de la tarjeta quede oculto tras el riel (`object-bottom` + `max-h` acotado).
+- [x] **KDS porta comandas (2026-04-12)**: Riel con `/public/icons/riel.png`, ancho `152vw` centrado y contenedor `overflow-hidden` (extremos del PNG recortados a los lados). Comandas debajo; `z-20` / `z-10` + `-mt` para efecto sujeta comandas.
 
 - [x] **Perfil `/profile` cabecera compacta (2026-04-12)**: Eliminados botón atrás, Facturas (ledger) y ajustes (engranaje); avatar `md` arriba a la izquierda con “Editar” debajo; nombre en la misma fila con `clamp` + `line-clamp`; altura de cabecera reducida. El modal `EditProfileModal` quedó sin entrada en esta vista (edición de datos vía modales del grid).
 

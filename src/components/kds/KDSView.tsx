@@ -14,8 +14,8 @@ const KDS_MAX_COLS = 4;
 /** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
 const KDS_MIN_CARD_PX = 200;
 
-/** Cache-bust al sustituir `public/icons/comandero.png` (porta comandas / riel). */
-const COMANDERO_PNG_VERSION = '20260412b';
+/** Cache-bust al sustituir `public/icons/riel.png` (porta comandas). */
+const RIEL_PNG_VERSION = '20260412c';
 
 const KDS_BG = '#5A5D60';
 const KDS_FOOTER_BG = '#484b4e';
@@ -250,20 +250,19 @@ function KDSOrderRowsLayout({
                             className="flex flex-col w-full min-w-0"
                         >
                             {/*
-                              Porta comandas: una sola imagen (`comandero.png`) encima.
-                              Las comandas van debajo; margen negativo + z-index hace que el borde superior
-                              quede oculto tras el riel (efecto “sujeta comandas”).
+                              Porta comandas: `riel.png` más ancha que la pantalla (recorte lateral
+                              con overflow-hidden). Comandas debajo; -mt + z-index = efecto sujeta comandas.
                             */}
                             <div
                                 className={cn(
-                                    'relative z-20 w-screen max-w-[100vw] shrink-0 overflow-visible',
+                                    'relative z-20 w-screen max-w-[100vw] shrink-0 overflow-hidden',
                                     'left-1/2 -translate-x-1/2'
                                 )}
                             >
                                 <img
-                                    src={`/icons/comandero.png?v=${COMANDERO_PNG_VERSION}`}
+                                    src={`/icons/riel.png?v=${RIEL_PNG_VERSION}`}
                                     alt=""
-                                    className="pointer-events-none block h-auto w-full max-h-[min(160px,30vw)] select-none object-contain object-bottom"
+                                    className="pointer-events-none relative left-1/2 block h-[min(120px,26vw)] w-[152vw] max-w-none -translate-x-1/2 select-none object-cover object-bottom"
                                     draggable={false}
                                 />
                             </div>
