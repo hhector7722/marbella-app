@@ -167,7 +167,7 @@ export function useKDS() {
                 .select('*, lineas:kds_order_lines(*)')
                 .eq('estado', 'completada')
                 .gte('completed_at', startIso)
-                .order('created_at', { ascending: true });
+                .order('completed_at', { ascending: false });
 
             if (completedErr) throw completedErr;
             ordersParts.push(...((completedOrders as unknown as KDSOrder[]) ?? []));

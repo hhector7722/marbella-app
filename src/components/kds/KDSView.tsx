@@ -257,9 +257,17 @@ export default function KDSView() {
         return new Date(order.created_at).getTime();
     };
 
-    const sortedOrders = useMemo(() => [...visibleOrders].sort(
-        (a, b) => getEffectiveStartTime(a) - getEffectiveStartTime(b)
-    ), [visibleOrders]);
+    const sortedOrders = useMemo(() => {
+        const copy = [...visibleOrders];
+        if (showCompleted) {
+            return copy.sort((a, b) => {
+                const ta = a.completed_at ? new Date(a.completed_at).getTime() : 0;
+                const tb = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+                return tb - ta;
+            });
+        }
+        return copy.sort((a, b) => getEffectiveStartTime(a) - getEffectiveStartTime(b));
+    }, [visibleOrders, showCompleted]);
 
     const lastCompletedOrderId = useMemo(() => {
         const completed = orders
