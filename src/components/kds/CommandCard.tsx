@@ -179,33 +179,31 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     </div>
                 )}
 
-                <div className="flex items-center gap-4 w-full pt-0">
-                    {/* Mesa */}
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-slate-900`}>
-                        <span className="text-2xl sm:text-3xl font-black tracking-wide uppercase tabular-nums">
-                            {(() => {
-                                const mesaNum = parseInt(order.mesa || '');
-                                if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
-                                return order.mesa || '--';
-                            })()}
-                        </span>
-                    </div>
-
-                    {/* Tiempo */}
-                    <div className="flex flex-col items-end flex-1 pr-1 min-w-0">
-                        <div className="flex items-center gap-1 text-right w-full justify-end opacity-95">
-                            <span className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
-                                {orderTime}
+                <div className="flex w-full items-center gap-2 pt-0 sm:gap-3">
+                    {/* Mesa — columna izquierda */}
+                    <div className="flex min-w-0 flex-1 justify-start">
+                        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white shadow-sm text-slate-900 sm:h-16 sm:w-16`}>
+                            <span className="text-2xl font-black uppercase tabular-nums tracking-wide sm:text-3xl">
+                                {(() => {
+                                    const mesaNum = parseInt(order.mesa || '');
+                                    if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
+                                    return order.mesa || '--';
+                                })()}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1 text-right w-full justify-end flex-wrap">
-                            <span className="text-sm sm:text-base font-bold opacity-85 uppercase tracking-[0.1em]">
+                    </div>
+
+                    {/* Hora + transcurrido — centrados en la cabecera */}
+                    <div className="flex min-w-0 shrink-0 flex-col items-center justify-center px-1 text-center">
+                        <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
+                        <div className="mt-0.5 flex flex-col items-center justify-center gap-0.5 sm:flex-row sm:flex-wrap sm:justify-center">
+                            <span className="text-sm font-bold uppercase tracking-[0.1em] opacity-85 sm:text-base">
                                 HACE {formatElapsed(elapsed)}
                             </span>
                             {order.origen_referencia && (
                                 <>
-                                    <span className="text-sm opacity-50 ml-1">•</span>
-                                    <span className="text-sm sm:text-base font-bold opacity-80 uppercase tracking-[0.08em] ml-1 max-w-[12rem] truncate">
+                                    <span className="hidden text-sm opacity-50 sm:inline">·</span>
+                                    <span className="max-w-[14rem] truncate text-xs font-bold uppercase tracking-[0.08em] opacity-80 sm:text-sm">
                                         {order.origen_referencia.replace(/^directo\s*-\s*/i, '').replace(/^directo-/i, '')}
                                     </span>
                                 </>
@@ -213,23 +211,25 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         </div>
                     </div>
 
-                    {/* Editar nota comanda */}
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setNotesModal({
-                                kind: 'order',
-                                title: `Mesa ${order.mesa || '--'}`,
-                                subtitle: 'NOTA COMANDA',
-                                initialNotes: order.notas_comanda,
-                            });
-                        }}
-                        className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center bg-transparent border-0 shadow-none hover:opacity-90 active:scale-95 transition"
-                        title="Editar nota comanda"
-                    >
-                        <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
-                    </button>
+                    {/* Editar nota — derecha, mismo ancho flexible que la mesa para centrar hora */}
+                    <div className="flex min-w-0 flex-1 justify-end">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setNotesModal({
+                                    kind: 'order',
+                                    title: `Mesa ${order.mesa || '--'}`,
+                                    subtitle: 'NOTA COMANDA',
+                                    initialNotes: order.notas_comanda,
+                                });
+                            }}
+                            className="flex h-16 w-16 shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95 sm:h-20 sm:w-20"
+                            title="Editar nota comanda"
+                        >
+                            <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
