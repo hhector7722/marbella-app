@@ -237,15 +237,15 @@ function ProfileContent() {
                         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
 
                         <div className="relative z-10 flex items-start gap-3 min-h-0">
-                            <div className="shrink-0 flex flex-col items-center gap-1 w-[4.75rem]">
+                            <div className="shrink-0 flex flex-col items-center gap-1.5 w-44">
                                 <Avatar
                                     src={profile.avatar_url}
                                     alt={fullName}
-                                    size="md"
+                                    size="xl"
                                     className="shadow-lg bg-white ring-2 ring-white"
                                 />
                                 {showAccountSection && (
-                                    <label className="min-h-[48px] px-2 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-flex items-center justify-center text-center leading-tight">
+                                    <label className="inline-flex w-fit max-w-full items-center justify-center rounded-md border border-white/80 px-2 py-1 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 text-center leading-tight">
                                         <input
                                             type="file"
                                             accept="image/jpeg,image/png,image/webp,image/gif"

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-const SIZES = { sm: 24, md: 48, lg: 80 } as const;
+const SIZES = { sm: 24, md: 48, lg: 80, xl: 176 } as const;
 type SizeKey = keyof typeof SIZES;
 
 interface AvatarProps {
@@ -20,7 +20,13 @@ interface AvatarProps {
 export function Avatar({ src, alt, size = 'md', className }: AvatarProps) {
     const px = SIZES[size];
     const sizeClasses =
-        size === 'sm' ? 'w-6 h-6' : size === 'md' ? 'w-12 h-12' : 'w-20 h-20';
+        size === 'sm'
+            ? 'w-6 h-6'
+            : size === 'md'
+              ? 'w-12 h-12'
+              : size === 'lg'
+                ? 'w-20 h-20'
+                : 'w-44 h-44';
 
     return (
         <div
