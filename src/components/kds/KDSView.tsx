@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { KdsCommandRail, kdsRailCardOverlapClass, kdsRailRowWrapperClass } from '@/components/kds/KdsCommandRail';
+import { combinedLineNotesForDisplay } from '@/components/kds/combined-line-notes';
 
 /** Máximo de comandas por fila (pantalla ancha). */
 const KDS_MAX_COLS = 4;
@@ -238,12 +239,13 @@ export default function KDSView() {
 
     const aggregatedItems = useMemo(() => visibleOrders.reduce((acc, order) => {
         order.lineas?.filter(l => l.estado === 'pendiente').forEach(line => {
-            const key = line.notas ? `${line.producto_nombre} | ${line.notas}` : line.producto_nombre;
+            const displayNotas = combinedLineNotesForDisplay(line.notas, line.notas_cocina);
+            const key = `${line.producto_nombre}|${line.notas ?? ''}|${line.notas_cocina ?? ''}`;
             const existing = acc.find(i => i.key === key);
             if (existing) {
                 existing.cantidad += 1;
             } else {
-                acc.push({ key, nombre: line.producto_nombre, notas: line.notas, cantidad: 1 });
+                acc.push({ key, nombre: line.producto_nombre, notas: displayNotas, cantidad: 1 });
             }
         });
         return acc;

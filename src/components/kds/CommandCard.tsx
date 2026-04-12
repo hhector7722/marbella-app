@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
 import { NotesModal } from './NotesModal';
+import { combinedLineNotesForDisplay } from './combined-line-notes';
 import { cn } from '@/lib/utils';
 
 interface CommandCardProps {
@@ -135,14 +136,15 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     // Todas las líneas visibles: pendientes, tachadas (terminado) y canceladas.
     const lineasVisibles = order.lineas || [];
 
-    // Agrupamiento de líneas: mismo nombre, notas y estado
+    // Agrupamiento: nombre + notas TPV + notas cocina + estado (notas_cocina no entra en delta TPV)
     const groupedLines = lineasVisibles.reduce((acc, line) => {
-        const key = `${line.producto_nombre}_${line.notas || ''}_${line.estado}`;
+        const key = `${line.producto_nombre}_${line.notas || ''}_${line.notas_cocina || ''}_${line.estado}`;
         if (!acc[key]) {
             acc[key] = {
                 ids: [line.id],
                 producto_nombre: line.producto_nombre,
                 notas: line.notas,
+                notas_cocina: line.notas_cocina ?? null,
                 estado: line.estado,
                 cantidad: 1
             };
@@ -151,7 +153,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             acc[key].cantidad++;
         }
         return acc;
-    }, {} as Record<string, { ids: string[]; producto_nombre: string; notas: string | null; estado: KDSItemStatus; cantidad: number }>);
+    }, {} as Record<string, { ids: string[]; producto_nombre: string; notas: string | null; notas_cocina: string | null; estado: KDSItemStatus; cantidad: number }>);
 
     const groupedArray = Object.values(groupedLines);
 
@@ -182,14 +184,21 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 <div className="flex w-full items-center gap-2 pt-0 sm:gap-3">
                     {/* Mesa — columna izquierda */}
                     <div className="flex min-w-0 flex-1 justify-start">
-                        <div className="flex h-[9rem] w-[9rem] shrink-0 items-center justify-center rounded-full bg-white text-slate-900 shadow-md ring-2 ring-black/10 sm:h-[10.5rem] sm:w-[10.5rem] md:h-[11.5rem] md:w-[11.5rem]">
-                            <span className="text-[clamp(2.75rem,10vw,4.75rem)] font-black uppercase leading-none tabular-nums tracking-tight sm:text-[clamp(3.25rem,9vw,5.5rem)] md:text-[clamp(3.5rem,8vw,6rem)]">
-                                {(() => {
-                                    const mesaNum = parseInt(order.mesa || '');
-                                    if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
-                                    return order.mesa || '--';
-                                })()}
-                            </span>
+                        <div className="flex min-w-0 flex-col items-start gap-0.5">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white shadow-sm text-slate-900 sm:h-16 sm:w-16">
+                                <span className="text-2xl font-black uppercase tabular-nums tracking-wide sm:text-3xl">
+                                    {(() => {
+                                        const mesaNum = parseInt(order.mesa || '');
+                                        if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
+                                        return order.mesa || '--';
+                                    })()}
+                                </span>
+                            </div>
+                            {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
+                                <span className="max-w-[6.5rem] truncate text-[10px] font-bold uppercase leading-tight tracking-wide text-white/95 sm:max-w-[8rem] sm:text-xs">
+                                    {order.nombre_cliente.trim()}
+                                </span>
+                            ) : null}
                         </div>
                     </div>
 
@@ -224,10 +233,10 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     initialNotes: order.notas_comanda,
                                 });
                             }}
-                            className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95 sm:h-24 sm:w-24 md:h-[5.5rem] md:w-[5.5rem]"
+                            className="flex h-16 w-16 shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95 sm:h-20 sm:w-20"
                             title="Editar nota comanda"
                         >
-                            <Image src="/icons/notas.png" alt="Notas" width={56} height={56} className={`h-12 w-12 object-contain sm:h-14 sm:w-14 md:h-16 md:w-16 ${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
+                            <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
                         </button>
                     </div>
                 </div>
@@ -296,7 +305,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                         kind: 'lineGroup',
                                                         title: group.producto_nombre,
                                                         subtitle: `Mesa ${order.mesa || '--'}`,
-                                                        initialNotes: group.notas,
+                                                        initialNotes: group.notas_cocina,
                                                         lineIds: group.ids,
                                                     });
                                                 }}
@@ -315,9 +324,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                             </span>
                                         </div>
 
-                                        {hasNotes(group.notas) && (
+                                        {hasNotes(combinedLineNotesForDisplay(group.notas, group.notas_cocina)) && (
                                             <div className="mt-2 space-y-1">
-                                                {splitBullets(group.notas).map((n, idx) => (
+                                                {splitBullets(combinedLineNotesForDisplay(group.notas, group.notas_cocina)).map((n, idx) => (
                                                     <div key={idx} className={`flex items-start gap-2 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
                                                         <span className="text-rose-600 font-black text-lg">·</span>
                                                         <span className="text-base sm:text-lg font-bold text-rose-700 italic tracking-wide break-words">

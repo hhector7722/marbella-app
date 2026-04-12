@@ -7,6 +7,8 @@ export interface KDSOrderLine {
     producto_nombre: string;
     cantidad: number;
     notas: string | null;
+    /** Notas solo cocina (KDS); no altera la reconciliación fncalcdelta con el TPV */
+    notas_cocina?: string | null;
     departamento: string | null;
     estado: KDSItemStatus;
     created_at: string;
@@ -19,6 +21,7 @@ export interface KDSOrder {
     id_ticket?: string | null;
     origen_referencia: string | null;
     mesa: string | null;
+    nombre_cliente?: string | null;
     notas_comanda: string | null;
     origen: string | null;
     estado: KDSOrderStatus;

@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-12 (KDS: riel procedural CSS)
+**Última actualización:** 2026-04-12 (KDS: notas cocina vs TPV)
+
+- [x] **KDS: notas de artículo sin duplicar comanda (2026-04-12)**: Las notas editadas en cocina se guardan en `kds_order_lines.notas_cocina` (migración `20260419130000_kds_order_lines_notas_cocina.sql`). La columna `notas` sigue siendo la del TPV y la clave de `fncalcdelta`; escribir en `notas` desde el KDS rompía el delta y podía crear otra cabecera/líneas. UI: `useKDS.updateLineNotes` + `CommandCard` / pie resumen usan `combinedLineNotesForDisplay`.
 
 - [x] **KDS porta comandas (2026-04-12)**: Riel procedural en [`KdsCommandRail.tsx`](src/components/kds/KdsCommandRail.tsx): metal **gris claro** (gradientes tipo `#f3f4f6`–`#cdd2dc`), ranura oscura, **labio inferior z-8** (detrás), **comanda z-15**, **bloque superior z-25** (delante). Fila con `kdsRailRowWrapperClass` (`pt` + `isolate`) y `kdsRailCardOverlapClass`.
 

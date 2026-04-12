@@ -429,12 +429,14 @@ export function useKDS() {
         inFlightLineIds.current = new Set([...inFlightLineIds.current, ...lineIds]);
         setOrders(prev => prev.map(o => ({
             ...o,
-            lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? { ...l, notas: nextNotes } : l),
+            lineas: (o.lineas || []).map(l =>
+                lineIds.includes(l.id) ? { ...l, notas_cocina: nextNotes } : l
+            ),
         })));
 
         const { error } = await supabase
             .from('kds_order_lines')
-            .update({ notas: nextNotes })
+            .update({ notas_cocina: nextNotes })
             .in('id', lineIds);
 
         lineIds.forEach(id => inFlightLineIds.current.delete(id));
