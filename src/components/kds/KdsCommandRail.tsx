@@ -13,9 +13,11 @@ const RAIL_H = 'h-[52px] sm:h-[58px]';
 export const kdsRailRowWrapperClass = 'relative isolate w-full min-w-0 pt-[52px] sm:pt-[58px]';
 
 /**
- * La comanda sube y queda entre labio inferior (z-8) y bloque superior (z-25).
+ * Margen negativo de la fila de comandas: pt − |mt| = tope de la ranura negra
+ * (borde superior de la comanda alineado con el inicio de la línea negra).
+ * sm: 58 − 23 = 35px = 42 − 7 (tope ranura). base: 52 − 20 = 32px = 38 − 6.
  */
-export const kdsRailCardOverlapClass = '-mt-[36px] sm:-mt-[42px]';
+export const kdsRailCardOverlapClass = '-mt-[20px] sm:-mt-[23px]';
 
 /**
  * Porta comandas metálico claro: labio inferior detrás de la tarjeta, bloque superior + ranura delante.
@@ -50,10 +52,10 @@ export function KdsCommandRail({ className }: { className?: string }) {
                 )}
             >
                 <div className="absolute left-[8%] right-[8%] top-2 h-px bg-white/75 sm:top-2.5" />
-                {/* Ranura (hueco donde se inserta visualmente el ticket) */}
+                {/* Ranura negra: todo el ancho del bloque superior / porta comandas */}
                 <div
                     className={cn(
-                        'absolute bottom-0 left-[3%] right-[3%] rounded-full bg-[#1a1f28]',
+                        'absolute inset-x-0 bottom-0 bg-[#1a1f28]',
                         'h-[6px] sm:h-[7px]',
                         'shadow-[inset_0_3px_6px_rgba(0,0,0,0.82),0_1px_0_rgba(255,255,255,0.15)]'
                     )}
