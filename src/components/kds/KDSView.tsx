@@ -20,8 +20,8 @@ const KDS_FOOTER_BG = '#484b4e';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
-/** Ancho mínimo por chip (nombre grande + cantidad en una fila). */
-const FOOTER_CHIP_MIN_PX = 188;
+/** Ancho mínimo por chip (nombre y cantidad mismo tamaño). */
+const FOOTER_CHIP_MIN_PX = 220;
 const FOOTER_GAP_PX = 8;
 const FOOTER_VER_MAS_MIN_PX = 80;
 
@@ -83,14 +83,14 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[64px] min-w-[188px] shrink-0 items-center rounded-xl border border-zinc-200/90 px-2.5 py-2 text-left shadow-sm transition',
+                        'flex min-h-[72px] min-w-[220px] shrink-0 items-center rounded-xl border border-zinc-200/90 px-2.5 py-2 text-left shadow-sm transition',
                         'bg-white hover:bg-zinc-50 active:scale-[0.99]',
-                        'max-w-[min(320px,48vw)] flex-[1_0_188px]'
+                        'max-w-[min(360px,52vw)] flex-[1_0_220px]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <p className="line-clamp-2 w-full min-w-0 break-words text-left leading-snug">
-                        <span className="text-lg font-black uppercase tracking-[0.05em] text-zinc-900 sm:text-xl">{item.nombre}</span><span className="font-black tabular-nums leading-none tracking-tight text-red-600 text-3xl sm:text-4xl">×{item.cantidad}</span>
+                    <p className="line-clamp-2 w-full min-w-0 break-words text-left leading-none">
+                        <span className="text-3xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-4xl">{item.nombre}</span><span className="font-black tabular-nums leading-none tracking-tight text-red-600 text-3xl sm:text-4xl">×{item.cantidad}</span>
                     </p>
                 </button>
             ))}

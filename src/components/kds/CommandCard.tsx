@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
@@ -160,7 +160,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             <div
             ref={cardRef}
             className={cn(
-                'relative flex flex-col overflow-hidden rounded-b-xl bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)] shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-300',
+                'relative flex flex-col overflow-hidden rounded-b-xl bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)] border-[0.5px] border-black shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-300',
                 openDropdownKey ? 'z-[100]' : 'z-auto',
                 isCompleted ? 'opacity-60' : isFullyDone ? 'opacity-90' : '',
                 !kdsRailAttached && 'mt-2'
@@ -273,14 +273,14 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                 : 'hover:bg-slate-50 cursor-pointer active:scale-[0.98]'
                                     }`}
                             >
-                                {/* Tick si no está pendiente */}
-                                {group.estado !== 'pendiente' && (
-                                    <div className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center rounded-xl transition-all duration-300 mr-3 ${isCompleted ? 'bg-slate-200 text-slate-400' :
-                                            group.estado === 'terminado' ? 'bg-green-500 text-white scale-110' :
-                                                group.estado === 'cancelado' ? 'bg-slate-300 text-slate-500' :
-                                                    'bg-slate-100 text-slate-400 border border-slate-300'
-                                        }`}>
-                                        {group.estado === 'cancelado' ? <X size={26} strokeWidth={3} /> : <CheckCircle size={26} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
+                                {/* Solo cancelados: icono X. Terminado: tachado verde sin tick. */}
+                                {group.estado === 'cancelado' && (
+                                    <div
+                                        className={`mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300 sm:h-12 sm:w-12 ${
+                                            isCompleted ? 'bg-slate-200 text-slate-400' : 'bg-slate-300 text-slate-500'
+                                        }`}
+                                    >
+                                        <X size={26} strokeWidth={3} />
                                     </div>
                                 )}
 
