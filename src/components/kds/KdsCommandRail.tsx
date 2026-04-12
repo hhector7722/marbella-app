@@ -13,11 +13,10 @@ const RAIL_H = 'h-[52px] sm:h-[58px]';
 export const kdsRailRowWrapperClass = 'relative isolate w-full min-w-0 pt-[52px] sm:pt-[58px]';
 
 /**
- * Margen negativo de la fila de comandas: pt − |mt| = tope de la ranura negra
- * (borde superior de la comanda alineado con el inicio de la línea negra).
- * sm: 58 − 23 = 35px = 42 − 7 (tope ranura). base: 52 − 20 = 32px = 38 − 6.
+ * Margen negativo de la fila de comandas. Un poco menos que el alineado exacto a la ranura
+ * para que se vea un fragmento de la línea negra encima del borde de la comanda (~3px).
  */
-export const kdsRailCardOverlapClass = '-mt-[20px] sm:-mt-[23px]';
+export const kdsRailCardOverlapClass = '-mt-[17px] sm:-mt-[20px]';
 
 /**
  * Porta comandas metálico claro: labio inferior detrás de la tarjeta, bloque superior + ranura delante.

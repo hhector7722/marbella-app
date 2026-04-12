@@ -83,18 +83,15 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[64px] min-w-[188px] shrink-0 flex-row items-center gap-2 rounded-xl px-2.5 py-2 text-left transition',
-                        'bg-black/20 hover:bg-black/30 active:scale-[0.99]',
+                        'flex min-h-[64px] min-w-[188px] shrink-0 items-center rounded-xl border border-zinc-200/90 px-2.5 py-2 text-left shadow-sm transition',
+                        'bg-white hover:bg-zinc-50 active:scale-[0.99]',
                         'max-w-[min(320px,48vw)] flex-[1_0_188px]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <span className="min-w-0 flex-1 line-clamp-2 text-left text-lg font-black uppercase leading-snug tracking-[0.05em] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)] sm:text-xl sm:leading-snug">
-                        {item.nombre}
-                    </span>
-                    <span className="shrink-0 font-black tabular-nums leading-none tracking-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.45)] text-3xl sm:text-4xl">
-                        ×{item.cantidad}
-                    </span>
+                    <p className="line-clamp-2 w-full min-w-0 break-words text-left leading-snug">
+                        <span className="text-lg font-black uppercase tracking-[0.05em] text-zinc-900 sm:text-xl">{item.nombre}</span><span className="font-black tabular-nums leading-none tracking-tight text-red-600 text-3xl sm:text-4xl">×{item.cantidad}</span>
+                    </p>
                 </button>
             ))}
             {verMas && (
