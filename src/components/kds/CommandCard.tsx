@@ -385,21 +385,26 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 })}
             </div>
 
-            <div className="p-3 sm:p-4 rounded-b-xl">
+            {/* Franja inferior alineada con bordes laterales e inferior de la comanda (sin padding horizontal). */}
+            <div className="w-full shrink-0 overflow-hidden rounded-b-xl border-t border-zinc-200/90 bg-slate-100/95">
                 {isCompleted ? (
                     <button
+                        type="button"
                         onClick={() => onRecuperarComanda(order.id)}
-                        className="w-full min-h-[52px] py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1"
+                        className="w-full min-h-[52px] rounded-none px-3 py-3 sm:px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1"
                     >
                         Restaurar
                     </button>
                 ) : (
                     <button
+                        type="button"
                         onClick={() => onCompletarComanda(order.id, order.id_ticket ?? null)}
-                        className={`w-full min-h-[52px] py-3 rounded-xl font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1 ${isFullyDone
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300 shadow-sm'
-                                : 'bg-slate-100/80 text-slate-400 hover:bg-slate-200/80'
-                            }`}
+                        className={cn(
+                            'w-full min-h-[52px] rounded-none px-3 py-3 sm:px-4 font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1',
+                            isFullyDone
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200/90'
+                                : 'bg-slate-200/90 text-slate-500 hover:bg-slate-300/90'
+                        )}
                     >
                         Finalizar
                     </button>

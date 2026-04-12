@@ -15,13 +15,13 @@ const KDS_MAX_COLS = 4;
 /** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
 const KDS_MIN_CARD_PX = 200;
 
-const KDS_BG = '#5A5D60';
-const KDS_FOOTER_BG = '#484b4e';
+const KDS_BG = '#4e5156';
+const KDS_FOOTER_BG = '#3d4044';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
-/** Ancho mínimo por chip (nombre y cantidad mismo tamaño). */
-const FOOTER_CHIP_MIN_PX = 220;
+/** Ancho mínimo por chip (nombre + cantidad una sola línea). */
+const FOOTER_CHIP_MIN_PX = 200;
 const FOOTER_GAP_PX = 8;
 const FOOTER_VER_MAS_MIN_PX = 80;
 
@@ -75,7 +75,7 @@ function KDSFooterProductChips({
     return (
         <div
             ref={rowRef}
-            className="flex min-h-[4rem] w-full min-w-0 flex-1 flex-nowrap items-stretch gap-2 overflow-hidden py-1"
+            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-stretch gap-2 overflow-hidden py-1"
         >
             {shown.map((item) => (
                 <button
@@ -83,15 +83,18 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[72px] min-w-[220px] shrink-0 items-center rounded-xl border border-zinc-200/90 px-2.5 py-2 text-left shadow-sm transition',
+                        'flex min-h-[52px] min-w-[200px] shrink-0 items-center rounded-xl border border-zinc-200/90 px-2.5 py-1.5 text-left shadow-sm transition',
                         'bg-white hover:bg-zinc-50 active:scale-[0.99]',
-                        'max-w-[min(360px,52vw)] flex-[1_0_220px]'
+                        'max-w-[min(340px,52vw)] flex-[1_0_200px]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <p className="line-clamp-2 w-full min-w-0 break-words text-left leading-none">
-                        <span className="text-3xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-4xl">{item.nombre}</span><span className="font-black tabular-nums leading-none tracking-tight text-red-600 text-3xl sm:text-4xl">×{item.cantidad}</span>
-                    </p>
+                    <div className="flex w-full min-w-0 flex-row flex-nowrap items-center gap-0 text-left leading-none">
+                        <span className="min-w-0 flex-1 truncate text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">
+                            {item.nombre}
+                        </span>
+                        <span className="shrink-0 font-black tabular-nums tracking-tight text-red-600 text-2xl sm:text-3xl">×{item.cantidad}</span>
+                    </div>
                 </button>
             ))}
             {verMas && (
