@@ -237,11 +237,11 @@ function ProfileContent() {
                         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
 
                         <div className="relative z-10 flex items-start gap-3 min-h-0">
-                            <div className="shrink-0 flex flex-col items-center gap-1.5 w-44">
+                            <div className="shrink-0 flex flex-col items-center gap-1.5 w-20">
                                 <Avatar
                                     src={profile.avatar_url}
                                     alt={fullName}
-                                    size="xl"
+                                    size="lg"
                                     className="shadow-lg bg-white ring-2 ring-white"
                                 />
                                 {showAccountSection && (
