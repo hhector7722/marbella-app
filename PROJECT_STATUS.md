@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-11 (KDS: fix FULL JOIN telemetría)
+**Última actualización:** 2026-04-12 (Perfil: cabecera compacta)
+
+- [x] **Perfil `/profile` cabecera compacta (2026-04-12)**: Eliminados botón atrás, Facturas (ledger) y ajustes (engranaje); avatar `md` arriba a la izquierda con “Editar” debajo; nombre en la misma fila con `clamp` + `line-clamp`; altura de cabecera reducida. El modal `EditProfileModal` quedó sin entrada en esta vista (edición de datos vía modales del grid).
 
 - [x] **KDS: fix error PostgreSQL FULL JOIN en telemetría (2026-04-11)**: Si el receptor logueaba `FULL JOIN is only supported with merge-joinable or hash-joinable join conditions`, aplicar migración [`supabase/migrations/20260418120000_kds_fncalcdelta_full_join_hashable.sql`](supabase/migrations/20260418120000_kds_fncalcdelta_full_join_hashable.sql): `fncalcdelta` usa equi-join con `COALESCE(articulo_id, sentinel)` en el `FULL OUTER JOIN` en lugar de `IS NOT DISTINCT FROM`.
 
@@ -96,7 +98,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
   - `get_worker_weekly_log_grid` y `get_weekly_worker_stats` verificados: coinciden con remoto. Constraint `time_logs_event_type_check` incluye `no_registered`.
 - [x] **Refinamiento Vista Profile por Rol**: Diferenciación de aspecto y contenido de `/profile` según quién visualiza.
   - **Staff**: Vista "Mi cuenta" con cabecera compacta, sin botón Editar ni Facturas; DocumentManager en solo lectura; sección Configuración de Cuenta (contraseña, cerrar sesión).
-  - **Manager (propio perfil)**: Mismo layout con botón Editar, Facturas (si user maestro) y DocumentManager con subir/borrar.
+  - **Manager (propio perfil)**: Mismo layout compacto (sin Facturas ni engranaje en cabecera); DocumentManager con subir/borrar donde aplique.
   - **Manager (perfil empleado)**: Vista "Ficha empleado" con botón "Volver a plantilla", badge de rol, sección Datos laborales (horas contrato/sem, banco horas, preferir bolsa) con regla Zero-Display, enlace "Ver en Registros", y sin sección Configuración de Cuenta. Implementado `viewMode` (`staff` | `manager-self` | `manager-employee`) y `viewingOtherProfile` en `src/app/profile/page.tsx`.
 - [x] **Lista Plantilla tipo Perfil (Modal Plantilla)**: El modal "Plantilla" desde el Dashboard Admin muestra iconos flotantes en grid 3–4 columnas (avatar circular, nombre debajo). Prop `variant="profile-list"` en `StaffSelectionModal`; variante `grid` se mantiene para Registros y Staff/Historial.
 - [x] **Vista Profile tipo Dashboard**: Rediseño de `/profile` de lista vertical a layout dashboard. Grid de tarjetas Bento (DNI, IBAN, Email, Teléfono) en 2–4 columnas; datos laborales y documentación en tarjetas; configuración de cuenta en grid 2 cols. Toda la información visible y amable de leer.

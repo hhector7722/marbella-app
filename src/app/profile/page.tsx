@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
-import EditProfileModal from '@/components/EditProfileModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -53,7 +51,6 @@ function ProfileContent() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [modalDatosPersonales, setModalDatosPersonales] = useState(false);
     const [modalContacto, setModalContacto] = useState(false);
@@ -235,60 +232,48 @@ function ProfileContent() {
             <div className="max-w-2xl mx-auto">
                 {/* Un solo contenedor: esquinas redondeadas, cabecera petróleo + contenido */}
                 <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden min-h-[60vh] flex flex-col">
-                    {/* Cabecera petróleo */}
-                    <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 pt-6 pb-4 px-4">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
+                    {/* Cabecera petróleo (compacta) */}
+                    <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 pt-3 pb-3 px-4">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
 
-                        <div className="relative z-10 flex items-center justify-between">
-                            <button
-                                onClick={viewMode === 'manager-employee' ? () => router.push('/dashboard') : () => router.back()}
-                                className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white/90 hover:bg-white/10 transition-all active:scale-95"
-                                aria-label="Volver"
-                            >
-                                <ArrowLeft size={24} strokeWidth={2.5} />
-                            </button>
-                            <div className="flex items-center gap-2">
-                                {viewMode === 'manager-self' && currentUser?.id === 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6' && (
-                                    <button
-                                        onClick={() => router.push('/dashboard/ledger')}
-                                        className="h-12 px-4 flex items-center gap-2 bg-[#5B8FB9] shadow-xl rounded-xl hover:bg-blue-400 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest"
-                                    >
-                                        <Receipt size={18} strokeWidth={2.5} />
-                                        Facturas
-                                    </button>
-                                )}
-                                {(viewMode === 'manager-self' || viewMode === 'manager-employee') && (
-                                    <button
-                                        onClick={() => setIsEditModalOpen(true)}
-                                        className="min-h-[48px] min-w-[48px] flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 text-white"
-                                    >
-                                        <Settings size={20} />
-                                    </button>
+                        <div className="relative z-10 flex items-start gap-3 min-h-0">
+                            <div className="shrink-0 flex flex-col items-center gap-1 w-[4.75rem]">
+                                <Avatar
+                                    src={profile.avatar_url}
+                                    alt={fullName}
+                                    size="md"
+                                    className="shadow-lg bg-white ring-2 ring-white"
+                                />
+                                {showAccountSection && (
+                                    <label className="min-h-[48px] px-2 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-flex items-center justify-center text-center leading-tight">
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp,image/gif"
+                                            onChange={handleAvatarFileSelect}
+                                            disabled={avatarUploading}
+                                            className="hidden"
+                                        />
+                                        {avatarUploading ? 'Subiendo…' : 'Editar'}
+                                    </label>
                                 )}
                             </div>
-                        </div>
 
-                        <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                            <Avatar src={profile.avatar_url} alt={fullName} size="lg" className="shadow-xl mb-2 bg-white ring-2 ring-white" />
-                            {showAccountSection && (
-                                <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-block">
-                                    <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp,image/gif"
-                                        onChange={handleAvatarFileSelect}
-                                        disabled={avatarUploading}
-                                        className="hidden"
-                                    />
-                                    {avatarUploading ? 'Subiendo…' : 'Editar'}
-                                </label>
-                            )}
-                            <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
-                            {viewMode === 'staff' && <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>}
-                            {viewMode === 'manager-employee' && (
-                                <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full mt-1">
-                                    {profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff'}
-                                </span>
-                            )}
+                            <div className="flex-1 min-w-0 flex flex-col items-center justify-center self-stretch pt-0.5 pb-0.5">
+                                <h1
+                                    className="w-full text-center font-black uppercase tracking-tight leading-tight line-clamp-3 text-[clamp(0.65rem,3.2vw,1rem)] px-1"
+                                    title={fullName}
+                                >
+                                    {fullName}
+                                </h1>
+                                {viewMode === 'staff' && (
+                                    <p className="text-[10px] text-white/70 uppercase tracking-widest mt-1">Mi cuenta</p>
+                                )}
+                                {viewMode === 'manager-employee' && (
+                                    <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full mt-1">
+                                        {profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff'}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -341,15 +326,6 @@ function ProfileContent() {
             <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} isManager={isManager} />
             <ContratoModal isOpen={contratoOpen} onClose={() => setContratoOpen(false)} userId={profile.id} isManager={isManager} />
             {isPasswordModalOpen && <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />}
-
-            {isEditModalOpen && (
-                <EditProfileModal
-                    isOpen={isEditModalOpen}
-                    onClose={() => setIsEditModalOpen(false)}
-                    onSuccess={() => fetchInitialData()}
-                    profile={profile}
-                />
-            )}
 
             {cropModalImageSrc && (
                 <AvatarCropModal
