@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-11 (KDS: anulaciones → reconciliación + tickets OLD)
+**Última actualización:** 2026-04-11 (KDS: fix FULL JOIN telemetría)
+
+- [x] **KDS: fix error PostgreSQL FULL JOIN en telemetría (2026-04-11)**: Si el receptor logueaba `FULL JOIN is only supported with merge-joinable or hash-joinable join conditions`, aplicar migración [`supabase/migrations/20260418120000_kds_fncalcdelta_full_join_hashable.sql`](supabase/migrations/20260418120000_kds_fncalcdelta_full_join_hashable.sql): `fncalcdelta` usa equi-join con `COALESCE(articulo_id, sentinel)` en el `FULL OUTER JOIN` en lugar de `IS NOT DISTINCT FROM`.
 
 - [x] **KDS: anulaciones de mesa/artículo al radar (2026-04-11)**: Migración [`supabase/migrations/20260417120000_kds_reconcile_cancellations_and_old_tickets.sql`](supabase/migrations/20260417120000_kds_reconcile_cancellations_and_old_tickets.sql): `fncalcdelta` reconcilia mapa TPV (`envia_a_kds`) con líneas KDS no canceladas por `(articulo_id, notas)` (FULL OUTER JOIN); `productos` vacío cancela pendientes; `fn_trg_process_kds_from_sala` llama delta con `[]` para `id_ticket` que desaparece de `radiografia_completa` (OLD sin NEW). Documentado en [`context/ARQUITECTURA_SYNC_KDS.md`](context/ARQUITECTURA_SYNC_KDS.md). Ejecutar el SQL en Supabase si el entorno aún no lo tiene.
 

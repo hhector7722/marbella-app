@@ -119,8 +119,24 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     const orderTime = formatLocalTime(new Date(effectiveStart));
     const isFullyDone = (order.lineas?.length || 0) > 0 && order.lineas?.every(l => l.estado === 'terminado' || l.estado === 'cancelado');
 
+    // Finalizar si todas las líneas vienen canceladas desde TPV (sin tachar en cocina); el caso terminado lo cubre useKDS.tacharProductos.
+    const allCancelado =
+        (order.lineas?.length ?? 0) > 0 && order.lineas!.every((l) => l.estado === 'cancelado');
+    const finalizeCancelOnce = useRef(false);
+    useEffect(() => {
+        finalizeCancelOnce.current = false;
+    }, [order.id]);
+    useEffect(() => {
+        if (isCompleted || !allCancelado || finalizeCancelOnce.current) return;
+        finalizeCancelOnce.current = true;
+        onCompletarComanda(order.id, order.id_ticket ?? null);
+    }, [allCancelado, isCompleted, order.id, order.id_ticket, onCompletarComanda]);
+
+    // Solo mostrar pendientes y cancelados; los terminados se ocultan (quedan "hechos").
+    const lineasVisibles = (order.lineas || []).filter((l) => l.estado !== 'terminado');
+
     // Agrupamiento de líneas: mismo nombre, notas y estado
-    const groupedLines = (order.lineas || []).reduce((acc, line) => {
+    const groupedLines = lineasVisibles.reduce((acc, line) => {
         const key = `${line.producto_nombre}_${line.notas || ''}_${line.estado}`;
         if (!acc[key]) {
             acc[key] = {
@@ -144,16 +160,16 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             <div
             ref={cardRef}
             className={cn(
-                'relative flex flex-col overflow-hidden rounded-t-none rounded-b-xl shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)]',
+                'relative flex flex-col overflow-hidden rounded-b-xl bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)] shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-300',
                 openDropdownKey ? 'z-[100]' : 'z-auto',
                 isCompleted ? 'opacity-60' : isFullyDone ? 'opacity-90' : '',
                 !kdsRailAttached && 'mt-2'
             )}
         >
-            {/* Cabecera: color desde el borde superior de la tarjeta (sin franja clara ni marco superior) */}
+            {/* Cabecera: sin bordes laterales (evita franja clara); el color llega al borde del contenedor */}
             <div
                 className={cn(
-                    'px-3 sm:px-4 pb-2 pt-1.5 flex justify-between items-start transition-colors duration-500 relative font-black',
+                    'px-3 sm:px-4 pb-2 pt-1.5 flex justify-between items-start transition-colors duration-500 relative font-black w-full min-w-0',
                     isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`
                 )}
             >
@@ -248,7 +264,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white border border-slate-200 shadow-sm ${isCompleted
+                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 shadow-sm ${isCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-slate-50 cursor-pointer opacity-70'
@@ -369,7 +385,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 })}
             </div>
 
-            <div className="p-3 sm:p-4 border-t border-slate-100 rounded-b-xl">
+            <div className="p-3 sm:p-4 rounded-b-xl">
                 {isCompleted ? (
                     <button
                         onClick={() => onRecuperarComanda(order.id)}

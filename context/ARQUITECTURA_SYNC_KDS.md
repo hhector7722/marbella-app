@@ -29,6 +29,7 @@ Definición exportada y mantenida en Git:
 
 - [`supabase/migrations/20260408120000_kds_estado_sala_pipeline_snapshot.sql`](../supabase/migrations/20260408120000_kds_estado_sala_pipeline_snapshot.sql)
 - Reconciliación de anulaciones y tickets solo en OLD: [`supabase/migrations/20260417120000_kds_reconcile_cancellations_and_old_tickets.sql`](../supabase/migrations/20260417120000_kds_reconcile_cancellations_and_old_tickets.sql)
+- Fix `FULL OUTER JOIN` hashable en `fncalcdelta` (evitar `IS NOT DISTINCT FROM` en el `ON`): [`supabase/migrations/20260418120000_kds_fncalcdelta_full_join_hashable.sql`](../supabase/migrations/20260418120000_kds_fncalcdelta_full_join_hashable.sql)
 
 Si el esquema en el dashboard diverge, volver a exportar funciones/trigger con `pg_get_functiondef` / `pg_get_triggerdef` o la herramienta SQL del proyecto Supabase y actualizar esa migración o añadir una nueva encima.
 

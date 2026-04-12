@@ -307,41 +307,6 @@ export function useKDS() {
         return () => clearTimeout(timer);
     }, [fetchActiveOrders]);
 
-    const tacharProductos = async (lineIds: string[], currentState: KDSItemStatus) => {
-        if (lineIds.length === 0) return;
-        setSyncStatus('syncing');
-
-        const nextState: KDSItemStatus = currentState === 'pendiente' ? 'terminado' : 'pendiente';
-        const completedAt = nextState === 'terminado' ? new Date().toISOString() : null;
-
-        lineIds.forEach(id => inFlightLineIds.current.add(id));
-
-        setOrders(prev => prev.map(o => ({
-            ...o,
-            lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? { ...l, estado: nextState, completed_at: completedAt } : l)
-        })));
-
-        const { error } = await supabase
-            .from('kds_order_lines')
-            .update({ estado: nextState, completed_at: completedAt })
-            .in('id', lineIds);
-
-        // Sacar del vuelo
-        lineIds.forEach(id => inFlightLineIds.current.delete(id));
-
-        if (error) {
-            setSyncStatus('error');
-            setOrders(prev => prev.map(o => ({
-                ...o,
-                lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? {
-                    ...l, estado: currentState, completed_at: currentState === 'terminado' ? new Date().toISOString() : null
-                } : l)
-            })));
-        } else {
-            setStatusWithTimeout('success');
-        }
-    };
-
     // CIERRE DE COMANDA OPTIMISTA — todas las tandas (mismo id_ticket) se cierran a la vez
     const completarComanda = async (orderId: string, idTicket?: string | null) => {
         setSyncStatus('syncing');
@@ -381,6 +346,56 @@ export function useKDS() {
             );
         } else {
             setStatusWithTimeout('success');
+        }
+    };
+
+    const tacharProductos = async (lineIds: string[], currentState: KDSItemStatus) => {
+        if (lineIds.length === 0) return;
+        setSyncStatus('syncing');
+
+        const nextState: KDSItemStatus = currentState === 'pendiente' ? 'terminado' : 'pendiente';
+        const completedAt = nextState === 'terminado' ? new Date().toISOString() : null;
+
+        lineIds.forEach(id => inFlightLineIds.current.add(id));
+
+        setOrders(prev => prev.map(o => ({
+            ...o,
+            lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? { ...l, estado: nextState, completed_at: completedAt } : l)
+        })));
+
+        const { error } = await supabase
+            .from('kds_order_lines')
+            .update({ estado: nextState, completed_at: completedAt })
+            .in('id', lineIds);
+
+        // Sacar del vuelo
+        lineIds.forEach(id => inFlightLineIds.current.delete(id));
+
+        if (error) {
+            setSyncStatus('error');
+            setOrders(prev => prev.map(o => ({
+                ...o,
+                lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? {
+                    ...l, estado: currentState, completed_at: currentState === 'terminado' ? new Date().toISOString() : null
+                } : l)
+            })));
+        } else {
+            setStatusWithTimeout('success');
+            // Si todas las líneas quedan terminadas o canceladas, finalizar comanda(s) automáticamente
+            setOrders((prev) => {
+                const affected = prev.find((o) => o.lineas?.some((l) => lineIds.includes(l.id)));
+                if (
+                    affected &&
+                    affected.estado === 'activa' &&
+                    (affected.lineas?.length ?? 0) > 0 &&
+                    affected.lineas!.every((l) => l.estado === 'terminado' || l.estado === 'cancelado')
+                ) {
+                    queueMicrotask(() => {
+                        void completarComanda(affected.id, affected.id_ticket ?? null);
+                    });
+                }
+                return prev;
+            });
         }
     };
 

@@ -29,7 +29,17 @@ async function start() {
         // 1. ENVÍO DE VENTAS (HISTORIAL DE COBRADOS)
         setInterval(async () => {
             try {
-                const res = await pool.request().query("SELECT TOP 50 Numero_Documento, Serie, Numero, Total_Documento, Fecha, ISNULL(Mesa, 0) AS Mesa FROM Documentos_Cabecera WITH (NOLOCK) WHERE Fecha >= CAST(GETDATE() AS DATE) ORDER BY Fecha DESC");
+                // Mismo día todos los tickets comparten Fecha: ORDER BY Fecha DESC no ordena dentro del día
+                // y TOP N devolvía un subconjunto arbitrario (TPV u otro terminal podían quedar fuera).
+                // Ordenar por cierre real; TOP alto para picos de muchas comandas en poco tiempo (ajusta si hace falta).
+                const res = await pool.request().query(`
+                    SELECT TOP 10000
+                        Numero_Documento, Serie, Numero, Total_Documento, Fecha,
+                        ISNULL(Mesa, 0) AS Mesa, Terminal
+                    FROM Documentos_Cabecera WITH (NOLOCK)
+                    WHERE Fecha >= CAST(GETDATE() AS DATE)
+                    ORDER BY Hora_Cierre DESC, Numero_Documento DESC
+                `);
                 
                 for (const t of res.recordset) {
                     if (!memoriaTickets.has(t.Numero_Documento)) {
@@ -51,7 +61,7 @@ async function start() {
 
                         await axios.post(URL_VENTAS, { ventas: [payloadVenta] });
                         memoriaTickets.add(t.Numero_Documento);
-                        console.log(`✅ Venta enviada -> Ticket: ${t.Numero_Documento} | Mesa: ${t.Mesa}`);
+                        console.log(`✅ Venta enviada -> Ticket: ${t.Numero_Documento} | Mesa: ${t.Mesa} | Terminal: ${t.Terminal ?? '?'}`);
                     }
                 }
             } catch (e) {

@@ -14,90 +14,98 @@ const KDS_MAX_COLS = 4;
 /** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
 const KDS_MIN_CARD_PX = 200;
 
-/** Subir este valor al reemplazar `public/icons/comandero.png` para forzar recarga (caché CDN/navegador). */
-const COMANDERO_PNG_VERSION = '20260413';
+/** Subir al cambiar `public/icons/comandera.png` (porta comandas). */
+const COMANDERA_PNG_VERSION = '20260418';
+
+const KDS_BG = '#5A5D60';
+const KDS_FOOTER_BG = '#484b4e';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
-const KDS_FOOTER_ROW_PX = 19;
-const KDS_FOOTER_ROW_GAP_PX = 2;
-const KDS_FOOTER_PLUS_LINE_PX = 18;
+const FOOTER_CHIP_MIN_PX = 104;
+const FOOTER_GAP_PX = 8;
+const FOOTER_VER_MAS_MIN_PX = 80;
 
-function rowsBlockHeightPx(rowCount: number): number {
-    if (rowCount <= 0) return 0;
-    return rowCount * KDS_FOOTER_ROW_PX + Math.max(0, rowCount - 1) * KDS_FOOTER_ROW_GAP_PX;
-}
-
-/** Máximo de filas que caben en `availableH` sin scroll; si no caben todas, se reserva altura para "+N". */
-function maxRowsFitInFooter(availableH: number, totalItems: number): number {
-    if (totalItems <= 0) return 0;
-    if (availableH <= 0) return Math.min(totalItems, 4);
-    for (let n = totalItems; n >= 1; n--) {
-        const need =
-            n < totalItems ? rowsBlockHeightPx(n) + KDS_FOOTER_PLUS_LINE_PX : rowsBlockHeightPx(n);
-        if (need <= availableH) return n;
+function maxProductChipsFit(rowWidth: number, totalItems: number): { show: number; verMas: boolean } {
+    if (totalItems <= 0) return { show: 0, verMas: false };
+    if (rowWidth <= 0) return { show: Math.min(4, totalItems), verMas: totalItems > 4 };
+    const needAll = totalItems * FOOTER_CHIP_MIN_PX + Math.max(0, totalItems - 1) * FOOTER_GAP_PX;
+    if (needAll <= rowWidth) return { show: totalItems, verMas: false };
+    for (let k = totalItems - 1; k >= 1; k--) {
+        const w =
+            k * FOOTER_CHIP_MIN_PX +
+            Math.max(0, k - 1) * FOOTER_GAP_PX +
+            FOOTER_GAP_PX +
+            FOOTER_VER_MAS_MIN_PX;
+        if (w <= rowWidth) return { show: k, verMas: true };
     }
-    return 1;
+    return { show: Math.min(1, totalItems), verMas: totalItems > 1 };
 }
 
-function KDSFooterTotalsCard({ items, onOpen }: { items: KdsAggregatedLine[]; onOpen: () => void }) {
-    const middleRef = useRef<HTMLDivElement>(null);
-    const [visibleCount, setVisibleCount] = useState(1);
+function KDSFooterProductChips({
+    items,
+    onOpen,
+}: {
+    items: KdsAggregatedLine[];
+    onOpen: () => void;
+}) {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const [layout, setLayout] = useState<{ show: number; verMas: boolean }>({ show: 8, verMas: false });
 
     const recalc = useCallback(() => {
-        const el = middleRef.current;
+        const el = rowRef.current;
         if (!el || items.length === 0) {
-            setVisibleCount(0);
+            setLayout({ show: 0, verMas: false });
             return;
         }
-        const h = el.clientHeight;
-        setVisibleCount(maxRowsFitInFooter(h, items.length));
+        setLayout(maxProductChipsFit(el.clientWidth, items.length));
     }, [items.length]);
 
     useLayoutEffect(() => {
         recalc();
-        const el = middleRef.current;
+        const el = rowRef.current;
         if (!el) return;
         const ro = new ResizeObserver(() => recalc());
         ro.observe(el);
         return () => ro.disconnect();
     }, [recalc]);
 
-    const shown = items.slice(0, visibleCount);
-    const rest = items.length - shown.length;
+    const { show, verMas } = layout;
+    const shown = verMas ? items.slice(0, show) : items;
 
     return (
-        <button
-            type="button"
-            onClick={onOpen}
-            className={cn(
-                'flex h-[6.5rem] w-full min-w-0 min-h-[48px] flex-col overflow-hidden rounded-xl border border-slate-700/90 bg-slate-900/95 px-3 py-2 text-left shadow-inner',
-                'hover:bg-slate-900 active:scale-[0.99] transition'
-            )}
-            title="Ver resumen completo"
+        <div
+            ref={rowRef}
+            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-stretch gap-2 overflow-hidden py-0.5"
         >
-            <span className="mb-0.5 shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                Totales por artículo
-            </span>
-            <div ref={middleRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
-                    {shown.map((item) => (
-                        <div
-                            key={item.key}
-                            className="flex min-w-0 shrink-0 items-center justify-between gap-2 text-xs leading-tight sm:text-sm"
-                        >
-                            <span className="min-w-0 truncate font-bold text-slate-100">{item.nombre}</span>
-                            <span className="shrink-0 font-black tabular-nums text-slate-300">×{item.cantidad}</span>
-                        </div>
-                    ))}
-                </div>
-                {rest > 0 && (
-                    <span className="shrink-0 pt-0.5 text-[10px] font-black tabular-nums text-slate-400">
-                        +{rest}
+            {shown.map((item) => (
+                <button
+                    key={item.key}
+                    type="button"
+                    onClick={onOpen}
+                    className={cn(
+                        'flex min-h-[48px] min-w-[100px] shrink-0 flex-col justify-center rounded-xl px-2.5 py-1.5 text-left transition',
+                        'bg-black/20 hover:bg-black/30 active:scale-[0.99]',
+                        'max-w-[200px] flex-[1_0_104px]'
+                    )}
+                    title={`${item.nombre} ×${item.cantidad}`}
+                >
+                    <span className="truncate text-xs font-black uppercase tracking-[0.06em] text-white/95 sm:text-sm">
+                        {item.nombre}
                     </span>
-                )}
-            </div>
-        </button>
+                    <span className="font-black tabular-nums text-white/85 text-base sm:text-lg">×{item.cantidad}</span>
+                </button>
+            ))}
+            {verMas && (
+                <button
+                    type="button"
+                    onClick={onOpen}
+                    className="flex min-h-[48px] min-w-[80px] shrink-0 items-center justify-center rounded-xl bg-black/25 px-2 text-xs font-black uppercase tracking-[0.12em] text-white/90 hover:bg-black/35"
+                >
+                    Ver más
+                </button>
+            )}
+        </div>
     );
 }
 
@@ -241,22 +249,26 @@ function KDSOrderRowsLayout({
                             key={`row-${row.map((o) => o.id).join('-')}-${rowIdx}`}
                             className="flex flex-col w-full min-w-0"
                         >
-                            {/* Full-bleed: imagen más ancha que el viewport; overflow recorta laterales del PNG */}
+                            {/* Porta comandas: mitad inferior detrás de las tarjetas, mitad superior delante (misma imagen comandera). */}
                             <div
                                 className={cn(
-                                    'relative w-screen max-w-[100vw] shrink-0 overflow-hidden',
+                                    'relative w-screen max-w-[100vw] shrink-0 overflow-visible',
                                     'left-1/2 -translate-x-1/2',
-                                    'shadow-[0_4px_12px_rgba(0,0,0,0.35)]'
+                                    'h-[min(44px,10vw)] min-h-[28px]'
                                 )}
                             >
                                 <img
-                                    src={`/icons/comandero.png?v=${COMANDERO_PNG_VERSION}`}
+                                    src={`/icons/comandera.png?v=${COMANDERA_PNG_VERSION}`}
                                     alt=""
-                                    className={cn(
-                                        'block h-auto min-h-[22px] max-h-[44px] max-w-none select-none pointer-events-none',
-                                        'w-[132%] min-w-[132%] object-cover object-center',
-                                        'relative left-1/2 -translate-x-1/2'
-                                    )}
+                                    className="pointer-events-none absolute left-1/2 top-0 z-[1] h-[200%] w-[132%] max-w-none -translate-x-1/2 select-none object-cover object-top"
+                                    style={{ clipPath: 'inset(55% 0 0 0)' }}
+                                    draggable={false}
+                                />
+                                <img
+                                    src={`/icons/comandera.png?v=${COMANDERA_PNG_VERSION}`}
+                                    alt=""
+                                    className="pointer-events-none absolute left-1/2 top-0 z-[30] h-[200%] w-[132%] max-w-none -translate-x-1/2 select-none object-cover object-top"
+                                    style={{ clipPath: 'inset(0 0 45% 0)' }}
                                     draggable={false}
                                 />
                             </div>
@@ -266,9 +278,9 @@ function KDSOrderRowsLayout({
                             */}
                             <div
                                 className={cn(
-                                    'relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
+                                    'relative z-[15] w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
                                     'flex flex-row flex-nowrap justify-evenly items-start',
-                                    'pt-0 px-1 sm:px-2 gap-0'
+                                    '-mt-[clamp(18px,5vw,36px)] pt-1 px-1 sm:px-2 gap-0'
                                 )}
                             >
                                 {row.map((order) => (
@@ -294,10 +306,18 @@ export default function KDSView() {
     const [showCompleted, setShowCompleted] = useState(false);
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
-    const visibleOrders = useMemo(() => orders.filter(o =>
-        (showCompleted ? o.estado === 'completada' : o.estado === 'activa') &&
-        (o.lineas?.length || 0) > 0
-    ), [orders, showCompleted]);
+    const visibleOrders = useMemo(
+        () =>
+            orders.filter((o) => {
+                if (showCompleted) {
+                    return o.estado === 'completada' && (o.lineas?.length || 0) > 0;
+                }
+                if (o.estado !== 'activa') return false;
+                if (!(o.lineas?.length || 0)) return false;
+                return o.lineas!.some((l) => l.estado === 'pendiente' || l.estado === 'cancelado');
+            }),
+        [orders, showCompleted]
+    );
 
     const aggregatedItems = useMemo(() => visibleOrders.reduce((acc, order) => {
         order.lineas?.filter(l => l.estado === 'pendiente').forEach(line => {
@@ -353,11 +373,14 @@ export default function KDSView() {
     );
 
     return (
-        <div className={`fixed inset-0 z-[100] flex flex-col bg-slate-900 transition-all duration-500 ${isOffline ? 'grayscale-[0.5]' : ''}`}>
+        <div
+            className={`fixed inset-0 z-[100] flex flex-col transition-all duration-500 ${isOffline ? 'grayscale-[0.5]' : ''}`}
+            style={{ backgroundColor: KDS_BG }}
+        >
 
             {isOffline && <div className="absolute inset-0 bg-red-900/10 pointer-events-none z-[90] backdrop-blur-[1px]" />}
 
-            <div className="flex flex-1 min-h-0 flex-col bg-[#0f1522] relative">
+            <div className="flex flex-1 min-h-0 flex-col relative" style={{ backgroundColor: KDS_BG }}>
 
                 {/* Área principal: comandas (scroll) */}
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-4 pb-3 custom-scrollbar">
@@ -367,9 +390,9 @@ export default function KDSView() {
                             <p className="text-sm font-black uppercase tracking-[0.35em] opacity-40 animate-pulse">Sincronizando...</p>
                         </div>
                     ) : visibleOrders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
+                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-white/15 rounded-3xl bg-black/10 mt-8 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
                             {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
-                            <h3 className="text-2xl font-bold text-slate-400 uppercase tracking-wide">
+                            <h3 className="text-2xl font-bold text-white/55 uppercase tracking-wide">
                                 {showCompleted ? 'Sin comandas finalizadas hoy' : 'No hay comandas pendientes'}
                             </h3>
                         </div>
@@ -384,20 +407,23 @@ export default function KDSView() {
 
             </div>
 
-            {/* Pie fijo: logo, resumen por artículo (sin scroll horizontal), controles */}
-            <footer className="shrink-0 z-30 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 min-h-[5.5rem] sm:min-h-[6rem] px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] overflow-x-hidden">
-                <div className="flex items-center gap-4 shrink-0 border-b border-slate-800/80 sm:border-b-0 pb-3 sm:pb-0 sm:border-r sm:pr-6">
+            {/* Pie fijo: un poco más oscuro que el fondo principal */}
+            <footer
+                className="shrink-0 z-30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 min-h-[5.5rem] sm:min-h-[6rem] px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] overflow-x-hidden border-t border-black/20"
+                style={{ backgroundColor: KDS_FOOTER_BG }}
+            >
+                <div className="flex items-center gap-4 shrink-0 border-b border-black/15 sm:border-b-0 pb-3 sm:pb-0 sm:border-r sm:border-black/15 sm:pr-6">
                     <div className="flex items-center justify-center shrink-0">
                         <Image src="/icons/logo-white.png" alt="Bar Marbella" width={52} height={52} className="object-contain drop-shadow-lg opacity-90" />
                     </div>
                     <div className="flex flex-col justify-center min-w-0">
                         <Link href="/dashboard/sala" className="flex items-center gap-2 mb-1 cursor-pointer">
                             <span className={`block h-2.5 w-2.5 rounded-full ${isOffline ? 'bg-rose-400' : 'bg-emerald-400'} animate-pulse shrink-0`} />
-                            <p className="text-sm sm:text-base font-black text-slate-300 uppercase tracking-[0.2em] leading-none">
+                            <p className="text-sm sm:text-base font-black text-white/80 uppercase tracking-[0.2em] leading-none">
                                 {isOffline ? 'DESCONECTADO' : 'Live'}
                             </p>
                         </Link>
-                        <p className="text-base sm:text-lg font-black text-slate-200 uppercase tracking-[0.22em] leading-tight text-center">
+                        <p className="text-base sm:text-lg font-black text-white/90 uppercase tracking-[0.22em] leading-tight text-center">
                             {visibleOrders.length === 0 ? ' ' : String(visibleOrders.length)}
                         </p>
                     </div>
@@ -406,19 +432,19 @@ export default function KDSView() {
                 <div className="flex-1 flex flex-col items-stretch gap-2 min-w-0 min-h-[3.25rem] overflow-x-hidden">
                     {aggregatedItems.length === 0 ? (
                         !loading && (
-                            <div className="text-slate-500 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto px-1">
+                            <div className="text-white/45 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto px-1">
                                 Nada que preparar
                             </div>
                         )
                     ) : (
-                        <KDSFooterTotalsCard
+                        <KDSFooterProductChips
                             items={aggregatedItems}
                             onOpen={() => setIsSummaryOpen(true)}
                         />
                     )}
                 </div>
 
-                <div className="flex items-center justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t border-slate-800/80 sm:border-t-0 sm:border-l sm:pl-6">
+                <div className="flex items-center justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t border-black/15 sm:border-t-0 sm:border-l sm:border-black/15 sm:pl-6">
                     <div
                         className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-500 overflow-hidden ${syncStatus === 'idle' ? 'w-0 opacity-0' : 'w-11 opacity-100 bg-slate-800 border border-slate-600/50 shadow-inner'}`}
                     >
@@ -521,8 +547,8 @@ export default function KDSView() {
             <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.35); }
 
       `}</style>
         </div>
