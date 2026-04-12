@@ -8,7 +8,7 @@ import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { KdsCommandRail, kdsRailCardOverlapClass } from '@/components/kds/KdsCommandRail';
+import { KdsCommandRail, kdsRailCardOverlapClass, kdsRailRowWrapperClass } from '@/components/kds/KdsCommandRail';
 
 /** Máximo de comandas por fila (pantalla ancha). */
 const KDS_MAX_COLS = 4;
@@ -20,8 +20,8 @@ const KDS_FOOTER_BG = '#484b4e';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
-/** Ancho mínimo por chip (nombre + cantidad grande en una fila). */
-const FOOTER_CHIP_MIN_PX = 156;
+/** Ancho mínimo por chip (nombre grande + cantidad en una fila). */
+const FOOTER_CHIP_MIN_PX = 188;
 const FOOTER_GAP_PX = 8;
 const FOOTER_VER_MAS_MIN_PX = 80;
 
@@ -75,7 +75,7 @@ function KDSFooterProductChips({
     return (
         <div
             ref={rowRef}
-            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-stretch gap-2 overflow-hidden py-0.5"
+            className="flex min-h-[4rem] w-full min-w-0 flex-1 flex-nowrap items-stretch gap-2 overflow-hidden py-1"
         >
             {shown.map((item) => (
                 <button
@@ -83,13 +83,13 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[56px] min-w-[156px] shrink-0 flex-row items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition',
+                        'flex min-h-[64px] min-w-[188px] shrink-0 flex-row items-center gap-2 rounded-xl px-2.5 py-2 text-left transition',
                         'bg-black/20 hover:bg-black/30 active:scale-[0.99]',
-                        'max-w-[min(280px,42vw)] flex-[1_0_156px]'
+                        'max-w-[min(320px,48vw)] flex-[1_0_188px]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <span className="min-w-0 flex-1 truncate text-xs font-black uppercase leading-tight tracking-[0.06em] text-white/95 sm:text-sm">
+                    <span className="min-w-0 flex-1 line-clamp-2 text-left text-lg font-black uppercase leading-snug tracking-[0.05em] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)] sm:text-xl sm:leading-snug">
                         {item.nombre}
                     </span>
                     <span className="shrink-0 font-black tabular-nums leading-none tracking-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.45)] text-3xl sm:text-4xl">
@@ -248,29 +248,18 @@ function KDSOrderRowsLayout({
                     {layoutRows.map((row, rowIdx) => (
                         <div
                             key={`row-${row.map((o) => o.id).join('-')}-${rowIdx}`}
-                            className="flex flex-col w-full min-w-0"
+                            className={cn(kdsRailRowWrapperClass, 'flex flex-col')}
                         >
                             {/*
-                              Porta comandas procedural (KdsCommandRail): sin PNG; solapamiento fijo
-                              con la fila de comandas vía kdsRailCardOverlapClass.
+                              Riel en capas: labio inferior z-8, comanda z-15, bloque superior z-25.
                             */}
+                            <KdsCommandRail />
                             <div
                                 className={cn(
-                                    'relative z-20 w-screen max-w-[100vw] shrink-0',
-                                    'left-1/2 -translate-x-1/2'
-                                )}
-                            >
-                                <KdsCommandRail />
-                            </div>
-                            {/*
-                              justify-evenly: filas con 1–4 comandas. z-10 < riel.
-                            */}
-                            <div
-                                className={cn(
-                                    'relative z-10 w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
+                                    'relative z-[15] w-screen max-w-[100vw] shrink-0 left-1/2 -translate-x-1/2',
                                     'flex flex-row flex-nowrap justify-evenly items-start',
                                     kdsRailCardOverlapClass,
-                                    'pt-0 px-1 sm:px-2 gap-0'
+                                    'px-1 sm:px-2 gap-0'
                                 )}
                             >
                                 {row.map((order) => (

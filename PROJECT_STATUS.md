@@ -2,7 +2,7 @@
 
 **Última actualización:** 2026-04-12 (KDS: riel procedural CSS)
 
-- [x] **KDS porta comandas (2026-04-12)**: Sustituido PNG por riel procedural en [`src/components/kds/KdsCommandRail.tsx`](src/components/kds/KdsCommandRail.tsx) (gradientes + ranura + labio; sin `riel.png`). Solapamiento fijo con comandas vía `kdsRailCardOverlapClass` en [`KDSView.tsx`](src/components/kds/KDSView.tsx).
+- [x] **KDS porta comandas (2026-04-12)**: Riel procedural en [`KdsCommandRail.tsx`](src/components/kds/KdsCommandRail.tsx): metal **gris claro** (gradientes tipo `#f3f4f6`–`#cdd2dc`), ranura oscura, **labio inferior z-8** (detrás), **comanda z-15**, **bloque superior z-25** (delante). Fila con `kdsRailRowWrapperClass` (`pt` + `isolate`) y `kdsRailCardOverlapClass`.
 
 - [x] **Perfil `/profile` cabecera compacta (2026-04-12)**: Eliminados botón atrás, Facturas (ledger) y ajustes (engranaje); avatar `md` arriba a la izquierda con “Editar” debajo; nombre en la misma fila con `clamp` + `line-clamp`; altura de cabecera reducida. El modal `EditProfileModal` quedó sin entrada en esta vista (edición de datos vía modales del grid).
 

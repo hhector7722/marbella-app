@@ -3,47 +3,62 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Riel / porta comandas procedural (sin bitmap): gradientes + sombras.
- * La comanda va justo debajo; usar `kdsRailCardOverlapClass` en la fila de tarjetas
- * para que el borde superior quede oculto bajo el labio del riel (z-index en KDSView).
+ * Altura del bloque riel (debe coincidir con el padding superior del wrapper de fila).
  */
-export const kdsRailCardOverlapClass = '-mt-[20px] sm:-mt-[22px]';
+const RAIL_H = 'h-[52px] sm:h-[58px]';
 
+/**
+ * Contenedor de cada fila de comandas: reserva altura para el riel absoluto + contexto de apilado.
+ */
+export const kdsRailRowWrapperClass = 'relative isolate w-full min-w-0 pt-[52px] sm:pt-[58px]';
+
+/**
+ * La comanda sube y queda entre labio inferior (z-8) y bloque superior (z-25).
+ */
+export const kdsRailCardOverlapClass = '-mt-[36px] sm:-mt-[42px]';
+
+/**
+ * Porta comandas metálico claro: labio inferior detrás de la tarjeta, bloque superior + ranura delante.
+ */
 export function KdsCommandRail({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'pointer-events-none relative h-[52px] w-full shrink-0 overflow-hidden sm:h-[58px]',
+                'pointer-events-none absolute left-1/2 top-0 z-0 w-screen max-w-[100vw] -translate-x-1/2',
+                RAIL_H,
                 className
             )}
             aria-hidden
         >
-            {/* Chapa base */}
-            <div className="absolute inset-0 bg-[#4f555e]" />
+            {/* Labio inferior — detrás de la comanda (z-8) */}
             <div
-                className="absolute inset-x-0 top-0 h-[55%] bg-gradient-to-b from-white/[0.22] via-white/[0.06] to-transparent"
-                aria-hidden
-            />
-            <div
-                className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/35 to-transparent"
-                aria-hidden
-            />
-
-            {/* Ranura (hueco donde “entra” el ticket) */}
-            <div
-                className="absolute bottom-[11px] left-[5%] right-[5%] h-[9px] rounded-full bg-black/55 shadow-[inset_0_3px_5px_rgba(0,0,0,0.85),0_1px_0_rgba(255,255,255,0.07)] sm:bottom-[12px] sm:h-[10px]"
-                aria-hidden
+                className={cn(
+                    'absolute inset-x-0 bottom-0 z-[8] rounded-t-[5px]',
+                    'h-[14px] sm:h-[16px]',
+                    'bg-gradient-to-b from-[#c4c9d2] via-[#adb3bf] to-[#959cab]',
+                    'shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-2px_3px_rgba(0,0,0,0.06),0_-3px_10px_rgba(0,0,0,0.1)]'
+                )}
             />
 
-            {/* Labio inferior: tapa visualmente el borde superior de la comanda */}
+            {/* Bloque superior + ranura — delante; tapa el borde superior de la comanda (z-25) */}
             <div
-                className="absolute bottom-0 left-0 right-0 h-[15px] bg-gradient-to-b from-[#3a3f47] via-[#2e3238] to-[#23262c] shadow-[0_-4px_10px_rgba(0,0,0,0.4)] sm:h-[17px]"
-                aria-hidden
-            />
-            <div className="absolute bottom-[14px] left-0 right-0 h-px bg-white/[0.12] sm:bottom-[16px]" aria-hidden />
-
-            {/* Reflejo fino superior */}
-            <div className="absolute left-[8%] right-[8%] top-1 h-px bg-white/25" aria-hidden />
+                className={cn(
+                    'absolute inset-x-0 top-0 z-[25] rounded-b-[4px]',
+                    'h-[38px] sm:h-[42px]',
+                    'bg-gradient-to-b from-[#f3f4f6] via-[#e5e7eb] to-[#cdd2dc]',
+                    'shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-12px_16px_rgba(100,110,130,0.12),0_4px_14px_rgba(0,0,0,0.14)]'
+                )}
+            >
+                <div className="absolute left-[8%] right-[8%] top-2 h-px bg-white/75 sm:top-2.5" />
+                {/* Ranura (hueco donde se inserta visualmente el ticket) */}
+                <div
+                    className={cn(
+                        'absolute bottom-0 left-[3%] right-[3%] rounded-full bg-[#1a1f28]',
+                        'h-[6px] sm:h-[7px]',
+                        'shadow-[inset_0_3px_6px_rgba(0,0,0,0.82),0_1px_0_rgba(255,255,255,0.15)]'
+                    )}
+                />
+            </div>
         </div>
     );
 }
