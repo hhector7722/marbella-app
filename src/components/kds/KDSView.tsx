@@ -20,27 +20,6 @@ const KDS_FOOTER_BG = '#3d4044';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
-/** Ancho mínimo por chip (nombre + cantidad una sola línea). */
-const FOOTER_CHIP_MIN_PX = 200;
-const FOOTER_GAP_PX = 8;
-const FOOTER_VER_MAS_MIN_PX = 80;
-
-function maxProductChipsFit(rowWidth: number, totalItems: number): { show: number; verMas: boolean } {
-    if (totalItems <= 0) return { show: 0, verMas: false };
-    if (rowWidth <= 0) return { show: Math.min(4, totalItems), verMas: totalItems > 4 };
-    const needAll = totalItems * FOOTER_CHIP_MIN_PX + Math.max(0, totalItems - 1) * FOOTER_GAP_PX;
-    if (needAll <= rowWidth) return { show: totalItems, verMas: false };
-    for (let k = totalItems - 1; k >= 1; k--) {
-        const w =
-            k * FOOTER_CHIP_MIN_PX +
-            Math.max(0, k - 1) * FOOTER_GAP_PX +
-            FOOTER_GAP_PX +
-            FOOTER_VER_MAS_MIN_PX;
-        if (w <= rowWidth) return { show: k, verMas: true };
-    }
-    return { show: Math.min(1, totalItems), verMas: totalItems > 1 };
-}
-
 function KDSFooterProductChips({
     items,
     onOpen,
@@ -48,62 +27,25 @@ function KDSFooterProductChips({
     items: KdsAggregatedLine[];
     onOpen: () => void;
 }) {
-    const rowRef = useRef<HTMLDivElement>(null);
-    const [layout, setLayout] = useState<{ show: number; verMas: boolean }>({ show: 8, verMas: false });
-
-    const recalc = useCallback(() => {
-        const el = rowRef.current;
-        if (!el || items.length === 0) {
-            setLayout({ show: 0, verMas: false });
-            return;
-        }
-        setLayout(maxProductChipsFit(el.clientWidth, items.length));
-    }, [items.length]);
-
-    useLayoutEffect(() => {
-        recalc();
-        const el = rowRef.current;
-        if (!el) return;
-        const ro = new ResizeObserver(() => recalc());
-        ro.observe(el);
-        return () => ro.disconnect();
-    }, [recalc]);
-
-    const { show, verMas } = layout;
-    const shown = verMas ? items.slice(0, show) : items;
-
     return (
-        <div
-            ref={rowRef}
-            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-start gap-2 overflow-x-auto overflow-y-visible py-1 [scrollbar-width:thin]"
-        >
-            {shown.map((item) => (
+        <div className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-start gap-2 overflow-x-auto overflow-y-visible py-1 [scrollbar-width:thin]">
+            {items.map((item) => (
                 <button
                     key={item.key}
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[48px] min-w-[200px] shrink-0 items-start rounded-xl border border-zinc-200/90 px-2.5 py-2 text-left shadow-sm transition',
-                        'bg-white hover:bg-zinc-50 active:scale-[0.99]',
-                        'max-w-[min(90vw,28rem)] flex-[1_1_200px]'
+                        'inline-flex max-w-[min(92vw,42rem)] min-h-[48px] w-max shrink-0 items-start rounded-xl border border-zinc-200/90 px-3 py-2 text-left shadow-sm transition',
+                        'bg-white hover:bg-zinc-50 active:scale-[0.99]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <p className="w-full min-w-0 break-words text-left leading-snug">
+                    <p className="min-w-0 max-w-full break-words text-left leading-snug">
                         <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">{item.nombre}</span>
                         <span className="font-black tabular-nums tracking-tight text-red-600 text-2xl sm:text-3xl"> ×{item.cantidad}</span>
                     </p>
                 </button>
             ))}
-            {verMas && (
-                <button
-                    type="button"
-                    onClick={onOpen}
-                    className="flex min-h-[48px] min-w-[80px] shrink-0 items-center justify-center rounded-xl bg-black/25 px-2 text-xs font-black uppercase tracking-[0.12em] text-white/90 hover:bg-black/35"
-                >
-                    Ver más
-                </button>
-            )}
         </div>
     );
 }

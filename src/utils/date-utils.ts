@@ -43,16 +43,15 @@ export function parseTPVDate(dateStr: string | null | undefined): Date {
 }
 
 /**
- * Formatea una fecha para mostrarla como HH:mm:ss
+ * Formatea una fecha para mostrarla como HH:mm (local).
  */
 export function formatLocalTime(date: Date | string | null | undefined): string {
-  if (!date) return '--:--:--';
+  if (!date) return '--:--';
   const d = (date instanceof Date) ? date : parseTPVDate(date);
   
   return d.toLocaleTimeString('es-ES', { 
     hour: '2-digit', 
     minute: '2-digit',
-    second: '2-digit',
     hour12: false
   });
 }
