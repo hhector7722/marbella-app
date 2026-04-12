@@ -427,9 +427,9 @@ export default function KDSView() {
                         {syncStatus === 'error' && <X size={22} className="text-rose-400" strokeWidth={2.5} />}
                     </div>
 
-                    <div className="flex bg-slate-800 p-1.5 rounded-xl shadow-inner min-h-[52px] items-center">
+                    <div className="flex min-h-[52px] flex-col items-end justify-center gap-2">
                         {!showCompleted ? (
-                            <div className="flex flex-col gap-2">
+                            <>
                                 <button
                                     type="button"
                                     disabled={!lastCompletedOrderId}
@@ -437,23 +437,23 @@ export default function KDSView() {
                                         if (!lastCompletedOrderId) return;
                                         recuperarComanda(lastCompletedOrderId);
                                     }}
-                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md disabled:opacity-40 disabled:hover:bg-emerald-600"
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg disabled:opacity-40 disabled:hover:bg-emerald-600"
                                 >
                                     Recup Última
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowCompleted(true)}
-                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-red-600 hover:bg-red-700 text-white shadow-md"
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-red-600 hover:bg-red-700 text-white shadow-lg"
                                 >
                                     Finalizadas
                                 </button>
-                            </div>
+                            </>
                         ) : (
                             <button
                                 type="button"
                                 onClick={() => setShowCompleted(false)}
-                                className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-[#407080] text-white shadow-md"
+                                className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-[#407080] text-white shadow-lg"
                             >
                                 Pendientes
                             </button>
