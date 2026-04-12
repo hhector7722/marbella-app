@@ -1,12 +1,12 @@
-import { Graduate } from 'next/font/google';
+import { Teko } from 'next/font/google';
 
 /**
- * Tipografía display para número de mesa en KDS: bloque con serifas tipo dorsal
- * deportivo (inspiración genérica “vintage league”, sin logotipos de marca).
+ * Dorsal / marcador condensado y angular (Google Fonts), más cercano a números
+ * deportivos tipo “league” que Graduate; sin assets de marca.
  */
-export const kdsMesaNumberFont = Graduate({
+export const kdsMesaNumberFont = Teko({
     subsets: ['latin'],
-    weight: '400',
+    weight: '700',
     display: 'swap',
     variable: '--font-kds-mesa-number',
 });

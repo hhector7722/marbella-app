@@ -4,7 +4,7 @@
 
 - [x] **Cron Storage: PDFs pedidos >7 días (2026-04-12)**: `GET /api/cron/cleanup-order-pdfs` (auth `Authorization: Bearer CRON_SECRET` como `cleanup-audio`): lista bucket `orders`, borra `.pdf` con `created_at` anterior a 7 días vía Storage API, pone `purchase_orders.pdf_url = null` para esos `order_number`. Vercel Cron diario `30 3 * * *` (UTC). Requiere `SUPABASE_SERVICE_ROLE_KEY` y `CRON_SECRET` en Vercel.
 
-- [x] **KDS: número de mesa estilo dorsal (2026-04-12)**: Componente [`KdsMesaNumber.tsx`](src/components/kds/KdsMesaNumber.tsx) + fuente **Graduate** (`next/font/google` en [`kds-mesa-number.ts`](src/lib/fonts/kds-mesa-number.ts)): bloque deportivo, doble trazo CSS (counters blancos) y sombras de extrusión; sin logotipos. Usado desde [`CommandCard.tsx`](src/components/kds/CommandCard.tsx).
+- [x] **KDS: número de mesa estilo dorsal (2026-04-12)**: Componente [`KdsMesaNumber.tsx`](src/components/kds/KdsMesaNumber.tsx) + fuente **Teko 700** (`next/font/google` en [`kds-mesa-number.ts`](src/lib/fonts/kds-mesa-number.ts)): condensado/angular tipo marcador, doble trazo CSS (counters blancos), tracking negativo para dígitos juntos; sin logotipos. Usado desde [`CommandCard.tsx`](src/components/kds/CommandCard.tsx).
 
 - [x] **KDS: notas de artículo sin duplicar comanda (2026-04-12)**: Las notas editadas en cocina se guardan en `kds_order_lines.notas_cocina` (migración `20260419130000_kds_order_lines_notas_cocina.sql`). La columna `notas` sigue siendo la del TPV y la clave de `fncalcdelta`; escribir en `notas` desde el KDS rompía el delta y podía crear otra cabecera/líneas. UI: `useKDS.updateLineNotes` + `CommandCard` / pie resumen usan `combinedLineNotesForDisplay`.
 
