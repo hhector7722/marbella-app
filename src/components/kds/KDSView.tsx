@@ -75,7 +75,7 @@ function KDSFooterProductChips({
     return (
         <div
             ref={rowRef}
-            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-stretch gap-2 overflow-hidden py-1"
+            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-start gap-2 overflow-x-auto overflow-y-visible py-1 [scrollbar-width:thin]"
         >
             {shown.map((item) => (
                 <button
@@ -83,18 +83,16 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[52px] min-w-[200px] shrink-0 items-center rounded-xl border border-zinc-200/90 px-2.5 py-1.5 text-left shadow-sm transition',
+                        'flex min-h-[48px] min-w-[200px] shrink-0 items-start rounded-xl border border-zinc-200/90 px-2.5 py-2 text-left shadow-sm transition',
                         'bg-white hover:bg-zinc-50 active:scale-[0.99]',
-                        'max-w-[min(340px,52vw)] flex-[1_0_200px]'
+                        'max-w-[min(90vw,28rem)] flex-[1_1_200px]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <div className="flex w-full min-w-0 flex-row flex-nowrap items-center gap-0 text-left leading-none">
-                        <span className="min-w-0 flex-1 truncate text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">
-                            {item.nombre}
-                        </span>
-                        <span className="shrink-0 font-black tabular-nums tracking-tight text-red-600 text-2xl sm:text-3xl">×{item.cantidad}</span>
-                    </div>
+                    <p className="w-full min-w-0 break-words text-left leading-snug">
+                        <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">{item.nombre}</span>
+                        <span className="font-black tabular-nums tracking-tight text-red-600 text-2xl sm:text-3xl"> ×{item.cantidad}</span>
+                    </p>
                 </button>
             ))}
             {verMas && (
@@ -406,7 +404,7 @@ export default function KDSView() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col items-stretch gap-2 min-w-0 min-h-[3.25rem] overflow-x-hidden">
+                <div className="flex-1 flex flex-col items-stretch gap-2 min-w-0 min-h-[3.25rem] overflow-x-auto overflow-y-visible">
                     {aggregatedItems.length === 0 ? (
                         !loading && (
                             <div className="text-white/45 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto px-1">

@@ -249,10 +249,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
             {/* Lista de Líneas */}
             <div className="flex-1 space-y-2 px-0 py-2 sm:py-3">
-                {groupedArray.map((group) => {
+                {groupedArray.map((group, lineIndex) => {
                     const groupKey = group.ids.join(',');
                     const isDropdownOpen = openDropdownKey === groupKey;
                     const canInteract = !isCompleted && group.estado !== 'cancelado';
+                    const isLastLine = lineIndex === groupedArray.length - 1;
 
                     return (
                         <div key={groupKey} className="relative">
@@ -264,7 +265,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 shadow-sm ${isCompleted
+                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 ${isLastLine ? 'shadow-none' : 'shadow-sm'} ${isCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-emerald-50/80 cursor-pointer'
@@ -386,7 +387,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             </div>
 
             {/* Franja inferior alineada con bordes laterales e inferior de la comanda (sin padding horizontal). */}
-            <div className="w-full shrink-0 overflow-hidden rounded-b-xl border-t border-zinc-200/90 bg-slate-100/95">
+            <div className="w-full shrink-0 overflow-hidden rounded-b-xl bg-slate-100/95">
                 {isCompleted ? (
                     <button
                         type="button"
