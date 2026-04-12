@@ -122,12 +122,12 @@ export function useKDS() {
         const startIso = startOfToday.toISOString();
         try {
             // Solo día en curso (inicio día local → ahora):
-            // - Activas: cabecera creada hoy, O alguna línea no cancelada creada hoy (mesa abierta con pedido nuevo hoy).
+            // - Cualquier línea creada hoy (incl. cancelada/abonada) enlaza la comanda activa; si excluíamos
+            //   cancelado, las comandas con solo líneas canceladas no entraban en lineRefs y desaparecían del KDS.
             const { data: lineRefs, error: lineErr } = await supabase
                 .from('kds_order_lines')
                 .select('kds_order_id')
-                .gte('created_at', startIso)
-                .neq('estado', 'cancelado');
+                .gte('created_at', startIso);
 
             if (lineErr) throw lineErr;
 

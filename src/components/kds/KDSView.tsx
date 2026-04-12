@@ -312,9 +312,7 @@ export default function KDSView() {
                 if (showCompleted) {
                     return o.estado === 'completada' && (o.lineas?.length || 0) > 0;
                 }
-                if (o.estado !== 'activa') return false;
-                if (!(o.lineas?.length || 0)) return false;
-                return o.lineas!.some((l) => l.estado === 'pendiente' || l.estado === 'cancelado');
+                return o.estado === 'activa' && (o.lineas?.length || 0) > 0;
             }),
         [orders, showCompleted]
     );
