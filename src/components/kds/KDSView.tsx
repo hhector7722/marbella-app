@@ -8,14 +8,12 @@ import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { KdsCommandRail, kdsRailCardOverlapClass } from '@/components/kds/KdsCommandRail';
 
 /** Máximo de comandas por fila (pantalla ancha). */
 const KDS_MAX_COLS = 4;
 /** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
 const KDS_MIN_CARD_PX = 200;
-
-/** Cache-bust al sustituir `public/icons/riel.png` (porta comandas). */
-const RIEL_PNG_VERSION = '20260412c';
 
 const KDS_BG = '#5A5D60';
 const KDS_FOOTER_BG = '#484b4e';
@@ -250,30 +248,26 @@ function KDSOrderRowsLayout({
                             className="flex flex-col w-full min-w-0"
                         >
                             {/*
-                              Porta comandas: `riel.png` más ancha que la pantalla (recorte lateral
-                              con overflow-hidden). Comandas debajo; -mt + z-index = efecto sujeta comandas.
+                              Porta comandas procedural (KdsCommandRail): sin PNG; solapamiento fijo
+                              con la fila de comandas vía kdsRailCardOverlapClass.
                             */}
                             <div
                                 className={cn(
-                                    'relative z-20 w-screen max-w-[100vw] shrink-0 overflow-hidden',
+                                    'relative z-20 w-screen max-w-[100vw] shrink-0',
                                     'left-1/2 -translate-x-1/2'
                                 )}
                             >
-                                <img
-                                    src={`/icons/riel.png?v=${RIEL_PNG_VERSION}`}
-                                    alt=""
-                                    className="pointer-events-none relative left-1/2 block h-[min(120px,26vw)] w-[152vw] max-w-none -translate-x-1/2 select-none object-cover object-bottom"
-                                    draggable={false}
-                                />
+                                <KdsCommandRail />
                             </div>
                             {/*
-                              justify-evenly: hueco en filas con 1–4 comandas. z-10 < riel para el “clip” visual.
+                              justify-evenly: filas con 1–4 comandas. z-10 < riel.
                             */}
                             <div
                                 className={cn(
                                     'relative z-10 w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
                                     'flex flex-row flex-nowrap justify-evenly items-start',
-                                    '-mt-[clamp(22px,6.5vw,52px)] pt-0 px-1 sm:px-2 gap-0'
+                                    kdsRailCardOverlapClass,
+                                    'pt-0 px-1 sm:px-2 gap-0'
                                 )}
                             >
                                 {row.map((order) => (
