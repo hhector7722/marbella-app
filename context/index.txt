@@ -2,6 +2,10 @@ const sql = require('mssql');
 const axios = require('axios');
 
 // ✨ CONEXIÓN DIRECTA POR RED LOCAL ✨
+// KDS / Gemelo: esta consulta solo alimenta mesas "vivas" (Comandas + ventas directas cortas).
+// Un abono sobre ticket ya cerrado puede no aparecer aquí; si no hay fila en el JSON, Supabase
+// no puede emitir delta KDS salvo que se amplíe la consulta (p. ej. rectificativas en Documentos_* del día).
+
 const DOMINIO = "http://erp-marbella.duckdns.org:3000";
 
 const URL_VENTAS = `${DOMINIO}/api/ventas`;

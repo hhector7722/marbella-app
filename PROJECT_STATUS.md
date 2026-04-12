@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-16 (KDS: finalizar por id_ticket + riel/columnas)
+**Última actualización:** 2026-04-11 (KDS: anulaciones → reconciliación + tickets OLD)
+
+- [x] **KDS: anulaciones de mesa/artículo al radar (2026-04-11)**: Migración [`supabase/migrations/20260417120000_kds_reconcile_cancellations_and_old_tickets.sql`](supabase/migrations/20260417120000_kds_reconcile_cancellations_and_old_tickets.sql): `fncalcdelta` reconcilia mapa TPV (`envia_a_kds`) con líneas KDS no canceladas por `(articulo_id, notas)` (FULL OUTER JOIN); `productos` vacío cancela pendientes; `fn_trg_process_kds_from_sala` llama delta con `[]` para `id_ticket` que desaparece de `radiografia_completa` (OLD sin NEW). Documentado en [`context/ARQUITECTURA_SYNC_KDS.md`](context/ARQUITECTURA_SYNC_KDS.md). Ejecutar el SQL en Supabase si el entorno aún no lo tiene.
 
 - [x] **Webhook nóminas: filas en `nominas` (2026-04-11)**: `POST /api/webhooks/nominas` subía el PDF al bucket `nominas` pero no insertaba en `public.nominas` (ni `employee_documents` cuando hay `codigo_empleado`), por lo que la lista en perfil quedaba vacía sin error. Tras la subida se inserta la fila (y espejo opcional en `employee_documents`); reintentos idempotentes borran por `file_path` / `storage_path` antes de insertar. PDFs antiguos solo en Storage: backfill SQL [`sql/backfill_nominas_desde_storage.sql`](sql/backfill_nominas_desde_storage.sql) (PREVIEW + INSERT comentado).
 
