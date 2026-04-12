@@ -43,11 +43,18 @@ export function useKDS() {
     const mergeOrders = useCallback((serverData: KDSOrder[]) => {
         setOrders(prev => {
             const prevMap = new Map(prev.map(o => [o.id, o]));
+            // Mantener alineado el ref con lo que ya se ve como completada (evita degradar tras sync).
+            prev.forEach((o) => {
+                if (o.estado === 'completada') localCompletedIds.current.add(o.id);
+            });
+
+            const wasCompletedInUi = (id: string) =>
+                localCompletedIds.current.has(id) || prevMap.get(id)?.estado === 'completada';
 
             const merged = serverData.map(serverOrder => {
                 const local = prevMap.get(serverOrder.id);
 
-                if (localCompletedIds.current.has(serverOrder.id)) {
+                if (wasCompletedInUi(serverOrder.id)) {
                     const baseOrder = local ?? serverOrder;
                     const serverLinesMap = new Map((serverOrder.lineas || []).map(l => [l.id, l]));
                     const mergedLineas = (baseOrder.lineas || []).map(localLine => {
@@ -85,8 +92,12 @@ export function useKDS() {
             prev.forEach(localOrder => {
                 const isFromToday = parseTPVDate(localOrder.created_at) >= startOfToday;
                 const isWaitingSync = localCompletedIds.current.has(localOrder.id);
-                
-                if (!merged.find(o => o.id === localOrder.id) && (isFromToday || isWaitingSync)) {
+                const completedLocally = localOrder.estado === 'completada';
+
+                if (
+                    !merged.find((o) => o.id === localOrder.id) &&
+                    (isFromToday || isWaitingSync || completedLocally)
+                ) {
                     merged.push(localOrder);
                 }
             });
@@ -222,8 +233,13 @@ export function useKDS() {
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== p.new.id) return o;
                             const updated = orderWithParsedDates({ ...o, ...p.new });
-                            if (localCompletedIds.current.has(o.id)) {
-                                return { ...updated, estado: 'completada' };
+                            // No bajar de completada → activa por un UPDATE rezagado del servidor
+                            if (localCompletedIds.current.has(o.id) || o.estado === 'completada') {
+                                return {
+                                    ...updated,
+                                    estado: 'completada',
+                                    completed_at: updated.completed_at ?? o.completed_at,
+                                };
                             }
                             return updated;
                         })));
