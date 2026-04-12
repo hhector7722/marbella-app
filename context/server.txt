@@ -94,7 +94,11 @@ app.post('/api/telemetria', async (req, res) => {
         // para que tu Trigger de Supabase no falle.
         const salaDisfrazada = sala.map(mesa => ({
             ...mesa,
-            id_ticket: mesa.numero_documento // <--- ESTO ARREGLA EL ERROR 500
+            id_ticket: mesa.numero_documento, // <--- ESTO ARREGLA EL ERROR 500
+            nombre_cliente:
+                mesa.nombre_cliente != null && String(mesa.nombre_cliente).trim() !== ''
+                    ? String(mesa.nombre_cliente).trim()
+                    : '',
         }));
 
         const { error } = await supabase.from('estado_sala').upsert([{
