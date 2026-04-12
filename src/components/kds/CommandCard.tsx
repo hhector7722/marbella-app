@@ -185,15 +185,18 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     {/* Mesa — columna izquierda */}
                     <div className="flex min-w-0 flex-1 justify-start">
                         <div className="flex min-w-0 flex-col items-start gap-0.5">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white shadow-sm text-slate-900 sm:h-16 sm:w-16">
-                                <span className="text-2xl font-black uppercase tabular-nums tracking-wide sm:text-3xl">
-                                    {(() => {
-                                        const mesaNum = parseInt(order.mesa || '');
-                                        if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
-                                        return order.mesa || '--';
-                                    })()}
-                                </span>
-                            </div>
+                            <span
+                                className={cn(
+                                    'inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-2xl border-[6px] border-white bg-white px-3 py-1.5 text-4xl font-black uppercase leading-none tabular-nums tracking-tight text-slate-900 shadow-[0_4px_0_rgba(0,0,0,0.06),0_12px_28px_rgba(0,0,0,0.18)] sm:px-5 sm:py-2 sm:text-5xl',
+                                    isCompleted && 'border-slate-200/90 bg-white/95 text-slate-600 shadow-[0_4px_0_rgba(0,0,0,0.04),0_8px_20px_rgba(0,0,0,0.1)]'
+                                )}
+                            >
+                                {(() => {
+                                    const mesaNum = parseInt(order.mesa || '');
+                                    if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
+                                    return order.mesa || '--';
+                                })()}
+                            </span>
                             {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
                                 <span className="max-w-[6.5rem] truncate text-[10px] font-bold uppercase leading-tight tracking-wide text-white/95 sm:max-w-[8rem] sm:text-xs">
                                     {order.nombre_cliente.trim()}
