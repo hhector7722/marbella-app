@@ -20,7 +20,8 @@ const KDS_FOOTER_BG = '#484b4e';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
-const FOOTER_CHIP_MIN_PX = 104;
+/** Ancho mínimo por chip (nombre + cantidad grande en una fila). */
+const FOOTER_CHIP_MIN_PX = 156;
 const FOOTER_GAP_PX = 8;
 const FOOTER_VER_MAS_MIN_PX = 80;
 
@@ -82,16 +83,18 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'flex min-h-[48px] min-w-[100px] shrink-0 flex-col justify-center rounded-xl px-2.5 py-1.5 text-left transition',
+                        'flex min-h-[56px] min-w-[156px] shrink-0 flex-row items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition',
                         'bg-black/20 hover:bg-black/30 active:scale-[0.99]',
-                        'max-w-[200px] flex-[1_0_104px]'
+                        'max-w-[min(280px,42vw)] flex-[1_0_156px]'
                     )}
                     title={`${item.nombre} ×${item.cantidad}`}
                 >
-                    <span className="truncate text-xs font-black uppercase tracking-[0.06em] text-white/95 sm:text-sm">
+                    <span className="min-w-0 flex-1 truncate text-xs font-black uppercase leading-tight tracking-[0.06em] text-white/95 sm:text-sm">
                         {item.nombre}
                     </span>
-                    <span className="font-black tabular-nums text-white/85 text-base sm:text-lg">×{item.cantidad}</span>
+                    <span className="shrink-0 font-black tabular-nums leading-none tracking-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.45)] text-3xl sm:text-4xl">
+                        ×{item.cantidad}
+                    </span>
                 </button>
             ))}
             {verMas && (
