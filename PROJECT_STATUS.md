@@ -1,8 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-12 (Cron: limpieza PDF pedidos `orders` +7 días)
+**Última actualización:** 2026-04-13 (KDS: aviso sonoro nuevas líneas pendientes)
 
 - [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). `nombre_cliente` debajo de «HACE…» con `KdsStickerBannerText` (Teko, **blanco sin trazo**; gris en cabecera apagada comanda finalizada), caja fija y escala con `ResizeObserver`.
+
+- [x] **KDS: aviso sonoro nuevas líneas pendientes (2026-04-13)**: En `useKDS` se emite evento `kds:new_pending_line` cuando entra `kds_order_lines` `estado='pendiente'`. En `KDSView` hay toggle táctil (48px+) para activar/silenciar y desbloqueo autoplay-safe con WebAudio (`useKdsNotificationSound`, rate-limit ~900ms).
 
 - [x] **Cron Storage: PDFs pedidos >7 días (2026-04-12)**: `GET /api/cron/cleanup-order-pdfs` (auth `Authorization: Bearer CRON_SECRET` como `cleanup-audio`): lista bucket `orders`, borra `.pdf` con `created_at` anterior a 7 días vía Storage API, pone `purchase_orders.pdf_url = null` para esos `order_number`. Vercel Cron diario `30 3 * * *` (UTC). Requiere `SUPABASE_SERVICE_ROLE_KEY` y `CRON_SECRET` en Vercel.
 

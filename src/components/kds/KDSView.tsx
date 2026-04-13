@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useLayoutEffect, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useKDS } from '@/hooks/useKDS';
+import { useKdsNotificationSound } from '@/hooks/useKdsNotificationSound';
 import { CommandCard } from './CommandCard';
-import { Loader2, Package, ListChecks, Check, X, RefreshCw } from 'lucide-react';
+import { Loader2, Package, ListChecks, Check, X, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -327,6 +328,14 @@ export default function KDSView() {
     } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+    const kdsSound = useKdsNotificationSound({ cooldownMs: 900 });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handler = () => kdsSound.play();
+        window.addEventListener('kds:new_pending_line', handler as EventListener);
+        return () => window.removeEventListener('kds:new_pending_line', handler as EventListener);
+    }, [kdsSound.play]);
 
     const visibleOrders = useMemo(
         () =>
@@ -531,6 +540,27 @@ export default function KDSView() {
                         {syncStatus === 'success' && <Check size={22} className="text-emerald-400" strokeWidth={2.5} />}
                         {syncStatus === 'error' && <X size={22} className="text-rose-400" strokeWidth={2.5} />}
                         {syncStatus === 'idle' && <RefreshCw size={22} className="text-zinc-300" strokeWidth={2.2} />}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            if (kdsSound.enabled) {
+                                kdsSound.setEnabled(false);
+                                return;
+                            }
+                            kdsSound.setEnabled(true);
+                            await kdsSound.unlock();
+                        }}
+                        className={cn(
+                            'flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl border shadow-inner transition-all duration-300',
+                            'border-slate-600/50 bg-slate-800 hover:bg-slate-700/90 active:scale-95',
+                            kdsSound.enabled ? 'text-emerald-300' : 'text-zinc-300'
+                        )}
+                        title={kdsSound.enabled ? 'Silenciar avisos' : 'Activar avisos sonoros'}
+                        aria-label={kdsSound.enabled ? 'Silenciar avisos' : 'Activar avisos sonoros'}
+                    >
+                        {kdsSound.enabled ? <Volume2 size={22} /> : <VolumeX size={22} />}
                     </button>
 
                     <div className="flex min-h-[52px] flex-col items-end justify-center gap-2">

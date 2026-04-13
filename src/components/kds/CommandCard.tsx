@@ -103,6 +103,14 @@ function splitBullets(raw: string | null | undefined) {
     return normalizePieces(input.split('\n'));
 }
 
+function firstTwoWords(raw: string | null | undefined) {
+    const v = (raw ?? '').trim();
+    if (!v) return '';
+    // Colapsar espacios y partir por whitespace.
+    const parts = v.replace(/\s+/g, ' ').split(' ').filter(Boolean);
+    return parts.slice(0, 2).join(' ');
+}
+
 export function CommandCard({
     order,
     onTacharProductos,
@@ -276,10 +284,10 @@ export function CommandCard({
                                 </>
                             )}
                         </div>
-                        {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
+                        {firstTwoWords(order.nombre_cliente) ? (
                             <div className="pointer-events-none flex w-full max-w-[min(100%,12rem)] translate-y-1 justify-center sm:max-w-[14rem] sm:translate-y-1.5">
                                 <KdsStickerBannerText
-                                    value={order.nombre_cliente.trim()}
+                                    value={firstTwoWords(order.nombre_cliente)}
                                     isCompleted={chromeCompleted}
                                     className="h-7 w-full min-w-0 sm:h-8"
                                 />
