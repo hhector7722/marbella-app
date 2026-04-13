@@ -301,6 +301,7 @@ export default function KDSView() {
             <CommandCard
                 order={order}
                 kdsRailAttached
+                completedListView={showCompleted}
                 onTacharProductos={tacharProductos}
                 onCompletarComanda={completarComanda}
                 onRecuperarComanda={recuperarComanda}
@@ -308,7 +309,7 @@ export default function KDSView() {
                 onUpdateOrderNotes={updateOrderNotes}
             />
         ),
-        [tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes]
+        [showCompleted, tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes]
     );
 
     return (

@@ -19,6 +19,8 @@ interface CommandCardProps {
     onUpdateOrderNotes: (orderId: string, nextNotes: string) => Promise<void> | void;
     /** KDS: sin margen superior; pegada visualmente al riel comandero */
     kdsRailAttached?: boolean;
+    /** Vista listado finalizadas: misma opacidad que pendientes; sin icono notas ni X en líneas */
+    completedListView?: boolean;
 }
 
 const QUICK_NOTES = [
@@ -51,12 +53,23 @@ function splitBullets(raw: string | null | undefined) {
     return raw.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRecuperarComanda, onUpdateLineNotes, onUpdateOrderNotes, kdsRailAttached = false }: CommandCardProps) {
+export function CommandCard({
+    order,
+    onTacharProductos,
+    onCompletarComanda,
+    onRecuperarComanda,
+    onUpdateLineNotes,
+    onUpdateOrderNotes,
+    kdsRailAttached = false,
+    completedListView = false,
+}: CommandCardProps) {
     const [elapsed, setElapsed] = useState<number>(0);
     // Clave del grupo cuyo dropdown de unidades está abierto (null = ninguno)
     const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
     const isCompleted = order.estado === 'completada';
+    /** Atenuación “comanda cerrada” solo en vista pendientes; en finalizadas se ve a opacidad plena */
+    const chromeCompleted = isCompleted && !completedListView;
 
     const [notesModal, setNotesModal] = useState<null | {
         kind: 'order' | 'lineGroup';
@@ -111,7 +124,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     };
 
     const getIndicatorColor = () => {
-        if (isCompleted) return 'bg-slate-600';
+        if (chromeCompleted) return 'bg-slate-600';
         // Indicador temporal: ≤15 min petróleo, 16–24 amarillo, ≥25 rojo
         if (elapsed >= 25) return 'animate-pulse-critical';
         if (elapsed >= 16) return 'bg-amber-400';
@@ -170,7 +183,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             className={cn(
                 'relative flex flex-col overflow-hidden rounded-b-xl bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)] border-[0.5px] border-black shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-300',
                 openDropdownKey ? 'z-[100]' : 'z-auto',
-                isCompleted ? 'opacity-60' : isFullyDone ? 'opacity-90' : '',
+                chromeCompleted ? 'opacity-60' : isFullyDone ? 'opacity-90' : '',
                 !kdsRailAttached && 'mt-2'
             )}
         >
@@ -178,10 +191,10 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             <div
                 className={cn(
                     'px-3 sm:px-4 pb-2 pt-1.5 flex justify-between items-start transition-colors duration-500 relative font-black w-full min-w-0',
-                    isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`
+                    chromeCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`
                 )}
             >
-                {isCompleted && (
+                {chromeCompleted && (
                     <div className="absolute top-0 right-3 bg-white/50 px-2 py-1 rounded-b-md text-[10px] font-black uppercase tracking-[0.15em] text-slate-700">
                         FINALIZADA
                     </div>
@@ -191,7 +204,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     {/* Mesa — columna izquierda (pl extra: un poco separado del borde de tarjeta) */}
                     <div className="flex min-w-0 flex-1 justify-start pl-2 sm:pl-3">
                         <div className="flex min-w-0 flex-col items-start">
-                            <KdsMesaNumber value={mesaDisplay} isCompleted={isCompleted} />
+                            <KdsMesaNumber value={mesaDisplay} isCompleted={chromeCompleted} />
                         </div>
                     </div>
 
@@ -199,11 +212,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     <div className="flex min-w-0 shrink-0 flex-col items-center justify-center px-1 text-center">
                         <div className="relative w-full max-w-[min(100%,12rem)] sm:max-w-[14rem]">
                             {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
-                                <div className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-px flex justify-center">
+                                <div className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-0.5 flex translate-y-1 justify-center">
                                     <KdsStickerBannerText
                                         value={order.nombre_cliente.trim()}
-                                        isCompleted={isCompleted}
-                                        className="h-7 w-full min-w-0 sm:h-8"
+                                        isCompleted={chromeCompleted}
+                                        className="h-9 w-full min-w-0 sm:h-10"
                                     />
                                 </div>
                             ) : null}
@@ -240,15 +253,15 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                             className="flex h-16 w-16 shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95 sm:h-20 sm:w-20"
                             title="Editar nota comanda"
                         >
-                            <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
+                            <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${chromeCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
                         </button>
                     </div>
                 </div>
             </div>
 
             {order.notas_comanda && (
-                <div className={`px-4 py-2.5 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
-                    <div className={`text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${isCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
+                <div className={`px-4 py-2.5 border-b border-slate-100 ${chromeCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
+                    <div className={`text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${chromeCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
                         {splitBullets(order.notas_comanda).map((n, idx) => (
                             <div key={idx} className="flex items-start gap-2">
                                 <span className="font-black">·</span>
@@ -277,7 +290,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 ${isLastLine ? 'shadow-none' : 'shadow-sm'} ${isCompleted
+                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 ${isLastLine ? 'shadow-none' : 'shadow-sm'} ${chromeCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-emerald-50/80 cursor-pointer'
@@ -286,11 +299,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                 : 'hover:bg-slate-50 cursor-pointer active:scale-[0.98]'
                                     }`}
                             >
-                                {/* Solo cancelados: icono X. Terminado: tachado verde sin tick. */}
-                                {group.estado === 'cancelado' && (
+                                {/* Solo cancelados: icono X (oculto en listado finalizadas). */}
+                                {group.estado === 'cancelado' && !completedListView && (
                                     <div
                                         className={`mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300 sm:h-12 sm:w-12 ${
-                                            isCompleted ? 'bg-slate-200 text-slate-400' : 'bg-slate-300 text-slate-500'
+                                            chromeCompleted ? 'bg-slate-200 text-slate-400' : 'bg-slate-300 text-slate-500'
                                         }`}
                                     >
                                         <X size={26} strokeWidth={3} />
@@ -300,25 +313,27 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                 <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="flex flex-col pr-1 min-w-0">
                                         <div className="flex items-center gap-0 min-w-0">
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setNotesModal({
-                                                        kind: 'lineGroup',
-                                                        title: group.producto_nombre,
-                                                        subtitle: `Mesa ${order.mesa || '--'}`,
-                                                        initialNotes: group.notas_cocina,
-                                                        lineIds: group.ids,
-                                                    });
-                                                }}
-                                                className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
-                                                title="Editar nota artículo"
-                                            >
-                                                <Image src="/icons/notas.png" alt="Notas" width={34} height={34} className={`${isCompleted ? 'opacity-45' : 'opacity-90'} drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]`} />
-                                            </button>
+                                            {!completedListView ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setNotesModal({
+                                                            kind: 'lineGroup',
+                                                            title: group.producto_nombre,
+                                                            subtitle: `Mesa ${order.mesa || '--'}`,
+                                                            initialNotes: group.notas_cocina,
+                                                            lineIds: group.ids,
+                                                        });
+                                                    }}
+                                                    className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
+                                                    title="Editar nota artículo"
+                                                >
+                                                    <Image src="/icons/notas.png" alt="Notas" width={34} height={34} className={`${chromeCompleted ? 'opacity-45' : 'opacity-90'} drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]`} />
+                                                </button>
+                                            ) : null}
 
-                                            <span className={`flex-1 min-w-0 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                                            <span className={`flex-1 min-w-0 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${chromeCompleted ? 'text-slate-400 line-through' :
                                                 group.estado === 'terminado' ? 'text-emerald-600 line-through decoration-emerald-600 decoration-2 [text-decoration-thickness:2px]' :
                                                     group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
                                                         'text-slate-900'
@@ -328,7 +343,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                         </div>
 
                                         {hasNotes(combinedLineNotesForDisplay(group.notas, group.notas_cocina)) && (
-                                            <div className={`mt-0.5 space-y-1 pl-12 sm:pl-14 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
+                                            <div className={`mt-0.5 space-y-1 ${completedListView ? 'pl-3 sm:pl-4' : 'pl-12 sm:pl-14'} ${group.estado === 'cancelado' || chromeCompleted ? 'opacity-50' : ''}`}>
                                                 {splitBullets(combinedLineNotesForDisplay(group.notas, group.notas_cocina)).map((n, idx) => (
                                                     <div key={idx} className="flex items-baseline gap-1.5">
                                                         <span className="shrink-0 text-base sm:text-lg font-bold leading-snug text-rose-700" aria-hidden>
@@ -408,7 +423,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         onClick={() => onRecuperarComanda(order.id)}
                         className="w-full min-h-[52px] rounded-none px-3 py-3 sm:px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1"
                     >
-                        Restaurar
+                        Recuperar
                     </button>
                 ) : (
                     <button
