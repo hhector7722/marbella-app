@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Plus, Check, Pencil, Trash2 } from "lucide-react";
+import { X } from "lucide-react";
+import { KdsMesaNumber } from "@/components/kds/KdsMesaNumber";
 
 function norm(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -20,6 +21,12 @@ function joinNotes(items: string[]) {
   return items.map((s) => s.trim()).filter(Boolean).join("\n");
 }
 
+function extractMesaValue(title: string, subtitle?: string | null) {
+  const src = `${title ?? ""}\n${subtitle ?? ""}`.trim();
+  const m = src.match(/mesa\s+([^\s]+)/i);
+  return (m?.[1] ?? "--").toString();
+}
+
 export function NotesModal(props: {
   isOpen: boolean;
   title: string;
@@ -30,20 +37,11 @@ export function NotesModal(props: {
   onClose: () => void;
   onSave: (notes: string) => Promise<void> | void;
 }) {
-  const {
-    isOpen,
-    title,
-    subtitle,
-    initialNotes,
-    quickNotes,
-    accent = "rose",
-    onClose,
-    onSave,
-  } = props;
+  const { isOpen, title, subtitle, initialNotes, quickNotes, onClose, onSave } = props;
 
-  const [items, setItems] = useState<string[]>([]);
-  const [draft, setDraft] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [selectedQuick, setSelectedQuick] = useState<Set<string>>(new Set());
+  const [freeText, setFreeText] = useState("");
+  const [isWriting, setIsWriting] = useState(false);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -54,11 +52,25 @@ export function NotesModal(props: {
 
   useEffect(() => {
     if (!isOpen) return;
-    setItems(splitNotes(initialNotes));
-    setDraft("");
-    setEditingIndex(null);
-    // Teclado nativo: intentar foco "fuerte" al abrir.
-    // Nota: en iOS/Android el teclado puede requerir gesto del usuario; esto mejora el éxito en la mayoría de casos.
+    const initial = splitNotes(initialNotes);
+    const quickNorm = new Map(quickNotes.map((q) => [norm(q), q]));
+    const nextSelected = new Set<string>();
+    const rest: string[] = [];
+    initial.forEach((it) => {
+      const key = norm(it);
+      const q = quickNorm.get(key);
+      if (q) nextSelected.add(q);
+      else rest.push(it);
+    });
+    setSelectedQuick(nextSelected);
+    setFreeText(joinNotes(rest));
+    setIsWriting(false);
+  }, [isOpen, initialNotes, quickNotes]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!isWriting) return;
+    // Teclado nativo: foco tras el gesto del usuario (click "ESCRIBIR") + refuerzo.
     const focus = () => {
       try {
         textareaRef.current?.focus({ preventScroll: true });
@@ -73,24 +85,19 @@ export function NotesModal(props: {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [isOpen, initialNotes]);
+  }, [isOpen, isWriting]);
 
-  const setByAddingUnique = (text: string) => {
-    const cleaned = text.trim().replace(/\s+/g, " ");
-    if (!cleaned) return;
-    const target = norm(cleaned);
-    setItems((prev) => {
-      const existing = new Set(prev.map(norm));
-      if (existing.has(target)) return prev;
-      return [...prev, cleaned];
+  const mesaValue = useMemo(() => extractMesaValue(title, subtitle), [title, subtitle]);
+  const canSave = useMemo(() => !saving, [saving]);
+
+  const toggleQuick = (q: string) => {
+    setSelectedQuick((prev) => {
+      const next = new Set(prev);
+      if (next.has(q)) next.delete(q);
+      else next.add(q);
+      return next;
     });
   };
-
-  const canSave = useMemo(() => true, []);
-  const accentClasses =
-    accent === "red"
-      ? { title: "text-red-700" }
-      : { title: "text-rose-800" };
 
   if (!isOpen || !mounted) return null;
 
@@ -103,188 +110,84 @@ export function NotesModal(props: {
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-        <div className="px-4 sm:px-5 py-3 bg-[#36606F] text-white flex items-start justify-between gap-3 shrink-0">
-          <div className="min-w-0">
-            <div className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
-              {title}
-            </div>
-            {subtitle && (
-              <div className="text-sm sm:text-base font-bold text-white/70 tracking-wide truncate">
-                {subtitle}
-              </div>
-            )}
+      <div className="w-full max-w-4xl max-h-[86vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col bg-[#1b1c20] border border-black/30">
+        {/* Cabecera: mismo color que el footer (fila resumen fija) */}
+        <div className="px-3 sm:px-4 py-2 bg-[#12141a] text-white flex items-center justify-between gap-3 shrink-0">
+          <div className="min-w-0 flex items-center gap-3">
+            <KdsMesaNumber value={mesaValue} isCompleted={false} />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 w-12 h-12 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center"
-          >
-            <X size={22} />
-          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Botón escribir: tarjeta estilo resumen, fuente algo menor */}
+            <button
+              type="button"
+              onClick={() => setIsWriting((v) => !v)}
+              className="min-h-[48px] px-3 rounded-xl border border-zinc-200/90 bg-white text-zinc-900 shadow-sm transition active:scale-[0.99] hover:bg-zinc-50"
+              title="Escribir"
+            >
+              <span className="text-[12px] sm:text-[13px] font-black uppercase tracking-[0.14em]">
+                Escribir
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 w-12 h-12 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center"
+              aria-label="Cerrar"
+            >
+              <X size={22} />
+            </button>
+          </div>
         </div>
 
-        {/* Cuerpo scrollable para mantener cabecera + footer siempre visibles */}
+        {/* Cuerpo */}
         <div className="p-3 sm:p-4 space-y-3 overflow-y-auto flex-1">
-          {/* Chips notas rápidas */}
+          {/* Caja de texto libre + teclado nativo */}
+          {isWriting && (
+            <div className="rounded-2xl border border-black/25 bg-white p-3 sm:p-4 shadow-sm">
+              <textarea
+                ref={textareaRef}
+                value={freeText}
+                onChange={(e) => setFreeText(e.target.value)}
+                placeholder="Escribe notas…"
+                className="w-full min-h-[110px] rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-base sm:text-lg font-semibold tracking-wide text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/25"
+                inputMode="text"
+                autoCorrect="off"
+                autoCapitalize="sentences"
+                spellCheck={false}
+              />
+            </div>
+          )}
+
+          {/* Notas rápidas: tarjetas blancas (mismo tipo/tamaño que resumen) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-            {quickNotes.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setByAddingUnique(q)}
-                className="min-h-[48px] rounded-xl border-2 border-black bg-white text-black px-3 py-2 text-center font-black uppercase tracking-[0.08em] text-[12px] sm:text-[13px] hover:bg-slate-50"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-
-          {/* Lista actual */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div className="text-[12px] sm:text-sm font-black uppercase tracking-[0.18em] text-slate-500">
-                Notas
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setItems([]);
-                  setEditingIndex(null);
-                  setDraft("");
-                  requestAnimationFrame(() => textareaRef.current?.focus());
-                }}
-                className="min-h-[44px] px-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-black uppercase tracking-[0.12em] text-[11px] hover:bg-slate-100"
-              >
-                Borrar
-              </button>
-            </div>
-
-            {items.length === 0 ? (
-              <div className="text-slate-500 font-bold tracking-wide italic py-2">
-                Sin notas
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {items.map((it, idx) => (
-                  <div
-                    key={`${it}-${idx}`}
-                    className="flex items-start gap-2 rounded-xl bg-white border border-slate-200 p-3"
-                  >
-                    <div className={`text-xl font-black ${accentClasses.title}`}>·</div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingIndex(idx);
-                        setDraft(it);
-                        requestAnimationFrame(() => textareaRef.current?.focus());
-                      }}
-                      className="flex-1 text-left text-base sm:text-lg font-bold tracking-wide text-slate-800 break-words"
-                    >
-                      {it}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setItems((prev) => prev.filter((_, i) => i !== idx))
-                      }
-                      className="shrink-0 w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
-                      title="Borrar nota"
-                    >
-                      <Trash2 size={18} className="text-slate-700" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Botón + (solo aquí, no pesa en la tarjeta si no hay notas) */}
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingIndex(null);
-                  setDraft("");
-                  requestAnimationFrame(() => textareaRef.current?.focus());
-                }}
-                className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg"
-                title="Añadir nota"
-              >
-                <Plus size={26} strokeWidth={3} />
-              </button>
-            </div>
-          </div>
-
-          {/* Editor */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div className="text-[12px] sm:text-sm font-black uppercase tracking-[0.18em] text-slate-500">
-                {editingIndex === null ? "Nueva nota" : "Editar nota"}
-              </div>
-              <button
-                type="button"
-                onClick={() => textareaRef.current?.focus()}
-                className="min-h-[44px] px-3 rounded-xl bg-[#407080] hover:bg-[#36606F] text-white font-black uppercase tracking-[0.12em] text-[11px] flex items-center gap-2"
-              >
-                <Pencil size={16} /> Escribir
-              </button>
-            </div>
-
-            <textarea
-              ref={textareaRef}
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Escribe una nota…"
-              className="w-full min-h-[88px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base sm:text-lg font-semibold tracking-wide text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/40"
-              inputMode="text"
-              autoCorrect="off"
-              autoCapitalize="sentences"
-              spellCheck={false}
-            />
-
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const cleaned = draft.trim().replace(/\s+/g, " ");
-                  if (!cleaned) return;
-                  setItems((prev) => {
-                    const existing = new Set(prev.map(norm));
-                    if (existing.has(norm(cleaned))) return prev;
-                    if (editingIndex === null) return [...prev, cleaned];
-                    const next = [...prev];
-                    next[editingIndex] = cleaned;
-                    return next;
-                  });
-                  setDraft("");
-                  setEditingIndex(null);
-                  requestAnimationFrame(() => textareaRef.current?.focus());
-                }}
-                className="flex-1 min-h-[52px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-[0.14em] text-base flex items-center justify-center gap-2"
-              >
-                <Plus size={20} strokeWidth={3} />{" "}
-                {editingIndex === null ? "Añadir" : "Actualizar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft("");
-                  setEditingIndex(null);
-                }}
-                className="min-h-[52px] px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase tracking-[0.14em] text-base"
-              >
-                Limpiar
-              </button>
-            </div>
+            {quickNotes.map((q) => {
+              const isOn = selectedQuick.has(q);
+              return (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => toggleQuick(q)}
+                  className={[
+                    "min-h-[48px] rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center shadow-sm transition active:scale-[0.99] hover:bg-zinc-50",
+                    "font-black uppercase tracking-[0.04em] text-zinc-900 text-2xl sm:text-3xl",
+                    isOn ? "ring-2 ring-red-600/70 border-red-600" : "",
+                  ].join(" ")}
+                >
+                  {q}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 border-t border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0">
+        {/* Acciones */}
+        <div className="p-3 sm:p-4 border-t border-black/25 bg-[#12141a] flex items-center justify-between gap-2 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[52px] px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase tracking-[0.14em] text-base"
+            className="min-h-[52px] px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-[0.16em] text-base"
           >
             Cancelar
           </button>
@@ -292,7 +195,9 @@ export function NotesModal(props: {
             type="button"
             disabled={saving || !canSave}
             onClick={async () => {
-              const payload = joinNotes(items);
+              const quickSelectedInOrder = quickNotes.filter((q) => selectedQuick.has(q));
+              const free = splitNotes(freeText);
+              const payload = joinNotes([...quickSelectedInOrder, ...free]);
               try {
                 setSaving(true);
                 await onSave(payload);
@@ -301,9 +206,9 @@ export function NotesModal(props: {
                 setSaving(false);
               }
             }}
-            className="flex-1 min-h-[52px] rounded-xl bg-[#407080] hover:bg-[#36606F] text-white font-black uppercase tracking-[0.16em] text-base flex items-center justify-center gap-2 disabled:opacity-60"
+            className="flex-1 min-h-[52px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-[0.16em] text-base disabled:opacity-60"
           >
-            <Check size={22} strokeWidth={3} /> Guardar
+            Guardar
           </button>
         </div>
       </div>
