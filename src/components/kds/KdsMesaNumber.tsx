@@ -46,3 +46,43 @@ export function KdsMesaNumber({ value, isCompleted }: KdsMesaNumberProps) {
         </span>
     );
 }
+
+type KdsStickerBannerTextProps = {
+    value: string;
+    isCompleted: boolean;
+};
+
+/**
+ * Mismo estilo dorsal Teko + doble trazo que el número de mesa, en tamaño reducido
+ * para nombre de cliente en cabecera (centrado, puede ocupar varias palabras).
+ */
+export function KdsStickerBannerText({ value, isCompleted }: KdsStickerBannerTextProps) {
+    const v = value.trim();
+    if (!v) return null;
+    return (
+        <span
+            className={cn(
+                'inline-grid max-w-[min(92vw,28rem)] place-items-center [grid-template-areas:\'banner\'] px-1 py-0.5 font-normal uppercase leading-tight tracking-wide',
+                kdsMesaNumberFont.className
+            )}
+        >
+            <span
+                className="pointer-events-none col-start-1 row-start-1 select-none text-center text-2xl text-transparent [-webkit-text-stroke:5px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:banner] sm:text-3xl sm:[-webkit-text-stroke:6px_rgb(255_255_255)] md:text-4xl md:[-webkit-text-stroke:7px_rgb(255_255_255)]"
+                aria-hidden
+            >
+                {v}
+            </span>
+            <span
+                className={cn(
+                    'relative z-10 col-start-1 row-start-1 text-center text-2xl [paint-order:stroke_fill] [-webkit-text-stroke:1.5px_rgb(255_255_255)] [grid-area:banner] sm:text-3xl sm:[-webkit-text-stroke:2px_rgb(255_255_255)] md:text-4xl md:[-webkit-text-stroke:2px_rgb(255_255_255)]',
+                    'text-black break-words [word-break:break-word]',
+                    '[text-shadow:1px_1px_0_rgb(23_23_23),0.5px_0.5px_0_rgba(255_255_255_0.12)]',
+                    isCompleted &&
+                        'text-slate-600 [text-shadow:1px_1px_0_rgb(71_85_105)] sm:[-webkit-text-stroke:2px_rgb(255_255_255)] md:[-webkit-text-stroke:2px_rgb(255_255_255)]'
+                )}
+            >
+                {v}
+            </span>
+        </span>
+    );
+}

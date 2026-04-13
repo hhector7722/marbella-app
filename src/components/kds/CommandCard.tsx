@@ -7,7 +7,7 @@ import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTimeKdsHeader } from '@/utils/date-utils';
 import { NotesModal } from './NotesModal';
 import { combinedLineNotesForDisplay } from './combined-line-notes';
-import { KdsMesaNumber } from './KdsMesaNumber';
+import { KdsMesaNumber, KdsStickerBannerText } from './KdsMesaNumber';
 import { cn } from '@/lib/utils';
 
 interface CommandCardProps {
@@ -103,11 +103,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     }, [openDropdownKey]);
 
     const formatElapsed = (minutes: number) => {
-        if (minutes < 0) return '0m';
-        if (minutes < 60) return `${minutes}m`;
+        if (minutes < 0) return '0 MIN';
+        if (minutes < 60) return `${minutes} MIN`;
         const hrs = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        return `${hrs}h ${mins}m`;
+        return `${hrs}h ${mins} MIN`;
     };
 
     const getIndicatorColor = () => {
@@ -187,20 +187,22 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     </div>
                 )}
 
-                <div className="flex w-full items-center gap-2 pt-0 sm:gap-3">
+                <div className="flex w-full flex-col gap-1 pt-0">
+                    {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
+                        <div className="flex w-full justify-center px-1">
+                            <KdsStickerBannerText value={order.nombre_cliente.trim()} isCompleted={isCompleted} />
+                        </div>
+                    ) : null}
+
+                    <div className="flex w-full items-center gap-2 sm:gap-3">
                     {/* Mesa — columna izquierda (pl extra: un poco separado del borde de tarjeta) */}
                     <div className="flex min-w-0 flex-1 justify-start pl-2 sm:pl-3">
-                        <div className="flex min-w-0 flex-col items-start gap-0.5">
+                        <div className="flex min-w-0 flex-col items-start">
                             <KdsMesaNumber value={mesaDisplay} isCompleted={isCompleted} />
-                            {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
-                                <span className="max-w-[6.5rem] truncate text-[10px] font-bold uppercase leading-tight tracking-wide text-white/95 sm:max-w-[8rem] sm:text-xs">
-                                    {order.nombre_cliente.trim()}
-                                </span>
-                            ) : null}
                         </div>
                     </div>
 
-                    {/* Hora + transcurrido — centrados en la cabecera */}
+                    {/* Hora + transcurrido — centrados en la cabecera (debajo del nombre cliente) */}
                     <div className="flex min-w-0 shrink-0 flex-col items-center justify-center px-1 text-center">
                         <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
                         <div className="mt-0.5 flex flex-col items-center justify-center gap-0.5 sm:flex-row sm:flex-wrap sm:justify-center">
@@ -236,6 +238,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         >
                             <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
                         </button>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -322,11 +325,13 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                         </div>
 
                                         {hasNotes(combinedLineNotesForDisplay(group.notas, group.notas_cocina)) && (
-                                            <div className={`mt-2 space-y-1 pl-12 sm:pl-14 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
+                                            <div className={`mt-0.5 space-y-1 pl-12 sm:pl-14 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
                                                 {splitBullets(combinedLineNotesForDisplay(group.notas, group.notas_cocina)).map((n, idx) => (
-                                                    <div key={idx} className="flex items-start gap-1.5">
-                                                        <span className="text-rose-600 font-black text-lg leading-snug shrink-0">·</span>
-                                                        <span className="text-base sm:text-lg font-bold text-rose-700 tracking-wide break-words not-italic">
+                                                    <div key={idx} className="flex items-baseline gap-1.5">
+                                                        <span className="shrink-0 text-base sm:text-lg font-bold leading-snug text-rose-700" aria-hidden>
+                                                            ·
+                                                        </span>
+                                                        <span className="min-w-0 flex-1 text-base sm:text-lg font-bold leading-snug text-rose-700 tracking-wide break-words not-italic">
                                                             {n}
                                                         </span>
                                                     </div>
