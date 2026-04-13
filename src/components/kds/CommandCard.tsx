@@ -208,11 +208,13 @@ export function CommandCard({
                         </div>
                     </div>
 
-                    {/* Hora, HACE… y nombre: gap-0.5 uniforme (mismo hueco hora↔HACE y HACE↔nombre) */}
-                    <div className="flex min-w-0 shrink-0 flex-col items-center justify-center gap-0.5 px-1 text-center">
-                        <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
-                        <div className="flex flex-col items-center justify-center gap-0.5 sm:flex-row sm:flex-wrap sm:justify-center">
-                            <span className="text-sm font-bold uppercase tracking-[0.1em] opacity-85 sm:text-base">
+                    {/* Hora, HACE… y nombre: mismo hueco entre los tres (leading-none evita aire extra del line-height) */}
+                    <div className="flex min-w-0 shrink-0 flex-col items-center justify-start gap-1 px-1 text-center">
+                        <span className="block text-lg font-black uppercase leading-none tracking-[0.12em] opacity-95 sm:text-xl">
+                            {orderTime}
+                        </span>
+                        <div className="flex flex-col items-center justify-center gap-0.5 leading-none sm:flex-row sm:flex-wrap sm:justify-center">
+                            <span className="text-sm font-bold uppercase leading-none tracking-[0.1em] opacity-85 sm:text-base">
                                 HACE {formatElapsed(elapsed)}
                             </span>
                             {order.origen_referencia && (
