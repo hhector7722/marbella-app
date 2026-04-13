@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { kdsMesaNumberFont } from '@/lib/fonts/kds-mesa-number';
 
@@ -50,39 +51,85 @@ export function KdsMesaNumber({ value, isCompleted }: KdsMesaNumberProps) {
 type KdsStickerBannerTextProps = {
     value: string;
     isCompleted: boolean;
+    /** Contenedor con alto fijo; el texto escala con `transform` para caber sin crecer la cabecera */
+    className?: string;
 };
 
 /**
- * Mismo estilo dorsal Teko + doble trazo que el número de mesa, en tamaño reducido
- * para nombre de cliente en cabecera (centrado, puede ocupar varias palabras).
+ * Mismo estilo dorsal Teko + doble trazo que el número de mesa, en tamaño reducido.
+ * No incrementa la altura del layout: va en caja de alto fijo y escala el contenido
+ * (ResizeObserver + escala uniforme) para caber en el ancho/alto disponibles.
  */
-export function KdsStickerBannerText({ value, isCompleted }: KdsStickerBannerTextProps) {
+export function KdsStickerBannerText({ value, isCompleted, className }: KdsStickerBannerTextProps) {
     const v = value.trim();
+    const outerRef = useRef<HTMLDivElement>(null);
+    const innerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    const recompute = useCallback(() => {
+        const outer = outerRef.current;
+        const inner = innerRef.current;
+        if (!outer || !inner || !v) return;
+        const ow = outer.clientWidth;
+        const oh = outer.clientHeight;
+        const iw = inner.scrollWidth;
+        const ih = inner.scrollHeight;
+        if (iw < 1 || ih < 1) return;
+        setScale(Math.min(1, ow / iw, oh / ih));
+    }, [v]);
+
+    useLayoutEffect(() => {
+        recompute();
+        const id = requestAnimationFrame(() => requestAnimationFrame(recompute));
+        const outer = outerRef.current;
+        if (!outer) {
+            return () => cancelAnimationFrame(id);
+        }
+        const ro = new ResizeObserver(() => recompute());
+        ro.observe(outer);
+        return () => {
+            cancelAnimationFrame(id);
+            ro.disconnect();
+        };
+    }, [recompute, isCompleted]);
+
     if (!v) return null;
+
     return (
-        <span
-            className={cn(
-                'inline-grid max-w-[min(92vw,28rem)] place-items-center [grid-template-areas:\'banner\'] px-1 py-0.5 font-normal uppercase leading-tight tracking-wide',
-                kdsMesaNumberFont.className
-            )}
+        <div
+            ref={outerRef}
+            className={cn('flex w-full min-w-0 items-start justify-center overflow-hidden', className)}
         >
-            <span
-                className="pointer-events-none col-start-1 row-start-1 select-none text-center text-2xl text-transparent [-webkit-text-stroke:5px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:banner] sm:text-3xl sm:[-webkit-text-stroke:6px_rgb(255_255_255)] md:text-4xl md:[-webkit-text-stroke:7px_rgb(255_255_255)]"
-                aria-hidden
+            <div
+                ref={innerRef}
+                className="inline-block max-w-none origin-top will-change-transform"
+                style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}
             >
-                {v}
-            </span>
-            <span
-                className={cn(
-                    'relative z-10 col-start-1 row-start-1 text-center text-2xl [paint-order:stroke_fill] [-webkit-text-stroke:1.5px_rgb(255_255_255)] [grid-area:banner] sm:text-3xl sm:[-webkit-text-stroke:2px_rgb(255_255_255)] md:text-4xl md:[-webkit-text-stroke:2px_rgb(255_255_255)]',
-                    'text-black break-words [word-break:break-word]',
-                    '[text-shadow:1px_1px_0_rgb(23_23_23),0.5px_0.5px_0_rgba(255_255_255_0.12)]',
-                    isCompleted &&
-                        'text-slate-600 [text-shadow:1px_1px_0_rgb(71_85_105)] sm:[-webkit-text-stroke:2px_rgb(255_255_255)] md:[-webkit-text-stroke:2px_rgb(255_255_255)]'
-                )}
-            >
-                {v}
-            </span>
-        </span>
+                <span
+                    className={cn(
+                        'inline-grid max-w-none place-items-center whitespace-nowrap [grid-template-areas:\'banner\'] px-0.5 font-normal uppercase leading-none tracking-wide',
+                        kdsMesaNumberFont.className
+                    )}
+                >
+                    <span
+                        className="pointer-events-none col-start-1 row-start-1 select-none text-center text-4xl text-transparent [-webkit-text-stroke:7px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:banner] sm:text-5xl sm:[-webkit-text-stroke:8px_rgb(255_255_255)]"
+                        aria-hidden
+                    >
+                        {v}
+                    </span>
+                    <span
+                        className={cn(
+                            'relative z-10 col-start-1 row-start-1 text-center text-4xl [paint-order:stroke_fill] [-webkit-text-stroke:2px_rgb(255_255_255)] [grid-area:banner] sm:text-5xl sm:[-webkit-text-stroke:2px_rgb(255_255_255)]',
+                            'text-black',
+                            '[text-shadow:1px_1px_0_rgb(23_23_23),0.5px_0.5px_0_rgba(255_255_255_0.12)]',
+                            isCompleted &&
+                                'text-slate-600 [text-shadow:1px_1px_0_rgb(71_85_105)] sm:[-webkit-text-stroke:2px_rgb(255_255_255)]'
+                        )}
+                    >
+                        {v}
+                    </span>
+                </span>
+            </div>
+        </div>
     );
 }

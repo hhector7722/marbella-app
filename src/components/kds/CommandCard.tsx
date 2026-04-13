@@ -187,14 +187,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     </div>
                 )}
 
-                <div className="flex w-full flex-col gap-1 pt-0">
-                    {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
-                        <div className="flex w-full justify-center px-1">
-                            <KdsStickerBannerText value={order.nombre_cliente.trim()} isCompleted={isCompleted} />
-                        </div>
-                    ) : null}
-
-                    <div className="flex w-full items-center gap-2 sm:gap-3">
+                <div className="relative flex w-full min-w-0 items-center gap-2 sm:gap-3 pt-0">
                     {/* Mesa — columna izquierda (pl extra: un poco separado del borde de tarjeta) */}
                     <div className="flex min-w-0 flex-1 justify-start pl-2 sm:pl-3">
                         <div className="flex min-w-0 flex-col items-start">
@@ -202,9 +195,20 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         </div>
                     </div>
 
-                    {/* Hora + transcurrido — centrados en la cabecera (debajo del nombre cliente) */}
+                    {/* Hora + transcurrido — centrados; nombre cliente encima de la hora sin añadir altura al flujo */}
                     <div className="flex min-w-0 shrink-0 flex-col items-center justify-center px-1 text-center">
-                        <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
+                        <div className="relative w-full max-w-[min(100%,12rem)] sm:max-w-[14rem]">
+                            {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
+                                <div className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-px flex justify-center">
+                                    <KdsStickerBannerText
+                                        value={order.nombre_cliente.trim()}
+                                        isCompleted={isCompleted}
+                                        className="h-7 w-full min-w-0 sm:h-8"
+                                    />
+                                </div>
+                            ) : null}
+                            <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
+                        </div>
                         <div className="mt-0.5 flex flex-col items-center justify-center gap-0.5 sm:flex-row sm:flex-wrap sm:justify-center">
                             <span className="text-sm font-bold uppercase tracking-[0.1em] opacity-85 sm:text-base">
                                 HACE {formatElapsed(elapsed)}
@@ -238,7 +242,6 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         >
                             <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
                         </button>
-                    </div>
                     </div>
                 </div>
             </div>

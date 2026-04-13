@@ -2,7 +2,7 @@
 
 **Última actualización:** 2026-04-12 (Cron: limpieza PDF pedidos `orders` +7 días)
 
-- [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). `nombre_cliente` va centrado encima de la fila hora/mesa/notas con `KdsStickerBannerText` en [`KdsMesaNumber.tsx`](src/components/kds/KdsMesaNumber.tsx) (misma fuente Teko y doble trazo negro/blanco que el número de mesa, tamaño reducido).
+- [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). `nombre_cliente` con `KdsStickerBannerText`: posición absoluta encima de la hora (sin fila extra: misma altura de cabecera que sin cliente), caja fija `h-7`/`h-8` y escala uniforme con `ResizeObserver` para caber en el ancho de la columna central.
 
 - [x] **Cron Storage: PDFs pedidos >7 días (2026-04-12)**: `GET /api/cron/cleanup-order-pdfs` (auth `Authorization: Bearer CRON_SECRET` como `cleanup-audio`): lista bucket `orders`, borra `.pdf` con `created_at` anterior a 7 días vía Storage API, pone `purchase_orders.pdf_url = null` para esos `order_number`. Vercel Cron diario `30 3 * * *` (UTC). Requiere `SUPABASE_SERVICE_ROLE_KEY` y `CRON_SECRET` en Vercel.
 
