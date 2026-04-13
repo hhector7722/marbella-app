@@ -443,9 +443,32 @@ export default function KDSView() {
                 style={{ backgroundColor: KDS_FOOTER_BG }}
             >
                 <div className="flex items-center gap-4 shrink-0 border-b border-black/15 sm:border-b-0 pb-3 sm:pb-0 sm:border-r sm:border-black/15 sm:pr-6">
-                    <div className="flex items-center justify-center shrink-0">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            try {
+                                if (document.fullscreenElement) {
+                                    await document.exitFullscreen();
+                                    return;
+                                }
+                                const anyDoc = document as any;
+                                if (anyDoc.webkitFullscreenElement) {
+                                    await anyDoc.webkitExitFullscreen?.();
+                                    return;
+                                }
+                                if (anyDoc.msFullscreenElement) {
+                                    await anyDoc.msExitFullscreen?.();
+                                }
+                            } catch {
+                                // no-op
+                            }
+                        }}
+                        className="flex min-h-[48px] min-w-[48px] items-center justify-center shrink-0 rounded-xl bg-white/0 hover:bg-white/5 active:bg-white/10 transition"
+                        title="Salir de pantalla completa"
+                        aria-label="Salir de pantalla completa"
+                    >
                         <Image src="/icons/logo-white.png" alt="Bar Marbella" width={52} height={52} className="object-contain drop-shadow-lg opacity-90" />
-                    </div>
+                    </button>
                     <div className="flex flex-col justify-center min-w-0">
                         <Link href="/dashboard/sala" className="flex items-center gap-2 mb-1 cursor-pointer">
                             <span className={`block h-2.5 w-2.5 rounded-full ${isOffline ? 'bg-rose-400' : 'bg-emerald-400'} animate-pulse shrink-0`} />
