@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
-import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
+import { parseDBDate, formatLocalTimeKdsHeader } from '@/utils/date-utils';
 import { NotesModal } from './NotesModal';
 import { combinedLineNotesForDisplay } from './combined-line-notes';
 import { KdsMesaNumber } from './KdsMesaNumber';
@@ -118,7 +118,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         return 'bg-[#407080]';
     };
 
-    const orderTime = formatLocalTime(new Date(effectiveStart));
+    const orderTime = formatLocalTimeKdsHeader(new Date(effectiveStart));
     const mesaDisplay = (() => {
         const mesaNum = parseInt(order.mesa || '');
         if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
@@ -188,8 +188,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 )}
 
                 <div className="flex w-full items-center gap-2 pt-0 sm:gap-3">
-                    {/* Mesa — columna izquierda */}
-                    <div className="flex min-w-0 flex-1 justify-start">
+                    {/* Mesa — columna izquierda (pl extra: un poco separado del borde de tarjeta) */}
+                    <div className="flex min-w-0 flex-1 justify-start pl-2 sm:pl-3">
                         <div className="flex min-w-0 flex-col items-start gap-0.5">
                             <KdsMesaNumber value={mesaDisplay} isCompleted={isCompleted} />
                             {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
@@ -241,9 +241,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             </div>
 
             {order.notas_comanda && (
-                <div className={`px-4 py-2.5 flex items-start gap-2 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
-                    <AlertTriangle size={22} className={`${isCompleted ? 'text-slate-400' : 'text-rose-500'} mt-0.5 shrink-0`} strokeWidth={2.5} />
-                    <div className={`flex-1 text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${isCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
+                <div className={`px-4 py-2.5 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
+                    <div className={`text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${isCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
                         {splitBullets(order.notas_comanda).map((n, idx) => (
                             <div key={idx} className="flex items-start gap-2">
                                 <span className="font-black">·</span>
@@ -323,11 +322,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                         </div>
 
                                         {hasNotes(combinedLineNotesForDisplay(group.notas, group.notas_cocina)) && (
-                                            <div className="mt-2 space-y-1">
+                                            <div className={`mt-2 space-y-1 pl-12 sm:pl-14 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
                                                 {splitBullets(combinedLineNotesForDisplay(group.notas, group.notas_cocina)).map((n, idx) => (
-                                                    <div key={idx} className={`flex items-start gap-2 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
-                                                        <span className="text-rose-600 font-black text-lg">·</span>
-                                                        <span className="text-base sm:text-lg font-bold text-rose-700 italic tracking-wide break-words">
+                                                    <div key={idx} className="flex items-start gap-1.5">
+                                                        <span className="text-rose-600 font-black text-lg leading-snug shrink-0">·</span>
+                                                        <span className="text-base sm:text-lg font-bold text-rose-700 tracking-wide break-words not-italic">
                                                             {n}
                                                         </span>
                                                     </div>

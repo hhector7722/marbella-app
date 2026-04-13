@@ -57,6 +57,16 @@ export function formatLocalTime(date: Date | string | null | undefined): string 
 }
 
 /**
+ * Hora local HH:mm para cabecera KDS: sin cero a la izquierda en la hora (8:28, no 08:28).
+ * Medianoche 00:xx se deja con dos cifras en hora para no confundir con 0:xx.
+ */
+export function formatLocalTimeKdsHeader(date: Date | string | null | undefined): string {
+  const base = formatLocalTime(date);
+  if (base === '--:--') return base;
+  return base.replace(/^0([1-9]:\d{2})$/, '$1');
+}
+
+/**
  * Obtiene el inicio del día local en Madrid (00:00:00)
  */
 export function getStartOfLocalToday(): Date {

@@ -26,7 +26,7 @@ export function KdsMesaNumber({ value, isCompleted }: KdsMesaNumberProps) {
         >
             {/* Base: trazo blanco grueso — counters en blanco */}
             <span
-                className="pointer-events-none col-start-1 row-start-1 select-none text-center text-6xl text-transparent [-webkit-text-stroke:12px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:mesa] sm:text-7xl sm:[-webkit-text-stroke:14px_rgb(255_255_255)] md:text-8xl md:[-webkit-text-stroke:16px_rgb(255_255_255)]"
+                className="pointer-events-none col-start-1 row-start-1 select-none text-center text-6xl text-transparent [-webkit-text-stroke:9px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:mesa] sm:text-7xl sm:[-webkit-text-stroke:11px_rgb(255_255_255)] md:text-8xl md:[-webkit-text-stroke:12px_rgb(255_255_255)]"
                 aria-hidden
             >
                 {value}
@@ -34,11 +34,11 @@ export function KdsMesaNumber({ value, isCompleted }: KdsMesaNumberProps) {
             {/* Frente: cuerpo oscuro + filo blanco interior + sombra corta (relieve) */}
             <span
                 className={cn(
-                    'relative z-10 col-start-1 row-start-1 text-center text-6xl [paint-order:stroke_fill] [-webkit-text-stroke:3px_rgb(255_255_255)] [grid-area:mesa] sm:text-7xl sm:[-webkit-text-stroke:4px_rgb(255_255_255)] md:text-8xl md:[-webkit-text-stroke:5px_rgb(255_255_255)]',
+                    'relative z-10 col-start-1 row-start-1 text-center text-6xl [paint-order:stroke_fill] [-webkit-text-stroke:2px_rgb(255_255_255)] [grid-area:mesa] sm:text-7xl sm:[-webkit-text-stroke:3px_rgb(255_255_255)] md:text-8xl md:[-webkit-text-stroke:4px_rgb(255_255_255)]',
                     'text-black',
                     '[text-shadow:2px_2px_0_rgb(23_23_23),1px_1px_0_rgba(255_255_255_0.15)]',
                     isCompleted &&
-                        'text-slate-600 [text-shadow:2px_2px_0_rgb(71_85_105)] sm:[-webkit-text-stroke:4px_rgb(255_255_255)] md:[-webkit-text-stroke:5px_rgb(255_255_255)]'
+                        'text-slate-600 [text-shadow:2px_2px_0_rgb(71_85_105)] sm:[-webkit-text-stroke:3px_rgb(255_255_255)] md:[-webkit-text-stroke:4px_rgb(255_255_255)]'
                 )}
             >
                 {value}
