@@ -227,7 +227,7 @@ export function CommandCard({
                             )}
                         </div>
                         {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
-                            <div className="pointer-events-none flex w-full max-w-[min(100%,12rem)] justify-center sm:max-w-[14rem]">
+                            <div className="pointer-events-none flex w-full max-w-[min(100%,12rem)] translate-y-1 justify-center sm:max-w-[14rem] sm:translate-y-1.5">
                                 <KdsStickerBannerText
                                     value={order.nombre_cliente.trim()}
                                     isCompleted={chromeCompleted}
