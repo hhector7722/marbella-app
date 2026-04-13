@@ -208,20 +208,9 @@ export function CommandCard({
                         </div>
                     </div>
 
-                    {/* Hora + transcurrido — centrados; nombre cliente encima de la hora sin añadir altura al flujo */}
+                    {/* Hora, HACE… y nombre cliente (caja altura fija debajo de HACE; escala al caber) */}
                     <div className="flex min-w-0 shrink-0 flex-col items-center justify-center px-1 text-center">
-                        <div className="relative w-full max-w-[min(100%,12rem)] sm:max-w-[14rem]">
-                            {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
-                                <div className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-0.5 flex translate-y-1 justify-center">
-                                    <KdsStickerBannerText
-                                        value={order.nombre_cliente.trim()}
-                                        isCompleted={chromeCompleted}
-                                        className="h-9 w-full min-w-0 sm:h-10"
-                                    />
-                                </div>
-                            ) : null}
-                            <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
-                        </div>
+                        <span className="text-lg font-black uppercase tracking-[0.12em] opacity-95 sm:text-xl">{orderTime}</span>
                         <div className="mt-0.5 flex flex-col items-center justify-center gap-0.5 sm:flex-row sm:flex-wrap sm:justify-center">
                             <span className="text-sm font-bold uppercase tracking-[0.1em] opacity-85 sm:text-base">
                                 HACE {formatElapsed(elapsed)}
@@ -235,6 +224,15 @@ export function CommandCard({
                                 </>
                             )}
                         </div>
+                        {(order.nombre_cliente && order.nombre_cliente.trim()) ? (
+                            <div className="pointer-events-none mt-0.5 flex w-full max-w-[min(100%,12rem)] justify-center sm:max-w-[14rem]">
+                                <KdsStickerBannerText
+                                    value={order.nombre_cliente.trim()}
+                                    isCompleted={chromeCompleted}
+                                    className="h-7 w-full min-w-0 sm:h-8"
+                                />
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Editar nota — derecha, mismo ancho flexible que la mesa para centrar hora */}
