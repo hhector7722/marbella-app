@@ -133,7 +133,7 @@ export function useKDS() {
                     }
                 };
 
-                const merged = serverData.map((serverOrder) => {
+                const merged: KDSOrder[] = serverData.map((serverOrder) => {
                     const local = prevMap.get(serverOrder.id);
                     const baseOrder = local ?? serverOrder;
                     const lineas = mergeLineasFromServer(baseOrder, serverOrder);
@@ -171,7 +171,7 @@ export function useKDS() {
                         // Evita que finalizadas de días anteriores se "enganchen" indefinidamente en memoria.
                         (isFromToday(localOrder) || hasOverride)
                     ) {
-                        merged.push(localOrder);
+                        merged.push({ ...localOrder, lineas: localOrder.lineas ?? [] });
                     }
                 });
 
