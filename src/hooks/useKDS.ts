@@ -5,12 +5,25 @@ import { createClient } from '@/utils/supabase/client';
 import { KDSOrder, KDSOrderLine, KDSItemStatus } from '@/components/kds/types';
 import { getStartOfLocalToday, parseTPVDate, parseDBDate } from '@/utils/date-utils';
 
+type KDSTicketKitchenState = 'activa' | 'completada';
+type KDSTicketStateRow = {
+    id_ticket: string;
+    kitchen_state: KDSTicketKitchenState;
+    manual_completed_at: string | null;
+    updated_at: string;
+};
+
 export function useKDS() {
     const [orders, setOrders] = useState<KDSOrder[]>([]);
+    const ordersRef = useRef<KDSOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
     const supabase = createClient();
+
+    useEffect(() => {
+        ordersRef.current = orders;
+    }, [orders]);
 
     const setStatusWithTimeout = useCallback((status: 'success' | 'error') => {
         setSyncStatus(status);
@@ -23,15 +36,12 @@ export function useKDS() {
     }, []);
 
     /**
-     * Estado MANUAL de comanda (activa/completada) decidido por cocina.
-     * - Una vez una comanda entra en KDS, su `estado` NO debe cambiar por lógica automática.
-     * - Solo cambia por acciones explícitas del usuario (Finalizar / Recuperar).
-     *
-     * Persistimos por día (se limpia al cambiar el startOfToday local).
+     * Estado manual por TICKET (fuente de verdad en BD: public.kds_ticket_state).
+     * Reglas:
+     * - Finalizar/Recuperar lo decide cocina (manual) por `id_ticket`.
+     * - Reabrir automático SOLO si, tras `manual_completed_at`, entran líneas nuevas (pendiente/cancelado).
      */
-    const localOrderOverride = useRef<Map<string, { estado: 'activa' | 'completada'; completed_at: string | null }>>(
-        new Map()
-    );
+    const ticketStateByTicket = useRef<Map<string, KDSTicketStateRow>>(new Map());
     const inFlightLineIds = useRef<Set<string>>(new Set());
     const realtimeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const pendingUpdates = useRef<Array<() => void>>([]);
@@ -67,45 +77,50 @@ export function useKDS() {
         return out;
     }, []);
 
-    const loadOverridesFromStorage = useCallback(() => {
-        if (typeof window === 'undefined') return;
-        const key = 'kds_order_state_overrides_v1';
-        try {
-            const raw = window.localStorage.getItem(key);
-            if (!raw) return;
-            const parsed = JSON.parse(raw) as {
-                dayStartIso?: string;
-                byId?: Record<string, { estado: 'activa' | 'completada'; completed_at: string | null }>;
-            };
-            const todayStart = getStartOfLocalToday().toISOString();
-            if (!parsed?.dayStartIso || parsed.dayStartIso !== todayStart) {
-                window.localStorage.removeItem(key);
-                return;
-            }
-            const byId = parsed.byId ?? {};
-            localOrderOverride.current = new Map(Object.entries(byId));
-        } catch {
-            // Si está corrupto, lo limpiamos.
-            try {
-                window.localStorage.removeItem(key);
-            } catch {}
-        }
+    const ticketKeyForOrder = useCallback((o: { id: string; id_ticket?: string | null }) => {
+        const t = (o.id_ticket ?? '').trim();
+        return t ? t : `order:${o.id}`;
     }, []);
 
-    const saveOverridesToStorage = useCallback(() => {
-        if (typeof window === 'undefined') return;
-        const key = 'kds_order_state_overrides_v1';
-        try {
-            const byId: Record<string, { estado: 'activa' | 'completada'; completed_at: string | null }> = {};
-            for (const [id, v] of localOrderOverride.current.entries()) byId[id] = v;
-            window.localStorage.setItem(
-                key,
-                JSON.stringify({ dayStartIso: getStartOfLocalToday().toISOString(), byId })
-            );
-        } catch {
-            // ignore
+    const applyTicketStateToOrders = useCallback((ordersIn: KDSOrder[]) => {
+        // Agrupar líneas por ticket para poder detectar “artículos nuevos” tras manual_completed_at
+        const linesByTicket = new Map<string, KDSOrderLine[]>();
+        for (const o of ordersIn) {
+            const tk = ticketKeyForOrder(o);
+            const arr = linesByTicket.get(tk) ?? [];
+            arr.push(...(o.lineas ?? []));
+            linesByTicket.set(tk, arr);
         }
-    }, []);
+
+        return ordersIn.map((o) => {
+            const tk = ticketKeyForOrder(o);
+            const st = ticketStateByTicket.current.get(tk);
+            if (!st) return o;
+
+            if (st.kitchen_state === 'activa') {
+                return { ...o, estado: 'activa' as const, completed_at: null };
+            }
+
+            // kitchen_state === 'completada'
+            const mc = st.manual_completed_at;
+            if (!mc) {
+                return { ...o, estado: 'completada' as const, completed_at: o.completed_at ?? null };
+            }
+            const mcMs = parseDBDate(mc).getTime();
+            const hasNewAfterManual =
+                (linesByTicket.get(tk) ?? []).some((l) => {
+                    const createdMs = parseDBDate(l.created_at).getTime();
+                    return createdMs > mcMs && (l.estado === 'pendiente' || l.estado === 'cancelado');
+                });
+
+            if (hasNewAfterManual) {
+                // Reapertura automática (solo por artículos nuevos)
+                return { ...o, estado: 'activa' as const, completed_at: null };
+            }
+
+            return { ...o, estado: 'completada' as const, completed_at: mc };
+        });
+    }, [ticketKeyForOrder]);
 
     const mergeOrders = useCallback(
         (serverData: KDSOrder[]) => {
@@ -138,51 +153,26 @@ export function useKDS() {
                     const baseOrder = local ?? serverOrder;
                     const lineas = mergeLineasFromServer(baseOrder, serverOrder);
                     const parsed = orderWithParsedDates(serverOrder);
-
-                    // Anclar estado a override manual (si existe) o al primer estado observado.
-                    const existingOverride = localOrderOverride.current.get(serverOrder.id);
-                    const pinned = existingOverride ?? {
-                        estado: (parsed.estado as 'activa' | 'completada') ?? 'activa',
-                        completed_at: (parsed.completed_at as string | null) ?? null,
-                    };
-                    if (!existingOverride) {
-                        localOrderOverride.current.set(serverOrder.id, pinned);
-                    }
-
-                    const finalEstado = pinned.estado;
-                    const finalCompletedAt = finalEstado === 'completada'
-                        ? (pinned.completed_at ?? parsed.completed_at ?? null)
-                        : null;
-
-                    return {
-                        ...parsed,
-                        estado: finalEstado,
-                        completed_at: finalCompletedAt,
-                        lineas,
-                    };
+                    return { ...parsed, lineas };
                 });
 
                 prev.forEach((localOrder) => {
-                    const hasOverride = localOrderOverride.current.has(localOrder.id);
+                    const hasTicketState = ticketStateByTicket.current.has(ticketKeyForOrder(localOrder));
 
                     if (
                         !merged.find((o) => o.id === localOrder.id) &&
                         // Retener solo si pertenece al día en curso o está pendiente de sync.
                         // Evita que finalizadas de días anteriores se "enganchen" indefinidamente en memoria.
-                        (isFromToday(localOrder) || hasOverride)
+                        (isFromToday(localOrder) || hasTicketState)
                     ) {
                         merged.push({ ...localOrder, lineas: localOrder.lineas ?? [] });
                     }
                 });
 
-                // Persistir el anclaje de estados manuales (por día).
-                // (Se ejecuta dentro de setOrders; es ligero: solo JSON de map.)
-                queueMicrotask(() => saveOverridesToStorage());
-
-                return merged;
+                return applyTicketStateToOrders(merged);
             });
         },
-        [mergeLineasFromServer, saveOverridesToStorage]
+        [mergeLineasFromServer, applyTicketStateToOrders, ticketKeyForOrder]
     );
 
     const orderWithParsedDates = (order: KDSOrder) => ({
@@ -267,11 +257,33 @@ export function useKDS() {
                             (order.estado === 'activa' && (order.lineas?.length ?? 0) > 0)
                     );
 
-                if (options.isInitial) {
-                    loadOverridesFromStorage();
-                    setOrders(cleanedData);
+                // 1) Traer estado manual por ticket (kds_ticket_state) para los tickets presentes
+                const ticketKeys = Array.from(
+                    new Set(
+                        cleanedData
+                            .map((o) => ticketKeyForOrder(o))
+                            .filter(Boolean)
+                    )
+                );
+                if (ticketKeys.length > 0) {
+                    const { data: ticketRows, error: ticketErr } = await supabase
+                        .from('kds_ticket_state')
+                        .select('*')
+                        .in('id_ticket', ticketKeys);
+                    if (ticketErr) throw ticketErr;
+                    ticketStateByTicket.current = new Map(
+                        ((ticketRows as unknown as KDSTicketStateRow[]) ?? []).map((r) => [r.id_ticket, r])
+                    );
                 } else {
-                    startTransition(() => mergeOrders(cleanedData));
+                    ticketStateByTicket.current = new Map();
+                }
+
+                const derived = applyTicketStateToOrders(cleanedData);
+
+                if (options.isInitial) {
+                    setOrders(derived);
+                } else {
+                    startTransition(() => mergeOrders(derived));
                 }
                 kdsFetchSucceededOnce.current = true;
                 setIsOffline(false);
@@ -315,32 +327,25 @@ export function useKDS() {
                         }
                     };
 
+                    const isRowManagedByKds = (row: any) => {
+                        const oid = (row as { id?: string } | null)?.id ?? '';
+                        const tk = (row?.id_ticket ? String(row.id_ticket).trim() : '') || `order:${oid}`;
+                        return ticketStateByTicket.current.has(tk);
+                    };
+
                     if (p.eventType === 'INSERT') {
                         const newOrder = { ...p.new, lineas: [] } as unknown as KDSOrder;
                         // No introducir comandas fuera del día en curso (evita “fantasmas” en Finalizadas).
-                        if (!isOrderRowFromToday(p.new)) return;
-                        // Anclar estado inicial observado si no existe override.
-                        const oid = (p.new as { id?: string } | null)?.id;
-                        if (oid && !localOrderOverride.current.has(oid)) {
-                            const estado = ((p.new as any)?.estado ?? 'activa') as 'activa' | 'completada';
-                            const completed_at = (p.new as any)?.completed_at ? String((p.new as any).completed_at) : null;
-                            localOrderOverride.current.set(oid, { estado, completed_at });
-                            saveOverridesToStorage();
-                        }
+                        if (!isOrderRowFromToday(p.new) && !isRowManagedByKds(p.new)) return;
                         scheduleUpdate(() => setOrders(prev => {
                             if (prev.find(o => o.id === newOrder.id)) return prev;
-                            return [...prev, orderWithParsedDates(newOrder)];
+                            return applyTicketStateToOrders([...prev, orderWithParsedDates(newOrder)]);
                         }));
                     } else if (p.eventType === 'UPDATE') {
                         // Si llega un UPDATE de un registro fuera del día, lo ignoramos (o lo expulsamos si existía).
                         if (!isOrderRowFromToday(p.new)) {
                             const oid = (p.new as { id?: string } | null)?.id;
-                            // EXCEPCIÓN: si cocina la tiene “anclada” (override manual), NO la expulsamos.
-                            // Caso típico: comanda creada ayer, completada hoy, y se recupera → estado activa + completed_at null,
-                            // lo que rompería el filtro de "hoy" pero el usuario la está gestionando hoy.
-                            if (oid && localOrderOverride.current.has(oid)) {
-                                // dejamos pasar el UPDATE para que se actualicen otros campos (líneas, notas, etc.)
-                            } else {
+                            if (!isRowManagedByKds(p.new)) {
                                 if (oid) scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
                                 return;
                             }
@@ -348,36 +353,42 @@ export function useKDS() {
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== (p.new as { id: string }).id) return o;
                             const updated = orderWithParsedDates({ ...o, ...p.new });
-                            // Estado manual anclado: ignorar flips automáticos de estado.
-                            const pinned = localOrderOverride.current.get(o.id);
-                            if (!pinned) {
-                                const estado = (updated.estado as 'activa' | 'completada') ?? 'activa';
-                                localOrderOverride.current.set(o.id, { estado, completed_at: (updated.completed_at as string | null) ?? null });
-                                saveOverridesToStorage();
-                                return updated;
-                            }
-                            return {
-                                ...updated,
-                                estado: pinned.estado,
-                                completed_at: pinned.estado === 'completada' ? (pinned.completed_at ?? (updated.completed_at as string | null) ?? o.completed_at) : null,
-                            };
+                            return updated;
                         })));
+                        // Reaplicar estado por ticket después del merge de fila
+                        scheduleUpdate(() => setOrders(prev => applyTicketStateToOrders(prev)));
                     } else if (p.eventType === 'DELETE') {
                         const oid = (p.old as { id?: string } | null)?.id;
                         if (!oid) return;
-                        localOrderOverride.current.delete(oid);
-                        saveOverridesToStorage();
                         scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
                     }
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_ticket_state' }, (p) => {
+                    const row = (p.new ?? p.old) as any;
+                    const idTicket = row?.id_ticket ? String(row.id_ticket) : null;
+                    if (!idTicket) return;
+                    if (p.eventType === 'DELETE') {
+                        ticketStateByTicket.current.delete(idTicket);
+                    } else {
+                        const next = row as KDSTicketStateRow;
+                        ticketStateByTicket.current.set(idTicket, next);
+                    }
+                    scheduleUpdate(() => setOrders(prev => applyTicketStateToOrders(prev)));
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_order_lines' }, (p) => {
                     if (p.eventType === 'INSERT') {
                         const nl = p.new as KDSOrderLine;
+                        if (nl?.estado === 'pendiente' && typeof window !== 'undefined') {
+                            window.dispatchEvent(
+                                new CustomEvent('kds:new_pending_line', { detail: nl })
+                            );
+                        }
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== nl.kds_order_id) return o;
                             if ((o.lineas || []).find(l => l.id === nl.id)) return o;
                             return { ...o, lineas: [...(o.lineas || []), nl] };
                         })));
+                        scheduleUpdate(() => setOrders(prev => applyTicketStateToOrders(prev)));
                     } else if (p.eventType === 'UPDATE') {
                         const ul = p.new as KDSOrderLine;
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
@@ -385,6 +396,7 @@ export function useKDS() {
                             if (inFlightLineIds.current.has(ul.id)) return o;
                             return { ...o, lineas: (o.lineas || []).map(l => l.id === ul.id ? ul : l) };
                         })));
+                        scheduleUpdate(() => setOrders(prev => applyTicketStateToOrders(prev)));
                     } else if (p.eventType === 'DELETE') {
                         const oldRow = p.old as { id?: string; kds_order_id?: string } | null;
                         const lid = oldRow?.id;
@@ -398,6 +410,7 @@ export function useKDS() {
                                 })
                             )
                         );
+                        scheduleUpdate(() => setOrders(prev => applyTicketStateToOrders(prev)));
                     }
                 })
                 .subscribe(async (status) => {
@@ -449,53 +462,37 @@ export function useKDS() {
     const completarComanda = async (orderId: string, idTicket?: string | null) => {
         setSyncStatus('syncing');
         const completedAt = new Date().toISOString();
-        const ticketKey = (idTicket && String(idTicket).trim()) ? String(idTicket).trim() : null;
+        const ticketKey = (idTicket && String(idTicket).trim()) ? String(idTicket).trim() : `order:${orderId}`;
 
-        let affectedIds: string[] = [];
-        const prevOverrides = new Map<string, { estado: 'activa' | 'completada'; completed_at: string | null }>();
-        setOrders((prev) => {
-            const targets = ticketKey
-                ? prev.filter((o) => (o.id_ticket ?? null) === ticketKey && o.estado === 'activa')
-                : prev.filter((o) => o.id === orderId);
-            affectedIds = targets.map((t) => t.id);
-            affectedIds.forEach((id) => {
-                const prior = localOrderOverride.current.get(id);
-                if (prior) prevOverrides.set(id, prior);
-                localOrderOverride.current.set(id, { estado: 'completada', completed_at: completedAt });
-            });
-            saveOverridesToStorage();
-            return prev.map((o) => {
-                if (ticketKey && (o.id_ticket ?? null) === ticketKey && o.estado === 'activa') {
-                    return { ...o, estado: 'completada' as const, completed_at: completedAt };
-                }
-                if (!ticketKey && o.id === orderId) {
-                    return { ...o, estado: 'completada' as const, completed_at: completedAt };
-                }
-                return o;
-            });
-        });
+        const prevTicketState = ticketStateByTicket.current.get(ticketKey) ?? null;
+        const optimisticRow: KDSTicketStateRow = {
+            id_ticket: ticketKey,
+            kitchen_state: 'completada',
+            manual_completed_at: completedAt,
+            updated_at: completedAt,
+        };
+        ticketStateByTicket.current.set(ticketKey, optimisticRow);
+        setOrders((prev) => applyTicketStateToOrders(prev));
 
-        const payload = { estado: 'completada' as const, completed_at: completedAt };
-        const { error } = ticketKey
-            ? await supabase.from('kds_orders').update(payload).eq('id_ticket', ticketKey).eq('estado', 'activa')
-            : await supabase.from('kds_orders').update(payload).eq('id', orderId);
+        // 1) Persistir estado manual por ticket
+        const { error: ticketErr } = await supabase
+            .from('kds_ticket_state')
+            .upsert({ id_ticket: ticketKey, kitchen_state: 'completada', manual_completed_at: completedAt });
 
-        if (error) {
+        // 2) Coherencia visual: marcar cabeceras existentes como completadas
+        const { error: ordersErr } = (idTicket && String(idTicket).trim())
+            ? await supabase.from('kds_orders').update({ estado: 'completada', completed_at: completedAt }).eq('id_ticket', String(idTicket).trim())
+            : await supabase.from('kds_orders').update({ estado: 'completada', completed_at: completedAt }).eq('id', orderId);
+
+        if (ticketErr || ordersErr) {
             setSyncStatus('error');
-            affectedIds.forEach((id) => {
-                const prior = prevOverrides.get(id);
-                if (prior) localOrderOverride.current.set(id, prior);
-                else localOrderOverride.current.delete(id);
-            });
-            saveOverridesToStorage();
-            setOrders((prev) =>
-                prev.map((o) =>
-                    affectedIds.includes(o.id) ? { ...o, estado: 'activa' as const, completed_at: null } : o
-                )
-            );
-        } else {
-            setStatusWithTimeout('success');
+            if (prevTicketState) ticketStateByTicket.current.set(ticketKey, prevTicketState);
+            else ticketStateByTicket.current.delete(ticketKey);
+            setOrders((prev) => applyTicketStateToOrders(prev));
+            return;
         }
+
+        setStatusWithTimeout('success');
     };
 
     const tacharProductos = async (lineIds: string[], currentState: KDSItemStatus) => {
@@ -540,8 +537,7 @@ export function useKDS() {
                     (affected.lineas?.length ?? 0) > 0 &&
                     affected.lineas!.every((l) => l.estado === 'terminado' || l.estado === 'cancelado');
 
-                const pinned = localOrderOverride.current.get(affected.id);
-                const alreadyCompleted = (pinned?.estado ?? affected.estado) === 'completada';
+                const alreadyCompleted = affected.estado === 'completada';
 
                 if (allDone && !alreadyCompleted) {
                     queueMicrotask(() => {
@@ -556,26 +552,37 @@ export function useKDS() {
     // RECUPERAR COMANDA (manual)
     const recuperarComanda = async (orderId: string) => {
         setSyncStatus('syncing');
-        const prev = localOrderOverride.current.get(orderId) ?? null;
-        localOrderOverride.current.set(orderId, { estado: 'activa', completed_at: null });
-        saveOverridesToStorage();
+        const current = ordersRef.current.find((o) => o.id === orderId);
+        const ticketKey = current ? ticketKeyForOrder(current) : `order:${orderId}`;
 
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'activa', completed_at: null } : o));
+        const prevTicketState = ticketStateByTicket.current.get(ticketKey) ?? null;
+        const optimisticRow: KDSTicketStateRow = {
+            id_ticket: ticketKey,
+            kitchen_state: 'activa',
+            manual_completed_at: null,
+            updated_at: new Date().toISOString(),
+        };
+        ticketStateByTicket.current.set(ticketKey, optimisticRow);
+        setOrders((prev) => applyTicketStateToOrders(prev));
 
-        const { error } = await supabase
-            .from('kds_orders')
-            .update({ estado: 'activa', completed_at: null })
-            .eq('id', orderId);
+        const { error: ticketErr } = await supabase
+            .from('kds_ticket_state')
+            .upsert({ id_ticket: ticketKey, kitchen_state: 'activa', manual_completed_at: null });
 
-        if (error) {
+        const idTicketRaw = current?.id_ticket ? String(current.id_ticket).trim() : '';
+        const { error: ordersErr } = idTicketRaw
+            ? await supabase.from('kds_orders').update({ estado: 'activa', completed_at: null }).eq('id_ticket', idTicketRaw)
+            : await supabase.from('kds_orders').update({ estado: 'activa', completed_at: null }).eq('id', orderId);
+
+        if (ticketErr || ordersErr) {
             setSyncStatus('error');
-            if (prev) localOrderOverride.current.set(orderId, prev);
-            else localOrderOverride.current.delete(orderId);
-            saveOverridesToStorage();
-            setOrders(prev2 => prev2.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
-        } else {
-            setStatusWithTimeout('success');
+            if (prevTicketState) ticketStateByTicket.current.set(ticketKey, prevTicketState);
+            else ticketStateByTicket.current.delete(ticketKey);
+            setOrders((prev) => applyTicketStateToOrders(prev));
+            return;
         }
+
+        setStatusWithTimeout('success');
     };
 
     const updateLineNotes = async (lineIds: string[], nextNotes: string) => {
