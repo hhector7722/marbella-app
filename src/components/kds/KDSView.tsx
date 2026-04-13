@@ -37,15 +37,25 @@ function KDSFooterProductChips({
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'inline-flex max-w-[min(92vw,42rem)] min-h-[48px] w-max shrink-0 items-start rounded-xl border border-zinc-200/90 px-3 py-2 text-left shadow-sm transition',
-                        'bg-white hover:bg-zinc-50 active:scale-[0.99]'
+                        'inline-flex max-w-[min(92vw,42rem)] min-h-[48px] w-max shrink-0 overflow-hidden rounded-xl border border-zinc-200/90 text-left shadow-sm transition active:scale-[0.99]',
+                        'bg-white hover:bg-zinc-50'
                     )}
                     title={`${item.nombre} (${item.cantidad})`}
                 >
-                    <p className="min-w-0 max-w-full break-words text-left leading-snug">
-                        <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">{item.nombre}</span>
-                        <span className="ml-1.5 font-black tabular-nums tracking-tight text-red-600 text-2xl sm:text-3xl">{item.cantidad}</span>
-                    </p>
+                    <div className="flex min-w-0 items-stretch">
+                        <div className="min-w-0 bg-white px-3 py-2">
+                            <p className="min-w-0 max-w-full break-words text-left leading-snug">
+                                <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">
+                                    {item.nombre}
+                                </span>
+                            </p>
+                        </div>
+                        <div className="shrink-0 bg-red-600 px-3 py-2">
+                            <span className="text-2xl font-black tabular-nums tracking-tight text-white sm:text-3xl">
+                                {item.cantidad}
+                            </span>
+                        </div>
+                    </div>
                 </button>
             ))}
         </div>
