@@ -50,7 +50,57 @@ function hasNotes(raw: string | null | undefined) {
 
 function splitBullets(raw: string | null | undefined) {
     if (!raw) return [];
-    return raw.split('\n').map(s => s.trim()).filter(Boolean);
+    const input = String(raw).trim();
+    if (!input) return [];
+
+    const stripWrappers = (s: string) => {
+        let out = s.trim();
+        // Quitar wrappers redundantes comunes
+        out = out.replace(/^\(+/, '').replace(/\)+$/, '').trim();
+        out = out.replace(/^"+/, '').replace(/"+$/, '').trim();
+        out = out.replace(/^'+/, '').replace(/'+$/, '').trim();
+        // Evitar bullets duplicados o prefijos típicos
+        out = out.replace(/^[·•\-–—]\s*/g, '').trim();
+        return out;
+    };
+
+    const normalizePieces = (pieces: string[]) =>
+        pieces
+            .map((p) => stripWrappers(p))
+            .flatMap((p) => p.split('\n').map((x) => stripWrappers(x)))
+            .map((p) => p.trim())
+            .filter(Boolean);
+
+    // Caso 1: JSON array string: ["A","B"]
+    if (input.startsWith('[') && input.endsWith(']')) {
+        try {
+            const parsed = JSON.parse(input);
+            if (Array.isArray(parsed)) return normalizePieces(parsed.map((x) => String(x)));
+        } catch {
+            // fallback abajo
+        }
+    }
+
+    // Caso 2: Postgres text[] estilo {A,B} o {"A","B"}
+    if (input.startsWith('{') && input.endsWith('}')) {
+        const inner = input.slice(1, -1).trim();
+        if (!inner) return [];
+        return normalizePieces(
+            inner
+                .split(',')
+                .map((x) => x.trim())
+        );
+    }
+
+    // Caso 3: lista bracketed sin JSON válido: [A, B]
+    if (input.startsWith('[') && input.endsWith(']')) {
+        const inner = input.slice(1, -1).trim();
+        if (!inner) return [];
+        return normalizePieces(inner.split(',').map((x) => x.trim()));
+    }
+
+    // Caso 4: texto normal con saltos de línea
+    return normalizePieces(input.split('\n'));
 }
 
 export function CommandCard({
@@ -290,7 +340,7 @@ export function CommandCard({
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 ${isLastLine ? 'shadow-none' : 'shadow-sm'} ${chromeCompleted
+                                className={`group relative flex items-center ${completedListView ? 'pl-3 sm:pl-4' : 'pl-0'} pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 ${isLastLine ? 'shadow-none' : 'shadow-sm'} ${chromeCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-emerald-50/80 cursor-pointer'
