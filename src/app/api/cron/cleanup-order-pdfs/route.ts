@@ -41,7 +41,9 @@ export async function GET(request: NextRequest) {
       })
       if (listError) throw listError
       if (!page?.length) break
-      allFiles.push(...page.map((f) => ({ name: f.name, created_at: f.created_at })))
+      allFiles.push(
+        ...page.map((f) => ({ name: f.name, created_at: f.created_at ?? undefined }))
+      )
       if (page.length < limit) break
       offset += limit
     }
