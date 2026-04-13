@@ -305,6 +305,7 @@ export function useKDS() {
     useEffect(() => {
         let reconnectTimeout: ReturnType<typeof setTimeout>;
         let backoffDelay = 2000;
+        let pollTimer: ReturnType<typeof setInterval> | undefined;
 
         const setupSubscription = () => {
             fetchActiveOrders({ isInitial: true });
@@ -437,8 +438,28 @@ export function useKDS() {
 
         const activeChannel = setupSubscription();
 
+        // Fallback operativo (Win7/Firefox/kiosk): Realtime puede no conectar o “dormirse”.
+        // El HTTP es la fuente de verdad; hacemos refetch silencioso periódico.
+        pollTimer = setInterval(() => {
+            void fetchActiveOrders({ isInitial: false, isSilent: true });
+        }, 8000);
+
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchActiveOrders({ isInitial: false, isSilent: true });
+            }
+        };
+        const onFocus = () => {
+            void fetchActiveOrders({ isInitial: false, isSilent: true });
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+        window.addEventListener('focus', onFocus);
+
         return () => {
             clearTimeout(reconnectTimeout);
+            if (pollTimer) clearInterval(pollTimer);
+            document.removeEventListener('visibilitychange', onVisibility);
+            window.removeEventListener('focus', onFocus);
             supabase.removeChannel(activeChannel);
         };
     }, [supabase, fetchActiveOrders]);
