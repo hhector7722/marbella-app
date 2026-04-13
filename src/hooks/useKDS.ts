@@ -40,71 +40,82 @@ export function useKDS() {
         }, 80);
     }, []);
 
-    const mergeOrders = useCallback((serverData: KDSOrder[]) => {
-        setOrders(prev => {
-            const prevMap = new Map(prev.map(o => [o.id, o]));
-            // Mantener alineado el ref con lo que ya se ve como completada (evita degradar tras sync).
-            prev.forEach((o) => {
-                if (o.estado === 'completada') localCompletedIds.current.add(o.id);
-            });
-
-            const wasCompletedInUi = (id: string) =>
-                localCompletedIds.current.has(id) || prevMap.get(id)?.estado === 'completada';
-
-            const merged = serverData.map(serverOrder => {
-                const local = prevMap.get(serverOrder.id);
-
-                if (wasCompletedInUi(serverOrder.id)) {
-                    const baseOrder = local ?? serverOrder;
-                    const serverLinesMap = new Map((serverOrder.lineas || []).map(l => [l.id, l]));
-                    const mergedLineas = (baseOrder.lineas || []).map(localLine => {
-                        const serverLine = serverLinesMap.get(localLine.id);
-                        if (inFlightLineIds.current.has(localLine.id)) return localLine;
-                        return serverLine ?? localLine;
-                    });
-                    (serverOrder.lineas || []).forEach(sl => {
-                        if (!mergedLineas.find(l => l.id === sl.id)) mergedLineas.push(sl);
-                    });
-                    return {
-                        ...serverOrder,
-                        estado: 'completada' as const,
-                        completed_at: baseOrder.completed_at ?? serverOrder.completed_at,
-                        lineas: mergedLineas,
-                    };
-                }
-
-                if (!local) return serverOrder;
-
-                const serverLinesMap = new Map((serverOrder.lineas || []).map(l => [l.id, l]));
-                const mergedLineas = (local.lineas || []).map(localLine => {
-                    if (inFlightLineIds.current.has(localLine.id)) return localLine;
-                    return serverLinesMap.get(localLine.id) ?? localLine;
-                });
-                (serverOrder.lineas || []).forEach(sl => {
-                    if (!mergedLineas.find(l => l.id === sl.id)) mergedLineas.push(sl);
-                });
-
-                return { ...orderWithParsedDates(serverOrder), lineas: mergedLineas };
-            });
-
-            const startOfToday = getStartOfLocalToday();
-
-            prev.forEach(localOrder => {
-                const isFromToday = parseTPVDate(localOrder.created_at) >= startOfToday;
-                const isWaitingSync = localCompletedIds.current.has(localOrder.id);
-                const completedLocally = localOrder.estado === 'completada';
-
-                if (
-                    !merged.find((o) => o.id === localOrder.id) &&
-                    (isFromToday || isWaitingSync || completedLocally)
-                ) {
-                    merged.push(localOrder);
-                }
-            });
-
-            return merged;
+    /**
+     * Líneas: el servidor es fuente de verdad (líneas borradas/anuladas en BD desaparecen del KDS).
+     * Se conserva línea local solo si hay update en vuelo (inFlightLineIds).
+     */
+    const mergeLineasFromServer = useCallback((local: KDSOrder | undefined, serverOrder: KDSOrder): KDSOrderLine[] => {
+        const serverLines = serverOrder.lineas ?? [];
+        const serverIds = new Set(serverLines.map((l) => l.id));
+        const out: KDSOrderLine[] = serverLines.map((sl) => {
+            const localLine = local?.lineas?.find((l) => l.id === sl.id);
+            if (localLine && inFlightLineIds.current.has(sl.id)) return localLine;
+            return sl;
         });
+        (local?.lineas ?? []).forEach((l) => {
+            if (!serverIds.has(l.id) && inFlightLineIds.current.has(l.id)) out.push(l);
+        });
+        return out;
     }, []);
+
+    const mergeOrders = useCallback(
+        (serverData: KDSOrder[]) => {
+            setOrders((prev) => {
+                const prevMap = new Map(prev.map((o) => [o.id, o]));
+                prev.forEach((o) => {
+                    if (o.estado === 'completada') localCompletedIds.current.add(o.id);
+                });
+
+                const shouldStayCompleted = (id: string, serverOrder: KDSOrder) =>
+                    localCompletedIds.current.has(id) ||
+                    prevMap.get(id)?.estado === 'completada' ||
+                    serverOrder.estado === 'completada';
+
+                const merged = serverData.map((serverOrder) => {
+                    const local = prevMap.get(serverOrder.id);
+
+                    if (shouldStayCompleted(serverOrder.id, serverOrder)) {
+                        const baseOrder = local ?? serverOrder;
+                        const lineas = mergeLineasFromServer(baseOrder, serverOrder);
+                        const parsed = orderWithParsedDates(serverOrder);
+                        return {
+                            ...parsed,
+                            estado: 'completada' as const,
+                            completed_at: baseOrder.completed_at ?? serverOrder.completed_at ?? null,
+                            lineas,
+                        };
+                    }
+
+                    if (!local) return orderWithParsedDates(serverOrder);
+
+                    const lineas = mergeLineasFromServer(local, serverOrder);
+                    return { ...orderWithParsedDates(serverOrder), lineas };
+                });
+
+                const startOfToday = getStartOfLocalToday();
+
+                prev.forEach((localOrder) => {
+                    const isFromToday = parseTPVDate(localOrder.created_at) >= startOfToday;
+                    const isWaitingSync = localCompletedIds.current.has(localOrder.id);
+                    const completedLocally = localOrder.estado === 'completada';
+
+                    if (
+                        !merged.find((o) => o.id === localOrder.id) &&
+                        (isFromToday || isWaitingSync || completedLocally)
+                    ) {
+                        merged.push(localOrder);
+                    }
+                });
+
+                merged.forEach((o) => {
+                    if (o.estado === 'completada') localCompletedIds.current.add(o.id);
+                });
+
+                return merged;
+            });
+        },
+        [mergeLineasFromServer]
+    );
 
     const orderWithParsedDates = (order: KDSOrder) => ({
         ...order,
@@ -231,10 +242,10 @@ export function useKDS() {
                         }));
                     } else if (p.eventType === 'UPDATE') {
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
-                            if (o.id !== p.new.id) return o;
+                            if (o.id !== (p.new as { id: string }).id) return o;
                             const updated = orderWithParsedDates({ ...o, ...p.new });
                             // No bajar de completada → activa por un UPDATE rezagado del servidor
-                            if (localCompletedIds.current.has(o.id) || o.estado === 'completada') {
+                            if (localCompletedIds.current.has(o.id) || o.estado === 'completada' || (p.new as { estado?: string }).estado === 'completada') {
                                 return {
                                     ...updated,
                                     estado: 'completada',
@@ -243,6 +254,11 @@ export function useKDS() {
                             }
                             return updated;
                         })));
+                    } else if (p.eventType === 'DELETE') {
+                        const oid = (p.old as { id?: string } | null)?.id;
+                        if (!oid) return;
+                        localCompletedIds.current.delete(oid);
+                        scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
                     }
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_order_lines' }, (p) => {
@@ -260,6 +276,19 @@ export function useKDS() {
                             if (inFlightLineIds.current.has(ul.id)) return o;
                             return { ...o, lineas: (o.lineas || []).map(l => l.id === ul.id ? ul : l) };
                         })));
+                    } else if (p.eventType === 'DELETE') {
+                        const oldRow = p.old as { id?: string; kds_order_id?: string } | null;
+                        const lid = oldRow?.id;
+                        const orderId = oldRow?.kds_order_id;
+                        if (!lid || !orderId) return;
+                        scheduleUpdate(() =>
+                            setOrders(prev =>
+                                prev.map(o => {
+                                    if (o.id !== orderId) return o;
+                                    return { ...o, lineas: (o.lineas || []).filter(l => l.id !== lid) };
+                                })
+                            )
+                        );
                     }
                 })
                 .subscribe(async (status) => {
