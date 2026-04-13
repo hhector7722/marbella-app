@@ -3,7 +3,7 @@
 import { useState, useMemo, useLayoutEffect, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
-import { Loader2, Package, ListChecks, Check, X } from 'lucide-react';
+import { Loader2, Package, ListChecks, Check, X, RefreshCw } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,8 +16,9 @@ const KDS_MAX_COLS = 4;
 /** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
 const KDS_MIN_CARD_PX = 200;
 
-const KDS_BG = '#4e5156';
-const KDS_FOOTER_BG = '#3d4044';
+/** Negro mate apagado (no #000); ligero carbón para cocina sin brillo “plástico”. */
+const KDS_BG = '#1b1c20';
+const KDS_FOOTER_BG = '#12141a';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
@@ -222,7 +223,18 @@ function KDSOrderRowsLayout({
 }
 
 export default function KDSView() {
-    const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes } = useKDS();
+    const {
+        orders,
+        loading,
+        isOffline,
+        syncStatus,
+        tacharProductos,
+        completarComanda,
+        recuperarComanda,
+        updateLineNotes,
+        updateOrderNotes,
+        refresh,
+    } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
@@ -312,14 +324,14 @@ export default function KDSView() {
                 {/* Área principal: comandas (scroll) */}
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-4 pb-3 custom-scrollbar">
                     {loading && orders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400 animate-in fade-in duration-700">
-                            <Loader2 className="animate-spin mb-4 opacity-20" size={56} strokeWidth={1} />
-                            <p className="text-sm font-black uppercase tracking-[0.35em] opacity-40 animate-pulse">Sincronizando...</p>
+                        <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-500 animate-in fade-in duration-700">
+                            <Loader2 className="animate-spin mb-4 opacity-25" size={56} strokeWidth={1} />
+                            <p className="text-sm font-black uppercase tracking-[0.35em] text-zinc-500/80 animate-pulse">Sincronizando...</p>
                         </div>
                     ) : visibleOrders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-white/15 rounded-3xl bg-black/10 mt-8 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
-                            {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
-                            <h3 className="text-2xl font-bold text-white/55 uppercase tracking-wide">
+                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-white/12 rounded-3xl bg-white/[0.04] mt-8 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
+                            {showCompleted ? <ListChecks className="text-zinc-500 mb-4" size={64} strokeWidth={1} /> : <Package className="text-zinc-500 mb-4" size={64} strokeWidth={1} />}
+                            <h3 className="text-2xl font-bold text-zinc-400 uppercase tracking-wide">
                                 {showCompleted ? 'Sin comandas finalizadas hoy' : 'No hay comandas pendientes'}
                             </h3>
                         </div>
@@ -372,13 +384,40 @@ export default function KDSView() {
                 </div>
 
                 <div className="flex items-center justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t border-black/15 sm:border-t-0 sm:border-l sm:border-black/15 sm:pl-6">
-                    <div
-                        className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-500 overflow-hidden ${syncStatus === 'idle' ? 'w-0 opacity-0' : 'w-11 opacity-100 bg-slate-800 border border-slate-600/50 shadow-inner'}`}
+                    <button
+                        type="button"
+                        title={
+                            syncStatus === 'error'
+                                ? 'Error al sincronizar — pulsar para reintentar'
+                                : syncStatus === 'syncing'
+                                  ? 'Sincronizando…'
+                                  : 'Sincronizar con servidor'
+                        }
+                        aria-label={
+                            syncStatus === 'error'
+                                ? 'Error de sincronización, reintentar'
+                                : syncStatus === 'syncing'
+                                  ? 'Sincronizando'
+                                  : 'Sincronizar'
+                        }
+                        disabled={syncStatus === 'syncing' || syncStatus === 'success'}
+                        onClick={() => {
+                            if (syncStatus === 'syncing' || syncStatus === 'success') return;
+                            void refresh();
+                        }}
+                        className={cn(
+                            'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-inner transition-all duration-300',
+                            'border-slate-600/50 bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30',
+                            syncStatus === 'idle' && 'hover:bg-slate-700/90 active:scale-95',
+                            (syncStatus === 'syncing' || syncStatus === 'success') && 'cursor-default',
+                            syncStatus === 'error' && 'border-rose-500/40 hover:bg-slate-700/90'
+                        )}
                     >
-                        {syncStatus === 'syncing' && <Loader2 size={22} className="text-blue-400 animate-spin" />}
+                        {syncStatus === 'syncing' && <Loader2 size={22} className="text-sky-400 animate-spin" />}
                         {syncStatus === 'success' && <Check size={22} className="text-emerald-400" strokeWidth={2.5} />}
                         {syncStatus === 'error' && <X size={22} className="text-rose-400" strokeWidth={2.5} />}
-                    </div>
+                        {syncStatus === 'idle' && <RefreshCw size={22} className="text-zinc-300" strokeWidth={2.2} />}
+                    </button>
 
                     <div className="flex min-h-[52px] flex-col items-end justify-center gap-2">
                         {!showCompleted ? (
