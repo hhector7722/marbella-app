@@ -56,9 +56,7 @@ type KdsStickerBannerTextProps = {
 };
 
 /**
- * Mismo estilo dorsal Teko + doble trazo que el número de mesa, en tamaño reducido.
- * No incrementa la altura del layout: va en caja de alto fijo y escala el contenido
- * (ResizeObserver + escala uniforme) para caber en el ancho/alto disponibles.
+ * Nombre cliente en cabecera KDS: Teko, blanco plano sin trazo ni sombra; escala en caja fija.
  */
 export function KdsStickerBannerText({ value, isCompleted, className }: KdsStickerBannerTextProps) {
     const v = value.trim();
@@ -107,27 +105,12 @@ export function KdsStickerBannerText({ value, isCompleted, className }: KdsStick
             >
                 <span
                     className={cn(
-                        'inline-grid max-w-none place-items-center whitespace-nowrap [grid-template-areas:\'banner\'] px-0.5 font-normal uppercase leading-none tracking-[0.07em] sm:tracking-[0.09em]',
-                        kdsMesaNumberFont.className
+                        'inline-block max-w-none whitespace-nowrap px-0.5 text-center text-5xl font-normal uppercase leading-none tracking-[0.07em] sm:text-6xl sm:tracking-[0.09em]',
+                        kdsMesaNumberFont.className,
+                        isCompleted ? 'text-slate-600' : 'text-white'
                     )}
                 >
-                    <span
-                        className="pointer-events-none col-start-1 row-start-1 select-none text-center text-5xl text-transparent [-webkit-text-stroke:8px_rgb(255_255_255)] [paint-order:stroke_fill] [grid-area:banner] sm:text-6xl sm:[-webkit-text-stroke:9px_rgb(255_255_255)]"
-                        aria-hidden
-                    >
-                        {v}
-                    </span>
-                    <span
-                        className={cn(
-                            'relative z-10 col-start-1 row-start-1 text-center text-5xl [paint-order:stroke_fill] [-webkit-text-stroke:2px_rgb(255_255_255)] [grid-area:banner] sm:text-6xl sm:[-webkit-text-stroke:2.5px_rgb(255_255_255)]',
-                            'text-black',
-                            '[text-shadow:1px_1px_0_rgb(23_23_23),0.5px_0.5px_0_rgba(255_255_255_0.12)]',
-                            isCompleted &&
-                                'text-slate-600 [text-shadow:1px_1px_0_rgb(71_85_105)] sm:[-webkit-text-stroke:2.5px_rgb(255_255_255)]'
-                        )}
-                    >
-                        {v}
-                    </span>
+                    {v}
                 </span>
             </div>
         </div>
