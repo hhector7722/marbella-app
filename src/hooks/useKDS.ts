@@ -22,7 +22,16 @@ export function useKDS() {
         }
     }, []);
 
-    const localCompletedIds = useRef<Set<string>>(new Set());
+    /**
+     * Estado MANUAL de comanda (activa/completada) decidido por cocina.
+     * - Una vez una comanda entra en KDS, su `estado` NO debe cambiar por lógica automática.
+     * - Solo cambia por acciones explícitas del usuario (Finalizar / Recuperar).
+     *
+     * Persistimos por día (se limpia al cambiar el startOfToday local).
+     */
+    const localOrderOverride = useRef<Map<string, { estado: 'activa' | 'completada'; completed_at: string | null }>>(
+        new Map()
+    );
     const inFlightLineIds = useRef<Set<string>>(new Set());
     const realtimeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const pendingUpdates = useRef<Array<() => void>>([]);
@@ -58,63 +67,122 @@ export function useKDS() {
         return out;
     }, []);
 
+    const loadOverridesFromStorage = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        const key = 'kds_order_state_overrides_v1';
+        try {
+            const raw = window.localStorage.getItem(key);
+            if (!raw) return;
+            const parsed = JSON.parse(raw) as {
+                dayStartIso?: string;
+                byId?: Record<string, { estado: 'activa' | 'completada'; completed_at: string | null }>;
+            };
+            const todayStart = getStartOfLocalToday().toISOString();
+            if (!parsed?.dayStartIso || parsed.dayStartIso !== todayStart) {
+                window.localStorage.removeItem(key);
+                return;
+            }
+            const byId = parsed.byId ?? {};
+            localOrderOverride.current = new Map(Object.entries(byId));
+        } catch {
+            // Si está corrupto, lo limpiamos.
+            try {
+                window.localStorage.removeItem(key);
+            } catch {}
+        }
+    }, []);
+
+    const saveOverridesToStorage = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        const key = 'kds_order_state_overrides_v1';
+        try {
+            const byId: Record<string, { estado: 'activa' | 'completada'; completed_at: string | null }> = {};
+            for (const [id, v] of localOrderOverride.current.entries()) byId[id] = v;
+            window.localStorage.setItem(
+                key,
+                JSON.stringify({ dayStartIso: getStartOfLocalToday().toISOString(), byId })
+            );
+        } catch {
+            // ignore
+        }
+    }, []);
+
     const mergeOrders = useCallback(
         (serverData: KDSOrder[]) => {
             setOrders((prev) => {
                 const prevMap = new Map(prev.map((o) => [o.id, o]));
-                prev.forEach((o) => {
-                    if (o.estado === 'completada') localCompletedIds.current.add(o.id);
-                });
 
-                const shouldStayCompleted = (id: string, serverOrder: KDSOrder) =>
-                    localCompletedIds.current.has(id) ||
-                    prevMap.get(id)?.estado === 'completada' ||
-                    serverOrder.estado === 'completada';
+                const startOfToday = getStartOfLocalToday();
+                const isFromToday = (o: KDSOrder) => {
+                    // Regla operativa (ver PROJECT_STATUS): día en curso por medianoche local.
+                    // - Activas: si cabecera creada hoy o existe alguna línea creada hoy.
+                    // - Completadas: si completed_at es de hoy.
+                    try {
+                        if (o.estado === 'completada') {
+                            const ca = o.completed_at ? parseDBDate(o.completed_at).getTime() : 0;
+                            return ca >= startOfToday.getTime();
+                        }
+                        const header = parseDBDate(o.created_at).getTime();
+                        if (header >= startOfToday.getTime()) return true;
+                        const anyLineToday =
+                            (o.lineas ?? []).some((l) => parseDBDate(l.created_at).getTime() >= startOfToday.getTime());
+                        return anyLineToday;
+                    } catch {
+                        // Fallback defensivo: si hay formato raro, no retener por defecto.
+                        return false;
+                    }
+                };
 
                 const merged = serverData.map((serverOrder) => {
                     const local = prevMap.get(serverOrder.id);
+                    const baseOrder = local ?? serverOrder;
+                    const lineas = mergeLineasFromServer(baseOrder, serverOrder);
+                    const parsed = orderWithParsedDates(serverOrder);
 
-                    if (shouldStayCompleted(serverOrder.id, serverOrder)) {
-                        const baseOrder = local ?? serverOrder;
-                        const lineas = mergeLineasFromServer(baseOrder, serverOrder);
-                        const parsed = orderWithParsedDates(serverOrder);
-                        return {
-                            ...parsed,
-                            estado: 'completada' as const,
-                            completed_at: baseOrder.completed_at ?? serverOrder.completed_at ?? null,
-                            lineas,
-                        };
+                    // Anclar estado a override manual (si existe) o al primer estado observado.
+                    const existingOverride = localOrderOverride.current.get(serverOrder.id);
+                    const pinned = existingOverride ?? {
+                        estado: (parsed.estado as 'activa' | 'completada') ?? 'activa',
+                        completed_at: (parsed.completed_at as string | null) ?? null,
+                    };
+                    if (!existingOverride) {
+                        localOrderOverride.current.set(serverOrder.id, pinned);
                     }
 
-                    if (!local) return orderWithParsedDates(serverOrder);
+                    const finalEstado = pinned.estado;
+                    const finalCompletedAt = finalEstado === 'completada'
+                        ? (pinned.completed_at ?? parsed.completed_at ?? null)
+                        : null;
 
-                    const lineas = mergeLineasFromServer(local, serverOrder);
-                    return { ...orderWithParsedDates(serverOrder), lineas };
+                    return {
+                        ...parsed,
+                        estado: finalEstado,
+                        completed_at: finalCompletedAt,
+                        lineas,
+                    };
                 });
 
-                const startOfToday = getStartOfLocalToday();
-
                 prev.forEach((localOrder) => {
-                    const isFromToday = parseTPVDate(localOrder.created_at) >= startOfToday;
-                    const isWaitingSync = localCompletedIds.current.has(localOrder.id);
-                    const completedLocally = localOrder.estado === 'completada';
+                    const hasOverride = localOrderOverride.current.has(localOrder.id);
 
                     if (
                         !merged.find((o) => o.id === localOrder.id) &&
-                        (isFromToday || isWaitingSync || completedLocally)
+                        // Retener solo si pertenece al día en curso o está pendiente de sync.
+                        // Evita que finalizadas de días anteriores se "enganchen" indefinidamente en memoria.
+                        (isFromToday(localOrder) || hasOverride)
                     ) {
                         merged.push(localOrder);
                     }
                 });
 
-                merged.forEach((o) => {
-                    if (o.estado === 'completada') localCompletedIds.current.add(o.id);
-                });
+                // Persistir el anclaje de estados manuales (por día).
+                // (Se ejecuta dentro de setOrders; es ligero: solo JSON de map.)
+                queueMicrotask(() => saveOverridesToStorage());
 
                 return merged;
             });
         },
-        [mergeLineasFromServer]
+        [mergeLineasFromServer, saveOverridesToStorage]
     );
 
     const orderWithParsedDates = (order: KDSOrder) => ({
@@ -200,9 +268,7 @@ export function useKDS() {
                     );
 
                 if (options.isInitial) {
-                    cleanedData.forEach(o => {
-                        if (o.estado === 'completada') localCompletedIds.current.add(o.id);
-                    });
+                    loadOverridesFromStorage();
                     setOrders(cleanedData);
                 } else {
                     startTransition(() => mergeOrders(cleanedData));
@@ -234,30 +300,66 @@ export function useKDS() {
             const channel = supabase
                 .channel('kds_resilient_sync_v2')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_orders' }, (p) => {
+                    const startOfToday = getStartOfLocalToday().getTime();
+                    const isOrderRowFromToday = (row: any) => {
+                        try {
+                            const estado = row?.estado as string | undefined;
+                            if (estado === 'completada') {
+                                const ca = row?.completed_at ? parseDBDate(row.completed_at).getTime() : 0;
+                                return ca >= startOfToday;
+                            }
+                            const header = row?.created_at ? parseDBDate(row.created_at).getTime() : 0;
+                            return header >= startOfToday;
+                        } catch {
+                            return false;
+                        }
+                    };
+
                     if (p.eventType === 'INSERT') {
                         const newOrder = { ...p.new, lineas: [] } as unknown as KDSOrder;
+                        // No introducir comandas fuera del día en curso (evita “fantasmas” en Finalizadas).
+                        if (!isOrderRowFromToday(p.new)) return;
+                        // Anclar estado inicial observado si no existe override.
+                        const oid = (p.new as { id?: string } | null)?.id;
+                        if (oid && !localOrderOverride.current.has(oid)) {
+                            const estado = ((p.new as any)?.estado ?? 'activa') as 'activa' | 'completada';
+                            const completed_at = (p.new as any)?.completed_at ? String((p.new as any).completed_at) : null;
+                            localOrderOverride.current.set(oid, { estado, completed_at });
+                            saveOverridesToStorage();
+                        }
                         scheduleUpdate(() => setOrders(prev => {
                             if (prev.find(o => o.id === newOrder.id)) return prev;
                             return [...prev, orderWithParsedDates(newOrder)];
                         }));
                     } else if (p.eventType === 'UPDATE') {
+                        // Si llega un UPDATE de un registro fuera del día, lo ignoramos (o lo expulsamos si existía).
+                        if (!isOrderRowFromToday(p.new)) {
+                            const oid = (p.new as { id?: string } | null)?.id;
+                            if (oid) scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
+                            return;
+                        }
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== (p.new as { id: string }).id) return o;
                             const updated = orderWithParsedDates({ ...o, ...p.new });
-                            // No bajar de completada → activa por un UPDATE rezagado del servidor
-                            if (localCompletedIds.current.has(o.id) || o.estado === 'completada' || (p.new as { estado?: string }).estado === 'completada') {
-                                return {
-                                    ...updated,
-                                    estado: 'completada',
-                                    completed_at: updated.completed_at ?? o.completed_at,
-                                };
+                            // Estado manual anclado: ignorar flips automáticos de estado.
+                            const pinned = localOrderOverride.current.get(o.id);
+                            if (!pinned) {
+                                const estado = (updated.estado as 'activa' | 'completada') ?? 'activa';
+                                localOrderOverride.current.set(o.id, { estado, completed_at: (updated.completed_at as string | null) ?? null });
+                                saveOverridesToStorage();
+                                return updated;
                             }
-                            return updated;
+                            return {
+                                ...updated,
+                                estado: pinned.estado,
+                                completed_at: pinned.estado === 'completada' ? (pinned.completed_at ?? (updated.completed_at as string | null) ?? o.completed_at) : null,
+                            };
                         })));
                     } else if (p.eventType === 'DELETE') {
                         const oid = (p.old as { id?: string } | null)?.id;
                         if (!oid) return;
-                        localCompletedIds.current.delete(oid);
+                        localOrderOverride.current.delete(oid);
+                        saveOverridesToStorage();
                         scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
                     }
                 })
@@ -336,19 +438,25 @@ export function useKDS() {
         return () => clearTimeout(timer);
     }, [fetchActiveOrders]);
 
-    // CIERRE DE COMANDA OPTIMISTA — todas las tandas (mismo id_ticket) se cierran a la vez
+    // FINALIZAR COMANDA (manual) — todas las tandas (mismo id_ticket) se cierran a la vez
     const completarComanda = async (orderId: string, idTicket?: string | null) => {
         setSyncStatus('syncing');
         const completedAt = new Date().toISOString();
         const ticketKey = (idTicket && String(idTicket).trim()) ? String(idTicket).trim() : null;
 
         let affectedIds: string[] = [];
+        const prevOverrides = new Map<string, { estado: 'activa' | 'completada'; completed_at: string | null }>();
         setOrders((prev) => {
             const targets = ticketKey
                 ? prev.filter((o) => (o.id_ticket ?? null) === ticketKey && o.estado === 'activa')
                 : prev.filter((o) => o.id === orderId);
             affectedIds = targets.map((t) => t.id);
-            affectedIds.forEach((id) => localCompletedIds.current.add(id));
+            affectedIds.forEach((id) => {
+                const prior = localOrderOverride.current.get(id);
+                if (prior) prevOverrides.set(id, prior);
+                localOrderOverride.current.set(id, { estado: 'completada', completed_at: completedAt });
+            });
+            saveOverridesToStorage();
             return prev.map((o) => {
                 if (ticketKey && (o.id_ticket ?? null) === ticketKey && o.estado === 'activa') {
                     return { ...o, estado: 'completada' as const, completed_at: completedAt };
@@ -367,7 +475,12 @@ export function useKDS() {
 
         if (error) {
             setSyncStatus('error');
-            affectedIds.forEach((id) => localCompletedIds.current.delete(id));
+            affectedIds.forEach((id) => {
+                const prior = prevOverrides.get(id);
+                if (prior) localOrderOverride.current.set(id, prior);
+                else localOrderOverride.current.delete(id);
+            });
+            saveOverridesToStorage();
             setOrders((prev) =>
                 prev.map((o) =>
                     affectedIds.includes(o.id) ? { ...o, estado: 'activa' as const, completed_at: null } : o
@@ -410,15 +523,20 @@ export function useKDS() {
             })));
         } else {
             setStatusWithTimeout('success');
-            // Si todas las líneas quedan terminadas o canceladas, finalizar comanda(s) automáticamente
+            // Si al marcar queda TODO terminado/cancelado, equivale a "Finalizar" (acción de cocina).
+            // Lo hacemos tras actualizar estado de líneas para que el snapshot sea consistente.
             setOrders((prev) => {
                 const affected = prev.find((o) => o.lineas?.some((l) => lineIds.includes(l.id)));
-                if (
-                    affected &&
-                    affected.estado === 'activa' &&
+                if (!affected) return prev;
+
+                const allDone =
                     (affected.lineas?.length ?? 0) > 0 &&
-                    affected.lineas!.every((l) => l.estado === 'terminado' || l.estado === 'cancelado')
-                ) {
+                    affected.lineas!.every((l) => l.estado === 'terminado' || l.estado === 'cancelado');
+
+                const pinned = localOrderOverride.current.get(affected.id);
+                const alreadyCompleted = (pinned?.estado ?? affected.estado) === 'completada';
+
+                if (allDone && !alreadyCompleted) {
                     queueMicrotask(() => {
                         void completarComanda(affected.id, affected.id_ticket ?? null);
                     });
@@ -428,11 +546,12 @@ export function useKDS() {
         }
     };
 
-    // RECUPERAR COMANDA OPTIMISTA
+    // RECUPERAR COMANDA (manual)
     const recuperarComanda = async (orderId: string) => {
         setSyncStatus('syncing');
-        // Quitar del veto local
-        localCompletedIds.current.delete(orderId);
+        const prev = localOrderOverride.current.get(orderId) ?? null;
+        localOrderOverride.current.set(orderId, { estado: 'activa', completed_at: null });
+        saveOverridesToStorage();
 
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'activa', completed_at: null } : o));
 
@@ -443,8 +562,10 @@ export function useKDS() {
 
         if (error) {
             setSyncStatus('error');
-            localCompletedIds.current.add(orderId);
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
+            if (prev) localOrderOverride.current.set(orderId, prev);
+            else localOrderOverride.current.delete(orderId);
+            saveOverridesToStorage();
+            setOrders(prev2 => prev2.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
         } else {
             setStatusWithTimeout('success');
         }
