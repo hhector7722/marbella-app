@@ -335,8 +335,15 @@ export function useKDS() {
                         // Si llega un UPDATE de un registro fuera del día, lo ignoramos (o lo expulsamos si existía).
                         if (!isOrderRowFromToday(p.new)) {
                             const oid = (p.new as { id?: string } | null)?.id;
-                            if (oid) scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
-                            return;
+                            // EXCEPCIÓN: si cocina la tiene “anclada” (override manual), NO la expulsamos.
+                            // Caso típico: comanda creada ayer, completada hoy, y se recupera → estado activa + completed_at null,
+                            // lo que rompería el filtro de "hoy" pero el usuario la está gestionando hoy.
+                            if (oid && localOrderOverride.current.has(oid)) {
+                                // dejamos pasar el UPDATE para que se actualicen otros campos (líneas, notas, etc.)
+                            } else {
+                                if (oid) scheduleUpdate(() => setOrders(prev => prev.filter(o => o.id !== oid)));
+                                return;
+                            }
                         }
                         scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== (p.new as { id: string }).id) return o;

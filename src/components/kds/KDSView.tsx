@@ -29,35 +29,115 @@ function KDSFooterProductChips({
     items: KdsAggregatedLine[];
     onOpen: () => void;
 }) {
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const [availablePx, setAvailablePx] = useState(0);
+    const [widthByKey, setWidthByKey] = useState<Record<string, number>>({});
+
+    const remeasure = useCallback(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        setAvailablePx(el.clientWidth);
+        const next: Record<string, number> = {};
+        const nodes = el.querySelectorAll('[data-chip-key]') as NodeListOf<HTMLElement>;
+        nodes.forEach((n) => {
+            const k = n.dataset.chipKey;
+            if (!k) return;
+            next[k] = Math.ceil(n.getBoundingClientRect().width);
+        });
+        setWidthByKey(next);
+    }, []);
+
+    useLayoutEffect(() => {
+        remeasure();
+        const el = wrapRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(() => remeasure());
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [remeasure, items]);
+
+    const gapPx = 8; // gap-2
+    const orderedKeys = items.map((i) => i.key);
+    const verMasKey = '__ver_mas__';
+    const verMasWidth = widthByKey[verMasKey] ?? 120;
+
+    let used = 0;
+    const visibleKeys: string[] = [];
+    for (let i = 0; i < orderedKeys.length; i++) {
+        const k = orderedKeys[i];
+        const w = widthByKey[k] ?? 240;
+        const nextUsed = visibleKeys.length === 0 ? w : used + gapPx + w;
+        const remaining = orderedKeys.length - (i + 1);
+        const needsVerMas = remaining > 0;
+        const reserve = needsVerMas ? (gapPx + verMasWidth) : 0;
+        if (availablePx > 0 && nextUsed + reserve > availablePx) break;
+        visibleKeys.push(k);
+        used = nextUsed;
+    }
+    const hiddenCount = orderedKeys.length - visibleKeys.length;
+
     return (
-        <div className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-start gap-2 overflow-x-auto overflow-y-visible py-1 [scrollbar-width:thin]">
-            {items.map((item) => (
+        <div
+            ref={wrapRef}
+            className="flex min-h-[3.25rem] w-full min-w-0 flex-1 flex-nowrap items-start gap-2 overflow-hidden py-1"
+        >
+            {items
+                .filter((it) => visibleKeys.includes(it.key))
+                .map((item) => (
+                    <button
+                        key={item.key}
+                        data-chip-key={item.key}
+                        type="button"
+                        onClick={onOpen}
+                        className={cn(
+                            'inline-flex max-w-[min(92vw,42rem)] min-h-[48px] w-max shrink-0 overflow-hidden rounded-xl border border-zinc-200/90 text-left shadow-sm transition active:scale-[0.99]',
+                            'bg-white hover:bg-zinc-50'
+                        )}
+                        title={`${item.nombre} (${item.cantidad})`}
+                    >
+                        <div className="flex min-w-0 items-stretch">
+                            <div className="min-w-0 bg-white px-3 py-2">
+                                <p className="min-w-0 max-w-full break-words text-left leading-snug">
+                                    <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">
+                                        {item.nombre}
+                                    </span>
+                                </p>
+                            </div>
+                            <div className="shrink-0 bg-red-600 px-3 py-2">
+                                <span className="text-2xl font-black tabular-nums tracking-tight text-white sm:text-3xl">
+                                    {item.cantidad}
+                                </span>
+                            </div>
+                        </div>
+                    </button>
+                ))}
+
+            {hiddenCount > 0 && (
                 <button
-                    key={item.key}
+                    key={verMasKey}
+                    data-chip-key={verMasKey}
                     type="button"
                     onClick={onOpen}
                     className={cn(
-                        'inline-flex max-w-[min(92vw,42rem)] min-h-[48px] w-max shrink-0 overflow-hidden rounded-xl border border-zinc-200/90 text-left shadow-sm transition active:scale-[0.99]',
+                        'inline-flex min-h-[48px] w-max shrink-0 overflow-hidden rounded-xl border border-zinc-200/90 text-left shadow-sm transition active:scale-[0.99]',
                         'bg-white hover:bg-zinc-50'
                     )}
-                    title={`${item.nombre} (${item.cantidad})`}
+                    title="Ver más"
                 >
-                    <div className="flex min-w-0 items-stretch">
-                        <div className="min-w-0 bg-white px-3 py-2">
-                            <p className="min-w-0 max-w-full break-words text-left leading-snug">
-                                <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">
-                                    {item.nombre}
-                                </span>
-                            </p>
+                    <div className="flex items-stretch">
+                        <div className="bg-white px-3 py-2">
+                            <span className="text-2xl font-black uppercase tracking-[0.04em] text-zinc-900 sm:text-3xl">
+                                Ver más
+                            </span>
                         </div>
-                        <div className="shrink-0 bg-red-600 px-3 py-2">
+                        <div className="bg-red-600 px-3 py-2">
                             <span className="text-2xl font-black tabular-nums tracking-tight text-white sm:text-3xl">
-                                {item.cantidad}
+                                +{hiddenCount}
                             </span>
                         </div>
                     </div>
                 </button>
-            ))}
+            )}
         </div>
     );
 }
@@ -379,7 +459,7 @@ export default function KDSView() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col items-stretch gap-2 min-w-0 min-h-[3.25rem] overflow-x-auto overflow-y-visible">
+                <div className="flex-1 flex flex-col items-stretch gap-2 min-w-0 min-h-[3.25rem] overflow-x-hidden overflow-y-visible">
                     {aggregatedItems.length === 0 ? (
                         !loading && (
                             <div className="text-white/45 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto px-1">
