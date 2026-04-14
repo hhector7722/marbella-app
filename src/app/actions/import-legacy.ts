@@ -4,11 +4,80 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
 
+export type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
+
 export type ImportResult = {
     success: boolean
     message: string
     count?: number
     errors?: string[]
+}
+
+export type ImportMeta = {
+    fileName?: string | null
+    fileHashSha256?: string | null
+}
+
+type ImportRunRow = {
+    step: ImportStep
+    file_name: string | null
+    file_hash_sha256: string | null
+    created_at: string
+    success: boolean
+    record_count: number | null
+    result_message: string | null
+}
+
+async function logImportRun(params: {
+    supabase: Awaited<ReturnType<typeof createClient>>
+    userId: string
+    step: ImportStep
+    meta?: ImportMeta
+    result: ImportResult
+}) {
+    const { supabase, userId, step, meta, result } = params
+
+    const errorsJson = Array.isArray(result.errors) ? result.errors : []
+
+    const { error } = await supabase.from('import_runs').insert({
+        user_id: userId,
+        step,
+        file_name: meta?.fileName ?? null,
+        file_hash_sha256: meta?.fileHashSha256 ?? null,
+        record_count: result.count ?? null,
+        success: !!result.success,
+        result_message: result.message ?? null,
+        errors: errorsJson,
+    })
+
+    if (error) {
+        throw new Error(`No se pudo registrar el historial de importación: ${error.message}`)
+    }
+}
+
+export async function getLatestImportRuns(): Promise<{ success: true; runs: Partial<Record<ImportStep, ImportRunRow>> } | { success: false; message: string }> {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return { success: false, message: 'Usuario no autenticado' }
+
+    const { data, error } = await supabase
+        .from('import_runs')
+        .select('step, file_name, file_hash_sha256, created_at, success, record_count, result_message')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+    if (error) return { success: false, message: error.message }
+
+    const runs: Partial<Record<ImportStep, ImportRunRow>> = {}
+    for (const row of (data ?? []) as unknown as ImportRunRow[]) {
+        const step = row.step
+        if (!runs[step]) runs[step] = row
+    }
+
+    return { success: true, runs }
 }
 
 // Utility to convert Excel serial date to JS Date
@@ -43,7 +112,7 @@ function getCell(row: Record<string, unknown>, possibleKeys: string[]): unknown 
     return undefined
 }
 
-export async function importSuppliers(data: Record<string, any>[]): Promise<ImportResult> {
+export async function importSuppliers(data: Record<string, any>[], meta?: ImportMeta): Promise<ImportResult> {
     const supabase = await createClient()
     const {
         data: { user },
@@ -96,15 +165,25 @@ export async function importSuppliers(data: Record<string, any>[]): Promise<Impo
     }
 
     revalidatePath('/dashboard/suppliers')
-    return {
+    const result: ImportResult = {
         success: true,
         message: `Importados ${successCount} proveedores`,
         count: successCount,
         errors,
     }
+
+    try {
+        await logImportRun({ supabase, userId: user.id, step: 'suppliers', meta, result })
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e)
+        result.errors = [...(result.errors ?? []), message]
+        result.message = `${result.message} (AVISO: historial no registrado)`
+    }
+
+    return result
 }
 
-export async function importProducts(data: Record<string, any>[]): Promise<ImportResult> {
+export async function importProducts(data: Record<string, any>[], meta?: ImportMeta): Promise<ImportResult> {
     const supabase = await createClient()
     const {
         data: { user },
@@ -171,15 +250,25 @@ export async function importProducts(data: Record<string, any>[]): Promise<Impor
     }
 
     revalidatePath('/dashboard/inventory')
-    return {
+    const result: ImportResult = {
         success: true,
         message: `Importados ${successCount} productos`,
         count: successCount,
         errors
     }
+
+    try {
+        await logImportRun({ supabase, userId: user.id, step: 'products', meta, result })
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e)
+        result.errors = [...(result.errors ?? []), message]
+        result.message = `${result.message} (AVISO: historial no registrado)`
+    }
+
+    return result
 }
 
-export async function importRecipes(data: Record<string, any>[]): Promise<ImportResult> {
+export async function importRecipes(data: Record<string, any>[], meta?: ImportMeta): Promise<ImportResult> {
     const supabase = await createClient()
     const {
         data: { user },
@@ -190,12 +279,28 @@ export async function importRecipes(data: Record<string, any>[]): Promise<Import
     }
 
     if (!data?.length) {
-        return { success: false, message: 'No hay filas para importar' }
+        const result: ImportResult = { success: false, message: 'No hay filas para importar', count: 0, errors: [] }
+        try {
+            await logImportRun({ supabase, userId: user.id, step: 'recipes', meta, result })
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            result.errors = [...(result.errors ?? []), message]
+            result.message = `${result.message} (AVISO: historial no registrado)`
+        }
+        return result
     }
 
     const { data: ingredientRows, error: ingErr } = await supabase.from('ingredients').select('id, name')
     if (ingErr || !ingredientRows) {
-        return { success: false, message: `No se pudieron cargar ingredientes: ${ingErr?.message ?? 'desconocido'}` }
+        const result: ImportResult = { success: false, message: `No se pudieron cargar ingredientes: ${ingErr?.message ?? 'desconocido'}`, count: 0, errors: [] }
+        try {
+            await logImportRun({ supabase, userId: user.id, step: 'recipes', meta, result })
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            result.errors = [...(result.errors ?? []), message]
+            result.message = `${result.message} (AVISO: historial no registrado)`
+        }
+        return result
     }
 
     const ingredientMap = new Map<string, string>()
@@ -347,24 +452,42 @@ export async function importRecipes(data: Record<string, any>[]): Promise<Import
     }
 
     if (groups.size === 0) {
-        return {
+        const result: ImportResult = {
             success: false,
             message: 'Ninguna fila tenía nombre_receta (o equivalente) relleno.',
             count: 0,
             errors,
         }
+        try {
+            await logImportRun({ supabase, userId: user.id, step: 'recipes', meta, result })
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            result.errors = [...(result.errors ?? []), message]
+            result.message = `${result.message} (AVISO: historial no registrado)`
+        }
+        return result
     }
 
     revalidatePath('/recipes')
-    return {
+    const result: ImportResult = {
         success: true,
         message: `Importadas ${successCount} recetas (${groups.size} grupos detectados)`,
         count: successCount,
         errors,
     }
+
+    try {
+        await logImportRun({ supabase, userId: user.id, step: 'recipes', meta, result })
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e)
+        result.errors = [...(result.errors ?? []), message]
+        result.message = `${result.message} (AVISO: historial no registrado)`
+    }
+
+    return result
 }
 
-export async function importLogs(data: Record<string, any>[]): Promise<ImportResult> {
+export async function importLogs(data: Record<string, any>[], meta?: ImportMeta): Promise<ImportResult> {
     const supabase = await createClient()
     const {
         data: { user },
@@ -522,15 +645,25 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
     revalidatePath('/staff/history')
     revalidatePath('/dashboard')
 
-    return {
+    const result: ImportResult = {
         success: true,
         message: `Importados ${successCount} registros de fichaje`,
         count: successCount,
         errors
     }
+
+    try {
+        await logImportRun({ supabase, userId: user.id, step: 'logs', meta, result })
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e)
+        result.errors = [...(result.errors ?? []), message]
+        result.message = `${result.message} (AVISO: historial no registrado)`
+    }
+
+    return result
 }
 
-export async function importInitialMovements(data: Record<string, any>[]): Promise<ImportResult> {
+export async function importInitialMovements(data: Record<string, any>[], meta?: ImportMeta): Promise<ImportResult> {
     const supabase = await createClient()
     const {
         data: { user },
@@ -619,10 +752,20 @@ export async function importInitialMovements(data: Record<string, any>[]): Promi
     revalidatePath('/dashboard/movements')
     revalidatePath('/dashboard')
 
-    return {
+    const result: ImportResult = {
         success: true,
         message: `Importados ${successCount} movimientos de caja`,
         count: successCount,
         errors
     }
+
+    try {
+        await logImportRun({ supabase, userId: user.id, step: 'treasury', meta, result })
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e)
+        result.errors = [...(result.errors ?? []), message]
+        result.message = `${result.message} (AVISO: historial no registrado)`
+    }
+
+    return result
 }

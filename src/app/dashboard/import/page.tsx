@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
 import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database } from 'lucide-react'
@@ -8,17 +8,25 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 // import { Button } from '@/components/ui/button' // Removed
 // import { Card, ... } from '@/components/ui/card' // Removed
 // import { Alert, ... } from '@/components/ui/alert' // Removed
-import { importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult } from '@/app/actions/import-legacy'
+import { getLatestImportRuns, importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult, ImportStep } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
-type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
+async function sha256Hex(buf: ArrayBuffer): Promise<string> {
+    const hash = await crypto.subtle.digest('SHA-256', buf)
+    const bytes = new Uint8Array(hash)
+    return Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
+}
 
 export default function ImportPage() {
     const [currentStep, setCurrentStep] = useState<ImportStep>('suppliers')
     const [fileData, setFileData] = useState<any[]>([])
     const [fileName, setFileName] = useState<string | null>(null)
+    const [fileHashSha256, setFileHashSha256] = useState<string | null>(null)
     const [isUploading, setIsUploading] = useState(false)
     const [importResult, setImportResult] = useState<ImportResult | null>(null)
+    const [latestRuns, setLatestRuns] = useState<Partial<Record<ImportStep, { file_name: string | null; created_at: string; success: boolean; record_count: number | null }>>>({})
 
     const steps: { id: ImportStep; label: string; description: string }[] = [
         { id: 'suppliers', label: '1. Proveedores', description: 'Base de datos de proveedores' },
@@ -28,13 +36,42 @@ export default function ImportPage() {
         { id: 'treasury', label: '5. Tesorería', description: 'Movimientos de caja' },
     ]
 
+    const lastRunForStep = useMemo(() => {
+        return latestRuns[currentStep] ?? null
+    }, [latestRuns, currentStep])
+
+    useEffect(() => {
+        let cancelled = false
+        const load = async () => {
+            const res = await getLatestImportRuns()
+            if (!cancelled) {
+                if (res.success) setLatestRuns(res.runs as any)
+            }
+        }
+        load()
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
         setFileName(file.name)
+        setFileHashSha256(null)
         setIsUploading(true)
         setImportResult(null)
+
+        // Calcular hash del archivo (para detectar re-imports exactos)
+        file
+            .arrayBuffer()
+            .then((buf) => sha256Hex(buf))
+            .then((hex) => setFileHashSha256(hex))
+            .catch(() => {
+                // No bloqueamos import por hash; solo ayuda visual.
+                setFileHashSha256(null)
+            })
 
         const reader = new FileReader()
         reader.onload = (evt) => {
@@ -59,22 +96,25 @@ export default function ImportPage() {
         setIsUploading(true)
         try {
             let result: ImportResult = { success: false, message: "Acción no definida" }
+            const meta = { fileName, fileHashSha256 }
 
             if (currentStep === 'suppliers') {
-                result = await importSuppliers(fileData)
+                result = await importSuppliers(fileData, meta)
             } else if (currentStep === 'products') {
-                result = await importProducts(fileData)
+                result = await importProducts(fileData, meta)
             } else if (currentStep === 'logs') {
-                result = await importLogs(fileData)
+                result = await importLogs(fileData, meta)
             } else if (currentStep === 'treasury') {
-                result = await importInitialMovements(fileData)
+                result = await importInitialMovements(fileData, meta)
             } else if (currentStep === 'recipes') {
-                result = await importRecipes(fileData)
+                result = await importRecipes(fileData, meta)
             } else {
                 result = { success: false, message: "Este paso aún no está implementado." }
             }
 
             setImportResult(result)
+            const res = await getLatestImportRuns()
+            if (res.success) setLatestRuns(res.runs as any)
             if (result.success) {
                 // Optional: clear data after success
             }
@@ -103,10 +143,12 @@ export default function ImportPage() {
             </div>
 
             {/* Progress Stepper */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 {steps.map((step, index) => {
                     const isActive = step.id === currentStep
                     const isPast = steps.findIndex(s => s.id === currentStep) > index
+                    const last = latestRuns[step.id]
+                    const hasLast = !!last?.created_at
 
                     return (
                         <div
@@ -115,10 +157,11 @@ export default function ImportPage() {
                                 setCurrentStep(step.id)
                                 setFileData([])
                                 setFileName(null)
+                                setFileHashSha256(null)
                                 setImportResult(null)
                             }}
                             className={cn(
-                                "flex flex-col items-center p-4 border rounded-xl transition-all cursor-pointer hover:bg-zinc-50",
+                                "flex min-h-24 flex-col items-center justify-center p-4 border rounded-xl transition-all cursor-pointer hover:bg-zinc-50",
                                 isActive ? "border-[#36606F] bg-blue-50/50" : "border-zinc-200 bg-white",
                                 isPast ? "opacity-60" : ""
                             )}
@@ -130,6 +173,9 @@ export default function ImportPage() {
                                 {index + 1}
                             </div>
                             <span className="font-medium text-sm text-center">{step.label}</span>
+                            <span className={cn("mt-1 text-[10px] font-medium text-center", hasLast ? "text-zinc-600" : "text-zinc-400")}>
+                                {hasLast ? `Último: ${last?.file_name ?? '—'}` : 'Sin importar'}
+                            </span>
                         </div>
                     )
                 })}
@@ -147,6 +193,23 @@ export default function ImportPage() {
                             </h3>
                         </div>
                         <div className="p-6 pt-0 text-sm text-blue-800 space-y-2">
+                            {lastRunForStep && (
+                                <div className="rounded-lg border border-blue-200 bg-white/60 p-3 text-xs text-blue-900">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="font-semibold">Último archivo importado</span>
+                                        <span className={cn("font-semibold", lastRunForStep.success ? "text-emerald-700" : "text-rose-700")}>
+                                            {lastRunForStep.success ? 'OK' : 'FALLÓ'}
+                                        </span>
+                                    </div>
+                                    <div className="mt-1 text-blue-800">
+                                        <span className="font-medium">{lastRunForStep.file_name ?? '—'}</span>
+                                    </div>
+                                    <div className="mt-1 text-[11px] text-blue-700/90">
+                                        {new Date(lastRunForStep.created_at).toLocaleString('es-ES')}
+                                        {typeof lastRunForStep.record_count === 'number' ? ` · ${lastRunForStep.record_count} filas` : ''}
+                                    </div>
+                                </div>
+                            )}
                             <p>Para <strong>{steps.find(s => s.id === currentStep)?.label}</strong>, el archivo debe contener estas columnas:</p>
                             {currentStep === 'suppliers' && (
                                 <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded">
@@ -214,7 +277,7 @@ export default function ImportPage() {
                                     <h3 className="text-lg font-semibold">Sube tu archivo Excel/CSV</h3>
                                     <p className="text-sm text-muted-foreground">Arrastra o selecciona el archivo para analizar</p>
                                 </div>
-                                <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-zinc-100 h-10 px-4 py-2 relative cursor-pointer">
+                                <button className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-zinc-100 px-4 py-2 relative cursor-pointer">
                                     Seleccionar Archivo
                                     <input
                                         type="file"
@@ -234,11 +297,16 @@ export default function ImportPage() {
                                         <div>
                                             <p className="font-medium text-sm">{fileName}</p>
                                             <p className="text-xs text-muted-foreground">{fileData.length} registros detectados</p>
+                                            {fileHashSha256 && (
+                                                <p className="mt-1 text-[10px] text-zinc-400 font-mono">
+                                                    SHA256: {fileHashSha256.slice(0, 8)}…{fileHashSha256.slice(-8)}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     <button
-                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-zinc-100 hover:text-accent-foreground h-9 px-3"
-                                        onClick={() => { setFileData([]); setFileName(null); setImportResult(null); }}
+                                        className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-zinc-100 hover:text-accent-foreground px-3"
+                                    onClick={() => { setFileData([]); setFileName(null); setFileHashSha256(null); setImportResult(null); }}
                                     >
                                         Cambiar
                                     </button>
@@ -276,7 +344,7 @@ export default function ImportPage() {
                                         <button
                                             onClick={handleImport}
                                             disabled={isUploading}
-                                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-[#36606F] text-white hover:bg-[#2A4C58] h-10 px-4 py-2"
+                                            className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-[#36606F] text-white hover:bg-[#2A4C58] px-4 py-2"
                                         >
                                             {isUploading ? (
                                                 <>
@@ -293,7 +361,7 @@ export default function ImportPage() {
                                     ) : (
                                         <button
                                             onClick={nextStep}
-                                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-green-600 bg-transparent text-green-700 hover:bg-green-50 h-10 px-4 py-2"
+                                            className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-green-600 bg-transparent text-green-700 hover:bg-green-50 px-4 py-2"
                                         >
                                             Siguiente Paso
                                             <ArrowRight className="w-4 h-4 ml-2" />
