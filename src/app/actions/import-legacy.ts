@@ -28,6 +28,12 @@ type ImportRunRow = {
     result_message: string | null
 }
 
+export type ImportRunsQuery = {
+    step?: ImportStep | 'all'
+    limit?: number
+    offset?: number
+}
+
 async function logImportRun(params: {
     supabase: Awaited<ReturnType<typeof createClient>>
     userId: string
@@ -78,6 +84,43 @@ export async function getLatestImportRuns(): Promise<{ success: true; runs: Part
     }
 
     return { success: true, runs }
+}
+
+export async function getImportRuns(
+    query: ImportRunsQuery = {}
+): Promise<
+    | { success: true; rows: ImportRunRow[]; total: number; limit: number; offset: number }
+    | { success: false; message: string }
+> {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return { success: false, message: 'Usuario no autenticado' }
+
+    const limit = Math.max(1, Math.min(200, Math.floor(query.limit ?? 50)))
+    const offset = Math.max(0, Math.floor(query.offset ?? 0))
+
+    let q = supabase
+        .from('import_runs')
+        .select('step, file_name, file_hash_sha256, created_at, success, record_count, result_message', { count: 'exact' })
+        .order('created_at', { ascending: false })
+
+    if (query.step && query.step !== 'all') {
+        q = q.eq('step', query.step)
+    }
+
+    const { data, error, count } = await q.range(offset, offset + limit - 1)
+    if (error) return { success: false, message: error.message }
+
+    return {
+        success: true,
+        rows: ((data ?? []) as unknown as ImportRunRow[]),
+        total: count ?? 0,
+        limit,
+        offset,
+    }
 }
 
 // Utility to convert Excel serial date to JS Date

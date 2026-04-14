@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 // import { Button } from '@/components/ui/button' // Removed
 // import { Card, ... } from '@/components/ui/card' // Removed
 // import { Alert, ... } from '@/components/ui/alert' // Removed
-import { getLatestImportRuns, importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult, ImportStep } from '@/app/actions/import-legacy'
+import { getImportRuns, getLatestImportRuns, importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult, ImportStep } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
 async function sha256Hex(buf: ArrayBuffer): Promise<string> {
@@ -27,6 +27,12 @@ export default function ImportPage() {
     const [isUploading, setIsUploading] = useState(false)
     const [importResult, setImportResult] = useState<ImportResult | null>(null)
     const [latestRuns, setLatestRuns] = useState<Partial<Record<ImportStep, { file_name: string | null; created_at: string; success: boolean; record_count: number | null }>>>({})
+    const [historyIsOpen, setHistoryIsOpen] = useState(true)
+    const [historyLoading, setHistoryLoading] = useState(false)
+    const [historyRows, setHistoryRows] = useState<Array<{ file_name: string | null; created_at: string; success: boolean; record_count: number | null; file_hash_sha256: string | null; result_message: string | null }>>([])
+    const [historyTotal, setHistoryTotal] = useState(0)
+    const [historyOffset, setHistoryOffset] = useState(0)
+    const historyLimit = 50
 
     const steps: { id: ImportStep; label: string; description: string }[] = [
         { id: 'suppliers', label: '1. Proveedores', description: 'Base de datos de proveedores' },
@@ -53,6 +59,30 @@ export default function ImportPage() {
             cancelled = true
         }
     }, [])
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadHistory = async () => {
+            setHistoryLoading(true)
+            try {
+                const res = await getImportRuns({ step: currentStep, limit: historyLimit, offset: historyOffset })
+                if (cancelled) return
+                if (res.success) {
+                    setHistoryRows(res.rows)
+                    setHistoryTotal(res.total)
+                }
+            } finally {
+                if (!cancelled) setHistoryLoading(false)
+            }
+        }
+
+        if (historyIsOpen) loadHistory()
+
+        return () => {
+            cancelled = true
+        }
+    }, [currentStep, historyIsOpen, historyOffset])
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -115,6 +145,15 @@ export default function ImportPage() {
             setImportResult(result)
             const res = await getLatestImportRuns()
             if (res.success) setLatestRuns(res.runs as any)
+            // refrescar historial del apartado actual
+            if (historyIsOpen) {
+                setHistoryOffset(0)
+                const hist = await getImportRuns({ step: currentStep, limit: historyLimit, offset: 0 })
+                if (hist.success) {
+                    setHistoryRows(hist.rows)
+                    setHistoryTotal(hist.total)
+                }
+            }
             if (result.success) {
                 // Optional: clear data after success
             }
@@ -131,7 +170,9 @@ export default function ImportPage() {
             setCurrentStep(steps[currentIndex + 1].id as ImportStep)
             setFileData([])
             setFileName(null)
+            setFileHashSha256(null)
             setImportResult(null)
+            setHistoryOffset(0)
         }
     }
 
@@ -210,6 +251,92 @@ export default function ImportPage() {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="rounded-lg border border-blue-200 bg-white/60">
+                                <button
+                                    type="button"
+                                    onClick={() => setHistoryIsOpen((v) => !v)}
+                                    className="w-full min-h-12 px-3 py-2 flex items-center justify-between gap-3 text-left"
+                                >
+                                    <div className="flex flex-col">
+                                        <span className="font-semibold text-blue-900 text-xs">Archivos ya importados</span>
+                                        <span className="text-[11px] text-blue-700/90">
+                                            {historyTotal > 0 ? `${historyTotal} importaciones registradas` : 'Sin historial'}
+                                        </span>
+                                    </div>
+                                    <span className="text-xs font-semibold text-blue-900">{historyIsOpen ? 'Ocultar' : 'Ver'}</span>
+                                </button>
+
+                                {historyIsOpen && (
+                                    <div className="border-t border-blue-200/60 p-2">
+                                        {historyLoading ? (
+                                            <div className="flex items-center gap-2 text-xs text-blue-800 px-2 py-2">
+                                                <LoadingSpinner size="sm" />
+                                                Cargando historial...
+                                            </div>
+                                        ) : historyRows.length === 0 ? (
+                                            <div className="text-xs text-blue-800 px-2 py-2">No hay importaciones registradas para este apartado.</div>
+                                        ) : (
+                                            <div className="max-h-[260px] overflow-auto">
+                                                {historyRows.map((r, idx) => (
+                                                    <div key={`${r.created_at}-${idx}`} className="px-2 py-2 border-b border-blue-200/40 last:border-0">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="min-w-0">
+                                                                <div className="text-[11px] font-semibold text-blue-900 truncate">
+                                                                    {r.file_name ?? '—'}
+                                                                </div>
+                                                                <div className="text-[10px] text-blue-700/90">
+                                                                    {new Date(r.created_at).toLocaleString('es-ES')}
+                                                                    {typeof r.record_count === 'number' ? ` · ${r.record_count} filas` : ''}
+                                                                </div>
+                                                            </div>
+                                                            <div className={cn("shrink-0 text-[10px] font-bold px-2 py-1 rounded-full border", r.success ? "text-emerald-700 border-emerald-200 bg-emerald-50" : "text-rose-700 border-rose-200 bg-rose-50")}>
+                                                                {r.success ? 'OK' : 'FALLÓ'}
+                                                            </div>
+                                                        </div>
+                                                        {(r.file_hash_sha256 || r.result_message) && (
+                                                            <div className="mt-1 space-y-1">
+                                                                {r.file_hash_sha256 && (
+                                                                    <div className="text-[10px] text-zinc-500 font-mono">
+                                                                        SHA256: {r.file_hash_sha256.slice(0, 8)}…{r.file_hash_sha256.slice(-8)}
+                                                                    </div>
+                                                                )}
+                                                                {r.result_message && (
+                                                                    <div className="text-[10px] text-blue-800/90 line-clamp-2">
+                                                                        {r.result_message}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {historyTotal > historyLimit && (
+                                            <div className="mt-2 grid grid-cols-2 gap-2">
+                                                <button
+                                                    type="button"
+                                                    className="min-h-12 rounded-md border border-blue-200 bg-white text-blue-900 text-xs font-semibold hover:bg-blue-50 disabled:opacity-50"
+                                                    disabled={historyOffset <= 0 || historyLoading}
+                                                    onClick={() => setHistoryOffset((o) => Math.max(0, o - historyLimit))}
+                                                >
+                                                    Anterior
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="min-h-12 rounded-md border border-blue-200 bg-white text-blue-900 text-xs font-semibold hover:bg-blue-50 disabled:opacity-50"
+                                                    disabled={historyOffset + historyLimit >= historyTotal || historyLoading}
+                                                    onClick={() => setHistoryOffset((o) => o + historyLimit)}
+                                                >
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                             <p>Para <strong>{steps.find(s => s.id === currentStep)?.label}</strong>, el archivo debe contener estas columnas:</p>
                             {currentStep === 'suppliers' && (
                                 <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded">
