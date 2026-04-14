@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-13 (KDS: aviso sonoro nuevas líneas pendientes)
+**Última actualización:** 2026-04-14 (KDS: logo pie = alternar pantalla completa tipo F11)
+
+- [x] **KDS pie: logo alterna pantalla completa (2026-04-14)**: El botón del logo en la fila fija inferior llama a `requestFullscreen` / `exitFullscreen` (y prefijos webkit/ms) sobre `document.documentElement`, equivalente práctico a pulsar **F11** (entrar si no hay fullscreen, salir si ya lo hay).
 
 - [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). `nombre_cliente` debajo de «HACE…» con `KdsStickerBannerText` (Teko, **blanco sin trazo**; gris en cabecera apagada comanda finalizada), caja fija y escala con `ResizeObserver`.
 

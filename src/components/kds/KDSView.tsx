@@ -456,25 +456,39 @@ export default function KDSView() {
                         type="button"
                         onClick={async () => {
                             try {
-                                if (document.fullscreenElement) {
-                                    await document.exitFullscreen();
+                                const d = document as Document & {
+                                    webkitFullscreenElement?: Element | null;
+                                    msFullscreenElement?: Element | null;
+                                    webkitExitFullscreen?: () => Promise<void>;
+                                    msExitFullscreen?: () => Promise<void>;
+                                };
+                                const root = document.documentElement as HTMLElement & {
+                                    webkitRequestFullscreen?: () => Promise<void> | void;
+                                    msRequestFullscreen?: () => Promise<void> | void;
+                                };
+
+                                const inFs =
+                                    !!document.fullscreenElement ||
+                                    !!d.webkitFullscreenElement ||
+                                    !!d.msFullscreenElement;
+
+                                if (inFs) {
+                                    if (document.fullscreenElement) await document.exitFullscreen();
+                                    else if (d.webkitFullscreenElement) await d.webkitExitFullscreen?.();
+                                    else if (d.msFullscreenElement) await d.msExitFullscreen?.();
                                     return;
                                 }
-                                const anyDoc = document as any;
-                                if (anyDoc.webkitFullscreenElement) {
-                                    await anyDoc.webkitExitFullscreen?.();
-                                    return;
-                                }
-                                if (anyDoc.msFullscreenElement) {
-                                    await anyDoc.msExitFullscreen?.();
-                                }
+
+                                if (root.requestFullscreen) await root.requestFullscreen();
+                                else if (root.webkitRequestFullscreen) await root.webkitRequestFullscreen();
+                                else if (root.msRequestFullscreen) await root.msRequestFullscreen();
                             } catch {
                                 // no-op
                             }
                         }}
                         className="flex min-h-[48px] min-w-[48px] items-center justify-center shrink-0 rounded-xl bg-white/0 hover:bg-white/5 active:bg-white/10 transition"
-                        title="Salir de pantalla completa"
-                        aria-label="Salir de pantalla completa"
+                        title="Pantalla completa (como F11)"
+                        aria-label="Alternar pantalla completa"
                     >
                         <Image src="/icons/logo-white.png" alt="Bar Marbella" width={52} height={52} className="object-contain drop-shadow-lg opacity-90" />
                     </button>
