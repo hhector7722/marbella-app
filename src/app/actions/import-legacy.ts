@@ -512,8 +512,18 @@ export async function importRecipes(
                     errors.push(`Receta ya existe (omitida): ${recipeName}`)
                     continue
                 }
-                const { error: updErr } = await supabase.from('recipes').update(insertPayload as never).eq('id', existing.id)
+                const { data: updatedRow, error: updErr } = await supabase
+                    .from('recipes')
+                    .update(insertPayload as never)
+                    .eq('id', existing.id)
+                    .select('id')
+                    .maybeSingle()
                 if (updErr) throw new Error(updErr.message)
+                if (!updatedRow?.id) {
+                    throw new Error(
+                        'No se pudo sobreescribir la receta (0 filas actualizadas). Esto suele indicar RLS bloqueando UPDATE o falta de policy SELECT para UPDATE.'
+                    )
+                }
                 recipeId = existing.id
             } else {
                 const { data: newRecipe, error: recipeError } = await supabase
@@ -576,8 +586,27 @@ export async function importRecipes(
             if (!recipeId) throw new Error('No se pudo resolver recipeId')
 
             if (existing?.id && overwriteExisting) {
-                const { error: delErr } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
+                const { data: beforeLines, error: beforeErr } = await supabase
+                    .from('recipe_ingredients')
+                    .select('id')
+                    .eq('recipe_id', recipeId)
+                if (beforeErr) throw new Error(beforeErr.message)
+
+                const beforeCount = beforeLines?.length ?? 0
+
+                const { data: deletedLines, error: delErr } = await supabase
+                    .from('recipe_ingredients')
+                    .delete()
+                    .eq('recipe_id', recipeId)
+                    .select('id')
                 if (delErr) throw new Error(delErr.message)
+
+                const deletedCount = deletedLines?.length ?? 0
+                if (beforeCount > 0 && deletedCount === 0) {
+                    throw new Error(
+                        'No se pudieron reemplazar ingredientes (0 filas borradas). Esto suele indicar RLS bloqueando DELETE.'
+                    )
+                }
             }
 
             if (linesToInsert.length > 0) {
