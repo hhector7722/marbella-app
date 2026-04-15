@@ -113,6 +113,7 @@ export default function ImportPage() {
     const [historyTotal, setHistoryTotal] = useState(0)
     const [historyOffset, setHistoryOffset] = useState(0)
     const historyLimit = 50
+    const [overwriteExistingRecipes, setOverwriteExistingRecipes] = useState(false)
 
     const steps: { id: ImportStep; label: string; description: string }[] = [
         { id: 'suppliers', label: '1. Proveedores', description: 'Base de datos de proveedores' },
@@ -260,7 +261,7 @@ export default function ImportPage() {
             } else if (currentStep === 'treasury') {
                 result = await importInitialMovements(fileData, meta)
             } else if (currentStep === 'recipes') {
-                result = await importRecipes(fileData, meta)
+                result = await importRecipes(fileData, meta, { overwriteExisting: overwriteExistingRecipes })
             } else {
                 result = { success: false, message: "Este paso aún no está implementado." }
             }
@@ -296,6 +297,7 @@ export default function ImportPage() {
             setFileHashSha256(null)
             setImportResult(null)
             setHistoryOffset(0)
+            setOverwriteExistingRecipes(false)
         }
     }
 
@@ -480,6 +482,17 @@ export default function ImportPage() {
                             )}
                             {currentStep === 'recipes' && (
                                 <div className="space-y-2 text-xs">
+                                    <label className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white/60 px-3 py-2 min-h-12 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={overwriteExistingRecipes}
+                                            onChange={(e) => setOverwriteExistingRecipes(e.target.checked)}
+                                            className="h-4 w-4"
+                                        />
+                                        <span className="text-[11px] font-semibold text-blue-900">
+                                            Sobreescribir receta si ya existe (actualiza datos y reemplaza ingredientes)
+                                        </span>
+                                    </label>
                                     <ul className="list-disc list-inside font-mono bg-white/50 p-2 rounded space-y-1">
                                         <li><strong>nombre_receta</strong> (req): mismo valor en cada fila del mismo plato</li>
                                         <li>categoria, precio_barra, precio_pavelló, raciones</li>

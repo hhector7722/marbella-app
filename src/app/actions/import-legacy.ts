@@ -18,6 +18,10 @@ export type ImportMeta = {
     fileHashSha256?: string | null
 }
 
+export type ImportRecipesOptions = {
+    overwriteExisting?: boolean
+}
+
 type ImportRunRow = {
     step: ImportStep
     file_name: string | null
@@ -366,7 +370,11 @@ export async function importProducts(data: Record<string, any>[], meta?: ImportM
     return result
 }
 
-export async function importRecipes(data: Record<string, any>[], meta?: ImportMeta): Promise<ImportResult> {
+export async function importRecipes(
+    data: Record<string, any>[],
+    meta?: ImportMeta,
+    options?: ImportRecipesOptions
+): Promise<ImportResult> {
     const supabase = await createClient()
     const {
         data: { user },
@@ -434,13 +442,16 @@ export async function importRecipes(data: Record<string, any>[], meta?: ImportMe
     const errors: string[] = []
     let successCount = 0
 
+    const overwriteExisting = options?.overwriteExisting === true
+
     for (const [, { displayName: recipeName, rows }] of groups) {
         try {
-            const { data: existing } = await supabase.from('recipes').select('id').ilike('name', recipeName).maybeSingle()
-            if (existing) {
-                errors.push(`Receta ya existe (omitida): ${recipeName}`)
-                continue
-            }
+            const { data: existing, error: existingErr } = await supabase
+                .from('recipes')
+                .select('id')
+                .ilike('name', recipeName)
+                .maybeSingle()
+            if (existingErr) throw new Error(existingErr.message)
 
             const header = rows[0]
             const categoryRaw = getCell(header, ['categoria', 'category', 'categoría'])
@@ -495,14 +506,26 @@ export async function importRecipes(data: Record<string, any>[], meta?: ImportMe
                 errors.push(`Receta "${recipeName}": parece catalán pero falta GEMINI_API_KEY; no se tradujo.`)
             }
 
-            const { data: newRecipe, error: recipeError } = await supabase
-                .from('recipes')
-                .insert(insertPayload as never)
-                .select('id')
-                .single()
+            let recipeId: string | null = null
+            if (existing?.id) {
+                if (!overwriteExisting) {
+                    errors.push(`Receta ya existe (omitida): ${recipeName}`)
+                    continue
+                }
+                const { error: updErr } = await supabase.from('recipes').update(insertPayload as never).eq('id', existing.id)
+                if (updErr) throw new Error(updErr.message)
+                recipeId = existing.id
+            } else {
+                const { data: newRecipe, error: recipeError } = await supabase
+                    .from('recipes')
+                    .insert(insertPayload as never)
+                    .select('id')
+                    .single()
 
-            if (recipeError) throw new Error(recipeError.message)
-            if (!newRecipe?.id) throw new Error('Inserción sin id')
+                if (recipeError) throw new Error(recipeError.message)
+                if (!newRecipe?.id) throw new Error('Inserción sin id')
+                recipeId = newRecipe.id
+            }
 
             const linesToInsert: {
                 recipe_id: string
@@ -542,12 +565,19 @@ export async function importRecipes(data: Record<string, any>[], meta?: ImportMe
                 const unitDb = unit === 'ud' ? 'ud' : unit
                 const qh = qty / 2
                 linesToInsert.push({
-                    recipe_id: newRecipe.id,
+                    recipe_id: recipeId!,
                     ingredient_id: id,
                     quantity_gross: qty,
                     quantity_half: qh,
                     unit: unitDb,
                 })
+            }
+
+            if (!recipeId) throw new Error('No se pudo resolver recipeId')
+
+            if (existing?.id && overwriteExisting) {
+                const { error: delErr } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
+                if (delErr) throw new Error(delErr.message)
             }
 
             if (linesToInsert.length > 0) {
