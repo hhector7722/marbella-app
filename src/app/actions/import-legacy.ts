@@ -86,6 +86,61 @@ export async function getLatestImportRuns(): Promise<{ success: true; runs: Part
     return { success: true, runs }
 }
 
+function isProbablyCatalan(s: string): boolean {
+    const t = (s || '').toLowerCase()
+    // Heurística simple (suficiente para fichas típicas)
+    return (
+        t.includes('netejar') ||
+        t.includes("d'aigua") ||
+        t.includes('aigua calenta') ||
+        t.includes('vaixella') ||
+        t.includes("l'esquerre") ||
+        t.includes('a l\'esquerre') ||
+        t.includes('tassa') ||
+        t.includes('cullereta') ||
+        t.includes('paletina') ||
+        t.includes('abocar') ||
+        t.includes('comprobar') || // mezcla frecuente en fichas
+        t.includes('hi ha')
+    )
+}
+
+async function translateCaToEsIfNeeded(text: string): Promise<string> {
+    const cleaned = String(text ?? '').trim()
+    if (!cleaned) return ''
+    if (!isProbablyCatalan(cleaned)) return cleaned
+
+    const geminiKey = process.env.GEMINI_API_KEY
+    if (!geminiKey) {
+        // No rompemos la importación: devolvemos original, pero el caller añadirá aviso.
+        return cleaned
+    }
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`
+    const prompt = `Traduce el siguiente texto del catalán al español. Mantén el formato (saltos de línea y viñetas). Devuelve SOLO el texto traducido, sin comillas ni markdown.\n\n${cleaned}`
+
+    const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1 },
+    }
+
+    const res = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    })
+
+    if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`Gemini traducción falló: ${errText}`)
+    }
+
+    const data = await res.json()
+    const out = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    if (typeof out !== 'string' || !out.trim()) return cleaned
+    return out.trim()
+}
+
 export async function getImportRuns(
     query: ImportRunsQuery = {}
 ): Promise<
@@ -392,8 +447,8 @@ export async function importRecipes(data: Record<string, any>[], meta?: ImportMe
             const saleRaw = getCell(header, ['precio_barra', 'sale_price', 'pvp', 'precio'])
             const pavRaw = getCell(header, ['precio_pavelló', 'precio_pavello', 'sales_price_pavello', 'pvp_pavello'])
             const servingsRaw = getCell(header, ['raciones', 'servings', 'comensales'])
-            const elaboration = getCell(header, ['elaboration', 'elaboración', 'preparacion'])
-            const presentation = getCell(header, ['presentation', 'presentación'])
+            const elaboration = getCell(header, ['elaboration', 'elaboración', 'elaboracion', 'elaboració', 'elaboracio', 'preparacion'])
+            const presentation = getCell(header, ['presentation', 'presentación', 'presentacion', 'presentació', 'presentacio'])
             const halfRaw = getCell(header, ['has_half_ration', 'media_racion', 'mitades'])
 
             const category = categoryRaw != null ? String(categoryRaw).trim() : ''
@@ -409,18 +464,35 @@ export async function importRecipes(data: Record<string, any>[], meta?: ImportMe
                           .toLowerCase()
                           .match(/^(1|si|sí|true|yes)$/) != null
 
+            const rawElab = elaboration != null ? String(elaboration) : ''
+            const rawPres = presentation != null ? String(presentation) : ''
+            let elabDb = rawElab
+            let presDb = rawPres
+            let translationWarn = false
+            try {
+                elabDb = await translateCaToEsIfNeeded(rawElab)
+                presDb = await translateCaToEsIfNeeded(rawPres)
+                translationWarn = (isProbablyCatalan(rawElab) || isProbablyCatalan(rawPres)) && !process.env.GEMINI_API_KEY
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e)
+                errors.push(`Receta "${recipeName}": no se pudo traducir catalán→es (se guarda texto original): ${msg}`)
+            }
+
             const insertPayload: Record<string, unknown> = {
                 name: recipeName,
                 category: category || 'Principales',
                 sale_price,
                 sales_price_pavello,
                 servings,
-                elaboration: elaboration != null ? String(elaboration) : '',
-                presentation: presentation != null ? String(presentation) : '',
+                elaboration: elabDb,
+                presentation: presDb,
                 has_half_ration,
                 sale_price_half: 0,
                 sale_price_half_pavello: 0,
                 target_food_cost_pct: 30,
+            }
+            if (translationWarn) {
+                errors.push(`Receta "${recipeName}": parece catalán pero falta GEMINI_API_KEY; no se tradujo.`)
             }
 
             const { data: newRecipe, error: recipeError } = await supabase

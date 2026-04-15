@@ -19,6 +19,86 @@ async function sha256Hex(buf: ArrayBuffer): Promise<string> {
         .join('')
 }
 
+function looksLikeRecipeFichaCsv(text: string): boolean {
+    const t = text.toLowerCase()
+    return t.includes('ingredients;') && (t.includes('elaboració') || t.includes('elaboracio')) && t.includes('presentació')
+}
+
+function parseRecipeFichaCsvToImportRows(text: string): any[] {
+    const lines = text
+        .split(/\r?\n/)
+        .map((l) => l.trimEnd())
+        .filter((l) => l.length > 0)
+
+    const rows = lines.map((l) => l.split(';'))
+
+    // Nombre receta = primera celda no vacía que no sea cabecera "Ingredients"
+    const firstNameRow = rows.find((r) => {
+        const c0 = (r[0] ?? '').trim()
+        if (!c0) return false
+        const c0n = c0.toLowerCase()
+        return c0n !== 'ingredients' && c0n !== 'ingredientes'
+    })
+    const recipeName = (firstNameRow?.[0] ?? '').trim()
+
+    const headerIdx = rows.findIndex((r) => (r[0] ?? '').trim().toLowerCase() === 'ingredients')
+    if (!recipeName || headerIdx === -1) return []
+
+    // Ingredientes: desde después de cabecera hasta antes de "Elaboració"
+    const elaborIdx = rows.findIndex((r) => (r[0] ?? '').trim().toLowerCase().startsWith('elabor'))
+    const ingStart = headerIdx + 1
+    const ingEnd = elaborIdx === -1 ? rows.length : elaborIdx
+    const ingredientRows: Array<{ ingrediente_nombre: string; cantidad: string; unidad: string }> = []
+
+    for (let i = ingStart; i < ingEnd; i++) {
+        const r = rows[i]
+        const name = (r[0] ?? '').trim()
+        const unit = (r[1] ?? '').trim()
+        const qty = (r[2] ?? '').trim()
+        if (!name) continue
+        // saltar filas separadoras
+        if (name.toLowerCase() === 'ingredients') continue
+        ingredientRows.push({ ingrediente_nombre: name, unidad: unit, cantidad: qty })
+    }
+
+    // Elaboración / Presentación: filas con bullets tras el separador
+    let elaboration = ''
+    let presentation = ''
+    if (elaborIdx !== -1) {
+        const elabLines: string[] = []
+        const presLines: string[] = []
+        for (let i = elaborIdx + 1; i < rows.length; i++) {
+            const r = rows[i]
+            const e = (r[0] ?? '').trim()
+            const p = (r[4] ?? '').trim()
+            if (e) elabLines.push(e.replace(/^[•‣\-\s]+/, '').trim())
+            if (p) presLines.push(p.replace(/^[•‣\-\s]+/, '').trim())
+        }
+        elaboration = elabLines.filter(Boolean).join('\n')
+        presentation = presLines.filter(Boolean).join('\n')
+    }
+
+    const base = {
+        nombre_receta: recipeName,
+        // claves que importRecipes ya reconoce
+        'elaboración': elaboration,
+        'presentación': presentation,
+    }
+
+    if (ingredientRows.length === 0) {
+        return [base]
+    }
+
+    return ingredientRows.map((ir, idx) => ({
+        ...base,
+        ingrediente_nombre: ir.ingrediente_nombre,
+        cantidad: ir.cantidad,
+        unidad: ir.unidad,
+        // solo por ahorrar payload; pero seguimos poniendo el texto en la primera fila del grupo
+        ...(idx === 0 ? {} : { 'elaboración': '', 'presentación': '' }),
+    }))
+}
+
 export default function ImportPage() {
     const [currentStep, setCurrentStep] = useState<ImportStep>('suppliers')
     const [fileData, setFileData] = useState<any[]>([])
@@ -102,6 +182,49 @@ export default function ImportPage() {
                 // No bloqueamos import por hash; solo ayuda visual.
                 setFileHashSha256(null)
             })
+
+        // Caso especial: CSV "Ficha" de recetas con ';' (como el ejemplo)
+        if (currentStep === 'recipes' && file.name.toLowerCase().endsWith('.csv')) {
+            file
+                .text()
+                .then((txt) => {
+                    if (looksLikeRecipeFichaCsv(txt)) {
+                        const parsed = parseRecipeFichaCsvToImportRows(txt)
+                        if (parsed.length === 0) {
+                            setImportResult({ success: false, message: 'CSV de ficha detectado pero no se pudo interpretar. Revisa el formato.' })
+                            setFileData([])
+                        } else {
+                            setFileData(parsed)
+                        }
+                        setIsUploading(false)
+                        return
+                    }
+
+                    // fallback a XLSX si no parece ficha
+                    const reader = new FileReader()
+                    reader.onload = (evt) => {
+                        try {
+                            const bstr = evt.target?.result
+                            const wb = XLSX.read(bstr, { type: 'binary' })
+                            const wsname = wb.SheetNames[0]
+                            const ws = wb.Sheets[wsname]
+                            const data = XLSX.utils.sheet_to_json(ws)
+                            setFileData(data)
+                        } catch (err) {
+                            console.error("Error parsing file", err)
+                            setImportResult({ success: false, message: "Error al leer el archivo. Asegúrate de que es un Excel/CSV válido." })
+                        } finally {
+                            setIsUploading(false)
+                        }
+                    }
+                    reader.readAsBinaryString(file)
+                })
+                .catch(() => {
+                    setImportResult({ success: false, message: 'No se pudo leer el CSV.' })
+                    setIsUploading(false)
+                })
+            return
+        }
 
         const reader = new FileReader()
         reader.onload = (evt) => {
