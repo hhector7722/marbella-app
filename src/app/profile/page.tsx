@@ -245,7 +245,16 @@ function ProfileContent() {
                                     className="shadow-lg bg-white ring-2 ring-white"
                                 />
                                 {showAccountSection && (
-                                    <label className="inline-flex w-fit max-w-full items-center justify-center rounded-md border border-white/80 px-2 py-1 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 text-center leading-tight">
+                                    <label
+                                        className={cn(
+                                            'w-full shrink-0',
+                                            'flex items-center justify-center text-center',
+                                            'min-h-[48px] px-3 py-2',
+                                            'rounded-xl border border-white/80',
+                                            'text-white text-[10px] font-black uppercase tracking-widest leading-tight',
+                                            'hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95'
+                                        )}
+                                    >
                                         <input
                                             type="file"
                                             accept="image/jpeg,image/png,image/webp,image/gif"
