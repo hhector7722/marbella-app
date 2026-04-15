@@ -236,7 +236,7 @@ function ProfileContent() {
                     <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 pt-3 pb-3 px-4">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
 
-                        <div className="relative z-10 flex items-start gap-3 min-h-0">
+                        <div className="relative z-10 grid grid-cols-[5rem_1fr_5rem] items-start gap-3 min-h-0">
                             <div className="shrink-0 flex flex-col items-center gap-1.5 w-20">
                                 <Avatar
                                     src={profile.avatar_url}
@@ -258,7 +258,7 @@ function ProfileContent() {
                                 )}
                             </div>
 
-                            <div className="flex-1 min-w-0 flex flex-col items-center justify-center self-stretch pt-0.5 pb-0.5">
+                            <div className="min-w-0 flex flex-col items-center justify-center self-stretch pt-0.5 pb-0.5">
                                 <h1
                                     className="w-full text-center font-black uppercase tracking-tight leading-tight line-clamp-3 text-[clamp(0.65rem,3.2vw,1rem)] px-1"
                                     title={fullName}
@@ -274,6 +274,9 @@ function ProfileContent() {
                                     </span>
                                 )}
                             </div>
+
+                            {/* Spacer para centrar el título respecto a todo el ancho */}
+                            <div className="shrink-0 w-20" />
                         </div>
                     </div>
 
