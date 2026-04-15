@@ -350,7 +350,16 @@ function RecipeDetailContent() {
             <div className={`max-w-6xl mx-auto w-full flex-1 flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden ${!isRestricted ? 'min-h-0' : ''}`}>
                 {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
                 <div className="bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
-                    <div className="relative flex items-center justify-center w-fit">
+                    <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
+                        {/* Zona izquierda: nombre receta */}
+                        <div className="min-w-0">
+                            <div className="text-white font-black text-[13px] md:text-[15px] leading-tight truncate">
+                                {recipe.name}
+                            </div>
+                        </div>
+
+                        {/* Centro: foto + navegación */}
+                        <div className="relative flex items-center justify-center w-fit shrink-0">
                         <button 
                             onClick={handlePreviousRecipe} 
                             disabled={currentRecipeIndex <= 0} 
@@ -383,6 +392,10 @@ function RecipeDetailContent() {
                         >
                             <ChevronRight className="w-8 h-8" />
                         </button>
+                    </div>
+
+                        {/* Zona derecha: reserva (mantiene centrado) */}
+                        <div className="min-w-0" />
                     </div>
 
                     <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
