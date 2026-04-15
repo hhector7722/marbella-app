@@ -665,7 +665,30 @@ function RecipeDetailContent() {
                             </select>
                         </div>
                         <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
-                        <div className="flex-1 overflow-y-auto space-y-1">{filteredIngredients.map(ing => (<button key={ing.id} onClick={() => handleAddIngredient(ing.id, addIngredientUnit)} className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"><span className="font-bold">{ing.name}</span><span>{ing.current_price}€/{ing.purchase_unit || 'ud'}</span></button>))}</div>
+                        <div className="flex-1 overflow-y-auto space-y-1">
+                            {filteredIngredients.map(ing => {
+                                const purchaseUnit = ing.purchase_unit || 'ud';
+                                const effective = `${Number(ing.current_price || 0).toFixed(4)}€/${purchaseUnit}`;
+                                const packInfo =
+                                    ing.supplier_pricing_mode === 'per_pack'
+                                        ? `${Number(ing.pack_price || 0).toFixed(2)}€/pack`
+                                        : null;
+
+                                return (
+                                    <button
+                                        key={ing.id}
+                                        onClick={() => handleAddIngredient(ing.id, addIngredientUnit)}
+                                        className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"
+                                    >
+                                        <span className="font-bold">{ing.name}</span>
+                                        <span className="text-right">
+                                            <span className="font-bold text-gray-700">{effective}</span>
+                                            {packInfo && <span className="block text-[10px] text-gray-400">{packInfo}</span>}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             )}

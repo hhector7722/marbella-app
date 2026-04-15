@@ -14,6 +14,11 @@ interface Ingredient {
     current_price: number;
     purchase_unit: string;
     unit_type: string; // Added field
+    supplier_pricing_mode?: 'per_purchase_unit' | 'per_pack';
+    pack_price?: number | null;
+    pack_units?: number | null;
+    pack_unit_size_qty?: number | null;
+    pack_unit_size_unit?: string | null;
     category: string;
     waste_percentage: number;
     image_url: string | null;
@@ -22,10 +27,74 @@ interface Ingredient {
     recommended_stock?: number | null;
 }
 
-const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'cl', 'u'];
+const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'u', 'lt'];
 const ORDER_UNITS = ['pack', 'caja', 'unidad', 'kg', 'pieza', 'lt', 'g', 'ml', 'cl'];
 const STANDARD_SUPPLIERS = ['Santa Teresa', 'Sant Aniol', 'Ametller', 'Sanilec', 'Shers', 'Panabad', 'Zander', 'Videla', 'Abril', 'Nestle', 'Fritz Ravich', 'Paellador', 'Vins Pons'];
 const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas'];
+
+function normalizeUnit(u: string | null | undefined): 'g' | 'kg' | 'ml' | 'l' | 'ud' | 'cl' {
+    const s = String(u ?? '').trim().toLowerCase();
+    if (s === 'u' || s === 'ud' || s === 'un' || s === 'unidad') return 'ud';
+    if (s === 'lt' || s === 'l' || s === 'litro') return 'l';
+    if (s === 'ml') return 'ml';
+    if (s === 'cl') return 'cl';
+    if (s === 'kg' || s === 'kilo') return 'kg';
+    if (s === 'g' || s === 'gr') return 'g';
+    return s as any;
+}
+
+function convertQty(qty: number, fromUnit: string, toUnit: string): number | null {
+    const from = normalizeUnit(fromUnit);
+    const to = normalizeUnit(toUnit);
+    if (!Number.isFinite(qty)) return null;
+    if (from === to) return qty;
+
+    // cl es volumen (centilitros)
+    const fromVol = from === 'ml' || from === 'l' || from === 'cl';
+    const toVol = to === 'ml' || to === 'l' || to === 'cl';
+    if (fromVol && toVol) {
+        const asMl =
+            from === 'l' ? qty * 1000 :
+            from === 'cl' ? qty * 10 :
+            qty;
+        if (to === 'ml') return asMl;
+        if (to === 'cl') return asMl / 10;
+        return asMl / 1000;
+    }
+
+    const fromMass = from === 'g' || from === 'kg';
+    const toMass = to === 'g' || to === 'kg';
+    if (fromMass && toMass) {
+        if (from === 'g' && to === 'kg') return qty / 1000;
+        if (from === 'kg' && to === 'g') return qty * 1000;
+        return qty;
+    }
+
+    if (from === 'ud' && to === 'ud') return qty;
+    return null;
+}
+
+function computeEffectivePriceFromPack(args: {
+    packPrice: number | null | undefined;
+    packUnits: number | null | undefined;
+    unitSizeQty: number | null | undefined;
+    unitSizeUnit: string | null | undefined;
+    purchaseUnit: string | null | undefined;
+}): number | null {
+    const packPrice = Number(args.packPrice);
+    const packUnits = Number(args.packUnits);
+    if (!Number.isFinite(packPrice) || packPrice < 0) return null;
+    if (!Number.isFinite(packUnits) || packUnits <= 0) return null;
+    const sizeQty = args.unitSizeQty == null ? 1 : Number(args.unitSizeQty);
+    if (!Number.isFinite(sizeQty) || sizeQty <= 0) return null;
+    const sizeUnit = args.unitSizeUnit ?? 'ud';
+    const purchaseUnit = args.purchaseUnit ?? 'ud';
+    const converted = convertQty(sizeQty, sizeUnit, purchaseUnit);
+    if (converted == null || converted <= 0) return null;
+    const denom = packUnits * converted;
+    if (!Number.isFinite(denom) || denom <= 0) return null;
+    return packPrice / denom;
+}
 
 export default function IngredientsPage() {
     const supabase = createClient();
@@ -43,7 +112,7 @@ export default function IngredientsPage() {
     const [isCustomSupplier2, setIsCustomSupplier2] = useState(false);
     const [customSupplier2Name, setCustomSupplier2Name] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos' });
+    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
 
@@ -85,19 +154,36 @@ export default function IngredientsPage() {
         if (!editingIngredient) return;
         setSaving(true);
         try {
-            const { error } = await supabase.from('ingredients').update({
+            const mode = (editForm.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
+            const payload: any = {
                 name: editForm.name,
                 supplier: editForm.supplier || null,
                 supplier_2: editForm.supplier_2 || null,
-                current_price: editForm.current_price,
                 purchase_unit: editForm.purchase_unit,
-                unit_type: editForm.purchase_unit, // Sync unit_type with purchase_unit
+                unit_type: editForm.purchase_unit, // se normaliza en DB también
                 category: editForm.category,
                 waste_percentage: editForm.waste_percentage || 0,
                 image_url: editForm.image_url,
                 order_unit: editForm.order_unit || 'unidad',
-                recommended_stock: editForm.recommended_stock || null
-            }).eq('id', editingIngredient.id);
+                recommended_stock: editForm.recommended_stock || null,
+                supplier_pricing_mode: mode,
+            };
+
+            if (mode === 'per_pack') {
+                payload.pack_price = editForm.pack_price ?? null;
+                payload.pack_units = editForm.pack_units ?? null;
+                payload.pack_unit_size_qty = editForm.pack_unit_size_qty ?? null;
+                payload.pack_unit_size_unit = editForm.pack_unit_size_unit ?? null;
+                // current_price lo deriva el trigger
+            } else {
+                payload.current_price = editForm.current_price;
+                payload.pack_price = null;
+                payload.pack_units = null;
+                payload.pack_unit_size_qty = null;
+                payload.pack_unit_size_unit = null;
+            }
+
+            const { error } = await supabase.from('ingredients').update(payload).eq('id', editingIngredient.id);
             if (error) throw error;
             toast.success('Guardado'); setEditingIngredient(null); fetchIngredients();
         } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
@@ -108,20 +194,37 @@ export default function IngredientsPage() {
         setIsCreating(true);
         const unit = newIngredient.purchase_unit || 'kg';
         try {
-            const { error } = await supabase.from('ingredients').insert({
+            const mode = (newIngredient.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
+            const payload: any = {
                 ...newIngredient,
                 supplier: newIngredient.supplier || null,
                 supplier_2: newIngredient.supplier_2 || null,
-                current_price: newIngredient.current_price || 0,
                 purchase_unit: unit,
-                unit_type: unit, // Provide missing unit_type
+                unit_type: unit, // DB también lo normaliza
                 category: newIngredient.category || 'Alimentos',
                 waste_percentage: newIngredient.waste_percentage || 0,
                 order_unit: newIngredient.order_unit || 'unidad',
-                recommended_stock: newIngredient.recommended_stock || null
-            });
+                recommended_stock: newIngredient.recommended_stock || null,
+                supplier_pricing_mode: mode,
+            };
+
+            if (mode === 'per_pack') {
+                payload.pack_price = newIngredient.pack_price ?? null;
+                payload.pack_units = newIngredient.pack_units ?? null;
+                payload.pack_unit_size_qty = newIngredient.pack_unit_size_qty ?? null;
+                payload.pack_unit_size_unit = newIngredient.pack_unit_size_unit ?? null;
+                delete payload.current_price; // lo deriva el trigger
+            } else {
+                payload.current_price = newIngredient.current_price || 0;
+                payload.pack_price = null;
+                payload.pack_units = null;
+                payload.pack_unit_size_qty = null;
+                payload.pack_unit_size_unit = null;
+            }
+
+            const { error } = await supabase.from('ingredients').insert(payload);
             if (error) throw error;
-            toast.success('Creado'); setShowCreateModal(false); setNewIngredient({ category: 'Alimentos' }); fetchIngredients();
+            toast.success('Creado'); setShowCreateModal(false); setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' }); fetchIngredients();
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
 
@@ -296,16 +399,123 @@ export default function IngredientsPage() {
                                 </button>
                             </div>
                             <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" />
-                            <div className="flex gap-2">
-                                <div className="w-1/2">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
-                                    <input type="number" step="0.01" value={editForm.current_price || ''} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
-                                </div>
-                                <div className="w-1/2">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
-                                    <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
-                                </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Cómo viene el precio</label>
+                                <select
+                                    value={editForm.supplier_pricing_mode || 'per_purchase_unit'}
+                                    onChange={e => setEditForm({ ...editForm, supplier_pricing_mode: e.target.value as any })}
+                                    className="w-full p-3 border rounded-2xl bg-white font-bold"
+                                >
+                                    <option value="per_purchase_unit">Por unidad (€/kg, €/L, €/ud)</option>
+                                    <option value="per_pack">Por pack / caja</option>
+                                </select>
                             </div>
+                            <div className="flex gap-2">
+                                {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
+                                    <>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio pack (€)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editForm.pack_price ?? ''}
+                                                onChange={e => setEditForm({ ...editForm, pack_price: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                            />
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades por pack</label>
+                                            <input
+                                                type="number"
+                                                step="1"
+                                                value={editForm.pack_units ?? ''}
+                                                onChange={e => setEditForm({ ...editForm, pack_units: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editForm.current_price || ''}
+                                                onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                            />
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
+                                            <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">
+                                                {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                            </select>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' && (
+                                <>
+                                    <div className="flex gap-2">
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Tamaño por unidad</label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                value={editForm.pack_unit_size_qty ?? ''}
+                                                onChange={e => setEditForm({ ...editForm, pack_unit_size_qty: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                                placeholder="Ej: 330"
+                                            />
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad tamaño</label>
+                                            <select
+                                                value={editForm.pack_unit_size_unit || 'ud'}
+                                                onChange={e => setEditForm({ ...editForm, pack_unit_size_unit: e.target.value })}
+                                                className="w-full p-3 border rounded-2xl bg-white"
+                                            >
+                                                <option value="ud">ud</option>
+                                                <option value="ml">ml</option>
+                                                <option value="cl">cl</option>
+                                                <option value="l">L</option>
+                                                <option value="g">g</option>
+                                                <option value="kg">kg</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 items-end">
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (para recetas)</label>
+                                            <select
+                                                value={editForm.purchase_unit}
+                                                onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })}
+                                                className="w-full p-3 border rounded-2xl bg-white"
+                                            >
+                                                {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio efectivo (auto)</label>
+                                            <div className="w-full p-3 border rounded-2xl bg-white font-black text-[#5E35B1]">
+                                                {(() => {
+                                                    const effective = computeEffectivePriceFromPack({
+                                                        packPrice: editForm.pack_price ?? null,
+                                                        packUnits: editForm.pack_units ?? null,
+                                                        unitSizeQty: editForm.pack_unit_size_qty ?? null,
+                                                        unitSizeUnit: editForm.pack_unit_size_unit ?? null,
+                                                        purchaseUnit: editForm.purchase_unit ?? null,
+                                                    });
+                                                    if (effective == null) return '—';
+                                                    const u = normalizeUnit(editForm.purchase_unit);
+                                                    return `${effective.toFixed(4)}€/${u}`;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
@@ -414,16 +624,126 @@ export default function IngredientsPage() {
                         <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
                             <div className="flex justify-center"><div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300"><Upload className="text-gray-400" /><input type="file" className="absolute inset-0 opacity-0" onChange={(e) => handleImageUpload(e, 'create')} /></div></div>
                             <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Nombre" />
-                            <div className="flex gap-2">
-                                <div className="w-1/2">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
-                                    <input type="number" step="0.01" value={newIngredient.current_price || ''} onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Precio" />
-                                </div>
-                                <div className="w-1/2">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
-                                    <select onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
-                                </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Cómo viene el precio</label>
+                                <select
+                                    value={newIngredient.supplier_pricing_mode || 'per_purchase_unit'}
+                                    onChange={e => setNewIngredient({ ...newIngredient, supplier_pricing_mode: e.target.value as any })}
+                                    className="w-full p-3 border rounded-2xl bg-white font-bold"
+                                >
+                                    <option value="per_purchase_unit">Por unidad (€/kg, €/L, €/ud)</option>
+                                    <option value="per_pack">Por pack / caja</option>
+                                </select>
                             </div>
+                            {(newIngredient.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
+                                <>
+                                    <div className="flex gap-2">
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio pack (€)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={newIngredient.pack_price ?? ''}
+                                                onChange={e => setNewIngredient({ ...newIngredient, pack_price: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                                placeholder="Ej: 3,25"
+                                            />
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades por pack</label>
+                                            <input
+                                                type="number"
+                                                step="1"
+                                                value={newIngredient.pack_units ?? ''}
+                                                onChange={e => setNewIngredient({ ...newIngredient, pack_units: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                                placeholder="Ej: 100"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Tamaño por unidad</label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                value={newIngredient.pack_unit_size_qty ?? ''}
+                                                onChange={e => setNewIngredient({ ...newIngredient, pack_unit_size_qty: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                className="w-full p-3 border rounded-2xl font-bold"
+                                                placeholder="Ej: 330"
+                                            />
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad tamaño</label>
+                                            <select
+                                                value={newIngredient.pack_unit_size_unit || 'ud'}
+                                                onChange={e => setNewIngredient({ ...newIngredient, pack_unit_size_unit: e.target.value })}
+                                                className="w-full p-3 border rounded-2xl bg-white"
+                                            >
+                                                <option value="ud">ud</option>
+                                                <option value="ml">ml</option>
+                                                <option value="cl">cl</option>
+                                                <option value="l">L</option>
+                                                <option value="g">g</option>
+                                                <option value="kg">kg</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 items-end">
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (para recetas)</label>
+                                            <select
+                                                value={newIngredient.purchase_unit || 'ud'}
+                                                onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })}
+                                                className="w-full p-3 border rounded-2xl bg-white"
+                                            >
+                                                {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio efectivo (auto)</label>
+                                            <div className="w-full p-3 border rounded-2xl bg-white font-black text-[#5E35B1]">
+                                                {(() => {
+                                                    const effective = computeEffectivePriceFromPack({
+                                                        packPrice: newIngredient.pack_price ?? null,
+                                                        packUnits: newIngredient.pack_units ?? null,
+                                                        unitSizeQty: newIngredient.pack_unit_size_qty ?? null,
+                                                        unitSizeUnit: newIngredient.pack_unit_size_unit ?? null,
+                                                        purchaseUnit: newIngredient.purchase_unit ?? null,
+                                                    });
+                                                    if (effective == null) return '—';
+                                                    const u = normalizeUnit(newIngredient.purchase_unit);
+                                                    return `${effective.toFixed(4)}€/${u}`;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <div className="w-1/2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={newIngredient.current_price || ''}
+                                            onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })}
+                                            className="w-full p-3 border rounded-2xl font-bold"
+                                            placeholder="Precio"
+                                        />
+                                    </div>
+                                    <div className="w-1/2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
+                                        <select
+                                            value={newIngredient.purchase_unit || 'kg'}
+                                            onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })}
+                                            className="w-full p-3 border rounded-2xl bg-white"
+                                        >
+                                            {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
                                 <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
