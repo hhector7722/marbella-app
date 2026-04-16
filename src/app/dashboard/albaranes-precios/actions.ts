@@ -219,7 +219,16 @@ Si una línea es ilegible, omítela. Usa punto decimal.`
 }
 
 export async function applyAlbaranPriceUpdatesAction(
-  updates: { ingredientId: string; newPrice: number; newPurchaseUnit: string }[]
+  updates: {
+    ingredientId: string
+    pricingMode: 'per_purchase_unit' | 'per_pack'
+    // per_purchase_unit: current_price; per_pack: pack_price
+    price: number
+    purchaseUnit: string
+    packUnits?: number | null
+    packUnitSizeQty?: number | null
+    packUnitSizeUnit?: string | null
+  }[]
 ): Promise<{ success: boolean; message: string; applied?: number; errors?: string[] }> {
   const gate = await gateManager()
   if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
@@ -234,24 +243,39 @@ export async function applyAlbaranPriceUpdatesAction(
 
   for (const u of updates) {
     if (!u.ingredientId) continue
-    const price = Number(u.newPrice)
+    const price = Number(u.price)
     if (!Number.isFinite(price) || price < 0) {
       errors.push(`Precio inválido para ingrediente ${u.ingredientId}`)
       continue
     }
-    const unit = String(u.newPurchaseUnit || 'kg').trim().toLowerCase()
-    const allowed = ['kg', 'g', 'l', 'ml', 'cl', 'u']
+    const unit = String(u.purchaseUnit || 'kg').trim().toLowerCase()
+    const allowed = ['kg', 'g', 'l', 'ml', 'cl', 'ud']
     const pu = allowed.includes(unit) ? unit : 'kg'
 
-    const { error } = await supabase
-      .from('ingredients')
-      .update({
-        current_price: price,
-        purchase_unit: pu,
-        unit_type: pu,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', u.ingredientId)
+    const pricingMode = u.pricingMode === 'per_pack' ? 'per_pack' : 'per_purchase_unit'
+
+    const payload: Record<string, any> = {
+      purchase_unit: pu,
+      unit_type: pu,
+      updated_at: new Date().toISOString(),
+      supplier_pricing_mode: pricingMode,
+    }
+
+    if (pricingMode === 'per_pack') {
+      payload.pack_price = price
+      payload.pack_units = u.packUnits ?? null
+      payload.pack_unit_size_qty = u.packUnitSizeQty ?? null
+      payload.pack_unit_size_unit = u.packUnitSizeUnit ?? null
+      // current_price lo deriva el trigger en BD
+    } else {
+      payload.current_price = price
+      payload.pack_price = null
+      payload.pack_units = null
+      payload.pack_unit_size_qty = null
+      payload.pack_unit_size_unit = null
+    }
+
+    const { error } = await supabase.from('ingredients').update(payload).eq('id', u.ingredientId)
 
     if (error) {
       errors.push(`${u.ingredientId}: ${error.message}`)

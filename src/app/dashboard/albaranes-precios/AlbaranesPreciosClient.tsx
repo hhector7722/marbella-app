@@ -11,12 +11,16 @@ import {
   type ProposalLine,
 } from './actions'
 
-const UNIT_OPTIONS = ['kg', 'g', 'l', 'ml', 'cl', 'u'] as const
+const UNIT_OPTIONS = ['kg', 'g', 'l', 'ml', 'cl', 'ud'] as const
 
 type RowState = ProposalLine & {
   selectedIngredientId: string | null
   editedPrice: number
   editedUnit: string
+  pricingMode: 'per_purchase_unit' | 'per_pack'
+  packUnits: number | null
+  packUnitSizeQty: number | null
+  packUnitSizeUnit: string
   decision: 'pending' | 'accepted' | 'discarded'
 }
 
@@ -28,6 +32,10 @@ function lineToRowState(p: ProposalLine): RowState {
     selectedIngredientId: selected,
     editedPrice: p.proposedPrice,
     editedUnit: p.proposedUnit,
+    pricingMode: 'per_purchase_unit',
+    packUnits: null,
+    packUnitSizeQty: null,
+    packUnitSizeUnit: 'ud',
     decision: 'pending',
   }
 }
@@ -101,8 +109,13 @@ export default function AlbaranesPreciosClient({
       .filter((r) => r.selectedIngredientId)
       .map((r) => ({
         ingredientId: r.selectedIngredientId!,
-        newPrice: r.editedPrice,
-        newPurchaseUnit: r.editedUnit,
+        pricingMode: r.pricingMode,
+        // En per_purchase_unit, esto es current_price. En per_pack, es pack_price.
+        price: r.editedPrice,
+        purchaseUnit: r.editedUnit,
+        packUnits: r.pricingMode === 'per_pack' ? r.packUnits : null,
+        packUnitSizeQty: r.pricingMode === 'per_pack' ? r.packUnitSizeQty : null,
+        packUnitSizeUnit: r.pricingMode === 'per_pack' ? r.packUnitSizeUnit : null,
       }))
     if (payload.length === 0) {
       toast.error('Marca al menos una línea como aceptada con ingrediente seleccionado')
@@ -286,6 +299,74 @@ export default function AlbaranesPreciosClient({
                         <p className="text-xs text-amber-700">Sin coincidencias automáticas; elige manualmente si añades el ingrediente en /ingredients.</p>
                       )}
                     </label>
+                    <div className="space-y-2">
+                      <label className="block space-y-1">
+                        <span className="text-[10px] font-bold uppercase text-zinc-400">Cómo viene el precio</span>
+                        <select
+                          value={row.pricingMode}
+                          onChange={(e) =>
+                            updateRow(row.lineId, {
+                              pricingMode: e.target.value as RowState['pricingMode'],
+                              // Defaults seguros para pack:
+                              packUnits: e.target.value === 'per_pack' ? (row.packUnits ?? row.cantidad ?? 1) : null,
+                              packUnitSizeQty: e.target.value === 'per_pack' ? (row.packUnitSizeQty ?? 1) : null,
+                              packUnitSizeUnit: e.target.value === 'per_pack' ? (row.packUnitSizeUnit ?? 'ud') : 'ud',
+                            })
+                          }
+                          className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
+                        >
+                          <option value="per_purchase_unit">Por unidad (€/kg, €/L, €/ud)</option>
+                          <option value="per_pack">Por pack / caja (precio total del pack)</option>
+                        </select>
+                      </label>
+
+                      {row.pricingMode === 'per_pack' && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="block space-y-1">
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidades por pack</span>
+                            <input
+                              type="number"
+                              step="1"
+                              value={row.packUnits ?? ''}
+                              onChange={(e) =>
+                                updateRow(row.lineId, { packUnits: e.target.value === '' ? null : Number(e.target.value) })
+                              }
+                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                              placeholder="Ej: 24"
+                            />
+                          </label>
+                          <label className="block space-y-1">
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Tamaño por unidad</span>
+                            <input
+                              type="number"
+                              step="0.001"
+                              value={row.packUnitSizeQty ?? ''}
+                              onChange={(e) =>
+                                updateRow(row.lineId, { packUnitSizeQty: e.target.value === '' ? null : Number(e.target.value) })
+                              }
+                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                              placeholder="Ej: 330"
+                            />
+                          </label>
+                          <label className="block space-y-1">
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad tamaño</span>
+                            <select
+                              value={row.packUnitSizeUnit}
+                              onChange={(e) => updateRow(row.lineId, { packUnitSizeUnit: e.target.value })}
+                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
+                            >
+                              <option value="ud">ud</option>
+                              <option value="ml">ml</option>
+                              <option value="cl">cl</option>
+                              <option value="l">L</option>
+                              <option value="g">g</option>
+                              <option value="kg">kg</option>
+                            </select>
+                          </label>
+                          <div className="col-span-1" />
+                        </div>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <label className="block space-y-1">
                         <span className="text-[10px] font-bold uppercase text-zinc-400">Precio €</span>

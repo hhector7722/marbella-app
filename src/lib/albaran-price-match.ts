@@ -87,7 +87,7 @@ export function pickSuggestedCandidate(candidates: MatchCandidate[]): string | n
   return best.id
 }
 
-/** Unidad de compra alineada con `STANDARD_UNITS` en ingredientes (kg, g, l, ml, cl, u). */
+/** Unidad de compra alineada con `STANDARD_UNITS` en ingredientes (kg, g, l, ml, cl, ud). */
 export function canonicalPurchaseUnit(raw: string | undefined | null): string {
   const s = String(raw ?? '')
     .trim()
@@ -100,7 +100,7 @@ export function canonicalPurchaseUnit(raw: string | undefined | null): string {
   if (['l', 'lt', 'litro', 'litros'].includes(s)) return 'l'
   if (['ml', 'mililitro', 'mililitros'].includes(s)) return 'ml'
   if (['cl', 'cls', 'centilitro', 'centilitros'].includes(s)) return 'cl'
-  if (['ud', 'uds', 'u', 'un', 'unidad', 'unidades', 'bote', 'botes', 'pieza', 'piezas'].includes(s)) return 'u'
+  if (['ud', 'uds', 'u', 'un', 'unidad', 'unidades', 'bote', 'botes', 'pieza', 'piezas'].includes(s)) return 'ud'
   return 'kg'
 }
 

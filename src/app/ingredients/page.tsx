@@ -402,21 +402,24 @@ export default function IngredientsPage() {
                             </div>
                             <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" />
                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Cómo viene el precio</label>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio según proveedor (albarán)</label>
                                 <select
                                     value={editForm.supplier_pricing_mode || 'per_purchase_unit'}
                                     onChange={e => setEditForm({ ...editForm, supplier_pricing_mode: e.target.value as any })}
                                     className="w-full p-3 border rounded-2xl bg-white font-bold"
                                 >
-                                    <option value="per_purchase_unit">Por unidad (€/kg, €/L, €/ud)</option>
-                                    <option value="per_pack">Por pack / caja</option>
+                                    <option value="per_purchase_unit">Directo (€/kg, €/L, €/ud)</option>
+                                    <option value="per_pack">Por formato (caja / pack / botella / lata…)</option>
                                 </select>
+                                <p className="text-[11px] text-gray-500 mt-1 px-1.5">
+                                    Si el albarán viene por caja/pack/botella/lata, el coste en recetas se calcula usando el contenido.
+                                </p>
                             </div>
                             <div className="flex gap-2">
                                 {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
                                     <>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio pack (€)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio del proveedor (€)</label>
                                             <input
                                                 type="number"
                                                 step="0.01"
@@ -426,7 +429,7 @@ export default function IngredientsPage() {
                                             />
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades por pack</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades dentro</label>
                                             <input
                                                 type="number"
                                                 step="1"
@@ -439,7 +442,7 @@ export default function IngredientsPage() {
                                 ) : (
                                     <>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad base)</label>
                                             <input
                                                 type="number"
                                                 step="0.01"
@@ -449,7 +452,7 @@ export default function IngredientsPage() {
                                             />
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base</label>
                                             <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">
                                                 {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                             </select>
@@ -461,7 +464,7 @@ export default function IngredientsPage() {
                                 <>
                                     <div className="flex gap-2">
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Tamaño por unidad</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Contenido por unidad</label>
                                             <input
                                                 type="number"
                                                 step="0.001"
@@ -472,7 +475,7 @@ export default function IngredientsPage() {
                                             />
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad tamaño</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad contenido</label>
                                             <select
                                                 value={editForm.pack_unit_size_unit || 'ud'}
                                                 onChange={e => setEditForm({ ...editForm, pack_unit_size_unit: e.target.value })}
@@ -489,7 +492,7 @@ export default function IngredientsPage() {
                                     </div>
                                     <div className="flex gap-2 items-end">
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (para recetas)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (recetas)</label>
                                             <select
                                                 value={editForm.purchase_unit}
                                                 onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })}
@@ -499,7 +502,7 @@ export default function IngredientsPage() {
                                             </select>
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio efectivo (auto)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Coste unitario (auto)</label>
                                             <div className="w-full p-3 border rounded-2xl bg-white font-black text-[#5E35B1]">
                                                 {(() => {
                                                     const effective = computeEffectivePriceFromPack({
@@ -627,21 +630,24 @@ export default function IngredientsPage() {
                             <div className="flex justify-center"><div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300"><Upload className="text-gray-400" /><input type="file" className="absolute inset-0 opacity-0" onChange={(e) => handleImageUpload(e, 'create')} /></div></div>
                             <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Nombre" />
                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Cómo viene el precio</label>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio según proveedor (albarán)</label>
                                 <select
                                     value={newIngredient.supplier_pricing_mode || 'per_purchase_unit'}
                                     onChange={e => setNewIngredient({ ...newIngredient, supplier_pricing_mode: e.target.value as any })}
                                     className="w-full p-3 border rounded-2xl bg-white font-bold"
                                 >
-                                    <option value="per_purchase_unit">Por unidad (€/kg, €/L, €/ud)</option>
-                                    <option value="per_pack">Por pack / caja</option>
+                                    <option value="per_purchase_unit">Directo (€/kg, €/L, €/ud)</option>
+                                    <option value="per_pack">Por formato (caja / pack / botella / lata…)</option>
                                 </select>
+                                <p className="text-[11px] text-gray-500 mt-1 px-1.5">
+                                    Si el albarán viene por caja/pack/botella/lata, el coste en recetas se calcula usando el contenido.
+                                </p>
                             </div>
                             {(newIngredient.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
                                 <>
                                     <div className="flex gap-2">
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio pack (€)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio del proveedor (€)</label>
                                             <input
                                                 type="number"
                                                 step="0.01"
@@ -652,7 +658,7 @@ export default function IngredientsPage() {
                                             />
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades por pack</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades dentro</label>
                                             <input
                                                 type="number"
                                                 step="1"
@@ -665,7 +671,7 @@ export default function IngredientsPage() {
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Tamaño por unidad</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Contenido por unidad</label>
                                             <input
                                                 type="number"
                                                 step="0.001"
@@ -676,7 +682,7 @@ export default function IngredientsPage() {
                                             />
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad tamaño</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad contenido</label>
                                             <select
                                                 value={newIngredient.pack_unit_size_unit || 'ud'}
                                                 onChange={e => setNewIngredient({ ...newIngredient, pack_unit_size_unit: e.target.value })}
@@ -693,7 +699,7 @@ export default function IngredientsPage() {
                                     </div>
                                     <div className="flex gap-2 items-end">
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (para recetas)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (recetas)</label>
                                             <select
                                                 value={newIngredient.purchase_unit || 'ud'}
                                                 onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })}
@@ -703,7 +709,7 @@ export default function IngredientsPage() {
                                             </select>
                                         </div>
                                         <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio efectivo (auto)</label>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Coste unitario (auto)</label>
                                             <div className="w-full p-3 border rounded-2xl bg-white font-black text-[#5E35B1]">
                                                 {(() => {
                                                     const effective = computeEffectivePriceFromPack({
@@ -724,7 +730,7 @@ export default function IngredientsPage() {
                             ) : (
                                 <div className="flex gap-2">
                                     <div className="w-1/2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad)</label>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad base)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -735,7 +741,7 @@ export default function IngredientsPage() {
                                         />
                                     </div>
                                     <div className="w-1/2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base</label>
                                         <select
                                             value={newIngredient.purchase_unit || 'kg'}
                                             onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })}
