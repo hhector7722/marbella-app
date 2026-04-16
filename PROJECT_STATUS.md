@@ -4,7 +4,9 @@
 
 - [x] **KDS pie: logo alterna pantalla completa (2026-04-14)**: El botón del logo en la fila fija inferior llama a `requestFullscreen` / `exitFullscreen` (y prefijos webkit/ms) sobre `document.documentElement`, equivalente práctico a pulsar **F11** (entrar si no hay fullscreen, salir si ya lo hay).
 
-- [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). `nombre_cliente` debajo de «HACE…» con `KdsStickerBannerText` (Teko, **blanco sin trazo**; gris en cabecera apagada comanda finalizada), caja fija y escala con `ResizeObserver`.
+- [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12 / 2026-04-16)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). Se eliminó el literal «HACE» (solo se muestra el tiempo). `nombre_cliente` con `KdsStickerBannerText` (Teko, **blanco sin trazo**; gris en cabecera apagada comanda finalizada), caja fija y escala con `ResizeObserver`.
+
+- [x] **KDS: hechos/anulados visibles sin iconos (2026-04-16)**: Al marcar un artículo como hecho, permanece visible con **tachado verde** y texto verde; al pulsarlo se **recupera** (vuelve a pendiente). Los anulados desde TPV se muestran con **tachado rojo** y texto rojo (sin iconos ni rellenos). La comanda **no** se auto-finaliza al completar líneas: solo termina al pulsar **Finalizar** (botón verde claro con opacidad).
 
 - [x] **KDS: aviso sonoro nuevas líneas pendientes (2026-04-13)**: En `useKDS` se emite evento `kds:new_pending_line` cuando entra `kds_order_lines` `estado='pendiente'`. En `KDSView` hay toggle táctil (48px+) para activar/silenciar y desbloqueo autoplay-safe con WebAudio (`useKdsNotificationSound`, rate-limit ~900ms).
 

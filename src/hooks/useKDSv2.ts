@@ -30,7 +30,7 @@ function buildSyntheticUnitId(parts: {
   id_ticket: string;
   articulo_id: number;
   notas_norm: string;
-  kind: 'pendiente' | 'cancelado';
+  kind: 'pendiente' | 'terminado' | 'cancelado';
   idx: number;
 }) {
   return [
@@ -105,6 +105,7 @@ export function useKDSv2() {
           const lineas: KDSOrderLine[] = [];
           rows.forEach((r) => {
             const pending = Math.max(0, Number(r.qty_added ?? 0) - Number(r.qty_done ?? 0));
+            const done = Math.max(0, Number(r.qty_done ?? 0));
             const cancel = Math.max(0, Number(r.qty_cancel_notice ?? 0));
             const nombre = (r.producto_nombre ?? '').trim() || `Artículo ${r.articulo_id}`;
             const notas = (r.notas_norm ?? '').trim();
@@ -126,6 +127,27 @@ export function useKDSv2() {
                 estado: 'pendiente',
                 created_at: o.opened_at,
                 completed_at: null,
+              });
+            }
+
+            // Mostrar hechos en verde (no desaparecen de la comanda). Se pueden recuperar (item_undone).
+            for (let i = 0; i < done; i++) {
+              lineas.push({
+                id: buildSyntheticUnitId({
+                  id_ticket: o.id_ticket,
+                  articulo_id: r.articulo_id,
+                  notas_norm: notas,
+                  kind: 'terminado',
+                  idx: i + 1,
+                }),
+                kds_order_id: o.id_ticket,
+                producto_nombre: nombre,
+                cantidad: 1,
+                notas: notas ? notas : null,
+                departamento: null,
+                estado: 'terminado',
+                created_at: o.opened_at,
+                completed_at: o.completed_at,
               });
             }
 
