@@ -27,8 +27,10 @@ interface Ingredient {
     recommended_stock?: number | null;
 }
 
-const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'u', 'lt'];
-const ORDER_UNITS = ['pack', 'caja', 'unidad', 'kg', 'pieza', 'lt', 'g', 'ml', 'cl'];
+// Unidades canónicas (sin duplicados tipo lt/l o u/ud)
+const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
+// Unidad de pedido (humana/operativa). Mantener sin duplicados.
+const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
 const STANDARD_SUPPLIERS = ['Santa Teresa', 'Sant Aniol', 'Ametller', 'Sanilec', 'Shers', 'Panabad', 'Zander', 'Videla', 'Abril', 'Nestle', 'Fritz Ravich', 'Paellador', 'Vins Pons'];
 const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas'];
 
