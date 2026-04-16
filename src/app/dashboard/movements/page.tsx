@@ -118,6 +118,7 @@ export default function MovementsPage() {
     });
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+    const [dateSortDir, setDateSortDir] = useState<'asc' | 'desc'>('desc');
 
     const parseLocalSafe = (dateStr: string | null) => {
         if (!dateStr) return new Date();
@@ -256,7 +257,7 @@ export default function MovementsPage() {
         if (!currentBoxStatus.loading) {
             fetchFilteredMovements();
         }
-    }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter, currentBoxStatus.loading]);
+    }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter, dateSortDir, currentBoxStatus.loading]);
 
     async function fetchFilteredMovements() {
         setLoading(true);
@@ -333,7 +334,7 @@ export default function MovementsPage() {
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
-                .order('created_at', { ascending: false })
+                .order('created_at', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
 
             const { data: pageMoves, error: fetchError } = await q;
@@ -532,7 +533,7 @@ export default function MovementsPage() {
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
-                .order('created_at', { ascending: false })
+                .order('created_at', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
 
             if (error) throw error;
@@ -592,17 +593,53 @@ export default function MovementsPage() {
         }
     };
 
-    const printFilteredTable = () => {
+    const printFilteredTable = async () => {
         if (shareBusy) return;
         setShareBusy('print');
         try {
-            const table = tableRef.current;
-            if (!table) {
-                toast.error('No se ha encontrado la tabla para imprimir.');
+            const all = await fetchAllFilteredMovementsForExport();
+            if (all.length === 0) {
+                toast.error('No hay movimientos para imprimir con el filtro actual.');
                 return;
             }
 
-            const html = table.outerHTML;
+            const rowsHtml = all.map((mov) => {
+                const d = new Date(mov.created_at);
+                const dateStr = isNaN(d.getTime()) ? '' : format(d, 'dd/MM/yyyy', { locale: es });
+
+                const concept = mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja');
+
+                const signedAmount =
+                    mov.type === 'income'
+                        ? `+${mov.amount.toFixed(2)}€`
+                        : mov.type === 'expense'
+                            ? `-${mov.amount.toFixed(2)}€`
+                            : `${mov.amount >= 0 ? '+' : ''}${mov.amount.toFixed(2)}€`;
+
+                const saldo = `${(mov.running_balance ?? 0).toFixed(2)}€`;
+
+                return `<tr>
+  <td>${dateStr}</td>
+  <td>${concept}</td>
+  <td>${signedAmount}</td>
+  <td>${saldo}</td>
+</tr>`;
+            }).join('\n');
+
+            const html = `<table>
+  <thead>
+    <tr>
+      <th>FECHA</th>
+      <th>CONCEPTO</th>
+      <th>IMPORTE</th>
+      <th>SALDO</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rowsHtml}
+  </tbody>
+</table>`;
+
             const iframe = document.createElement('iframe');
             iframe.setAttribute('aria-hidden', 'true');
             iframe.style.position = 'fixed';
@@ -642,6 +679,7 @@ export default function MovementsPage() {
         padding: 10px 12px;
         font-size: 12px;
         vertical-align: top;
+        text-align: center;
       }
       tbody tr:nth-child(even) td { background: #fafafa; }
       @media print {
@@ -886,7 +924,31 @@ export default function MovementsPage() {
                                     <table ref={tableRef} className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[20%] md:w-[22%] text-center">FECHA</th>
+                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[20%] md:w-[22%] text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setDateSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                                                        }}
+                                                        className={cn(
+                                                            "w-full min-h-12",
+                                                            "inline-flex items-center justify-center gap-1.5",
+                                                            "rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors",
+                                                            "outline-none"
+                                                        )}
+                                                        aria-label="Ordenar por fecha"
+                                                        title={dateSortDir === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                                                    >
+                                                        <span>FECHA</span>
+                                                        {dateSortDir === 'asc' ? (
+                                                            <ArrowUp className="w-3.5 h-3.5 opacity-90" strokeWidth={3} />
+                                                        ) : (
+                                                            <ArrowDown className="w-3.5 h-3.5 opacity-90" strokeWidth={3} />
+                                                        )}
+                                                    </button>
+                                                </th>
                                                 <th className="px-1 md:px-6 py-2 md:py-4 w-[44%] md:w-[38%] text-center">CONCEPTO</th>
                                                 <th className="px-0.5 md:px-6 py-2 md:py-4 text-center w-[18%] md:w-[20%]">IMPORTE</th>
                                                 <th className="px-1 md:px-8 py-2 md:py-4 text-center w-[18%] md:w-[20%]">SALDO</th>
