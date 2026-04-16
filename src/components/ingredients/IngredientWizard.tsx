@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/utils/supabase/client'
+import { toast } from 'sonner'
 
 export type IngredientWizardCategory = 'Bebida' | 'Comida' | 'Packaging'
+export type IngredientWizardHowCharged = 'kilo' | 'litro' | 'pack' | 'unidad'
 export type IngredientWizardPricing = 'per_purchase_unit' | 'per_pack'
 export type WizardBaseUnit = 'kg' | 'l' | 'ud'
 
 export type WizardDraft = {
-  category: IngredientWizardCategory
-  pricingMode: IngredientWizardPricing
+  name: string
+  category: IngredientWizardCategory | null
+  howCharged: IngredientWizardHowCharged | null
+  pricingMode: IngredientWizardPricing | null
   // Precio según proveedor:
   supplierPrice: number
   // Si viene por formato/caja:
@@ -93,187 +98,319 @@ function primaryBaseUnitForCategory(cat: IngredientWizardCategory): WizardBaseUn
 }
 
 export function IngredientWizard({
+  ingredientId: initialIngredientId,
   initialName,
-  onDone,
+  initialCategory,
+  initialHowCharged,
+  initialPricingMode,
+  onClose,
 }: {
+  ingredientId?: string | null
   initialName?: string
-  onDone: (result: WizardResult) => void
+  initialCategory?: IngredientWizardCategory | null
+  initialHowCharged?: IngredientWizardHowCharged | null
+  initialPricingMode?: IngredientWizardPricing | null
+  onClose?: () => void
 }) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+  const supabase = createClient()
+  const [ingredientId, setIngredientId] = useState<string | null>(initialIngredientId ?? null)
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+  const [saving, setSaving] = useState(false)
   const [draft, setDraft] = useState<WizardDraft>(() => ({
-    category: 'Bebida',
-    pricingMode: 'per_purchase_unit',
+    name: String(initialName ?? '').trim(),
+    category: initialCategory ?? null,
+    howCharged: initialHowCharged ?? null,
+    pricingMode: initialPricingMode ?? null,
     supplierPrice: 0,
     unitsInside: null,
     contentPerUnitQty: null,
     contentPerUnitUnit: 'ud',
-    baseUnit: 'l',
+    baseUnit: initialCategory ? primaryBaseUnitForCategory(initialCategory) : 'l',
   }))
 
   const unitCost = useMemo(() => computeUnitCost(draft), [draft])
 
-  const chips = (items: Array<{ id: string; label: string; onClick: () => void }>) => (
-    <div className="grid grid-cols-2 gap-2">
-      {items.map((it) => (
-        <button
-          key={it.id}
-          type="button"
-          onClick={it.onClick}
-          className={cn(
-            'min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-800',
-            'hover:bg-zinc-50 active:scale-[0.99]'
-          )}
-        >
-          {it.label}
-        </button>
-      ))}
-    </div>
-  )
-
-  function next() {
-    setStep((s) => (s === 4 ? 4 : ((s + 1) as any)))
+  async function upsertDraft(patch: Partial<WizardDraft>) {
+    setDraft((d) => ({ ...d, ...patch }))
   }
+
+  async function ensureIngredientId(name: string): Promise<string> {
+    if (ingredientId) return ingredientId
+    const clean = String(name || '').trim()
+    if (!clean) throw new Error('Nombre requerido')
+    setSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('ingredients')
+        .insert({
+          name: clean,
+          category: 'Alimentos',
+          current_price: 0,
+          purchase_unit: 'kg',
+          unit_type: 'kg',
+          waste_percentage: 0,
+          supplier_pricing_mode: 'per_purchase_unit',
+          order_unit: 'ud',
+        })
+        .select('id')
+        .single()
+      if (error) throw error
+      const id = data?.id as string
+      if (!id) throw new Error('No se pudo crear ingrediente')
+      setIngredientId(id)
+      return id
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function savePatch(patch: Record<string, any>) {
+    const id = await ensureIngredientId(draft.name)
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('ingredients').update(patch).eq('id', id)
+      if (error) throw error
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function advance() {
+    setStep((s) => (s === 5 ? 5 : ((s + 1) as any)))
+  }
+
   function back() {
     setStep((s) => (s === 1 ? 1 : ((s - 1) as any)))
   }
 
-  function commit() {
-    if (draft.pricingMode === 'per_purchase_unit') {
-      onDone({
-        supplier_pricing_mode: 'per_purchase_unit',
-        purchase_unit: draft.baseUnit,
-        current_price: unitCost ?? 0,
-      })
-      return
+  async function handleConfirmName() {
+    const clean = String(draft.name || '').trim()
+    if (!clean) return toast.error('Nombre requerido')
+    try {
+      const id = await ensureIngredientId(clean)
+      await supabase.from('ingredients').update({ name: clean }).eq('id', id)
+      advance()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error guardando nombre')
     }
-    onDone({
-      supplier_pricing_mode: 'per_pack',
-      purchase_unit: draft.baseUnit,
-      pack_price: draft.supplierPrice,
-      pack_units: draft.unitsInside,
-      pack_unit_size_qty: draft.contentPerUnitQty ?? 1,
-      pack_unit_size_unit: draft.contentPerUnitUnit ?? 'ud',
-    })
+  }
+
+  async function handlePickCategory(cat: IngredientWizardCategory) {
+    const dbCategory = cat === 'Bebida' ? 'Bebidas' : cat === 'Packaging' ? 'Packaging' : 'Alimentos'
+    try {
+      await upsertDraft({ category: cat, baseUnit: primaryBaseUnitForCategory(cat) })
+      await savePatch({ category: dbCategory })
+      advance()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error guardando categoría')
+    }
+  }
+
+  async function handlePickHowCharged(h: IngredientWizardHowCharged) {
+    try {
+      let pricingMode: IngredientWizardPricing = h === 'pack' ? 'per_pack' : 'per_purchase_unit'
+      let baseUnit: WizardBaseUnit = draft.baseUnit
+      if (h === 'kilo') baseUnit = 'kg'
+      if (h === 'litro') baseUnit = 'l'
+      if (h === 'unidad') baseUnit = 'ud'
+      if (h === 'pack') {
+        baseUnit = primaryBaseUnitForCategory(draft.category ?? 'Bebida')
+      }
+
+      await upsertDraft({
+        howCharged: h,
+        pricingMode,
+        baseUnit,
+        unitsInside: h === 'pack' ? (draft.unitsInside ?? 1) : null,
+        contentPerUnitQty:
+          h === 'pack'
+            ? (draft.contentPerUnitQty ?? (draft.category === 'Bebida' ? 330 : 1))
+            : null,
+        contentPerUnitUnit:
+          h === 'pack'
+            ? (draft.category === 'Bebida' ? 'ml' : 'ud')
+            : 'ud',
+      })
+
+      if (pricingMode === 'per_purchase_unit') {
+        await savePatch({
+          supplier_pricing_mode: 'per_purchase_unit',
+          purchase_unit: baseUnit,
+          unit_type: baseUnit,
+          pack_price: null,
+          pack_units: null,
+          pack_unit_size_qty: null,
+          pack_unit_size_unit: null,
+        })
+      } else {
+        await savePatch({
+          supplier_pricing_mode: 'per_pack',
+          purchase_unit: baseUnit,
+          unit_type: baseUnit,
+        })
+      }
+
+      advance()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error guardando modo proveedor')
+    }
+  }
+
+  async function handleSavePricingAndAdvance() {
+    try {
+      if (!draft.pricingMode) return toast.error('Falta seleccionar cómo cobra el proveedor')
+      if (draft.pricingMode === 'per_purchase_unit') {
+        if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
+        await savePatch({
+          current_price: draft.supplierPrice,
+          purchase_unit: draft.baseUnit,
+          unit_type: draft.baseUnit,
+        })
+        advance()
+        return
+      }
+
+      // per_pack
+      if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
+      if (!draft.unitsInside || draft.unitsInside <= 0) return toast.error('Unidades dentro inválido')
+      const qty = draft.contentPerUnitQty ?? 1
+      const unit = draft.contentPerUnitUnit ?? 'ud'
+      await savePatch({
+        pack_price: draft.supplierPrice,
+        pack_units: draft.unitsInside,
+        pack_unit_size_qty: qty,
+        pack_unit_size_unit: unit,
+        purchase_unit: draft.baseUnit,
+        unit_type: draft.baseUnit,
+      })
+      advance()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error guardando precio')
+    }
+  }
+
+  async function handleUploadImage(file: File) {
+    try {
+      const id = await ensureIngredientId(draft.name)
+      const fileExt = file.name.split('.').pop() || 'jpg'
+      const fileName = `ing-${id}-${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('ingredients').upload(fileName, file, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data } = supabase.storage.from('ingredients').getPublicUrl(fileName)
+      const publicUrl = data.publicUrl
+      await supabase.from('ingredients').update({ image_url: publicUrl }).eq('id', id)
+      toast.success('Imagen guardada')
+    } catch (e: any) {
+      toast.error(e?.message || 'Error subiendo imagen')
+    }
   }
 
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4">
-      <div className="space-y-1">
-        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400">Asistente</div>
-        <div className="text-lg font-black text-zinc-900 leading-tight">
-          {initialName ? `Configurar “${initialName}”` : 'Configurar ingrediente'}
-        </div>
+      <div className="space-y-2">
+        {step === 1 ? (
+          <input
+            value={draft.name}
+            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+            placeholder="Nombre del ingrediente"
+            className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
+            autoFocus
+          />
+        ) : (
+          <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 flex items-center">
+            <span className="font-black text-zinc-900">{draft.name || '—'}</span>
+          </div>
+        )}
       </div>
 
       {step === 1 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Qué es?</div>
-          {chips([
-            {
-              id: 'Bebida',
-              label: 'Bebida',
-              onClick: () =>
-                setDraft((d) => ({
-                  ...d,
-                  category: 'Bebida',
-                  baseUnit: 'l',
-                  contentPerUnitUnit: 'ml',
-                  contentPerUnitQty: d.contentPerUnitQty ?? 330,
-                })),
-            },
-            {
-              id: 'Comida',
-              label: 'Comida',
-              onClick: () =>
-                setDraft((d) => ({
-                  ...d,
-                  category: 'Comida',
-                  baseUnit: 'kg',
-                  contentPerUnitUnit: 'g',
-                  contentPerUnitQty: d.contentPerUnitQty ?? 250,
-                })),
-            },
-            {
-              id: 'Packaging',
-              label: 'Packaging / consumible',
-              onClick: () =>
-                setDraft((d) => ({
-                  ...d,
-                  category: 'Packaging',
-                  baseUnit: 'ud',
-                  contentPerUnitUnit: 'ud',
-                  contentPerUnitQty: 1,
-                })),
-            },
-            {
-              id: 'Siguiente',
-              label: 'Siguiente',
-              onClick: () => {
-                setDraft((d) => ({ ...d, baseUnit: primaryBaseUnitForCategory(d.category) }))
-                next()
-              },
-            },
-          ])}
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleConfirmName}
+            className="w-full min-h-12 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
+          >
+            Continuar
+          </button>
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo viene en el albarán?</div>
-          {chips([
-            {
-              id: 'Directo',
-              label: 'Directo (€/kg, €/L, €/ud)',
-              onClick: () => setDraft((d) => ({ ...d, pricingMode: 'per_purchase_unit' })),
-            },
-            {
-              id: 'Formato',
-              label: 'Botella / lata / caja',
-              onClick: () => setDraft((d) => ({ ...d, pricingMode: 'per_pack', unitsInside: d.unitsInside ?? 1 })),
-            },
-          ])}
-          <div className="flex gap-2">
-            <button type="button" onClick={back} className="min-h-12 px-4 rounded-xl border border-zinc-200 font-bold">
-              Atrás
+          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Qué es?</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handlePickCategory('Bebida')}
+              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+            >
+              Bebida
             </button>
-            <button type="button" onClick={next} className="min-h-12 flex-1 px-4 rounded-xl bg-[#36606F] text-white font-black">
-              Continuar
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handlePickCategory('Comida')}
+              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+            >
+              Comida
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handlePickCategory('Packaging')}
+              className="col-span-2 min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+            >
+              Packaging
             </button>
           </div>
+          <button type="button" onClick={back} className="min-h-12 w-full rounded-xl border border-zinc-200 font-bold">
+            Atrás
+          </button>
         </div>
       )}
 
       {step === 3 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Precio del albarán</div>
+          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo lo cobra el proveedor?</div>
           <div className="grid grid-cols-2 gap-2">
-            <label className="block space-y-1">
-              <span className="text-[10px] font-bold uppercase text-zinc-400">Precio (€)</span>
-              <input
-                type="number"
-                step="0.01"
-                value={draft.supplierPrice || ''}
-                onChange={(e) => setDraft((d) => ({ ...d, supplierPrice: toNumber(e.target.value) }))}
-                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad base (recetas)</span>
-              <select
-                value={draft.baseUnit}
-                onChange={(e) => setDraft((d) => ({ ...d, baseUnit: e.target.value as WizardBaseUnit }))}
-                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
-              >
-                <option value="kg">kg</option>
-                <option value="l">L</option>
-                <option value="ud">ud</option>
-              </select>
-            </label>
+            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('kilo')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
+              Por kilo
+            </button>
+            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('litro')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
+              Por litro
+            </button>
+            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('pack')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
+              Por pack
+            </button>
+            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('unidad')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
+              Por unidad
+            </button>
           </div>
+          <button type="button" onClick={back} className="min-h-12 w-full rounded-xl border border-zinc-200 font-bold">
+            Atrás
+          </button>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="space-y-3">
+          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Precio</div>
+          <label className="block space-y-1">
+            <span className="text-[10px] font-bold uppercase text-zinc-400">Precio (€)</span>
+            <input
+              type="number"
+              step="0.01"
+              value={draft.supplierPrice || ''}
+              onChange={(e) => setDraft((d) => ({ ...d, supplierPrice: toNumber(e.target.value) }))}
+              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+            />
+          </label>
 
           {draft.pricingMode === 'per_pack' && (
             <div className="space-y-3">
-              <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Contenido del formato</div>
+              <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Contenido del pack</div>
               <label className="block space-y-1">
                 <span className="text-[10px] font-bold uppercase text-zinc-400">Unidades dentro</span>
                 <div className="grid grid-cols-3 gap-2">
@@ -355,36 +492,52 @@ export function IngredientWizard({
           )}
 
           <div className="flex gap-2">
-            <button type="button" onClick={back} className="min-h-12 px-4 rounded-xl border border-zinc-200 font-bold">
+            <button type="button" onClick={back} className="min-h-12 flex-1 rounded-xl border border-zinc-200 font-bold">
               Atrás
             </button>
-            <button type="button" onClick={next} className="min-h-12 flex-1 px-4 rounded-xl bg-[#36606F] text-white font-black">
-              Continuar
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSavePricingAndAdvance}
+              className="min-h-12 flex-1 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
+            >
+              Guardar
             </button>
           </div>
         </div>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Resumen</div>
+          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Imagen (opcional)</div>
+          <label className="block">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) handleUploadImage(f)
+                e.target.value = ''
+              }}
+            />
+            <span className="inline-flex w-full min-h-12 items-center justify-center rounded-xl border border-zinc-200 bg-white font-black text-sm cursor-pointer hover:bg-zinc-50">
+              Subir imagen
+            </span>
+          </label>
           <div className="rounded-2xl border border-zinc-100 bg-white p-4">
             <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Coste unitario (auto)</div>
             <div className="text-2xl font-black text-[#36606F] mt-1">
               {unitCost == null ? '—' : `${unitCost.toFixed(4)}€ / ${draft.baseUnit}`}
             </div>
-            <div className="text-xs text-zinc-500 mt-2">
-              Esto es lo que usará el escandallo al convertir desde recetas (ml/g/ud) a la unidad base.
-            </div>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={back} className="min-h-12 px-4 rounded-xl border border-zinc-200 font-bold">
-              Atrás
-            </button>
-            <button type="button" onClick={commit} className="min-h-12 flex-1 px-4 rounded-xl bg-emerald-600 text-white font-black">
-              Guardar
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => onClose?.()}
+            className="w-full min-h-12 rounded-xl bg-emerald-600 text-white font-black"
+          >
+            Terminar
+          </button>
         </div>
       )}
     </div>
