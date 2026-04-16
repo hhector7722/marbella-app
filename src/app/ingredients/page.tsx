@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
+import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 
 interface Ingredient {
     id: string;
@@ -117,6 +118,8 @@ export default function IngredientsPage() {
     const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
+    const [editMode, setEditMode] = useState<'wizard' | 'expert'>('wizard');
+    const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
 
     useEffect(() => { fetchIngredients(); fetchSuppliers(); }, []);
 
@@ -342,6 +345,7 @@ export default function IngredientsPage() {
                                         onClick={() => {
                                             setEditingIngredient(ing);
                                             setEditForm({ ...ing });
+                                        setEditMode('wizard');
 
                                             const isCustom1 = !!ing.supplier && !STANDARD_SUPPLIERS.includes(ing.supplier);
                                             setIsCustomSupplier(isCustom1);
@@ -379,6 +383,60 @@ export default function IngredientsPage() {
                             <button onClick={() => setEditingIngredient(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditMode('wizard')}
+                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${editMode === 'wizard' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
+                                >
+                                    Asistente
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditMode('expert')}
+                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${editMode === 'expert' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
+                                >
+                                    Modo experto
+                                </button>
+                            </div>
+
+                            {editMode === 'wizard' && (
+                                <IngredientWizard
+                                    initialName={String(editForm.name || editingIngredient.name || '')}
+                                    onDone={async (res) => {
+                                        try {
+                                            const payload: any = {
+                                                supplier_pricing_mode: res.supplier_pricing_mode,
+                                                purchase_unit: res.purchase_unit,
+                                                unit_type: res.purchase_unit,
+                                                updated_at: new Date().toISOString(),
+                                            };
+                                            if (res.supplier_pricing_mode === 'per_purchase_unit') {
+                                                payload.current_price = res.current_price ?? 0;
+                                                payload.pack_price = null;
+                                                payload.pack_units = null;
+                                                payload.pack_unit_size_qty = null;
+                                                payload.pack_unit_size_unit = null;
+                                            } else {
+                                                payload.pack_price = res.pack_price ?? null;
+                                                payload.pack_units = res.pack_units ?? null;
+                                                payload.pack_unit_size_qty = res.pack_unit_size_qty ?? null;
+                                                payload.pack_unit_size_unit = res.pack_unit_size_unit ?? null;
+                                            }
+                                            const { error } = await supabase.from('ingredients').update(payload).eq('id', editingIngredient.id);
+                                            if (error) throw error;
+                                            toast.success('Guardado');
+                                            setEditingIngredient(null);
+                                            fetchIngredients();
+                                        } catch (e: any) {
+                                            toast.error(e?.message || 'Error al guardar');
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            {editMode === 'expert' && (
+                            <div className="space-y-4">
                             <div className="flex justify-center items-center gap-8">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); navigateIngredient(-1); }}
@@ -615,6 +673,8 @@ export default function IngredientsPage() {
                                 </button>
                                 <button onClick={handleSaveEdit} disabled={saving} className="flex-1 py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Guardar</button>
                             </div>
+                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -627,8 +687,76 @@ export default function IngredientsPage() {
                             <h2 className="text-lg font-black text-white uppercase tracking-widest">Nuevo</h2>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setCreateMode('wizard')}
+                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${createMode === 'wizard' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
+                                >
+                                    Asistente
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCreateMode('expert')}
+                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${createMode === 'expert' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
+                                >
+                                    Modo experto
+                                </button>
+                            </div>
+
                             <div className="flex justify-center"><div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300"><Upload className="text-gray-400" /><input type="file" className="absolute inset-0 opacity-0" onChange={(e) => handleImageUpload(e, 'create')} /></div></div>
                             <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Nombre" />
+
+                            {createMode === 'wizard' && (
+                                <IngredientWizard
+                                    initialName={String(newIngredient.name || '')}
+                                    onDone={async (res) => {
+                                        if (!newIngredient.name) return toast.error('El nombre es obligatorio');
+                                        setIsCreating(true);
+                                        try {
+                                            const unit = res.purchase_unit || 'kg';
+                                            const payload: any = {
+                                                ...newIngredient,
+                                                supplier: newIngredient.supplier || null,
+                                                supplier_2: newIngredient.supplier_2 || null,
+                                                purchase_unit: unit,
+                                                unit_type: unit,
+                                                category: newIngredient.category || 'Alimentos',
+                                                waste_percentage: newIngredient.waste_percentage || 0,
+                                                order_unit: newIngredient.order_unit || 'ud',
+                                                recommended_stock: newIngredient.recommended_stock || null,
+                                                supplier_pricing_mode: res.supplier_pricing_mode,
+                                            };
+                                            if (res.supplier_pricing_mode === 'per_purchase_unit') {
+                                                payload.current_price = res.current_price ?? 0;
+                                                payload.pack_price = null;
+                                                payload.pack_units = null;
+                                                payload.pack_unit_size_qty = null;
+                                                payload.pack_unit_size_unit = null;
+                                            } else {
+                                                payload.pack_price = res.pack_price ?? null;
+                                                payload.pack_units = res.pack_units ?? null;
+                                                payload.pack_unit_size_qty = res.pack_unit_size_qty ?? null;
+                                                payload.pack_unit_size_unit = res.pack_unit_size_unit ?? null;
+                                                delete payload.current_price;
+                                            }
+                                            const { error } = await supabase.from('ingredients').insert(payload);
+                                            if (error) throw error;
+                                            toast.success('Creado');
+                                            setShowCreateModal(false);
+                                            setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
+                                            fetchIngredients();
+                                        } catch (e: any) {
+                                            toast.error(e?.message || 'Error al crear');
+                                        } finally {
+                                            setIsCreating(false);
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            {createMode === 'expert' && (
+                            <div className="space-y-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio según proveedor (albarán)</label>
                                 <select
@@ -771,6 +899,8 @@ export default function IngredientsPage() {
                                 </div>
                             </div>
                             <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Crear</button>
+                            </div>
+                            )}
                         </div>
                     </div>
                 </div>

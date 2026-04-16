@@ -21,6 +21,7 @@ type RowState = ProposalLine & {
   packUnits: number | null
   packUnitSizeQty: number | null
   packUnitSizeUnit: string
+  showExpert: boolean
   decision: 'pending' | 'accepted' | 'discarded'
 }
 
@@ -36,6 +37,7 @@ function lineToRowState(p: ProposalLine): RowState {
     packUnits: null,
     packUnitSizeQty: null,
     packUnitSizeUnit: 'ud',
+    showExpert: false,
     decision: 'pending',
   }
 }
@@ -323,33 +325,79 @@ export default function AlbaranesPreciosClient({
                       {row.pricingMode === 'per_pack' && (
                         <div className="grid grid-cols-2 gap-2">
                           <label className="block space-y-1">
-                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidades por pack</span>
-                            <input
-                              type="number"
-                              step="1"
-                              value={row.packUnits ?? ''}
-                              onChange={(e) =>
-                                updateRow(row.lineId, { packUnits: e.target.value === '' ? null : Number(e.target.value) })
-                              }
-                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
-                              placeholder="Ej: 24"
-                            />
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidades dentro</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[6, 12, 24, 48, 72, 96].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => updateRow(row.lineId, { packUnits: n })}
+                                  className={cn(
+                                    'min-h-12 rounded-xl border px-2 text-sm font-black',
+                                    row.packUnits === n
+                                      ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]'
+                                      : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                  )}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+                              <input
+                                type="number"
+                                step="1"
+                                value={row.packUnits ?? ''}
+                                onChange={(e) =>
+                                  updateRow(row.lineId, { packUnits: e.target.value === '' ? null : Number(e.target.value) })
+                                }
+                                className="min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                                placeholder="Otro"
+                              />
+                            </div>
                           </label>
                           <label className="block space-y-1">
-                            <span className="text-[10px] font-bold uppercase text-zinc-400">Tamaño por unidad</span>
-                            <input
-                              type="number"
-                              step="0.001"
-                              value={row.packUnitSizeQty ?? ''}
-                              onChange={(e) =>
-                                updateRow(row.lineId, { packUnitSizeQty: e.target.value === '' ? null : Number(e.target.value) })
-                              }
-                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
-                              placeholder="Ej: 330"
-                            />
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[330, 500, 700, 750].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => updateRow(row.lineId, { packUnitSizeQty: n, packUnitSizeUnit: 'ml' })}
+                                  className={cn(
+                                    'min-h-12 rounded-xl border px-2 text-sm font-black',
+                                    row.packUnitSizeQty === n && row.packUnitSizeUnit === 'ml'
+                                      ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]'
+                                      : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                  )}
+                                >
+                                  {n}ml
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => updateRow(row.lineId, { packUnitSizeQty: 1, packUnitSizeUnit: 'l' })}
+                                className={cn(
+                                  'min-h-12 rounded-xl border px-2 text-sm font-black',
+                                  row.packUnitSizeQty === 1 && row.packUnitSizeUnit === 'l'
+                                    ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]'
+                                    : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                )}
+                              >
+                                1L
+                              </button>
+                              <input
+                                type="number"
+                                step="0.001"
+                                value={row.packUnitSizeQty ?? ''}
+                                onChange={(e) =>
+                                  updateRow(row.lineId, { packUnitSizeQty: e.target.value === '' ? null : Number(e.target.value) })
+                                }
+                                className="min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                                placeholder="Otro"
+                              />
+                            </div>
                           </label>
                           <label className="block space-y-1">
-                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad tamaño</span>
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad contenido</span>
                             <select
                               value={row.packUnitSizeUnit}
                               onChange={(e) => updateRow(row.lineId, { packUnitSizeUnit: e.target.value })}
@@ -367,33 +415,52 @@ export default function AlbaranesPreciosClient({
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="block space-y-1">
-                        <span className="text-[10px] font-bold uppercase text-zinc-400">Precio €</span>
-                        <input
-                          type="number"
-                          step="0.0001"
-                          value={row.editedPrice}
-                          onChange={(e) =>
-                            updateRow(row.lineId, { editedPrice: parseFloat(e.target.value) || 0 })
-                          }
-                          className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
-                        />
-                      </label>
-                      <label className="block space-y-1">
-                        <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad precio</span>
-                        <select
-                          value={row.editedUnit}
-                          onChange={(e) => updateRow(row.lineId, { editedUnit: e.target.value })}
-                          className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[10px] font-bold uppercase text-zinc-400">Precio del albarán</div>
+                        <button
+                          type="button"
+                          onClick={() => updateRow(row.lineId, { showExpert: !row.showExpert })}
+                          className="text-[10px] font-black uppercase tracking-widest text-[#36606F] hover:underline"
                         >
-                          {UNIT_OPTIONS.map((u) => (
-                            <option key={u} value={u}>
-                              € / {u}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                          {row.showExpert ? 'Ocultar' : 'Editar'}
+                        </button>
+                      </div>
+                      {row.showExpert ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="block space-y-1">
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Precio €</span>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={row.editedPrice}
+                              onChange={(e) =>
+                                updateRow(row.lineId, { editedPrice: parseFloat(e.target.value) || 0 })
+                              }
+                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                            />
+                          </label>
+                          <label className="block space-y-1">
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad precio</span>
+                            <select
+                              value={row.editedUnit}
+                              onChange={(e) => updateRow(row.lineId, { editedUnit: e.target.value })}
+                              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
+                            >
+                              {UNIT_OPTIONS.map((u) => (
+                                <option key={u} value={u}>
+                                  € / {u}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 flex items-center justify-between">
+                          <span className="font-mono font-bold text-zinc-900">{row.editedPrice.toFixed(4)} €</span>
+                          <span className="text-sm font-bold text-zinc-500">/ {row.editedUnit}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
