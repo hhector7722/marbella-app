@@ -316,7 +316,7 @@ export default function AlbaranesPreciosClient({
                           className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
                         >
                           <option value="per_purchase_unit">Por unidad (€/kg, €/L, €/ud)</option>
-                          <option value="per_pack">Por pack / caja (precio total del pack)</option>
+                          <option value="per_pack">Botella / lata / caja (precio unidad proveedor)</option>
                         </select>
                       </label>
 

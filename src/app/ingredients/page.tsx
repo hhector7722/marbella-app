@@ -409,7 +409,7 @@ export default function IngredientsPage() {
                                     className="w-full p-3 border rounded-2xl bg-white font-bold"
                                 >
                                     <option value="per_purchase_unit">Directo (€/kg, €/L, €/ud)</option>
-                                    <option value="per_pack">Por formato (caja / pack / botella / lata…)</option>
+                                    <option value="per_pack">Botella / lata / caja (unidad proveedor)</option>
                                 </select>
                                 <p className="text-[11px] text-gray-500 mt-1 px-1.5">
                                     Si el albarán viene por caja/pack/botella/lata, el coste en recetas se calcula usando el contenido.
@@ -637,7 +637,7 @@ export default function IngredientsPage() {
                                     className="w-full p-3 border rounded-2xl bg-white font-bold"
                                 >
                                     <option value="per_purchase_unit">Directo (€/kg, €/L, €/ud)</option>
-                                    <option value="per_pack">Por formato (caja / pack / botella / lata…)</option>
+                                    <option value="per_pack">Botella / lata / caja (unidad proveedor)</option>
                                 </select>
                                 <p className="text-[11px] text-gray-500 mt-1 px-1.5">
                                     Si el albarán viene por caja/pack/botella/lata, el coste en recetas se calcula usando el contenido.
