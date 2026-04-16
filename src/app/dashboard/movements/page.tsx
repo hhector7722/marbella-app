@@ -592,7 +592,7 @@ export default function MovementsPage() {
         }
     };
 
-    const printFilteredTable = async () => {
+    const printFilteredTable = () => {
         if (shareBusy) return;
         setShareBusy('print');
         try {
@@ -603,14 +603,25 @@ export default function MovementsPage() {
             }
 
             const html = table.outerHTML;
-            const w = window.open('', '_blank', 'noopener,noreferrer');
-            if (!w) {
-                toast.error('Bloqueo del navegador: no se pudo abrir la ventana de impresión.');
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('aria-hidden', 'true');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument;
+            if (!doc) {
+                iframe.remove();
+                toast.error('No se pudo preparar la impresión.');
                 return;
             }
 
-            w.document.open();
-            w.document.write(`<!doctype html>
+            doc.open();
+            doc.write(`<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -643,14 +654,19 @@ export default function MovementsPage() {
   </head>
   <body>
     ${html}
-    <script>
-      window.focus();
-      window.print();
-      window.onafterprint = () => window.close();
-    </script>
   </body>
 </html>`);
-            w.document.close();
+            doc.close();
+
+            // Dar un tick para que el iframe termine de maquetar antes del print (iOS/Safari es sensible).
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                } finally {
+                    setTimeout(() => iframe.remove(), 250);
+                }
+            }, 50);
         } catch (e) {
             console.error(e);
             toast.error('Error al imprimir.');
