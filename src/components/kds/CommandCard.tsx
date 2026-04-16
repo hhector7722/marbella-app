@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { X } from 'lucide-react';
 import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTimeKdsHeader } from '@/utils/date-utils';
@@ -195,20 +194,8 @@ export function CommandCard({
         if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
         return order.mesa || '--';
     })();
-    const isFullyDone = (order.lineas?.length || 0) > 0 && order.lineas?.every(l => l.estado === 'terminado' || l.estado === 'cancelado');
-
-    // Finalizar si todas las líneas vienen canceladas desde TPV (sin tachar en cocina); el caso terminado lo cubre useKDS.tacharProductos.
-    const allCancelado =
-        (order.lineas?.length ?? 0) > 0 && order.lineas!.every((l) => l.estado === 'cancelado');
-    const finalizeCancelOnce = useRef(false);
-    useEffect(() => {
-        finalizeCancelOnce.current = false;
-    }, [order.id]);
-    useEffect(() => {
-        if (isCompleted || !allCancelado || finalizeCancelOnce.current) return;
-        finalizeCancelOnce.current = true;
-        onCompletarComanda(order.id, order.id_ticket ?? null);
-    }, [allCancelado, isCompleted, order.id, order.id_ticket, onCompletarComanda]);
+    const isFullyDone =
+        (order.lineas?.length || 0) > 0 && order.lineas?.every((l) => l.estado === 'terminado' || l.estado === 'cancelado');
 
     // Todas las líneas visibles: pendientes, tachadas (terminado) y canceladas.
     const lineasVisibles = order.lineas || [];
@@ -266,14 +253,14 @@ export function CommandCard({
                         </div>
                     </div>
 
-                    {/* Hora, HACE… y nombre: mismo hueco entre los tres (leading-none evita aire extra del line-height) */}
+                    {/* Hora, tiempo y nombre: mismo hueco entre los tres (leading-none evita aire extra del line-height) */}
                     <div className="flex min-w-0 shrink-0 flex-col items-center justify-start gap-1 px-1 text-center">
                         <span className="block text-lg font-black uppercase leading-none tracking-[0.12em] opacity-95 sm:text-xl">
                             {orderTime}
                         </span>
                         <div className="flex flex-col items-center justify-center gap-0.5 leading-none sm:flex-row sm:flex-wrap sm:justify-center">
                             <span className="text-sm font-bold uppercase leading-none tracking-[0.1em] opacity-85 sm:text-base">
-                                HACE {formatElapsed(elapsed)}
+                                {formatElapsed(elapsed)}
                             </span>
                             {order.origen_referencia && (
                                 <>
@@ -337,6 +324,7 @@ export function CommandCard({
                     const isDropdownOpen = openDropdownKey === groupKey;
                     const canInteract = !isCompleted && group.estado !== 'cancelado';
                     const isLastLine = lineIndex === groupedArray.length - 1;
+                    const showLineNotesButton = !completedListView && !chromeCompleted && group.estado === 'pendiente';
 
                     return (
                         <div key={groupKey} className="relative">
@@ -348,30 +336,19 @@ export function CommandCard({
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center ${completedListView ? 'pl-3 sm:pl-4' : 'pl-0'} pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white/95 ${isLastLine ? 'shadow-none' : 'shadow-sm'} ${chromeCompleted
+                                className={`group relative flex items-center ${completedListView ? 'pl-3 sm:pl-4' : 'pl-0'} pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl ${group.estado === 'cancelado' ? 'bg-transparent' : 'bg-white/95'} ${group.estado === 'cancelado' || isLastLine ? 'shadow-none' : 'shadow-sm'} ${chromeCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-emerald-50/80 cursor-pointer'
                                             : group.estado === 'cancelado'
-                                                ? 'opacity-60 cursor-not-allowed rounded-lg'
+                                                ? 'opacity-70 cursor-not-allowed'
                                                 : 'hover:bg-slate-50 cursor-pointer active:scale-[0.98]'
                                     }`}
                             >
-                                {/* Solo cancelados: icono X (oculto en listado finalizadas). */}
-                                {group.estado === 'cancelado' && !completedListView && (
-                                    <div
-                                        className={`mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300 sm:h-12 sm:w-12 ${
-                                            chromeCompleted ? 'bg-slate-200 text-slate-400' : 'bg-slate-300 text-slate-500'
-                                        }`}
-                                    >
-                                        <X size={26} strokeWidth={3} />
-                                    </div>
-                                )}
-
                                 <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="flex flex-col pr-1 min-w-0">
                                         <div className="flex items-center gap-0 min-w-0">
-                                            {!completedListView ? (
+                                            {showLineNotesButton ? (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
@@ -391,17 +368,27 @@ export function CommandCard({
                                                 </button>
                                             ) : null}
 
-                                            <span className={`flex-1 min-w-0 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${chromeCompleted ? 'text-slate-400 line-through' :
-                                                group.estado === 'terminado' ? 'text-emerald-600 line-through decoration-emerald-600 decoration-2 [text-decoration-thickness:2px]' :
-                                                    group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
-                                                        'text-slate-900'
-                                            }`}>
+                                            <span
+                                                className={`flex-1 min-w-0 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${
+                                                    chromeCompleted
+                                                        ? 'text-slate-400 line-through'
+                                                        : group.estado === 'terminado'
+                                                            ? 'text-emerald-700 line-through decoration-emerald-700 decoration-2 [text-decoration-thickness:2px]'
+                                                            : group.estado === 'cancelado'
+                                                                ? 'text-red-700 line-through decoration-red-700 decoration-2 [text-decoration-thickness:2px]'
+                                                                : 'text-slate-900'
+                                                }`}
+                                            >
                                             {group.producto_nombre}
                                             </span>
                                         </div>
 
                                         {hasNotes(combinedLineNotesForDisplay(group.notas, group.notas_cocina)) && (
-                                            <div className={`mt-0.5 space-y-1 ${completedListView ? 'pl-3 sm:pl-4' : 'pl-12 sm:pl-14'} ${group.estado === 'cancelado' || chromeCompleted ? 'opacity-50' : ''}`}>
+                                            <div
+                                                className={`mt-0.5 space-y-1 ${completedListView || !showLineNotesButton ? 'pl-3 sm:pl-4' : 'pl-12 sm:pl-14'} ${
+                                                    group.estado === 'cancelado' || chromeCompleted ? 'opacity-50' : ''
+                                                }`}
+                                            >
                                                 {splitBullets(combinedLineNotesForDisplay(group.notas, group.notas_cocina)).map((n, idx) => (
                                                     <div key={idx} className="flex items-baseline gap-1.5">
                                                         <span className="shrink-0 text-base sm:text-lg font-bold leading-snug text-rose-700" aria-hidden>
@@ -425,7 +412,7 @@ export function CommandCard({
                                                 e.stopPropagation(); // No propagar al div padre (que tacharía todo)
                                                 setOpenDropdownKey(isDropdownOpen ? null : groupKey);
                                             }}
-                                            className={`shrink-0 flex items-center justify-center rounded-lg px-2.5 py-1.5 border-[3px] min-w-[3rem] transition-all duration-150 ${
+                                            className={`shrink-0 flex items-center justify-center rounded-lg px-2.5 py-1.5 border-[4px] min-w-[3rem] transition-all duration-150 ${
                                                 group.estado === 'terminado'
                                                     ? 'border-green-200 text-green-600 bg-green-50 cursor-default'
                                                     : canInteract && group.estado === 'pendiente' && group.cantidad > 1
@@ -490,7 +477,7 @@ export function CommandCard({
                         className={cn(
                             'w-full min-h-[52px] rounded-none px-3 py-3 sm:px-4 font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1',
                             isFullyDone
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200/90'
+                                ? 'bg-emerald-200/70 text-emerald-950 hover:bg-emerald-200/90'
                                 : 'bg-slate-200/90 text-slate-500 hover:bg-slate-300/90'
                         )}
                     >
