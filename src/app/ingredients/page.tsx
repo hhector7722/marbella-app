@@ -402,35 +402,11 @@ export default function IngredientsPage() {
 
                             {editMode === 'wizard' && (
                                 <IngredientWizard
+                                    ingredientId={editingIngredient.id}
                                     initialName={String(editForm.name || editingIngredient.name || '')}
-                                    onDone={async (res) => {
-                                        try {
-                                            const payload: any = {
-                                                supplier_pricing_mode: res.supplier_pricing_mode,
-                                                purchase_unit: res.purchase_unit,
-                                                unit_type: res.purchase_unit,
-                                                updated_at: new Date().toISOString(),
-                                            };
-                                            if (res.supplier_pricing_mode === 'per_purchase_unit') {
-                                                payload.current_price = res.current_price ?? 0;
-                                                payload.pack_price = null;
-                                                payload.pack_units = null;
-                                                payload.pack_unit_size_qty = null;
-                                                payload.pack_unit_size_unit = null;
-                                            } else {
-                                                payload.pack_price = res.pack_price ?? null;
-                                                payload.pack_units = res.pack_units ?? null;
-                                                payload.pack_unit_size_qty = res.pack_unit_size_qty ?? null;
-                                                payload.pack_unit_size_unit = res.pack_unit_size_unit ?? null;
-                                            }
-                                            const { error } = await supabase.from('ingredients').update(payload).eq('id', editingIngredient.id);
-                                            if (error) throw error;
-                                            toast.success('Guardado');
-                                            setEditingIngredient(null);
-                                            fetchIngredients();
-                                        } catch (e: any) {
-                                            toast.error(e?.message || 'Error al guardar');
-                                        }
+                                    onClose={() => {
+                                        setEditingIngredient(null);
+                                        fetchIngredients();
                                     }}
                                 />
                             )}
@@ -709,48 +685,10 @@ export default function IngredientsPage() {
 
                             {createMode === 'wizard' && (
                                 <IngredientWizard
-                                    initialName={String(newIngredient.name || '')}
-                                    onDone={async (res) => {
-                                        if (!newIngredient.name) return toast.error('El nombre es obligatorio');
-                                        setIsCreating(true);
-                                        try {
-                                            const unit = res.purchase_unit || 'kg';
-                                            const payload: any = {
-                                                ...newIngredient,
-                                                supplier: newIngredient.supplier || null,
-                                                supplier_2: newIngredient.supplier_2 || null,
-                                                purchase_unit: unit,
-                                                unit_type: unit,
-                                                category: newIngredient.category || 'Alimentos',
-                                                waste_percentage: newIngredient.waste_percentage || 0,
-                                                order_unit: newIngredient.order_unit || 'ud',
-                                                recommended_stock: newIngredient.recommended_stock || null,
-                                                supplier_pricing_mode: res.supplier_pricing_mode,
-                                            };
-                                            if (res.supplier_pricing_mode === 'per_purchase_unit') {
-                                                payload.current_price = res.current_price ?? 0;
-                                                payload.pack_price = null;
-                                                payload.pack_units = null;
-                                                payload.pack_unit_size_qty = null;
-                                                payload.pack_unit_size_unit = null;
-                                            } else {
-                                                payload.pack_price = res.pack_price ?? null;
-                                                payload.pack_units = res.pack_units ?? null;
-                                                payload.pack_unit_size_qty = res.pack_unit_size_qty ?? null;
-                                                payload.pack_unit_size_unit = res.pack_unit_size_unit ?? null;
-                                                delete payload.current_price;
-                                            }
-                                            const { error } = await supabase.from('ingredients').insert(payload);
-                                            if (error) throw error;
-                                            toast.success('Creado');
-                                            setShowCreateModal(false);
-                                            setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
-                                            fetchIngredients();
-                                        } catch (e: any) {
-                                            toast.error(e?.message || 'Error al crear');
-                                        } finally {
-                                            setIsCreating(false);
-                                        }
+                                    onClose={() => {
+                                        setShowCreateModal(false);
+                                        setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
+                                        fetchIngredients();
                                     }}
                                 />
                             )}
