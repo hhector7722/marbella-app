@@ -16,6 +16,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
 import type { VentasTab } from '@/components/dashboards/SubNavVentas';
+import * as XLSX from 'xlsx';
 
 interface TicketSummary {
     numero_documento: string;
@@ -383,6 +384,134 @@ export default function VentasPage() {
         return rows;
     }, [tickets]);
 
+    const getActiveTableEl = (): HTMLTableElement | null => {
+        const table = document.querySelector('.print-table-ventas table') as HTMLTableElement | null;
+        return table;
+    };
+
+    const getCleanPrintableTableHTML = (): string | null => {
+        const table = getActiveTableEl();
+        if (!table) return null;
+        const clone = table.cloneNode(true) as HTMLTableElement;
+        // El drill-down de tickets se renderiza en un <tr className="... print:hidden">.
+        // Para exportar/imprimir “la tabla activa” sin detalles colapsados, eliminamos esas filas.
+        clone.querySelectorAll('tr.print\\:hidden').forEach((tr) => tr.remove());
+        return clone.outerHTML;
+    };
+
+    const exportActiveTableToExcel = () => {
+        try {
+            const table = getActiveTableEl();
+            if (!table) {
+                toast.error('No se ha encontrado la tabla activa para exportar.');
+                return;
+            }
+            const cleanHTML = getCleanPrintableTableHTML();
+            if (!cleanHTML) {
+                toast.error('No se pudo preparar la tabla para exportar.');
+                return;
+            }
+            const tmp = document.createElement('div');
+            tmp.innerHTML = cleanHTML;
+            const cleanTable = tmp.querySelector('table') as HTMLTableElement | null;
+            if (!cleanTable) {
+                toast.error('No se pudo preparar la tabla para exportar.');
+                return;
+            }
+
+            const ws = XLSX.utils.table_to_sheet(cleanTable);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Tabla');
+
+            const now = new Date();
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+            const fileName = `ventas_${activeTab.toLowerCase()}_${stamp}.xlsx`;
+            XLSX.writeFile(wb, fileName, { compression: true });
+            toast.success('Excel descargado.');
+        } catch (e) {
+            console.error(e);
+            toast.error('Error exportando a Excel.');
+        }
+    };
+
+    const printActiveTable = () => {
+        try {
+            const cleanHTML = getCleanPrintableTableHTML();
+            if (!cleanHTML) {
+                toast.error('No se ha encontrado la tabla activa para imprimir.');
+                return;
+            }
+
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('aria-hidden', 'true');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument;
+            if (!doc) {
+                iframe.remove();
+                toast.error('No se pudo preparar la impresión.');
+                return;
+            }
+
+            doc.open();
+            doc.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Imprimir ventas</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        background: #36606F; color: white;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        font-weight: 800; font-size: 11px;
+        padding: 10px 12px; text-align: left;
+      }
+      tbody td {
+        border-top: 1px solid #f4f4f5;
+        padding: 10px 12px;
+        font-size: 12px;
+        vertical-align: top;
+      }
+      tbody tr:nth-child(even) td { background: #fafafa; }
+      @media print {
+        body { margin: 0; padding: 0; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+        thead { display: table-header-group; }
+      }
+    </style>
+  </head>
+  <body>
+    ${cleanHTML}
+  </body>
+</html>`);
+            doc.close();
+
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                } finally {
+                    setTimeout(() => iframe.remove(), 250);
+                }
+            }, 50);
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al imprimir.');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900 print:bg-white">
             <div className="max-w-4xl mx-auto space-y-6">
@@ -576,6 +705,8 @@ export default function VentasPage() {
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
                         showPrint
+                        onExportExcel={exportActiveTableToExcel}
+                        onPrint={printActiveTable}
                     />
 
                     {/* TABLAS */}
