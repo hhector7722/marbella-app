@@ -180,8 +180,8 @@ export function useKDSv2() {
   );
 
   const scheduleRefresh = useCallback(() => {
-    if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
-    refreshTimer.current = window.setTimeout(() => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => {
       void fetchProjection({ initial: false, silent: true });
     }, 160);
   }, [fetchProjection]);
@@ -193,7 +193,7 @@ export function useKDSv2() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kds_events' }, () => scheduleRefresh())
       .subscribe();
     return () => {
-      if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
       supabase.removeChannel(channel);
     };
   }, [fetchProjection, scheduleRefresh, supabase]);
