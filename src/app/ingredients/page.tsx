@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
@@ -118,8 +119,8 @@ export default function IngredientsPage() {
     const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
-    const [editMode, setEditMode] = useState<'wizard' | 'expert'>('wizard');
     const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
+    const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
 
     useEffect(() => { fetchIngredients(); fetchSuppliers(); }, []);
 
@@ -327,7 +328,11 @@ export default function IngredientsPage() {
                                 )}
                             </div>
                             <button
-                                onClick={() => setShowCreateModal(true)}
+                                onClick={() => {
+                                    setCreateMode('wizard');
+                                    setCreateSettingsOpen(false);
+                                    setShowCreateModal(true);
+                                }}
                                 className="bg-[#5E35B1] text-white w-10 h-10 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
                             >
                                 <Plus className="w-6 h-6" />
@@ -345,7 +350,6 @@ export default function IngredientsPage() {
                                         onClick={() => {
                                             setEditingIngredient(ing);
                                             setEditForm({ ...ing });
-                                        setEditMode('wizard');
 
                                             const isCustom1 = !!ing.supplier && !STANDARD_SUPPLIERS.includes(ing.supplier);
                                             setIsCustomSupplier(isCustom1);
@@ -383,35 +387,6 @@ export default function IngredientsPage() {
                             <button onClick={() => setEditingIngredient(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setEditMode('wizard')}
-                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${editMode === 'wizard' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
-                                >
-                                    Asistente
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setEditMode('expert')}
-                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${editMode === 'expert' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
-                                >
-                                    Modo experto
-                                </button>
-                            </div>
-
-                            {editMode === 'wizard' && (
-                                <IngredientWizard
-                                    ingredientId={editingIngredient.id}
-                                    initialName={String(editForm.name || editingIngredient.name || '')}
-                                    onClose={() => {
-                                        setEditingIngredient(null);
-                                        fetchIngredients();
-                                    }}
-                                />
-                            )}
-
-                            {editMode === 'expert' && (
                             <div className="space-y-4">
                             <div className="flex justify-center items-center gap-8">
                                 <button
@@ -650,7 +625,6 @@ export default function IngredientsPage() {
                                 <button onClick={handleSaveEdit} disabled={saving} className="flex-1 py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Guardar</button>
                             </div>
                             </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -659,30 +633,66 @@ export default function IngredientsPage() {
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowCreateModal(false)}>
                     <div className="bg-white rounded-[20px] max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-4 shrink-0">
+                        <div className="bg-[#36606F] px-4 md:px-6 py-4 shrink-0 flex justify-between items-center gap-3 relative">
                             <h2 className="text-lg font-black text-white uppercase tracking-widest">Nuevo</h2>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-1 shrink-0">
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        aria-label="Ajustes"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCreateSettingsOpen((v) => !v);
+                                        }}
+                                        className="min-h-12 min-w-12 inline-flex items-center justify-center text-white hover:opacity-80 rounded-full bg-transparent border-0 shadow-none p-0"
+                                    >
+                                        <Settings className="w-6 h-6" strokeWidth={1.75} />
+                                    </button>
+                                    {createSettingsOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-[70]" onClick={() => setCreateSettingsOpen(false)} />
+                                            <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-xl border border-zinc-100 p-3 z-[80] text-left">
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Modo de creación</div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCreateMode('wizard');
+                                                        setCreateSettingsOpen(false);
+                                                    }}
+                                                    className={cn(
+                                                        'mt-2 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
+                                                        createMode === 'wizard' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
+                                                    )}
+                                                >
+                                                    Asistente
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCreateMode('expert');
+                                                        setCreateSettingsOpen(false);
+                                                    }}
+                                                    className={cn(
+                                                        'mt-1 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
+                                                        createMode === 'expert' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
+                                                    )}
+                                                >
+                                                    Modo experto
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                                 <button
                                     type="button"
-                                    onClick={() => setCreateMode('wizard')}
-                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${createMode === 'wizard' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
                                 >
-                                    Asistente
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setCreateMode('expert')}
-                                    className={`flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${createMode === 'expert' ? 'bg-white border-[#36606F] text-[#36606F]' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}
-                                >
-                                    Modo experto
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
-
-                            <div className="flex justify-center"><div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300"><Upload className="text-gray-400" /><input type="file" className="absolute inset-0 opacity-0" onChange={(e) => handleImageUpload(e, 'create')} /></div></div>
-                            <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Nombre" />
-
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
                             {createMode === 'wizard' && (
                                 <IngredientWizard
                                     onClose={() => {
@@ -695,6 +705,33 @@ export default function IngredientsPage() {
 
                             {createMode === 'expert' && (
                             <div className="space-y-4">
+                            <div className="flex justify-center">
+                                <div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 group shrink-0">
+                                    {newIngredient.image_url ? (
+                                        <img src={newIngredient.image_url} className="w-full h-full object-contain" alt="" />
+                                    ) : (
+                                        <Upload className="text-gray-400" />
+                                    )}
+                                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold cursor-pointer">
+                                        Foto
+                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'create')} disabled={uploadingImage} />
+                                    </label>
+                                    {uploadingImage && (
+                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                            <LoadingSpinner size="md" className="text-[#5E35B1]" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Nombre</label>
+                                <input
+                                    value={newIngredient.name || ''}
+                                    onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
+                                    className="w-full p-3 border rounded-2xl font-bold mt-1"
+                                    placeholder="Nombre del ingrediente"
+                                />
+                            </div>
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio según proveedor (albarán)</label>
                                 <select

@@ -307,24 +307,18 @@ export function IngredientWizard({
 
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4">
-      <div className="space-y-2">
-        {step === 1 ? (
-          <input
-            value={draft.name}
-            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder="Nombre del ingrediente"
-            className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
-            autoFocus
-          />
-        ) : (
-          <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 flex items-center">
-            <span className="font-black text-zinc-900">{draft.name || '—'}</span>
-          </div>
-        )}
-      </div>
-
-      {step === 1 && (
+      {step === 1 ? (
         <div className="space-y-3">
+          <label className="block space-y-2">
+            <span className="text-xs font-black text-zinc-700 uppercase tracking-widest">Nombre</span>
+            <input
+              value={draft.name}
+              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+              placeholder=""
+              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
+              autoFocus
+            />
+          </label>
           <button
             type="button"
             disabled={saving}
@@ -333,6 +327,10 @@ export function IngredientWizard({
           >
             Continuar
           </button>
+        </div>
+      ) : (
+        <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 flex items-center shrink-0">
+          <span className="font-black text-zinc-900">{draft.name || '—'}</span>
         </div>
       )}
 
