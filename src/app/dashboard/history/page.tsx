@@ -17,6 +17,8 @@ import {
     Banknote,
     Minus,
     Printer,
+    Share,
+    Download,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -29,6 +31,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import * as XLSX from 'xlsx';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -210,6 +213,8 @@ export default function HistoryPage() {
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+    const [shareMenuOpen, setShareMenuOpen] = useState(false);
+    const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
 
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showCashDetails, setShowCashDetails] = useState(false);
@@ -235,6 +240,25 @@ export default function HistoryPage() {
         checkUserRole();
         fetchHistory();
     }, [rangeStart, rangeEnd, selectedDate, filterMode]);
+
+    useEffect(() => {
+        if (!shareMenuOpen) return;
+        const onPointerDown = (e: PointerEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest('[data-history-share-root="true"]')) return;
+            setShareMenuOpen(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShareMenuOpen(false);
+        };
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown, true);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [shareMenuOpen]);
 
     async function checkUserRole() {
         const { data: { user } } = await supabase.auth.getUser();
@@ -311,6 +335,123 @@ export default function HistoryPage() {
             setLoading(false);
         }
     }
+
+    const getActiveTableEl = (): HTMLTableElement | null => {
+        const table = document.querySelector('.print-table-cierres table') as HTMLTableElement | null;
+        return table;
+    };
+
+    const exportTableToExcel = () => {
+        if (shareBusy) return;
+        setShareBusy('excel');
+        try {
+            const table = getActiveTableEl();
+            if (!table) {
+                toast.error('No se ha encontrado la tabla para exportar.');
+                return;
+            }
+            const ws = XLSX.utils.table_to_sheet(table);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Cierres');
+
+            const now = new Date();
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+            XLSX.writeFile(wb, `cierres_${stamp}.xlsx`, { compression: true });
+            toast.success('Excel descargado.');
+        } catch (e) {
+            console.error(e);
+            toast.error('Error exportando a Excel.');
+        } finally {
+            setShareBusy(null);
+            setShareMenuOpen(false);
+        }
+    };
+
+    const printTable = () => {
+        if (shareBusy) return;
+        setShareBusy('print');
+        try {
+            const table = getActiveTableEl();
+            if (!table) {
+                toast.error('No se ha encontrado la tabla para imprimir.');
+                return;
+            }
+            const html = table.outerHTML;
+
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('aria-hidden', 'true');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument;
+            if (!doc) {
+                iframe.remove();
+                toast.error('No se pudo preparar la impresión.');
+                return;
+            }
+
+            doc.open();
+            doc.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Imprimir cierres</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        background: #36606F; color: white;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        font-weight: 800; font-size: 11px;
+        padding: 10px 12px; text-align: right;
+      }
+      thead th:first-child { text-align: left; }
+      tbody td {
+        border-top: 1px solid #f4f4f5;
+        padding: 10px 12px;
+        font-size: 12px;
+        vertical-align: top;
+        text-align: right;
+      }
+      tbody td:first-child { text-align: left; }
+      tbody tr:nth-child(even) td { background: #fafafa; }
+      @media print {
+        body { margin: 0; padding: 0; }
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    ${html}
+  </body>
+</html>`);
+            doc.close();
+
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                } finally {
+                    setTimeout(() => iframe.remove(), 250);
+                }
+            }, 50);
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al imprimir.');
+        } finally {
+            setShareBusy(null);
+            setShareMenuOpen(false);
+        }
+    };
 
     const generateCalendarDays = () => {
         const year = calendarBaseDate.getFullYear();
@@ -547,14 +688,45 @@ export default function HistoryPage() {
                                 </button>
                             </div>
                             {viewMode === 'table' && (
-                                <button
-                                    type="button"
-                                    onClick={() => window.print()}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                    title="Imprimir tabla"
-                                >
-                                    <Printer size={16} />
-                                </button>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2" data-history-share-root="true">
+                                    <div className="relative" data-history-share-root="true">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShareMenuOpen(v => !v)}
+                                            className={cn(
+                                                "p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none",
+                                                "min-h-[48px] min-w-[48px] flex items-center justify-center",
+                                                shareBusy ? "opacity-60 pointer-events-none" : ""
+                                            )}
+                                            title="Compartir"
+                                            aria-label="Compartir"
+                                        >
+                                            <Share size={16} />
+                                        </button>
+
+                                        {shareMenuOpen && (
+                                            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden">
+                                                <button
+                                                    type="button"
+                                                    onClick={exportTableToExcel}
+                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                                >
+                                                    <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
+                                                    <Download className="w-4 h-4 text-zinc-500" />
+                                                </button>
+                                                <div className="h-px bg-zinc-100" />
+                                                <button
+                                                    type="button"
+                                                    onClick={printTable}
+                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                                >
+                                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
+                                                    <Printer className="w-4 h-4 text-zinc-500" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             )}
                         </div>
 

@@ -3,10 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 
 const PDFParser = require('pdf2json');
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getServiceSupabase() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        throw new Error('supabaseKey is required.');
+    }
+    return createClient(url, key);
+}
 
 function isValidDNI(dni: string): boolean {
     const validChars = 'TRWAGMYFPDXBNJZSQVHLCKE';
@@ -28,6 +32,7 @@ function isValidDNI(dni: string): boolean {
 
 export async function POST(request: Request) {
     try {
+        const supabase = getServiceSupabase();
         const authHeader = request.headers.get('authorization');
         if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
