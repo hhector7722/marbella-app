@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
@@ -26,7 +26,9 @@ import {
     ArrowDown,
     Download,
     RefreshCw,
-    AlertTriangle
+    AlertTriangle,
+    Share,
+    Printer
 } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -41,6 +43,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import * as XLSX from 'xlsx';
 
 interface Movement {
     id: string;
@@ -56,6 +59,7 @@ interface Movement {
 export default function MovementsPage() {
     const supabase = createClient();
     const router = useRouter();
+    const tableRef = useRef<HTMLTableElement | null>(null);
 
     // NUMERIC Postgres (normalmente string) -> céntimos enteros.
     // Redondea al céntimo (para corregir imprecisión binaria tipo 392.7599999).
@@ -144,6 +148,8 @@ export default function MovementsPage() {
     const [loading, setLoading] = useState(true);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+    const [shareMenuOpen, setShareMenuOpen] = useState(false);
+    const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
 
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
@@ -462,6 +468,198 @@ export default function MovementsPage() {
         setFilterMode('range');
     };
 
+    useEffect(() => {
+        if (!shareMenuOpen) return;
+        const onPointerDown = (e: PointerEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest('[data-movements-share-root="true"]')) return;
+            setShareMenuOpen(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShareMenuOpen(false);
+        };
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown, true);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [shareMenuOpen]);
+
+    const getCurrentFilterISO = () => {
+        let startISO: string;
+        let endISO: string;
+
+        if (filterMode === 'single') {
+            const d = parseLocalSafe(selectedDate);
+            d.setHours(0, 0, 0, 0);
+            startISO = d.toISOString();
+            d.setHours(23, 59, 59, 999);
+            endISO = d.toISOString();
+            return { startISO, endISO };
+        }
+
+        if (!rangeStart || !rangeEnd) {
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
+            startISO = d.toISOString();
+            d.setHours(23, 59, 59, 999);
+            endISO = d.toISOString();
+            return { startISO, endISO };
+        }
+
+        const s = parseLocalSafe(rangeStart);
+        s.setHours(0, 0, 0, 0);
+        const e = parseLocalSafe(rangeEnd);
+        e.setHours(23, 59, 59, 999);
+        startISO = s.toISOString();
+        endISO = e.toISOString();
+        return { startISO, endISO };
+    };
+
+    const fetchAllFilteredMovementsForExport = async (): Promise<Movement[]> => {
+        const { startISO, endISO } = getCurrentFilterISO();
+        const out: Movement[] = [];
+        const pageSize = 1000;
+        for (let offset = 0; offset < 100_000; offset += pageSize) {
+            const from = offset;
+            const to = offset + pageSize - 1;
+            const { data, error } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('*')
+                .gte('created_at', startISO)
+                .lte('created_at', endISO)
+                .neq('type', 'ADJUSTMENT')
+                .neq('type', 'SWAP')
+                .order('created_at', { ascending: false })
+                .range(from, to);
+
+            if (error) throw error;
+            const rows = data ?? [];
+            const formatted: Movement[] = rows.map((m: any) => ({
+                ...m,
+                type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
+                    (m.type === 'OUT' ? 'expense' : 'adjustment'),
+                original_type: m.type,
+                running_balance: parseNumericToCents(m.running_balance || 0) / 100
+            }));
+            out.push(...formatted);
+            if (rows.length < pageSize) break;
+        }
+        return out;
+    };
+
+    const exportFilteredTableToExcel = async () => {
+        if (shareBusy) return;
+        setShareBusy('excel');
+        try {
+            const all = await fetchAllFilteredMovementsForExport();
+            if (all.length === 0) {
+                toast.error('No hay movimientos para exportar con el filtro actual.');
+                return;
+            }
+
+            const rows = all.map((mov) => {
+                const d = new Date(mov.created_at);
+                const concept = mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja');
+                const signedAmount = mov.type === 'income' ? mov.amount : mov.type === 'expense' ? -mov.amount : mov.amount;
+                return {
+                    Fecha: isNaN(d.getTime()) ? '' : format(d, 'dd/MM/yyyy', { locale: es }),
+                    Hora: isNaN(d.getTime()) ? '' : format(d, 'HH:mm'),
+                    Concepto: concept,
+                    Importe: Number(signedAmount.toFixed(2)),
+                    Saldo: Number((mov.running_balance ?? 0).toFixed(2)),
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(rows, { header: ['Fecha', 'Hora', 'Concepto', 'Importe', 'Saldo'] });
+            ws['!cols'] = [{ wch: 12 }, { wch: 6 }, { wch: 40 }, { wch: 10 }, { wch: 10 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
+
+            const now = new Date();
+            const fileName = `movimientos_${format(now, 'yyyy-MM-dd_HHmm')}.xlsx`;
+            XLSX.writeFile(wb, fileName, { compression: true });
+            toast.success('Excel descargado.');
+        } catch (e) {
+            console.error(e);
+            toast.error('Error exportando a Excel.');
+        } finally {
+            setShareBusy(null);
+            setShareMenuOpen(false);
+        }
+    };
+
+    const printFilteredTable = async () => {
+        if (shareBusy) return;
+        setShareBusy('print');
+        try {
+            const table = tableRef.current;
+            if (!table) {
+                toast.error('No se ha encontrado la tabla para imprimir.');
+                return;
+            }
+
+            const html = table.outerHTML;
+            const w = window.open('', '_blank', 'noopener,noreferrer');
+            if (!w) {
+                toast.error('Bloqueo del navegador: no se pudo abrir la ventana de impresión.');
+                return;
+            }
+
+            w.document.open();
+            w.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Imprimir movimientos</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        background: #36606F; color: white;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        font-weight: 800; font-size: 11px;
+        padding: 10px 12px; text-align: center;
+      }
+      tbody td {
+        border-top: 1px solid #f4f4f5;
+        padding: 10px 12px;
+        font-size: 12px;
+        vertical-align: top;
+      }
+      tbody tr:nth-child(even) td { background: #fafafa; }
+      @media print {
+        body { margin: 0; padding: 0; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+        thead { display: table-header-group; }
+      }
+    </style>
+  </head>
+  <body>
+    ${html}
+    <script>
+      window.focus();
+      window.print();
+      window.onafterprint = () => window.close();
+    </script>
+  </body>
+</html>`);
+            w.document.close();
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al imprimir.');
+        } finally {
+            setShareBusy(null);
+            setShareMenuOpen(false);
+        }
+    };
+
     const generateCalendarDays = () => {
         const year = calendarBaseDate.getFullYear();
         const month = calendarBaseDate.getMonth();
@@ -566,7 +764,7 @@ export default function MovementsPage() {
                             </div>
 
                             {/* FILTRO UNIFICADO */}
-                            <div className="absolute right-0 flex items-center gap-1.5 shrink-0 text-white">
+                            <div className="absolute right-0 flex items-center gap-1.5 shrink-0 text-white" data-movements-share-root="true">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     hasActiveFilter={(() => {
@@ -585,6 +783,44 @@ export default function MovementsPage() {
                                         setRangeEnd(format(e, 'yyyy-MM-dd'));
                                     }}
                                 />
+
+                                <div className="relative shrink-0" data-movements-share-root="true">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShareMenuOpen(v => !v)}
+                                        aria-label="Compartir"
+                                        className={cn(
+                                            "min-h-12 min-w-12",
+                                            "rounded-xl border border-white/10 bg-white/10 hover:bg-white/20",
+                                            "inline-flex items-center justify-center transition-all active:scale-95",
+                                            shareBusy ? "opacity-60 pointer-events-none" : ""
+                                        )}
+                                    >
+                                        <Share className="w-5 h-5" strokeWidth={2.5} />
+                                    </button>
+
+                                    {shareMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={exportFilteredTableToExcel}
+                                                className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                            >
+                                                <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
+                                                <Download className="w-4 h-4 text-zinc-500" />
+                                            </button>
+                                            <div className="h-px bg-zinc-100" />
+                                            <button
+                                                type="button"
+                                                onClick={printFilteredTable}
+                                                className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                            >
+                                                <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
+                                                <Printer className="w-4 h-4 text-zinc-500" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -631,7 +867,7 @@ export default function MovementsPage() {
                         <div className="p-3 bg-white">
                             <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="w-full">
-                                    <table className="w-full text-left font-sans">
+                                    <table ref={tableRef} className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <th className="px-1 md:px-6 py-2 md:py-4 w-[20%] md:w-[22%] text-center">FECHA</th>
