@@ -4,6 +4,8 @@
 
 - [x] **KDS pie: logo alterna pantalla completa (2026-04-14)**: El botón del logo en la fila fija inferior llama a `requestFullscreen` / `exitFullscreen` (y prefijos webkit/ms) sobre `document.documentElement`, equivalente práctico a pulsar **F11** (entrar si no hay fullscreen, salir si ya lo hay).
 
+- [x] **Inventario: Recuento (Inventory Ledger) + fix trigger ABS (2026-04-17)**: Nueva ruta `/dashboard/inventory` con UI táctil (targets 48px, barra flotante, regla Zero-Display en teórico) y Server Action `processInventoryCounts`. Migración `20260417100000_fix_inventory_ledger.sql` añade `recipe_ingredients.umb_multiplier` y corrige el trigger `update_ingredient_stock_trigger` para permitir deltas negativos en `INVENTORY_COUNT`/`ADJUSTMENT` (sin ABS) manteniendo ABS en compra/venta/merma.
+
 - [x] **KDS cabecera comanda: tiempo "MIN" + nombre cliente (2026-04-12 / 2026-04-16)**: `formatElapsed` usa unidad `MIN` con espacio (`8 MIN`, `5h 30 MIN`). Se eliminó el literal «HACE» (solo se muestra el tiempo). `nombre_cliente` con `KdsStickerBannerText` (Teko, **blanco sin trazo**; gris en cabecera apagada comanda finalizada), caja fija y escala con `ResizeObserver`.
 
 - [x] **KDS: hechos/anulados visibles sin iconos (2026-04-16)**: Al marcar un artículo como hecho, permanece visible con **tachado verde** y texto verde; al pulsarlo se **recupera** (vuelve a pendiente). Los anulados desde TPV se muestran con **tachado rojo** y texto rojo (sin iconos ni rellenos). La comanda **no** se auto-finaliza al completar líneas: solo termina al pulsar **Finalizar** (botón verde claro con opacidad).
@@ -398,6 +400,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 
 ## 🛠️ NOTAS TÉCNICAS
 - **Gemelo Digital (Sala / KDS):** El TPV envía telemetría al receptor (`context/server.txt`); Supabase mantiene la SSOT en `estado_sala` y el KDS en `kds_orders` / `kds_order_lines`. Ver `context/ARQUITECTURA_SYNC_KDS.md` y la migración `20260408120000_kds_estado_sala_pipeline_snapshot.sql`.
+- **Contexto para LLM (prompt-ready):** Documento “copiar/pegar” con stack, rutas, APIs, DB/RPCs, reglas duras y env vars en `context/LLM_PROMPT.md`.
 - **Primary Color: #5B8FB9 (Azul Marbella) + Mejoras UI Dashboard
 - **Database Rules:** Seguir el protocolo `db-supabase-master`.
 - **Naming Convention:** Se mantienen nombres actuales de DB para evitar roturas de esquema.
