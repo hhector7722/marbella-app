@@ -68,6 +68,7 @@ function RecipesContent() {
     }, [selectedRecipeId]);
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
+    const canEditRecipeFromModal = userRole === 'manager' || userRole === 'supervisor';
 
     async function fetchRecipeDetails(id: string) {
         try {
@@ -248,12 +249,27 @@ function RecipesContent() {
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setSelectedRecipeId(null)}
-                                className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 text-white transition-all active:scale-90"
-                            >
-                                <X size={20} strokeWidth={3} />
-                            </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                                {canEditRecipeFromModal && selectedRecipeId && (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedRecipeId(null);
+                                            router.push(`/recipes/${selectedRecipeId}`);
+                                        }}
+                                        className="h-12 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90 flex items-center gap-2 font-black uppercase tracking-widest text-[10px]"
+                                    >
+                                        <Edit2 size={16} strokeWidth={3} />
+                                        Editar
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setSelectedRecipeId(null)}
+                                    className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 text-white transition-all active:scale-90"
+                                    aria-label="Cerrar"
+                                >
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Contenido Scrollable */}
