@@ -1,10 +1,10 @@
-import { createServerClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { InventoryClient } from './InventoryClient'
 
 export const dynamic = 'force-dynamic'
 
 export default async function InventoryPage() {
-  const supabase = await createServerClient()
+  const supabase = await createClient()
 
   const { data: ingredients, error } = await supabase
     .from('ingredients')
