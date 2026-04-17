@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from '@/lib/utils';
-import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight, Settings, Pencil } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
@@ -121,6 +121,10 @@ export default function IngredientsPage() {
     const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
     const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
     const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
+    const [editPricingOpen, setEditPricingOpen] = useState(false);
+    const [editPricingStep, setEditPricingStep] = useState<1 | 2>(1);
+
+    const PACK_UNITS_PRESETS_EDIT = [12, 24];
 
     useEffect(() => { fetchIngredients(); fetchSuppliers(); }, []);
 
@@ -410,126 +414,247 @@ export default function IngredientsPage() {
                                 </button>
                             </div>
                             <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" />
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio según proveedor (albarán)</label>
-                                <select
-                                    value={editForm.supplier_pricing_mode || 'per_purchase_unit'}
-                                    onChange={e => setEditForm({ ...editForm, supplier_pricing_mode: e.target.value as any })}
-                                    className="w-full p-3 border rounded-2xl bg-white font-bold"
-                                >
-                                    <option value="per_purchase_unit">Directo (€/kg, €/L, €/ud)</option>
-                                    <option value="per_pack">Botella / lata / caja (unidad proveedor)</option>
-                                </select>
-                                <p className="text-[11px] text-gray-500 mt-1 px-1.5">
-                                    Si el albarán viene por caja/pack/botella/lata, el coste en recetas se calcula usando el contenido.
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
-                                    <>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio del proveedor (€)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={editForm.pack_price ?? ''}
-                                                onChange={e => setEditForm({ ...editForm, pack_price: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                            />
+                            <div className="rounded-2xl border border-zinc-100 bg-white p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio proveedor</div>
+                                        <div className="font-black text-zinc-900">
+                                            {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack'
+                                                ? `${Number(editForm.pack_price ?? 0).toFixed(2)}€ (pack)`
+                                                : `${Number(editForm.current_price ?? 0).toFixed(2)}€ / ${normalizeUnit(editForm.purchase_unit)}`}
                                         </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades dentro</label>
-                                            <input
-                                                type="number"
-                                                step="1"
-                                                value={editForm.pack_units ?? ''}
-                                                onChange={e => setEditForm({ ...editForm, pack_units: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                            />
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad base)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={editForm.current_price || ''}
-                                                onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                            />
-                                        </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base</label>
-                                            <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">
-                                                {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                                            </select>
-                                        </div>
-                                    </>
+                                        {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
+                                            <div className="text-xs text-zinc-500 mt-1">
+                                                {Number(editForm.pack_units ?? 0) || '—'} uds · {Number(editForm.pack_unit_size_qty ?? 0) || '—'}
+                                                {String(editForm.pack_unit_size_unit ?? '') || ''} · base {normalizeUnit(editForm.purchase_unit)}
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditPricingOpen(v => !v);
+                                            setEditPricingStep(1);
+                                        }}
+                                        className="min-h-12 px-4 rounded-xl border border-zinc-200 bg-white font-black text-[#36606F] inline-flex items-center gap-2 shrink-0 hover:bg-zinc-50"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                        Editar
+                                    </button>
+                                </div>
+
+                                {editPricingOpen && (
+                                    <div className="mt-4 space-y-3">
+                                        {editPricingStep === 1 && (
+                                            <>
+                                                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo lo cobra el proveedor?</div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                        onClick={() => {
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                supplier_pricing_mode: 'per_purchase_unit',
+                                                                purchase_unit: 'kg',
+                                                                unit_type: 'kg',
+                                                                pack_price: null,
+                                                                pack_units: null,
+                                                                pack_unit_size_qty: null,
+                                                                pack_unit_size_unit: null,
+                                                            }));
+                                                            setEditPricingStep(2);
+                                                        }}
+                                                    >
+                                                        Por kilo
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                        onClick={() => {
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                supplier_pricing_mode: 'per_purchase_unit',
+                                                                purchase_unit: 'l',
+                                                                unit_type: 'l',
+                                                                pack_price: null,
+                                                                pack_units: null,
+                                                                pack_unit_size_qty: null,
+                                                                pack_unit_size_unit: null,
+                                                            }));
+                                                            setEditPricingStep(2);
+                                                        }}
+                                                    >
+                                                        Por litro
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                        onClick={() => {
+                                                            const base = (editForm.category === 'Bebidas' ? 'l' : editForm.category === 'Packaging' ? 'ud' : 'kg') as any;
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                supplier_pricing_mode: 'per_pack',
+                                                                purchase_unit: base,
+                                                                unit_type: base,
+                                                                pack_units: p.pack_units ?? 12,
+                                                                pack_unit_size_qty: p.pack_unit_size_qty ?? 330,
+                                                                pack_unit_size_unit: p.pack_unit_size_unit ?? (base === 'l' ? 'ml' : 'ud'),
+                                                            }));
+                                                            setEditPricingStep(2);
+                                                        }}
+                                                    >
+                                                        Por pack
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                        onClick={() => {
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                supplier_pricing_mode: 'per_purchase_unit',
+                                                                purchase_unit: 'ud',
+                                                                unit_type: 'ud',
+                                                                pack_price: null,
+                                                                pack_units: null,
+                                                                pack_unit_size_qty: null,
+                                                                pack_unit_size_unit: null,
+                                                            }));
+                                                            setEditPricingStep(2);
+                                                        }}
+                                                    >
+                                                        Por unidad
+                                                    </button>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setEditPricingOpen(false); setEditPricingStep(1); }}
+                                                        className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {editPricingStep === 2 && (
+                                            <>
+                                                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Precio</div>
+                                                {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
+                                                    <div className="space-y-3">
+                                                        <label className="block space-y-1">
+                                                            <span className="text-[10px] font-bold uppercase text-zinc-400">Precio del pack (€)</span>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={editForm.pack_price ?? ''}
+                                                                onChange={(e) => setEditForm({ ...editForm, pack_price: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 font-mono font-bold"
+                                                            />
+                                                        </label>
+                                                        <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Contenido del pack</div>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            {PACK_UNITS_PRESETS_EDIT.map((n) => (
+                                                                <button
+                                                                    key={n}
+                                                                    type="button"
+                                                                    onClick={() => setEditForm((p) => ({ ...p, pack_units: n }))}
+                                                                    className={cn(
+                                                                        'min-h-12 rounded-xl border px-2 text-sm font-black',
+                                                                        Number(editForm.pack_units) === n ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]' : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                                                    )}
+                                                                >
+                                                                    {n}
+                                                                </button>
+                                                            ))}
+                                                            <input
+                                                                type="number"
+                                                                step="1"
+                                                                placeholder="Otro"
+                                                                value={editForm.pack_units ?? ''}
+                                                                onChange={(e) => setEditForm((p) => ({ ...p, pack_units: e.target.value === '' ? null : parseFloat(e.target.value) }))}
+                                                                className="min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                                                            />
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <label className="block space-y-1">
+                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.001"
+                                                                    value={editForm.pack_unit_size_qty ?? ''}
+                                                                    onChange={(e) => setEditForm({ ...editForm, pack_unit_size_qty: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                                                                    className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                                                                />
+                                                            </label>
+                                                            <label className="block space-y-1">
+                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad contenido</span>
+                                                                <select
+                                                                    value={editForm.pack_unit_size_unit || 'ud'}
+                                                                    onChange={(e) => setEditForm({ ...editForm, pack_unit_size_unit: e.target.value })}
+                                                                    className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
+                                                                >
+                                                                    <option value="ud">ud</option>
+                                                                    <option value="ml">ml</option>
+                                                                    <option value="cl">cl</option>
+                                                                    <option value="l">L</option>
+                                                                    <option value="g">g</option>
+                                                                    <option value="kg">kg</option>
+                                                                </select>
+                                                            </label>
+                                                        </div>
+                                                        <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
+                                                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Coste unitario (auto)</div>
+                                                            <div className="mt-1 font-black text-[#5E35B1]">
+                                                                {(() => {
+                                                                    const effective = computeEffectivePriceFromPack({
+                                                                        packPrice: editForm.pack_price ?? null,
+                                                                        packUnits: editForm.pack_units ?? null,
+                                                                        unitSizeQty: editForm.pack_unit_size_qty ?? null,
+                                                                        unitSizeUnit: editForm.pack_unit_size_unit ?? null,
+                                                                        purchaseUnit: editForm.purchase_unit ?? null,
+                                                                    });
+                                                                    if (effective == null) return '—';
+                                                                    const u = normalizeUnit(editForm.purchase_unit);
+                                                                    return `${effective.toFixed(4)}€/${u}`;
+                                                                })()}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <label className="block space-y-1">
+                                                        <span className="text-[10px] font-bold uppercase text-zinc-400">Precio (€ / unidad base)</span>
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={editForm.current_price ?? ''}
+                                                            onChange={(e) => setEditForm({ ...editForm, current_price: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                                            className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 font-mono font-bold"
+                                                        />
+                                                    </label>
+                                                )}
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditPricingStep(1)}
+                                                        className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
+                                                    >
+                                                        Atrás
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setEditPricingOpen(false); setEditPricingStep(1); toast.success('Precio actualizado (pendiente de Guardar)'); }}
+                                                        className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300"
+                                                    >
+                                                        Listo
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                 )}
                             </div>
-                            {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' && (
-                                <>
-                                    <div className="flex gap-2">
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Contenido por unidad</label>
-                                            <input
-                                                type="number"
-                                                step="0.001"
-                                                value={editForm.pack_unit_size_qty ?? ''}
-                                                onChange={e => setEditForm({ ...editForm, pack_unit_size_qty: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                                placeholder="Ej: 330"
-                                            />
-                                        </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad contenido</label>
-                                            <select
-                                                value={editForm.pack_unit_size_unit || 'ud'}
-                                                onChange={e => setEditForm({ ...editForm, pack_unit_size_unit: e.target.value })}
-                                                className="w-full p-3 border rounded-2xl bg-white"
-                                            >
-                                                <option value="ud">ud</option>
-                                                <option value="ml">ml</option>
-                                                <option value="cl">cl</option>
-                                                <option value="l">L</option>
-                                                <option value="g">g</option>
-                                                <option value="kg">kg</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 items-end">
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (recetas)</label>
-                                            <select
-                                                value={editForm.purchase_unit}
-                                                onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })}
-                                                className="w-full p-3 border rounded-2xl bg-white"
-                                            >
-                                                {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Coste unitario (auto)</label>
-                                            <div className="w-full p-3 border rounded-2xl bg-white font-black text-[#5E35B1]">
-                                                {(() => {
-                                                    const effective = computeEffectivePriceFromPack({
-                                                        packPrice: editForm.pack_price ?? null,
-                                                        packUnits: editForm.pack_units ?? null,
-                                                        unitSizeQty: editForm.pack_unit_size_qty ?? null,
-                                                        unitSizeUnit: editForm.pack_unit_size_unit ?? null,
-                                                        purchaseUnit: editForm.purchase_unit ?? null,
-                                                    });
-                                                    if (effective == null) return '—';
-                                                    const u = normalizeUnit(editForm.purchase_unit);
-                                                    return `${effective.toFixed(4)}€/${u}`;
-                                                })()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
