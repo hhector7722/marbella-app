@@ -232,6 +232,10 @@ export function IngredientWizard({
             : 'ud',
       })
 
+      // IMPORTANTE:
+      // - En modo pack, NO podemos guardar supplier_pricing_mode='per_pack' aún,
+      //   porque el trigger exige pack_price/pack_units/pack_unit_size_* y lanza excepción si faltan.
+      // - Lo guardamos en el paso de Precio junto con los pack_*.
       if (pricingMode === 'per_purchase_unit') {
         await savePatch({
           supplier_pricing_mode: 'per_purchase_unit',
@@ -244,9 +248,14 @@ export function IngredientWizard({
         })
       } else {
         await savePatch({
-          supplier_pricing_mode: 'per_pack',
+          // mantener modo estable hasta que haya pack_* completos
+          supplier_pricing_mode: 'per_purchase_unit',
           purchase_unit: baseUnit,
           unit_type: baseUnit,
+          pack_price: null,
+          pack_units: null,
+          pack_unit_size_qty: null,
+          pack_unit_size_unit: null,
         })
       }
 
@@ -262,9 +271,14 @@ export function IngredientWizard({
       if (draft.pricingMode === 'per_purchase_unit') {
         if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
         await savePatch({
+          supplier_pricing_mode: 'per_purchase_unit',
           current_price: draft.supplierPrice,
           purchase_unit: draft.baseUnit,
           unit_type: draft.baseUnit,
+          pack_price: null,
+          pack_units: null,
+          pack_unit_size_qty: null,
+          pack_unit_size_unit: null,
         })
         advance()
         return
@@ -276,6 +290,7 @@ export function IngredientWizard({
       const qty = draft.contentPerUnitQty ?? 1
       const unit = draft.contentPerUnitUnit ?? 'ud'
       await savePatch({
+        supplier_pricing_mode: 'per_pack',
         pack_price: draft.supplierPrice,
         pack_units: draft.unitsInside,
         pack_unit_size_qty: qty,
@@ -286,6 +301,23 @@ export function IngredientWizard({
       advance()
     } catch (e: any) {
       toast.error(e?.message || 'Error guardando precio')
+    }
+  }
+
+  async function skipPricing() {
+    try {
+      // Permitir crear sin precio: dejamos un estado estable compatible con trigger.
+      await savePatch({
+        supplier_pricing_mode: 'per_purchase_unit',
+        current_price: 0,
+        pack_price: null,
+        pack_units: null,
+        pack_unit_size_qty: null,
+        pack_unit_size_unit: null,
+      })
+      advance()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error al saltar precio')
     }
   }
 
@@ -363,9 +395,27 @@ export function IngredientWizard({
               Packaging
             </button>
           </div>
-          <button type="button" onClick={back} className="min-h-12 w-full rounded-xl border border-zinc-200 font-bold">
-            Atrás
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={back} className="min-h-12 flex-1 rounded-xl border border-zinc-200 font-bold">
+              Atrás
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={async () => {
+                // Añadir más tarde: mantenemos categoría por defecto en BD (Alimentos) y avanzamos.
+                try {
+                  await ensureIngredientId(draft.name)
+                  advance()
+                } catch (e: any) {
+                  toast.error(e?.message || 'Error')
+                }
+              }}
+              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700 disabled:opacity-50"
+            >
+              Añadir más tarde
+            </button>
+          </div>
         </div>
       )}
 
@@ -386,9 +436,22 @@ export function IngredientWizard({
               Por unidad
             </button>
           </div>
-          <button type="button" onClick={back} className="min-h-12 w-full rounded-xl border border-zinc-200 font-bold">
-            Atrás
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={back} className="min-h-12 flex-1 rounded-xl border border-zinc-200 font-bold">
+              Atrás
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={async () => {
+                // Añadir más tarde: saltamos directamente al paso de imagen.
+                await skipPricing()
+              }}
+              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700 disabled:opacity-50"
+            >
+              Añadir más tarde
+            </button>
+          </div>
         </div>
       )}
 
@@ -496,6 +559,14 @@ export function IngredientWizard({
             <button
               type="button"
               disabled={saving}
+              onClick={skipPricing}
+              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700 disabled:opacity-50"
+            >
+              Añadir más tarde
+            </button>
+            <button
+              type="button"
+              disabled={saving}
               onClick={handleSavePricingAndAdvance}
               className="min-h-12 flex-1 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
             >
@@ -535,6 +606,13 @@ export function IngredientWizard({
             className="w-full min-h-12 rounded-xl bg-emerald-600 text-white font-black"
           >
             Terminar
+          </button>
+          <button
+            type="button"
+            onClick={() => onClose?.()}
+            className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700"
+          >
+            Añadir más tarde
           </button>
         </div>
       )}
