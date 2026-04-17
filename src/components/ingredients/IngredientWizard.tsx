@@ -21,6 +21,12 @@ export type WizardDraft = {
   contentPerUnitUnit: 'ud' | 'ml' | 'cl' | 'l' | 'g' | 'kg'
   // Unidad base (para coste/recetas):
   baseUnit: WizardBaseUnit
+  // Opcionales (último paso)
+  wastePercentage: number | null
+  orderUnit: string | null
+  recommendedStock: number | null
+  supplier: string | null
+  supplier2: string | null
 }
 
 export type WizardResult = {
@@ -54,6 +60,8 @@ const MASS_PRESETS = [
   { qty: 1, unit: 'kg' as const },
   { qty: 2, unit: 'kg' as const },
 ]
+
+const ORDER_UNIT_OPTIONS = ['unidad', 'ud', 'pack', 'caja', 'pieza', 'kg', 'l', 'g', 'ml', 'cl'] as const
 
 function toNumber(x: unknown): number {
   const n = typeof x === 'number' ? x : Number(String(x ?? '').replace(',', '.'))
@@ -126,6 +134,11 @@ export function IngredientWizard({
     contentPerUnitQty: null,
     contentPerUnitUnit: 'ud',
     baseUnit: initialCategory ? primaryBaseUnitForCategory(initialCategory) : 'l',
+    wastePercentage: 0,
+    orderUnit: 'unidad',
+    recommendedStock: null,
+    supplier: null,
+    supplier2: null,
   }))
 
   const unitCost = useMemo(() => computeUnitCost(draft), [draft])
@@ -334,6 +347,35 @@ export function IngredientWizard({
       toast.success('Imagen guardada')
     } catch (e: any) {
       toast.error(e?.message || 'Error subiendo imagen')
+    }
+  }
+
+  async function saveOptionalFieldsAndClose() {
+    try {
+      // Acepta vacíos: proveedores pueden ser null; stock puede ser null.
+      const wp = draft.wastePercentage == null ? 0 : Number(draft.wastePercentage)
+      const waste_percentage = Number.isFinite(wp) ? wp : 0
+      const rs =
+        draft.recommendedStock == null
+          ? null
+          : (() => {
+              const n = Number(draft.recommendedStock)
+              return Number.isFinite(n) ? n : null
+            })()
+      const order_unit = String(draft.orderUnit ?? '').trim() || null
+      const supplier = String(draft.supplier ?? '').trim() || null
+      const supplier_2 = String(draft.supplier2 ?? '').trim() || null
+
+      await savePatch({
+        waste_percentage,
+        order_unit,
+        recommended_stock: rs,
+        supplier,
+        supplier_2,
+      })
+      onClose?.()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error al guardar')
     }
   }
 
@@ -594,6 +636,71 @@ export function IngredientWizard({
               Subir imagen
             </span>
           </label>
+          <div className="rounded-2xl border border-zinc-100 bg-white p-4 space-y-3">
+            <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Opcional</div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block space-y-1">
+                <span className="text-[10px] font-bold uppercase text-zinc-400">% Merma</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={draft.wastePercentage ?? ''}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      wastePercentage: e.target.value === '' ? null : toNumber(e.target.value),
+                    }))
+                  }
+                  className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-[10px] font-bold uppercase text-zinc-400">U. pedido</span>
+                <select
+                  value={draft.orderUnit ?? 'unidad'}
+                  onChange={(e) => setDraft((d) => ({ ...d, orderUnit: e.target.value }))}
+                  className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white font-bold"
+                >
+                  {ORDER_UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <label className="block space-y-1">
+              <span className="text-[10px] font-bold uppercase text-zinc-400">Stock recomendado</span>
+              <input
+                type="number"
+                step="1"
+                value={draft.recommendedStock ?? ''}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    recommendedStock: e.target.value === '' ? null : toNumber(e.target.value),
+                  }))
+                }
+                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-[10px] font-bold uppercase text-zinc-400">Proveedor (opcional)</span>
+              <input
+                value={draft.supplier ?? ''}
+                onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value }))}
+                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-[10px] font-bold uppercase text-zinc-400">Proveedor 2 (opcional)</span>
+              <input
+                value={draft.supplier2 ?? ''}
+                onChange={(e) => setDraft((d) => ({ ...d, supplier2: e.target.value }))}
+                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
+              />
+            </label>
+          </div>
           <div className="rounded-2xl border border-zinc-100 bg-white p-4">
             <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Coste unitario (auto)</div>
             <div className="text-2xl font-black text-[#36606F] mt-1">
@@ -602,14 +709,14 @@ export function IngredientWizard({
           </div>
           <button
             type="button"
-            onClick={() => onClose?.()}
+            onClick={saveOptionalFieldsAndClose}
             className="w-full min-h-12 rounded-xl bg-emerald-600 text-white font-black"
           >
             Terminar
           </button>
           <button
             type="button"
-            onClick={() => onClose?.()}
+            onClick={saveOptionalFieldsAndClose}
             className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700"
           >
             Añadir más tarde
