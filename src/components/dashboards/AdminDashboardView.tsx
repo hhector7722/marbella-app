@@ -1252,13 +1252,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
                 { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
                 { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
-                { title: 'Producto', img: '/icons/suppliers.png', link: '/ingredients' },
+                { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients' },
             ].map((card, i) => (
                 <button
                     key={i}
                     onClick={() => {
                         if (card.title === 'Plantilla') setIsStaffModalOpen(true);
-                        else if (card.title === 'Producto') setIsProductModalOpen(true);
+                        else if (card.title === 'Stock') setIsProductModalOpen(true);
                         else if (card.link) router.push(card.link);
                     }}
                     className={cn(

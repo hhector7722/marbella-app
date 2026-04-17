@@ -853,7 +853,7 @@ export default function StaffDashboardView() {
                             <IOSIconBoxed img="/icons/change.png" color="bg-white" label="Caja" onClick={() => setIsCashOptionsModalOpen(true)} />
                             <IOSIconBoxed img="/icons/recipes.png" color="bg-white" label="Recetas" onClick={() => router.push('/recipes?view=staff')} />
                             <IOSIconBoxed img="/icons/information.png" color="bg-white" label="Info" onClick={() => setActiveMenu('info')} />
-                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-white" label="Productos" onClick={() => setIsProductModalOpen(true)} />
+                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-white" label="Stock" onClick={() => setIsProductModalOpen(true)} />
                         </div>
                     </div>
                 </div>
