@@ -41,7 +41,7 @@ export type WizardResult = {
   pack_unit_size_unit?: string | null
 }
 
-const PACK_UNITS_PRESETS = [6, 12, 24, 48, 72, 96]
+const PACK_UNITS_PRESETS = [12, 24]
 const VOLUME_PRESETS = [
   { qty: 200, unit: 'ml' as const },
   { qty: 250, unit: 'ml' as const },
@@ -411,7 +411,7 @@ export function IngredientWizard({
       {step === 2 && (
         <div className="space-y-3">
           <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Qué es?</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <button
               type="button"
               disabled={saving}
@@ -432,13 +432,17 @@ export function IngredientWizard({
               type="button"
               disabled={saving}
               onClick={() => handlePickCategory('Packaging')}
-              className="col-span-2 min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
             >
               Packaging
             </button>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={back} className="min-h-12 flex-1 rounded-xl border border-zinc-200 font-bold">
+            <button
+              type="button"
+              onClick={back}
+              className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
+            >
               Atrás
             </button>
             <button
@@ -453,7 +457,7 @@ export function IngredientWizard({
                   toast.error(e?.message || 'Error')
                 }
               }}
-              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700 disabled:opacity-50"
+              className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
               Añadir más tarde
             </button>
