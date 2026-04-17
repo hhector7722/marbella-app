@@ -19,6 +19,7 @@ import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { addEmployeeDocument, getEmployeeDocuments, deleteEmployeeDocument, updateProfile } from '@/app/actions/profile';
+import { ConsumptionModal } from './ConsumptionModal';
 import { getISOWeekStartUTC, toUTCDateString } from '@/lib/date-utils';
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -82,6 +83,7 @@ export default function StaffDashboard() {
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
+    const [showConsumptionModal, setShowConsumptionModal] = useState(false);
 
     // Estado Menús Emergentes
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
@@ -242,8 +244,9 @@ export default function StaffDashboard() {
         finally { setLoading(false); }
     }
 
-    const handleClockAction = async () => {
+    const handleClockAction = async (forcedAction?: 'in' | 'out') => {
         if (!userId) return;
+        const action = forcedAction ?? modalAction;
         setShowModal(false);
         setActionLoading(true);
 
@@ -287,7 +290,7 @@ export default function StaffDashboard() {
             const now = new Date();
             const logCoords = { input_lat: lat, input_lng: lng };
 
-            if (modalAction === 'in') {
+            if (action === 'in') {
                 const { data, error } = await supabase.from('time_logs')
                     .insert({
                         user_id: userId,
@@ -309,7 +312,7 @@ export default function StaffDashboard() {
                     setGiffOverlaySrc(overlayConfig.entrada);
                     setShowGiffOverlay(true);
                 }
-            } else if (modalAction === 'out' && todayLog) {
+            } else if (action === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
 
@@ -531,7 +534,15 @@ export default function StaffDashboard() {
                 {/* COLUMNA DERECHA */}
                 <div className="space-y-6">
                     <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col items-center text-center relative gap-4">
-                        <button onClick={openConfirmation} disabled={status === 'finished' || actionLoading}
+                        <button
+                            onClick={() => {
+                                if (status === 'working') {
+                                    setShowConsumptionModal(true);
+                                } else {
+                                    openConfirmation();
+                                }
+                            }}
+                            disabled={status === 'finished' || actionLoading}
                             className={`w-full h-24 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
                                 ${status === 'idle' ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200' : ''}
                                 ${status === 'working' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' : ''}
@@ -604,6 +615,15 @@ export default function StaffDashboard() {
             </div>
 
             {/* MODALES */}
+            {showConsumptionModal && (
+                <ConsumptionModal
+                    onCancel={() => setShowConsumptionModal(false)}
+                    onConfirm={async () => {
+                        setShowConsumptionModal(false);
+                        await handleClockAction('out');
+                    }}
+                />
+            )}
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
@@ -616,7 +636,7 @@ export default function StaffDashboard() {
                         <h3 className="text-xl font-black text-gray-800 mb-4">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setShowModal(false)} className="py-3 px-4 bg-gray-100 text-gray-600 font-bold rounded-xl">Cancelar</button>
-                            <button onClick={handleClockAction} className="py-3 px-4 bg-blue-600 text-white font-bold rounded-xl">Confirmar</button>
+                            <button type="button" onClick={() => void handleClockAction()} className="py-3 px-4 bg-blue-600 text-white font-bold rounded-xl">Confirmar</button>
                         </div>
                     </div>
                 </div>
