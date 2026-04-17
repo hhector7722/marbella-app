@@ -483,7 +483,11 @@ export function IngredientWizard({
             </button>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={back} className="min-h-12 flex-1 rounded-xl border border-zinc-200 font-bold">
+            <button
+              type="button"
+              onClick={back}
+              className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
+            >
               Atrás
             </button>
             <button
@@ -493,7 +497,7 @@ export function IngredientWizard({
                 // Añadir más tarde: saltamos directamente al paso de imagen.
                 await skipPricing()
               }}
-              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700 disabled:opacity-50"
+              className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
               Añadir más tarde
             </button>
@@ -599,14 +603,18 @@ export function IngredientWizard({
           )}
 
           <div className="flex gap-2">
-            <button type="button" onClick={back} className="min-h-12 flex-1 rounded-xl border border-zinc-200 font-bold">
+            <button
+              type="button"
+              onClick={back}
+              className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
+            >
               Atrás
             </button>
             <button
               type="button"
               disabled={saving}
               onClick={skipPricing}
-              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700 disabled:opacity-50"
+              className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
               Añadir más tarde
             </button>
@@ -721,7 +729,7 @@ export function IngredientWizard({
           <button
             type="button"
             onClick={saveOptionalFieldsAndClose}
-            className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white font-black text-zinc-700"
+            className="w-full min-h-12 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300"
           >
             Añadir más tarde
           </button>
