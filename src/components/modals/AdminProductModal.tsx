@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -340,11 +341,31 @@ function IngredientCombobox({ ingredients, value, onChange }: { ingredients: Ing
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [menuRect, setMenuRect] = useState<{ left: number; top: number; width: number } | null>(null);
 
     const filtered = search.trim()
         ? ingredients.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()))
         : ingredients;
     const displayName = value ? ingredients.find((i) => i.id === value)?.name ?? '' : '';
+
+    const updateMenuRect = useCallback(() => {
+        const el = buttonRef.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const width = Math.max(240, Math.round(r.width));
+        const left = Math.min(
+            Math.max(12, Math.round(r.left)),
+            Math.max(12, window.innerWidth - width - 12)
+        );
+        const top = Math.round(r.bottom + 6);
+        setMenuRect({ left, top, width });
+    }, []);
+
+    useLayoutEffect(() => {
+        if (!open) return;
+        updateMenuRect();
+    }, [open, updateMenuRect]);
 
     useEffect(() => {
         if (!open) return;
@@ -355,80 +376,82 @@ function IngredientCombobox({ ingredients, value, onChange }: { ingredients: Ing
         return () => document.removeEventListener('mousedown', handle);
     }, [open]);
 
+    useEffect(() => {
+        if (!open) return;
+        const onWindow = () => updateMenuRect();
+        window.addEventListener('resize', onWindow);
+        // Captura scroll en cualquier contenedor (el modal tiene overflow-y)
+        window.addEventListener('scroll', onWindow, true);
+        return () => {
+            window.removeEventListener('resize', onWindow);
+            window.removeEventListener('scroll', onWindow, true);
+        };
+    }, [open, updateMenuRect]);
+
     return (
         <div ref={containerRef} className="relative w-full min-h-[32px]">
             <button
+                ref={buttonRef}
                 type="button"
-                onClick={() => { setOpen((o) => !o); if (!open) setSearch(''); }}
+                onClick={() => {
+                    setOpen((o) => !o);
+                    if (!open) setSearch('');
+                }}
                 className="w-full flex items-center justify-between gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs bg-white min-h-[32px] text-left hover:border-zinc-300"
             >
                 <span className={cn('truncate', !displayName && 'text-zinc-400')}>{displayName || 'Seleccionar ingrediente'}</span>
                 <ChevronDown size={14} className={cn('text-zinc-400 shrink-0 transition-transform', open && 'rotate-180')} />
             </button>
             {open && (
-                <div className="fixed inset-0 z-[500]">
-                    <button
-                        type="button"
-                        aria-label="Cerrar selector de ingrediente"
-                        onClick={() => setOpen(false)}
-                        className="absolute inset-0 bg-black/30"
-                    />
-
-                    <div className="absolute left-1/2 top-1/2 w-[min(640px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-100 bg-white shadow-2xl overflow-hidden">
-                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 text-white">
-                            <div className="min-w-0">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-white/80">
-                                    Seleccionar ingrediente
-                                </div>
-                                <div className="text-sm font-black truncate">
-                                    {displayName || '—'}
-                                </div>
+                typeof document !== 'undefined' && menuRect
+                    ? createPortal(
+                        <div
+                            className="fixed z-[600] rounded-lg border border-zinc-200 bg-white shadow-lg overflow-hidden"
+                            style={{
+                                left: menuRect.left,
+                                top: menuRect.top,
+                                width: menuRect.width,
+                            }}
+                        >
+                            <div className="p-1.5 border-b border-zinc-100 bg-zinc-50">
+                                <input
+                                    type="text"
+                                    placeholder="Escribe para buscar..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                    className="w-full min-h-12 px-3 rounded-xl border border-zinc-200 text-xs bg-white font-bold"
+                                    autoFocus
+                                />
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                className="shrink-0 inline-flex items-center justify-center min-h-12 min-w-12 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95"
-                            >
-                                <X size={18} strokeWidth={3} />
-                            </button>
-                        </div>
-
-                        <div className="p-3 bg-white">
-                            <input
-                                type="text"
-                                placeholder="Escribe para buscar…"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold bg-white"
-                                autoFocus
-                            />
-                        </div>
-
-                        <div className="max-h-[60vh] overflow-y-auto bg-white">
-                            {filtered.length === 0 ? (
-                                <div className="px-4 py-6 text-sm font-bold text-zinc-500">
-                                    Sin resultados
-                                </div>
-                            ) : (
-                                <div className="p-2">
-                                    {filtered.slice(0, 200).map((ing) => (
-                                        <button
-                                            key={ing.id}
-                                            type="button"
-                                            onClick={() => { onChange(ing.id); setOpen(false); setSearch(''); }}
-                                            className={cn(
-                                                'w-full text-left min-h-12 rounded-xl px-3 text-sm font-bold hover:bg-zinc-50 active:scale-[0.99]',
-                                                value === ing.id && 'bg-[#36606F]/10 text-[#36606F]'
-                                            )}
-                                        >
-                                            <span className="block truncate">{ing.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                            <ul className="max-h-[240px] overflow-y-auto py-0.5">
+                                {filtered.length === 0 ? (
+                                    <li className="px-3 py-2 text-xs text-zinc-500">Sin resultados</li>
+                                ) : (
+                                    filtered.slice(0, 100).map((ing) => (
+                                        <li key={ing.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    onChange(ing.id);
+                                                    setOpen(false);
+                                                    setSearch('');
+                                                }}
+                                                className={cn(
+                                                    'w-full px-3 min-h-12 text-left text-xs font-bold hover:bg-zinc-100',
+                                                    value === ing.id && 'bg-[#36606F]/10 text-[#36606F]'
+                                                )}
+                                            >
+                                                <span className="block truncate">{ing.name}</span>
+                                            </button>
+                                        </li>
+                                    ))
+                                )}
+                            </ul>
+                        </div>,
+                        document.body
+                    )
+                    : null
             )}
         </div>
     );
