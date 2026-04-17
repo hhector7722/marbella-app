@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 interface CountPayload {
@@ -11,7 +11,7 @@ interface CountPayload {
 }
 
 export async function processInventoryCounts(counts: CountPayload[]) {
-  const supabase = await createServerClient()
+  const supabase = await createClient()
   
   const actionableCounts = counts.filter(
     (c) => c.physical_stock !== c.theoretical_stock
