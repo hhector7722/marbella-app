@@ -366,38 +366,68 @@ function IngredientCombobox({ ingredients, value, onChange }: { ingredients: Ing
                 <ChevronDown size={14} className={cn('text-zinc-400 shrink-0 transition-transform', open && 'rotate-180')} />
             </button>
             {open && (
-                <div className="absolute z-50 left-0 right-0 top-full mt-0.5 rounded-lg border border-zinc-200 bg-white shadow-lg overflow-hidden">
-                    <div className="p-1.5 border-b border-zinc-100 bg-zinc-50">
-                        <input
-                            type="text"
-                            placeholder="Escribe para buscar..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            className="w-full px-2 py-1.5 rounded border border-zinc-200 text-xs bg-white"
-                            autoFocus
-                        />
+                <div className="fixed inset-0 z-[500]">
+                    <button
+                        type="button"
+                        aria-label="Cerrar selector de ingrediente"
+                        onClick={() => setOpen(false)}
+                        className="absolute inset-0 bg-black/30"
+                    />
+
+                    <div className="absolute left-1/2 top-1/2 w-[min(640px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-100 bg-white shadow-2xl overflow-hidden">
+                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 text-white">
+                            <div className="min-w-0">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-white/80">
+                                    Seleccionar ingrediente
+                                </div>
+                                <div className="text-sm font-black truncate">
+                                    {displayName || '—'}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                className="shrink-0 inline-flex items-center justify-center min-h-12 min-w-12 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95"
+                            >
+                                <X size={18} strokeWidth={3} />
+                            </button>
+                        </div>
+
+                        <div className="p-3 bg-white">
+                            <input
+                                type="text"
+                                placeholder="Escribe para buscar…"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold bg-white"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="max-h-[60vh] overflow-y-auto bg-white">
+                            {filtered.length === 0 ? (
+                                <div className="px-4 py-6 text-sm font-bold text-zinc-500">
+                                    Sin resultados
+                                </div>
+                            ) : (
+                                <div className="p-2">
+                                    {filtered.slice(0, 200).map((ing) => (
+                                        <button
+                                            key={ing.id}
+                                            type="button"
+                                            onClick={() => { onChange(ing.id); setOpen(false); setSearch(''); }}
+                                            className={cn(
+                                                'w-full text-left min-h-12 rounded-xl px-3 text-sm font-bold hover:bg-zinc-50 active:scale-[0.99]',
+                                                value === ing.id && 'bg-[#36606F]/10 text-[#36606F]'
+                                            )}
+                                        >
+                                            <span className="block truncate">{ing.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <ul className="max-h-[200px] overflow-y-auto py-0.5">
-                        {filtered.length === 0 ? (
-                            <li className="px-3 py-2 text-xs text-zinc-500">Sin resultados</li>
-                        ) : (
-                            filtered.slice(0, 100).map((ing) => (
-                                <li key={ing.id}>
-                                    <button
-                                        type="button"
-                                        onClick={() => { onChange(ing.id); setOpen(false); setSearch(''); }}
-                                        className={cn(
-                                            'w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-100',
-                                            value === ing.id && 'bg-[#36606F]/10 text-[#36606F] font-medium'
-                                        )}
-                                    >
-                                        {ing.name}
-                                    </button>
-                                </li>
-                            ))
-                        )}
-                    </ul>
                 </div>
             )}
         </div>
