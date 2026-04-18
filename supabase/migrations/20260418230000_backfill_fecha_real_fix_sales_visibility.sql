@@ -13,31 +13,23 @@ LANGUAGE sql
 IMMUTABLE
 PARALLEL SAFE
 AS $$
-  COALESCE(
+  SELECT COALESCE(
     p_fecha_real,
-    (
-      (p_fecha + COALESCE(
-        CASE
-          WHEN p_hora_cierre IS NULL OR btrim(p_hora_cierre) = '' THEN NULL::time
-          WHEN p_hora_cierre ~ 'T' THEN (NULLIF(split_part(split_part(p_hora_cierre, 'T', 2), '.', 1), ''))::time
-          WHEN p_hora_cierre ~ ' ' THEN (NULLIF(split_part(p_hora_cierre, ' ', 2), ''))::time
-          WHEN length(btrim(p_hora_cierre)) >= 8 THEN (substring(p_hora_cierre from 1 for 8))::time
-          ELSE NULL::time
-        END,
-        time '12:00'
-      ))::timestamp AT TIME ZONE 'Europe/Madrid'
-    )
+    CASE WHEN p_fecha IS NOT NULL
+      THEN (p_fecha::timestamp AT TIME ZONE 'Europe/Madrid')
+      ELSE NULL
+    END
   );
 $$;
 
 COMMENT ON FUNCTION public.ticket_effective_reception_ts(date, text, timestamptz) IS
-  'Instante para análisis: fecha_real del receptor si existe; si no, fecha negocio TPV + hora_cierre (o 12:00 Madrid).';
+  'Recepción real si existe; si no, día de negocio TPV (`fecha`) a medianoche Europe/Madrid.';
 
 GRANT EXECUTE ON FUNCTION public.ticket_effective_reception_ts(date, text, timestamptz) TO anon, authenticated, service_role;
 
--- Backfill cabeceras: solo donde faltaba recepción real
+-- Backfill cabeceras: mismo día que `fecha` (medianoche Madrid)
 UPDATE public.tickets_marbella t
-SET fecha_real = public.ticket_effective_reception_ts(t.fecha, t.hora_cierre, NULL)
+SET fecha_real = (t.fecha::timestamp AT TIME ZONE 'Europe/Madrid')
 WHERE t.fecha_real IS NULL
   AND t.fecha IS NOT NULL;
 
@@ -49,9 +41,9 @@ WHERE tl.numero_documento = t.numero_documento
   AND tl.fecha_real IS NULL
   AND t.fecha_real IS NOT NULL;
 
--- Líneas huérfanas sin cabecera coherente: usar fecha_negocio mediodía Madrid
+-- Líneas huérfanas: mismo día que fecha_negocio (medianoche Madrid)
 UPDATE public.ticket_lines_marbella tl
-SET fecha_real = ((tl.fecha_negocio::timestamp + time '12:00') AT TIME ZONE 'Europe/Madrid')
+SET fecha_real = (tl.fecha_negocio::timestamp AT TIME ZONE 'Europe/Madrid')
 WHERE tl.fecha_real IS NULL
   AND tl.fecha_negocio IS NOT NULL;
 
@@ -120,14 +112,14 @@ BEGIN
       tl.fecha_real,
       CASE WHEN t.numero_documento IS NOT NULL
         THEN public.ticket_effective_reception_ts(t.fecha, t.hora_cierre, t.fecha_real)
-        ELSE ((tl.fecha_negocio::timestamp + time '12:00') AT TIME ZONE 'Europe/Madrid')
+        ELSE (tl.fecha_negocio::timestamp AT TIME ZONE 'Europe/Madrid')
       END
     )))::date >= p_start_date
       AND (timezone('Europe/Madrid', COALESCE(
       tl.fecha_real,
       CASE WHEN t.numero_documento IS NOT NULL
         THEN public.ticket_effective_reception_ts(t.fecha, t.hora_cierre, t.fecha_real)
-        ELSE ((tl.fecha_negocio::timestamp + time '12:00') AT TIME ZONE 'Europe/Madrid')
+        ELSE (tl.fecha_negocio::timestamp AT TIME ZONE 'Europe/Madrid')
       END
     )))::date <= p_end_date
     GROUP BY a.nombre, tl.articulo_id
