@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-18 (Recetas compuestas / menús)
+**Última actualización:** 2026-04-18 (Eje ventas: fecha_real)
+
+- [x] **Ventas: eje cronológico único `fecha_real` (2026-04-18)**: KPIs, gráficas horarias, ranking de productos y listados de tickets usan `fecha_real` (día civil en `Europe/Madrid` vía `timezone(...)` en RPCs y `madridDayUtcRangeIso` / `madridRangeUtcIso` en cliente). La columna `fecha` del TPV queda solo como trazabilidad. Migración `20260418220000_sales_axis_fecha_real.sql` (`get_daily_sales_stats`, `get_hourly_sales`, `get_product_sales_ranking`, `get_daily_sales_chart`). Helpers en `src/lib/madrid-date-bounds.ts`; `getBusinessHourFromTicket` en `src/lib/utils.ts`. Realtime dashboard sin filtro por `fecha`; validación por día Madrid en `fecha_real`.
 
 - [x] **Recetas compuestas (menús / combos) (2026-04-18)**: Tabla puente `recipe_combos` (`combo_recipe_id` → `child_recipe_id`, `quantity`, UNIQUE par combo-hijo, CHECK anti-autorreferencia). RLS policy para `authenticated`. Migración `20260418200000_recipe_combos.sql`. Server Actions en `src/app/dashboard/recipes/actions.ts`: `getComboItems`, `addComboItem` (bloqueo de ciclos en servidor además del CHECK), `removeComboItem`; `revalidatePath` sobre `/recipes/[id]`. UI: categoría **Menús** en `/recipes/[id]` muestra `SubRecipesPanel` (búsqueda excluyendo receta actual, cantidad, lista con eliminar, `sonner`).
 

@@ -31,6 +31,7 @@ import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 
 const CONTACTS_DATA = [
@@ -337,10 +338,12 @@ export default function StaffDashboardView() {
                 setNextShifts([]);
             }
 
-            // --- FETCH LIVE TICKETS FOR CLOSING ---
+            // --- FETCH LIVE TICKETS FOR CLOSING (eje fecha_real / día Madrid) ---
+            const { startIso: ventasStart, endIso: ventasEnd } = madridDayUtcRangeIso(todayISO);
             const { data: ticketsToday } = await supabase.from('tickets_marbella')
                 .select('total_documento')
-                .eq('fecha', todayISO);
+                .gte('fecha_real', ventasStart)
+                .lte('fecha_real', ventasEnd);
 
             const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
             const countVentas = ticketsToday?.reduce((count, t) => {

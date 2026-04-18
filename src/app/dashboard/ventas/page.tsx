@@ -8,7 +8,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn, getHourFromTicketTime } from '@/lib/utils';
+import { cn, getBusinessHourFromTicket } from '@/lib/utils';
+import { madridDayUtcRangeIso, madridRangeUtcIso, formatMadridHmFromIso } from '@/lib/madrid-date-bounds';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
@@ -21,6 +22,7 @@ import * as XLSX from 'xlsx';
 interface TicketSummary {
     numero_documento: string;
     fecha: string;
+    fecha_real?: string | null;
     hora_cierre: string;
     origen: string;
     total_documento: number;
@@ -132,14 +134,15 @@ export default function VentasPage() {
                     setSalesChartData(hourly);
                     return;
                 }
+                const { startIso: chartStart, endIso: chartEnd } = madridDayUtcRangeIso(chartDate);
                 const { data: ticketsData } = await supabase
                     .from('tickets_marbella')
-                    .select('hora_cierre, total_documento, fecha')
-                    .gte('fecha', chartDate)
-                    .lte('fecha', chartDate);
+                    .select('hora_cierre, total_documento, fecha, fecha_real')
+                    .gte('fecha_real', chartStart)
+                    .lte('fecha_real', chartEnd);
                 const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
-                (ticketsData || []).forEach((t: { hora_cierre?: string; total_documento?: number; fecha?: string }) => {
-                    const hour = getHourFromTicketTime(t.hora_cierre, t.fecha);
+                (ticketsData || []).forEach((t: { hora_cierre?: string; total_documento?: number; fecha?: string; fecha_real?: string }) => {
+                    const hour = getBusinessHourFromTicket(t);
                     hourly[hour].total += Number(t.total_documento) || 0;
                 });
                 setSalesChartData(hourly);
@@ -193,12 +196,17 @@ export default function VentasPage() {
     async function fetchVentas() {
         setLoading(true);
         try {
-            let startDateStr: string;
-            let endDateStr: string;
+            let ticketStartIso: string;
+            let ticketEndIso: string;
+            let productStartYmd: string;
+            let productEndYmd: string;
 
             if (filterMode === 'single') {
-                startDateStr = selectedDate;
-                endDateStr = selectedDate;
+                const { startIso, endIso } = madridDayUtcRangeIso(selectedDate);
+                ticketStartIso = startIso;
+                ticketEndIso = endIso;
+                productStartYmd = selectedDate;
+                productEndYmd = selectedDate;
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setTickets([]);
@@ -207,26 +215,25 @@ export default function VentasPage() {
                     setLoading(false);
                     return;
                 }
-                const s = parseLocalSafe(rangeStart);
-                s.setHours(0, 0, 0, 0);
-                const e = parseLocalSafe(rangeEnd);
-                e.setHours(23, 59, 59, 999);
-                startDateStr = s.toISOString();
-                endDateStr = e.toISOString();
+                const { startIso, endIso } = madridRangeUtcIso(rangeStart, rangeEnd);
+                ticketStartIso = startIso;
+                ticketEndIso = endIso;
+                productStartYmd = rangeStart;
+                productEndYmd = rangeEnd;
             }
 
-            // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos
+            // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos — eje fecha_real
             const ticketsPromise = supabase
-                .from('tickets_marbella') // Endpoint/Tabla a utilizar
-                .select('numero_documento, fecha, hora_cierre, total_documento, mesa')
-                .gte('fecha', startDateStr)
-                .lte('fecha', endDateStr)
-                .order('fecha', { ascending: false })
+                .from('tickets_marbella')
+                .select('numero_documento, fecha, fecha_real, hora_cierre, total_documento, mesa')
+                .gte('fecha_real', ticketStartIso)
+                .lte('fecha_real', ticketEndIso)
+                .order('fecha_real', { ascending: false })
                 .order('hora_cierre', { ascending: false });
 
             const productsPromise = supabase.rpc('get_product_sales_ranking', {
-                p_start_date: startDateStr,
-                p_end_date: endDateStr
+                p_start_date: productStartYmd,
+                p_end_date: productEndYmd
             });
 
             const [ticketsRes, productsRes] = await Promise.all([ticketsPromise, productsPromise]);
@@ -253,7 +260,7 @@ export default function VentasPage() {
                 const startTotal = (Number.isFinite(sH) ? sH : 0) * 60 + (Number.isFinite(sM) ? sM : 0);
                 const endTotal = (Number.isFinite(eH) ? eH : 0) * 60 + (Number.isFinite(eM) ? eM : 0);
                 return activeData.filter((t: any) => {
-                    const hour = getHourFromTicketTime(t.hora_cierre, t.fecha);
+                    const hour = getBusinessHourFromTicket(t);
                     const minutes = hour * 60; // aproximación por hora
                     return minutes >= startTotal && minutes <= endTotal;
                 });
@@ -361,7 +368,7 @@ export default function VentasPage() {
     const hourSlotsRows = useMemo((): HourSlotRow[] => {
         const map = new Map<string, { count: number; sum: number }>();
         for (const t of tickets) {
-            const h = getHourFromTicketTime(t.hora_cierre, t.fecha);
+            const h = getBusinessHourFromTicket(t);
             const label = hourToSlotLabel(h);
             if (!label) continue;
             const amt = Number(t.total_documento) || 0;
@@ -754,6 +761,8 @@ export default function VentasPage() {
                                                                 <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
                                                                     {(() => {
                                                                         try {
+                                                                            const hm = formatMadridHmFromIso(ticket.fecha_real);
+                                                                            if (hm) return hm.length >= 5 ? hm.substring(0, 5) : hm;
                                                                             let rawTime = ticket.hora_cierre;
                                                                             if (rawTime && typeof rawTime === 'string') {
                                                                                 if (rawTime.includes('T')) rawTime = rawTime.split('T')[1];

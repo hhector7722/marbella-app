@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { sendClosingNotification } from '@/app/actions/notifications';
+import { madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 
 // export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
 export const BILLS = [100, 50, 20, 10, 5];
@@ -134,12 +135,14 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         try {
             const dateObj = parseDateTimeLocal(selectedDateTime);
             const dateStr = format(dateObj, 'yyyy-MM-dd');
+            const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
 
             // Robust fetch: Aggregated sum directly from the table to avoid RPC dependency issues
             const { data: tickets, error: salesError } = await supabase
                 .from('tickets_marbella')
                 .select('total_documento')
-                .eq('fecha', dateStr);
+                .gte('fecha_real', startIso)
+                .lte('fecha_real', endIso);
 
             if (salesError) throw salesError;
 

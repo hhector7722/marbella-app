@@ -23,7 +23,8 @@ import { CashBoxEditModal } from '@/components/modals/CashBoxEditModal';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn, calculateRoundedHours, getHourFromTicketTime } from '@/lib/utils';
+import { cn, calculateRoundedHours, getBusinessHourFromTicket } from '@/lib/utils';
+import { madridDayUtcRangeIso, formatYmdInMadrid, formatMadridHmFromIso } from '@/lib/madrid-date-bounds';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import Image from 'next/image';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
@@ -270,9 +271,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
-    /** Extrae la hora (0-23) del ticket; alineado con get_hourly_sales y getHourFromTicketTime. */
-    const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string }): number =>
-        getHourFromTicketTime(ticket.hora_cierre, ticket.fecha);
+    /** Hora 0–23 según fecha_real (Madrid); alineado con get_hourly_sales. */
+    const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string; fecha_real?: string | null }): number =>
+        getBusinessHourFromTicket(ticket);
 
     const fetchHourlySales = async (targetDate?: string) => {
         const dateStr = targetDate ?? format(new Date(), 'yyyy-MM-dd');
@@ -290,14 +291,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 setSalesChartData(hourly);
                 return;
             }
+            const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
             const { data: tickets } = await supabase
                 .from('tickets_marbella')
-                .select('hora_cierre, total_documento')
-                .gte('fecha', dateStr)
-                .lte('fecha', dateStr);
+                .select('hora_cierre, fecha, fecha_real, total_documento')
+                .gte('fecha_real', startIso)
+                .lte('fecha_real', endIso);
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
-            (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
-                const hour = getHourFromTicketTime(t.hora_cierre);
+            (tickets || []).forEach((t: { hora_cierre?: string; fecha?: string; fecha_real?: string; total_documento?: number }) => {
+                const hour = getBusinessHourFromTicket(t);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
             setSalesChartData(hourly);
@@ -339,9 +341,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'tickets_marbella',
-                filter: `fecha=eq.${todayStr}`
             }, (payload: any) => {
                 if (salesViewDateRef.current !== todayStr) return;
+                const fr = payload.new?.fecha_real as string | undefined;
+                if (!fr || formatYmdInMadrid(fr) !== todayStr) return;
                 const newTotal = Number(payload.new.total_documento) || 0;
                 setLiveTickets((prev: { total: number; count: number }) => ({
                     total: prev.total + newTotal,
@@ -592,12 +595,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         if (!isSalesExpanded && filterHourRange === null) return;
         let cancelled = false;
         setLoadingSalesTickets(true);
+        const { startIso, endIso } = madridDayUtcRangeIso(salesViewDate);
         supabase
             .from('tickets_marbella')
-            .select('numero_documento, fecha, hora_cierre, total_documento')
-            .gte('fecha', salesViewDate)
-            .lte('fecha', salesViewDate)
-            .order('fecha', { ascending: false })
+            .select('numero_documento, fecha, hora_cierre, total_documento, fecha_real')
+            .gte('fecha_real', startIso)
+            .lte('fecha_real', endIso)
+            .order('fecha_real', { ascending: false })
             .order('hora_cierre', { ascending: false })
             .limit(100)
             .then(({ data, error }) => {
@@ -896,14 +900,17 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </tr>
                                             ) : displayTickets.map((ticket, idx) => {
                                                 const cleanDoc = ticket.numero_documento?.replace(/0+/, '') || '';
-                                                const rawTime = ticket.hora_cierre;
-                                                let hora = '---';
-                                                if (rawTime && typeof rawTime === 'string') {
-                                                    const t = rawTime.includes('T') ? rawTime.split('T')[1] : rawTime;
-                                                    if (t && t !== '00:00:00' && t.length >= 5) hora = t.substring(0, 5);
-                                                } else if (ticket.fecha?.includes?.('T')) {
-                                                    const f = ticket.fecha.split('T')[1];
-                                                    if (f && f !== '00:00:00') hora = f.substring(0, 5);
+                                                const hmReal = formatMadridHmFromIso(ticket.fecha_real);
+                                                let hora = hmReal ?? '---';
+                                                if (!hmReal) {
+                                                    const rawTime = ticket.hora_cierre;
+                                                    if (rawTime && typeof rawTime === 'string') {
+                                                        const t = rawTime.includes('T') ? rawTime.split('T')[1] : rawTime;
+                                                        if (t && t !== '00:00:00' && t.length >= 5) hora = t.substring(0, 5);
+                                                    } else if (ticket.fecha?.includes?.('T')) {
+                                                        const f = ticket.fecha.split('T')[1];
+                                                        if (f && f !== '00:00:00') hora = f.substring(0, 5);
+                                                    }
                                                 }
                                                 return (
                                                     <React.Fragment key={ticket.numero_documento || idx}>

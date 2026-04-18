@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { getHourFromMadridIso } from "@/lib/madrid-date-bounds";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -42,6 +43,16 @@ export function getHourFromTicketTime(horaCierre?: string | null, fecha?: string
     const match = part.replace(/\.\d+/, '').match(/^(\d{1,2})/);
     if (match) return Math.min(23, Math.max(0, parseInt(match[1], 10)));
     return 12;
+}
+
+/** KPIs / gráficas: hora según recepción real; si no hay `fecha_real`, fallback TPV. */
+export function getBusinessHourFromTicket(ticket: {
+    fecha_real?: string | null;
+    hora_cierre?: string | null;
+    fecha?: string | null;
+}): number {
+    if (ticket.fecha_real) return getHourFromMadridIso(ticket.fecha_real);
+    return getHourFromTicketTime(ticket.hora_cierre, ticket.fecha);
 }
 
 export function calculateRoundedHours(hours: number): number {

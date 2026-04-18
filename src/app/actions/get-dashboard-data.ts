@@ -2,7 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
-import { getHourFromTicketTime } from '@/lib/utils';
+import { getBusinessHourFromTicket } from '@/lib/utils';
+import { madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -40,6 +41,8 @@ export async function getDashboardData() {
     };
 
     // 1. Parallel Fetching of Core Data (ventas por hora del día actual)
+    const { startIso: todayStartIso, endIso: todayEndIso } = madridDayUtcRangeIso(todayStr);
+
     const chartPromise = (async () => {
         try {
             const { data, error } = await supabase.rpc('get_hourly_sales', {
@@ -54,17 +57,17 @@ export async function getDashboardData() {
                 });
                 return hourly;
             }
-            // Fallback: fetch tickets directly and aggregate by hour
+            // Fallback: fetch tickets directly and aggregate by hour (eje fecha_real)
             const { data: tickets } = await supabase
                 .from('tickets_marbella')
-                .select('hora_cierre, total_documento')
-                .gte('fecha', todayStr)
-                .lte('fecha', todayStr)
-                .limit(5000); // MODIFICACIÓN: Única alteración realizada.
+                .select('hora_cierre, fecha, fecha_real, total_documento')
+                .gte('fecha_real', todayStartIso)
+                .lte('fecha_real', todayEndIso)
+                .limit(5000);
 
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
-            (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
-                const hour = getHourFromTicketTime(t.hora_cierre);
+            (tickets || []).forEach((t: { hora_cierre?: string; fecha?: string; fecha_real?: string; total_documento?: number }) => {
+                const hour = getBusinessHourFromTicket(t);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
             return hourly;
