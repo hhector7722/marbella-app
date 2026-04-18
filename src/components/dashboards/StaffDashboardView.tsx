@@ -33,6 +33,7 @@ import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -104,6 +105,7 @@ export default function StaffDashboardView() {
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
+    const [showConsumptionModal, setShowConsumptionModal] = useState(false);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | 'carta' | null>(null);
     const [preferStock, setPreferStock] = useState(false);
@@ -483,8 +485,9 @@ export default function StaffDashboardView() {
         }
     };
 
-    const handleClockAction = async () => {
+    const handleClockAction = async (forcedAction?: 'in' | 'out') => {
         if (!userId) return;
+        const action = forcedAction ?? modalAction;
         setShowModal(false);
         setActionLoading(true);
         try {
@@ -517,7 +520,7 @@ export default function StaffDashboardView() {
             const now = new Date();
             const logCoords = { input_lat: lat, input_lng: lng };
 
-            if (modalAction === 'in') {
+            if (action === 'in') {
                 const { data } = await supabase.from('time_logs')
                     .insert({
                         user_id: userId,
@@ -535,7 +538,7 @@ export default function StaffDashboardView() {
                     setGiffOverlaySrc(overlayConfig.entrada);
                     setShowGiffOverlay(true);
                 }
-            } else if (modalAction === 'out' && todayLog) {
+            } else if (action === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffMinutes = differenceInMinutes(now, clockIn);
                 const roundedHours = applyRoundingRule(diffMinutes);
@@ -752,7 +755,14 @@ export default function StaffDashboardView() {
 
                     <div className="w-full bg-white rounded-2xl p-4 md:p-3 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-2">
                         <button
-                            onClick={openConfirmation}
+                            type="button"
+                            onClick={() => {
+                                if (status === 'working') {
+                                    setShowConsumptionModal(true);
+                                } else {
+                                    openConfirmation();
+                                }
+                            }}
                             disabled={status === 'finished' || actionLoading}
                             className={cn(
                                 "w-full h-16 md:h-8 rounded-2xl md:rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
@@ -862,13 +872,22 @@ export default function StaffDashboardView() {
                 </div>
             </div>
 
+            {showConsumptionModal && (
+                <ConsumptionModal
+                    onCancel={() => setShowConsumptionModal(false)}
+                    onConfirm={async () => {
+                        setShowConsumptionModal(false);
+                        await handleClockAction('out');
+                    }}
+                />
+            )}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
                     <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
-                            <button onClick={handleClockAction} className={cn("h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg", modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200")}>Confirmar</button>
+                            <button type="button" onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
+                            <button type="button" onClick={() => void handleClockAction()} className={cn("h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg", modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200")}>Confirmar</button>
                         </div>
                     </div>
                 </div>
