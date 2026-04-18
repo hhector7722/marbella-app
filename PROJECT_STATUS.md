@@ -1,6 +1,9 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-18 (Eje ventas: fecha_real)
+**Última actualización:** 2026-04-18 (Consumo personal en `/staff/dashboard`)
+
+- [x] **Staff dashboard: mismo modal consumo al fichar salida (2026-04-18)**: La home del personal es `/staff/dashboard` (`StaffDashboardView`), no `/staff`. `ConsumptionModal` + flujo `handleClockAction('out')` replicado aquí; `/staff` sigue teniendo el modal por si se accede directo.
+- [x] **Ventas: backfill `fecha_real` + `ticket_effective_reception_ts` (2026-04-18)**: El histórico con `fecha_real` NULL quedaba invisible en KPIs/RPCs. Migración `20260418230000_backfill_fecha_real_fix_sales_visibility.sql` rellena recepción desde TPV donde faltaba y redefine RPCs usando instante efectivo (`COALESCE` recepción real vs fecha+hora TPV).
 
 - [x] **Ventas: eje cronológico único `fecha_real` (2026-04-18)**: KPIs, gráficas horarias, ranking de productos y listados de tickets usan `fecha_real` (día civil en `Europe/Madrid` vía `timezone(...)` en RPCs y `madridDayUtcRangeIso` / `madridRangeUtcIso` en cliente). La columna `fecha` del TPV queda solo como trazabilidad. Migración `20260418220000_sales_axis_fecha_real.sql` (`get_daily_sales_stats`, `get_hourly_sales`, `get_product_sales_ranking`, `get_daily_sales_chart`). Helpers en `src/lib/madrid-date-bounds.ts`; `getBusinessHourFromTicket` en `src/lib/utils.ts`. Realtime dashboard sin filtro por `fecha`; validación por día Madrid en `fecha_real`.
 
