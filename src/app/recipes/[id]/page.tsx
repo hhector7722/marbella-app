@@ -9,8 +9,9 @@ import { toast, Toaster } from 'sonner';
 import CreateIngredientModal from '@/components/CreateIngredientModal';
 import { cn } from '@/lib/utils';
 import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
+import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 
-const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails'];
+const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails', 'Menús'];
 
 interface ViewState {
     location: 'pvp' | 'pavello';
@@ -301,6 +302,7 @@ function RecipeDetailContent() {
 
     const healthIndicator = getHealthIndicator(foodCost);
     const simulatedHealthIndicator = getHealthIndicator(simulatedFoodCost);
+    const isMenuRecipe = recipe?.category === 'Menús';
 
     const themeColors = view.location === 'pvp'
         ? { toggle: 'bg-blue-600 text-white', toggleInactive: 'bg-gray-100 text-gray-600', border: 'border-blue-500' }
@@ -650,6 +652,9 @@ function RecipeDetailContent() {
                             </div>
                         </div>
                     </div>
+                    {!isRestricted && isMenuRecipe && (
+                        <SubRecipesPanel recipeId={recipeId} />
+                    )}
                 </div>
             </div>
 

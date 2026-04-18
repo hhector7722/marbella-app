@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-18 (Webhook BDP nativo en Next.js)
+**Última actualización:** 2026-04-18 (Recetas compuestas / menús)
+
+- [x] **Recetas compuestas (menús / combos) (2026-04-18)**: Tabla puente `recipe_combos` (`combo_recipe_id` → `child_recipe_id`, `quantity`, UNIQUE par combo-hijo, CHECK anti-autorreferencia). RLS policy para `authenticated`. Migración `20260418200000_recipe_combos.sql`. Server Actions en `src/app/dashboard/recipes/actions.ts`: `getComboItems`, `addComboItem` (bloqueo de ciclos en servidor además del CHECK), `removeComboItem`; `revalidatePath` sobre `/recipes/[id]`. UI: categoría **Menús** en `/recipes/[id]` muestra `SubRecipesPanel` (búsqueda excluyendo receta actual, cantidad, lista con eliminar, `sonner`).
 
 - [x] **BDP: receptor nativo en Next.js + ledger inventario (2026-04-18)**: Nuevas rutas `POST /api/webhooks/bdp/ventas` y `POST /api/webhooks/bdp/telemetria` protegidas por `Authorization: Bearer ${WEBHOOK_SECRET}`. Usan `@supabase/supabase-js` con `SUPABASE_SERVICE_ROLE_KEY` para upsert en `tickets_marbella`/`ticket_lines_marbella` y `estado_sala`. En ventas se guarda `fecha_real` (timestamp ISO al entrar el `POST`, migración `20260418190000_tickets_fecha_real.sql`) además de `fecha`/`fecha_negocio` de BDP. Tras el upsert dispara RPC de inventario: `process_ticket_stock_deduction` si `total_documento >= 0` y `revert_ticket_stock_deduction` si `total_documento < 0`.
 
