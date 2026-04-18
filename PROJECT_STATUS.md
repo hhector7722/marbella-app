@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-17 (Consumo personal al fichar salida `/staff`)
+**Última actualización:** 2026-04-18 (RPC reintegro stock anulación TPV)
+
+- [x] **Inventario: reintegro stock por anulación TPV (2026-04-18)**: RPC `revert_ticket_stock_deduction` (`stock_movements` `ADJUSTMENT` con `reference_doc` `REFUND-<ticket>`, idempotente; compensa líneas `SALE` `TICKET-<ticket>`). Server Action `revertTicketInventory` en `src/lib/actions/inventory-sync.ts`. Migración `20260417180000_revert_ticket_stock_rpc.sql`.
 
 - [x] **Staff: consumo personal antes de fichar salida (2026-04-17)**: En `/staff`, «FICHAR SALIDA» abre `ConsumptionModal` (acceso rápido + búsqueda, Entero/Medio, vía rápida «NO HE CONSUMIDO NADA HOY»). Server Actions `submitPersonalConsumption` / `getConsumptionRecipes`; RPC `process_staff_consumption` (`stock_movements` tipo `WASTE`, referencia `STAFF-<uuid>-<epoch>`). Migración `20260417170000_staff_consumption_rpc.sql`. Tras confirmar, `handleClockAction('out')` cierra el turno.
 - [x] **Dashboard: menú Stock (Manager + Staff) (2026-04-17)**: Icono flotante renombrado a **Stock** (`StaffDashboardView`, `AdminDashboardView`). `StaffProductModal`: enlaces Next `<Link>` a arqueo `/dashboard/inventory`, mermas `/dashboard/inventory/waste`, escáner `/dashboard/scanner`, catálogo `/ingredients`, proveedores; **Pedidos** abre selector de proveedor; anillo activo si `usePathname` coincide. `AdminProductModal` (cabecera **Stock**, rejilla `max-w-md`): mismas rutas staff más **Auditoría** `/dashboard/inventory/ledger` y **Mapeos TPV** `/dashboard/recetas-tpv`; iconos `lucide-react` (ClipboardList, Trash2, Camera, History, BookOpen) donde aplica.
