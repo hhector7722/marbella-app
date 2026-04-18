@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { getHourFromMadridIso } from "@/lib/madrid-date-bounds";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -45,13 +44,11 @@ export function getHourFromTicketTime(horaCierre?: string | null, fecha?: string
     return 12;
 }
 
-/** KPIs / gráficas: hora según recepción real; si no hay `fecha_real`, fallback TPV. */
+/** KPIs / gráficas: hora según TPV (`hora_cierre` / `fecha`), alineado con `get_hourly_sales`. */
 export function getBusinessHourFromTicket(ticket: {
-    fecha_real?: string | null;
     hora_cierre?: string | null;
     fecha?: string | null;
 }): number {
-    if (ticket.fecha_real) return getHourFromMadridIso(ticket.fecha_real);
     return getHourFromTicketTime(ticket.hora_cierre, ticket.fecha);
 }
 

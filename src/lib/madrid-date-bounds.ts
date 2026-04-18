@@ -1,6 +1,6 @@
 import { fromZonedTime } from 'date-fns-tz'
 
-/** Hora 0–23 del instante en calendario Europe/Madrid (eje `fecha_real`). */
+/** Hora 0–23 del instante en calendario Europe/Madrid (timestamptz ISO). */
 export function getHourFromMadridIso(iso: string | null | undefined): number {
   if (!iso || typeof iso !== 'string') return 12
   const d = new Date(iso)
@@ -14,7 +14,7 @@ export function getHourFromMadridIso(iso: string | null | undefined): number {
   return Number.isFinite(n) ? Math.min(23, Math.max(0, n)) : 12
 }
 
-/** Límites UTC ISO para filtrar `fecha_real` (timestamptz) por día civil en Europe/Madrid. */
+/** Límites UTC ISO para un día civil en Europe/Madrid (timestamptz). */
 export function madridDayUtcRangeIso(yyyyMmDd: string): { startIso: string; endIso: string } {
   const start = fromZonedTime(`${yyyyMmDd}T00:00:00.000`, 'Europe/Madrid')
   const end = fromZonedTime(`${yyyyMmDd}T23:59:59.999`, 'Europe/Madrid')
@@ -27,7 +27,7 @@ export function madridRangeUtcIso(startYmd: string, endYmd: string): { startIso:
   return { startIso, endIso }
 }
 
-/** yyyy-MM-dd del instante en calendario Madrid (p. ej. validar Realtime). */
+/** yyyy-MM-dd del instante en calendario Madrid. */
 export function formatYmdInMadrid(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso
   if (Number.isNaN(d.getTime())) return ''
@@ -44,7 +44,7 @@ export function formatYmdInMadrid(iso: string | Date): string {
   return `${y}-${m}-${day}`
 }
 
-/** HH:mm en Madrid para mostrar en tablas (eje recepción real). */
+/** HH:mm en Madrid para mostrar en tablas a partir de ISO. */
 export function formatMadridHmFromIso(iso: string | null | undefined): string | null {
   if (!iso) return null
   const d = new Date(iso)

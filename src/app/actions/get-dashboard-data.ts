@@ -3,7 +3,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { getBusinessHourFromTicket } from '@/lib/utils';
-import { madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -40,9 +39,7 @@ export async function getDashboardData() {
         return neg ? -cents : cents;
     };
 
-    // 1. Parallel Fetching of Core Data (ventas por hora del día actual)
-    const { startIso: todayStartIso, endIso: todayEndIso } = madridDayUtcRangeIso(todayStr);
-
+    // 1. Parallel Fetching of Core Data (ventas por hora del día actual, eje TPV fecha + hora_cierre)
     const chartPromise = (async () => {
         try {
             const { data, error } = await supabase.rpc('get_hourly_sales', {
@@ -57,16 +54,15 @@ export async function getDashboardData() {
                 });
                 return hourly;
             }
-            // Fallback: fetch tickets directly and aggregate by hour (eje fecha_real)
+            // Fallback: fetch tickets directly and aggregate by hour (eje fecha TPV)
             const { data: tickets } = await supabase
                 .from('tickets_marbella')
-                .select('hora_cierre, fecha, fecha_real, total_documento')
-                .gte('fecha_real', todayStartIso)
-                .lte('fecha_real', todayEndIso)
+                .select('hora_cierre, fecha, total_documento')
+                .eq('fecha', todayStr)
                 .limit(5000);
 
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
-            (tickets || []).forEach((t: { hora_cierre?: string; fecha?: string; fecha_real?: string; total_documento?: number }) => {
+            (tickets || []).forEach((t: { hora_cierre?: string; fecha?: string; total_documento?: number }) => {
                 const hour = getBusinessHourFromTicket(t);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });

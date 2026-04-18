@@ -9,7 +9,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
-import { madridDayUtcRangeIso, madridRangeUtcIso, formatMadridHmFromIso } from '@/lib/madrid-date-bounds';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
@@ -22,7 +21,6 @@ import * as XLSX from 'xlsx';
 interface TicketSummary {
     numero_documento: string;
     fecha: string;
-    fecha_real?: string | null;
     hora_cierre: string;
     origen: string;
     total_documento: number;
@@ -134,14 +132,12 @@ export default function VentasPage() {
                     setSalesChartData(hourly);
                     return;
                 }
-                const { startIso: chartStart, endIso: chartEnd } = madridDayUtcRangeIso(chartDate);
                 const { data: ticketsData } = await supabase
                     .from('tickets_marbella')
-                    .select('hora_cierre, total_documento, fecha, fecha_real')
-                    .gte('fecha_real', chartStart)
-                    .lte('fecha_real', chartEnd);
+                    .select('hora_cierre, total_documento, fecha')
+                    .eq('fecha', chartDate);
                 const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
-                (ticketsData || []).forEach((t: { hora_cierre?: string; total_documento?: number; fecha?: string; fecha_real?: string }) => {
+                (ticketsData || []).forEach((t: { hora_cierre?: string; total_documento?: number; fecha?: string }) => {
                     const hour = getBusinessHourFromTicket(t);
                     hourly[hour].total += Number(t.total_documento) || 0;
                 });
@@ -196,17 +192,19 @@ export default function VentasPage() {
     async function fetchVentas() {
         setLoading(true);
         try {
-            let ticketStartIso: string;
-            let ticketEndIso: string;
             let productStartYmd: string;
             let productEndYmd: string;
 
+            let ticketsQuery = supabase
+                .from('tickets_marbella')
+                .select('numero_documento, fecha, hora_cierre, total_documento, mesa')
+                .order('fecha', { ascending: false })
+                .order('hora_cierre', { ascending: false });
+
             if (filterMode === 'single') {
-                const { startIso, endIso } = madridDayUtcRangeIso(selectedDate);
-                ticketStartIso = startIso;
-                ticketEndIso = endIso;
                 productStartYmd = selectedDate;
                 productEndYmd = selectedDate;
+                ticketsQuery = ticketsQuery.eq('fecha', selectedDate);
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setTickets([]);
@@ -215,21 +213,12 @@ export default function VentasPage() {
                     setLoading(false);
                     return;
                 }
-                const { startIso, endIso } = madridRangeUtcIso(rangeStart, rangeEnd);
-                ticketStartIso = startIso;
-                ticketEndIso = endIso;
                 productStartYmd = rangeStart;
                 productEndYmd = rangeEnd;
+                ticketsQuery = ticketsQuery.gte('fecha', rangeStart).lte('fecha', rangeEnd);
             }
 
-            // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos — eje fecha_real
-            const ticketsPromise = supabase
-                .from('tickets_marbella')
-                .select('numero_documento, fecha, fecha_real, hora_cierre, total_documento, mesa')
-                .gte('fecha_real', ticketStartIso)
-                .lte('fecha_real', ticketEndIso)
-                .order('fecha_real', { ascending: false })
-                .order('hora_cierre', { ascending: false });
+            const ticketsPromise = ticketsQuery;
 
             const productsPromise = supabase.rpc('get_product_sales_ranking', {
                 p_start_date: productStartYmd,
@@ -761,8 +750,6 @@ export default function VentasPage() {
                                                                 <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
                                                                     {(() => {
                                                                         try {
-                                                                            const hm = formatMadridHmFromIso(ticket.fecha_real);
-                                                                            if (hm) return hm.length >= 5 ? hm.substring(0, 5) : hm;
                                                                             let rawTime = ticket.hora_cierre;
                                                                             if (rawTime && typeof rawTime === 'string') {
                                                                                 if (rawTime.includes('T')) rawTime = rawTime.split('T')[1];
