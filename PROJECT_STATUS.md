@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-18 (RPC reintegro stock anulación TPV)
+**Última actualización:** 2026-04-18 (Webhook BDP nativo en Next.js)
+
+- [x] **BDP: receptor nativo en Next.js + ledger inventario (2026-04-18)**: Nuevas rutas `POST /api/webhooks/bdp/ventas` y `POST /api/webhooks/bdp/telemetria` protegidas por `Authorization: Bearer ${WEBHOOK_SECRET}`. Usan `@supabase/supabase-js` con `SUPABASE_SERVICE_ROLE_KEY` para upsert en `tickets_marbella`/`ticket_lines_marbella` y `estado_sala`. En ventas se guarda `fecha_real` (timestamp ISO al entrar el `POST`, migración `20260418190000_tickets_fecha_real.sql`) además de `fecha`/`fecha_negocio` de BDP. Tras el upsert dispara RPC de inventario: `process_ticket_stock_deduction` si `total_documento >= 0` y `revert_ticket_stock_deduction` si `total_documento < 0`.
 
 - [x] **Inventario: reintegro stock por anulación TPV (2026-04-18)**: RPC `revert_ticket_stock_deduction` (`stock_movements` `ADJUSTMENT` con `reference_doc` `REFUND-<ticket>`, idempotente; compensa líneas `SALE` `TICKET-<ticket>`). Server Action `revertTicketInventory` en `src/lib/actions/inventory-sync.ts`. Migración `20260417180000_revert_ticket_stock_rpc.sql`.
 
