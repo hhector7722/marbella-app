@@ -175,19 +175,20 @@ export function CommandCard({
     }, [openDropdownKey]);
 
     const formatElapsed = (minutes: number) => {
-        if (minutes < 0) return '0 H 0 M';
-        if (minutes < 60) return `0 H ${minutes} M`;
-        const hrs = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return `${hrs} H ${mins} M`;
+        const m = minutes < 0 ? 0 : minutes;
+        const hrs = Math.floor(m / 60);
+        const mins = m % 60;
+        if (hrs === 0) return `${mins}m`;
+        if (mins === 0) return `${hrs}h`;
+        return `${hrs}h${mins}m`;
     };
 
-    const getElapsedTextColor = () => {
-        if (chromeCompleted) return 'text-slate-500';
-        // Aust: 0–15 negro, 16–25 naranja, ≥26 rojo
-        if (elapsed >= 26) return 'text-rose-700';
-        if (elapsed >= 16) return 'text-orange-600';
-        return 'text-black';
+    /** Aust: fondo indicador — verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto siempre blanco */
+    const getElapsedIndicatorClass = () => {
+        if (chromeCompleted) return 'bg-slate-400 text-white';
+        if (elapsed >= 25) return 'bg-red-600 text-white';
+        if (elapsed >= 16) return 'bg-orange-500 text-white';
+        return 'bg-emerald-600 text-white';
     };
 
     const orderTime = formatLocalTimeKdsHeader(new Date(effectiveStart));
@@ -317,7 +318,12 @@ export function CommandCard({
                         <div className={cn('text-sm sm:text-base font-black uppercase tracking-[0.12em] leading-none text-slate-600', chromeCompleted && 'text-slate-500')}>
                             {orderTime}
                         </div>
-                        <div className={cn('text-sm sm:text-base font-black uppercase tracking-[0.12em] leading-none tabular-nums', getElapsedTextColor())}>
+                        <div
+                            className={cn(
+                                'inline-flex shrink-0 items-center justify-center rounded-lg px-2.5 py-1 text-sm sm:text-base font-black tabular-nums leading-none tracking-normal border-0 shadow-none',
+                                getElapsedIndicatorClass()
+                            )}
+                        >
                             {formatElapsed(elapsed)}
                         </div>
                     </div>

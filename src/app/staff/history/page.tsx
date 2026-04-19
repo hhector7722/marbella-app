@@ -453,8 +453,11 @@ export default function HistoryPage() {
                                     <button
                                         onClick={() => setShowEmployeeDropdown(true)}
                                         className={cn(
-                                            "h-8 px-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/10 flex items-center justify-center text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shadow-sm",
-                                            viewingOther && "bg-white/20 border-white/30"
+                                            "flex items-center justify-center text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shrink-0",
+                                            isPlantilla
+                                                ? "min-h-[48px] px-1 py-1 bg-transparent border-0 shadow-none rounded-none hover:bg-transparent hover:text-white/85"
+                                                : "h-8 px-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/10 shadow-sm",
+                                            viewingOther && !isPlantilla && "bg-white/20 border-white/30"
                                         )}
                                     >
                                         <span className="max-w-[70px] truncate">{headerLabel}</span>
