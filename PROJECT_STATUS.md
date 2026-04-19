@@ -1,7 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-19 (Stock: modales, layout detalle, mermas)
+**Última actualización:** 2026-04-19 (Mermas: rejilla con fotos, unidad en ingredientes)
 
+- [x] **Mermas: rejilla tipo `/orders/new` + unidad editable (2026-04-19)**: `/dashboard/inventory/waste` con `max-w-7xl`; recetas en grid (`photo_url`, nombre, cantidad `ud` debajo) + buscador; ingredientes con `image_url`, selector de medida (`WasteUnitSelect` + presets) y cantidad debajo; misma rejilla responsive que pedidos (`grid-cols-3` … `xl:grid-cols-8`).
 - [x] **Mermas: recetas vs ingredientes + stepper (2026-04-19)**: `/dashboard/inventory/waste` sin subtítulo en cabecera; toggle Recetas / Ingredientes; recetas con selector + unidades `ud` y `processRecipeWaste` (desglose `recipe_ingredients` × unidades); ingredientes con `QuantityStepper` estilo desglose (+/−/centro); sin stock teórico ni barra inferior negra; botón verde ancho completo.
 
 - [x] **Stock / inventario: modales, páginas detalle y mermas (2026-04-19)**: `StaffProductModal`: solo Pedidos, Inventario (`/icons/inventory.png`), Escáner (`/icons/scan.png`), Proveedores — sin Mermas ni Ingredientes. `AdminProductModal`: iconos imagen para Inventario, Mermas (`/icons/bin.png`), Escáner (`/icons/scan.png`), entrada **Stock** (`/icons/productes.png` → `/dashboard/inventory/ledger`); sin Mapeos TPV en el modal. Layout compartido `DashboardDetailLayout` (fondo `#5B8FB9`, tarjeta blanca, cabecera `#36606F`) en `/dashboard/inventory`, `/dashboard/inventory/ledger` (cabecera **Stock** + botón derecho **Mapeo TPV** → `/dashboard/recetas-tpv`), `/dashboard/scanner`, `/dashboard/recetas-tpv`, `/dashboard/inventory/waste`. Nueva ruta **Mermas** `/dashboard/inventory/waste` con `WasteClient` + `processWasteEntries` (insert `stock_movements` tipo `WASTE`). Iconos PNG en `public/icons/`: `inventory.png`, `productes.png`, `scan.png`.

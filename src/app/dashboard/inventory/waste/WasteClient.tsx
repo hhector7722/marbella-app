@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo, useRef, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { ChevronDown, Minus, Plus, Save, X } from 'lucide-react'
+import { ChefHat, Minus, Package, Plus, Save, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { processRecipeWaste, processWasteEntries } from './actions'
 
@@ -11,11 +11,31 @@ type Ingredient = {
   name: string
   unit: string
   category: string
+  image_url: string | null
+  order_unit: string | null
 }
 
-type RecipeOption = { id: string; name: string }
+type RecipeOption = { id: string; name: string; photo_url: string | null }
 
 type WasteMode = 'recipes' | 'ingredients'
+
+const WASTE_UNIT_PRESETS = [
+  'ud',
+  'u',
+  'unidad',
+  'unidades',
+  'kg',
+  'g',
+  'l',
+  'ml',
+  'lt',
+  'litro',
+  'pack',
+  'caja',
+  'pieza',
+  'bandeja',
+  'bolsa',
+] as const
 
 function isCountUnit(unit: string): boolean {
   const u = unit.trim().toLowerCase()
@@ -50,11 +70,13 @@ function QuantityStepper({
   value,
   onChange,
   ariaLabel,
+  hideUnitSuffix,
 }: {
   unit: string
   value: number
   onChange: (n: number) => void
   ariaLabel: string
+  hideUnitSuffix?: boolean
 }) {
   const step = getStep(unit)
   const count = isCountUnit(unit)
@@ -75,8 +97,9 @@ function QuantityStepper({
   return (
     <div
       className={cn(
-        'flex items-center justify-between w-full max-w-[220px] border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-sm',
+        'flex items-center justify-between w-full border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-sm',
         'min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
+        !hideUnitSuffix && 'max-w-[220px]',
       )}
     >
       <button
@@ -103,102 +126,134 @@ function QuantityStepper({
       >
         <Plus className="w-5 h-5" strokeWidth={2.5} />
       </button>
-      <span className="pr-3 text-xs font-bold text-zinc-500 w-10 text-center shrink-0">{unit}</span>
+      {!hideUnitSuffix ? (
+        <span className="pr-3 text-xs font-bold text-zinc-500 w-10 text-center shrink-0">{unit}</span>
+      ) : null}
     </div>
   )
 }
 
-function RecipePicker({
-  recipes,
-  selectedId,
-  onSelect,
+function WasteUnitSelect({
+  value,
+  ingredientUnit,
+  orderUnit,
+  onChange,
 }: {
-  recipes: RecipeOption[]
-  selectedId: string | null
-  onSelect: (id: string | null) => void
+  value: string
+  ingredientUnit: string
+  orderUnit: string | null
+  onChange: (u: string) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [q, setQ] = useState('')
-  const wrap = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [])
-
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase()
-    if (!s) return recipes.slice(0, 80)
-    return recipes.filter((r) => r.name.toLowerCase().includes(s)).slice(0, 80)
-  }, [recipes, q])
-
-  const selected = recipes.find((r) => r.id === selectedId)
+  const options = useMemo(() => {
+    const s = new Set<string>(
+      [...WASTE_UNIT_PRESETS, ingredientUnit, orderUnit, value].filter(Boolean) as string[],
+    )
+    return Array.from(s).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+  }, [ingredientUnit, orderUnit, value])
 
   return (
-    <div className="relative" ref={wrap}>
-      <div className="flex gap-2 items-stretch">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="min-h-[48px] flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left shadow-sm flex items-center justify-between gap-2 hover:bg-zinc-50/80 transition-colors"
-        >
-          <span className={cn('truncate font-semibold text-sm', selected ? 'text-zinc-900' : 'text-zinc-400')}>
-            {selected ? selected.name : 'Seleccionar receta…'}
-          </span>
-          <ChevronDown className={cn('w-5 h-5 text-zinc-400 shrink-0 transition-transform', open && 'rotate-180')} />
-        </button>
-        {selectedId ? (
-          <button
-            type="button"
-            onClick={() => onSelect(null)}
-            className="min-h-[48px] min-w-[48px] shrink-0 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 transition-colors"
-            aria-label="Quitar receta"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        ) : null}
-      </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        'w-full min-h-[48px] rounded-xl border border-zinc-200 bg-white px-3 text-xs font-black uppercase tracking-wide text-zinc-700 shadow-sm',
+        'outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40',
+      )}
+      aria-label="Unidad de medida"
+    >
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
+  )
+}
 
-      {open ? (
-        <div className="absolute z-50 mt-2 w-full rounded-xl border border-zinc-200 bg-white shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-zinc-100 bg-zinc-50">
-            <input
-              className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#36606F]/30"
-              placeholder="Buscar receta…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <ul className="max-h-[280px] overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <li className="px-4 py-6 text-center text-sm text-zinc-500">Sin resultados.</li>
-            ) : (
-              filtered.map((r) => (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    className={cn(
-                      'w-full px-4 py-3 text-left text-sm font-semibold hover:bg-zinc-100 transition-colors',
-                      r.id === selectedId ? 'bg-emerald-50 text-emerald-800' : 'text-zinc-800',
-                    )}
-                    onClick={() => {
-                      onSelect(r.id)
-                      setOpen(false)
-                      setQ('')
-                    }}
-                  >
-                    {r.name}
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
+function RecipeWasteCard({
+  recipe,
+  value,
+  onChange,
+}: {
+  recipe: RecipeOption
+  value: number
+  onChange: (n: number) => void
+}) {
+  return (
+    <div className="flex flex-col bg-white rounded-2xl shadow-md overflow-hidden h-full border border-zinc-100 hover:shadow-lg transition-shadow">
+      <div className="flex flex-col items-center flex-1 min-h-0 p-2">
+        <div className="w-full aspect-square max-h-28 bg-white flex items-center justify-center overflow-hidden rounded-xl border border-zinc-100 shrink-0 mb-2">
+          {recipe.photo_url ? (
+            <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" />
+          ) : (
+            <ChefHat className="w-10 h-10 text-zinc-200" strokeWidth={1.5} />
+          )}
         </div>
-      ) : null}
+        <span
+          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2 min-h-[2.5rem]"
+          title={recipe.name}
+        >
+          {recipe.name}
+        </span>
+      </div>
+      <div className="shrink-0 p-2 pt-0 flex flex-col gap-1 border-t border-zinc-100 bg-zinc-50/50">
+        <label className="sr-only">Cantidad merma {recipe.name}</label>
+        <QuantityStepper
+          unit="ud"
+          value={value}
+          onChange={onChange}
+          ariaLabel={`Unidades ${recipe.name}`}
+        />
+      </div>
+    </div>
+  )
+}
+
+function IngredientWasteCard({
+  item,
+  amount,
+  wasteUnit,
+  onAmountChange,
+  onUnitChange,
+}: {
+  item: Ingredient
+  amount: number
+  wasteUnit: string
+  onAmountChange: (n: number) => void
+  onUnitChange: (u: string) => void
+}) {
+  return (
+    <div className="flex flex-col bg-white rounded-2xl shadow-md overflow-hidden h-full border border-zinc-100 hover:shadow-lg transition-shadow">
+      <div className="flex flex-col items-center flex-1 min-h-0 p-2">
+        <div className="w-full aspect-square max-h-28 bg-white flex items-center justify-center overflow-hidden rounded-xl border border-zinc-100 shrink-0 mb-2">
+          {item.image_url ? (
+            <img src={item.image_url} alt="" className="h-full w-full object-contain" />
+          ) : (
+            <Package className="w-10 h-10 text-zinc-200" strokeWidth={1.5} />
+          )}
+        </div>
+        <span
+          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2 min-h-[2.5rem]"
+          title={item.name}
+        >
+          {item.name}
+        </span>
+      </div>
+      <div className="shrink-0 p-2 pt-0 flex flex-col gap-2 border-t border-zinc-100 bg-zinc-50/50">
+        <WasteUnitSelect
+          value={wasteUnit}
+          ingredientUnit={item.unit}
+          orderUnit={item.order_unit}
+          onChange={onUnitChange}
+        />
+        <QuantityStepper
+          unit={wasteUnit}
+          value={amount}
+          onChange={onAmountChange}
+          ariaLabel={`Pérdida ${item.name}`}
+          hideUnitSuffix
+        />
+      </div>
     </div>
   )
 }
@@ -213,38 +268,75 @@ export function WasteClient({
   const [mode, setMode] = useState<WasteMode>('recipes')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [recipeId, setRecipeId] = useState<string | null>(null)
-  const [recipeUnits, setRecipeUnits] = useState(0)
+  const [recipeAmounts, setRecipeAmounts] = useState<Record<string, number>>({})
+  const [recipeQuery, setRecipeQuery] = useState('')
 
   const [amounts, setAmounts] = useState<Record<string, number>>({})
+  const [wasteUnits, setWasteUnits] = useState<Record<string, string>>(() =>
+    Object.fromEntries(initialIngredients.map((i) => [i.id, (i.unit || 'ud').trim() || 'ud'])),
+  )
+
+  useEffect(() => {
+    setWasteUnits((prev) => {
+      const next = { ...prev }
+      for (const i of initialIngredients) {
+        const def = (i.unit || 'ud').trim() || 'ud'
+        if (next[i.id] === undefined) next[i.id] = def
+      }
+      return next
+    })
+  }, [initialIngredients])
+
+  const filteredRecipes = useMemo(() => {
+    const s = recipeQuery.trim().toLowerCase()
+    if (!s) return recipes
+    return recipes.filter((r) => r.name.toLowerCase().includes(s))
+  }, [recipes, recipeQuery])
 
   const grouped = useMemo(() => {
-    return initialIngredients.reduce((acc, curr) => {
-      ;(acc[curr.category] = acc[curr.category] || []).push(curr)
-      return acc
-    }, {} as Record<string, Ingredient[]>)
+    return initialIngredients.reduce(
+      (acc, curr) => {
+        ;(acc[curr.category] = acc[curr.category] || []).push(curr)
+        return acc
+      },
+      {} as Record<string, Ingredient[]>,
+    )
   }, [initialIngredients])
 
   const setIngredientQty = (id: string, unit: string, n: number) => {
     setAmounts((prev) => ({ ...prev, [id]: roundQty(n, unit) }))
   }
 
-  const canSubmitRecipes = recipeId != null && recipeUnits > 0
+  const canSubmitRecipes = useMemo(
+    () => Object.values(recipeAmounts).some((n) => Number.isFinite(n) && n > 0),
+    [recipeAmounts],
+  )
   const canSubmitIngredients = Object.values(amounts).some((n) => Number.isFinite(n) && n > 0)
 
   const handleSubmit = async () => {
     if (mode === 'recipes') {
-      if (!recipeId || recipeUnits <= 0) {
-        toast.error('Elige una receta y un número de unidades mayor que cero.')
+      const lines = Object.entries(recipeAmounts).filter(([, q]) => Number.isFinite(q) && q > 0)
+      if (lines.length === 0) {
+        toast.error('Indica al menos una receta con unidades mayor que cero.')
         return
       }
       setIsSubmitting(true)
       try {
-        const res = await processRecipeWaste(recipeId, recipeUnits)
-        if (res.success) {
-          toast.success(res.message)
-          setRecipeUnits(0)
+        for (const [rid, qty] of lines) {
+          await processRecipeWaste(rid, qty)
         }
+        toast.success(
+          lines.length === 1
+            ? 'Merma de receta registrada.'
+            : `Registradas ${lines.length} mermas de receta.`,
+        )
+        setRecipeAmounts((prev) => {
+          const next = { ...prev }
+          lines.forEach(([id]) => {
+            next[id] = 0
+          })
+          return next
+        })
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Error al registrar')
       } finally {
@@ -256,8 +348,9 @@ export function WasteClient({
     const payload = Object.entries(amounts)
       .map(([ingredient_id, quantity]) => {
         const item = initialIngredients.find((i) => i.id === ingredient_id)
+        const u = wasteUnits[ingredient_id] ?? item?.unit ?? 'ud'
         if (!item || !Number.isFinite(quantity) || quantity <= 0) return null
-        return { ingredient_id, quantity, unit: item.unit }
+        return { ingredient_id, quantity, unit: u }
       })
       .filter(Boolean) as { ingredient_id: string; quantity: number; unit: string }[]
 
@@ -309,8 +402,7 @@ export function WasteClient({
             type="button"
             onClick={() => {
               setMode('ingredients')
-              setRecipeId(null)
-              setRecipeUnits(0)
+              setRecipeAmounts({})
             }}
             className={cn(
               'flex-1 min-h-[48px] rounded-lg text-sm font-black uppercase tracking-wide transition-colors',
@@ -323,46 +415,57 @@ export function WasteClient({
       </div>
 
       {mode === 'recipes' ? (
-        <div className="flex flex-col gap-4 rounded-xl border border-zinc-100 bg-zinc-50/80 p-4">
-          <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Receta</label>
-          <RecipePicker recipes={recipes} selectedId={recipeId} onSelect={setRecipeId} />
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-2">
-              Unidades (raciones / salidas)
-            </label>
-            <QuantityStepper
-              unit="ud"
-              value={recipeUnits}
-              onChange={setRecipeUnits}
-              ariaLabel="Unidades de receta"
+        <div className="flex flex-col gap-4">
+          <div className="relative w-full shrink-0">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar receta…"
+              value={recipeQuery}
+              onChange={(e) => setRecipeQuery(e.target.value)}
+              className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
             />
           </div>
+          {filteredRecipes.length === 0 ? (
+            <p className="text-sm text-zinc-500 text-center py-8">No hay recetas que coincidan.</p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
+              {filteredRecipes.map((r) => (
+                <RecipeWasteCard
+                  key={r.id}
+                  recipe={r}
+                  value={recipeAmounts[r.id] ?? 0}
+                  onChange={(n) => setRecipeAmounts((prev) => ({ ...prev, [r.id]: n }))}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {Object.entries(grouped).map(([category, items]) => (
-            <section
-              key={category}
-              className="rounded-xl border border-zinc-100 bg-zinc-50/80 overflow-hidden shrink-0"
-            >
-              <div className="bg-zinc-100/80 px-4 py-3 border-b border-zinc-100 font-semibold text-zinc-700 text-sm">
-                {category}
-              </div>
-              <div className="divide-y divide-zinc-100">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 hover:bg-white/60 transition-colors"
-                  >
-                    <span className="text-base font-medium text-zinc-900 min-w-0 pr-2">{item.name}</span>
-                    <QuantityStepper
-                      unit={item.unit}
-                      value={amounts[item.id] ?? 0}
-                      onChange={(n) => setIngredientQty(item.id, item.unit, n)}
-                      ariaLabel={`Pérdida ${item.name}`}
+            <section key={category} className="flex flex-col gap-3 shrink-0">
+              <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
+                {items.map((item) => {
+                  const wu = wasteUnits[item.id] ?? item.unit
+                  return (
+                    <IngredientWasteCard
+                      key={item.id}
+                      item={item}
+                      amount={amounts[item.id] ?? 0}
+                      wasteUnit={wu}
+                      onAmountChange={(n) => setIngredientQty(item.id, wu, n)}
+                      onUnitChange={(newUnit) => {
+                        setWasteUnits((prev) => ({ ...prev, [item.id]: newUnit }))
+                        setAmounts((prev) => ({
+                          ...prev,
+                          [item.id]: roundQty(prev[item.id] ?? 0, newUnit),
+                        }))
+                      }}
                     />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           ))}

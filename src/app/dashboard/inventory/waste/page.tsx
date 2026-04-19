@@ -10,10 +10,10 @@ export default async function WastePage() {
   const [ingRes, recRes] = await Promise.all([
     supabase
       .from('ingredients')
-      .select('id, name, unit, category')
+      .select('id, name, unit, category, image_url, order_unit')
       .order('category', { ascending: true })
       .order('name', { ascending: true }),
-    supabase.from('recipes').select('id, name').order('name', { ascending: true }),
+    supabase.from('recipes').select('id, name, photo_url').order('name', { ascending: true }),
   ])
 
   if (ingRes.error) {
@@ -24,7 +24,7 @@ export default async function WastePage() {
   }
 
   return (
-    <DashboardDetailLayout title="Mermas" maxWidthClass="max-w-4xl">
+    <DashboardDetailLayout title="Mermas" maxWidthClass="max-w-7xl">
       <WasteClient initialIngredients={ingRes.data || []} recipes={recRes.data || []} />
     </DashboardDetailLayout>
   )
