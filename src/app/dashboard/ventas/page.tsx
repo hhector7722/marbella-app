@@ -509,18 +509,60 @@ export default function VentasPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900 print:bg-white">
-            <div className="max-w-4xl mx-auto space-y-6">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
+            <div className="max-w-5xl mx-auto print:max-w-none">
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
 
-                    {/* CABECERA Y FILTROS */}
-                    <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3 print:hidden">
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                                <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
+                    {/* CABECERA Y FILTROS (formato alineado con /dashboard/history) */}
+                    <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
+                        <div className="relative flex items-center justify-between gap-1 min-w-0">
+                            <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0">
+                                <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Ventas</h1>
                             </div>
 
-                            <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (filterMode === 'single') {
+                                            const prev = subDays(parseLocalSafe(selectedDate), 1);
+                                            setSelectedDate(format(prev, 'yyyy-MM-dd'));
+                                        } else {
+                                            handlePrevMonth();
+                                        }
+                                    }}
+                                    className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[100px] sm:max-w-[140px] md:max-w-[200px]"
+                                >
+                                    {filterMode === 'single'
+                                        ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+                                        : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                            : 'Periodo')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (filterMode === 'single') {
+                                            const next = addDays(parseLocalSafe(selectedDate), 1);
+                                            setSelectedDate(format(next, 'yyyy-MM-dd'));
+                                        } else {
+                                            handleNextMonth();
+                                        }
+                                    }}
+                                    className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     buttonClassName={cn(
@@ -543,71 +585,29 @@ export default function VentasPage() {
                                 />
                             </div>
                         </div>
-
-                        {/* FILTRO ACTIVO CENTRADO */}
-                        <div className="flex items-center justify-center max-w-sm mx-auto pt-1">
-                            <button
-                                onClick={() => {
-                                    if (filterMode === 'single') {
-                                        const prev = subDays(parseLocalSafe(selectedDate), 1);
-                                        setSelectedDate(format(prev, 'yyyy-MM-dd'));
-                                    } else {
-                                        handlePrevMonth();
-                                    }
-                                }}
-                                className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-
-                            <button
-                                onClick={() => setIsTimeFilterOpen(true)}
-                                className="px-2 md:px-6 text-[13px] sm:text-[15px] md:text-[18px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center"
-                            >
-                                {filterMode === 'single'
-                                    ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
-                                    : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
-                                        : 'Periodo')}
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    if (filterMode === 'single') {
-                                        const next = addDays(parseLocalSafe(selectedDate), 1);
-                                        setSelectedDate(format(next, 'yyyy-MM-dd'));
-                                    } else {
-                                        handleNextMonth();
-                                    }
-                                }}
-                                className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
-                            >
-                                <ChevronRight size={20} />
-                            </button>
-                        </div>
                     </div>
 
                     {/* SECCIÓN DE KPIs */}
-                    <div className="py-4 px-2 grid grid-cols-3 border-b border-zinc-50 print:hidden">
-                        <div className="flex flex-col items-center justify-center text-center px-1">
-                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-emerald-500">
+                    <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50 print:hidden">
+                        <div className="flex flex-col items-center justify-center text-center">
+                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-emerald-500">
                                 {summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}
                             </span>
-                            <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ventas Totales</span>
+                            <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">Ventas Totales</span>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center px-1">
-                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-zinc-900">
+                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
+                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-zinc-900">
                                 {summary.count > 0 ? summary.count : " "}
                             </span>
-                            <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Nº Tickets</span>
+                            <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">Nº Tickets</span>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center px-1">
-                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-[#36606F]">
+                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
+                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-[#36606F]">
                                 {summary.avgTicket > 0 ? `${summary.avgTicket.toFixed(2)}€` : " "}
                             </span>
-                            <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ticket Medio</span>
+                            <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">Ticket Medio</span>
                         </div>
                     </div>
 
