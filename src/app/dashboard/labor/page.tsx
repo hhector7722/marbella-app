@@ -839,16 +839,30 @@ export default function LaborHistoryPage() {
                                             ))}
                                         </div>
                                     </>
-                                ) : (
+                                ) : dayDetail ? (
                                     <p className="text-center text-zinc-400 font-bold text-sm py-8">
-                                        Sin coste registrado este día
+                                        {workerFilterId
+                                            ? 'Sin coste registrado para este trabajador este día'
+                                            : 'Sin coste registrado este día'}
                                     </p>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </div>,
                     document.body
                 )}
+
+            <StaffSelectionModal
+                isOpen={isWorkerModalOpen}
+                onClose={() => setIsWorkerModalOpen(false)}
+                employees={employees}
+                title="Trabajador"
+                variant="profile-list"
+                onSelect={(emp) => {
+                    setWorkerFilterId(emp.id);
+                    setIsWorkerModalOpen(false);
+                }}
+            />
 
             <TimeFilterModal
                 isOpen={isTimeFilterOpen}
