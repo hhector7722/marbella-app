@@ -7,23 +7,25 @@ export const dynamic = 'force-dynamic'
 export default async function WastePage() {
   const supabase = await createClient()
 
-  const { data: ingredients, error } = await supabase
-    .from('ingredients')
-    .select('id, name, unit, stock_current, category')
-    .order('category', { ascending: true })
-    .order('name', { ascending: true })
+  const [ingRes, recRes] = await Promise.all([
+    supabase
+      .from('ingredients')
+      .select('id, name, unit, category')
+      .order('category', { ascending: true })
+      .order('name', { ascending: true }),
+    supabase.from('recipes').select('id, name').order('name', { ascending: true }),
+  ])
 
-  if (error) {
+  if (ingRes.error) {
     throw new Error('No se pudo cargar el catálogo de ingredientes.')
+  }
+  if (recRes.error) {
+    throw new Error('No se pudo cargar el listado de recetas.')
   }
 
   return (
-    <DashboardDetailLayout
-      title="Mermas"
-      subtitle="Registro de pérdidas y consumos no facturados"
-      maxWidthClass="max-w-4xl"
-    >
-      <WasteClient initialIngredients={ingredients || []} />
+    <DashboardDetailLayout title="Mermas" maxWidthClass="max-w-4xl">
+      <WasteClient initialIngredients={ingRes.data || []} recipes={recRes.data || []} />
     </DashboardDetailLayout>
   )
 }

@@ -2,6 +2,8 @@
 
 **Última actualización:** 2026-04-19 (Stock: modales, layout detalle, mermas)
 
+- [x] **Mermas: recetas vs ingredientes + stepper (2026-04-19)**: `/dashboard/inventory/waste` sin subtítulo en cabecera; toggle Recetas / Ingredientes; recetas con selector + unidades `ud` y `processRecipeWaste` (desglose `recipe_ingredients` × unidades); ingredientes con `QuantityStepper` estilo desglose (+/−/centro); sin stock teórico ni barra inferior negra; botón verde ancho completo.
+
 - [x] **Stock / inventario: modales, páginas detalle y mermas (2026-04-19)**: `StaffProductModal`: solo Pedidos, Inventario (`/icons/inventory.svg`), Escáner (`/icons/scanner.svg`), Proveedores — sin Mermas ni Ingredientes. `AdminProductModal`: iconos imagen para Inventario, Mermas (`/icons/bin.png`), Escáner, entrada **Stock** (`/icons/productes.svg` → `/dashboard/inventory/ledger`); sin Mapeos TPV en el modal. Layout compartido `DashboardDetailLayout` (fondo `#5B8FB9`, tarjeta blanca, cabecera `#36606F`) en `/dashboard/inventory`, `/dashboard/inventory/ledger` (cabecera **Stock** + botón derecho **Mapeo TPV** → `/dashboard/recetas-tpv`), `/dashboard/scanner`, `/dashboard/recetas-tpv`, `/dashboard/inventory/waste`. Nueva ruta **Mermas** `/dashboard/inventory/waste` con `WasteClient` + `processWasteEntries` (insert `stock_movements` tipo `WASTE`). SVGs en `public/icons/`: `inventory.svg`, `productes.svg`, `scanner.svg`.
 
 - [x] **Staff dashboard: mismo modal consumo al fichar salida (2026-04-18)**: La home del personal es `/staff/dashboard` (`StaffDashboardView`), no `/staff`. `ConsumptionModal` + flujo `handleClockAction('out')` replicado aquí; `/staff` sigue teniendo el modal por si se accede directo.
