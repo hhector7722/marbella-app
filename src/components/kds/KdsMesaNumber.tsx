@@ -24,7 +24,8 @@ export function KdsMesaNumber({ value, isCompleted, variant = 'dorsal' }: KdsMes
                 className={cn(
                     'inline-flex min-h-[48px] shrink-0 items-center justify-center px-0.5 py-0.5 tabular-nums uppercase leading-none',
                     'text-7xl sm:text-8xl md:text-9xl',
-                    'tracking-[-0.07em] sm:tracking-[-0.09em]',
+                    // Aust: separar dígitos (evitar “24” pegado)
+                    'tracking-[0.08em] sm:tracking-[0.1em]',
                     kdsMesaNumberFont.className,
                     isCompleted ? 'text-slate-500' : 'text-black'
                 )}
