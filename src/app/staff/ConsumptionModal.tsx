@@ -41,6 +41,12 @@ const EXCLUDED_QUICK_NAMES = new Set([
   'café americano',
   'café doble',
   'tortilla de patatas entera',
+  'preparación patatas bravas',
+  'preparacion patatas bravas',
+  'sup manchego',
+  'tabla de manchego',
+  'oreo helado',
+  'oreo palo',
 ]);
 
 /** Bocadillos sin opción medio (nombre normalizado). */
@@ -148,14 +154,19 @@ export function ConsumptionModal({
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
-    return recipes.filter((r) => r.name.toLowerCase().includes(q) && !quickIds.has(r.id));
+    return recipes.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) &&
+        !quickIds.has(r.id) &&
+        !isExcludedFromQuick(r),
+    );
   }, [search, recipes, quickIds]);
 
   const gridRecipes = search.trim() ? searchResults : quickRecipes;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end justify-center bg-gray-900/80 p-4 backdrop-blur-sm sm:items-center">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="flex h-[90vh] max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between bg-[#36606F] p-5 text-white">
           <div>
             <h2 className="text-xl font-bold tracking-tight">Consumo personal</h2>
@@ -172,53 +183,55 @@ export function ConsumptionModal({
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center p-12">
-            <Loader2 className="h-12 w-12 animate-spin text-gray-400" />
-          </div>
-        ) : (
-          <div className="flex-1 space-y-5 overflow-y-auto bg-zinc-50/80 p-4 md:p-5">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
-                placeholder="Buscar otros productos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-[#36606F]/40"
-              />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+          {isLoading ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8">
+              <Loader2 className="h-12 w-12 shrink-0 animate-spin text-gray-400" aria-hidden />
             </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col space-y-5 overflow-y-auto p-4 md:p-5">
+              <div className="relative shrink-0">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="search"
+                  placeholder="Buscar otros productos..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-[#36606F]/40"
+                />
+              </div>
 
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-              {gridRecipes.map((recipe) => (
-                <button
-                  key={recipe.id}
-                  type="button"
-                  onClick={() => onRecipeActivate(recipe)}
-                  className="flex min-h-0 flex-col items-stretch gap-0.5 bg-transparent p-1.5 text-left transition-transform active:scale-[0.98]"
-                >
-                  <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
-                    {recipe.photo_url ? (
-                      <img
-                        src={recipe.photo_url}
-                        alt=""
-                        className="max-h-12 w-full object-contain"
-                      />
-                    ) : (
-                      <Package className="h-5 w-5 text-zinc-300" aria-hidden />
-                    )}
-                  </div>
-                  <span
-                    className="line-clamp-2 w-full text-left text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
-                    title={recipe.name}
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                {gridRecipes.map((recipe) => (
+                  <button
+                    key={recipe.id}
+                    type="button"
+                    onClick={() => onRecipeActivate(recipe)}
+                    className="flex min-h-0 flex-col items-center gap-0.5 bg-transparent p-1.5 text-center transition-transform active:scale-[0.98]"
                   >
-                    {recipe.name}
-                  </span>
-                </button>
-              ))}
+                    <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
+                      {recipe.photo_url ? (
+                        <img
+                          src={recipe.photo_url}
+                          alt=""
+                          className="max-h-12 w-full object-contain"
+                        />
+                      ) : (
+                        <Package className="h-5 w-5 text-zinc-300" aria-hidden />
+                      )}
+                    </div>
+                    <span
+                      className="line-clamp-2 w-full text-center text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
+                      title={recipe.name}
+                    >
+                      {recipe.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="shrink-0 border-t border-zinc-200 bg-white p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] md:p-5">
           {cart.length > 0 && (
