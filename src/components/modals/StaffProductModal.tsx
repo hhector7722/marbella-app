@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StaffProductModalProps {
@@ -25,16 +26,17 @@ const STAFF_MENU_ITEMS: StaffMenuItem[] = [
 
 export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: StaffProductModalProps) {
     const pathname = usePathname();
+    const [isNavigating, setIsNavigating] = useState(false);
 
     if (!isOpen) return null;
 
     return (
         <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200"
-            onClick={onClose}
+            onClick={isNavigating ? undefined : onClose}
         >
             <div
-                className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300"
+                className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
@@ -46,8 +48,9 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                     </div>
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                        onClick={isNavigating ? undefined : onClose}
+                        disabled={isNavigating}
+                        className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 disabled:opacity-50 disabled:pointer-events-none"
                     >
                         <X size={20} strokeWidth={3} />
                     </button>
@@ -90,7 +93,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                                 isActive && 'ring-2 ring-[#36606F]/40 bg-white shadow-sm',
                             );
                             return (
-                                <Link key={i} href={item.href} onClick={onClose} className={baseClass}>
+                                <Link key={i} href={item.href} onClick={() => setIsNavigating(true)} className={baseClass}>
                                     <div className="w-12 h-12 transition-transform group-hover:scale-110">
                                         <Image
                                             src={item.img}
@@ -108,6 +111,17 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                         return null;
                     })}
                 </div>
+
+                {isNavigating && (
+                    <div
+                        className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 backdrop-blur-[2px]"
+                        aria-live="polite"
+                        aria-busy="true"
+                    >
+                        <Loader2 className="h-10 w-10 animate-spin text-[#36606F]" strokeWidth={2.5} />
+                        <span className="text-xs font-black uppercase tracking-wider text-[#36606F]/80">Cargando…</span>
+                    </div>
+                )}
             </div>
         </div>
     );

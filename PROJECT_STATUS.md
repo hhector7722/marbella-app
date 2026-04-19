@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-19 (Stock modal: accesos + Consumo Personal)
+**Última actualización:** 2026-04-19 (Stock modal: navegación sin flash)
+
+- [x] **Stock modal: navegación sin flash a `/dashboard` (2026-04-19)**: Los `<Link>` del modal ya no ejecutan `onClose` al pulsar (era lo que cerraba el overlay y dejaba ver el dashboard un momento antes de la nueva ruta). Mientras la SPA navega, el modal permanece visible con capa `Loader2` + «Cargando…» y se bloquea cierre por backdrop/X. `AdminProductModal` + `StaffProductModal`. El flujo **Pedidos** → otro modal sigue usando `onClose` + `setTimeout`.
 
 - [x] **Coste laboral `/dashboard/labor` (2026-04-19)**: Eliminados subtítulo de periodo y rango de fechas bajo la cabecera; eliminada la cruz de cierre en la cabecera petróleo. Icono de usuario abre `StaffSelectionModal` para filtrar por trabajador; badge rojo con cruz blanca sobre el icono quita el filtro. RPC `get_labor_cost_month_summary(p_year, p_month, p_user_id uuid default null)` en migración `20260419150000_get_labor_cost_month_summary_user_filter.sql`.
 

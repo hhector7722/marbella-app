@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -32,14 +32,18 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
 
 export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: AdminProductModalProps) {
     const pathname = usePathname();
+    const [isNavigating, setIsNavigating] = useState(false);
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200"
+            onClick={isNavigating ? undefined : onClose}
+        >
             <div
                 className={cn(
-                    'bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300 w-full max-w-md'
+                    'relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300 w-full max-w-md',
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -47,7 +51,12 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                     <div className="flex items-center gap-2 min-w-0">
                         <h3 className="text-lg font-black uppercase tracking-wider leading-none">Stock</h3>
                     </div>
-                    <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                    <button
+                        type="button"
+                        onClick={isNavigating ? undefined : onClose}
+                        disabled={isNavigating}
+                        className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 disabled:opacity-50 disabled:pointer-events-none"
+                    >
                         <X size={20} strokeWidth={3} />
                     </button>
                 </div>
@@ -91,7 +100,7 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                             isActive && 'ring-2 ring-[#36606F]/40 bg-white shadow-sm',
                         );
                         return (
-                            <Link key={i} href={item.href} onClick={onClose} className={baseClass}>
+                            <Link key={i} href={item.href} onClick={() => setIsNavigating(true)} className={baseClass}>
                                 <div className="w-12 h-12 transition-transform group-hover:scale-110">
                                     <Image
                                         src={item.img}
@@ -106,6 +115,17 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                         );
                     })}
                 </div>
+
+                {isNavigating && (
+                    <div
+                        className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 backdrop-blur-[2px]"
+                        aria-live="polite"
+                        aria-busy="true"
+                    >
+                        <Loader2 className="h-10 w-10 animate-spin text-[#36606F]" strokeWidth={2.5} />
+                        <span className="text-xs font-black uppercase tracking-wider text-[#36606F]/80">Cargando…</span>
+                    </div>
+                )}
             </div>
         </div>
     );
