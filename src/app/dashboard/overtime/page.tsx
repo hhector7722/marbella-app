@@ -1,7 +1,7 @@
 'use client';
 
 import {
-    ArrowLeft, ChevronLeft, ChevronRight, Check, Circle, X
+    ChevronLeft, ChevronRight, Check, Circle, X
 } from 'lucide-react';
 import React, { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -147,27 +147,22 @@ export default function OvertimePage() {
                     {/* Vista detalle: contenedor que se adapta al contenido (calendario + filas) */}
                     <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col w-full">
                         {/* Cabecera petróleo (vista detalle) */}
-                        <div className="bg-[#36606F] px-6 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => router.push('/dashboard')}
-                                    className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                    aria-label="Volver"
-                                >
-                                    <ArrowLeft size={20} strokeWidth={2.5} />
-                                </button>
-                                <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider">Horas Extras</h1>
-                            </div>
-                            <div className="flex items-center gap-2 text-white">
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    hasActiveFilter={!isSameMonth(viewMonth, new Date()) || viewMonth.getFullYear() !== new Date().getFullYear()}
-                                    onClear={() => setViewMonth(startOfMonth(new Date()))}
-                                />
-                                <button onClick={() => router.push('/dashboard')} className="p-2 text-white/60 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Cerrar">
-                                    <X size={24} />
-                                </button>
-                            </div>
+                        <div className="relative bg-[#36606F] px-6 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
+                            <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider">Horas Extras</h1>
+
+                            {/* Filtrar: flotante sobre cabecera, sin marco/fondo */}
+                            <TimeFilterButton
+                                className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2"
+                                onClick={() => setIsTimeFilterOpen(true)}
+                                hasActiveFilter={!isSameMonth(viewMonth, new Date()) || viewMonth.getFullYear() !== new Date().getFullYear()}
+                                onClear={() => setViewMonth(startOfMonth(new Date()))}
+                                buttonClassName={cn(
+                                    "bg-transparent hover:bg-transparent border-0 rounded-none shadow-none",
+                                    "px-0 py-0",
+                                    "min-h-[48px] min-w-[48px]",
+                                    "text-white/90 hover:text-white"
+                                )}
+                            />
                         </div>
 
                         {/* Cuerpo: calendario + filas de semanas (altura por contenido) */}
