@@ -247,11 +247,10 @@ function ProfileContent() {
                                 {showAccountSection && (
                                     <label
                                         className={cn(
-                                            'w-full shrink-0',
-                                            'flex items-center justify-center text-center',
-                                            'min-h-[48px] px-3 py-2',
-                                            'rounded-xl border border-white/80',
-                                            'text-white text-[10px] font-black uppercase tracking-widest leading-tight',
+                                            'shrink-0 inline-flex items-center justify-center self-center text-center',
+                                            'px-1 py-0.5',
+                                            'rounded-lg border border-white/80',
+                                            'text-white text-[10px] font-black uppercase tracking-widest leading-none',
                                             'hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95'
                                         )}
                                     >
