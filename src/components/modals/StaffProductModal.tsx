@@ -18,8 +18,8 @@ type StaffMenuItem =
 
 const STAFF_MENU_ITEMS: StaffMenuItem[] = [
     { title: 'Pedidos', hover: 'hover:bg-emerald-50/30', special: 'pedidos' },
-    { title: 'Inventario', href: '/dashboard/inventory', hover: 'hover:bg-purple-50/30', img: '/icons/inventory.svg' },
-    { title: 'Escáner', href: '/dashboard/scanner', hover: 'hover:bg-cyan-50/30', img: '/icons/scanner.svg' },
+    { title: 'Inventario', href: '/dashboard/inventory', hover: 'hover:bg-purple-50/30', img: '/icons/inventory.png' },
+    { title: 'Escáner', href: '/dashboard/scanner', hover: 'hover:bg-cyan-50/30', img: '/icons/scan.png' },
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
 ];
 
