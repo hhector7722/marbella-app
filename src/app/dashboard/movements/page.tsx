@@ -811,9 +811,10 @@ export default function MovementsPage() {
                             </div>
 
                             {/* FILTRO UNIFICADO */}
-                            <div className="absolute right-0 flex items-center gap-1.5 shrink-0 text-white" data-movements-share-root="true">
+                            <div className="absolute right-1 md:right-0 flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white" data-movements-share-root="true">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
+                                    showLabel={false}
                                     buttonClassName={cn(
                                         "min-h-12 min-w-12 px-0 py-0",
                                         "rounded-xl border-0 bg-transparent hover:bg-transparent",
@@ -933,7 +934,7 @@ export default function MovementsPage() {
                                                         }}
                                                         className={cn(
                                                             "w-full",
-                                                            "inline-flex items-center justify-center gap-1.5",
+                                                            "inline-flex items-center justify-center gap-1",
                                                             "rounded-md hover:bg-white/10 active:bg-white/20 transition-colors",
                                                             "outline-none"
                                                         )}
@@ -942,15 +943,15 @@ export default function MovementsPage() {
                                                     >
                                                         <span>FECHA</span>
                                                         {dateSortDir === 'asc' ? (
-                                                            <ArrowUp className="w-3.5 h-3.5 opacity-90" strokeWidth={3} />
+                                                            <ArrowUp className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-90" strokeWidth={3} />
                                                         ) : (
-                                                            <ArrowDown className="w-3.5 h-3.5 opacity-90" strokeWidth={3} />
+                                                            <ArrowDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-90" strokeWidth={3} />
                                                         )}
                                                     </button>
                                                 </th>
-                                                <th className="px-1 md:px-6 py-1 md:py-2 w-[38%] md:w-[38%] text-center">CONCEPTO</th>
-                                                <th className="px-0.5 md:px-6 py-1 md:py-2 text-center w-[20%] md:w-[20%]">IMPORTE</th>
-                                                <th className="px-1 md:px-8 py-1 md:py-2 text-center w-[20%] md:w-[20%]">SALDO</th>
+                                                <th className="px-0.5 md:px-6 py-1 md:py-2 w-[32%] md:w-[38%] text-center">CONCEPTO</th>
+                                                <th className="px-0.5 md:px-6 py-1 md:py-2 text-center w-[22%] md:w-[20%]">IMPORTE</th>
+                                                <th className="px-0.5 md:px-8 py-1 md:py-2 text-center w-[24%] md:w-[20%]">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
@@ -1028,7 +1029,7 @@ export default function MovementsPage() {
                                                                     {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
                                                                 </span>
                                                             </td>
-                                                            <td className="px-1 md:px-8 py-2 md:py-3 text-right">
+                                                            <td className="px-0.5 md:px-8 py-2 md:py-3 text-center md:text-right">
                                                                 <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">
                                                                     {mov.running_balance.toFixed(2)}€
                                                                 </span>

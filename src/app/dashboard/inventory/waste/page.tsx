@@ -13,7 +13,7 @@ export default async function WastePage() {
       .select('id, name, unit, category, image_url, order_unit')
       .order('category', { ascending: true })
       .order('name', { ascending: true }),
-    supabase.from('recipes').select('id, name, photo_url').order('name', { ascending: true }),
+    supabase.from('recipes').select('id, name, photo_url, category').order('name', { ascending: true }),
   ])
 
   if (ingRes.error) {
@@ -24,7 +24,7 @@ export default async function WastePage() {
   }
 
   return (
-    <DashboardDetailLayout title="Mermas" maxWidthClass="max-w-7xl">
+    <DashboardDetailLayout title="Mermas" maxWidthClass="max-w-7xl" showBackButton={false}>
       <WasteClient initialIngredients={ingRes.data || []} recipes={recRes.data || []} />
     </DashboardDetailLayout>
   )

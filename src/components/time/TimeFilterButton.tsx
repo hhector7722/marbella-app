@@ -7,15 +7,18 @@ export function TimeFilterButton({
   onClick,
   className,
   buttonClassName,
+  showLabel,
   hasActiveFilter,
   onClear,
 }: {
   onClick: () => void;
   className?: string;
   buttonClassName?: string;
+  showLabel?: boolean;
   hasActiveFilter?: boolean;
   onClear?: () => void;
 }) {
+  const shouldShowLabel = showLabel ?? true;
   return (
     <div className={cn("relative inline-flex shrink-0", className)}>
       <button
@@ -32,7 +35,7 @@ export function TimeFilterButton({
         aria-label="Filtrar"
       >
         <Calendar className="w-4 h-4 md:w-[18px] md:h-[18px]" />
-        <span>Filtrar</span>
+        {shouldShowLabel && <span>Filtrar</span>}
       </button>
 
       {hasActiveFilter && onClear && (
