@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTimeKdsHeader } from '@/utils/date-utils';
@@ -127,6 +127,8 @@ export function CommandCard({
     const isCompleted = order.estado === 'completada';
     /** Atenuación “comanda cerrada” solo en vista pendientes; en finalizadas se ve a opacidad plena */
     const chromeCompleted = isCompleted && !completedListView;
+    /** Mantiene el hueco del botón notas al tachar para que el nombre no se desplace horizontalmente */
+    const reserveLineNotesSlot = !completedListView && !chromeCompleted;
 
     const [notesModal, setNotesModal] = useState<null | {
         kind: 'order' | 'lineGroup';
@@ -173,11 +175,11 @@ export function CommandCard({
     }, [openDropdownKey]);
 
     const formatElapsed = (minutes: number) => {
-        if (minutes < 0) return '0 H 0 MIN';
-        if (minutes < 60) return `0 H ${minutes} MIN`;
+        if (minutes < 0) return '0 H 0 M';
+        if (minutes < 60) return `0 H ${minutes} M`;
         const hrs = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        return `${hrs} H ${mins} MIN`;
+        return `${hrs} H ${mins} M`;
     };
 
     const getElapsedTextColor = () => {
@@ -201,25 +203,36 @@ export function CommandCard({
     const lineasVisibles = order.lineas || [];
 
     // Agrupamiento: nombre + notas TPV + notas cocina + estado (notas_cocina no entra en delta TPV)
-    const groupedLines = lineasVisibles.reduce((acc, line) => {
-        const key = `${line.producto_nombre}_${line.notas || ''}_${line.notas_cocina || ''}_${line.estado}`;
-        if (!acc[key]) {
-            acc[key] = {
-                ids: [line.id],
-                producto_nombre: line.producto_nombre,
-                notas: line.notas,
-                notas_cocina: line.notas_cocina ?? null,
-                estado: line.estado,
-                cantidad: 1
-            };
-        } else {
-            acc[key].ids.push(line.id);
-            acc[key].cantidad++;
-        }
-        return acc;
-    }, {} as Record<string, { ids: string[]; producto_nombre: string; notas: string | null; notas_cocina: string | null; estado: KDSItemStatus; cantidad: number }>);
+    const groupedLines = useMemo(() => {
+        return lineasVisibles.reduce((acc, line) => {
+            const key = `${line.producto_nombre}_${line.notas || ''}_${line.notas_cocina || ''}_${line.estado}`;
+            if (!acc[key]) {
+                acc[key] = {
+                    ids: [line.id],
+                    producto_nombre: line.producto_nombre,
+                    notas: line.notas,
+                    notas_cocina: line.notas_cocina ?? null,
+                    estado: line.estado,
+                    cantidad: 1
+                };
+            } else {
+                acc[key].ids.push(line.id);
+                acc[key].cantidad++;
+            }
+            return acc;
+        }, {} as Record<string, { ids: string[]; producto_nombre: string; notas: string | null; notas_cocina: string | null; estado: KDSItemStatus; cantidad: number }>);
+    }, [lineasVisibles]);
 
-    const groupedArray = Object.values(groupedLines);
+    /** Orden estable por posición en ticket: al tachar no “salta” de fila por orden de inserción en el objeto. */
+    const groupedArray = useMemo(() => {
+        const groups = Object.values(groupedLines);
+        const lineIndexById = new Map(lineasVisibles.map((l, i) => [l.id, i]));
+        return [...groups].sort((a, b) => {
+            const minA = Math.min(...a.ids.map((id) => lineIndexById.get(id) ?? Number.MAX_SAFE_INTEGER));
+            const minB = Math.min(...b.ids.map((id) => lineIndexById.get(id) ?? Number.MAX_SAFE_INTEGER));
+            return minA - minB;
+        });
+    }, [groupedLines, lineasVisibles]);
 
     return (
         <>
@@ -260,7 +273,7 @@ export function CommandCard({
                                         initialNotes: order.notas_comanda,
                                     });
                                 }}
-                                className="flex h-12 w-12 shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95"
+                                className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
                                 title="Editar nota comanda"
                             >
                                 <Image
@@ -268,7 +281,7 @@ export function CommandCard({
                                     alt="Notas"
                                     width={34}
                                     height={34}
-                                    className={cn(chromeCompleted ? 'opacity-40' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
+                                    className={cn(chromeCompleted ? 'opacity-45' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
                                 />
                             </button>
                             <div className="min-w-0 flex-1">
@@ -362,6 +375,11 @@ export function CommandCard({
                                                 >
                                                     <Image src="/icons/notas.png" alt="Notas" width={34} height={34} className={`${chromeCompleted ? 'opacity-45' : 'opacity-90'} drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]`} />
                                                 </button>
+                                            ) : reserveLineNotesSlot ? (
+                                                <div
+                                                    className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px]"
+                                                    aria-hidden
+                                                />
                                             ) : null}
 
                                             <span
@@ -381,7 +399,7 @@ export function CommandCard({
 
                                         {hasNotes(combinedLineNotesForDisplay(group.notas, group.notas_cocina)) && (
                                             <div
-                                                className={`mt-0.5 space-y-1 ${completedListView || !showLineNotesButton ? 'pl-3 sm:pl-4' : 'pl-12 sm:pl-14'} ${
+                                                className={`mt-0.5 space-y-1 ${completedListView ? 'pl-3 sm:pl-4' : reserveLineNotesSlot ? 'pl-12 sm:pl-14' : 'pl-3 sm:pl-4'} ${
                                                     group.estado === 'cancelado' || chromeCompleted ? 'opacity-50' : ''
                                                 }`}
                                             >
