@@ -96,14 +96,15 @@ function QuantityStepper({
   return (
     <div
       className={cn(
+        // Caja "cantidad" estilo desglose monetario (cierre de caja)
         'flex items-center justify-between w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm',
-        'min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
+        'h-10 min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
       )}
     >
       <button
         type="button"
         onClick={() => adjust(-step)}
-        className="h-12 w-10 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-colors"
+        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-colors shrink-0"
         aria-label={`Menos ${ariaLabel}`}
       >
         <Minus className="w-4 h-4" strokeWidth={3} />
@@ -119,8 +120,8 @@ function QuantityStepper({
         }}
         onBlur={onBlur}
         className={cn(
-          'flex-1 min-w-0 h-12 bg-transparent text-center font-black tabular-nums outline-none',
-          'text-[11px] sm:text-xs text-zinc-800 tracking-tight',
+          'flex-1 w-0 h-full bg-transparent text-center font-black tabular-nums outline-none p-0',
+          'text-[10px] sm:text-[11px] text-zinc-700 tracking-tighter',
           'focus:bg-blue-50/20 transition-colors',
         )}
         aria-label={ariaLabel}
@@ -128,7 +129,7 @@ function QuantityStepper({
       <button
         type="button"
         onClick={() => adjust(step)}
-        className="h-12 w-10 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100 transition-colors"
+        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100 transition-colors shrink-0"
         aria-label={`Más ${ariaLabel}`}
       >
         <Plus className="w-4 h-4" strokeWidth={3} />
@@ -195,15 +196,15 @@ function RecipeWasteCard({
   onBlur: () => void
 }) {
   return (
-    <div className="relative flex flex-col bg-white rounded-2xl shadow-md overflow-visible h-full border border-zinc-100 hover:shadow-lg transition-shadow pt-10">
-      <div className="absolute left-1/2 top-2 -translate-x-1/2 w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible h-full pt-14">
+      <div className="absolute left-1/2 top-2 -translate-x-1/2 w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
         {recipe.photo_url ? (
-          <img src={recipe.photo_url} alt="" className="h-12 w-12 object-contain drop-shadow-sm" />
+          <img src={recipe.photo_url} alt="" className="h-14 w-14 object-contain" />
         ) : (
           <ChefHat className="w-9 h-9 text-zinc-200" strokeWidth={1.5} />
         )}
       </div>
-      <div className="flex flex-col items-center flex-1 min-h-0 p-2 pt-1">
+      <div className="flex flex-col items-center flex-1 min-h-0 px-2 pt-3">
         <span
           className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2 min-h-[2.5rem]"
           title={recipe.name}
@@ -211,7 +212,7 @@ function RecipeWasteCard({
           {recipe.name}
         </span>
       </div>
-      <div className="shrink-0 p-2 pt-0 flex flex-col gap-1 border-t border-zinc-100 bg-zinc-50/50">
+      <div className="shrink-0 p-2 pt-1 flex flex-col gap-1">
         <label className="sr-only">Cantidad merma {recipe.name}</label>
         <QuantityStepper
           unit="ud"
@@ -247,15 +248,15 @@ function IngredientWasteCard({
   onUnitChange: (u: string) => void
 }) {
   return (
-    <div className="relative flex flex-col bg-white rounded-2xl shadow-md overflow-visible h-full border border-zinc-100 hover:shadow-lg transition-shadow pt-10">
-      <div className="absolute left-1/2 top-2 -translate-x-1/2 w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible h-full pt-14">
+      <div className="absolute left-1/2 top-2 -translate-x-1/2 w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
         {item.image_url ? (
-          <img src={item.image_url} alt="" className="h-12 w-12 object-contain drop-shadow-sm" />
+          <img src={item.image_url} alt="" className="h-14 w-14 object-contain" />
         ) : (
           <Package className="w-9 h-9 text-zinc-200" strokeWidth={1.5} />
         )}
       </div>
-      <div className="flex flex-col items-center flex-1 min-h-0 p-2 pt-1">
+      <div className="flex flex-col items-center flex-1 min-h-0 px-2 pt-3">
         <span
           className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2 min-h-[2.5rem]"
           title={item.name}
@@ -263,7 +264,7 @@ function IngredientWasteCard({
           {item.name}
         </span>
       </div>
-      <div className="shrink-0 p-2 pt-0 flex flex-col gap-2 border-t border-zinc-100 bg-zinc-50/50">
+      <div className="shrink-0 p-2 pt-1 flex flex-col gap-2">
         <WasteUnitSelect
           value={wasteUnit}
           ingredientUnit={item.unit}
