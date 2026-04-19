@@ -1,0 +1,135 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export type DigitalMenuRow = {
+    articulo_id: number;
+    articulo_nombre: string;
+    familia_id: number | null;
+    familia_nombre: string | null;
+    recipe_id: string;
+    recipe_name: string;
+    descripcion: string | null;
+    precio: number | string | null;
+    photo_url: string | null;
+};
+
+function formatPriceDisplay(precio: number | string | null | undefined): string {
+    if (precio === null || precio === undefined) return ' ';
+    const n = typeof precio === 'string' ? parseFloat(precio) : precio;
+    if (Number.isNaN(n) || Math.abs(n) < 0.005) return ' ';
+    return `${n.toFixed(2)}€`;
+}
+
+function MenuCard({ row }: { row: DigitalMenuRow }) {
+    const priceStr = formatPriceDisplay(row.precio);
+    const showPrice = priceStr.trim() !== '';
+
+    return (
+        <div
+            className={cn(
+                'flex overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm',
+                row.photo_url ? 'flex-col sm:flex-row' : 'flex-col'
+            )}
+        >
+            {row.photo_url ? (
+                <div className="relative h-40 w-full shrink-0 bg-zinc-50 sm:h-auto sm:min-h-[120px] sm:w-40">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD */}
+                    <img
+                        src={row.photo_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                    />
+                </div>
+            ) : null}
+            <div className="flex min-h-[48px] min-w-0 flex-1 flex-col justify-center gap-1 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="text-base font-black leading-tight text-zinc-900">{row.articulo_nombre}</h3>
+                    {showPrice ? (
+                        <span className="shrink-0 font-mono text-sm font-black text-[#36606F]">{priceStr}</span>
+                    ) : (
+                        <span className="shrink-0 font-mono text-sm font-black text-[#36606F]" aria-hidden>
+                            {' '}
+                        </span>
+                    )}
+                </div>
+                {row.descripcion ? (
+                    <p className="text-xs leading-relaxed text-zinc-500">{row.descripcion}</p>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
+    const grouped = useMemo(() => {
+        const m = new Map<string, DigitalMenuRow[]>();
+        for (const row of items) {
+            const key = (row.familia_nombre?.trim() || 'Sin familia').trim();
+            if (!m.has(key)) m.set(key, []);
+            m.get(key)!.push(row);
+        }
+        const entries = Array.from(m.entries()).sort((a, b) =>
+            a[0].localeCompare(b[0], 'es', { sensitivity: 'base' })
+        );
+        for (const [, rows] of entries) {
+            rows.sort((a, b) =>
+                a.articulo_nombre.localeCompare(b.articulo_nombre, 'es', { sensitivity: 'base' })
+            );
+        }
+        return entries;
+    }, [items]);
+
+    const [openKey, setOpenKey] = useState<string | null>(() => grouped[0]?.[0] ?? null);
+
+    if (items.length === 0) {
+        return (
+            <div className="rounded-xl border border-zinc-100 bg-white p-6 text-center shadow-sm">
+                <p className="text-sm font-medium text-zinc-500">No hay platos en carta con mapeo TPV todavía.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-2">
+            {grouped.map(([familia, rows]) => {
+                const isOpen = openKey === familia;
+                return (
+                    <div
+                        key={familia}
+                        className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm"
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setOpenKey((o) => (o === familia ? null : familia))}
+                            className="flex min-h-[48px] w-full items-center justify-between gap-3 p-4 text-left active:bg-zinc-50/80"
+                            aria-expanded={isOpen}
+                        >
+                            <span className="text-sm font-black uppercase tracking-wide text-[#36606F]">
+                                {familia}
+                            </span>
+                            <ChevronDown
+                                className={cn(
+                                    'h-5 w-5 shrink-0 text-zinc-400 transition-transform',
+                                    isOpen && 'rotate-180'
+                                )}
+                                aria-hidden
+                            />
+                        </button>
+                        {isOpen ? (
+                            <div className="shrink-0 border-t border-zinc-100 px-3 pb-3 pt-1">
+                                <div className="flex max-h-[min(70vh,520px)] flex-col gap-3 overflow-y-auto pr-1">
+                                    {rows.map((row) => (
+                                        <MenuCard key={row.articulo_id} row={row} />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
