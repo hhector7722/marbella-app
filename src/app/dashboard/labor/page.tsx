@@ -486,28 +486,33 @@ export default function LaborHistoryPage() {
                                 hasActiveFilter={filterActive}
                                 onClear={clearTimeFilter}
                             />
-                            <button
-                                type="button"
-                                onClick={() => router.back()}
-                                className="p-2 text-white/60 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                aria-label="Volver"
-                            >
-                                <X size={24} />
-                            </button>
+                            <div className="relative shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsWorkerModalOpen(true)}
+                                    className="relative p-2 text-white/90 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10"
+                                    aria-label="Filtrar por trabajador"
+                                >
+                                    <User size={24} strokeWidth={2.25} />
+                                </button>
+                                {workerFilterId ? (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setWorkerFilterId(null);
+                                        }}
+                                        className="absolute -right-0.5 -top-0.5 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-2 ring-[#36606F]"
+                                        aria-label="Quitar filtro de trabajador"
+                                    >
+                                        <X size={9} strokeWidth={3} className="text-white" />
+                                    </button>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
 
                     <div className="px-4 md:px-8 pt-3 pb-3 border-b border-zinc-100 shrink-0">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 text-center mb-2">
-                            {filterActive ? 'Periodo filtrado' : 'Periodo (mes actual)'}
-                        </p>
-                        <p
-                            className="text-[10px] font-bold text-zinc-500 text-center mb-3 leading-snug px-1"
-                            title={timeFilterLabel(appliedFilter)}
-                        >
-                            {periodSubtitle}
-                        </p>
-                        {/* Flechas pegadas al nombre del mes: ancho natural del texto */}
                         <div className="flex justify-center w-full">
                             <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                                 <button
