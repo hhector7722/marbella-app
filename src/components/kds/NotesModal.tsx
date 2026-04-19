@@ -173,7 +173,7 @@ export function NotesModal(props: {
                   className={cn(
                     "min-h-[56px] sm:min-h-[64px] rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center shadow-sm transition active:scale-[0.99] hover:bg-zinc-50",
                     "font-black uppercase tracking-[0.04em] text-zinc-900 text-2xl sm:text-3xl",
-                    isOn && "ring-2 ring-red-600/70 border-red-600"
+                    isOn && "ring-2 ring-[#D56170]/70 border-[#D56170]"
                   )}
                 >
                   {q}
@@ -188,7 +188,7 @@ export function NotesModal(props: {
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[52px] px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-[0.16em] text-base"
+            className="min-h-[52px] px-5 rounded-xl bg-[#D56170] hover:bg-[#C55462] text-white font-black uppercase tracking-[0.16em] text-base"
           >
             Cancelar
           </button>

@@ -104,7 +104,7 @@ function KDSFooterProductChips({
                                     </span>
                                 </p>
                             </div>
-                            <div className="shrink-0 bg-red-600 px-3 py-2">
+                            <div className="shrink-0 bg-[#D56170] px-3 py-2">
                                 <span className="text-2xl font-black tabular-nums tracking-tight text-white sm:text-3xl">
                                     {item.cantidad}
                                 </span>
@@ -131,7 +131,7 @@ function KDSFooterProductChips({
                                 Ver más
                             </span>
                         </div>
-                        <div className="bg-red-600 px-3 py-2">
+                        <div className="bg-[#D56170] px-3 py-2">
                             <span className="text-2xl font-black tabular-nums tracking-tight text-white sm:text-3xl">
                                 +{hiddenCount}
                             </span>
@@ -594,7 +594,7 @@ export default function KDSView() {
                                 <button
                                     type="button"
                                     onClick={() => setShowCompleted(true)}
-                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-red-600 hover:bg-red-700 text-white shadow-lg"
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-[#D56170] hover:bg-[#C55462] text-white shadow-lg"
                                 >
                                     Finalizadas
                                 </button>
