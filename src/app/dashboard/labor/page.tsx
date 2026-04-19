@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, User, X } from 'lucide-react';
 import {
     addMonths,
     eachDayOfInterval,
@@ -23,7 +22,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
-import { timeFilterLabel } from '@/components/time/time-filter-types';
+import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -186,9 +185,15 @@ function LaborPctRingCentered({
     );
 }
 
+type ProfileOption = {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url?: string | null;
+};
+
 export default function LaborHistoryPage() {
     const supabase = createClient();
-    const router = useRouter();
 
     const def = defaultFullMonthPeriod();
     const [periodStart, setPeriodStart] = useState<string>(def.start);
@@ -205,6 +210,11 @@ export default function LaborHistoryPage() {
         const n = new Date();
         return { kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 };
     });
+
+    /** null = todos los trabajadores */
+    const [workerFilterId, setWorkerFilterId] = useState<string | null>(null);
+    const [isWorkerModalOpen, setIsWorkerModalOpen] = useState(false);
+    const [employees, setEmployees] = useState<ProfileOption[]>([]);
 
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -224,15 +234,6 @@ export default function LaborHistoryPage() {
         return eachDayOfInterval({ start: startVisible, end: endVisible });
     }, [viewMonth]);
 
-    const periodSubtitle = useMemo(() => {
-        const a = parseLocalSafe(periodStart);
-        const b = parseLocalSafe(periodEnd);
-        if (format(a, 'yyyy-MM-dd') === format(b, 'yyyy-MM-dd')) {
-            return format(a, "d MMM yyyy", { locale: es });
-        }
-        return `${format(a, "d MMM", { locale: es })} – ${format(b, "d MMM yyyy", { locale: es })}`;
-    }, [periodStart, periodEnd]);
-
     const filterActive = useMemo(() => {
         const cur = defaultFullMonthPeriod();
         return periodStart !== cur.start || periodEnd !== cur.end;
@@ -245,6 +246,25 @@ export default function LaborHistoryPage() {
     }, [summary, periodNetSales]);
 
     const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    useEffect(() => {
+        let cancelled = false;
+        void (async () => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name, avatar_url')
+                .order('first_name');
+            if (cancelled || error) return;
+            const list = (data || []).filter((e: ProfileOption) => {
+                const name = (e.first_name || '').trim().toLowerCase();
+                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+            });
+            setEmployees(list);
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [supabase]);
 
     const fetchPeriodSummary = useCallback(async () => {
         setLoading(true);
@@ -270,6 +290,7 @@ export default function LaborHistoryPage() {
                 const { data, error } = await supabase.rpc('get_labor_cost_month_summary', {
                     p_year: y,
                     p_month: m,
+                    p_user_id: workerFilterId ?? null,
                 });
                 if (error) throw error;
                 const raw = data as Record<string, unknown> | null;
@@ -329,7 +350,7 @@ export default function LaborHistoryPage() {
         } finally {
             setLoading(false);
         }
-    }, [supabase, periodStart, periodEnd]);
+    }, [supabase, periodStart, periodEnd, workerFilterId]);
 
     useEffect(() => {
         fetchPeriodSummary();
@@ -352,69 +373,98 @@ export default function LaborHistoryPage() {
         setAppliedFilter({ kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 });
     };
 
-    const openDayDetail = async (day: Date) => {
-        const key = format(day, 'yyyy-MM-dd');
-        setSelectedDayStr(key);
-        setDetailOpen(true);
-        setDetailLoading(true);
-        setDayDetail(null);
-        try {
-            const [laborRes, salesRes] = await Promise.all([
-                supabase.rpc('get_labor_cost_day_detail', { p_date: key }),
-                supabase.rpc('get_cash_closings_summary', {
-                    p_start_date: key,
-                    p_end_date: key,
-                }),
-            ]);
-            if (laborRes.error) throw laborRes.error;
-            if (salesRes.error) console.warn(salesRes.error);
-            const raw = laborRes.data as Record<string, unknown> | null;
-            if (!raw) {
-                setDayDetail(null);
-                return;
-            }
-            const dayNetSales = salesRes.error
-                ? 0
-                : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
-
-            const wrows = Array.isArray(raw.workers) ? raw.workers : [];
-            const workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => {
-                const id = String(w.id ?? w.userId ?? '');
-                const total = Number(w.total) || 0;
-                let laborPctOfSales: number | null = null;
-                if (dayNetSales > 0) {
-                    laborPctOfSales = (total / dayNetSales) * 100;
-                }
-                return {
-                    id,
-                    name: w.name != null ? String(w.name) : null,
-                    fixed: Number(w.fixed ?? w.fixedCost) || 0,
-                    overtime: Number(w.overtime ?? w.overtimeCost) || 0,
-                    total,
-                    laborPctOfSales,
-                };
-            });
-            const totalFixed = workers.reduce((s, w) => s + w.fixed, 0);
-            const totalOvertime = workers.reduce((s, w) => s + w.overtime, 0);
-            const totalCost =
-                Number(raw.totalCost ?? raw.dayTotal) ||
-                totalFixed + totalOvertime;
-            setDayDetail({
-                date: String(raw.date),
-                totalFixed,
-                totalOvertime,
-                totalCost,
-                dayNetSales,
-                workers,
-            });
-        } catch (e) {
-            console.error(e);
-            toast.error('Error al cargar el desglose del día');
+    const openDayDetail = useCallback(
+        async (day: Date) => {
+            const key = format(day, 'yyyy-MM-dd');
+            setSelectedDayStr(key);
+            setDetailOpen(true);
+            setDetailLoading(true);
             setDayDetail(null);
-        } finally {
-            setDetailLoading(false);
-        }
-    };
+            try {
+                const [laborRes, salesRes] = await Promise.all([
+                    supabase.rpc('get_labor_cost_day_detail', { p_date: key }),
+                    supabase.rpc('get_cash_closings_summary', {
+                        p_start_date: key,
+                        p_end_date: key,
+                    }),
+                ]);
+                if (laborRes.error) throw laborRes.error;
+                if (salesRes.error) console.warn(salesRes.error);
+                const raw = laborRes.data as Record<string, unknown> | null;
+                if (!raw) {
+                    setDayDetail(null);
+                    return;
+                }
+                const dayNetSales = salesRes.error
+                    ? 0
+                    : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
+
+                const wrows = Array.isArray(raw.workers) ? raw.workers : [];
+                let workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => {
+                    const id = String(w.id ?? w.userId ?? '');
+                    const total = Number(w.total) || 0;
+                    let laborPctOfSales: number | null = null;
+                    if (dayNetSales > 0) {
+                        laborPctOfSales = (total / dayNetSales) * 100;
+                    }
+                    return {
+                        id,
+                        name: w.name != null ? String(w.name) : null,
+                        fixed: Number(w.fixed ?? w.fixedCost) || 0,
+                        overtime: Number(w.overtime ?? w.overtimeCost) || 0,
+                        total,
+                        laborPctOfSales,
+                    };
+                });
+
+                if (workerFilterId) {
+                    workers = workers.filter((w) => w.id === workerFilterId);
+                    if (workers.length === 0) {
+                        setDayDetail({
+                            date: String(raw.date),
+                            totalFixed: 0,
+                            totalOvertime: 0,
+                            totalCost: 0,
+                            dayNetSales,
+                            workers: [],
+                        });
+                        return;
+                    }
+                    const w = workers[0];
+                    setDayDetail({
+                        date: String(raw.date),
+                        totalFixed: w.fixed,
+                        totalOvertime: w.overtime,
+                        totalCost: w.total,
+                        dayNetSales,
+                        workers: [w],
+                    });
+                    return;
+                }
+
+                const totalFixed = workers.reduce((s, w) => s + w.fixed, 0);
+                const totalOvertime = workers.reduce((s, w) => s + w.overtime, 0);
+                const totalCost =
+                    Number(raw.totalCost ?? raw.dayTotal) ||
+                    totalFixed + totalOvertime;
+                setDayDetail({
+                    date: String(raw.date),
+                    totalFixed,
+                    totalOvertime,
+                    totalCost,
+                    dayNetSales,
+                    workers,
+                });
+            } catch (e) {
+                console.error(e);
+                toast.error('Error al cargar el desglose del día');
+                setDayDetail(null);
+            } finally {
+                setDetailLoading(false);
+            }
+        },
+        [supabase, workerFilterId],
+    );
 
     const closeDetail = () => {
         setDetailOpen(false);
