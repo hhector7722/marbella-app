@@ -136,10 +136,10 @@ export default function ConsumoPersonalDashboardPage() {
   }, [periodStart, periodEnd]);
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelledAuth = false;
     void (async () => {
       const { data: userRes, error: userErr } = await supabase.auth.getUser();
-      if (cancelled) return;
+      if (cancelledAuth) return;
       if (userErr) {
         console.error(userErr);
         setAuthState({ status: 'unauthenticated' });
@@ -160,7 +160,7 @@ export default function ConsumoPersonalDashboardPage() {
         .select('role')
         .eq('id', user.id)
         .maybeSingle();
-      if (cancelled) return;
+      if (cancelledAuth) return;
       if (profErr) {
         console.error(profErr);
         toast.error('No se pudo verificar permisos (perfil).');
@@ -178,13 +178,13 @@ export default function ConsumoPersonalDashboardPage() {
 
       setAuthState({ status: 'ok', userId: user.id });
     })();
-    let cancelled = false;
+    let cancelledEmployees = false;
     void (async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
         .order('first_name');
-      if (cancelled) return;
+      if (cancelledEmployees) return;
       if (error) {
         console.error(error);
         toast.error('No se pudo cargar la lista de empleados.');
@@ -198,7 +198,8 @@ export default function ConsumoPersonalDashboardPage() {
       setEmployees(list);
     })();
     return () => {
-      cancelled = true;
+      cancelledAuth = true;
+      cancelledEmployees = true;
     };
   }, [supabase, router]);
 
