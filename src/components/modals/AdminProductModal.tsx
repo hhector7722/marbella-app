@@ -25,8 +25,8 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     { title: 'Mermas', href: '/dashboard/inventory/waste', hover: 'hover:bg-orange-50/30', img: '/icons/bin.png' },
     { title: 'Escáner', href: '/dashboard/scanner', hover: 'hover:bg-cyan-50/30', img: '/icons/scan.png' },
     { title: 'Stock', href: '/dashboard/inventory/ledger', hover: 'hover:bg-violet-50/30', img: '/icons/productes.png' },
-    { title: 'Albaranes', href: '/dashboard/albaranes-precios', hover: 'hover:bg-zinc-100/30', img: '/icons/albaran.svg' },
-    { title: 'Consumo Personal', href: '/dashboard/consumo-personal', hover: 'hover:bg-emerald-50/30', img: '/icons/consum.png' },
+    { title: 'Albaranes', href: '/dashboard/albaranes-precios', hover: 'hover:bg-zinc-100/30', img: '/icons/albaran' },
+    { title: 'Consumo Personal', href: '/dashboard/consumo-personal', hover: 'hover:bg-emerald-50/30', img: '/icons/consum' },
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
 ];
 
