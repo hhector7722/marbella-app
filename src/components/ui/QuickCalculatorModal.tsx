@@ -312,7 +312,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                 ref={modalRef}
                 className={cn(
                     'bg-white relative rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
-                    tab === 'breakdown' ? 'max-w-[320px]' : 'max-w-[280px]'
+                    tab === 'breakdown' ? 'max-w-[420px]' : 'max-w-[280px]'
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -406,7 +406,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 />
                             )}
                             <div ref={breakdownCaptureRef}>
-                                <div className="grid grid-cols-4 gap-y-5 gap-x-3 p-3">
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-5 gap-x-3 p-3">
                                     {DENOMINATIONS.map((denom) => {
                                         const qty = breakdownCounts[denom] || 0;
                                         return (
@@ -432,11 +432,11 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                     <span className="font-black text-gray-400 text-[8px] uppercase tracking-widest block">
                                                         {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                                     </span>
-                                                    <div className="flex items-center justify-between w-full h-9 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
+                                                    <div className="flex items-center justify-between w-full h-10 min-h-[44px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
                                                         <button
                                                             type="button"
                                                             onClick={() => handleBreakdownAdjust(denom, -1)}
-                                                            className="w-7 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
                                                         >
                                                             <Minus size={12} strokeWidth={3} />
                                                         </button>
@@ -446,12 +446,12 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                             value={qty > 0 ? qty : ''}
                                                             onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
                                                             placeholder=""
-                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 px-1 text-xs tracking-tight tabular-nums focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => handleBreakdownAdjust(denom, 1)}
-                                                            className="w-7 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
                                                         >
                                                             <Plus size={12} strokeWidth={3} />
                                                         </button>

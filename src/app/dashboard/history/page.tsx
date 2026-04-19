@@ -604,14 +604,6 @@ export default function HistoryPage() {
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
                         <div className="relative flex items-center justify-between gap-1 min-w-0">
                             <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0">
-                                <button
-                                    type="button"
-                                    onClick={() => router.back()}
-                                    className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-8 h-8 md:w-9 md:h-9 hover:bg-white/20 transition-all active:scale-95 shrink-0 min-h-[48px] min-w-[48px] md:min-h-0 md:min-w-0 md:w-8 md:h-8"
-                                    aria-label="Volver"
-                                >
-                                    <ChevronLeft size={20} strokeWidth={2.5} />
-                                </button>
                                 <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
                             </div>
 
@@ -632,6 +624,11 @@ export default function HistoryPage() {
                             <div className="flex items-center gap-1 shrink-0 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
+                                    buttonClassName={cn(
+                                        "min-h-12 min-w-12 px-0 py-0",
+                                        "rounded-xl border-0 bg-transparent hover:bg-transparent",
+                                        "text-white/90 hover:text-white"
+                                    )}
                                     hasActiveFilter={(() => {
                                         const now = new Date();
                                         const defS = format(startOfMonth(now), 'yyyy-MM-dd');
