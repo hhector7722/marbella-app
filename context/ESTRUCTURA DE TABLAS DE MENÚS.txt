@@ -1,0 +1,44 @@
+====== ESTRUCTURA DE TABLAS DE MENÚS EN BDP ======
+
+Tabla            Columna              TipoDato
+-----            -------              --------
+Comandas_Menus   Tipo                 int
+Comandas_Menus   Salon_Barra          numeric
+Comandas_Menus   Numero_Referencia    numeric
+Comandas_Menus   Terminal             numeric
+Comandas_Menus   Linea_Comanda        numeric
+Comandas_Menus   Linea                numeric
+Comandas_Menus   IndexGrupo           numeric
+Comandas_Menus   PLU                  numeric
+Comandas_Menus   Descripcion          varchar
+Comandas_Menus   Descripcion_Cocina   varchar
+Comandas_Menus   Unidades             decimal
+Comandas_Menus   Suplemento           decimal
+Comandas_Menus   PMC                  decimal
+Comandas_Menus   UPC                  decimal
+Comandas_Menus   Imp_Aux              varchar
+Comandas_Menus   Nivel_Impresion      numeric
+Comandas_Menus   Uds_Impre_Cocina     decimal
+Comandas_Menus   Precio_Para_Desglose decimal
+Comandas_Menus   GUID_Item            binary
+Comandas_Menus   Comprobante_Emitido  bit
+Comandas_Menus   Linea_Aparcada       bit
+Documentos_Menus Serie                varchar
+Documentos_Menus Numero               numeric
+Documentos_Menus Linea_Documentos     numeric
+Documentos_Menus Linea                numeric
+Documentos_Menus Tipo                 numeric
+Documentos_Menus Terminal             numeric
+Documentos_Menus Fecha                datetime
+Documentos_Menus PLU                  numeric
+Documentos_Menus Descripcion          varchar
+Documentos_Menus Unidades             decimal
+Documentos_Menus Total_Con_Rec_Dto    decimal
+Documentos_Menus Turno                numeric
+Documentos_Menus Invitacion           bit
+Documentos_Menus Personal             bit
+Documentos_Menus PLU_Principal        decimal
+Documentos_Menus GUID_Item            binary
+Documentos_Menus Suplemento           decimal
+
+
