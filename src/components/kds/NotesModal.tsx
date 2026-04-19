@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { KdsMesaNumber } from "@/components/kds/KdsMesaNumber";
+import { cn } from "@/lib/utils";
 
 function norm(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -103,14 +104,14 @@ export function NotesModal(props: {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[2147483647] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
+      className="fixed inset-0 z-[2147483647] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-1 sm:p-2"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-4xl max-h-[86vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col bg-[#1b1c20] border border-black/30">
+      <div className="w-[98vw] max-w-6xl h-[92vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col bg-[#1b1c20] border border-black/30">
         {/* Cabecera: mismo color que el footer (fila resumen fija) */}
         <div className="px-3 sm:px-4 py-2 bg-[#12141a] text-white flex items-center justify-between gap-3 shrink-0">
           <div className="min-w-0 flex items-center gap-3">
@@ -151,7 +152,7 @@ export function NotesModal(props: {
                 value={freeText}
                 onChange={(e) => setFreeText(e.target.value)}
                 placeholder="Escribe notas…"
-                className="w-full min-h-[110px] rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-base sm:text-lg font-semibold tracking-wide text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/25"
+                className="w-full min-h-[200px] sm:min-h-[260px] rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-lg sm:text-xl font-semibold tracking-wide text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/25"
                 inputMode="text"
                 autoCorrect="off"
                 autoCapitalize="sentences"
@@ -169,11 +170,11 @@ export function NotesModal(props: {
                   key={q}
                   type="button"
                   onClick={() => toggleQuick(q)}
-                  className={[
-                    "min-h-[48px] rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center shadow-sm transition active:scale-[0.99] hover:bg-zinc-50",
+                  className={cn(
+                    "min-h-[56px] sm:min-h-[64px] rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center shadow-sm transition active:scale-[0.99] hover:bg-zinc-50",
                     "font-black uppercase tracking-[0.04em] text-zinc-900 text-2xl sm:text-3xl",
-                    isOn ? "ring-2 ring-red-600/70 border-red-600" : "",
-                  ].join(" ")}
+                    isOn && "ring-2 ring-red-600/70 border-red-600"
+                  )}
                 >
                   {q}
                 </button>
