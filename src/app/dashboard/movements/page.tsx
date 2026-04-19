@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
-    ArrowLeft,
     ArrowDownLeft,
     ArrowUpRight,
     Plus,
@@ -759,12 +758,6 @@ export default function MovementsPage() {
                     <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
                         <div className="flex items-center justify-between gap-2 md:gap-4">
                             <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                <button
-                                    onClick={() => router.back()}
-                                    className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95 shrink-0"
-                                >
-                                    <ArrowLeft className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
-                                </button>
                                 <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Caja Inicial</h1>
                             </div>
 
@@ -821,6 +814,11 @@ export default function MovementsPage() {
                             <div className="absolute right-0 flex items-center gap-1.5 shrink-0 text-white" data-movements-share-root="true">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
+                                    buttonClassName={cn(
+                                        "min-h-12 min-w-12 px-0 py-0",
+                                        "rounded-xl border-0 bg-transparent hover:bg-transparent",
+                                        "text-white/90 hover:text-white"
+                                    )}
                                     hasActiveFilter={(() => {
                                         const d = new Date();
                                         const defS = format(startOfMonth(d), 'yyyy-MM-dd');
@@ -845,12 +843,13 @@ export default function MovementsPage() {
                                         aria-label="Compartir"
                                         className={cn(
                                             "min-h-12 min-w-12",
-                                            "rounded-xl border border-white/10 bg-white/10 hover:bg-white/20",
+                                            "rounded-xl border-0 bg-transparent hover:bg-transparent",
+                                            "text-white/90 hover:text-white",
                                             "inline-flex items-center justify-center transition-all active:scale-95",
                                             shareBusy ? "opacity-60 pointer-events-none" : ""
                                         )}
                                     >
-                                        <Share className="w-5 h-5" strokeWidth={2.5} />
+                                        <Share className="w-[18px] h-[18px] md:w-[18px] md:h-[18px]" strokeWidth={2.5} />
                                     </button>
 
                                     {shareMenuOpen && (
@@ -923,8 +922,8 @@ export default function MovementsPage() {
                                 <div className="w-full">
                                     <table ref={tableRef} className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
-                                            <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[20%] md:w-[22%] text-center">
+                                            <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-wider md:tracking-[0.15em] leading-none">
+                                                <th className="px-1 md:px-6 py-1 md:py-2 w-[22%] md:w-[22%] text-center">
                                                     <button
                                                         type="button"
                                                         onClick={(e) => {
@@ -933,9 +932,9 @@ export default function MovementsPage() {
                                                             setDateSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
                                                         }}
                                                         className={cn(
-                                                            "w-full min-h-12",
+                                                            "w-full",
                                                             "inline-flex items-center justify-center gap-1.5",
-                                                            "rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors",
+                                                            "rounded-md hover:bg-white/10 active:bg-white/20 transition-colors",
                                                             "outline-none"
                                                         )}
                                                         aria-label="Ordenar por fecha"
@@ -949,9 +948,9 @@ export default function MovementsPage() {
                                                         )}
                                                     </button>
                                                 </th>
-                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[44%] md:w-[38%] text-center">CONCEPTO</th>
-                                                <th className="px-0.5 md:px-6 py-2 md:py-4 text-center w-[18%] md:w-[20%]">IMPORTE</th>
-                                                <th className="px-1 md:px-8 py-2 md:py-4 text-center w-[18%] md:w-[20%]">SALDO</th>
+                                                <th className="px-1 md:px-6 py-1 md:py-2 w-[38%] md:w-[38%] text-center">CONCEPTO</th>
+                                                <th className="px-0.5 md:px-6 py-1 md:py-2 text-center w-[20%] md:w-[20%]">IMPORTE</th>
+                                                <th className="px-1 md:px-8 py-1 md:py-2 text-center w-[20%] md:w-[20%]">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">

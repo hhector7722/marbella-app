@@ -6,11 +6,13 @@ import { cn } from "@/lib/utils";
 export function TimeFilterButton({
   onClick,
   className,
+  buttonClassName,
   hasActiveFilter,
   onClear,
 }: {
   onClick: () => void;
   className?: string;
+  buttonClassName?: string;
   hasActiveFilter?: boolean;
   onClear?: () => void;
 }) {
@@ -24,7 +26,8 @@ export function TimeFilterButton({
           "text-[9px] md:text-[10px] font-black uppercase tracking-widest",
           "transition-all outline-none",
           "bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl border border-white/10",
-          "min-h-[32px] md:min-h-[36px]"
+          "min-h-[32px] md:min-h-[36px]",
+          buttonClassName
         )}
         aria-label="Filtrar"
       >
