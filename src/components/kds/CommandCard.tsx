@@ -6,7 +6,7 @@ import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTimeKdsHeader } from '@/utils/date-utils';
 import { NotesModal } from './NotesModal';
 import { combinedLineNotesForDisplay } from './combined-line-notes';
-import { KdsMesaNumber, KdsStickerBannerText } from './KdsMesaNumber';
+import { KdsMesaNumber } from './KdsMesaNumber';
 import { cn } from '@/lib/utils';
 
 interface CommandCardProps {
@@ -173,19 +173,19 @@ export function CommandCard({
     }, [openDropdownKey]);
 
     const formatElapsed = (minutes: number) => {
-        if (minutes < 0) return '0 MIN';
-        if (minutes < 60) return `${minutes} MIN`;
+        if (minutes < 0) return '0 H 0 MIN';
+        if (minutes < 60) return `0 H ${minutes} MIN`;
         const hrs = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        return `${hrs}h ${mins} MIN`;
+        return `${hrs} H ${mins} MIN`;
     };
 
-    const getIndicatorColor = () => {
-        if (chromeCompleted) return 'bg-slate-600';
-        // Indicador temporal: ≤15 min petróleo, 16–24 amarillo, ≥25 rojo
-        if (elapsed >= 25) return 'animate-pulse-critical';
-        if (elapsed >= 16) return 'bg-amber-400';
-        return 'bg-[#407080]';
+    const getElapsedTextColor = () => {
+        if (chromeCompleted) return 'text-slate-500';
+        // Aust: 0–15 negro, 16–25 naranja, ≥26 rojo
+        if (elapsed >= 26) return 'text-rose-700';
+        if (elapsed >= 16) return 'text-orange-600';
+        return 'text-black';
     };
 
     const orderTime = formatLocalTimeKdsHeader(new Date(effectiveStart));
@@ -232,11 +232,11 @@ export function CommandCard({
                 !kdsRailAttached && 'mt-2'
             )}
         >
-            {/* Cabecera: sin bordes laterales (evita franja clara); el color llega al borde del contenedor */}
+            {/* Cabecera aust: fondo blanco, mesa centrada sin contorno, notas+cliente izq, hora+tiempo dcha */}
             <div
                 className={cn(
-                    'px-3 sm:px-4 pb-2 pt-1.5 flex justify-between items-start transition-colors duration-500 relative font-black w-full min-w-0',
-                    chromeCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`
+                    'px-3 sm:px-4 pb-2 pt-2 flex items-start transition-colors duration-500 relative font-black w-full min-w-0',
+                    chromeCompleted ? 'bg-slate-50 text-slate-600' : 'bg-white text-black'
                 )}
             >
                 {chromeCompleted && (
@@ -245,77 +245,73 @@ export function CommandCard({
                     </div>
                 )}
 
-                <div className="relative flex w-full min-w-0 items-center gap-2 sm:gap-3 pt-0">
-                    {/* Mesa — columna izquierda (pl extra: un poco separado del borde de tarjeta) */}
-                    <div className="flex min-w-0 flex-1 justify-start pl-2 sm:pl-3">
-                        <div className="flex min-w-0 flex-col items-start">
-                            <KdsMesaNumber value={mesaDisplay} isCompleted={chromeCompleted} />
-                        </div>
-                    </div>
-
-                    {/* Hora, tiempo y nombre: mismo hueco entre los tres (leading-none evita aire extra del line-height) */}
-                    <div className="flex min-w-0 shrink-0 flex-col items-center justify-start gap-1 px-1 text-center">
-                        <span className="block text-lg font-black uppercase leading-none tracking-[0.12em] opacity-95 sm:text-xl">
-                            {orderTime}
-                        </span>
-                        <div className="flex flex-col items-center justify-center gap-0.5 leading-none sm:flex-row sm:flex-wrap sm:justify-center">
-                            <span className="text-sm font-bold uppercase leading-none tracking-[0.1em] opacity-85 sm:text-base">
-                                {formatElapsed(elapsed)}
-                            </span>
-                            {order.origen_referencia && (
-                                <>
-                                    <span className="hidden text-sm opacity-50 sm:inline">·</span>
-                                    <span className="max-w-[14rem] truncate text-xs font-bold uppercase tracking-[0.08em] opacity-80 sm:text-sm">
-                                        {order.origen_referencia.replace(/^directo\s*-\s*/i, '').replace(/^directo-/i, '')}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                        {firstTwoWords(order.nombre_cliente) ? (
-                            <div className="pointer-events-none flex w-full max-w-[min(100%,12rem)] translate-y-1 justify-center sm:max-w-[14rem] sm:translate-y-1.5">
-                                <KdsStickerBannerText
-                                    value={firstTwoWords(order.nombre_cliente)}
-                                    isCompleted={chromeCompleted}
-                                    className="h-7 w-full min-w-0 sm:h-8"
+                <div className="relative flex w-full min-w-0 items-start gap-2 sm:gap-3">
+                    {/* Izquierda: notas comanda + cliente */}
+                    <div className="flex min-w-0 flex-1 flex-col items-start justify-start gap-1 pt-0.5">
+                        <div className="flex items-start gap-2 min-w-0">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNotesModal({
+                                        kind: 'order',
+                                        title: `Mesa ${order.mesa || '--'}`,
+                                        subtitle: 'NOTA COMANDA',
+                                        initialNotes: order.notas_comanda,
+                                    });
+                                }}
+                                className="flex h-12 w-12 shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95"
+                                title="Editar nota comanda"
+                            >
+                                <Image
+                                    src="/icons/notas.png"
+                                    alt="Notas"
+                                    width={34}
+                                    height={34}
+                                    className={cn(chromeCompleted ? 'opacity-40' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
                                 />
+                            </button>
+                            <div className="min-w-0 flex-1">
+                                {hasNotes(order.notas_comanda) ? (
+                                    <div className={cn('text-xs sm:text-sm font-black uppercase tracking-[0.1em] leading-snug text-slate-700', chromeCompleted && 'text-slate-500')}>
+                                        {splitBullets(order.notas_comanda)[0] ?? ' '}
+                                    </div>
+                                ) : (
+                                    <div className="text-xs sm:text-sm font-black uppercase tracking-[0.1em] leading-snug text-slate-400">
+                                        {' '}
+                                    </div>
+                                )}
+                                {firstTwoWords(order.nombre_cliente) ? (
+                                    <div className={cn('text-2xl sm:text-3xl font-black uppercase tracking-[0.06em] leading-none text-slate-900 truncate', chromeCompleted && 'text-slate-500')}>
+                                        {firstTwoWords(order.nombre_cliente)}
+                                    </div>
+                                ) : (
+                                    <div className="text-2xl sm:text-3xl font-black uppercase tracking-[0.06em] leading-none text-slate-300">
+                                        {' '}
+                                    </div>
+                                )}
                             </div>
-                        ) : null}
+                        </div>
                     </div>
 
-                    {/* Editar nota — derecha, mismo ancho flexible que la mesa para centrar hora */}
-                    <div className="flex min-w-0 flex-1 justify-end">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setNotesModal({
-                                    kind: 'order',
-                                    title: `Mesa ${order.mesa || '--'}`,
-                                    subtitle: 'NOTA COMANDA',
-                                    initialNotes: order.notas_comanda,
-                                });
-                            }}
-                            className="flex h-16 w-16 shrink-0 items-center justify-center border-0 bg-transparent shadow-none transition hover:opacity-90 active:scale-95 sm:h-20 sm:w-20"
-                            title="Editar nota comanda"
-                        >
-                            <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${chromeCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
-                        </button>
+                    {/* Centro: mesa grande sin contorno */}
+                    <div className="flex min-w-0 shrink-0 flex-col items-center justify-start pt-0">
+                        <KdsMesaNumber value={mesaDisplay} isCompleted={chromeCompleted} variant="plain" />
+                    </div>
+
+                    {/* Derecha: hora + indicador (color por tiempo) */}
+                    <div className="flex min-w-0 flex-1 flex-col items-end justify-start gap-1 pt-1 text-right">
+                        <div className={cn('text-sm sm:text-base font-black uppercase tracking-[0.12em] leading-none text-slate-600', chromeCompleted && 'text-slate-500')}>
+                            {orderTime}
+                        </div>
+                        <div className={cn('text-sm sm:text-base font-black uppercase tracking-[0.12em] leading-none tabular-nums', getElapsedTextColor())}>
+                            {formatElapsed(elapsed)}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {order.notas_comanda && (
-                <div className={`px-4 py-2.5 border-b border-slate-100 ${chromeCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
-                    <div className={`text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${chromeCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
-                        {splitBullets(order.notas_comanda).map((n, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                                <span className="font-black">·</span>
-                                <span className="break-words">{n}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* Notas comanda completas se editan en modal; en aust se muestran como preview en cabecera */}
 
             {/* Lista de Líneas */}
             <div className="flex-1 space-y-2 px-0 py-2 sm:py-3">

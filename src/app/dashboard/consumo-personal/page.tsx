@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
 import { ChevronLeft, ChevronRight, User, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   addMonths,
   eachDayOfInterval,
@@ -91,6 +92,7 @@ function firstNameOnly(full: string | null): string {
 
 export default function ConsumoPersonalDashboardPage() {
   const supabase = createClient();
+  const router = useRouter();
 
   const def = defaultFullMonthPeriod();
   const [periodStart, setPeriodStart] = useState<string>(def.start);
@@ -115,6 +117,13 @@ export default function ConsumoPersonalDashboardPage() {
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
   const [dayDetail, setDayDetail] = useState<DayDetailPayload | null>(null);
 
+  const [authState, setAuthState] = useState<
+    | { status: 'checking' }
+    | { status: 'unauthenticated' }
+    | { status: 'forbidden' }
+    | { status: 'ok'; userId: string }
+  >({ status: 'checking' });
+
   const calendarDays = useMemo(() => {
     const startVisible = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
     const endVisible = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 });
@@ -129,11 +138,59 @@ export default function ConsumoPersonalDashboardPage() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (userErr) {
+        console.error(userErr);
+        setAuthState({ status: 'unauthenticated' });
+        toast.error('Sesión caducada. Vuelve a iniciar sesión.');
+        router.replace('/login');
+        return;
+      }
+      const user = userRes?.user ?? null;
+      if (!user) {
+        setAuthState({ status: 'unauthenticated' });
+        toast.error('Sesión caducada. Vuelve a iniciar sesión.');
+        router.replace('/login');
+        return;
+      }
+
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (profErr) {
+        console.error(profErr);
+        toast.error('No se pudo verificar permisos (perfil).');
+        setAuthState({ status: 'forbidden' });
+        return;
+      }
+
+      const role = (prof as any)?.role as string | null | undefined;
+      if (role !== 'manager' && role !== 'admin') {
+        setAuthState({ status: 'forbidden' });
+        toast.error('No autorizado: esta pantalla es solo para gestor/admin.');
+        router.replace('/dashboard');
+        return;
+      }
+
+      setAuthState({ status: 'ok', userId: user.id });
+    })();
+    let cancelled = false;
+    void (async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
         .order('first_name');
-      if (cancelled || error) return;
+      if (cancelled) return;
+      if (error) {
+        console.error(error);
+        toast.error('No se pudo cargar la lista de empleados.');
+        setEmployees([]);
+        return;
+      }
       const list = (data || []).filter((e: ProfileOption) => {
         const name = (e.first_name || '').trim().toLowerCase();
         return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
@@ -143,11 +200,16 @@ export default function ConsumoPersonalDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [supabase]);
+  }, [supabase, router]);
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
     try {
+      if (authState.status === 'checking') return;
+      if (authState.status !== 'ok') {
+        setSummary(null);
+        return;
+      }
       const start = parseLocalSafe(periodStart);
       const end = parseLocalSafe(periodEnd);
       if (end < start) {
@@ -177,12 +239,17 @@ export default function ConsumoPersonalDashboardPage() {
       });
     } catch (e) {
       console.error(e);
-      toast.error('No se pudo cargar el consumo personal. ¿Permisos de gestor?');
+      const msg = String((e as any)?.message ?? '');
+      if (msg.toLowerCase().includes('no autorizado') || msg.toLowerCase().includes('forbidden')) {
+        toast.error('No autorizado: esta pantalla es solo para gestor/admin.');
+      } else {
+        toast.error('No se pudo cargar el consumo personal.');
+      }
       setSummary(null);
     } finally {
       setLoading(false);
     }
-  }, [supabase, periodStart, periodEnd, workerFilterId]);
+  }, [supabase, periodStart, periodEnd, workerFilterId, authState]);
 
   useEffect(() => {
     fetchSummary();

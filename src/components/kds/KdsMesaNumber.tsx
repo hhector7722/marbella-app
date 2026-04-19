@@ -8,6 +8,8 @@ type KdsMesaNumberProps = {
     /** Texto ya normalizado (ej. mesa o "--") */
     value: string;
     isCompleted: boolean;
+    /** Variante visual: dorsal con contorno (default) o texto plano sin contorno */
+    variant?: 'dorsal' | 'plain';
 };
 
 /**
@@ -15,7 +17,23 @@ type KdsMesaNumberProps = {
  * (counters blancos vía contorno interior) + capa negra con trazo fino y sombra
  * ligera. Tracking ajustado para dígitos juntos tipo “99”.
  */
-export function KdsMesaNumber({ value, isCompleted }: KdsMesaNumberProps) {
+export function KdsMesaNumber({ value, isCompleted, variant = 'dorsal' }: KdsMesaNumberProps) {
+    if (variant === 'plain') {
+        return (
+            <span
+                className={cn(
+                    'inline-flex min-h-[48px] shrink-0 items-center justify-center px-0.5 py-0.5 tabular-nums uppercase leading-none',
+                    'text-7xl sm:text-8xl md:text-9xl',
+                    'tracking-[-0.07em] sm:tracking-[-0.09em]',
+                    kdsMesaNumberFont.className,
+                    isCompleted ? 'text-slate-500' : 'text-black'
+                )}
+            >
+                {value}
+            </span>
+        );
+    }
+
     return (
         <span
             className={cn(
