@@ -180,7 +180,7 @@ export function CommandCard({
         const mins = m % 60;
         if (hrs === 0) return `${mins}m`;
         if (mins === 0) return `${hrs}h`;
-        return `${hrs}h${mins}m`;
+        return `${hrs}h ${mins}m`;
     };
 
     /** Aust: fondo indicador — verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto siempre blanco */
@@ -486,7 +486,7 @@ export function CommandCard({
                     <button
                         type="button"
                         onClick={() => onRecuperarComanda(order.id)}
-                        className="w-full min-h-[52px] rounded-none px-3 py-3 sm:px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1"
+                        className="w-full min-h-[52px] rounded-none px-3 py-3 sm:px-4 bg-[#D56170] hover:bg-[#C55462] text-white font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1"
                     >
                         Recuperar
                     </button>
