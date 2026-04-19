@@ -189,26 +189,29 @@ export function ConsumptionModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
               {gridRecipes.map((recipe) => (
                 <button
                   key={recipe.id}
                   type="button"
                   onClick={() => onRecipeActivate(recipe)}
-                  className="flex flex-col gap-2 rounded-2xl border border-zinc-100 bg-white p-3 text-left shadow-sm transition-all active:scale-[0.98] hover:border-zinc-200"
+                  className="flex min-h-0 flex-col items-stretch gap-0.5 bg-transparent p-1.5 text-left transition-transform active:scale-[0.98]"
                 >
-                  <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-zinc-100">
+                  <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
                     {recipe.photo_url ? (
                       <img
                         src={recipe.photo_url}
                         alt=""
-                        className="max-h-full max-w-full object-contain"
+                        className="max-h-12 w-full object-contain"
                       />
                     ) : (
-                      <Package className="h-10 w-10 text-zinc-300" aria-hidden />
+                      <Package className="h-5 w-5 text-zinc-300" aria-hidden />
                     )}
                   </div>
-                  <span className="line-clamp-3 min-h-[2.75rem] text-center text-xs font-semibold leading-snug text-zinc-900">
+                  <span
+                    className="line-clamp-2 w-full text-left text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
+                    title={recipe.name}
+                  >
                     {recipe.name}
                   </span>
                 </button>
@@ -218,30 +221,30 @@ export function ConsumptionModal({
         )}
 
         <div className="shrink-0 border-t border-zinc-200 bg-white p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] md:p-5">
-          <h3 className="mb-2 font-bold text-zinc-900">Has consumido:</h3>
-          <div className="mb-3 flex min-h-[2rem] flex-wrap gap-2">
-            {cart.length === 0 ? (
-              <span className="text-sm text-zinc-400">Ninguno</span>
-            ) : (
-              cart.map((c, i) => (
-                <span
-                  key={`${c.recipe.id}-${c.is_half}-${i}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-sm font-medium text-emerald-900"
-                >
-                  {c.quantity}× {c.recipe.name}
-                  {c.is_half ? ' (Mitad)' : ''}
-                  <button
-                    type="button"
-                    onClick={() => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-emerald-800 hover:text-red-600"
-                    aria-label="Quitar"
+          {cart.length > 0 && (
+            <>
+              <h3 className="mb-2 font-bold text-zinc-900">Has consumido:</h3>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {cart.map((c, i) => (
+                  <span
+                    key={`${c.recipe.id}-${c.is_half}-${i}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-sm font-medium text-emerald-900"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                </span>
-              ))
-            )}
-          </div>
+                    {c.quantity}× {c.recipe.name}
+                    {c.is_half ? ' (Mitad)' : ''}
+                    <button
+                      type="button"
+                      onClick={() => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-emerald-800 hover:text-red-600"
+                      aria-label="Quitar"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
           <button
             type="button"
             onClick={() => void handleSubmit()}
