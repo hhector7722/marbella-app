@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import MappingClient from './MappingClient'
 
 export type Recipe = {
@@ -52,16 +53,13 @@ export default async function RecetasTpvPage() {
   const recipes = (recipesRes.data ?? []) as unknown as Recipe[]
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Mapeo TPV → Receta</h1>
-        <p className="text-sm text-zinc-500">
-          Vincula artículos del TPV (BDP) con recetas para que el inventario se reste automáticamente. Interfaz táctil (48px+).
-        </p>
-      </div>
-
+    <DashboardDetailLayout
+      title="Mapeo TPV"
+      subtitle="Artículos BDP ↔ recetas: el inventario se descuenta según ventas TPV"
+      maxWidthClass="max-w-7xl"
+    >
       <MappingClient mappings={mappings} articles={articles} recipes={recipes} />
-    </div>
+    </DashboardDetailLayout>
   )
 }
 

@@ -9,11 +9,6 @@ import {
     ChevronDown,
     ChevronRight,
     FileText,
-    ClipboardList,
-    Trash2,
-    Camera,
-    History,
-    BookOpen,
 } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -73,41 +68,10 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     { title: 'Recetas', href: '/recipes', img: '/icons/recipes.png', hover: 'hover:bg-red-50/30' },
     { title: 'Ingredientes', href: '/ingredients', img: '/icons/ingrediente.png', hover: 'hover:bg-orange-50/30' },
     { title: 'Pedidos', hover: 'hover:bg-emerald-50/30', special: 'pedidos' },
-    {
-        title: 'Inventario',
-        href: '/dashboard/inventory',
-        hover: 'hover:bg-purple-50/30',
-        icon: ClipboardList,
-        iconWrap: 'bg-purple-50 text-purple-700',
-    },
-    {
-        title: 'Mermas',
-        href: '/dashboard/inventory/waste',
-        hover: 'hover:bg-orange-50/30',
-        icon: Trash2,
-        iconWrap: 'bg-orange-50 text-orange-700',
-    },
-    {
-        title: 'Escáner',
-        href: '/dashboard/scanner',
-        hover: 'hover:bg-cyan-50/30',
-        icon: Camera,
-        iconWrap: 'bg-cyan-50 text-cyan-700',
-    },
-    {
-        title: 'Auditoría',
-        href: '/dashboard/inventory/ledger',
-        hover: 'hover:bg-violet-50/30',
-        icon: History,
-        iconWrap: 'bg-violet-50 text-violet-700',
-    },
-    {
-        title: 'Mapeos TPV',
-        href: '/dashboard/recetas-tpv',
-        hover: 'hover:bg-amber-50/30',
-        icon: BookOpen,
-        iconWrap: 'bg-amber-50 text-amber-800',
-    },
+    { title: 'Inventario', href: '/dashboard/inventory', hover: 'hover:bg-purple-50/30', img: '/icons/inventory.svg' },
+    { title: 'Mermas', href: '/dashboard/inventory/waste', hover: 'hover:bg-orange-50/30', img: '/icons/bin.png' },
+    { title: 'Escáner', href: '/dashboard/scanner', hover: 'hover:bg-cyan-50/30', img: '/icons/scanner.svg' },
+    { title: 'Stock', href: '/dashboard/inventory/ledger', hover: 'hover:bg-violet-50/30', img: '/icons/productes.svg' },
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
 ];
 

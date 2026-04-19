@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import type { LucideIcon } from 'lucide-react';
-import { Camera, ClipboardList, Package, Trash2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StaffProductModalProps {
@@ -15,39 +14,12 @@ interface StaffProductModalProps {
 
 type StaffMenuItem =
     | { title: string; hover: string; special: 'pedidos' }
-    | { title: string; hover: string; href: string; icon: LucideIcon; iconWrap: string }
     | { title: string; hover: string; href: string; img: string };
 
 const STAFF_MENU_ITEMS: StaffMenuItem[] = [
     { title: 'Pedidos', hover: 'hover:bg-emerald-50/30', special: 'pedidos' },
-    {
-        title: 'Inventario',
-        href: '/dashboard/inventory',
-        hover: 'hover:bg-purple-50/30',
-        icon: ClipboardList,
-        iconWrap: 'bg-purple-50 text-purple-700',
-    },
-    {
-        title: 'Mermas',
-        href: '/dashboard/inventory/waste',
-        hover: 'hover:bg-orange-50/30',
-        icon: Trash2,
-        iconWrap: 'bg-orange-50 text-orange-700',
-    },
-    {
-        title: 'Escáner',
-        href: '/dashboard/scanner',
-        hover: 'hover:bg-cyan-50/30',
-        icon: Camera,
-        iconWrap: 'bg-cyan-50 text-cyan-700',
-    },
-    {
-        title: 'Ingredientes',
-        href: '/ingredients',
-        hover: 'hover:bg-blue-50/30',
-        icon: Package,
-        iconWrap: 'bg-blue-50 text-blue-700',
-    },
+    { title: 'Inventario', href: '/dashboard/inventory', hover: 'hover:bg-purple-50/30', img: '/icons/inventory.svg' },
+    { title: 'Escáner', href: '/dashboard/scanner', hover: 'hover:bg-cyan-50/30', img: '/icons/scanner.svg' },
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
 ];
 
@@ -110,30 +82,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                             );
                         }
 
-                        if ('icon' in item) {
-                            const isActive = pathname === item.href;
-                            const baseClass = cn(
-                                'bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95 text-center no-underline',
-                                item.hover,
-                                isActive && 'ring-2 ring-[#36606F]/40 bg-white shadow-sm',
-                            );
-                            const Icon = item.icon;
-                            return (
-                                <Link key={i} href={item.href} onClick={onClose} className={baseClass}>
-                                    <div
-                                        className={cn(
-                                            'w-12 h-12 flex items-center justify-center rounded-xl transition-transform group-hover:scale-110',
-                                            item.iconWrap,
-                                        )}
-                                    >
-                                        <Icon className="w-7 h-7" strokeWidth={2} />
-                                    </div>
-                                    <span className="font-black text-sm text-gray-700">{item.title}</span>
-                                </Link>
-                            );
-                        }
-
-                        if ('img' in item) {
+                        if ('href' in item && 'img' in item) {
                             const isActive = pathname === item.href;
                             const baseClass = cn(
                                 'bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95 text-center no-underline',

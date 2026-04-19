@@ -63,8 +63,8 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
   return (
     <div className="space-y-8 pb-24">
       {Object.entries(grouped).map(([category, items]) => (
-        <section key={category} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden shrink-0">
-          <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 font-semibold text-gray-700">
+        <section key={category} className="rounded-xl border border-zinc-100 bg-zinc-50/80 overflow-hidden shrink-0">
+          <div className="bg-zinc-100/80 px-4 py-3 border-b border-zinc-100 font-semibold text-zinc-700 text-sm">
             {category}
           </div>
           <div className="divide-y divide-gray-50">
@@ -72,7 +72,7 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
               const displayTeorico = item.stock_current === 0 ? " " : item.stock_current.toString()
               
               return (
-                <div key={item.id} className="flex items-center justify-between p-4 px-6 hover:bg-gray-50/50 transition-colors">
+                <div key={item.id} className="flex items-center justify-between p-4 px-4 hover:bg-white/60 transition-colors">
                   <div className="flex flex-col">
                     <span className="text-base font-medium text-gray-900">{item.name}</span>
                     <span className="text-sm text-gray-400">Teórico: {displayTeorico} {item.unit}</span>
@@ -80,7 +80,7 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
                   
                   <div className="flex items-center gap-3 shrink-0">
                     <input
-                      type="inputMode"
+                      type="text"
                       inputMode="decimal"
                       placeholder={item.stock_current.toString()}
                       value={physicalCounts[item.id] !== undefined ? physicalCounts[item.id] : ''}

@@ -184,8 +184,8 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden shrink-0">
+    <div className="flex flex-col lg:flex-row gap-4 items-stretch">
+      <div className="w-full lg:w-1/3 rounded-xl border border-zinc-100 bg-zinc-50/80 overflow-hidden shrink-0 flex flex-col min-h-0">
         <div className="p-4 border-b border-zinc-100 relative">
           <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
@@ -196,7 +196,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             className="w-full min-h-12 pl-10 pr-4 bg-zinc-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
           />
         </div>
-        <div className="overflow-y-auto h-[600px] divide-y divide-zinc-50">
+        <div className="overflow-y-auto max-h-[min(560px,60vh)] min-h-[280px] divide-y divide-zinc-50 flex-1">
           {filtered.map((ing) => (
             <button
               key={ing.id}
@@ -221,10 +221,10 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
         </div>
       </div>
 
-      <div className="w-full lg:w-2/3 flex-1 bg-white rounded-2xl shadow-sm border border-zinc-100 min-h-[600px] flex flex-col">
+      <div className="w-full lg:w-2/3 flex-1 rounded-xl border border-zinc-100 bg-zinc-50/80 min-h-[min(600px,60vh)] flex flex-col">
         {!selectedIng ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400 font-medium min-h-[600px]">
-            Selecciona un ingrediente para ver su auditoría
+          <div className="flex-1 flex items-center justify-center text-zinc-400 font-medium px-6 py-16 text-center text-sm">
+            Selecciona un ingrediente para ver sus movimientos
           </div>
         ) : (
           <>
@@ -247,7 +247,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               </div>
             </div>
 
-            <div className="p-0 overflow-y-auto h-[520px] flex-1 min-h-0">
+            <div className="p-0 overflow-y-auto flex-1 min-h-[280px] max-h-[min(520px,50vh)]">
               {isLoading ? (
                 <div className="flex justify-center p-10">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600" />

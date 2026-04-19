@@ -1,4 +1,7 @@
+import Link from 'next/link'
+import { BookOpen } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { LedgerClient } from './LedgerClient'
 
 export const dynamic = 'force-dynamic'
@@ -15,13 +18,21 @@ export default async function LedgerPage() {
   if (error) throw new Error('Fallo al cargar base de inventario')
 
   return (
-    <main className="max-w-5xl mx-auto p-4 space-y-6">
-      <header className="flex flex-col gap-1 bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Auditoría de Ledger</h1>
-        <p className="text-sm text-gray-500">Traza inmutable de cada gramo/unidad que entra y sale del local.</p>
-      </header>
-
+    <DashboardDetailLayout
+      title="Stock"
+      subtitle="Historial de movimientos y trazabilidad por ingrediente"
+      maxWidthClass="max-w-6xl"
+      rightSlot={
+        <Link
+          href="/dashboard/recetas-tpv"
+          className="min-h-[48px] px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-colors"
+        >
+          <BookOpen className="w-5 h-5 shrink-0" strokeWidth={2.5} />
+          Mapeo TPV
+        </Link>
+      }
+    >
       <LedgerClient ingredients={ingredients || []} />
-    </main>
+    </DashboardDetailLayout>
   )
 }

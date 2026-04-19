@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { InventoryClient } from './InventoryClient'
 
 export const dynamic = 'force-dynamic'
@@ -17,14 +18,12 @@ export default async function InventoryPage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto p-4 space-y-6">
-      <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Recuento de Inventario</h1>
-          <p className="text-sm text-gray-500 mt-1">Ajuste físico frente a teórico. Solo se registrarán las diferencias.</p>
-        </div>
-      </header>
+    <DashboardDetailLayout
+      title="Inventario"
+      subtitle="Recuento físico: solo se registrarán las diferencias frente al stock teórico"
+      maxWidthClass="max-w-4xl"
+    >
       <InventoryClient initialIngredients={ingredients || []} />
-    </main>
+    </DashboardDetailLayout>
   )
 }
