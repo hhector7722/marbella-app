@@ -793,11 +793,11 @@ export default function MovementsPage() {
                         </div>
 
                         {/* FILTROS INTEGRADOS EN CABECERA */}
-                        {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="relative flex items-center justify-center gap-2 pb-2">
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 pb-2 w-full">
+                            <div aria-hidden className="min-w-0" />
                             {/* NAVEGADOR MENSUAL PRINCIPAL */}
-                            <div className="flex items-center gap-0.5 md:gap-1">
-                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                            <div className="flex items-center justify-center gap-0.5 md:gap-1 min-w-0">
+                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
                                     <ChevronLeft size={18} />
                                 </button>
                                 <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
@@ -805,19 +805,19 @@ export default function MovementsPage() {
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'SELECCIONAR MES'}
                                 </button>
-                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
                                     <ChevronRight size={18} />
                                 </button>
                             </div>
 
-                            {/* FILTRO UNIFICADO */}
-                            <div className="absolute right-1 md:right-0 flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white" data-movements-share-root="true">
+                            {/* FILTRO + COMPARTIR (alineados a la derecha) */}
+                            <div className="flex items-center justify-end gap-1 md:gap-1.5 shrink-0 text-white min-w-0" data-movements-share-root="true">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    showLabel={false}
+                                    showLabel
                                     buttonClassName={cn(
-                                        "min-h-12 min-w-12 px-0 py-0",
-                                        "rounded-xl border-0 bg-transparent hover:bg-transparent",
+                                        "min-h-12 px-2 md:px-3 py-1.5",
+                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
                                         "text-white/90 hover:text-white"
                                     )}
                                     hasActiveFilter={(() => {
@@ -844,7 +844,7 @@ export default function MovementsPage() {
                                         aria-label="Compartir"
                                         className={cn(
                                             "min-h-12 min-w-12",
-                                            "rounded-xl border-0 bg-transparent hover:bg-transparent",
+                                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
                                             "text-white/90 hover:text-white",
                                             "inline-flex items-center justify-center transition-all active:scale-95",
                                             shareBusy ? "opacity-60 pointer-events-none" : ""
@@ -919,12 +919,12 @@ export default function MovementsPage() {
 
                         {/* LISTADO DE MOVIMIENTOS INTEGRADO */}
                         <div className="p-3 bg-white">
-                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
+                            <div className="rounded-t-lg rounded-b-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="w-full">
                                     <table ref={tableRef} className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-wider md:tracking-[0.15em] leading-none">
-                                                <th className="px-1 md:px-6 py-1 md:py-2 w-[22%] md:w-[22%] text-center">
+                                                <th className="px-1 md:px-4 py-1 md:py-2 w-[24%] md:w-[22%] text-center">
                                                     <button
                                                         type="button"
                                                         onClick={(e) => {
@@ -949,9 +949,9 @@ export default function MovementsPage() {
                                                         )}
                                                     </button>
                                                 </th>
-                                                <th className="px-0.5 md:px-6 py-1 md:py-2 w-[32%] md:w-[38%] text-center">CONCEPTO</th>
-                                                <th className="px-0.5 md:px-6 py-1 md:py-2 text-center w-[22%] md:w-[20%]">IMPORTE</th>
-                                                <th className="px-0.5 md:px-8 py-1 md:py-2 text-center w-[24%] md:w-[20%]">SALDO</th>
+                                                <th className="px-0.5 md:px-3 py-1 md:py-2 w-[26%] md:w-[28%] text-center">CONCEPTO</th>
+                                                <th className="px-0.5 md:px-4 py-1 md:py-2 text-center w-[25%] md:w-[25%]">IMPORTE</th>
+                                                <th className="px-0.5 md:px-5 py-1 md:py-2 text-center w-[25%] md:w-[25%]">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
@@ -985,7 +985,7 @@ export default function MovementsPage() {
                                                                 setSelectedMovement(mov);
                                                             }}
                                                         >
-                                                            <td className="px-1 md:px-6 py-2 md:py-3">
+                                                            <td className="px-1 md:px-4 py-2 md:py-2.5">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[10px] md:text-[13px] font-black text-zinc-900 italic">
                                                                         {isNaN(date.getTime()) ? (
@@ -1002,10 +1002,10 @@ export default function MovementsPage() {
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-1 md:px-6 py-2 md:py-3">
-                                                                <div className="flex items-center gap-1 md:gap-3">
+                                                            <td className="px-0.5 md:px-3 py-2 md:py-2.5">
+                                                                <div className="flex items-center gap-0.5 md:gap-2 min-w-0">
                                                                     <div className={cn(
-                                                                        "w-4 h-4 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                                                        "w-4 h-4 md:w-7 md:h-7 rounded-md md:rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
                                                                         mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
                                                                             mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
                                                                                 "bg-orange-50 text-orange-500"
@@ -1014,12 +1014,12 @@ export default function MovementsPage() {
                                                                             mov.type === 'expense' ? <ArrowUp size={8} className="md:size-[16px]" strokeWidth={3} /> :
                                                                                 <RefreshCw size={8} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[9px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[140px] md:max-w-[200px]">
+                                                                    <span className="text-[9px] md:text-[11px] font-bold text-zinc-500 uppercase tracking-tight truncate min-w-0 max-w-[100px] sm:max-w-[120px] md:max-w-[150px]">
                                                                         {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-0.5 md:px-6 py-2 md:py-3 text-center">
+                                                            <td className="px-0.5 md:px-4 py-2 md:py-2.5 text-center">
                                                                 <span className={cn(
                                                                     "text-[10px] md:text-[15px] font-black tabular-nums",
                                                                     mov.type === 'income' ? "text-emerald-500" :
@@ -1029,7 +1029,7 @@ export default function MovementsPage() {
                                                                     {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
                                                                 </span>
                                                             </td>
-                                                            <td className="px-0.5 md:px-8 py-2 md:py-3 text-center md:text-right">
+                                                            <td className="px-0.5 md:px-5 py-2 md:py-2.5 text-center md:text-right">
                                                                 <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">
                                                                     {mov.running_balance.toFixed(2)}€
                                                                 </span>

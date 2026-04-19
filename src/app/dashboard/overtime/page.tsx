@@ -22,6 +22,12 @@ const formatDisplay = (val: number, suffix: string = '') => {
     return `${val.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${suffix}`;
 };
 
+/** Fecha local desde YYYY-MM-DD (evita desfase UTC). */
+function parseLocalYmd(ymd: string): Date {
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
 // Fila de staff en el modal (réplica del dashboard)
 const StaffOvertimeRow = memo(({
     staff,
@@ -199,11 +205,11 @@ export default function OvertimePage() {
                                     <div className="w-10 h-10 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
                                 </div>
                             ) : (
-                                <div className="flex gap-3 md:gap-4">
-                                    {/* Calendario mini (escala widget, un poco mayor) */}
-                                    <div className="shrink-0 flex flex-col gap-[3px]">
+                                <div className="flex gap-2 md:gap-3">
+                                    {/* Calendario mini (compacto, alineado con filas de semana) */}
+                                    <div className="shrink-0 flex flex-col gap-[2px]">
                                         {rows.map((rowDays, rowIndex) => (
-                                            <div key={rowIndex} className="grid grid-cols-7 gap-[3px]">
+                                            <div key={rowIndex} className="grid grid-cols-7 gap-[2px]">
                                                 {rowDays.map((day) => {
                                                     const inMonth = isSameMonth(day, viewMonth);
                                                     const isToday = isSameDay(day, today);
@@ -211,7 +217,7 @@ export default function OvertimePage() {
                                                         <div
                                                             key={day.getTime()}
                                                             className={cn(
-                                                                'w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-full text-[10px] md:text-xs font-bold',
+                                                                'w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold',
                                                                 !inMonth && 'text-zinc-300',
                                                                 inMonth && !isToday && 'text-zinc-600',
                                                                 isToday && 'bg-blue-500 text-white'
@@ -224,49 +230,49 @@ export default function OvertimePage() {
                                             </div>
                                         ))}
                                     </div>
-                                    {/* Lista de semanas (1 fila = 1 fila calendario) */}
-                                    <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
-                                        {rowWeekIds.map((weekId, rowIndex) => {
+                                    {/* Lista de semanas: misma fila "Semana N" + importe total a la derecha */}
+                                    <div className="flex-1 min-w-0 flex flex-col gap-[2px] justify-center">
+                                        {rowWeekIds.map((weekId) => {
                                             if (weekId === currentWeekStart) {
-                                                return <div key={weekId} className="w-7 h-7 md:w-8 md:h-8 flex-shrink-0" aria-hidden />;
+                                                return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
                                             }
                                             const week = weeksData.find(w => w.weekId === weekId);
                                             if (!week) {
-                                                return <div key={weekId} className="h-7 md:h-8 flex-shrink-0 min-h-[28px] md:min-h-[32px]" aria-hidden />;
+                                                return <div key={weekId} className="h-6 md:h-7 flex-shrink-0 min-h-[24px] md:min-h-[28px]" aria-hidden />;
                                             }
                                             const isFullyPaid = week.staff?.every((s: any) => {
                                                 const cost = (s.totalCost ?? (s as any).amount ?? 0);
                                                 return cost < 0.05 || !!s.isPaid || s.preferStock === true;
                                             });
                                             const weekTotal = week.totalAmount ?? 0;
+                                            const weekStart = parseLocalYmd(week.weekId);
                                             return (
                                                 <button
                                                     key={week.weekId}
                                                     type="button"
                                                     onClick={() => setWeekDetailModal({ week })}
                                                     className={cn(
-                                                        'w-full h-7 md:h-8 min-h-[28px] md:min-h-[32px] flex items-center justify-between gap-2 px-2 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
+                                                        'w-full h-6 md:h-7 min-h-[24px] md:min-h-[28px] flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
                                                         'bg-transparent border-0 hover:bg-purple-50/50'
                                                     )}
                                                 >
-                                                    <div className="flex items-center gap-1.5 shrink-0 w-24 md:w-28">
-                                                        <div className="shrink-0 flex items-center justify-center w-6 md:w-7">
+                                                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                                                        <div className="shrink-0 flex items-center justify-center w-5 md:w-6">
                                                             {isFullyPaid ? (
-                                                                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                                                    <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" strokeWidth={4} />
+                                                                <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                                                    <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
                                                                 </div>
                                                             ) : (
-                                                                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                                                    <span className="text-white font-black text-[8px] leading-none">!</span>
+                                                                <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                                                    <span className="text-white font-black text-[7px] leading-none">!</span>
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
+                                                        <span className="text-[9px] md:text-[10px] font-black text-zinc-600 uppercase truncate">
+                                                            Semana {getISOWeek(weekStart)}
+                                                        </span>
                                                     </div>
-                                                    <span className="flex-1 text-[8px] md:text-[9px] font-bold text-zinc-500 uppercase truncate min-w-0 text-left pl-2">
-                                                        {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
-                                                    </span>
-                                                    <span className="text-[10px] md:text-xs font-black text-zinc-900 shrink-0 w-10 md:w-12 text-right">
+                                                    <span className="text-[9px] md:text-[10px] font-black text-zinc-900 tabular-nums shrink-0 text-right min-w-[2.5rem]">
                                                         {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                                                     </span>
                                                 </button>
@@ -287,8 +293,9 @@ export default function OvertimePage() {
                     return cost > 0.05 && s.preferStock !== true;
                 });
                 const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
-                const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
-                const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
+                const modalWeekStart = parseLocalYmd(weekDetailModal.week.weekId);
+                const weekNum = getISOWeek(modalWeekStart);
+                const periodStr = `${format(modalWeekStart, 'd MMM', { locale: es })} - ${format(addDays(modalWeekStart, 6), 'd MMM yyyy', { locale: es })}`;
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                         <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
