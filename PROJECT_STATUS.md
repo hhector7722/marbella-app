@@ -8,7 +8,7 @@
 
 - [x] **Ventas `/dashboard/ventas`: cabecera compacta (2026-04-19)**: Misma estructura que `/dashboard/history` — barra petróleo `p-1.5 md:p-3`, título `text-xs md:text-sm`, navegación fecha centrada con chevrons 16px, `TimeFilterButton` a la derecha; contenedor `max-w-5xl`, tarjeta `rounded-2xl`, KPIs con tipografía alineada a History. Texto de fecha sin `truncate`/ancho mínimo que cortaba el mes; rango mensual con `parseLocalSafe` para mes/año.
 
-- [x] **KDS cabecera aust: tiempo compacto + pastilla indicadora (2026-04-19)**: `CommandCard` muestra tiempo transcurrido como `nhnm` en minúsculas sin espacios (`45m` si 0 h, `1h30m` si hay horas). Pastilla propia sin borde: fondo verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto blanco. Comandas finalizadas: pastilla gris.
+- [x] **KDS cabecera aust: tiempo compacto + pastilla indicadora (2026-04-19)**: `CommandCard` muestra tiempo transcurrido en minúsculas (`45m` si 0 h, `1h 30m` si hay horas y minutos; espacio entre `h` y minutos). Pastilla propia sin borde: fondo verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto blanco. Comandas finalizadas: pastilla gris.
 
 - [x] **Carta digital nativa `/staff/carta` (2026-04-19)**: Vista SQL `public.v_digital_menu_items` (join `bdp_familias`, `bdp_articulos`, `map_tpv_receta`, `recipes`; PVP `precio_base` con fallback `sale_price`; descripción `presentation`/`elaboration`; foto `photo_url`). `GRANT SELECT` a `authenticated`. UI: `DigitalMenu` (SSR) + `MenuAccordion` (cliente, acordeón por familia, targets 48px+, zero-display precio, sin placeholder de imagen). Entrada desde Info → La Carta en `StaffDashboardView` y enlace en `/staff`. Migración `20260419210000_digital_menu_view.sql`.
 
