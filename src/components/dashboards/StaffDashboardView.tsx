@@ -1017,24 +1017,38 @@ export default function StaffDashboardView() {
                                         </a>
                                     </div>
                                 )}
-                                {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
+                                {infoSubMenu === 'reservas' && (
                                     <div className="flex flex-col items-center gap-6 py-4">
                                         <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
-                                            {infoSubMenu === 'reservas' ? (
-                                                <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
-                                            ) : (
-                                                <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
-                                            )}
+                                            <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-base font-black text-gray-800 mb-1">
-                                                {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
-                                            </p>
+                                            <p className="text-base font-black text-gray-800 mb-1">Reservas</p>
                                             <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
                                         </div>
                                         <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
                                             <span className="text-sm">En desarrollo</span>
                                         </div>
+                                    </div>
+                                )}
+                                {infoSubMenu === 'carta' && (
+                                    <div className="flex flex-col items-stretch gap-4 py-2">
+                                        <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50">
+                                                <BookOpen size={28} className="text-amber-500" strokeWidth={1.5} />
+                                            </div>
+                                            <div className="min-w-0 flex-1 text-left">
+                                                <p className="text-sm font-black text-gray-800">Carta del restaurante</p>
+                                                <p className="text-xs text-gray-500">Familias, platos, precio TPV y foto de la receta.</p>
+                                            </div>
+                                        </div>
+                                        <Link
+                                            href="/staff/carta"
+                                            onClick={closeMenus}
+                                            className="flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-[#5B8FB9] px-4 py-3 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-blue-200/40 transition-all active:scale-[0.98]"
+                                        >
+                                            Abrir la carta
+                                        </Link>
                                     </div>
                                 )}
                             </div>

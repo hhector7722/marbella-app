@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-19 (Stock modal: navegación sin flash)
+**Última actualización:** 2026-04-19 (Carta digital staff)
+
+- [x] **Carta digital nativa `/staff/carta` (2026-04-19)**: Vista SQL `public.v_digital_menu_items` (join `bdp_familias`, `bdp_articulos`, `map_tpv_receta`, `recipes`; PVP `precio_base` con fallback `sale_price`; descripción `presentation`/`elaboration`; foto `photo_url`). `GRANT SELECT` a `authenticated`. UI: `DigitalMenu` (SSR) + `MenuAccordion` (cliente, acordeón por familia, targets 48px+, zero-display precio, sin placeholder de imagen). Entrada desde Info → La Carta en `StaffDashboardView` y enlace en `/staff`. Migración `20260419210000_digital_menu_view.sql`.
 
 - [x] **Stock modal: navegación sin flash a `/dashboard` (2026-04-19)**: Los `<Link>` del modal ya no ejecutan `onClose` al pulsar (era lo que cerraba el overlay y dejaba ver el dashboard un momento antes de la nueva ruta). Mientras la SPA navega, el modal permanece visible con capa `Loader2` + «Cargando…» y se bloquea cierre por backdrop/X. `AdminProductModal` + `StaffProductModal`. El flujo **Pedidos** → otro modal sigue usando `onClose` + `setTimeout`.
 

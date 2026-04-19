@@ -49,11 +49,7 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
                     <h3 className="text-base font-black leading-tight text-zinc-900">{row.articulo_nombre}</h3>
                     {showPrice ? (
                         <span className="shrink-0 font-mono text-sm font-black text-[#36606F]">{priceStr}</span>
-                    ) : (
-                        <span className="shrink-0 font-mono text-sm font-black text-[#36606F]" aria-hidden>
-                            {' '}
-                        </span>
-                    )}
+                    ) : null}
                 </div>
                 {row.descripcion ? (
                     <p className="text-xs leading-relaxed text-zinc-500">{row.descripcion}</p>
