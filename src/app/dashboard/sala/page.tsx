@@ -4,7 +4,7 @@
 
 import { useRouter } from 'next/navigation';
 
-import { ArrowLeft, Monitor } from 'lucide-react';
+import { Monitor } from 'lucide-react';
 
 import RadarSala from '@/components/dashboards/RadarSala';
 
@@ -50,27 +50,11 @@ export default function SalaPage() {
 
             <div className="flex items-center justify-between gap-2">
 
-              <div className="flex items-center gap-2 md:gap-3 shrink-0">
+              <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">
 
-                <button
+                Sala
 
-                  onClick={() => router.push('/dashboard')}
-
-                  className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-7 h-7 md:w-10 md:h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0"
-
-                >
-
-                  <ArrowLeft className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} />
-
-                </button>
-
-                <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">
-
-                  Sala
-
-                </h1>
-
-              </div>
+              </h1>
 
 
 

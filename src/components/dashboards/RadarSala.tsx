@@ -168,12 +168,14 @@ export default function RadarSala() {
 
   return (
     <div className="font-sans bg-white rounded-xl shadow-sm overflow-hidden">
-      <header className="bg-[#36606F] p-3 md:p-4">
-        <div>
-          <h2 className="text-lg md:text-xl font-bold tracking-tight text-white">Mesas Abiertas</h2>
-          <p className="text-[10px] md:text-xs text-slate-300 mt-0.5">
+      <header className="bg-[#36606F] px-3 py-2 md:px-4 md:py-2">
+        <div className="flex flex-wrap items-center gap-x-2.5 md:gap-3">
+          <h2 className="text-base md:text-lg font-bold tracking-tight text-white shrink-0">
+            Mesas Abiertas
+          </h2>
+          <span className="text-[10px] md:text-xs text-slate-300 tabular-nums">
             {mesas.length} mesas activas • {ultimaAct ? formatLocalTime(ultimaAct) : '...'}
-          </p>
+          </span>
         </div>
       </header>
 
