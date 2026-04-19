@@ -1,8 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-19 (Ventas: cabecera compacta tipo History)
+**Última actualización:** 2026-04-19 (Horas extras: lista semanal compacta)
 
-- [x] **Ventas `/dashboard/ventas`: cabecera compacta (2026-04-19)**: Misma estructura que `/dashboard/history` — barra petróleo `p-1.5 md:p-3`, título `text-xs md:text-sm`, navegación fecha centrada con chevrons 16px, `TimeFilterButton` a la derecha; contenedor `max-w-5xl`, tarjeta `rounded-2xl`, KPIs con tipografía alineada a History.
+- [x] **Horas extras `/dashboard/overtime` (2026-04-19)**: Calendario mini más denso (`gap-[2px]`, celdas `w-6`/`md:w-7`). Cada fila de semana en una sola línea: icono + «Semana N» a la izquierda e **importe total semanal** alineado a la derecha; eliminado el rango de fechas en la lista (sigue en el modal). Parseo local `parseLocalYmd` para `weekId` en filas y cabecera del modal.
+
+- [x] **Caja inicial `/dashboard/movements` (2026-04-19)**: Contenedor de tabla con esquinas superiores menos redondeadas (`rounded-t-lg` + `rounded-b-[1.5rem]`). Fila de periodo en grid 3 columnas: navegación mensual centrada; **Filtrar** visible de nuevo en `TimeFilterButton` + botón compartir alineados a la derecha. Columna **Concepto** más compacta (anchos/padding/texto truncado).
+
+- [x] **Ventas `/dashboard/ventas`: cabecera compacta (2026-04-19)**: Misma estructura que `/dashboard/history` — barra petróleo `p-1.5 md:p-3`, título `text-xs md:text-sm`, navegación fecha centrada con chevrons 16px, `TimeFilterButton` a la derecha; contenedor `max-w-5xl`, tarjeta `rounded-2xl`, KPIs con tipografía alineada a History. Texto de fecha sin `truncate`/ancho mínimo que cortaba el mes; rango mensual con `parseLocalSafe` para mes/año.
 
 - [x] **KDS cabecera aust: tiempo compacto + pastilla indicadora (2026-04-19)**: `CommandCard` muestra tiempo transcurrido como `nhnm` en minúsculas sin espacios (`45m` si 0 h, `1h30m` si hay horas). Pastilla propia sin borde: fondo verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto blanco. Comandas finalizadas: pastilla gris.
 

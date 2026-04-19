@@ -538,12 +538,12 @@ export default function VentasPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[100px] sm:max-w-[140px] md:max-w-[200px]"
+                                    className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none max-w-[min(calc(100vw-5.5rem),24rem)] leading-tight"
                                 >
                                     {filterMode === 'single'
                                         ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
-                                        : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                        : (rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                                            ? format(parseLocalSafe(rangeStart), "MMMM 'de' yyyy", { locale: es })
                                             : 'Periodo')}
                                 </button>
                                 <button
