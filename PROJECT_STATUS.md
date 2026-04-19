@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-19 (Horas extras: lista semanal compacta)
+**Última actualización:** 2026-04-19 (Consumo personal: fix RPC + UI calendario/cabecera)
 
 - [x] **Horas extras `/dashboard/overtime` (2026-04-19)**: Calendario mini más denso (`gap-[2px]`, celdas `w-6`/`md:w-7`). Cada fila de semana en una sola línea: icono + «Semana N» a la izquierda e **importe total semanal** alineado a la derecha; eliminado el rango de fechas en la lista (sigue en el modal). Parseo local `parseLocalYmd` para `weekId` en filas y cabecera del modal.
 
@@ -17,6 +17,7 @@
 - [x] **Coste laboral `/dashboard/labor` (2026-04-19)**: Eliminados subtítulo de periodo y rango de fechas bajo la cabecera; eliminada la cruz de cierre en la cabecera petróleo. Icono de usuario abre `StaffSelectionModal` para filtrar por trabajador; badge rojo con cruz blanca sobre el icono quita el filtro. RPC `get_labor_cost_month_summary(p_year, p_month, p_user_id uuid default null)` en migración `20260419150000_get_labor_cost_month_summary_user_filter.sql`.
 
 - [x] **Stock modal `/dashboard`: accesos "Albaranes" + "Consumo Personal" (2026-04-19)**: `AdminProductModal` elimina el toggle cabecera Menú/Albaranes y pasa a grid único con accesos. Nuevo icono `public/icons/albaran.svg`. Nueva ruta `/dashboard/consumo-personal` con calendario tipo `/dashboard/labor`, filtros temporal + trabajador y desglose por día (productos por trabajador). RPCs: `get_staff_consumption_summary(p_start_date, p_end_date, p_user_id)` y `get_staff_consumption_day_detail(p_date, p_user_id)` en migración `20260419170000_staff_consumption_dashboard_rpc.sql` (solo manager/admin).
+- [x] **Consumo personal `/dashboard/consumo-personal`: fix carga datos + UI (2026-04-19)**: El RPC parseaba `reference_doc` `STAFF-<uuid>-<epoch>` con `split_part(..., '-', 2)`, inválido para UUIDs con guiones → fallaba el cast y el cliente no cargaba. Corregido con `regexp_match` al UUID completo en migración `20260419180000_fix_staff_consumption_reference_uuid_parse.sql`. UI: calendario sin caja gris/borde; botón «Filtrar» (`TimeFilterButton`) transparente sobre cabecera; icono usuario más compacto (`h-10 w-10`, `User` 20px), cabecera `overflow-visible` para no recortar controles.
 
 - [x] **Mermas: rejilla tipo `/orders/new` + unidad editable (2026-04-19)**: `/dashboard/inventory/waste` con `max-w-7xl`; recetas en grid (`photo_url`, nombre, cantidad `ud` debajo) + buscador; ingredientes con `image_url`, selector de medida (`WasteUnitSelect` + presets) y cantidad debajo; misma rejilla responsive que pedidos (`grid-cols-3` … `xl:grid-cols-8`).
 - [x] **Mermas: recetas vs ingredientes + stepper (2026-04-19)**: `/dashboard/inventory/waste` sin subtítulo en cabecera; toggle Recetas / Ingredientes; recetas con selector + unidades `ud` y `processRecipeWaste` (desglose `recipe_ingredients` × unidades); ingredientes con `QuantityStepper` estilo desglose (+/−/centro); sin stock teórico ni barra inferior negra; botón verde ancho completo.

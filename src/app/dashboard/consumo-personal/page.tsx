@@ -325,25 +325,26 @@ export default function ConsumoPersonalDashboardPage() {
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
-          <div className="bg-[#36606F] px-4 md:px-8 py-5 flex items-center justify-between gap-2 shrink-0">
-            <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink-0 min-w-0">
+        <div className="bg-white rounded-2xl shadow-2xl relative overflow-visible flex flex-col min-h-[85vh]">
+          <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0 overflow-visible">
+            <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink min-w-0 truncate pr-2">
               Consumo personal
             </h1>
-            <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
+            <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
               <TimeFilterButton
                 onClick={() => setIsTimeFilterOpen(true)}
                 hasActiveFilter={filterActive}
                 onClear={clearTimeFilter}
+                buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
               />
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 flex items-center justify-center">
                 <button
                   type="button"
                   onClick={() => setIsWorkerModalOpen(true)}
-                  className="relative p-2 text-white/90 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10"
+                  className="relative text-white/90 hover:text-white transition-colors h-10 w-10 md:h-10 md:w-10 flex items-center justify-center rounded-lg hover:bg-white/10"
                   aria-label="Filtrar por trabajador"
                 >
-                  <User size={24} strokeWidth={2.25} />
+                  <User size={20} strokeWidth={2.25} className="shrink-0" />
                 </button>
                 {workerFilterId ? (
                   <button
@@ -352,7 +353,7 @@ export default function ConsumoPersonalDashboardPage() {
                       e.stopPropagation();
                       setWorkerFilterId(null);
                     }}
-                    className="absolute -right-0.5 -top-0.5 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-2 ring-[#36606F]"
+                    className="absolute -right-0.5 top-0.5 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-2 ring-[#36606F]"
                     aria-label="Quitar filtro de trabajador"
                   >
                     <X size={9} strokeWidth={3} className="text-white" />
@@ -413,8 +414,8 @@ export default function ConsumoPersonalDashboardPage() {
                 <LoadingSpinner size="lg" className="text-[#36606F]" />
               </div>
             ) : (
-              <div className="bg-[#EFEDED] rounded-2xl border border-zinc-100 shadow-inner overflow-hidden flex-1 flex flex-col min-h-0">
-                <div className="p-1 md:p-3 overflow-x-auto no-scrollbar flex-1">
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="p-0 md:p-1 overflow-x-auto no-scrollbar flex-1">
                   <div className="min-w-0">
                     <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
                       {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
