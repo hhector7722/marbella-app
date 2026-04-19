@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, useLayoutEffect, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -62,6 +62,57 @@ function ProfileContent() {
     const [logoutConfirm, setLogoutConfirm] = useState(false);
     const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
+
+    const fullName = profile
+        ? `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase()
+        : '';
+
+    const profileTitleContainerRef = useRef<HTMLDivElement>(null);
+    const profileNameHeadingRef = useRef<HTMLHeadingElement>(null);
+    const [profileNameFontPx, setProfileNameFontPx] = useState(16);
+
+    useLayoutEffect(() => {
+        if (!fullName) return;
+        const wrap = profileTitleContainerRef.current;
+        const h1 = profileNameHeadingRef.current;
+        if (!wrap || !h1) return;
+
+        const maxFont = 16;
+        const minFont = 10;
+        const step = 0.25;
+
+        const fit = () => {
+            const available = wrap.clientWidth;
+            if (available < 8) return;
+
+            let size = maxFont;
+            h1.style.fontSize = `${size}px`;
+
+            while (size > minFont && h1.scrollWidth > available) {
+                size -= step;
+                h1.style.fontSize = `${size}px`;
+            }
+
+            while (size < maxFont) {
+                const next = Math.min(maxFont, size + step);
+                h1.style.fontSize = `${next}px`;
+                if (h1.scrollWidth > available) {
+                    h1.style.fontSize = `${size}px`;
+                    break;
+                }
+                size = next;
+            }
+
+            setProfileNameFontPx(size);
+        };
+
+        fit();
+        const ro = new ResizeObserver(() => {
+            requestAnimationFrame(fit);
+        });
+        ro.observe(wrap);
+        return () => ro.disconnect();
+    }, [fullName]);
 
     useEffect(() => {
         fetchInitialData();
@@ -225,8 +276,6 @@ function ProfileContent() {
         );
     }
 
-    const fullName = `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase();
-
     return (
         <div className="min-h-screen bg-[#5B8FB9] pb-24 p-4">
             <div className="max-w-2xl mx-auto">
@@ -267,12 +316,19 @@ function ProfileContent() {
                             </div>
 
                             <div className="min-w-0 flex flex-col items-center justify-center self-stretch pt-0.5 pb-0.5">
-                                <h1
-                                    className="w-full text-center font-black uppercase tracking-tight leading-tight line-clamp-3 text-[clamp(0.65rem,3.2vw,1rem)] px-1"
-                                    title={fullName}
+                                <div
+                                    ref={profileTitleContainerRef}
+                                    className="w-full min-w-0 max-w-full px-1 box-border"
                                 >
-                                    {fullName}
-                                </h1>
+                                    <h1
+                                        ref={profileNameHeadingRef}
+                                        className="w-full text-center font-black uppercase tracking-tight leading-none whitespace-nowrap overflow-hidden text-ellipsis"
+                                        style={{ fontSize: `${profileNameFontPx}px` }}
+                                        title={fullName}
+                                    >
+                                        {fullName}
+                                    </h1>
+                                </div>
                                 {viewMode === 'staff' && (
                                     <p className="text-[10px] text-white/70 uppercase tracking-widest mt-1">Mi cuenta</p>
                                 )}
