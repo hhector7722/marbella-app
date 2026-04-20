@@ -7,6 +7,7 @@ import { MessageSquare, ChevronLeft, Plus } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import CashClosingModal from './CashClosingModal';
 import { useAIStore } from '@/store/aiStore';
+import { cn } from '@/lib/utils';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -56,27 +57,31 @@ export default function Navbar() {
 
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
+    const homePath = isAdminMode || userData?.role === 'manager' ? '/dashboard' : '/staff/dashboard';
 
     const showClosureButton = pathname === '/staff/dashboard' &&
         (userData?.role === 'manager' || userData?.is_supervisor === true || userData?.role === 'supervisor');
 
     return (
         <>
-            <nav className={`bg-[#5B8FB9] text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden`}>
+            <nav
+                className={cn(
+                    'bg-[#5B8FB9] text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden'
+                )}
+            >
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full">
 
                     <div className="flex items-center gap-1">
                         {!isDashboard && (
                             <button
                                 onClick={() => {
-                                    if (pathname === '/dashboard/ventas' || pathname === '/dashboard/sala') {
-                                        router.push('/dashboard');
-                                    } else {
-                                        router.back();
-                                    }
+                                    router.push(homePath);
                                 }}
-                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
-                                aria-label="Volver"
+                                className={cn(
+                                    'h-12 w-12 shrink-0 grid place-items-center rounded-full transition-colors',
+                                    'hover:bg-white/10 active:bg-white/15'
+                                )}
+                                aria-label="Ir a inicio"
                             >
                                 <ChevronLeft size={22} strokeWidth={2.5} />
                             </button>
