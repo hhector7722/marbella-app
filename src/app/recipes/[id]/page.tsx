@@ -676,7 +676,7 @@ function RecipeDetailContent() {
                 </div>
 
                 {/* CUERPO: fondo blanco roto */}
-                <div className={`bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 ${!isRestricted ? 'min-h-0' : ''}`}>
+                <div className={`bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 content-start ${!isRestricted ? 'min-h-0' : ''}`}>
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
