@@ -12,6 +12,7 @@ export function DashboardDetailLayout({
   maxWidthClass = 'max-w-4xl',
   rightSlot,
   showBackButton = true,
+  className,
   children,
 }: {
   title: string
@@ -20,12 +21,14 @@ export function DashboardDetailLayout({
   maxWidthClass?: string
   rightSlot?: ReactNode
   showBackButton?: boolean
+  /** Clases extra para el contenedor exterior (p. ej. padding superior adicional). */
+  className?: string
   children: ReactNode
 }) {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+    <div className={cn('min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24', className)}>
       <div className={cn('mx-auto w-full', maxWidthClass)}>
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-[85vh]">
           <div className="bg-[#36606F] px-4 md:px-8 py-4 md:py-5 flex items-center justify-between gap-3 shrink-0">

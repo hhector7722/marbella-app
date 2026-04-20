@@ -97,14 +97,14 @@ function QuantityStepper({
     <div
       className={cn(
         // Caja "cantidad" estilo desglose monetario (cierre de caja)
-        'flex items-center justify-between w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm',
-        'h-10 min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
+        'flex items-stretch justify-between w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm',
+        'min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
       )}
     >
       <button
         type="button"
         onClick={() => adjust(-step)}
-        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-colors shrink-0"
+        className="w-7 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-colors"
         aria-label={`Menos ${ariaLabel}`}
       >
         <Minus className="w-4 h-4" strokeWidth={3} />
@@ -129,7 +129,7 @@ function QuantityStepper({
       <button
         type="button"
         onClick={() => adjust(step)}
-        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100 transition-colors shrink-0"
+        className="w-7 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100 transition-colors"
         aria-label={`Más ${ariaLabel}`}
       >
         <Plus className="w-4 h-4" strokeWidth={3} />
@@ -166,7 +166,7 @@ function WasteUnitSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        'w-full min-h-[48px] rounded-xl border border-zinc-200 bg-white px-3 text-xs font-black uppercase tracking-wide text-zinc-700 shadow-sm',
+        'w-full min-h-[48px] rounded-xl border border-zinc-200 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-700 shadow-sm',
         'outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40',
       )}
       aria-label="Unidad de medida"
@@ -196,23 +196,23 @@ function RecipeWasteCard({
   onBlur: () => void
 }) {
   return (
-    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible h-full pt-14">
-      <div className="absolute left-1/2 top-2 -translate-x-1/2 w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
+    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible pt-12">
+      <div className="absolute left-1/2 top-1 -translate-x-1/2 w-14 h-14 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
         {recipe.photo_url ? (
-          <img src={recipe.photo_url} alt="" className="h-14 w-14 object-contain" />
+          <img src={recipe.photo_url} alt="" className="h-12 w-12 object-contain" />
         ) : (
-          <ChefHat className="w-9 h-9 text-zinc-200" strokeWidth={1.5} />
+          <ChefHat className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
         )}
       </div>
-      <div className="flex flex-col items-center flex-1 min-h-0 px-2 pt-3">
+      <div className="flex flex-col items-center px-2 pt-2 pb-1">
         <span
-          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2 min-h-[2.5rem]"
+          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2"
           title={recipe.name}
         >
           {recipe.name}
         </span>
       </div>
-      <div className="shrink-0 p-2 pt-1 flex flex-col gap-1">
+      <div className="shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
         <label className="sr-only">Cantidad merma {recipe.name}</label>
         <QuantityStepper
           unit="ud"
@@ -222,6 +222,7 @@ function RecipeWasteCard({
           onRawChange={onRawChange}
           onBlur={onBlur}
           ariaLabel={`Unidades ${recipe.name}`}
+          hideUnitSuffix
         />
       </div>
     </div>
@@ -248,23 +249,23 @@ function IngredientWasteCard({
   onUnitChange: (u: string) => void
 }) {
   return (
-    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible h-full pt-14">
-      <div className="absolute left-1/2 top-2 -translate-x-1/2 w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
+    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible pt-12">
+      <div className="absolute left-1/2 top-1 -translate-x-1/2 w-14 h-14 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
         {item.image_url ? (
-          <img src={item.image_url} alt="" className="h-14 w-14 object-contain" />
+          <img src={item.image_url} alt="" className="h-12 w-12 object-contain" />
         ) : (
-          <Package className="w-9 h-9 text-zinc-200" strokeWidth={1.5} />
+          <Package className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
         )}
       </div>
-      <div className="flex flex-col items-center flex-1 min-h-0 px-2 pt-3">
+      <div className="flex flex-col items-center px-2 pt-2 pb-1">
         <span
-          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2 min-h-[2.5rem]"
+          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2"
           title={item.name}
         >
           {item.name}
         </span>
       </div>
-      <div className="shrink-0 p-2 pt-1 flex flex-col gap-2">
+      <div className="shrink-0 px-2 pb-2 pt-0 flex flex-col gap-1.5 items-stretch w-full">
         <WasteUnitSelect
           value={wasteUnit}
           ingredientUnit={item.unit}
@@ -310,6 +311,11 @@ export function WasteClient({
   const [wasteUnits, setWasteUnits] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialIngredients.map((i) => [i.id, (i.unit || 'ud').trim() || 'ud'])),
   )
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.scrollTo(0, 0)
+  }, [])
 
   useEffect(() => {
     setWasteUnits((prev) => {
@@ -470,38 +476,38 @@ export function WasteClient({
           como movimiento tipo merma.
         </p>
 
-        <div className="flex shrink-0 w-full max-w-md">
-          <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm w-full">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('recipes')
-              setAmounts({})
-            }}
-            className={cn(
-              'flex-1 min-h-[48px] text-[10px] font-black uppercase tracking-widest transition-colors outline-none',
-              mode === 'recipes'
-                ? 'bg-[#36606F] text-white'
-                : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
-            )}
-          >
-            Recetas
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('ingredients')
-              setRecipeAmounts({})
-            }}
-            className={cn(
-              'flex-1 min-h-[48px] text-[10px] font-black uppercase tracking-widest transition-colors outline-none',
-              mode === 'ingredients'
-                ? 'bg-[#36606F] text-white'
-                : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
-            )}
-          >
-            Ingredientes
-          </button>
+        <div className="flex shrink-0 w-full justify-start">
+          <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm max-w-full">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('recipes')
+                setAmounts({})
+              }}
+              className={cn(
+                'px-3 py-2 min-h-[48px] h-auto inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-colors outline-none whitespace-nowrap',
+                mode === 'recipes'
+                  ? 'bg-[#36606F] text-white'
+                  : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
+              )}
+            >
+              Recetas
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('ingredients')
+                setRecipeAmounts({})
+              }}
+              className={cn(
+                'px-3 py-2 min-h-[48px] h-auto inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-colors outline-none whitespace-nowrap',
+                mode === 'ingredients'
+                  ? 'bg-[#36606F] text-white'
+                  : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
+              )}
+            >
+              Ingredientes
+            </button>
           </div>
         </div>
       </div>
@@ -592,7 +598,7 @@ export function WasteClient({
             {filteredRecipes.length === 0 ? (
               <p className="text-sm text-zinc-500 text-center py-8">No hay recetas que coincidan.</p>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-start justify-items-stretch">
                 {filteredRecipes.map((r) => (
                   <RecipeWasteCard
                     key={r.id}
@@ -694,7 +700,7 @@ export function WasteClient({
               Object.entries(grouped).map(([category, items]) => (
                 <section key={category} className="flex flex-col gap-3 shrink-0">
                   <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-start justify-items-stretch">
                     {items.map((item) => {
                       const wu = wasteUnits[item.id] ?? item.unit
                       const numeric = amounts[item.id] ?? 0

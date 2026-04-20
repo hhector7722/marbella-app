@@ -24,7 +24,12 @@ export default async function WastePage() {
   }
 
   return (
-    <DashboardDetailLayout title="Mermas" maxWidthClass="max-w-7xl" showBackButton={false}>
+    <DashboardDetailLayout
+      title="Mermas"
+      maxWidthClass="max-w-7xl"
+      showBackButton={false}
+      className="pt-6 md:pt-8"
+    >
       <WasteClient initialIngredients={ingRes.data || []} recipes={recRes.data || []} />
     </DashboardDetailLayout>
   )
