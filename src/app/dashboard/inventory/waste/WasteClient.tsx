@@ -20,16 +20,12 @@ type RecipeOption = { id: string; name: string; photo_url: string | null; catego
 type WasteMode = 'recipes' | 'ingredients'
 
 const WASTE_UNIT_PRESETS = [
+  // Canónicas (deduplicadas por significado, no por string)
   'ud',
-  'u',
-  'unidad',
-  'unidades',
   'kg',
   'g',
   'l',
   'ml',
-  'lt',
-  'litro',
   'pack',
   'caja',
   'pieza',
@@ -37,15 +33,47 @@ const WASTE_UNIT_PRESETS = [
   'bolsa',
 ] as const
 
+function normalizeWasteUnit(unit: string | null | undefined): string {
+  const raw = (unit ?? '').trim().toLowerCase()
+  if (!raw) return 'ud'
+
+  // Unidades (conteo)
+  if (raw === 'ud' || raw === 'u' || raw === 'un' || raw === 'unidad' || raw === 'unidades') return 'ud'
+
+  // Litros
+  if (raw === 'l' || raw === 'lt' || raw === 'litro' || raw === 'litros') return 'l'
+
+  // Mililitros
+  if (raw === 'ml' || raw === 'mililitro' || raw === 'mililitros') return 'ml'
+
+  // Gramos / kilos
+  if (raw === 'g' || raw === 'gr' || raw === 'gramo' || raw === 'gramos') return 'g'
+  if (raw === 'kg' || raw === 'kilo' || raw === 'kilos') return 'kg'
+
+  return raw
+}
+
+function uniqueOrdered(list: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const item of list) {
+    const v = normalizeWasteUnit(item)
+    if (!seen.has(v)) {
+      seen.add(v)
+      out.push(v)
+    }
+  }
+  return out
+}
+
 function isCountUnit(unit: string): boolean {
-  const u = unit.trim().toLowerCase()
-  return u === 'ud' || u === 'u' || u === 'unidad' || u === 'un' || u === 'unidades'
+  return normalizeWasteUnit(unit) === 'ud'
 }
 
 function getStep(unit: string): number {
   if (isCountUnit(unit)) return 1
-  const u = unit.trim().toLowerCase()
-  if (u === 'kg' || u === 'l' || u === 'lt' || u === 'litro') return 0.01
+  const u = normalizeWasteUnit(unit)
+  if (u === 'kg' || u === 'l') return 0.01
   return 1
 }
 
@@ -155,16 +183,17 @@ function WasteUnitSelect({
   onChange: (u: string) => void
 }) {
   const options = useMemo(() => {
-    const s = new Set<string>(
-      [...WASTE_UNIT_PRESETS, ingredientUnit, orderUnit, value].filter(Boolean) as string[],
-    )
-    return Array.from(s).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+    const base = [...WASTE_UNIT_PRESETS]
+    const extras = uniqueOrdered([ingredientUnit, orderUnit ?? '', value].filter(Boolean) as string[])
+    return uniqueOrdered([...base, ...extras])
   }, [ingredientUnit, orderUnit, value])
+
+  const normalizedValue = normalizeWasteUnit(value || ingredientUnit || orderUnit || 'ud')
 
   return (
     <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
+      value={normalizedValue}
+      onChange={(e) => onChange(normalizeWasteUnit(e.target.value))}
       className={cn(
         'w-full min-h-[48px] rounded-xl border border-zinc-200 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-700 shadow-sm',
         'outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40',
@@ -309,7 +338,7 @@ export function WasteClient({
   const [ingredientCategory, setIngredientCategory] = useState<string | null>(null)
   const [ingredientFilterOpen, setIngredientFilterOpen] = useState(false)
   const [wasteUnits, setWasteUnits] = useState<Record<string, string>>(() =>
-    Object.fromEntries(initialIngredients.map((i) => [i.id, (i.unit || 'ud').trim() || 'ud'])),
+    Object.fromEntries(initialIngredients.map((i) => [i.id, normalizeWasteUnit(i.unit)])),
   )
 
   useEffect(() => {
@@ -321,7 +350,7 @@ export function WasteClient({
     setWasteUnits((prev) => {
       const next = { ...prev }
       for (const i of initialIngredients) {
-        const def = (i.unit || 'ud').trim() || 'ud'
+        const def = normalizeWasteUnit(i.unit)
         if (next[i.id] === undefined) next[i.id] = def
       }
       return next
@@ -702,7 +731,7 @@ export function WasteClient({
                   <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-start justify-items-stretch">
                     {items.map((item) => {
-                      const wu = wasteUnits[item.id] ?? item.unit
+                      const wu = normalizeWasteUnit(wasteUnits[item.id] ?? item.unit)
                       const numeric = amounts[item.id] ?? 0
                       const fallbackRaw =
                         numeric === 0
@@ -725,14 +754,15 @@ export function WasteClient({
                           wasteUnit={wu}
                           onAmountChange={(n) => setIngredientQty(item.id, wu, n)}
                           onUnitChange={(newUnit) => {
-                            setWasteUnits((prev) => ({ ...prev, [item.id]: newUnit }))
+                            const norm = normalizeWasteUnit(newUnit)
+                            setWasteUnits((prev) => ({ ...prev, [item.id]: norm }))
                             setAmounts((prev) => ({
                               ...prev,
-                              [item.id]: roundQty(prev[item.id] ?? 0, newUnit),
+                              [item.id]: roundQty(prev[item.id] ?? 0, norm),
                             }))
                             setAmountsRaw((prev) => {
                               const next = { ...prev }
-                              const now = roundQty(amounts[item.id] ?? 0, newUnit)
+                              const now = roundQty(amounts[item.id] ?? 0, norm)
                               next[item.id] = now === 0 ? '' : String(now)
                               return next
                             })
