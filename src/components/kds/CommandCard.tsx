@@ -292,7 +292,7 @@ export function CommandCard({
                                 title="Editar nota comanda"
                             >
                                 <Image
-                                    src="/icons/notas"
+                                    src="/icons/notas.png"
                                     alt="Notas"
                                     width={34}
                                     height={34}
@@ -394,7 +394,7 @@ export function CommandCard({
                                                     title="Editar nota artículo"
                                                 >
                                                     <Image
-                                                        src="/icons/notas"
+                                                        src="/icons/notas.png"
                                                         alt="Notas"
                                                         width={34}
                                                         height={34}
