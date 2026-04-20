@@ -80,7 +80,12 @@ export function useKDSv2() {
         const { data: projOrders, error: oErr } = await supabase
           .from('kds_projection_orders')
           .select('*')
-          .or(`estado.eq.activa,and(estado.eq.completada,completed_at.gte.${startIso})`)
+          // Solo día en curso (medianoche local → ahora):
+          // - Activas: si se abrieron hoy o tuvieron eventos hoy (líneas nuevas / cambios).
+          // - Completadas: si se completaron hoy.
+          .or(
+            `and(estado.eq.activa,opened_at.gte.${startIso}),and(estado.eq.activa,last_event_at.gte.${startIso}),and(estado.eq.completada,completed_at.gte.${startIso})`
+          )
           .order('opened_at', { ascending: true });
         if (oErr) throw oErr;
 
