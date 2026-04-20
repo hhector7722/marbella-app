@@ -498,7 +498,9 @@ export default function IngredientsPage() {
                                                                 purchase_unit: base,
                                                                 unit_type: base,
                                                                 pack_units: p.pack_units ?? 12,
-                                                                pack_unit_size_qty: p.pack_unit_size_qty ?? 330,
+                                                                // IMPORTANTE: por defecto NO rellenamos el número (evita "330" automático).
+                                                                pack_unit_size_qty: p.pack_unit_size_qty ?? null,
+                                                                // Sí dejamos una unidad razonable para que el selector no quede raro.
                                                                 pack_unit_size_unit: p.pack_unit_size_unit ?? (base === 'l' ? 'ml' : 'ud'),
                                                             }));
                                                             setEditPricingStep(2);
