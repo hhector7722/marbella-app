@@ -682,13 +682,14 @@ function RecipeDetailContent() {
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
                             </div>
-                            <div className="p-3 flex-1 flex flex-col justify-between">
-                                <div>
-                                    <div className="flex gap-4 justify-center mb-2">
+                            <div className="flex-1 flex flex-col min-h-0">
+                                {/* Sección 1: precio actual + KPIs */}
+                                <div className="p-3 flex flex-col shrink-0">
+                                    <div className="flex gap-4 justify-center mb-2 shrink-0">
                                         {/* Toggle PVP / PAV */}
                                         <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm shrink-0">
-                                            <button 
-                                                onClick={() => setView(v => ({ ...v, location: 'pvp' }))} 
+                                            <button
+                                                onClick={() => setView(v => ({ ...v, location: 'pvp' }))}
                                                 className={cn(
                                                     "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
                                                     view.location === 'pvp' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
@@ -696,8 +697,8 @@ function RecipeDetailContent() {
                                             >
                                                 PVP
                                             </button>
-                                            <button 
-                                                onClick={() => setView(v => ({ ...v, location: 'pavello' }))} 
+                                            <button
+                                                onClick={() => setView(v => ({ ...v, location: 'pavello' }))}
                                                 className={cn(
                                                     "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
                                                     view.location === 'pavello' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
@@ -709,8 +710,8 @@ function RecipeDetailContent() {
 
                                         {/* Toggle 1 / 1/2 */}
                                         <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm shrink-0">
-                                            <button 
-                                                onClick={() => setView(v => ({ ...v, size: 'full' }))} 
+                                            <button
+                                                onClick={() => setView(v => ({ ...v, size: 'full' }))}
                                                 className={cn(
                                                     "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
                                                     view.size === 'full' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
@@ -718,8 +719,8 @@ function RecipeDetailContent() {
                                             >
                                                 1
                                             </button>
-                                            <button 
-                                                onClick={() => setView(v => ({ ...v, size: 'half' }))} 
+                                            <button
+                                                onClick={() => setView(v => ({ ...v, size: 'half' }))}
                                                 className={cn(
                                                     "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
                                                     view.size === 'half' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
@@ -729,70 +730,111 @@ function RecipeDetailContent() {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center justify-center gap-1 my-2">
-                                    <span className="text-lg font-bold text-gray-800">€</span>
-                                    {!isEditingPrice ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-3xl font-black text-center text-gray-800 tabular-nums">
-                                                {(currentPrice || 0).toFixed(2)}
+
+                                    <div className="flex items-center justify-center gap-1 my-2 shrink-0">
+                                        <span className="text-lg font-bold text-gray-800">€</span>
+                                        {!isEditingPrice ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-3xl font-black text-center text-gray-800 tabular-nums">
+                                                    {(currentPrice || 0).toFixed(2)}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={startEditPrice}
+                                                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#36606F] hover:bg-[#36606F]/5 rounded-lg transition shrink-0"
+                                                    title="Editar precio"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={startEditPrice}
-                                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#36606F] hover:bg-[#36606F]/5 rounded-lg transition shrink-0"
-                                                title="Editar precio"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    inputMode="decimal"
+                                                    value={priceDraft}
+                                                    onChange={(e) => setPriceDraft(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') confirmEditPrice();
+                                                        if (e.key === 'Escape') cancelEditPrice();
+                                                    }}
+                                                    autoFocus
+                                                    placeholder="0"
+                                                    className={cn(
+                                                        "text-3xl font-black text-center text-gray-800 border-b-2 outline-none w-28 bg-transparent tabular-nums",
+                                                        themeColors.border
+                                                    )}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={confirmEditPrice}
+                                                    disabled={savingPrice}
+                                                    className="w-10 h-10 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg transition shrink-0 disabled:opacity-50"
+                                                    title="Confirmar"
+                                                >
+                                                    <Check className="w-5 h-5" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={cancelEditPrice}
+                                                    disabled={savingPrice}
+                                                    className="w-10 h-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 disabled:opacity-50"
+                                                    title="Cancelar"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50 shrink-0">
+                                        <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
+                                        <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
+                                        <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center mt-2 px-2 shrink-0">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
+                                        <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
+                                    </div>
+                                </div>
+
+                                {/* Sección 2: simulador dentro de la misma tarjeta */}
+                                <div className="border-t border-gray-100 p-3 flex-1 flex flex-col min-h-0">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <Beaker className="w-3.5 h-3.5 text-purple-600/70" />
+                                        <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em]">Simulador de Margen</h3>
+                                    </div>
+
+                                    <div className="mt-3 flex-1 flex flex-col justify-between min-h-0">
+                                        <div className="flex flex-col justify-center gap-4">
+                                            <div className="flex items-center justify-between px-4">
+                                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
+                                                <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
+                                            </div>
                                             <input
-                                                type="text"
-                                                inputMode="decimal"
-                                                value={priceDraft}
-                                                onChange={(e) => setPriceDraft(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') confirmEditPrice();
-                                                    if (e.key === 'Escape') cancelEditPrice();
-                                                }}
-                                                autoFocus
-                                                placeholder="0"
-                                                className={cn(
-                                                    "text-3xl font-black text-center text-gray-800 border-b-2 outline-none w-28 bg-transparent tabular-nums",
-                                                    themeColors.border
-                                                )}
+                                                type="range"
+                                                min={Math.floor((currentPrice * 0.5) * 10) / 10}
+                                                max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
+                                                step={0.10}
+                                                value={simulatedPrice}
+                                                onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
+                                                className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
                                             />
-                                            <button
-                                                type="button"
-                                                onClick={confirmEditPrice}
-                                                disabled={savingPrice}
-                                                className="w-10 h-10 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg transition shrink-0 disabled:opacity-50"
-                                                title="Confirmar"
-                                            >
-                                                <Check className="w-5 h-5" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={cancelEditPrice}
-                                                disabled={savingPrice}
-                                                className="w-10 h-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 disabled:opacity-50"
-                                                title="Cancelar"
-                                            >
-                                                <X className="w-5 h-5" />
-                                            </button>
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
+                                                <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
+                                                <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
-                                    <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
-                                    <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
-                                    <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
-                                </div>
-                                <div className="flex justify-between items-center mt-2 px-2">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
-                                    <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
+                                        <button
+                                            onClick={applySimulatedPrice}
+                                            disabled={applyingSimulation || simulatedPrice === currentPrice}
+                                            className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-3 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50 shrink-0"
+                                        >
+                                            APLICAR CAMBIOS
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -863,40 +905,16 @@ function RecipeDetailContent() {
                             </table>
                         </div>
                     </div>
-                    {!isRestricted && (
-                        <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
-                            <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
-                                <Beaker className="w-3.5 h-3.5 text-white/70" />
-                                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
-                            </div>
-                            <div className="p-3 flex-1 flex flex-col justify-between">
-                                <div className="flex flex-col justify-center gap-4">
-                                    <div className="flex items-center justify-between px-4">
-                                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
-                                        <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
-                                    </div>
-                                    <input type="range" min={Math.floor((currentPrice * 0.5) * 10) / 10} max={Math.ceil((currentPrice * 2) * 10) / 10 || 20} step={0.10} value={simulatedPrice} onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)} className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600" />
-                                    <div className="grid grid-cols-3 gap-2 text-center">
-                                        <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
-                                        <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
-                                        <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
-                                    </div>
-                                </div>
-                                <button onClick={applySimulatedPrice} disabled={applyingSimulation || simulatedPrice === currentPrice} className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-2 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50">APLICAR CAMBIOS</button>
-                            </div>
-                        </div>
-                    )}
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0"><h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2></div>
-                        <div className="flex-1 p-3 border-b flex flex-col min-h-0 overflow-hidden">
-                            <div className="flex justify-between items-center mb-2 shrink-0">
-                                <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-wider">Metodología</h2>
-                                {!isRestricted && (
-                                    <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-xs text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors">
-                                        <Edit2 size={14} />
-                                    </button>
-                                )}
-                            </div>
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Metodología</h2>
+                            {!isRestricted && (
+                                <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-xs text-white/80 hover:bg-white/10 p-1.5 rounded-lg transition-colors">
+                                    <Edit2 size={14} />
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden">
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {isEditingElaboration ? (
                                     <div className="space-y-1.5">
@@ -921,15 +939,18 @@ function RecipeDetailContent() {
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
+                            {!isRestricted && (
+                                <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-xs text-white/80 hover:bg-white/10 p-1.5 rounded-lg transition-colors">
+                                    <Edit2 size={14} />
+                                </button>
+                            )}
+                        </div>
                         <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden bg-zinc-50/30">
-                            <div className="flex justify-between items-center mb-2 shrink-0">
-                                <h2 className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Presentación</h2>
-                                {!isRestricted && (
-                                    <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-xs text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors">
-                                        <Edit2 size={14} />
-                                    </button>
-                                )}
-                            </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {isEditingPresentation ? (
                                     <div className="space-y-1.5">
