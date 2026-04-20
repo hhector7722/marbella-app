@@ -90,7 +90,7 @@ export async function getLatestImportRuns(): Promise<{ success: true; runs: Part
     return { success: true, runs }
 }
 
-function isProbablyCatalan(s: string): boolean {
+export function isProbablyCatalan(s: string): boolean {
     const t = (s || '').toLowerCase()
     // Heurística simple (suficiente para fichas típicas)
     return (
@@ -109,7 +109,7 @@ function isProbablyCatalan(s: string): boolean {
     )
 }
 
-async function translateCaToEsIfNeeded(text: string): Promise<string> {
+export async function translateCaToEsIfNeeded(text: string): Promise<string> {
     const cleaned = String(text ?? '').trim()
     if (!cleaned) return ''
     if (!isProbablyCatalan(cleaned)) return cleaned

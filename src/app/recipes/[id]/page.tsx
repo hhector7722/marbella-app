@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker, Import, Pencil, Check } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
+import { translateCaToEsTextAction } from '@/app/actions/translate-ca-es';
 
 const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails', 'Menús'];
 
@@ -26,6 +27,7 @@ function RecipeDetailContent() {
     const recipeId = params.id as string;
     const supabase = createClient();
     const importInputRef = useRef<HTMLInputElement | null>(null);
+    const [importScope, setImportScope] = useState<'all' | 'elaboration' | 'presentation'>('all');
 
     // --- 1. ESTADOS ---
     const [recipe, setRecipe] = useState<any>(null);
@@ -244,12 +246,56 @@ function RecipeDetailContent() {
         return '';
     }
 
+    function getRowTextByKey(row: Record<string, any>, candidates: string[]): string {
+        const keys = Object.keys(row ?? {});
+        for (const c of candidates) {
+            const nk = normalizeKey(c);
+            const found = keys.find((k) => normalizeKey(k) === nk);
+            if (found && row[found] != null) {
+                const v = String(row[found]).trim();
+                if (v) return v;
+            }
+        }
+        return '';
+    }
+
+    async function parseImportFileToRows(file: File): Promise<Record<string, any>[]> {
+        if (file.name.toLowerCase().endsWith('.csv')) {
+            const txt = await file.text();
+            if (looksLikeRecipeFichaCsv(txt)) {
+                return parseRecipeFichaCsvToImportRows(txt) as any;
+            }
+            // XLSX también puede leer CSV; usamos el mismo fallback que dashboard/import
+            const wb = XLSX.read(txt, { type: 'string' });
+            const wsname = wb.SheetNames[0];
+            const ws = wb.Sheets[wsname];
+            return XLSX.utils.sheet_to_json(ws) as any;
+        }
+
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        return XLSX.utils.sheet_to_json(ws) as any;
+    }
+
     async function handleImportIconClick() {
         if (!canImportRecipe) return;
         if (!recipe?.name) {
             toast.error('No se puede importar: receta sin nombre cargado.');
             return;
         }
+        setImportScope('all');
+        importInputRef.current?.click();
+    }
+
+    async function handleImportSectionClick(scope: 'elaboration' | 'presentation') {
+        if (!canImportRecipe) return;
+        if (!recipe?.name) {
+            toast.error('No se puede importar: receta sin nombre cargado.');
+            return;
+        }
+        setImportScope(scope);
         importInputRef.current?.click();
     }
 
@@ -264,33 +310,9 @@ function RecipeDetailContent() {
             return;
         }
 
-        const ok = confirm(`Vas a IMPORTAR y SOBREESCRIBIR la receta actual:\n\n"${recipe.name}"\n\n¿Continuar?`);
-        if (!ok) return;
-
         setImportingRecipe(true);
         try {
-            const buf = await file.arrayBuffer();
-            const fileHashSha256 = await sha256Hex(buf).catch(() => null);
-
-            let fileRows: Record<string, any>[] = [];
-
-            if (file.name.toLowerCase().endsWith('.csv')) {
-                const txt = await file.text();
-                if (looksLikeRecipeFichaCsv(txt)) {
-                    fileRows = parseRecipeFichaCsvToImportRows(txt) as any;
-                } else {
-                    // XLSX también puede leer CSV; usamos el mismo fallback que dashboard/import
-                    const wb = XLSX.read(txt, { type: 'string' });
-                    const wsname = wb.SheetNames[0];
-                    const ws = wb.Sheets[wsname];
-                    fileRows = XLSX.utils.sheet_to_json(ws) as any;
-                }
-            } else {
-                const wb = XLSX.read(buf, { type: 'array' });
-                const wsname = wb.SheetNames[0];
-                const ws = wb.Sheets[wsname];
-                fileRows = XLSX.utils.sheet_to_json(ws) as any;
-            }
+            const fileRows = await parseImportFileToRows(file);
 
             if (!Array.isArray(fileRows) || fileRows.length === 0) {
                 toast.error('Archivo vacío o no interpretable.');
@@ -305,11 +327,32 @@ function RecipeDetailContent() {
                 return;
             }
 
-            const res = await importRecipes(
-                filtered,
-                { fileName: file.name, fileHashSha256: fileHashSha256 ?? undefined },
-                { overwriteExisting: true }
-            );
+            if (importScope === 'elaboration' || importScope === 'presentation') {
+                const keyCandidates = importScope === 'elaboration' ? ['elaboración', 'elaboracion', 'elaboration'] : ['presentación', 'presentacion', 'presentation'];
+                const sectionText =
+                    filtered.map((r) => getRowTextByKey(r, keyCandidates)).find((t) => String(t ?? '').trim() !== '') ??
+                    '';
+                if (!String(sectionText).trim()) {
+                    toast.error(`El archivo no trae ${importScope === 'elaboration' ? 'elaboración' : 'presentación'} para esta receta.`);
+                    return;
+                }
+                const translated = await translateCaToEsTextAction({ text: sectionText });
+                if (translated.warning) toast(translated.warning);
+                await updateRecipeField(importScope === 'elaboration' ? 'elaboration' : 'presentation', translated.text);
+                toast.success(
+                    `Importación OK (solo ${importScope === 'elaboration' ? 'elaboración' : 'presentación'}${translated.translated ? ', traducido' : ''})`
+                );
+                await fetchRecipe();
+                return;
+            }
+
+            const ok = confirm(`Vas a IMPORTAR y SOBREESCRIBIR la receta actual:\n\n"${recipe.name}"\n\n¿Continuar?`);
+            if (!ok) return;
+
+            const buf = await file.arrayBuffer();
+            const fileHashSha256 = await sha256Hex(buf).catch(() => null);
+
+            const res = await importRecipes(filtered, { fileName: file.name, fileHashSha256: fileHashSha256 ?? undefined }, { overwriteExisting: true });
 
             if (!res.success) {
                 toast.error(res.message || 'Error importando receta');
@@ -332,6 +375,7 @@ function RecipeDetailContent() {
             toast.error(err?.message || 'Error inesperado importando receta');
         } finally {
             setImportingRecipe(false);
+            setImportScope('all');
         }
     }
 
@@ -680,7 +724,7 @@ function RecipeDetailContent() {
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
-                                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
+                                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Precio</h2>
                             </div>
                             <div className="flex flex-col">
                                 {/* Sección 1: precio actual + KPIs */}
@@ -704,7 +748,7 @@ function RecipeDetailContent() {
                                                     view.location === 'pavello' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
                                                 )}
                                             >
-                                                PAV
+                                                Pabellón
                                             </button>
                                         </div>
 
@@ -717,7 +761,7 @@ function RecipeDetailContent() {
                                                     view.size === 'full' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
                                                 )}
                                             >
-                                                1
+                                                Entero
                                             </button>
                                             <button
                                                 onClick={() => setView(v => ({ ...v, size: 'half' }))}
@@ -726,7 +770,7 @@ function RecipeDetailContent() {
                                                     view.size === 'half' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
                                                 )}
                                             >
-                                                1/2
+                                                Medio
                                             </button>
                                         </div>
                                     </div>
@@ -787,7 +831,7 @@ function RecipeDetailContent() {
                                         )}
                                     </div>
 
-                                    <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50 shrink-0">
+                                    <div className="grid grid-cols-3 gap-2 text-center shrink-0">
                                         <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
                                         <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
                                         <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
@@ -799,31 +843,41 @@ function RecipeDetailContent() {
                                     </div>
                                 </div>
 
-                                {/* Sección 2: simulador dentro de la misma tarjeta */}
-                                <div className="border-t border-gray-100 p-3 flex flex-col">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <Beaker className="w-3.5 h-3.5 text-purple-600/70" />
-                                        <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em]">Simulador de Margen</h3>
-                                    </div>
-
-                                    <div className="mt-3 flex flex-col gap-4">
-                                        <div className="flex items-center justify-between px-4">
-                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
-                                            <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
+                                {/* Sección 2: simulador dentro de tarjeta lila propia */}
+                                <div className="border-t border-gray-100 p-3">
+                                    <div className="rounded-xl bg-purple-600 p-3 text-white">
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h3>
                                         </div>
-                                        <input
-                                            type="range"
-                                            min={Math.floor((currentPrice * 0.5) * 10) / 10}
-                                            max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
-                                            step={0.10}
-                                            value={simulatedPrice}
-                                            onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
-                                            className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                        />
-                                        <div className="grid grid-cols-3 gap-2 text-center">
-                                            <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
-                                            <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
-                                            <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
+
+                                        <div className="mt-3 flex flex-col gap-4">
+                                            <div className="flex items-center justify-between px-1">
+                                                <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Simulado</span>
+                                                <span className="text-3xl font-black text-white">{(simulatedPrice || 0).toFixed(2)}€</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={Math.floor((currentPrice * 0.5) * 10) / 10}
+                                                max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
+                                                step={0.10}
+                                                value={simulatedPrice}
+                                                onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
+                                                className="w-full h-1.5 bg-white/25 rounded-lg appearance-none cursor-pointer accent-white"
+                                            />
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                <div>
+                                                    <div className="text-[9px] text-white/80 font-bold uppercase tracking-widest">FC</div>
+                                                    <div className="text-lg font-black text-white">{(simulatedFoodCost || 0).toFixed(0)}%</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-[9px] text-white/80 font-bold uppercase tracking-widest">Base</div>
+                                                    <div className="text-lg font-black text-white">{(simulatedBasePrice || 0).toFixed(2)}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-[9px] text-white/80 font-bold uppercase tracking-widest">Margen</div>
+                                                    <div className="text-lg font-black text-white">{(simulatedMargin || 0).toFixed(2)}€</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -898,11 +952,31 @@ function RecipeDetailContent() {
                     </div>
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Metodología</h2>
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
                             {!isRestricted && (
-                                <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-xs text-white/80 hover:bg-white/10 p-1.5 rounded-lg transition-colors">
-                                    <Edit2 size={14} />
-                                </button>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {canImportRecipe && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleImportSectionClick('elaboration')}
+                                            disabled={importingRecipe}
+                                            title="Importar (solo elaboración)"
+                                            className={cn(
+                                                "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white hover:bg-white/10 rounded-lg active:scale-95",
+                                                importingRecipe ? "opacity-40 pointer-events-none" : ""
+                                            )}
+                                        >
+                                            <Import className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setIsEditingElaboration(!isEditingElaboration)}
+                                        className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                                        title="Editar"
+                                    >
+                                        <Edit2 size={14} />
+                                    </button>
+                                </div>
                             )}
                         </div>
                         <div className="p-3">
@@ -936,9 +1010,29 @@ function RecipeDetailContent() {
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
                             {!isRestricted && (
-                                <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-xs text-white/80 hover:bg-white/10 p-1.5 rounded-lg transition-colors">
-                                    <Edit2 size={14} />
-                                </button>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {canImportRecipe && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleImportSectionClick('presentation')}
+                                            disabled={importingRecipe}
+                                            title="Importar (solo presentación)"
+                                            className={cn(
+                                                "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white hover:bg-white/10 rounded-lg active:scale-95",
+                                                importingRecipe ? "opacity-40 pointer-events-none" : ""
+                                            )}
+                                        >
+                                            <Import className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setIsEditingPresentation(!isEditingPresentation)}
+                                        className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                                        title="Editar"
+                                    >
+                                        <Edit2 size={14} />
+                                    </button>
+                                </div>
                             )}
                         </div>
                         <div className="p-3 bg-zinc-50/30">
