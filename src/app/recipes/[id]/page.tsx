@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker, Import } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import CreateIngredientModal from '@/components/CreateIngredientModal';
 import { cn } from '@/lib/utils';
 import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
+import * as XLSX from 'xlsx';
+import { importRecipes } from '@/app/actions/import-legacy';
 
 const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails', 'Menús'];
 
@@ -23,6 +25,7 @@ function RecipeDetailContent() {
     const router = useRouter();
     const recipeId = params.id as string;
     const supabase = createClient();
+    const importInputRef = useRef<HTMLInputElement | null>(null);
 
     // --- 1. ESTADOS ---
     const [recipe, setRecipe] = useState<any>(null);
@@ -54,6 +57,7 @@ function RecipeDetailContent() {
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [importingRecipe, setImportingRecipe] = useState(false);
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -123,6 +127,211 @@ function RecipeDetailContent() {
     }, [recipeId]);
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
+    const canImportRecipe = !isStaffView && userRole === 'manager';
+
+    async function sha256Hex(buf: ArrayBuffer): Promise<string> {
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        const bytes = new Uint8Array(hash);
+        return Array.from(bytes)
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    function looksLikeRecipeFichaCsv(text: string): boolean {
+        const t = text.toLowerCase();
+        return t.includes('ingredients;') && (t.includes('elaboració') || t.includes('elaboracio')) && t.includes('presentació');
+    }
+
+    function parseRecipeFichaCsvToImportRows(text: string): any[] {
+        const lines = text
+            .split(/\r?\n/)
+            .map((l) => l.trimEnd())
+            .filter((l) => l.length > 0);
+
+        const rows = lines.map((l) => l.split(';'));
+
+        // Nombre receta = primera celda no vacía que no sea cabecera "Ingredients"
+        const firstNameRow = rows.find((r) => {
+            const c0 = (r[0] ?? '').trim();
+            if (!c0) return false;
+            const c0n = c0.toLowerCase();
+            return c0n !== 'ingredients' && c0n !== 'ingredientes';
+        });
+        const recipeName = (firstNameRow?.[0] ?? '').trim();
+
+        const headerIdx = rows.findIndex((r) => (r[0] ?? '').trim().toLowerCase() === 'ingredients');
+        if (!recipeName || headerIdx === -1) return [];
+
+        // Ingredientes: desde después de cabecera hasta antes de "Elaboració"
+        const elaborIdx = rows.findIndex((r) => (r[0] ?? '').trim().toLowerCase().startsWith('elabor'));
+        const ingStart = headerIdx + 1;
+        const ingEnd = elaborIdx === -1 ? rows.length : elaborIdx;
+        const ingredientRows: Array<{ ingrediente_nombre: string; cantidad: string; unidad: string }> = [];
+
+        for (let i = ingStart; i < ingEnd; i++) {
+            const r = rows[i];
+            const name = (r[0] ?? '').trim();
+            const unit = (r[1] ?? '').trim();
+            const qty = (r[2] ?? '').trim();
+            if (!name) continue;
+            // saltar filas separadoras
+            if (name.toLowerCase() === 'ingredients') continue;
+            ingredientRows.push({ ingrediente_nombre: name, unidad: unit, cantidad: qty });
+        }
+
+        // Elaboración / Presentación: filas con bullets tras el separador
+        let elaboration = '';
+        let presentation = '';
+        if (elaborIdx !== -1) {
+            const elabLines: string[] = [];
+            const presLines: string[] = [];
+            for (let i = elaborIdx + 1; i < rows.length; i++) {
+                const r = rows[i];
+                const e = (r[0] ?? '').trim();
+                const p = (r[4] ?? '').trim();
+                if (e) elabLines.push(e.replace(/^[•‣\-\s]+/, '').trim());
+                if (p) presLines.push(p.replace(/^[•‣\-\s]+/, '').trim());
+            }
+            elaboration = elabLines.filter(Boolean).join('\n');
+            presentation = presLines.filter(Boolean).join('\n');
+        }
+
+        const base = {
+            nombre_receta: recipeName,
+            // claves que importRecipes ya reconoce
+            'elaboración': elaboration,
+            'presentación': presentation,
+        };
+
+        if (ingredientRows.length === 0) {
+            return [base];
+        }
+
+        return ingredientRows.map((ir, idx) => ({
+            ...base,
+            ingrediente_nombre: ir.ingrediente_nombre,
+            cantidad: ir.cantidad,
+            unidad: ir.unidad,
+            // solo por ahorrar payload; pero seguimos poniendo el texto en la primera fila del grupo
+            ...(idx === 0 ? {} : { 'elaboración': '', 'presentación': '' }),
+        }));
+    }
+
+    function normalizeKey(s: string) {
+        return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function getRowRecipeName(row: Record<string, any>): string {
+        const keys = Object.keys(row ?? {});
+        const candidates = [
+            'nombre_receta',
+            'nombre receta',
+            'receta',
+            'recipe_name',
+            'nombre_plato',
+            'nombre',
+            'name',
+        ];
+        for (const c of candidates) {
+            const nk = normalizeKey(c);
+            const found = keys.find((k) => normalizeKey(k) === nk);
+            if (found && row[found] != null && String(row[found]).trim() !== '') {
+                return String(row[found]).trim();
+            }
+        }
+        return '';
+    }
+
+    async function handleImportIconClick() {
+        if (!canImportRecipe) return;
+        if (!recipe?.name) {
+            toast.error('No se puede importar: receta sin nombre cargado.');
+            return;
+        }
+        importInputRef.current?.click();
+    }
+
+    async function handleImportFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0] ?? null;
+        // permitir re-seleccionar el mismo archivo
+        e.target.value = '';
+        if (!file) return;
+        if (!canImportRecipe) return;
+        if (!recipe?.name) {
+            toast.error('No se puede importar: receta sin nombre cargado.');
+            return;
+        }
+
+        const ok = confirm(`Vas a IMPORTAR y SOBREESCRIBIR la receta actual:\n\n"${recipe.name}"\n\n¿Continuar?`);
+        if (!ok) return;
+
+        setImportingRecipe(true);
+        try {
+            const buf = await file.arrayBuffer();
+            const fileHashSha256 = await sha256Hex(buf).catch(() => null);
+
+            let fileRows: Record<string, any>[] = [];
+
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                const txt = await file.text();
+                if (looksLikeRecipeFichaCsv(txt)) {
+                    fileRows = parseRecipeFichaCsvToImportRows(txt) as any;
+                } else {
+                    // XLSX también puede leer CSV; usamos el mismo fallback que dashboard/import
+                    const wb = XLSX.read(txt, { type: 'string' });
+                    const wsname = wb.SheetNames[0];
+                    const ws = wb.Sheets[wsname];
+                    fileRows = XLSX.utils.sheet_to_json(ws) as any;
+                }
+            } else {
+                const wb = XLSX.read(buf, { type: 'array' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                fileRows = XLSX.utils.sheet_to_json(ws) as any;
+            }
+
+            if (!Array.isArray(fileRows) || fileRows.length === 0) {
+                toast.error('Archivo vacío o no interpretable.');
+                return;
+            }
+
+            const expected = String(recipe.name).trim().toLowerCase();
+            const filtered = fileRows.filter((r) => getRowRecipeName(r).trim().toLowerCase() === expected);
+
+            if (filtered.length === 0) {
+                toast.error(`El archivo no contiene filas para "${recipe.name}" (por nombre_receta).`);
+                return;
+            }
+
+            const res = await importRecipes(
+                filtered,
+                { fileName: file.name, fileHashSha256: fileHashSha256 ?? undefined },
+                { overwriteExisting: true }
+            );
+
+            if (!res.success) {
+                toast.error(res.message || 'Error importando receta');
+                if (res.errors?.length) {
+                    for (const err of res.errors.slice(0, 3)) toast.error(err);
+                }
+                return;
+            }
+
+            toast.success(`Importación OK: ${res.message}`);
+            if (res.errors?.length) {
+                // avisos no fatales
+                for (const warn of res.errors.slice(0, 3)) toast(warn);
+            }
+
+            await fetchRecipe();
+            fetchBackendCost();
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err?.message || 'Error inesperado importando receta');
+        } finally {
+            setImportingRecipe(false);
+        }
+    }
 
     useEffect(() => {
         if (!recipe) return;
@@ -146,7 +355,7 @@ function RecipeDetailContent() {
         if (view.size === 'full') {
             return view.location === 'pvp' ? recipe.sale_price : recipe.sales_price_pavello;
         } else {
-            return view.location === 'pvp' ? recipe.sale_price_half : recipe.price_pavello_half;
+            return view.location === 'pvp' ? recipe.sale_price_half : recipe.sale_price_half_pavello;
         }
     };
 
@@ -190,7 +399,7 @@ function RecipeDetailContent() {
         setSavingPrice(true);
         let field = 'sale_price';
         if (view.size === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
-        else field = view.location === 'pvp' ? 'sale_price_half' : 'price_pavello_half';
+        else field = view.location === 'pvp' ? 'sale_price_half' : 'sale_price_half_pavello';
 
         await updateRecipeField(field, num);
         setSavingPrice(false);
@@ -212,7 +421,7 @@ function RecipeDetailContent() {
         setApplyingSimulation(true);
         let field = 'sale_price';
         if (view.size === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
-        else field = view.location === 'pvp' ? 'sale_price_half' : 'price_pavello_half';
+        else field = view.location === 'pvp' ? 'sale_price_half' : 'sale_price_half_pavello';
         await updateRecipeField(field, simulatedPrice);
         setApplyingSimulation(false);
     };
@@ -397,7 +606,31 @@ function RecipeDetailContent() {
                     </div>
 
                         {/* Zona derecha: reserva (mantiene centrado) */}
-                        <div className="min-w-0" />
+                        <div className="min-w-0 flex items-center justify-end">
+                            {canImportRecipe && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handleImportIconClick}
+                                        disabled={importingRecipe}
+                                        title="Importar (sobrescribe esta receta)"
+                                        className={cn(
+                                            "w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95",
+                                            importingRecipe ? "opacity-40 pointer-events-none" : ""
+                                        )}
+                                    >
+                                        <Import className="w-5 h-5" />
+                                    </button>
+                                    <input
+                                        ref={importInputRef}
+                                        type="file"
+                                        accept=".xlsx,.xls,.csv"
+                                        className="hidden"
+                                        onChange={handleImportFileSelected}
+                                    />
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
@@ -477,7 +710,18 @@ function RecipeDetailContent() {
                                     <span className="text-lg font-bold text-gray-800">€</span>
                                     <EditablePrice
                                         value={currentPrice || 0}
-                                        onChange={(val: number) => setRecipe({ ...recipe, [view.location === 'pvp' ? (view.size === 'full' ? 'sale_price' : 'sale_price_half') : (view.size === 'full' ? 'sales_price_pavello' : 'price_pavello_half')]: val })}
+                                        onChange={(val: number) =>
+                                            setRecipe({
+                                                ...recipe,
+                                                [view.location === 'pvp'
+                                                    ? view.size === 'full'
+                                                        ? 'sale_price'
+                                                        : 'sale_price_half'
+                                                    : view.size === 'full'
+                                                      ? 'sales_price_pavello'
+                                                      : 'sale_price_half_pavello']: val,
+                                            })
+                                        }
                                         onBlur={(e: any) => handlePriceUpdate(e.target.value)}
                                         className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
                                     />
