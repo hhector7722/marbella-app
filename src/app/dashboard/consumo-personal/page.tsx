@@ -286,7 +286,7 @@ export default function ConsumoPersonalDashboardPage() {
           setDayDetail(null);
           return;
         }
-        const mappedWorkers = Array.isArray(raw.workers)
+        const mappedWorkers: DayDetailWorker[] = Array.isArray(raw.workers)
           ? raw.workers.map((w) => ({
               id: String((w as any).id ?? ''),
               name: (w as any).name != null ? String((w as any).name) : null,
