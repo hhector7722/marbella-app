@@ -578,11 +578,11 @@ function RecipeDetailContent() {
     if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
-        <div className={`min-h-screen bg-[#5B8FB9] p-4 md:p-6 flex flex-col ${isRestricted ? 'overflow-y-auto pb-8' : 'overflow-hidden'}`}>
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
             <Toaster position="top-right" />
 
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
-            <div className={`max-w-6xl mx-auto w-full flex-1 flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden ${!isRestricted ? 'min-h-0' : ''}`}>
+            <div className="max-w-6xl mx-auto w-full flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden">
                 {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
                 <div className="bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
                     <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -676,7 +676,7 @@ function RecipeDetailContent() {
                 </div>
 
                 {/* CUERPO: fondo blanco roto */}
-                <div className={`bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 content-start ${!isRestricted ? 'min-h-0' : ''}`}>
+                <div className="bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
@@ -905,8 +905,8 @@ function RecipeDetailContent() {
                                 </button>
                             )}
                         </div>
-                        <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden">
-                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="p-3">
+                            <div className="custom-scrollbar">
                                 {isEditingElaboration ? (
                                     <div className="space-y-1.5">
                                         {elaborationSteps.map((s, i) => (
@@ -941,8 +941,8 @@ function RecipeDetailContent() {
                                 </button>
                             )}
                         </div>
-                        <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden bg-zinc-50/30">
-                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="p-3 bg-zinc-50/30">
+                            <div className="custom-scrollbar">
                                 {isEditingPresentation ? (
                                     <div className="space-y-1.5">
                                         {presentationSteps.map((s, i) => (
