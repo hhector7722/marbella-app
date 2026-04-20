@@ -13,6 +13,7 @@ export type WizardDraft = {
   category: IngredientWizardCategory | null
   howCharged: IngredientWizardHowCharged | null
   pricingMode: IngredientWizardPricing | null
+  containsLiquid: boolean | null
   // Precio según proveedor:
   supplierPrice: number
   // Si viene por formato/caja:
@@ -129,6 +130,7 @@ export function IngredientWizard({
     category: initialCategory ?? null,
     howCharged: initialHowCharged ?? null,
     pricingMode: initialPricingMode ?? null,
+    containsLiquid: null,
     supplierPrice: 0,
     unitsInside: null,
     contentPerUnitQty: null,
@@ -219,30 +221,34 @@ export function IngredientWizard({
     }
   }
 
-  async function handlePickHowCharged(h: IngredientWizardHowCharged) {
+  function needsLiquidQuestion(h: IngredientWizardHowCharged): boolean {
+    return h === 'pack' || h === 'unidad'
+  }
+
+  async function finalizeHowChargedAndAdvance(next: {
+    howCharged: IngredientWizardHowCharged
+    pricingMode: IngredientWizardPricing
+    baseUnit: WizardBaseUnit
+    containsLiquid: boolean | null
+  }) {
     try {
-      let pricingMode: IngredientWizardPricing = h === 'pack' ? 'per_pack' : 'per_purchase_unit'
-      let baseUnit: WizardBaseUnit = draft.baseUnit
-      if (h === 'kilo') baseUnit = 'kg'
-      if (h === 'litro') baseUnit = 'l'
-      if (h === 'unidad') baseUnit = 'ud'
-      if (h === 'pack') {
-        baseUnit = primaryBaseUnitForCategory(draft.category ?? 'Bebida')
-      }
+      const h = next.howCharged
+      const pricingMode = next.pricingMode
+      const baseUnit = next.baseUnit
+      const containsLiquid = next.containsLiquid
+
+      const perPack = pricingMode === 'per_pack'
+      const shouldAskContent = perPack && containsLiquid === true
 
       await upsertDraft({
         howCharged: h,
         pricingMode,
         baseUnit,
-        unitsInside: h === 'pack' ? (draft.unitsInside ?? 1) : null,
-        contentPerUnitQty:
-          h === 'pack'
-            ? (draft.contentPerUnitQty ?? (draft.category === 'Bebida' ? 330 : 1))
-            : null,
-        contentPerUnitUnit:
-          h === 'pack'
-            ? (draft.category === 'Bebida' ? 'ml' : 'ud')
-            : 'ud',
+        containsLiquid,
+        unitsInside: perPack ? (h === 'unidad' ? 1 : (draft.unitsInside ?? 1)) : null,
+        // Solo pedimos contenido por unidad si es líquido. Si NO es líquido, fijamos 1 ud.
+        contentPerUnitQty: perPack ? (shouldAskContent ? (draft.contentPerUnitQty ?? null) : 1) : null,
+        contentPerUnitUnit: perPack ? (shouldAskContent ? (draft.contentPerUnitUnit ?? 'ml') : 'ud') : 'ud',
       })
 
       // IMPORTANTE:
@@ -278,6 +284,50 @@ export function IngredientWizard({
     }
   }
 
+  async function handlePickHowCharged(h: IngredientWizardHowCharged) {
+    // Reglas:
+    // - litro => se entiende "líquido"
+    // - kilo  => se entiende "no líquido"
+    // - pack/unidad => preguntamos "¿contiene líquido?"
+    if (h === 'litro') {
+      return finalizeHowChargedAndAdvance({
+        howCharged: h,
+        pricingMode: 'per_purchase_unit',
+        baseUnit: 'l',
+        containsLiquid: true,
+      })
+    }
+    if (h === 'kilo') {
+      return finalizeHowChargedAndAdvance({
+        howCharged: h,
+        pricingMode: 'per_purchase_unit',
+        baseUnit: 'kg',
+        containsLiquid: false,
+      })
+    }
+
+    if (needsLiquidQuestion(h)) {
+      // guardamos selección y esperamos a la respuesta Sí/No para decidir la lógica
+      await upsertDraft({
+        howCharged: h,
+        containsLiquid: null,
+        // resetea configuración de pack para evitar confusión visual previa
+        unitsInside: null,
+        contentPerUnitQty: null,
+        contentPerUnitUnit: 'ud',
+      })
+      return
+    }
+
+    // fallback seguro (no debería ocurrir)
+    return finalizeHowChargedAndAdvance({
+      howCharged: h,
+      pricingMode: 'per_purchase_unit',
+      baseUnit: draft.baseUnit,
+      containsLiquid: null,
+    })
+  }
+
   async function handleSavePricingAndAdvance() {
     try {
       if (!draft.pricingMode) return toast.error('Falta seleccionar cómo cobra el proveedor')
@@ -300,6 +350,11 @@ export function IngredientWizard({
       // per_pack
       if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
       if (!draft.unitsInside || draft.unitsInside <= 0) return toast.error('Unidades dentro inválido')
+      if (draft.containsLiquid === true) {
+        if (!Number.isFinite(draft.contentPerUnitQty ?? NaN) || Number(draft.contentPerUnitQty) <= 0) {
+          return toast.error('Falta el contenido por unidad (ej. 330 ml)')
+        }
+      }
       const qty = draft.contentPerUnitQty ?? 1
       const unit = draft.contentPerUnitUnit ?? 'ud'
       await savePatch({
@@ -482,6 +537,55 @@ export function IngredientWizard({
               Por unidad
             </button>
           </div>
+
+          {needsLiquidQuestion(draft.howCharged ?? 'kilo') &&
+            (draft.howCharged === 'pack' || draft.howCharged === 'unidad') &&
+            draft.containsLiquid == null && (
+              <div className="rounded-2xl border border-zinc-100 bg-white p-4 space-y-3">
+                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Contiene líquido?</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      const perPack = true
+                      // Si es "unidad" y contiene líquido, tratamos como pack de 1 (botella/lata)
+                      const baseUnit: WizardBaseUnit = 'l'
+                      void finalizeHowChargedAndAdvance({
+                        howCharged: draft.howCharged as any,
+                        pricingMode: perPack ? 'per_pack' : 'per_purchase_unit',
+                        baseUnit,
+                        containsLiquid: true,
+                      })
+                    }}
+                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                  >
+                    Sí
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      // No líquido: pack/unidad se maneja como ud (sin pedir contenido por unidad)
+                      const baseUnit: WizardBaseUnit = 'ud'
+                      void finalizeHowChargedAndAdvance({
+                        howCharged: draft.howCharged as any,
+                        pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
+                        baseUnit,
+                        containsLiquid: false,
+                      })
+                    }}
+                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                  >
+                    No
+                  </button>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  Solo se pide “contenido por unidad” si es líquido (botella/lata/caja).
+                </div>
+              </div>
+            )}
+
           <div className="flex gap-2">
             <button
               type="button"
@@ -549,56 +653,62 @@ export function IngredientWizard({
                 </div>
               </label>
 
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={draft.contentPerUnitQty ?? ''}
-                    onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitQty: e.target.value === '' ? null : toNumber(e.target.value) }))}
-                    className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad contenido</span>
-                  <select
-                    value={draft.contentPerUnitUnit}
-                    onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitUnit: e.target.value as any }))}
-                    className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
-                  >
-                    <option value="ud">ud</option>
-                    <option value="ml">ml</option>
-                    <option value="cl">cl</option>
-                    <option value="l">L</option>
-                    <option value="g">g</option>
-                    <option value="kg">kg</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
-                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Atajos</div>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {(draft.category === 'Bebida' ? VOLUME_PRESETS : MASS_PRESETS).slice(0, 6).map((p) => (
-                    <button
-                      key={`${p.qty}-${p.unit}`}
-                      type="button"
-                      onClick={() =>
-                        setDraft((d) => ({
-                          ...d,
-                          contentPerUnitQty: p.qty,
-                          contentPerUnitUnit: p.unit as any,
-                        }))
-                      }
-                      className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+              {draft.containsLiquid === true ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={draft.contentPerUnitQty ?? ''}
+                      onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitQty: e.target.value === '' ? null : toNumber(e.target.value) }))}
+                      className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad contenido</span>
+                    <select
+                      value={draft.contentPerUnitUnit}
+                      onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitUnit: e.target.value as any }))}
+                      className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
                     >
-                      {p.qty}
-                      {p.unit}
-                    </button>
-                  ))}
+                      <option value="ml">ml</option>
+                      <option value="cl">cl</option>
+                      <option value="l">L</option>
+                    </select>
+                  </label>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Contenido por unidad</div>
+                  <div className="mt-1 font-black text-zinc-800">No aplica (se calcula por unidades “ud”).</div>
+                </div>
+              )}
+
+              {draft.containsLiquid === true && (
+                <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Atajos</div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {VOLUME_PRESETS.slice(0, 6).map((p) => (
+                      <button
+                        key={`${p.qty}-${p.unit}`}
+                        type="button"
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            contentPerUnitQty: p.qty,
+                            contentPerUnitUnit: p.unit as any,
+                          }))
+                        }
+                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                      >
+                        {p.qty}
+                        {p.unit}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
