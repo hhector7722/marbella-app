@@ -116,6 +116,7 @@ export default function ConsumoPersonalDashboardPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
   const [dayDetail, setDayDetail] = useState<DayDetailPayload | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const [authState, setAuthState] = useState<
     | { status: 'checking' }
@@ -275,6 +276,7 @@ export default function ConsumoPersonalDashboardPage() {
       setDetailOpen(true);
       setDetailLoading(true);
       setDayDetail(null);
+      setDetailError(null);
       try {
         const { data, error } = await supabase.rpc('get_staff_consumption_day_detail', {
           p_date: key,
@@ -283,6 +285,8 @@ export default function ConsumoPersonalDashboardPage() {
         if (error) throw error;
         const raw = (data || null) as DayDetailPayload | null;
         if (!raw) {
+          setDetailError('No se pudo cargar el desglose (respuesta vacía).');
+          toast.error(`Error al cargar el desglose (${key})`);
           setDayDetail(null);
           return;
         }
@@ -310,7 +314,9 @@ export default function ConsumoPersonalDashboardPage() {
         });
       } catch (e) {
         console.error(e);
-        toast.error('Error al cargar el desglose del día');
+        const msg = String((e as any)?.message ?? '');
+        setDetailError(msg || 'Error al cargar el desglose del día');
+        toast.error(`Error al cargar el desglose (${key})`);
         setDayDetail(null);
       } finally {
         setDetailLoading(false);
@@ -323,6 +329,7 @@ export default function ConsumoPersonalDashboardPage() {
     setDetailOpen(false);
     setDayDetail(null);
     setSelectedDayStr(null);
+    setDetailError(null);
   };
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -575,6 +582,32 @@ export default function ConsumoPersonalDashboardPage() {
                   <div className="flex justify-center py-12">
                     <LoadingSpinner className="text-[#36606F]" />
                   </div>
+                ) : detailError ? (
+                  <div className="flex flex-col items-center justify-center text-center gap-3 py-10">
+                    <p className="text-sm font-black text-zinc-800">No se pudo cargar el desglose</p>
+                    <p className="text-xs font-bold text-zinc-500 max-w-[22rem]">
+                      {detailError}
+                    </p>
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!selectedDayStr) return;
+                          openDayDetail(parseLocalSafe(selectedDayStr));
+                        }}
+                        className="min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white font-black uppercase tracking-wider shadow-sm hover:opacity-95 active:scale-[0.99]"
+                      >
+                        Reintentar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeDetail}
+                        className="min-h-[48px] px-4 rounded-xl bg-zinc-100 text-zinc-800 font-black uppercase tracking-wider hover:bg-zinc-200 active:scale-[0.99]"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                  </div>
                 ) : dayDetail ? (
                   <>
                     <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
@@ -628,7 +661,11 @@ export default function ConsumoPersonalDashboardPage() {
                       </div>
                     )}
                   </>
-                ) : null}
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center gap-2 py-10">
+                    <p className="text-sm font-black text-zinc-700">Sin datos para mostrar</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>,
