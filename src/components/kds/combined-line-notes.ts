@@ -1,3 +1,6 @@
+/** Separador entre notas TPV y cocina: una sola fila en KDS (no `\n`, que partía en dos líneas). */
+const KDS_NOTAS_TPV_COCINA_SEP = ' · ';
+
 /** Texto TPV + texto cocina para mostrar en tarjetas y pie resumen (sin tocar la clave de delta). */
 export function combinedLineNotesForDisplay(
     notas: string | null | undefined,
@@ -8,5 +11,5 @@ export function combinedLineNotesForDisplay(
     if (!a && !b) return null;
     if (!a) return b || null;
     if (!b) return a || null;
-    return `${a}\n${b}`;
+    return `${a}${KDS_NOTAS_TPV_COCINA_SEP}${b}`;
 }
