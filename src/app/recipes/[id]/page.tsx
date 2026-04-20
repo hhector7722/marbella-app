@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker, Import } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker, Import, Pencil, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import CreateIngredientModal from '@/components/CreateIngredientModal';
@@ -58,6 +58,8 @@ function RecipeDetailContent() {
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [importingRecipe, setImportingRecipe] = useState(false);
+    const [isEditingPrice, setIsEditingPrice] = useState(false);
+    const [priceDraft, setPriceDraft] = useState('');
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -394,7 +396,7 @@ function RecipeDetailContent() {
     };
 
     const handlePriceUpdate = async (newPrice: string) => {
-        const num = parseFloat(newPrice);
+        const num = parseFloat(String(newPrice ?? '').replace(',', '.'));
         if (isNaN(num)) return;
         setSavingPrice(true);
         let field = 'sale_price';
@@ -403,6 +405,28 @@ function RecipeDetailContent() {
 
         await updateRecipeField(field, num);
         setSavingPrice(false);
+    };
+
+    const startEditPrice = () => {
+        const v = Number(currentPrice || 0);
+        setPriceDraft(v > 0 ? String(v).replace('.', ',') : '');
+        setIsEditingPrice(true);
+    };
+
+    const cancelEditPrice = () => {
+        setIsEditingPrice(false);
+        setPriceDraft('');
+    };
+
+    const confirmEditPrice = async () => {
+        const raw = String(priceDraft ?? '').trim();
+        const parsed = raw === '' ? 0 : parseFloat(raw.replace(',', '.'));
+        if (!Number.isFinite(parsed) || parsed < 0) {
+            toast.error('Precio inválido');
+            return;
+        }
+        await handlePriceUpdate(String(parsed));
+        setIsEditingPrice(false);
     };
 
     const handleQuantityChange = async (ingredientId: string, newQuantity: number) => {
@@ -708,23 +732,58 @@ function RecipeDetailContent() {
                                 </div>
                                 <div className="flex items-center justify-center gap-1 my-2">
                                     <span className="text-lg font-bold text-gray-800">€</span>
-                                    <EditablePrice
-                                        value={currentPrice || 0}
-                                        onChange={(val: number) =>
-                                            setRecipe({
-                                                ...recipe,
-                                                [view.location === 'pvp'
-                                                    ? view.size === 'full'
-                                                        ? 'sale_price'
-                                                        : 'sale_price_half'
-                                                    : view.size === 'full'
-                                                      ? 'sales_price_pavello'
-                                                      : 'sale_price_half_pavello']: val,
-                                            })
-                                        }
-                                        onBlur={(e: any) => handlePriceUpdate(e.target.value)}
-                                        className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
-                                    />
+                                    {!isEditingPrice ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-3xl font-black text-center text-gray-800 tabular-nums">
+                                                {(currentPrice || 0).toFixed(2)}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={startEditPrice}
+                                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#36606F] hover:bg-[#36606F]/5 rounded-lg transition shrink-0"
+                                                title="Editar precio"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                value={priceDraft}
+                                                onChange={(e) => setPriceDraft(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') confirmEditPrice();
+                                                    if (e.key === 'Escape') cancelEditPrice();
+                                                }}
+                                                autoFocus
+                                                placeholder="0"
+                                                className={cn(
+                                                    "text-3xl font-black text-center text-gray-800 border-b-2 outline-none w-28 bg-transparent tabular-nums",
+                                                    themeColors.border
+                                                )}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={confirmEditPrice}
+                                                disabled={savingPrice}
+                                                className="w-10 h-10 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg transition shrink-0 disabled:opacity-50"
+                                                title="Confirmar"
+                                            >
+                                                <Check className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={cancelEditPrice}
+                                                disabled={savingPrice}
+                                                className="w-10 h-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 disabled:opacity-50"
+                                                title="Cancelar"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
                                     <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
