@@ -70,11 +70,25 @@ function splitBullets(raw: string | null | undefined) {
             .map((p) => p.trim())
             .filter(Boolean);
 
+    const normalizeForDisplay = (pieces: string[]) => {
+        const normalized = normalizePieces(pieces);
+        // Regla operativa KDS: "NH NM" nunca debe renderizarse en 2 filas aunque venga con \n.
+        // Normalizamos el caso específico (cualquier casing) a una sola línea.
+        if (
+            normalized.length === 2 &&
+            normalized[0]?.trim().toLowerCase() === 'nh' &&
+            normalized[1]?.trim().toLowerCase() === 'nm'
+        ) {
+            return ['NH NM'];
+        }
+        return normalized;
+    };
+
     // Caso 1: JSON array string: ["A","B"]
     if (input.startsWith('[') && input.endsWith(']')) {
         try {
             const parsed = JSON.parse(input);
-            if (Array.isArray(parsed)) return normalizePieces(parsed.map((x) => String(x)));
+            if (Array.isArray(parsed)) return normalizeForDisplay(parsed.map((x) => String(x)));
         } catch {
             // fallback abajo
         }
@@ -84,7 +98,7 @@ function splitBullets(raw: string | null | undefined) {
     if (input.startsWith('{') && input.endsWith('}')) {
         const inner = input.slice(1, -1).trim();
         if (!inner) return [];
-        return normalizePieces(
+        return normalizeForDisplay(
             inner
                 .split(',')
                 .map((x) => x.trim())
@@ -95,11 +109,11 @@ function splitBullets(raw: string | null | undefined) {
     if (input.startsWith('[') && input.endsWith(']')) {
         const inner = input.slice(1, -1).trim();
         if (!inner) return [];
-        return normalizePieces(inner.split(',').map((x) => x.trim()));
+        return normalizeForDisplay(inner.split(',').map((x) => x.trim()));
     }
 
     // Caso 4: texto normal con saltos de línea
-    return normalizePieces(input.split('\n'));
+    return normalizeForDisplay(input.split('\n'));
 }
 
 function firstTwoWords(raw: string | null | undefined) {
@@ -278,7 +292,7 @@ export function CommandCard({
                                 title="Editar nota comanda"
                             >
                                 <Image
-                                    src="/icons/notas.svg"
+                                    src="/icons/notas"
                                     alt="Notas"
                                     width={34}
                                     height={34}
@@ -380,7 +394,7 @@ export function CommandCard({
                                                     title="Editar nota artículo"
                                                 >
                                                     <Image
-                                                        src="/icons/notas.svg"
+                                                        src="/icons/notas"
                                                         alt="Notas"
                                                         width={34}
                                                         height={34}
