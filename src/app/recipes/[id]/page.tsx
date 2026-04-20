@@ -682,7 +682,7 @@ function RecipeDetailContent() {
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
                             </div>
-                            <div className="flex-1 flex flex-col min-h-0">
+                            <div className="flex flex-col">
                                 {/* Sección 1: precio actual + KPIs */}
                                 <div className="p-3 flex flex-col shrink-0">
                                     <div className="flex gap-4 justify-center mb-2 shrink-0">
@@ -800,40 +800,31 @@ function RecipeDetailContent() {
                                 </div>
 
                                 {/* Sección 2: simulador dentro de la misma tarjeta */}
-                                <div className="border-t border-gray-100 p-3 flex-1 flex flex-col min-h-0">
+                                <div className="border-t border-gray-100 p-3 flex flex-col">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Beaker className="w-3.5 h-3.5 text-purple-600/70" />
                                         <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em]">Simulador de Margen</h3>
                                     </div>
 
-                                    <div className="mt-3 flex-1 flex flex-col justify-between min-h-0">
-                                        <div className="flex flex-col justify-center gap-4">
-                                            <div className="flex items-center justify-between px-4">
-                                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
-                                                <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={Math.floor((currentPrice * 0.5) * 10) / 10}
-                                                max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
-                                                step={0.10}
-                                                value={simulatedPrice}
-                                                onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
-                                                className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                            />
-                                            <div className="grid grid-cols-3 gap-2 text-center">
-                                                <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
-                                                <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
-                                                <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
-                                            </div>
+                                    <div className="mt-3 flex flex-col gap-4">
+                                        <div className="flex items-center justify-between px-4">
+                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
+                                            <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
                                         </div>
-                                        <button
-                                            onClick={applySimulatedPrice}
-                                            disabled={applyingSimulation || simulatedPrice === currentPrice}
-                                            className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-3 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50 shrink-0"
-                                        >
-                                            APLICAR CAMBIOS
-                                        </button>
+                                        <input
+                                            type="range"
+                                            min={Math.floor((currentPrice * 0.5) * 10) / 10}
+                                            max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
+                                            step={0.10}
+                                            value={simulatedPrice}
+                                            onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
+                                            className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                        />
+                                        <div className="grid grid-cols-3 gap-2 text-center">
+                                            <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
+                                            <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
+                                            <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -849,7 +840,7 @@ function RecipeDetailContent() {
                                 </div>
                             )}
                         </div>
-                        <div className="overflow-y-auto flex-1 custom-scrollbar relative">
+                        <div className="custom-scrollbar relative">
                             <table className="w-full text-[10px] border-collapse">
                                 <thead className="sticky top-0 z-10 bg-white shadow-sm">
                                     <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
