@@ -286,22 +286,27 @@ export default function ConsumoPersonalDashboardPage() {
           setDayDetail(null);
           return;
         }
+        const mappedWorkers = Array.isArray(raw.workers)
+          ? raw.workers.map((w) => ({
+              id: String((w as any).id ?? ''),
+              name: (w as any).name != null ? String((w as any).name) : null,
+              total: Number((w as any).total) || 0,
+              items: Array.isArray((w as any).items)
+                ? (w as any).items.map((it: any) => ({
+                    name: String(it?.name ?? ''),
+                    amount: Number(it?.amount) || 0,
+                  }))
+                : [],
+            }))
+          : [];
+        mappedWorkers.sort((a, b) => b.total - a.total);
+        for (const w of mappedWorkers) {
+          w.items.sort((a, b) => b.amount - a.amount);
+        }
         setDayDetail({
           date: String(raw.date),
           totalAmount: Number(raw.totalAmount) || 0,
-          workers: Array.isArray(raw.workers)
-            ? raw.workers.map((w) => ({
-                id: String((w as any).id ?? ''),
-                name: (w as any).name != null ? String((w as any).name) : null,
-                total: Number((w as any).total) || 0,
-                items: Array.isArray((w as any).items)
-                  ? (w as any).items.map((it: any) => ({
-                      name: String(it?.name ?? ''),
-                      amount: Number(it?.amount) || 0,
-                    }))
-                  : [],
-              }))
-            : [],
+          workers: mappedWorkers,
         });
       } catch (e) {
         console.error(e);
