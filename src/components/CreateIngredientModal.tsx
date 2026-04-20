@@ -84,6 +84,8 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
                                 <option value="Alimentos">Alimentos</option>
                                 <option value="Packaging">Packaging</option>
                                 <option value="Bebidas">Bebidas</option>
+                                <option value="Limpieza">Limpieza</option>
+                                <option value="Otros">Otros</option>
                             </select>
                         </div>
                     </div>

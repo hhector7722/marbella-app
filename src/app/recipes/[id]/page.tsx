@@ -6,10 +6,10 @@ import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker, Import, Pencil, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
-import CreateIngredientModal from '@/components/CreateIngredientModal';
 import { cn } from '@/lib/utils';
 import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
+import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
 
@@ -1012,7 +1012,19 @@ function RecipeDetailContent() {
                     </div>
                 </div>
             )}
-            <CreateIngredientModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => { fetchAvailableIngredients(); fetchRecipe(); }} />
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
+                    <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                        <IngredientWizard
+                            onClose={() => {
+                                setIsModalOpen(false);
+                                void fetchAvailableIngredients();
+                                void fetchRecipe();
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
             {showCategoryModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
                     <div className="bg-white rounded-xl p-4 max-w-xs w-full shadow-2xl" onClick={e => e.stopPropagation()}>

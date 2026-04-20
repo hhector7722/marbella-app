@@ -34,7 +34,7 @@ const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
 // Unidad de pedido (humana/operativa). Mantener sin duplicados.
 const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
 const STANDARD_SUPPLIERS = ['Santa Teresa', 'Sant Aniol', 'Ametller', 'Sanilec', 'Shers', 'Panabad', 'Zander', 'Videla', 'Abril', 'Nestle', 'Fritz Ravich', 'Paellador', 'Vins Pons'];
-const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas'];
+const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas', 'Limpieza', 'Otros'];
 
 function normalizeUnit(u: string | null | undefined): 'g' | 'kg' | 'ml' | 'l' | 'ud' | 'cl' {
     const s = String(u ?? '').trim().toLowerCase();
@@ -444,7 +444,27 @@ export default function IngredientsPage() {
                                 </div>
 
                                 {editPricingOpen && (
-                                    <div className="mt-4 space-y-3">
+                                    <div className="mt-4 rounded-2xl bg-[#36606F] p-4 shadow-sm space-y-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-white/70">Asistente de precio</div>
+                                                <div className="text-sm font-black text-white truncate">
+                                                    Paso {editPricingStep === 1 ? '1/2' : '2/2'}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setEditPricingOpen(false);
+                                                    setEditPricingStep(1);
+                                                }}
+                                                className="min-h-12 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-black shrink-0"
+                                            >
+                                                Cerrar
+                                            </button>
+                                        </div>
+
+                                        <div className="rounded-2xl bg-white p-4 space-y-3">
                                         {editPricingStep === 1 && (
                                             <>
                                                 <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo lo cobra el proveedor?</div>
@@ -491,7 +511,13 @@ export default function IngredientsPage() {
                                                         type="button"
                                                         className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
                                                         onClick={() => {
-                                                            const base = (editForm.category === 'Bebidas' ? 'l' : editForm.category === 'Packaging' ? 'ud' : 'kg') as any;
+                                                            const base = (
+                                                                editForm.category === 'Bebidas'
+                                                                    ? 'l'
+                                                                    : editForm.category === 'Packaging' || editForm.category === 'Limpieza' || editForm.category === 'Otros'
+                                                                        ? 'ud'
+                                                                        : 'kg'
+                                                            ) as any;
                                                             setEditForm((p) => ({
                                                                 ...p,
                                                                 supplier_pricing_mode: 'per_pack',
@@ -654,6 +680,7 @@ export default function IngredientsPage() {
                                                 </div>
                                             </>
                                         )}
+                                        </div>
                                     </div>
                                 )}
                             </div>

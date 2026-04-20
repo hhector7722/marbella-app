@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 
-export type IngredientWizardCategory = 'Bebida' | 'Comida' | 'Packaging'
+export type IngredientWizardCategory = 'Bebida' | 'Comida' | 'Packaging' | 'Limpieza' | 'Otros'
 export type IngredientWizardHowCharged = 'kilo' | 'litro' | 'pack' | 'unidad'
 export type IngredientWizardPricing = 'per_purchase_unit' | 'per_pack'
 export type WizardBaseUnit = 'kg' | 'l' | 'ud'
@@ -103,7 +103,22 @@ function computeUnitCost(d: WizardDraft): number | null {
 function primaryBaseUnitForCategory(cat: IngredientWizardCategory): WizardBaseUnit {
   if (cat === 'Bebida') return 'l'
   if (cat === 'Packaging') return 'ud'
+  if (cat === 'Limpieza') return 'ud'
+  if (cat === 'Otros') return 'ud'
   return 'kg'
+}
+
+function allowedHowChargedOptionsForCategory(cat: IngredientWizardCategory | null): IngredientWizardHowCharged[] {
+  // Reglas solicitadas:
+  // - Comida: no aparece "litro"
+  // - Bebida: no aparece "kilo"
+  // - Packaging/Limpieza/Otros: no aparece "litro" ni "kilo"
+  const all: IngredientWizardHowCharged[] = ['kilo', 'litro', 'pack', 'unidad']
+  if (!cat) return all
+  if (cat === 'Bebida') return all.filter((x) => x !== 'kilo')
+  if (cat === 'Comida') return all.filter((x) => x !== 'litro')
+  if (cat === 'Packaging' || cat === 'Limpieza' || cat === 'Otros') return all.filter((x) => x !== 'litro' && x !== 'kilo')
+  return all
 }
 
 export function IngredientWizard({
@@ -211,7 +226,16 @@ export function IngredientWizard({
   }
 
   async function handlePickCategory(cat: IngredientWizardCategory) {
-    const dbCategory = cat === 'Bebida' ? 'Bebidas' : cat === 'Packaging' ? 'Packaging' : 'Alimentos'
+    const dbCategory =
+      cat === 'Bebida'
+        ? 'Bebidas'
+        : cat === 'Packaging'
+          ? 'Packaging'
+          : cat === 'Limpieza'
+            ? 'Limpieza'
+            : cat === 'Otros'
+              ? 'Otros'
+              : 'Alimentos'
     try {
       await upsertDraft({ category: cat, baseUnit: primaryBaseUnitForCategory(cat) })
       await savePatch({ category: dbCategory })
@@ -491,6 +515,22 @@ export function IngredientWizard({
             >
               Packaging
             </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handlePickCategory('Limpieza')}
+              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+            >
+              Limpieza
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handlePickCategory('Otros')}
+              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+            >
+              Otros
+            </button>
           </div>
           <div className="flex gap-2">
             <button
@@ -524,18 +564,46 @@ export function IngredientWizard({
         <div className="space-y-3">
           <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo lo cobra el proveedor?</div>
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('kilo')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
-              Por kilo
-            </button>
-            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('litro')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
-              Por litro
-            </button>
-            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('pack')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
-              Por pack
-            </button>
-            <button type="button" disabled={saving} onClick={() => handlePickHowCharged('unidad')} className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black">
-              Por unidad
-            </button>
+            {allowedHowChargedOptionsForCategory(draft.category).includes('kilo') && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => handlePickHowCharged('kilo')}
+                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+              >
+                Por kilo
+              </button>
+            )}
+            {allowedHowChargedOptionsForCategory(draft.category).includes('litro') && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => handlePickHowCharged('litro')}
+                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+              >
+                Por litro
+              </button>
+            )}
+            {allowedHowChargedOptionsForCategory(draft.category).includes('pack') && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => handlePickHowCharged('pack')}
+                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+              >
+                Por pack
+              </button>
+            )}
+            {allowedHowChargedOptionsForCategory(draft.category).includes('unidad') && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => handlePickHowCharged('unidad')}
+                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+              >
+                Por unidad
+              </button>
+            )}
           </div>
 
           {needsLiquidQuestion(draft.howCharged ?? 'kilo') &&
