@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
+import { isProbablyCatalan, parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
 
 export type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
 
@@ -88,25 +88,6 @@ export async function getLatestImportRuns(): Promise<{ success: true; runs: Part
     }
 
     return { success: true, runs }
-}
-
-export function isProbablyCatalan(s: string): boolean {
-    const t = (s || '').toLowerCase()
-    // Heurística simple (suficiente para fichas típicas)
-    return (
-        t.includes('netejar') ||
-        t.includes("d'aigua") ||
-        t.includes('aigua calenta') ||
-        t.includes('vaixella') ||
-        t.includes("l'esquerre") ||
-        t.includes('a l\'esquerre') ||
-        t.includes('tassa') ||
-        t.includes('cullereta') ||
-        t.includes('paletina') ||
-        t.includes('abocar') ||
-        t.includes('comprobar') || // mezcla frecuente en fichas
-        t.includes('hi ha')
-    )
 }
 
 export async function translateCaToEsIfNeeded(text: string): Promise<string> {

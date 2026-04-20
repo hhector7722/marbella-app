@@ -1,5 +1,24 @@
 import { normalizeRecipeImportUnit, type MassVolumeUnit } from '@/lib/recipe-cost'
 
+/** Heurística simple para detectar texto probablemente en catalán (fichas típicas). */
+export function isProbablyCatalan(s: string): boolean {
+  const t = (s || '').toLowerCase()
+  return (
+    t.includes('netejar') ||
+    t.includes("d'aigua") ||
+    t.includes('aigua calenta') ||
+    t.includes('vaixella') ||
+    t.includes("l'esquerre") ||
+    t.includes('a l\'esquerre') ||
+    t.includes('tassa') ||
+    t.includes('cullereta') ||
+    t.includes('paletina') ||
+    t.includes('abocar') ||
+    t.includes('comprobar') ||
+    t.includes('hi ha')
+  )
+}
+
 export function parseNum(v: unknown): number | null {
   if (v === undefined || v === null || v === '') return null
   if (typeof v === 'number') return Number.isFinite(v) ? v : null

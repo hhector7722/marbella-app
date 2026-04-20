@@ -1,7 +1,8 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { isProbablyCatalan, translateCaToEsIfNeeded } from '@/app/actions/import-legacy'
+import { isProbablyCatalan } from '@/lib/recipe-import-shared'
+import { translateCaToEsIfNeeded } from '@/app/actions/import-legacy'
 
 export async function translateCaToEsTextAction(input: { text: string }): Promise<{
   text: string
