@@ -278,7 +278,7 @@ export function CommandCard({
                                 title="Editar nota comanda"
                             >
                                 <Image
-                                    src="/icons/notas.png"
+                                    src="/icons/notas.svg"
                                     alt="Notas"
                                     width={34}
                                     height={34}
@@ -379,7 +379,13 @@ export function CommandCard({
                                                     className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
                                                     title="Editar nota artículo"
                                                 >
-                                                    <Image src="/icons/notas.png" alt="Notas" width={34} height={34} className={`${chromeCompleted ? 'opacity-45' : 'opacity-90'} drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]`} />
+                                                    <Image
+                                                        src="/icons/notas.svg"
+                                                        alt="Notas"
+                                                        width={34}
+                                                        height={34}
+                                                        className={cn(chromeCompleted ? 'opacity-45' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
+                                                    />
                                                 </button>
                                             ) : reserveLineNotesSlot ? (
                                                 <div
