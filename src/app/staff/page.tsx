@@ -203,8 +203,10 @@ export default function StaffDashboard() {
                 const staffData = currentWeek.staff[0];
                 if (staffData) {
                     totalHours = staffData.totalHours;
-                    totalExtraHours = staffData.overtimeHours;
-                    pendingHours = staffData.overtimeHours;
+                    // Extras: saldo semanal positivo (no acumulado)
+                    totalExtraHours = Math.max(0, Number(staffData.weeklyBalance ?? 0));
+                    // Pendiente: arrastre (pending_balance) desde semanas anteriores
+                    pendingHours = Number(staffData.startBalance ?? staffData.pendingBalance ?? 0);
                     estimatedPayout = staffData.totalCost;
                 }
             }
@@ -215,7 +217,7 @@ export default function StaffDashboard() {
                 pendingHours: pendingHours,
                 estimatedPayout: estimatedPayout,
                 status: 'pending',
-                startBalance: 0
+                startBalance: pendingHours
             });
 
             const { data: realShifts } = await supabase

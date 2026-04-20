@@ -28,6 +28,15 @@ function parseLocalYmd(ymd: string): Date {
     return new Date(y, m - 1, d);
 }
 
+/** Semana lun–dom cerrada: el domingo (lunes+6) es estrictamente anterior al día local de hoy. */
+function isPastCompletedWeek(weekMondayYmd: string): boolean {
+    const [y, m, d] = weekMondayYmd.split('-').map(Number);
+    const sunday = new Date(y, m - 1, d + 6);
+    const t = new Date();
+    const today0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    return sunday < today0;
+}
+
 // Fila de staff en el modal (réplica del dashboard)
 const StaffOvertimeRow = memo(({
     staff,
@@ -141,7 +150,6 @@ export default function OvertimePage() {
     const end = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start, end });
     const today = new Date();
-    const currentWeekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const rows: Date[][] = [];
     for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7));
     const rowWeekIds = rows.map(row => row[0] ? format(row[0], 'yyyy-MM-dd') : '');
@@ -233,7 +241,7 @@ export default function OvertimePage() {
                                     {/* Lista de semanas: misma fila "Semana N" + importe total a la derecha */}
                                     <div className="flex-1 min-w-0 flex flex-col gap-[2px] justify-center">
                                         {rowWeekIds.map((weekId) => {
-                                            if (weekId === currentWeekStart) {
+                                            if (!isPastCompletedWeek(weekId)) {
                                                 return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
                                             }
                                             const week = weeksData.find(w => w.weekId === weekId);

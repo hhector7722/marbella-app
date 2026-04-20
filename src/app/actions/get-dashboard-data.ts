@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
-import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
+import { getISOWeek, format, addDays, parseISO } from 'date-fns';
 import { getBusinessHourFromTicket } from '@/lib/utils';
 
 export async function getDashboardData() {
@@ -180,7 +180,8 @@ export async function getDashboardData() {
 
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
         p_start_date: sixtyDaysAgo,
-        p_end_date: todayISO
+        p_end_date: todayISO,
+        p_only_completed_weeks: true,
     });
 
     if (rpcError) {
@@ -203,11 +204,6 @@ export async function getDashboardData() {
                 initialPaidStatus[`${week.weekId}-${s.id}`] = s.isPaid;
             });
         });
-
-        // FILTRO DE SEMANA EN CURSO: Solo mostramos semanas finalizadas en el dashboard.
-        const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const toDateStr = (id: any) => typeof id === 'string' ? id.slice(0, 10) : String(id).slice(0, 10);
-        overtimeData = overtimeData.filter((week: any) => toDateStr(week.weekId) < currentWeekStart);
     }
 
     return {

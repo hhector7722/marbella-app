@@ -38,7 +38,8 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
         const { data, error } = await supabase.rpc('get_weekly_worker_stats', {
             p_start_date: startDate,
             p_end_date: endDate,
-            p_user_id: userId ?? null
+            p_user_id: userId ?? null,
+            p_only_completed_weeks: true,
         });
 
         if (error) {

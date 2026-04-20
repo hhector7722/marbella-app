@@ -1,11 +1,10 @@
 -- =================================================================
--- RPC: get_weekly_worker_stats (V5 - Lee final_balance del snapshot)
--- Usa el final_balance calculado por fn_recalc_and_propagate_snapshots.
--- totalCost sólo se muestra si el balance es positivo Y la semana es PAGO.
+-- FIX: get_weekly_worker_stats - exponer arrastre (pending_balance)
+--      y saldo semanal (balance_hours) para UI.
 -- =================================================================
 
 CREATE OR REPLACE FUNCTION public.get_weekly_worker_stats(
-    p_start_date date, 
+    p_start_date date,
     p_end_date date,
     p_user_id uuid DEFAULT NULL
 )
@@ -18,7 +17,7 @@ BEGIN
         FROM generate_series(p_start_date, p_end_date, '1 day'::interval) AS d
     ),
     weekly_user_logs AS (
-        SELECT 
+        SELECT
             date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date AS week_start,
             user_id,
             SUM(public.fn_round_marbella_hours(total_hours)) AS week_logs_sum
@@ -28,13 +27,16 @@ BEGIN
           AND (p_user_id IS NULL OR user_id = p_user_id)
         GROUP BY 1, 2
     ),
-    -- También incluir semanas con snapshot pero sin logs (semanas vacías con config manual)
     weeks_with_snapshots AS (
         SELECT DISTINCT s.week_start, s.user_id
         FROM public.weekly_snapshots s
         WHERE s.week_start IN (SELECT week_start FROM weeks_in_range)
           AND (p_user_id IS NULL OR s.user_id = p_user_id)
-          AND NOT EXISTS (SELECT 1 FROM weekly_user_logs wl WHERE wl.week_start = s.week_start AND wl.user_id = s.user_id)
+          AND NOT EXISTS (
+              SELECT 1
+              FROM weekly_user_logs wl
+              WHERE wl.week_start = s.week_start AND wl.user_id = s.user_id
+          )
     ),
     all_week_users AS (
         SELECT week_start, user_id, week_logs_sum FROM weekly_user_logs
@@ -42,20 +44,17 @@ BEGIN
         SELECT week_start, user_id, 0 FROM weeks_with_snapshots
     ),
     staff_stats AS (
-        SELECT 
+        SELECT
             wu.week_start,
             p.id as user_id,
             p.first_name || ' ' || COALESCE(p.last_name, '') as name,
             p.role,
             p.overtime_cost_per_hour as over_price,
-            -- prefer_stock: override semanal tiene prioridad
             COALESCE(s.prefer_stock_hours_override, p.prefer_stock_hours, false) as prefer_stock,
             COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0) as limit_hours,
             wu.week_logs_sum,
             COALESCE(s.is_paid, false) as is_paid,
-            -- Arrastre (pendientes) desde la semana anterior, calculado por propagación
             COALESCE(s.pending_balance, 0) as start_balance,
-            -- Saldo semanal (sin arrastre). Si no hay snapshot, se calcula con la regla estándar.
             COALESCE(
                 s.balance_hours,
                 CASE
@@ -64,11 +63,11 @@ BEGIN
                     ELSE (wu.week_logs_sum - COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0))
                 END
             ) as weekly_balance,
-            -- final_balance del snapshot (ya propagado correctamente por fn_recalc)
-            COALESCE(s.final_balance, 
-                CASE 
-                    WHEN extract(month from wu.week_start) = 8 OR p.role = 'manager' OR p.is_fixed_salary = true 
-                    THEN wu.week_logs_sum 
+            COALESCE(
+                s.final_balance,
+                CASE
+                    WHEN extract(month from wu.week_start) = 8 OR p.role = 'manager' OR p.is_fixed_salary = true
+                    THEN wu.week_logs_sum
                     ELSE (wu.week_logs_sum - COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0))
                 END
             ) as final_balance
@@ -77,7 +76,7 @@ BEGIN
         LEFT JOIN public.weekly_snapshots s ON wu.user_id = s.user_id AND wu.week_start = s.week_start
     ),
     formatted_staff AS (
-        SELECT 
+        SELECT
             week_start,
             jsonb_agg(
                 jsonb_build_object(
@@ -90,15 +89,14 @@ BEGIN
                     'startBalance', start_balance,
                     'weeklyBalance', weekly_balance,
                     'finalBalance', final_balance,
-                    -- totalCost: solo si balance positivo Y semana configurada como PAGO
                     'totalCost', CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END,
                     'regularCost', 0,
                     'overtimeCost', CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END,
                     'isPaid', is_paid,
                     'preferStock', prefer_stock,
-                    -- Back-compat: "pendingBalance" = arrastre (pendientes) desde semanas anteriores
                     'pendingBalance', start_balance
-                ) ORDER BY (CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END) DESC
+                )
+                ORDER BY (CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END) DESC
             ) as staff_list,
             SUM(CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END) as week_overtime_cost,
             SUM(CASE WHEN role = 'manager' THEN (limit_hours + week_logs_sum) ELSE week_logs_sum END) as week_total_hours
@@ -106,7 +104,7 @@ BEGIN
         GROUP BY week_start
     ),
     weeks_array AS (
-        SELECT 
+        SELECT
             jsonb_agg(
                 jsonb_build_object(
                     'weekId', week_start::text,
@@ -115,11 +113,12 @@ BEGIN
                     'totalAmount', week_overtime_cost,
                     'totalHours', week_total_hours,
                     'staff', staff_list
-                ) ORDER BY week_start DESC
+                )
+                ORDER BY week_start DESC
             ) as weeks
         FROM formatted_staff
     )
-    SELECT 
+    SELECT
         jsonb_build_object(
             'weeksResult', COALESCE((SELECT weeks FROM weeks_array), '[]'::jsonb),
             'summary', jsonb_build_object(
@@ -133,3 +132,4 @@ BEGIN
     RETURN v_result;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
