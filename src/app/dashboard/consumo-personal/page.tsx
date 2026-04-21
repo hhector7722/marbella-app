@@ -90,6 +90,17 @@ function firstNameOnly(full: string | null): string {
   return full.trim().split(/\s+/)[0] ?? '—';
 }
 
+/**
+ * Nombre de producto en desglose: sin prefijo "Consumo personal" / "consumo-personal"
+ * (el RPC ya quita parte del literal; esto cubre variantes y datos antiguos).
+ */
+function consumptionProductDisplayName(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '—';
+  const cleaned = t.replace(/^consumo\s*(-\s*)?personal\s*[:\-]?\s*/i, '').trim();
+  return cleaned || '—';
+}
+
 export default function ConsumoPersonalDashboardPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -297,7 +308,7 @@ export default function ConsumoPersonalDashboardPage() {
               total: Number((w as any).total) || 0,
               items: Array.isArray((w as any).items)
                 ? (w as any).items.map((it: any) => ({
-                    name: String(it?.name ?? ''),
+                    name: consumptionProductDisplayName(String(it?.name ?? '')),
                     amount: Number(it?.amount) || 0,
                   }))
                 : [],
@@ -337,8 +348,8 @@ export default function ConsumoPersonalDashboardPage() {
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl relative overflow-visible flex flex-col min-h-[85vh]">
-          <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0 overflow-visible">
+        <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
+          <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0">
             <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink min-w-0 truncate pr-2">
               Consumo personal
             </h1>
@@ -647,7 +658,7 @@ export default function ConsumoPersonalDashboardPage() {
                                 {w.items.map((it, idx) => (
                                   <div key={`${it.name}-${idx}`} className="flex items-center justify-between gap-2 py-1 border-b border-zinc-100 last:border-0">
                                     <div className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
-                                      {it.name || '—'}
+                                      {it.name}
                                     </div>
                                     <div className="shrink-0 text-[12px] font-black tabular-nums text-zinc-900">
                                       {formatEuroRead(it.amount)}
