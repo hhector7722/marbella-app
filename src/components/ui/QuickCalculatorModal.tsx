@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback } from 'react';
-import { X, Copy, Calculator, Delete, Minus, Plus, Banknote, Send } from 'lucide-react';
+import { X, Copy, Calculator, Delete, Minus, Plus, Banknote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
@@ -482,7 +482,12 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                             isSending && "opacity-60 cursor-not-allowed"
                                         )}
                                     >
-                                        <Send size={14} />
+                                        <img
+                                            src="/icons/whatsapp.png"
+                                            alt=""
+                                            className="w-[18px] h-[18px] object-contain shrink-0"
+                                            draggable={false}
+                                        />
                                         {isSending ? 'Generando…' : 'Enviar'}
                                     </button>
                                 </div>
