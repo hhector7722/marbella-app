@@ -152,9 +152,7 @@ export async function getPurchaseInvoiceDetailAction(
     .eq('id', id)
 
   if (!canViewAll) q = q.eq('created_by', gate.userId)
-  q = q.maybeSingle()
-
-  const { data, error } = await q
+  const { data, error } = await q.maybeSingle()
   if (error) return { success: false, message: error.message }
   if (!data) return { success: false, message: 'No encontrado o sin permiso' }
 
