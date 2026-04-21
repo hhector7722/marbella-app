@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -654,7 +655,19 @@ function RecipeDetailContent() {
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
             <div className="max-w-6xl mx-auto w-full flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden">
                 {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
-                <div className="bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
+                <div className="relative bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
+                    <Link
+                        href="/recipes"
+                        aria-label="Volver a recetas"
+                        className={cn(
+                            "absolute left-2 top-2 md:left-3 md:top-2",
+                            "w-12 h-12 flex items-center justify-center shrink-0",
+                            "text-white/70 hover:text-white active:scale-95 transition",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]"
+                        )}
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </Link>
                     <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
                         {/* Zona izquierda: nombre receta */}
                         <div className="min-w-0">
