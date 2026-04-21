@@ -51,6 +51,8 @@ function RecipeDetailContent() {
 
     const [isEditingPresentation, setIsEditingPresentation] = useState(false);
     const [presentationSteps, setPresentationSteps] = useState<string[]>([]);
+    const [savingElaboration, setSavingElaboration] = useState(false);
+    const [savingPresentation, setSavingPresentation] = useState(false);
 
     const [showIngredientModal, setShowIngredientModal] = useState(false);
     const [addIngredientUnit, setAddIngredientUnit] = useState<string>('kg');
@@ -434,9 +436,13 @@ function RecipeDetailContent() {
 
     // --- 5. UPDATES ---
     const updateRecipeField = async (field: string, value: any) => {
-        await supabase.from('recipes').update({ [field]: value }).eq('id', recipeId);
+        const { error } = await supabase.from('recipes').update({ [field]: value }).eq('id', recipeId);
+        if (error) {
+            toast.error(`No se pudo guardar (${field}): ${error.message}`);
+            throw error;
+        }
         setRecipe({ ...recipe, [field]: value });
-        toast.success('Actualizado');
+        toast.success('Guardado');
     };
 
     const handlePriceUpdate = async (newPrice: string) => {
@@ -568,6 +574,26 @@ function RecipeDetailContent() {
     const handleAddPresentationStep = () => setPresentationSteps([...presentationSteps, '']);
     const handleUpdatePresentationStep = (index: number, value: string) => {
         const n = [...presentationSteps]; n[index] = value; setPresentationSteps(n);
+    };
+
+    const handleSaveElaboration = async () => {
+        if (isRestricted) return;
+        setSavingElaboration(true);
+        try {
+            await updateTextDB('elaboration', elaborationSteps);
+        } finally {
+            setSavingElaboration(false);
+        }
+    };
+
+    const handleSavePresentation = async () => {
+        if (isRestricted) return;
+        setSavingPresentation(true);
+        try {
+            await updateTextDB('presentation', presentationSteps);
+        } finally {
+            setSavingPresentation(false);
+        }
     };
 
     const getHealthIndicator = (fc: number) => {
@@ -986,11 +1012,50 @@ function RecipeDetailContent() {
                                         {elaborationSteps.map((s, i) => (
                                             <div key={i} className="flex gap-1.5 items-center">
                                                 <input value={s} onChange={e => handleUpdateElaborationStep(i, e.target.value)} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none" />
-                                                <button onClick={() => { const n = [...elaborationSteps]; n.splice(i, 1); setElaborationSteps(n); updateTextDB('elaboration', n); }} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const n = [...elaborationSteps];
+                                                        n.splice(i, 1);
+                                                        setElaborationSteps(n);
+                                                        void updateTextDB('elaboration', n);
+                                                    }}
+                                                    className="p-1 text-gray-300 hover:text-rose-500"
+                                                    title="Eliminar paso"
+                                                >
+                                                    <X size={14} />
+                                                </button>
                                             </div>
                                         ))}
                                         <button onClick={handleAddElaborationStep} className="text-[10px] font-bold text-blue-500 w-full py-2 hover:bg-blue-50 rounded-lg transition-colors border border-dashed border-blue-200">+ Añadir paso</button>
-                                        <button onClick={() => setIsEditingElaboration(false)} className="block w-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-blue-600/20">Cerrar Edición</button>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveElaboration}
+                                                disabled={savingElaboration}
+                                                className="h-12 w-full bg-white text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-blue-50 active:scale-[0.99] disabled:opacity-60"
+                                            >
+                                                <span className="inline-flex items-center justify-center gap-2">
+                                                    <Save className="w-4 h-4" />
+                                                    {savingElaboration ? 'Guardando…' : 'Guardar'}
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    try {
+                                                        await handleSaveElaboration();
+                                                        setIsEditingElaboration(false);
+                                                    } catch {
+                                                        // si falla, mantenemos modo edición para que el usuario no pierda control
+                                                    }
+                                                }}
+                                                disabled={savingElaboration}
+                                                className="h-12 w-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60"
+                                            >
+                                                Cerrar (Guardar)
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <ul className="space-y-2">
@@ -1042,11 +1107,50 @@ function RecipeDetailContent() {
                                         {presentationSteps.map((s, i) => (
                                             <div key={i} className="flex gap-1.5 items-center">
                                                 <input value={s} onChange={e => handleUpdatePresentationStep(i, e.target.value)} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-emerald-500 outline-none" />
-                                                <button onClick={() => { const n = [...presentationSteps]; n.splice(i, 1); setPresentationSteps(n); updateTextDB('presentation', n); }} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const n = [...presentationSteps];
+                                                        n.splice(i, 1);
+                                                        setPresentationSteps(n);
+                                                        void updateTextDB('presentation', n);
+                                                    }}
+                                                    className="p-1 text-gray-300 hover:text-rose-500"
+                                                    title="Eliminar nota"
+                                                >
+                                                    <X size={14} />
+                                                </button>
                                             </div>
                                         ))}
                                         <button onClick={handleAddPresentationStep} className="text-[10px] font-bold text-emerald-500 w-full py-2 hover:bg-emerald-50 rounded-lg transition-colors border border-dashed border-emerald-200">+ Añadir nota</button>
-                                        <button onClick={() => setIsEditingPresentation(false)} className="block w-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-emerald-600/20">Cerrar Edición</button>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleSavePresentation}
+                                                disabled={savingPresentation}
+                                                className="h-12 w-full bg-white text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-emerald-50 active:scale-[0.99] disabled:opacity-60"
+                                            >
+                                                <span className="inline-flex items-center justify-center gap-2">
+                                                    <Save className="w-4 h-4" />
+                                                    {savingPresentation ? 'Guardando…' : 'Guardar'}
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    try {
+                                                        await handleSavePresentation();
+                                                        setIsEditingPresentation(false);
+                                                    } catch {
+                                                        // si falla, mantenemos modo edición para que el usuario no pierda control
+                                                    }
+                                                }}
+                                                disabled={savingPresentation}
+                                                className="h-12 w-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60"
+                                            >
+                                                Cerrar (Guardar)
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <ul className="space-y-2">
