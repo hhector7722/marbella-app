@@ -107,6 +107,7 @@ export default function StaffDashboardView() {
     const [showConsumptionModal, setShowConsumptionModal] = useState(false);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | 'carta' | null>(null);
+    const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
     const [preferStock, setPreferStock] = useState(false);
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
@@ -594,6 +595,7 @@ export default function StaffDashboardView() {
     );
 
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); setIsProductModalOpen(false); };
+    const closeManualsModal = () => setIsManualsModalOpen(false);
 
     if (loading) return (
         <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
@@ -970,6 +972,20 @@ export default function StaffDashboardView() {
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
                                         </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setInfoSubMenu(null);
+                                                setActiveMenu(null);
+                                                setIsManualsModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                                        >
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/guide.png" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Manuales</span>
+                                        </button>
                                     </div>
                                 )}
                                 {infoSubMenu === 'contactos' && (
@@ -1056,6 +1072,61 @@ export default function StaffDashboardView() {
                     </div>
                 )
             }
+
+            {isManualsModalOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-[115] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
+                    onClick={closeManualsModal}
+                >
+                    <div
+                        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-label="Manuales"
+                    >
+                        <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest">Manuales</h3>
+                            <button
+                                onClick={closeManualsModal}
+                                className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20 min-h-[48px] min-w-[48px]"
+                                aria-label="Cerrar manuales"
+                            >
+                                <X size={18} strokeWidth={3} />
+                            </button>
+                        </div>
+
+                        <div className="p-8 space-y-1 overflow-y-auto">
+                            {[
+                                { label: 'Check List', icon: '/icons/inventory.png' },
+                                { label: 'Tpv', icon: '/icons/pos.png' },
+                                { label: 'Altavoces', icon: '/icons/altav.png' },
+                                { label: 'Bebidas', icon: '/icons/ingrediente.png' },
+                                { label: 'Horno', icon: '/icons/horno.png' },
+                                { label: 'Cambios por Lluvia', icon: '/icons/lluvia.png' },
+                                { label: 'Acceso Cuadro Eléctrico', icon: '/icons/electrico.png' },
+                            ].map((item) => (
+                                <button
+                                    key={item.label}
+                                    onClick={() => toast.info('Pendiente de configurar destino')}
+                                    className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                                    type="button"
+                                >
+                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                        <Image
+                                            src={item.icon}
+                                            alt={item.label}
+                                            width={36}
+                                            height={36}
+                                            className="object-contain transition-transform group-hover:scale-110"
+                                        />
+                                    </div>
+                                    <span className="font-bold text-sm tracking-tight text-left">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <StaffProductModal
                 isOpen={isProductModalOpen}
