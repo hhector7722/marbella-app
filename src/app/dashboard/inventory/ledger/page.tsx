@@ -11,7 +11,7 @@ export default async function LedgerPage() {
 
   const { data: ingredients, error } = await supabase
     .from('ingredients')
-    .select('id, name, unit, stock_current, category')
+    .select('id, name, unit, stock_current, category, image_url, order_unit')
     .order('category', { ascending: true })
     .order('name', { ascending: true })
 
@@ -21,7 +21,8 @@ export default async function LedgerPage() {
     <DashboardDetailLayout
       title="Stock"
       subtitle="Historial de movimientos y trazabilidad por ingrediente"
-      maxWidthClass="max-w-6xl"
+      maxWidthClass="max-w-7xl"
+      className="pt-6 md:pt-8"
       rightSlot={
         <Link
           href="/dashboard/recetas-tpv"

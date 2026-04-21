@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-21 (Mermas: filas alineadas)
+**Última actualización:** 2026-04-21 (Inventario / Stock: UI alineada a Mermas)
+
+- [x] **Inventario `/dashboard/inventory` + auditoría `/dashboard/inventory/ledger`: diseño tipo Mermas (2026-04-21)**: Rejilla responsive con imagen `h-12 w-12`, nombre abreviado, buscador + filtro por categoría; recuento con `QuantityStepper` (misma caja que mermas); ledger con tarjetas seleccionables y caja de solo lectura para stock teórico; `max-w-7xl` + `pt-6 md:pt-8`; consultas con `image_url` / `order_unit`.
 
 - [x] **Mermas `/dashboard/inventory/waste`: filas uniformes (2026-04-21)**: Rejilla `items-stretch` + tarjetas `h-full`; zona imagen fija `h-14` (`h-12 w-12`); nombre una sola línea (`abbreviateLabel` + `truncate`, `title` con nombre completo); controles al fondo con `mt-auto` para alinear select/stepper entre columnas. Tarjeta `rounded-xl border-zinc-100 shadow-sm`.
 

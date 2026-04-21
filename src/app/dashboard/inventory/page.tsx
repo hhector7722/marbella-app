@@ -9,7 +9,7 @@ export default async function InventoryPage() {
 
   const { data: ingredients, error } = await supabase
     .from('ingredients')
-    .select('id, name, unit, stock_current, category')
+    .select('id, name, unit, stock_current, category, image_url, order_unit')
     .order('category', { ascending: true })
     .order('name', { ascending: true })
 
@@ -21,7 +21,8 @@ export default async function InventoryPage() {
     <DashboardDetailLayout
       title="Inventario"
       subtitle="Recuento físico: solo se registrarán las diferencias frente al stock teórico"
-      maxWidthClass="max-w-4xl"
+      maxWidthClass="max-w-7xl"
+      className="pt-6 md:pt-8"
     >
       <InventoryClient initialIngredients={ingredients || []} />
     </DashboardDetailLayout>
