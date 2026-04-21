@@ -347,7 +347,12 @@ export default function StaffDashboard() {
             // Rollback on any failure
             setStatus(prevStatus);
             setTodayLog(prevLog);
-            toast.error("Error al fichar");
+            const msg =
+                (error as any)?.message ||
+                (error as any)?.error_description ||
+                (error as any)?.details ||
+                "Error al fichar";
+            toast.error(msg);
         } finally {
             setActionLoading(false);
         }
