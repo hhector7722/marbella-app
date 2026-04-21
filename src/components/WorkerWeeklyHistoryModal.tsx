@@ -197,11 +197,14 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                            <div className="grid grid-cols-7">
+                        <div className="mb-4 relative z-0">
+                            <div className="grid grid-cols-7 gap-2">
                                 {weekData.days.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10 shadow-sm border-r border-white/30 last:border-r-0">
+                                    <div
+                                        key={i}
+                                        className="flex flex-col min-h-[108px] bg-white relative rounded-xl shadow-sm overflow-hidden"
+                                    >
+                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
                                         <div className="flex-1 p-1 flex flex-col items-stretch relative z-0 bg-white">
@@ -243,7 +246,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                 ))}
                             </div>
 
-                            <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
+                            <div className="mt-2 bg-white rounded-2xl shadow-sm flex items-center h-10 relative z-10 overflow-hidden">
                                 {weekData.summary.isPaid && (
                                     <img
                                         src="/sello/pagado.png"

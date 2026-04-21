@@ -10,6 +10,8 @@
 
 - [x] **Horas extras `/dashboard/overtime` (2026-04-19)**: Calendario mini más denso (`gap-[2px]`, celdas `w-6`/`md:w-7`). Cada fila de semana en una sola línea: icono + «Semana N» a la izquierda e **importe total semanal** alineado a la derecha; eliminado el rango de fechas en la lista (sigue en el modal). Parseo local `parseLocalYmd` para `weekId` en filas y cabecera del modal.
 
+- [x] **Horas extras detalle (modal semanal): calendario sin marco ni fondo gris (2026-04-21)**: En `WorkerWeeklyHistoryModal`, el grid de días deja de ir dentro de una “caja” con borde/sombra y pasa a 7 tarjetas sueltas (`gap`) para que floten directamente sobre el contenedor.
+
 - [x] **Staff dashboard: “Pendiente” ya no arrastra positivos (2026-04-20)**: Causa raíz: en `src/app/staff/page.tsx` se estaba mostrando `overtimeHours` (positivos de `final_balance`) como “Pendiente”. Solución: `get_weekly_worker_stats` ahora expone `startBalance`=`pending_balance` y `weeklyBalance`=`balance_hours`; el dashboard usa `startBalance` para “Pendiente” y `weeklyBalance` (positivo) para “Extras”. Migración `20260420160000_get_weekly_worker_stats_start_balance_weekly_balance.sql`.
 
 - [x] **Caja inicial `/dashboard/movements` (2026-04-19)**: Contenedor de tabla con esquinas superiores menos redondeadas (`rounded-t-lg` + `rounded-b-[1.5rem]`). Fila de periodo en grid 3 columnas: navegación mensual centrada; **Filtrar** visible de nuevo en `TimeFilterButton` + botón compartir alineados a la derecha. Columna **Concepto** más compacta (anchos/padding/texto truncado).
