@@ -346,12 +346,12 @@ export default function ConsumoPersonalDashboardPage() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+    <div className="bg-[#5B8FB9] p-4 md:p-6 pb-24">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
+        <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
           <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0">
             <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink min-w-0 truncate pr-2">
-              Consumo personal
+              Consumo staff
             </h1>
             <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
               <TimeFilterButton
@@ -386,7 +386,7 @@ export default function ConsumoPersonalDashboardPage() {
             </div>
           </div>
 
-          <div className="px-4 md:px-8 pt-3 pb-3 border-b border-zinc-100 shrink-0">
+          <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
             <div className="flex justify-center w-full">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
@@ -412,9 +412,9 @@ export default function ConsumoPersonalDashboardPage() {
             </div>
           </div>
 
-          <div className="p-4 md:p-8 flex-1 flex flex-col min-h-0">
-            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 border-y border-gray-50 shrink-0 min-w-0">
-              <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+          <div className="p-4 md:p-8 flex flex-col">
+            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
+              <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                   Importe
                 </span>
@@ -433,12 +433,12 @@ export default function ConsumoPersonalDashboardPage() {
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 flex-1">
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <LoadingSpinner size="lg" className="text-[#36606F]" />
               </div>
             ) : (
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="p-0 md:p-1 overflow-x-auto no-scrollbar flex-1">
+              <div className="flex flex-col">
+                <div className="p-0 md:p-1 overflow-x-auto no-scrollbar">
                   <div className="min-w-0">
                     <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
                       {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useLayoutEffect, useEffect, useCallback, useRef, type ReactNode } from 'react';
-import { useKDSv2 as useKDS } from '@/hooks/useKDSv2';
+import { useKDS } from '@/hooks/useKDS';
 import { useKdsNotificationSound } from '@/hooks/useKdsNotificationSound';
 import { CommandCard } from './CommandCard';
 import { Loader2, Package, ListChecks, Check, X, RefreshCw, Volume2, VolumeX } from 'lucide-react';

@@ -512,7 +512,7 @@ export default function LaborHistoryPage() {
                         </div>
                     </div>
 
-                    <div className="px-4 md:px-8 pt-3 pb-3 border-b border-zinc-100 shrink-0">
+                    <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
                         <div className="flex justify-center w-full">
                             <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                                 <button
@@ -539,8 +539,8 @@ export default function LaborHistoryPage() {
                     </div>
 
                     <div className="p-4 md:p-8 flex flex-col">
-                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-4 py-2 border-y border-gray-50 shrink-0 min-w-0">
-                            <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
+                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Coste
                                 </span>
@@ -548,7 +548,7 @@ export default function LaborHistoryPage() {
                                     {summary ? formatEuroRead(summary.totalCost) : ' '}
                                 </span>
                             </div>
-                            <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Fijo
                                 </span>
@@ -556,7 +556,7 @@ export default function LaborHistoryPage() {
                                     {summary ? formatEuroRead(summary.totalFixed) : ' '}
                                 </span>
                             </div>
-                            <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Extras
                                 </span>
