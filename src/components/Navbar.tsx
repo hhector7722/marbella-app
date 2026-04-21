@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MessageSquare, ChevronLeft, Plus } from 'lucide-react';
+import { MessageSquare, ChevronLeft } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
-import CashClosingModal from './CashClosingModal';
 import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +13,6 @@ export default function Navbar() {
     const router = useRouter();
     const supabase = createClient();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
-    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
     // ANÁLISIS CRÍTICO: Tienes esta función de Zustand activada en el botón.
     const toggleChat = useAIStore((state) => state.toggleChat);
@@ -59,9 +57,6 @@ export default function Navbar() {
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
     const homePath = isAdminMode || userData?.role === 'manager' ? '/dashboard' : '/staff/dashboard';
 
-    const showClosureButton = pathname === '/staff/dashboard' &&
-        (userData?.role === 'manager' || userData?.is_supervisor === true || userData?.role === 'supervisor');
-
     return (
         <>
             <nav
@@ -97,18 +92,6 @@ export default function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-3">
-                        {showClosureButton && (
-                            <button
-                                onClick={() => setIsClosingModalOpen(true)}
-                                className="flex items-center gap-2 px-3 h-8 bg-transparent hover:bg-white/5 text-white rounded-xl transition-all active:scale-95 group"
-                            >
-                                <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                    <Plus size={14} strokeWidth={4} className="text-white" />
-                                </div>
-                                <span className="text-[10px] font-black tracking-widest uppercase">Cierre</span>
-                            </button>
-                        )}
-
                         {userData?.role === 'manager' && (
                             <button
                                 onClick={() => router.push(isAdminMode ? '/staff/dashboard' : '/dashboard')}
@@ -137,11 +120,6 @@ export default function Navbar() {
                     </div>
                 </div>
             </nav>
-
-            <CashClosingModal
-                isOpen={isClosingModalOpen}
-                onClose={() => setIsClosingModalOpen(false)}
-            />
         </>
     );
 }

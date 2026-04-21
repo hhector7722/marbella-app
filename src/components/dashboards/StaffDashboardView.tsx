@@ -1240,6 +1240,22 @@ export default function StaffDashboardView() {
                                                 <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
                                             </div>
                                         </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setIsCashOptionsModalOpen(false);
+                                                setIsClosingModalOpen(true);
+                                            }}
+                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                                <Image src="/icons/lock.png" alt="Cierre" width={48} height={48} className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="flex flex-col text-left">
+                                                <span className="font-black text-gray-800 uppercase tracking-wide">Cierre</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Cerrar caja y registrar el arqueo</span>
+                                            </div>
+                                        </button>
                                     </>
                                 ) : (
                                     <div className="flex flex-col gap-2">
