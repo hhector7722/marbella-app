@@ -4,19 +4,14 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-async function gateManager() {
+async function gateAuthenticated() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { ok: false as const, message: 'No autenticado', supabase: null }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'manager' && profile?.role !== 'admin') {
-    return { ok: false as const, message: 'Sin permiso (solo gestión)', supabase: null }
-  }
-
-  return { ok: true as const, supabase }
+  return { ok: true as const, supabase, userId: user.id }
 }
 
 export type ProcessScannerImageResult =
@@ -28,9 +23,10 @@ export type ProcessScannerImageResult =
 
 export async function processScannerImage(base64DataUri: string, filename: string): Promise<ProcessScannerImageResult> {
   try {
-    const gate = await gateManager()
+    const gate = await gateAuthenticated()
     if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
     const supabase = gate.supabase
+    const userId = gate.userId
 
     // Separar el mime_type y los datos raw
     const matches = base64DataUri.match(/^data:([A-Za-z0-9.+-\/]+);base64,(.+)$/)
@@ -40,19 +36,6 @@ export async function processScannerImage(base64DataUri: string, filename: strin
     const rawBase64 = matches[2]
     const buffer = Buffer.from(rawBase64, 'base64')
     const contentSha256 = createHash('sha256').update(buffer).digest('hex')
-
-    const { data: dupByHash, error: dupByHashError } = await supabase
-      .from('purchase_invoices')
-      .select('id')
-      .eq('content_sha256', contentSha256)
-      .maybeSingle()
-    if (dupByHashError) {
-      console.error('Scanner dupByHash error:', dupByHashError)
-      return { success: false, message: 'Error comprobando duplicados (hash). Reintenta en unos segundos.' }
-    }
-    if (dupByHash?.id) {
-      return { success: false, message: 'Este documento ya fue subido (misma imagen). No se duplica el stock.' }
-    }
 
     const geminiKey = process.env.GEMINI_API_KEY
     if (!geminiKey) return { success: false, message: 'GEMINI_API_KEY no configurada' }
@@ -124,29 +107,38 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
       }
     }
 
-    if (matchedSupplierId != null && invoiceNum !== 'DESCONOCIDO') {
-      const { data: dupLogical, error: dupLogicalError } = await supabase
-        .from('purchase_invoices')
-        .select('id')
-        .eq('supplier_id', matchedSupplierId)
-        .eq('invoice_number', invoiceNum)
-        .eq('invoice_date', invoiceDateStr)
-        .maybeSingle()
-      if (dupLogicalError) {
-        console.error('Scanner dupLogical error:', dupLogicalError)
-        return { success: false, message: 'Error comprobando duplicados (proveedor+número+fecha).' }
-      }
-      if (dupLogical?.id) {
-        return {
-          success: false,
-          message:
-            'Ya consta un albarán con el mismo proveedor, número y fecha. Si es otra entrega, revisa la foto o el número en el documento.',
+    // 2b) Duplicados (hash + semántico) con función SECURITY DEFINER (no requiere SELECT global)
+    try {
+      const { data: dupData, error: dupFnError } = await supabase.rpc('check_purchase_invoice_duplicate', {
+        p_content_sha256: contentSha256,
+        p_supplier_id: matchedSupplierId,
+        p_invoice_number: invoiceNum !== 'DESCONOCIDO' ? invoiceNum : null,
+        p_invoice_date: invoiceNum !== 'DESCONOCIDO' ? invoiceDateStr : null,
+      })
+      if (dupFnError) {
+        console.error('Scanner duplicate RPC error:', dupFnError)
+      } else {
+        const dupByHash = Boolean((dupData as any)?.dup_by_hash)
+        const dupBySemantic = Boolean((dupData as any)?.dup_by_semantic)
+
+        if (dupByHash) {
+          return { success: false, message: 'Este documento ya fue subido (misma imagen). No se duplica el stock.' }
+        }
+        if (dupBySemantic) {
+          return {
+            success: false,
+            message:
+              'Ya consta un albarán con el mismo proveedor, número y fecha. Si es otra entrega, revisa la foto o el número en el documento.',
+          }
         }
       }
+    } catch (e) {
+      console.error('Scanner duplicate RPC unexpected error:', e)
     }
 
     // 3. Subir a Storage
-    const filePath = `${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_scanner_${filename}`
+    // IMPORTANTE (RLS Storage): subimos dentro de una carpeta por usuario `${auth.uid()}/...`
+    const filePath = `${userId}/${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_scanner_${filename}`
 
     const { error: uploadError } = await supabase.storage.from('albaranes').upload(filePath, buffer, {
       contentType: mimeType,
@@ -157,6 +149,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     const { data: invoice, error: invoiceError } = await supabase
       .from('purchase_invoices')
       .insert({
+        created_by: userId,
         supplier_id: matchedSupplierId,
         invoice_number: invoiceNum,
         invoice_date: invoiceDateStr,
