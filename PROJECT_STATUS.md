@@ -21,6 +21,7 @@
 - [x] **Ventas `/dashboard/ventas`: cabecera compacta (2026-04-19)**: Misma estructura que `/dashboard/history` — barra petróleo `p-1.5 md:p-3`, título `text-xs md:text-sm`, navegación fecha centrada con chevrons 16px, `TimeFilterButton` a la derecha; contenedor `max-w-5xl`, tarjeta `rounded-2xl`, KPIs con tipografía alineada a History. Texto de fecha sin `truncate`/ancho mínimo que cortaba el mes; rango mensual con `parseLocalSafe` para mes/año.
 
 - [x] **KDS: notas TPV + cocina en una fila (2026-04-20)**: `combinedLineNotesForDisplay` ya no inserta salto de línea entre ambas; se unen con ` · ` para que no aparezcan en filas separadas en tarjeta ni resumen.
+- [x] **KDS: restaurar guardado/visualización notas comanda y artículo (2026-04-21)**: La vista KDS volvió a usar `useKDS` (v1) para que las notas editadas desde cocina vuelvan a persistir (`kds_orders.notas_comanda` y `kds_order_lines.notas_cocina`). Además, el webhook de telemetría normaliza y acepta alias de campos para no perder `notas_comanda` ni `notas` por línea.
 
 - [x] **KDS cabecera aust: tiempo compacto + pastilla indicadora (2026-04-19)**: `CommandCard` muestra tiempo transcurrido en minúsculas (`45m` si 0 h, `1h 30m` si hay horas y minutos; espacio entre `h` y minutos). Pastilla propia sin borde: fondo verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto blanco. Comandas finalizadas: pastilla gris.
 
