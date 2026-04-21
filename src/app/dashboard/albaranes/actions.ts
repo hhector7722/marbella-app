@@ -150,9 +150,9 @@ export async function getPurchaseInvoiceDetailAction(
     `
     )
     .eq('id', id)
-    .maybeSingle()
 
   if (!canViewAll) q = q.eq('created_by', gate.userId)
+  q = q.maybeSingle()
 
   const { data, error } = await q
   if (error) return { success: false, message: error.message }
