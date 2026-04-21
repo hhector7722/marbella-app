@@ -131,7 +131,12 @@ export function ConsumptionModal({
         quantity: c.quantity,
         is_half: c.is_half,
       }));
-      await submitPersonalConsumption(payload);
+      const res = await submitPersonalConsumption(payload);
+      if (!res?.success) {
+        toast.error(res?.message || 'Error al registrar consumo');
+        setIsSubmitting(false);
+        return;
+      }
       await Promise.resolve(onConfirm());
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al registrar consumo';
