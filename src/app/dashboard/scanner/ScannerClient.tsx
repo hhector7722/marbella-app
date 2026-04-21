@@ -57,7 +57,13 @@ export function ScannerClient() {
       setMessageTone('info')
       setMessage('Foto correcta. Enviando…')
 
-      await processScannerImage(dataUri, file.name.replace(/\.[^/.]+$/, '') + '.jpg')
+      const res = await processScannerImage(dataUri, file.name.replace(/\.[^/.]+$/, '') + '.jpg')
+      if (!res?.success) {
+        setMessageTone('error')
+        setMessage(res?.message || 'No se pudo procesar. Repite la foto.')
+        setPreview(null)
+        return
+      }
 
       setMessageTone('success')
       setMessage('OK. Albarán recibido.')
