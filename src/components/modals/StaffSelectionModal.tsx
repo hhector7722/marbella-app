@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Banknote } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 
@@ -69,9 +69,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                             <button
                                 type="button"
                                 onClick={onOpenTips}
-                                className="inline-flex items-center justify-center gap-1.5 min-h-[48px] h-10 px-3 rounded-2xl bg-white/10 hover:bg-white/20 text-[9px] font-black uppercase tracking-widest border border-white/20 active:scale-95 transition-all shrink-0"
+                                className="inline-flex items-center justify-center min-h-[48px] h-10 px-2 rounded-2xl bg-transparent border-0 text-[9px] font-black uppercase tracking-widest text-white/90 hover:text-white active:scale-95 transition-all shrink-0"
                             >
-                                <Banknote className="w-4 h-4 shrink-0" />
                                 Propinas
                             </button>
                         )}
