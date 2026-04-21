@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Camera, Loader2 } from 'lucide-react'
+import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { processScannerImage } from './actions'
 import { cn } from '@/lib/utils'
 
@@ -45,10 +46,18 @@ export function ScannerClient() {
       const dataUri = await compressImage(file)
       setPreview(dataUri)
 
+      const q = await assessScannerImageReadability(dataUri)
+      if (!q.ok) {
+        toast.error(q.message)
+        setPreview(null)
+        return
+      }
+      toast.success('Foto correcta — enviando al servidor…')
+
       toast.info('Extrayendo datos con IA…')
       await processScannerImage(dataUri, file.name.replace(/\.[^/.]+$/, '') + '.jpg')
 
-      toast.success('Albarán procesado con éxito')
+      toast.success('Albarán registrado. El mapeo de líneas y stock se puede completar después.')
       setPreview(null)
     } catch (error: any) {
       toast.error(error?.message || 'Error al procesar')
@@ -100,7 +109,7 @@ export function ScannerClient() {
       )}
 
       <p className="text-gray-400 text-sm text-center max-w-xs">
-        Usa esta herramienta al recibir la mercancía para inyectar el stock físico al instante.
+        Al recibir mercancía: la app comprueba que la foto sea legible, registra el albarán y evita duplicar la misma imagen o el mismo documento (proveedor + número + fecha).
       </p>
     </div>
   )

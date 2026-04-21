@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -32,6 +33,21 @@ export async function POST(req: Request) {
             return NextResponse.json(
                 { error: 'Configuración de API Gemini incompleta' },
                 { status: 500 }
+            );
+        }
+
+        const supabase = createClient(supabaseUrl, serviceRoleKey);
+        const buffer = Buffer.from(fileBase64, 'base64');
+        const contentSha256 = createHash('sha256').update(buffer).digest('hex');
+        const { data: dupByHash } = await supabase
+            .from('purchase_invoices')
+            .select('id')
+            .eq('content_sha256', contentSha256)
+            .maybeSingle();
+        if (dupByHash?.id) {
+            return NextResponse.json(
+                { error: 'Documento duplicado (mismo fichero ya registrado).' },
+                { status: 409 }
             );
         }
 
@@ -95,27 +111,11 @@ export async function POST(req: Request) {
             );
         }
 
-        // 3. Conexión a Base de Datos (Bypass de RLS para escritura)
-        const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-        // 4. Subida al Bucket Privado 'albaranes'
-        const buffer = Buffer.from(fileBase64, 'base64');
         const d = new Date();
-        const filePath = `${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_${filename}`;
 
-        const { error: uploadError } = await supabase.storage
-            .from('albaranes')
-            .upload(filePath, buffer, { contentType: 'application/pdf' });
-
-        if (uploadError) {
-            console.error('Webhook Albaranes: error subida Storage', uploadError);
-            throw uploadError;
-        }
-
-        // 4.5. Búsqueda de Coincidencia de Proveedor (Automatización)
+        // 3. Coincidencia de proveedor y duplicado lógico (antes de subir el PDF a Storage)
         let matchedSupplierId = null;
         if (aiData.proveedor) {
-            // Buscamos los primeros 10 caracteres del proveedor extraído
             const searchTerm = aiData.proveedor.substring(0, 10).trim();
             if (searchTerm.length > 0) {
                 const { data: supplierMatch, error: supplierError } = await supabase
@@ -131,16 +131,55 @@ export async function POST(req: Request) {
             }
         }
 
+        const invoiceNumRaw = String(aiData.numero_factura ?? '').trim();
+        const invoiceNum = invoiceNumRaw || 'DESCONOCIDO';
+        const invoiceDateStr =
+            typeof aiData.fecha === 'string' && aiData.fecha.trim()
+                ? aiData.fecha.trim()
+                : d.toISOString().split('T')[0];
+
+        if (matchedSupplierId != null && invoiceNum !== 'DESCONOCIDO') {
+            const { data: dupLogical } = await supabase
+                .from('purchase_invoices')
+                .select('id')
+                .eq('supplier_id', matchedSupplierId)
+                .eq('invoice_number', invoiceNum)
+                .eq('invoice_date', invoiceDateStr)
+                .maybeSingle();
+            if (dupLogical?.id) {
+                return NextResponse.json(
+                    {
+                        error:
+                            'Ya consta un albarán con el mismo proveedor, número y fecha (documento duplicado).',
+                    },
+                    { status: 409 }
+                );
+            }
+        }
+
+        // 4. Subida al Bucket Privado 'albaranes'
+        const filePath = `${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('albaranes')
+            .upload(filePath, buffer, { contentType: 'application/pdf' });
+
+        if (uploadError) {
+            console.error('Webhook Albaranes: error subida Storage', uploadError);
+            throw uploadError;
+        }
+
         // 5. Inserción de la Cabecera de la Factura
         const { data: invoice, error: invoiceError } = await supabase
             .from('purchase_invoices')
             .insert({
                 supplier_id: matchedSupplierId,
-                invoice_number: aiData.numero_factura ?? 'DESCONOCIDO',
-                invoice_date: aiData.fecha ?? d.toISOString().split('T')[0],
+                invoice_number: invoiceNum,
+                invoice_date: invoiceDateStr,
                 total_amount: aiData.total ?? 0,
                 file_path: filePath,
-                status: 'pending_mapping'
+                status: 'pending_mapping',
+                content_sha256: contentSha256,
             })
             .select('id')
             .single();

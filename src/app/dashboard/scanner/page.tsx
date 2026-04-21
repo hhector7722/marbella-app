@@ -7,7 +7,7 @@ export default function ScannerPage() {
   return (
     <DashboardDetailLayout
       title="Escáner"
-      subtitle="Captura el albarán: se optimiza la imagen y se procesa con IA"
+      subtitle="Foto del albarán: comprobación rápida de nitidez, registro y deduplicación si ya existía la misma imagen o el mismo documento"
       maxWidthClass="max-w-lg"
     >
       <ScannerClient />

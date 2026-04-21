@@ -1,5 +1,6 @@
 'use server'
 
+import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -29,6 +30,17 @@ export async function processScannerImage(base64DataUri: string, filename: strin
 
   const mimeType = matches[1]
   const rawBase64 = matches[2]
+  const buffer = Buffer.from(rawBase64, 'base64')
+  const contentSha256 = createHash('sha256').update(buffer).digest('hex')
+
+  const { data: dupByHash } = await supabase
+    .from('purchase_invoices')
+    .select('id')
+    .eq('content_sha256', contentSha256)
+    .maybeSingle()
+  if (dupByHash?.id) {
+    throw new Error('Este documento ya fue subido (misma imagen). No se duplica el stock.')
+  }
 
   const geminiKey = process.env.GEMINI_API_KEY
   if (!geminiKey) throw new Error('GEMINI_API_KEY no configurada')
@@ -78,18 +90,13 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     throw new Error('JSON inválido de Gemini')
   }
 
-  // 2. Subir a Storage
-  const buffer = Buffer.from(rawBase64, 'base64')
+  // 2. Duplicado lógico (mismo proveedor + número + fecha) — antes de gastar Storage
   const d = new Date()
-  const filePath = `${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_scanner_${filename}`
+  const invoiceDateStr = typeof aiData?.fecha === 'string' && aiData.fecha.trim() ? aiData.fecha.trim() : d.toISOString().split('T')[0]
+  const invoiceNumRaw = String(aiData?.numero_factura ?? '').trim()
+  const invoiceNum = invoiceNumRaw || 'DESCONOCIDO'
 
-  const { error: uploadError } = await supabase.storage.from('albaranes').upload(filePath, buffer, {
-    contentType: mimeType,
-  })
-  if (uploadError) throw new Error(`Error Storage: ${uploadError.message}`)
-
-  // 3. Buscar Proveedor
-  let matchedSupplierId = null
+  let matchedSupplierId: number | null = null
   if (aiData?.proveedor) {
     const searchTerm = String(aiData.proveedor).substring(0, 10).trim()
     if (searchTerm) {
@@ -103,22 +110,52 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     }
   }
 
+  if (matchedSupplierId != null && invoiceNum !== 'DESCONOCIDO') {
+    const { data: dupLogical } = await supabase
+      .from('purchase_invoices')
+      .select('id')
+      .eq('supplier_id', matchedSupplierId)
+      .eq('invoice_number', invoiceNum)
+      .eq('invoice_date', invoiceDateStr)
+      .maybeSingle()
+    if (dupLogical?.id) {
+      throw new Error(
+        'Ya consta un albarán con el mismo proveedor, número y fecha. Si es otra entrega, revisa la foto o el número en el documento.'
+      )
+    }
+  }
+
+  // 3. Subir a Storage
+  const filePath = `${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_scanner_${filename}`
+
+  const { error: uploadError } = await supabase.storage.from('albaranes').upload(filePath, buffer, {
+    contentType: mimeType,
+  })
+  if (uploadError) throw new Error(`Error Storage: ${uploadError.message}`)
+
   // 4. Insertar Cabecera (CRÍTICO: source = 'scanner')
   const { data: invoice, error: invoiceError } = await supabase
     .from('purchase_invoices')
     .insert({
       supplier_id: matchedSupplierId,
-      invoice_number: aiData?.numero_factura || 'DESCONOCIDO',
-      invoice_date: aiData?.fecha || d.toISOString().split('T')[0],
+      invoice_number: invoiceNum,
+      invoice_date: invoiceDateStr,
       total_amount: aiData?.total || 0,
       file_path: filePath,
       status: 'pending_mapping',
       source: 'scanner',
+      content_sha256: contentSha256,
     })
     .select('id')
     .single()
 
-  if (invoiceError || !invoice) throw new Error('Error al guardar la cabecera')
+  if (invoiceError || !invoice) {
+    const msg = invoiceError?.message ?? ''
+    if (msg.includes('duplicate') || msg.includes('unique') || (invoiceError as { code?: string })?.code === '23505') {
+      throw new Error('Este documento ya fue registrado (duplicado). No se duplica el stock.')
+    }
+    throw new Error('Error al guardar la cabecera')
+  }
 
   // 5. Insertar Líneas
   if (Array.isArray(aiData?.lineas) && aiData.lineas.length > 0) {
