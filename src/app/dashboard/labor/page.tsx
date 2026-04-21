@@ -485,6 +485,7 @@ export default function LaborHistoryPage() {
                                 onClick={() => setIsTimeFilterOpen(true)}
                                 hasActiveFilter={filterActive}
                                 onClear={clearTimeFilter}
+                                buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
                             />
                             <div className="relative shrink-0">
                                 <button
