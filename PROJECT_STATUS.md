@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-21 (Horas extras: solo semanas cerradas)
+**Última actualización:** 2026-04-21 (Mermas: filas alineadas)
+
+- [x] **Mermas `/dashboard/inventory/waste`: filas uniformes (2026-04-21)**: Rejilla `items-stretch` + tarjetas `h-full`; zona imagen fija `h-14` (`h-12 w-12`); nombre una sola línea (`abbreviateLabel` + `truncate`, `title` con nombre completo); controles al fondo con `mt-auto` para alinear select/stepper entre columnas. Tarjeta `rounded-xl border-zinc-100 shadow-sm`.
 
 - [x] **Horas extras: no listar semanas abiertas ni futuras (2026-04-21)**: La RPC `get_weekly_worker_stats` incluía cualquier lunes tocado por el mes (p. ej. semana 27 abr–3 may) y filas solo-snapshot; `get-dashboard-data` filtraba solo `weekId < lunes actual` y no excluía semanas futuras. Añadido `p_only_completed_weeks` (domingo de la semana &lt; hoy en Madrid); `getOvertimeData` y `getDashboardData` lo activan. Vista `/dashboard/overtime` oculta filas de semanas no cerradas con la misma regla en cliente. Migración `20260421120000_get_weekly_worker_stats_only_completed_weeks.sql`.
 

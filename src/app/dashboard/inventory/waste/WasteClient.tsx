@@ -85,6 +85,14 @@ function roundQty(n: number, unit: string): number {
   return Math.max(0, Number(f.toFixed(decimals)))
 }
 
+/** Una sola línea en rejilla: acorta con puntos suspensivos (título muestra el nombre completo). */
+function abbreviateLabel(name: string, maxChars = 22): string {
+  const t = name.replace(/\s+/g, ' ').trim()
+  if (t.length <= maxChars) return t
+  const cut = Math.max(8, maxChars - 1)
+  return `${t.slice(0, cut)}…`
+}
+
 function parseQuantity(raw: string, unit: string): number {
   const t = raw.replace(',', '.').trim()
   if (t === '') return 0
@@ -224,24 +232,29 @@ function RecipeWasteCard({
   onRawChange: (s: string) => void
   onBlur: () => void
 }) {
+  const label = abbreviateLabel(recipe.name)
   return (
-    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible pt-12">
-      <div className="absolute left-1/2 top-1 -translate-x-1/2 w-14 h-14 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
+    <div
+      className={cn(
+        'flex h-full min-h-0 flex-col rounded-xl border border-zinc-100 bg-white shadow-sm overflow-hidden',
+      )}
+    >
+      <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
         {recipe.photo_url ? (
           <img src={recipe.photo_url} alt="" className="h-12 w-12 object-contain" />
         ) : (
           <ChefHat className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
         )}
       </div>
-      <div className="flex flex-col items-center px-2 pt-2 pb-1">
+      <div className="shrink-0 h-10 px-2 flex items-center justify-center min-w-0">
         <span
-          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2"
+          className="w-full min-w-0 text-center text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 whitespace-nowrap overflow-hidden text-ellipsis"
           title={recipe.name}
         >
-          {recipe.name}
+          {label}
         </span>
       </div>
-      <div className="shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
+      <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
         <label className="sr-only">Cantidad merma {recipe.name}</label>
         <QuantityStepper
           unit="ud"
@@ -277,24 +290,29 @@ function IngredientWasteCard({
   onBlur: () => void
   onUnitChange: (u: string) => void
 }) {
+  const label = abbreviateLabel(item.name)
   return (
-    <div className="relative flex flex-col bg-transparent rounded-2xl overflow-visible pt-12">
-      <div className="absolute left-1/2 top-1 -translate-x-1/2 w-14 h-14 rounded-2xl bg-transparent flex items-center justify-center pointer-events-none">
+    <div
+      className={cn(
+        'flex h-full min-h-0 flex-col rounded-xl border border-zinc-100 bg-white shadow-sm overflow-hidden',
+      )}
+    >
+      <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
         {item.image_url ? (
           <img src={item.image_url} alt="" className="h-12 w-12 object-contain" />
         ) : (
           <Package className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
         )}
       </div>
-      <div className="flex flex-col items-center px-2 pt-2 pb-1">
+      <div className="shrink-0 h-10 px-2 flex items-center justify-center min-w-0">
         <span
-          className="text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 leading-tight w-full text-center line-clamp-2"
+          className="w-full min-w-0 text-center text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 whitespace-nowrap overflow-hidden text-ellipsis"
           title={item.name}
         >
-          {item.name}
+          {label}
         </span>
       </div>
-      <div className="shrink-0 px-2 pb-2 pt-0 flex flex-col gap-1.5 items-stretch w-full">
+      <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col gap-1.5 items-stretch w-full">
         <WasteUnitSelect
           value={wasteUnit}
           ingredientUnit={item.unit}
@@ -627,7 +645,7 @@ export function WasteClient({
             {filteredRecipes.length === 0 ? (
               <p className="text-sm text-zinc-500 text-center py-8">No hay recetas que coincidan.</p>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-start justify-items-stretch">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
                 {filteredRecipes.map((r) => (
                   <RecipeWasteCard
                     key={r.id}
@@ -729,7 +747,7 @@ export function WasteClient({
               Object.entries(grouped).map(([category, items]) => (
                 <section key={category} className="flex flex-col gap-3 shrink-0">
                   <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-start justify-items-stretch">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
                     {items.map((item) => {
                       const wu = normalizeWasteUnit(wasteUnits[item.id] ?? item.unit)
                       const numeric = amounts[item.id] ?? 0
