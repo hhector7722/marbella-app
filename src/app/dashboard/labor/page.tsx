@@ -577,7 +577,7 @@ export default function LaborHistoryPage() {
                                 <LoadingSpinner size="lg" className="text-[#36606F]" />
                             </div>
                         ) : (
-                            <div className="bg-[#EFEDED] rounded-2xl border border-zinc-100 shadow-inner overflow-hidden flex-1 flex flex-col min-h-0">
+                            <div className="bg-transparent border-0 shadow-none overflow-visible flex-1 flex flex-col min-h-0">
                                 <div className="p-1 md:p-3 overflow-x-auto no-scrollbar flex-1">
                                     <div className="min-w-0">
                                         <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
