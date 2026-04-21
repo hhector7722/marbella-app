@@ -473,9 +473,9 @@ export default function LaborHistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+        <div className="bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
+                <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
                     <div className="bg-[#36606F] px-4 md:px-8 py-5 flex items-center justify-between gap-2 shrink-0">
                         <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink-0 min-w-0">
                             Coste laboral
@@ -538,7 +538,7 @@ export default function LaborHistoryPage() {
                         </div>
                     </div>
 
-                    <div className="p-4 md:p-8 flex-1 flex flex-col min-h-0">
+                    <div className="p-4 md:p-8 flex flex-col">
                         <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-4 py-2 border-y border-gray-50 shrink-0 min-w-0">
                             <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
@@ -573,12 +573,12 @@ export default function LaborHistoryPage() {
                         </div>
 
                         {loading ? (
-                            <div className="flex flex-col items-center justify-center py-20 gap-4 flex-1">
+                            <div className="flex flex-col items-center justify-center py-20 gap-4">
                                 <LoadingSpinner size="lg" className="text-[#36606F]" />
                             </div>
                         ) : (
-                            <div className="bg-transparent border-0 shadow-none overflow-visible flex-1 flex flex-col min-h-0">
-                                <div className="p-1 md:p-3 overflow-x-auto no-scrollbar flex-1">
+                            <div className="bg-transparent border-0 shadow-none overflow-visible">
+                                <div className="p-1 md:p-3 overflow-x-auto no-scrollbar">
                                     <div className="min-w-0">
                                         <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
                                             {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
