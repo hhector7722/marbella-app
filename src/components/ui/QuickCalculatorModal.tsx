@@ -446,7 +446,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                             value={qty > 0 ? qty : ''}
                                                             onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
                                                             placeholder=""
-                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 px-1 text-xs tracking-tight tabular-nums focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 px-0.5 text-[11px] tracking-normal tabular-nums leading-none focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                         />
                                                         <button
                                                             type="button"
