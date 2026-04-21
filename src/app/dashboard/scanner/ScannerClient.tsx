@@ -1,8 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { toast } from 'sonner'
-import { Camera, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { processScannerImage } from './actions'
 import { cn } from '@/lib/utils'
@@ -10,6 +9,8 @@ import { cn } from '@/lib/utils'
 export function ScannerClient() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [messageTone, setMessageTone] = useState<'error' | 'success' | 'info'>('info')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const compressImage = (file: File): Promise<string> => {
@@ -41,26 +42,29 @@ export function ScannerClient() {
     if (!file) return
 
     setIsProcessing(true)
+    setMessage(null)
     try {
-      toast.info('Optimizando imagen…')
       const dataUri = await compressImage(file)
       setPreview(dataUri)
 
       const q = await assessScannerImageReadability(dataUri)
       if (!q.ok) {
-        toast.error(q.message)
+        setMessageTone('error')
+        setMessage(q.message)
         setPreview(null)
         return
       }
-      toast.success('Foto correcta — enviando al servidor…')
+      setMessageTone('info')
+      setMessage('Foto correcta. Enviando…')
 
-      toast.info('Extrayendo datos con IA…')
       await processScannerImage(dataUri, file.name.replace(/\.[^/.]+$/, '') + '.jpg')
 
-      toast.success('Albarán registrado. El mapeo de líneas y stock se puede completar después.')
+      setMessageTone('success')
+      setMessage('OK. Albarán recibido.')
       setPreview(null)
     } catch (error: any) {
-      toast.error(error?.message || 'Error al procesar')
+      setMessageTone('error')
+      setMessage(error?.message || 'No se pudo procesar. Repite la foto.')
       setPreview(null)
     } finally {
       setIsProcessing(false)
@@ -69,7 +73,7 @@ export function ScannerClient() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col gap-4">
       <input
         ref={fileInputRef}
         type="file"
@@ -79,38 +83,53 @@ export function ScannerClient() {
         className="hidden"
       />
 
-      {!preview ? (
+      <div
+        className={cn(
+          'rounded-2xl border border-zinc-100 bg-white shadow-sm',
+          'p-4 md:p-6 flex flex-col gap-4'
+        )}
+      >
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            setMessage(null)
+            fileInputRef.current?.click()
+          }}
           disabled={isProcessing}
           className={cn(
-            'w-48 h-48 rounded-full text-white flex flex-col items-center justify-center gap-3 transition-all',
-            'shadow-xl active:scale-95 disabled:opacity-60 disabled:pointer-events-none',
-            'bg-[#36606F] hover:bg-[#2A4C58] shadow-[#36606F]/20'
+            'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-widest',
+            'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
+            'disabled:opacity-60 disabled:pointer-events-none shrink-0'
           )}
         >
-          <Camera className="w-16 h-16" />
-          <span className="font-black text-lg uppercase tracking-widest">Escanear</span>
+          Escanear albarán
         </button>
-      ) : (
-        <div className="w-full relative rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-white">
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full h-auto max-h-[60vh] object-cover opacity-50"
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-900 bg-white/40 backdrop-blur-sm px-4">
-            <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#36606F]" />
-            <span className="font-black text-xl drop-shadow-md text-center">Analizando documento…</span>
-            <span className="text-sm font-medium mt-2 text-center">Puede tardar hasta 10 segundos</span>
-          </div>
-        </div>
-      )}
 
-      <p className="text-gray-400 text-sm text-center max-w-xs">
-        Al recibir mercancía: la app comprueba que la foto sea legible, registra el albarán y evita duplicar la misma imagen o el mismo documento (proveedor + número + fecha).
-      </p>
+        {preview ? (
+          <div className="w-full relative rounded-2xl overflow-hidden border border-zinc-100 bg-white">
+            <img src={preview} alt="Previsualización" className="w-full h-auto max-h-[60vh] object-cover opacity-40" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-900 bg-white/50 backdrop-blur-sm px-4">
+              <Loader2 className="w-10 h-10 animate-spin mb-3 text-[#36606F]" />
+              <span className="font-black text-lg text-center">Analizando…</span>
+              <span className="text-sm font-medium mt-1 text-center text-zinc-700">Espera unos segundos</span>
+            </div>
+          </div>
+        ) : null}
+
+        {message ? (
+          <div
+            className={cn(
+              'rounded-xl border p-3 text-sm font-semibold',
+              messageTone === 'error' && 'border-rose-200 bg-rose-50 text-rose-900',
+              messageTone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-900',
+              messageTone === 'info' && 'border-zinc-200 bg-zinc-50 text-zinc-800'
+            )}
+            role={messageTone === 'error' ? 'alert' : 'status'}
+          >
+            {message}
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
