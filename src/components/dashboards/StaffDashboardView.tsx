@@ -615,6 +615,11 @@ export default function StaffDashboardView() {
     };
     const closeTpvManualModal = () => setIsTpvManualModalOpen(false);
     const closeHornoManualModal = () => setIsHornoManualModalOpen(false);
+    const backToInfoFromManuals = () => {
+        closeManualsModal();
+        setActiveMenu('info');
+        setInfoSubMenu(null);
+    };
 
     /** Misma UX que nóminas: visor PDF nativo del navegador en nueva pestaña (`NominasModal.openNomina`). */
     const openStaffPdf = (url: string) => {
@@ -637,25 +642,21 @@ export default function StaffDashboardView() {
             case 'altavoces':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setIsManualsModalOpen(false);
                 setManualMediaViewer({ type: 'video', src: STAFF_MANUAL_ASSETS.altavocesVideo, title: 'Altavoces' });
                 break;
             case 'bebidas':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setIsManualsModalOpen(false);
                 setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.bebidasImage, title: 'Bebidas' });
                 break;
             case 'cambios-lluvia':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setIsManualsModalOpen(false);
                 setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cambiosLluviaImage, title: 'Cambios por Lluvia' });
                 break;
             case 'cuadro-electrico':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setIsManualsModalOpen(false);
                 setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cuadroElectricoImage, title: 'Acceso Cuadro Eléctrico' });
                 break;
             default:
@@ -1151,7 +1152,17 @@ export default function StaffDashboardView() {
                         aria-label="Manuales"
                     >
                         <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest">Manuales</h3>
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={backToInfoFromManuals}
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
+                                    aria-label="Volver a información"
+                                >
+                                    <ArrowLeft size={20} strokeWidth={3} />
+                                </button>
+                                <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">Manuales</h3>
+                            </div>
                             <button
                                 onClick={closeManualsModal}
                                 className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20 min-h-[48px] min-w-[48px]"
@@ -1202,10 +1213,10 @@ export default function StaffDashboardView() {
                                 <button
                                     type="button"
                                     onClick={closeTpvManualModal}
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 min-h-[48px] min-w-[48px]"
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
                                     aria-label="Volver a manuales"
                                 >
-                                    <ArrowLeft size={18} strokeWidth={3} />
+                                    <ArrowLeft size={20} strokeWidth={3} />
                                 </button>
                                 <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">TPV</h3>
                             </div>
@@ -1250,10 +1261,10 @@ export default function StaffDashboardView() {
                                 <button
                                     type="button"
                                     onClick={closeHornoManualModal}
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 min-h-[48px] min-w-[48px]"
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
                                     aria-label="Volver a manuales"
                                 >
-                                    <ArrowLeft size={18} strokeWidth={3} />
+                                    <ArrowLeft size={20} strokeWidth={3} />
                                 </button>
                                 <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">Horno</h3>
                             </div>
@@ -1279,7 +1290,6 @@ export default function StaffDashboardView() {
                                 onClick={() => {
                                     setIsHornoManualModalOpen(false);
                                     setIsTpvManualModalOpen(false);
-                                    setIsManualsModalOpen(false);
                                     setManualMediaViewer({
                                         type: 'video',
                                         src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
@@ -1307,7 +1317,17 @@ export default function StaffDashboardView() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-[#36606F] px-4 py-3 text-white">
-                            <h3 className="min-w-0 truncate text-sm font-black uppercase tracking-wide">{manualMediaViewer.title}</h3>
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setManualMediaViewer(null)}
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
+                                    aria-label="Volver a manuales"
+                                >
+                                    <ArrowLeft size={20} strokeWidth={3} />
+                                </button>
+                                <h3 className="min-w-0 truncate text-sm font-black uppercase tracking-wide">{manualMediaViewer.title}</h3>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setManualMediaViewer(null)}

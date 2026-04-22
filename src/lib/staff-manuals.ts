@@ -35,7 +35,7 @@ export const STAFF_MANUAL_MENU: Array<{
     { id: 'bebidas', label: 'Bebidas', icon: '/icons/ingrediente' },
     { id: 'horno', label: 'Horno', icon: '/icons/horno.png' },
     { id: 'cambios-lluvia', label: 'Cambios por Lluvia', icon: '/icons/lluvia.png' },
-    { id: 'cuadro-electrico', label: 'Acceso Cuadro Eléctrico', icon: '/icons/electrico.png' },
+    { id: 'cuadro-electrico', label: 'Acceso Cuadro Eléctrico', icon: '/icons/cuadro-electrico' },
 ];
 
 /** Sub-entradas del manual TPV (destinos: pendiente de definir). */
