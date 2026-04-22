@@ -25,8 +25,9 @@ export async function translateCaToEsTextAction(input: { text: string }): Promis
   if (profErr) {
     return { text: cleaned, translated: false, warning: `No se pudo verificar rol (no se tradujo): ${profErr.message}` }
   }
-  if (profile?.role !== 'manager') {
-    return { text: cleaned, translated: false, warning: 'Sin permisos de manager para traducir.' }
+  const role = String(profile?.role ?? '').trim()
+  if (role !== 'manager' && role !== 'admin') {
+    return { text: cleaned, translated: false, warning: 'Sin permisos de gestión (manager/admin) para traducir.' }
   }
 
   if (!isProbablyCatalan(cleaned)) {
