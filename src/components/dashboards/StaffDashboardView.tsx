@@ -1049,7 +1049,7 @@ export default function StaffDashboardView() {
                                             className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
                                         >
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/guide" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                <Image src="/icons/guide.png" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">Manuales</span>
                                         </button>

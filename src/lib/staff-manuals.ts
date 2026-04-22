@@ -30,12 +30,12 @@ export const STAFF_MANUAL_MENU: Array<{
     icon: string;
 }> = [
     { id: 'check-list', label: 'Check List', icon: '/icons/inventory.png' },
-    { id: 'tpv', label: 'Tpv', icon: '/icons/pos' },
+    { id: 'tpv', label: 'Tpv', icon: '/icons/pos.png' },
     { id: 'altavoces', label: 'Altavoces', icon: '/icons/altav.png' },
-    { id: 'bebidas', label: 'Bebidas', icon: '/icons/ingrediente' },
+    { id: 'bebidas', label: 'Bebidas', icon: '/icons/ingrediente.png' },
     { id: 'horno', label: 'Horno', icon: '/icons/horno.png' },
     { id: 'cambios-lluvia', label: 'Cambios por Lluvia', icon: '/icons/lluvia.png' },
-    { id: 'cuadro-electrico', label: 'Acceso Cuadro Eléctrico', icon: '/icons/cuadro-electrico' },
+    { id: 'cuadro-electrico', label: 'Acceso Cuadro Eléctrico', icon: '/icons/electrico.png' },
 ];
 
 /** Sub-entradas del manual TPV (destinos: pendiente de definir). */
