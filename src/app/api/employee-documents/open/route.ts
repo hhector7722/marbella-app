@@ -7,8 +7,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const ALLOWED_TIPOS = new Set(['comunicado', 'contrato', 'sancion']);
 
 function bucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
-    if (storagePath.includes('/nominas/')) return 'employee-documents';
-    return 'nominas';
+    // Legacy nóminas guardadas con rutas tipo "04/2026/..." en el bucket `nominas`.
+    // Comunicados/contratos/sanciones se guardan como "<userId>/<carpeta>/..." en `employee-documents`.
+    if (/^\d{2}\/\d{4}\//.test(storagePath)) return 'nominas';
+    return 'employee-documents';
 }
 
 function mimeForFilename(name: string): { contentType: string; inline: boolean } {

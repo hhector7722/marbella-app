@@ -5,8 +5,10 @@ import { createClient as createServiceClient } from '@supabase/supabase-js';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function bucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
-    if (storagePath.includes('/nominas/')) return 'employee-documents';
-    return 'nominas';
+    // Legacy: nóminas guardadas como "MM/YYYY/..." en el bucket `nominas`.
+    // Novedad: si la nómina está espejada en `employee_documents`, su ruta puede ser "<userId>/nominas/..."
+    if (/^\d{2}\/\d{4}\//.test(storagePath)) return 'nominas';
+    return 'employee-documents';
 }
 
 /**
