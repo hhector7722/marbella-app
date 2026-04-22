@@ -13,6 +13,11 @@ export const STAFF_MANUAL_ASSETS = {
     bebidasImage: '/docs/manuals/bebidas.png',
     cambiosLluviaImage: '/docs/manuals/cambios-lluvia.png',
     cuadroElectricoImage: '/docs/manuals/cuadro-electrico.png',
+    /** Vídeos submenú TPV (visor embebido en modal). */
+    tpvAnulacionesVideo: '/docs/manuals/abono.mp4',
+    tpvDescuentosVideo: '/docs/manuals/descuento.mp4',
+    tpvCobrosPendientesVideo: '/docs/manuals/cobros.mp4',
+    tpvImpresorasVideo: '/docs/manuals/tickets.mp4',
 } as const;
 
 export type StaffManualMenuId =
@@ -47,3 +52,12 @@ export const STAFF_TPV_MANUAL_ITEMS = [
     'Impresoras Tpv',
     'Instrucciones Handy',
 ] as const;
+
+export type StaffTpvManualItemLabel = (typeof STAFF_TPV_MANUAL_ITEMS)[number];
+
+export const STAFF_TPV_MANUAL_VIDEOS: Partial<Record<StaffTpvManualItemLabel, { src: string; title: string }>> = {
+    'Anulaciones': { src: STAFF_MANUAL_ASSETS.tpvAnulacionesVideo, title: 'TPV · Anulaciones' },
+    'Descuentos': { src: STAFF_MANUAL_ASSETS.tpvDescuentosVideo, title: 'TPV · Descuentos' },
+    'Cobros Pendientes': { src: STAFF_MANUAL_ASSETS.tpvCobrosPendientesVideo, title: 'TPV · Cobros Pendientes' },
+    'Impresoras Tpv': { src: STAFF_MANUAL_ASSETS.tpvImpresorasVideo, title: 'TPV · Impresoras TPV' },
+};

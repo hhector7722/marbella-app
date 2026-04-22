@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check, PlayCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ function RecipeDetailContent() {
     const recipeId = params.id as string;
     const supabase = createClient();
     const importInputRef = useRef<HTMLInputElement | null>(null);
+    const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
     const [importScope, setImportScope] = useState<'all' | 'elaboration' | 'presentation'>('all');
 
     // --- 1. ESTADOS ---
@@ -65,6 +66,7 @@ function RecipeDetailContent() {
     const [importingRecipe, setImportingRecipe] = useState(false);
     const [isEditingPrice, setIsEditingPrice] = useState(false);
     const [priceDraft, setPriceDraft] = useState('');
+    const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -135,6 +137,7 @@ function RecipeDetailContent() {
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canImportRecipe = !isStaffView && userRole === 'manager';
+    const canManageRecipeVideo = !isStaffView && userRole === 'manager';
 
     async function sha256Hex(buf: ArrayBuffer): Promise<string> {
         const hash = await crypto.subtle.digest('SHA-256', buf);
@@ -445,6 +448,50 @@ function RecipeDetailContent() {
         setRecipe({ ...recipe, [field]: value });
         toast.success('Guardado');
     };
+
+    async function handleElaborationVideoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0] ?? null;
+        // permitir re-seleccionar el mismo archivo
+        e.target.value = '';
+        if (!file) return;
+        if (!canManageRecipeVideo) return;
+
+        try {
+            setUploadingElaborationVideo(true);
+
+            const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+            const cleanBase = file.name
+                .toLowerCase()
+                .replace(/\.[^/.]+$/, '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 60);
+
+            const fileName = `${Date.now()}-${cleanBase || 'elaboracion'}.${ext}`;
+            const path = `${recipeId}/${fileName}`;
+
+            const up = await supabase.storage.from('recipe_videos').upload(path, file, {
+                upsert: true,
+                contentType: file.type || undefined,
+            });
+            if (up.error) throw up.error;
+
+            const { data: publicUrl } = supabase.storage.from('recipe_videos').getPublicUrl(path);
+            const url = publicUrl?.publicUrl;
+            if (!url) throw new Error('No se pudo obtener URL pública del vídeo.');
+
+            await updateRecipeField('elaboration_video_url', url);
+            await fetchRecipe();
+            toast.success('Vídeo de elaboración guardado');
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err?.message || 'Error subiendo vídeo');
+        } finally {
+            setUploadingElaborationVideo(false);
+        }
+    }
 
     const handlePriceUpdate = async (newPrice: string) => {
         const num = parseFloat(String(newPrice ?? '').replace(',', '.'));
@@ -1008,6 +1055,30 @@ function RecipeDetailContent() {
                                             <Import className="w-5 h-5" />
                                         </button>
                                     )}
+                                    {canManageRecipeVideo && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => elaborationVideoInputRef.current?.click()}
+                                                disabled={uploadingElaborationVideo}
+                                                title="Añadir vídeo de elaboración"
+                                                aria-label="Añadir vídeo de elaboración"
+                                                className={cn(
+                                                    "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white hover:bg-white/10 rounded-lg active:scale-95",
+                                                    uploadingElaborationVideo ? "opacity-40 pointer-events-none" : ""
+                                                )}
+                                            >
+                                                <PlayCircle className="w-5 h-5" />
+                                            </button>
+                                            <input
+                                                ref={elaborationVideoInputRef}
+                                                type="file"
+                                                accept="video/*"
+                                                className="hidden"
+                                                onChange={handleElaborationVideoSelected}
+                                            />
+                                        </>
+                                    )}
                                     <button
                                         onClick={() => setIsEditingElaboration(!isEditingElaboration)}
                                         className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
@@ -1071,14 +1142,25 @@ function RecipeDetailContent() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <ul className="space-y-2">
-                                        {elaborationSteps.map((s, i) => (
-                                            <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
-                                                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[8px]">{i + 1}</span>
-                                                <span>{s}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <div className="space-y-3">
+                                        <ul className="space-y-2">
+                                            {elaborationSteps.map((s, i) => (
+                                                <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
+                                                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[8px]">{i + 1}</span>
+                                                    <span>{s}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        {recipe?.elaboration_video_url && (
+                                            <video
+                                                controls
+                                                preload="metadata"
+                                                src={recipe.elaboration_video_url}
+                                                className="w-full rounded-2xl bg-black"
+                                            />
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>

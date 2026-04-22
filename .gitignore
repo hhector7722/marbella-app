@@ -18,6 +18,11 @@
 /.next/
 /out/
 
+# recipe videos (local, no commit)
+/public/docs/manuals/bravas.mp4
+/public/docs/manuals/sangria.mp4
+/public/docs/manuals/calamares.mp4
+
 # production
 /build
 

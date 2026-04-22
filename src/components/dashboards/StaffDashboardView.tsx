@@ -33,7 +33,7 @@ import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
-import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, type StaffManualMenuId } from '@/lib/staff-manuals';
+import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -1234,7 +1234,16 @@ export default function StaffDashboardView() {
                                 <button
                                     key={label}
                                     type="button"
-                                    onClick={() => toast.info('Destino pendiente de configurar', { description: label })}
+                                    onClick={() => {
+                                        const v = STAFF_TPV_MANUAL_VIDEOS[label];
+                                        if (!v) {
+                                            toast.info('Destino pendiente de configurar', { description: label });
+                                            return;
+                                        }
+                                        setIsTpvManualModalOpen(false);
+                                        setIsHornoManualModalOpen(false);
+                                        setManualMediaViewer({ type: 'video', src: v.src, title: v.title });
+                                    }}
                                     className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
                                 >
                                     {label}

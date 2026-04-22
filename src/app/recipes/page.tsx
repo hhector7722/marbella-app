@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
-import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, BookOpen, UtensilsCrossed, Beaker, Camera, Edit2 } from 'lucide-react';
+import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, BookOpen, UtensilsCrossed, Beaker, Camera, Edit2, PlayCircle } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -41,6 +41,8 @@ function RecipesContent() {
     const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
     const [fullRecipeData, setFullRecipeData] = useState<any>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
+    const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
+    const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
     const router = useRouter();
 
     const searchParams = useSearchParams();
@@ -69,6 +71,57 @@ function RecipesContent() {
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canEditRecipeFromModal = userRole === 'manager' || userRole === 'supervisor';
+    const canManageRecipeVideo = userRole === 'manager';
+
+    async function handleElaborationVideoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0] ?? null;
+        // permitir re-seleccionar el mismo archivo
+        e.target.value = '';
+        if (!file) return;
+        if (!selectedRecipeId) return;
+        if (!canManageRecipeVideo) return;
+
+        try {
+            setUploadingElaborationVideo(true);
+
+            const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+            const cleanBase = file.name
+                .toLowerCase()
+                .replace(/\.[^/.]+$/, '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 60);
+
+            const fileName = `${Date.now()}-${cleanBase || 'elaboracion'}.${ext}`;
+            const path = `${selectedRecipeId}/${fileName}`;
+
+            const up = await supabase.storage.from('recipe_videos').upload(path, file, {
+                upsert: true,
+                contentType: file.type || undefined,
+            });
+            if (up.error) throw up.error;
+
+            const { data: publicUrl } = supabase.storage.from('recipe_videos').getPublicUrl(path);
+            const url = publicUrl?.publicUrl;
+            if (!url) throw new Error('No se pudo obtener URL pública del vídeo.');
+
+            const { error: updateErr } = await supabase
+                .from('recipes')
+                .update({ elaboration_video_url: url })
+                .eq('id', selectedRecipeId);
+            if (updateErr) throw updateErr;
+
+            toast.success('Vídeo de elaboración guardado');
+            await fetchRecipeDetails(selectedRecipeId);
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err?.message || 'Error subiendo vídeo');
+        } finally {
+            setUploadingElaborationVideo(false);
+        }
+    }
 
     async function fetchRecipeDetails(id: string) {
         try {
@@ -227,7 +280,7 @@ function RecipesContent() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header del Modal */}
-                        <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0 border-b border-white/10">
+                        <div className="relative bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0 border-b border-white/10">
                             <div className="flex items-center gap-4">
                                 <div className="w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0 p-1">
                                     {fullRecipeData?.photo_url ? (
@@ -256,10 +309,11 @@ function RecipesContent() {
                                             setSelectedRecipeId(null);
                                             router.push(`/recipes/${selectedRecipeId}`);
                                         }}
-                                        className="h-12 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90 flex items-center gap-2 font-black uppercase tracking-widest text-[10px]"
+                                        className="w-12 h-12 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
+                                        aria-label="Editar"
+                                        title="Editar"
                                     >
                                         <Edit2 size={16} strokeWidth={3} />
-                                        Editar
                                     </button>
                                 )}
                                 <button
@@ -306,9 +360,35 @@ function RecipesContent() {
                                     {/* Columna Derecha: Elaboración y Presentación */}
                                     <div className="space-y-4">
                                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
-                                            <div className="bg-[#36606F] px-5 py-3 flex items-center gap-2 shrink-0">
-                                                <BookOpen size={14} className="text-white/70" />
-                                                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h4>
+                                            <div className="bg-[#36606F] px-5 py-3 flex items-center justify-between shrink-0">
+                                                <div className="flex items-center gap-2">
+                                                    <BookOpen size={14} className="text-white/70" />
+                                                    <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h4>
+                                                </div>
+                                                {canManageRecipeVideo && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => elaborationVideoInputRef.current?.click()}
+                                                            disabled={uploadingElaborationVideo}
+                                                            title="Añadir vídeo de elaboración"
+                                                            aria-label="Añadir vídeo de elaboración"
+                                                            className={cn(
+                                                                "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white active:scale-95",
+                                                                uploadingElaborationVideo ? "opacity-50 pointer-events-none" : ""
+                                                            )}
+                                                        >
+                                                            <PlayCircle className="w-5 h-5" />
+                                                        </button>
+                                                        <input
+                                                            ref={elaborationVideoInputRef}
+                                                            type="file"
+                                                            accept="video/*"
+                                                            className="hidden"
+                                                            onChange={handleElaborationVideoSelected}
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
                                             <div className="p-5 overflow-y-auto max-h-[400px]">
                                                 {fullRecipeData?.elaboration ? (
@@ -327,6 +407,17 @@ function RecipesContent() {
                                                 ) : (
                                                     <div className="h-32 flex flex-col items-center justify-center text-zinc-300 italic">
                                                         <p className="text-[10px] font-bold uppercase tracking-widest">Sin pasos registrados</p>
+                                                    </div>
+                                                )}
+
+                                                {fullRecipeData?.elaboration_video_url && (
+                                                    <div className="mt-5">
+                                                        <video
+                                                            controls
+                                                            preload="metadata"
+                                                            src={fullRecipeData.elaboration_video_url}
+                                                            className="w-full rounded-2xl bg-black"
+                                                        />
                                                     </div>
                                                 )}
                                             </div>
