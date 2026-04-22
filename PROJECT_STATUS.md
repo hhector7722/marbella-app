@@ -24,6 +24,7 @@
 
 - [x] **KDS: notas TPV + cocina en una fila (2026-04-20)**: `combinedLineNotesForDisplay` ya no inserta salto de línea entre ambas; se unen con ` · ` para que no aparezcan en filas separadas en tarjeta ni resumen.
 - [x] **KDS: restaurar guardado/visualización notas comanda y artículo (2026-04-21)**: La vista KDS volvió a usar `useKDS` (v1) para que las notas editadas desde cocina vuelvan a persistir (`kds_orders.notas_comanda` y `kds_order_lines.notas_cocina`). Además, el webhook de telemetría normaliza y acepta alias de campos para no perder `notas_comanda` ni `notas` por línea.
+- [x] **Hotfix KDS: estado_sala sí, KDS no (2026-04-22)**: Tras habilitar KDS v2 (`kds_events`), el trigger `trg_update_kds_on_sala_change` quedó apuntando a v2 y dejó de poblar tablas v1 (`kds_orders`/`kds_order_lines`) que usa la UI actual. Se restauró un trigger v1 con `fn_trg_process_kds_from_sala_v1()` (migración `20260422130000_restore_kds_v1_trigger_on_estado_sala.sql`).
 
 - [x] **KDS cabecera aust: tiempo compacto + pastilla indicadora (2026-04-19)**: `CommandCard` muestra tiempo transcurrido en minúsculas (`45m` si 0 h, `1h 30m` si hay horas y minutos; espacio entre `h` y minutos). Pastilla propia sin borde: fondo verde 0–15 min, naranja 16–24 min, rojo ≥25 min; texto blanco. Comandas finalizadas: pastilla gris.
 
