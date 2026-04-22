@@ -1037,7 +1037,7 @@ function RecipeDetailContent() {
                         </div>
                     </div>
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                        <div className="bg-[#36606F] px-4 h-12 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
                             {!isRestricted && (
                                 <div className="flex items-center gap-1 shrink-0">
