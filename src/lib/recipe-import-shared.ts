@@ -2,21 +2,59 @@ import { normalizeRecipeImportUnit, type MassVolumeUnit } from '@/lib/recipe-cos
 
 /** Heurística simple para detectar texto probablemente en catalán (fichas típicas). */
 export function isProbablyCatalan(s: string): boolean {
-  const t = (s || '').toLowerCase()
-  return (
-    t.includes('netejar') ||
-    t.includes("d'aigua") ||
-    t.includes('aigua calenta') ||
-    t.includes('vaixella') ||
-    t.includes("l'esquerre") ||
-    t.includes('a l\'esquerre') ||
-    t.includes('tassa') ||
-    t.includes('cullereta') ||
-    t.includes('paletina') ||
-    t.includes('abocar') ||
-    t.includes('comprobar') ||
-    t.includes('hi ha')
-  )
+  const t = String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  // Señales fuertes (muy específicas de catalán)
+  if (t.includes('·') || t.includes('ç')) return true
+
+  const hits = [
+    // conectores / gramática muy común en fichas
+    /\bamb\b/,
+    /\bdespres\b/,
+    /\bmentre\b/,
+    /\bperque\b/,
+    /\bcal\b/,
+    /\bben\b/,
+    /\buna mica\b/,
+    /\b(poseu|posar|posa|posar-hi)\b/,
+    /\bafegiu\b/,
+    /\bbarregeu\b/,
+    /\btalleu\b/,
+    /\bdeixeu\b/,
+    /\bremeneu\b/,
+    /\bfins que\b/,
+    /\ba l[' ]/,
+    /\bl[' ]/,
+    /\bd[' ]/,
+
+    // vocabulario típico de cocina en catalán
+    /\bforn\b/,
+    /\bcoure\b/,
+    /\bsofregi(t|da)\b/,
+    /\ball\b/,
+    /\boli\b/,
+    /\bjulivert\b/,
+
+    // palabras de secciones (muy frecuentes en import)
+    /\belaboracio\b/,
+    /\bpresentacio\b/,
+    /\bingredients\b/,
+
+    // legacy (staff/manuales) que ya teníamos
+    /\bnetejar\b/,
+    /\baigua calenta\b/,
+    /\bvaixella\b/,
+    /\bcullereta\b/,
+    /\bpaletina\b/,
+    /\babocar\b/,
+    /\bhi ha\b/,
+  ].reduce((acc, re) => acc + (re.test(t) ? 1 : 0), 0)
+
+  // Con 2 señales evitamos falsos positivos en español.
+  return hits >= 2
 }
 
 export function parseNum(v: unknown): number | null {
