@@ -932,13 +932,31 @@ function RecipeDetailContent() {
                                 {/* Sección 2: simulador dentro de tarjeta lila propia */}
                                 <div className="border-t border-gray-100 p-3">
                                     <div className="rounded-xl bg-purple-600 p-3 text-white">
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h3>
+                                        <div className="flex items-center justify-between gap-2 shrink-0">
+                                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador</h3>
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    try {
+                                                        await applySimulatedPrice()
+                                                    } catch {
+                                                        // applySimulatedPrice ya emite toast en caso de fallo vía updateRecipeField
+                                                    }
+                                                }}
+                                                disabled={applyingSimulation || isRestricted}
+                                                className={cn(
+                                                    "text-[10px] font-black uppercase tracking-widest text-white/90 hover:text-white transition active:scale-[0.99]",
+                                                    (applyingSimulation || isRestricted) ? "opacity-50 pointer-events-none" : ""
+                                                )}
+                                                title="Aplicar precio simulado"
+                                                aria-label="Aplicar precio simulado"
+                                            >
+                                                {applyingSimulation ? "Aplicando…" : "Aplicar"}
+                                            </button>
                                         </div>
 
                                         <div className="mt-3 flex flex-col gap-4">
-                                            <div className="flex items-center justify-between px-1">
-                                                <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Simulado</span>
+                                            <div className="px-1 text-center">
                                                 <span className="text-3xl font-black text-white">{(simulatedPrice || 0).toFixed(2)}€</span>
                                             </div>
                                             <input
@@ -1037,10 +1055,10 @@ function RecipeDetailContent() {
                         </div>
                     </div>
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 h-12 shrink-0 flex items-center justify-between">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
                             {!isRestricted && (
-                                <div className="flex items-center gap-1 shrink-0">
+                                <div className="flex items-center gap-1 shrink-0 -my-2">
                                     {canImportRecipe && (
                                         <button
                                             type="button"
@@ -1052,7 +1070,7 @@ function RecipeDetailContent() {
                                                 importingRecipe ? "opacity-40 pointer-events-none" : ""
                                             )}
                                         >
-                                            <Import className="w-5 h-5" />
+                                            <Import className="w-4 h-4" />
                                         </button>
                                     )}
                                     {canManageRecipeVideo && (
@@ -1068,7 +1086,7 @@ function RecipeDetailContent() {
                                                     uploadingElaborationVideo ? "opacity-40 pointer-events-none" : ""
                                                 )}
                                             >
-                                                <PlayCircle className="w-5 h-5" />
+                                                <PlayCircle className="w-4 h-4" />
                                             </button>
                                             <input
                                                 ref={elaborationVideoInputRef}
@@ -1084,7 +1102,7 @@ function RecipeDetailContent() {
                                         className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
                                         title="Editar"
                                     >
-                                        <Edit2 size={14} />
+                                        <Edit2 size={13} />
                                     </button>
                                 </div>
                             )}
@@ -1170,7 +1188,7 @@ function RecipeDetailContent() {
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
                             {!isRestricted && (
-                                <div className="flex items-center gap-1 shrink-0">
+                                <div className="flex items-center gap-1 shrink-0 -my-2">
                                     {canImportRecipe && (
                                         <button
                                             type="button"
@@ -1182,7 +1200,7 @@ function RecipeDetailContent() {
                                                 importingRecipe ? "opacity-40 pointer-events-none" : ""
                                             )}
                                         >
-                                            <Import className="w-5 h-5" />
+                                            <Import className="w-4 h-4" />
                                         </button>
                                     )}
                                     <button
@@ -1190,7 +1208,7 @@ function RecipeDetailContent() {
                                         className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
                                         title="Editar"
                                     >
-                                        <Edit2 size={14} />
+                                        <Edit2 size={13} />
                                     </button>
                                 </div>
                             )}
