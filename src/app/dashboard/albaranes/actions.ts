@@ -20,7 +20,7 @@ async function gateAuthenticated(): Promise<GateResult> {
 }
 
 export type PurchaseInvoiceListItem = {
-  id: number
+  id: string
   created_at: string
   created_by: string | null
   source: string | null
@@ -85,7 +85,7 @@ export async function listPurchaseInvoicesAction(params?: {
 }
 
 export type PurchaseInvoiceLine = {
-  id: number
+  id: string
   original_name: string
   quantity: number | null
   unit_price: number | null
@@ -96,7 +96,7 @@ export type PurchaseInvoiceLine = {
 }
 
 export type PurchaseInvoiceDetail = {
-  id: number
+  id: string
   created_at: string
   created_by: string | null
   source: string | null
@@ -112,13 +112,13 @@ export type PurchaseInvoiceDetail = {
 }
 
 export async function getPurchaseInvoiceDetailAction(
-  invoiceId: number
+  invoiceId: string
 ): Promise<{ success: true; detail: PurchaseInvoiceDetail } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  const id = Number(invoiceId)
-  if (!Number.isFinite(id) || id <= 0) return { success: false, message: 'ID inválido' }
+  const id = String(invoiceId ?? '').trim()
+  if (!id) return { success: false, message: 'ID inválido' }
 
   const canViewAll = gate.role === 'manager' || gate.role === 'admin'
 

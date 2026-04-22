@@ -8,6 +8,13 @@ import { cn } from '@/lib/utils'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem } from './actions'
 import { getPurchaseInvoiceDetailAction, listPurchaseInvoicesAction } from './actions'
 
+function formatDateTitle(v: string | null | undefined) {
+  const t = String(v ?? '').trim()
+  if (!t) return '—'
+  // `invoice_date` viene como YYYY-MM-DD (DATE). Mostrar tal cual evita líos de zona horaria.
+  return t
+}
+
 function formatMaybeMoney(v: number | null | undefined) {
   const n = typeof v === 'number' && Number.isFinite(v) ? v : null
   if (n == null || n === 0) return ' '
@@ -36,7 +43,7 @@ export default function AlbaranesHistoricoClient({
   const [items, setItems] = useState<PurchaseInvoiceListItem[]>(initialItems)
   const [error, setError] = useState<string | null>(initialError)
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<PurchaseInvoiceDetail | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -73,7 +80,7 @@ export default function AlbaranesHistoricoClient({
     })
   }
 
-  async function openDetail(id: number) {
+  async function openDetail(id: string) {
     setSelectedId(id)
     setDetail(null)
     setDetailError(null)
@@ -187,7 +194,17 @@ export default function AlbaranesHistoricoClient({
 
         <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
           <div className="px-4 py-3 border-b border-zinc-100 shrink-0 flex items-center justify-between gap-2">
-            <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Detalle</p>
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-wider text-zinc-600 truncate">
+                {detail?.supplier_name ? detail.supplier_name : 'Detalle'}
+              </p>
+              {detail ? (
+                <p className="text-[11px] font-bold text-zinc-500 truncate">
+                  {formatDateTitle(detail.invoice_date)}
+                  {detail.invoice_number ? ` · ${detail.invoice_number}` : ''}
+                </p>
+              ) : null}
+            </div>
             {detail?.signed_url ? (
               <a
                 href={detail.signed_url}
