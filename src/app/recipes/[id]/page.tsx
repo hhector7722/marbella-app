@@ -70,6 +70,11 @@ function RecipeDetailContent() {
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
+    const catFilter = searchParams.get('cat');
+
+    const currentQueryString = searchParams.toString();
+    const buildDetailHref = (id: string) => (currentQueryString ? `/recipes/${id}?${currentQueryString}` : `/recipes/${id}`);
+    const buildBackHref = () => (currentQueryString ? `/recipes?${currentQueryString}` : '/recipes');
 
     // --- 2. FUNCIONES DE CARGA ---
     const fetchAvailableIngredients = async () => {
@@ -113,7 +118,9 @@ function RecipeDetailContent() {
     };
 
     const fetchAllRecipes = async () => {
-        const { data } = await supabase.from('recipes').select('id, name').order('name');
+        let q = supabase.from('recipes').select('id, name, category').order('name');
+        if (catFilter) q = q.eq('category', catFilter);
+        const { data } = await q;
         if (data) {
             setAllRecipes(data);
             setCurrentRecipeIndex(data.findIndex((r: any) => r.id === recipeId));
@@ -133,7 +140,7 @@ function RecipeDetailContent() {
             }
         };
         checkRole();
-    }, [recipeId]);
+    }, [recipeId, catFilter]);
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canImportRecipe = !isStaffView && userRole === 'manager';
@@ -550,10 +557,10 @@ function RecipeDetailContent() {
 
     // --- 6. UTILS ---
     const handlePreviousRecipe = () => {
-        if (currentRecipeIndex > 0) router.push(`/recipes/${allRecipes[currentRecipeIndex - 1].id}`);
+        if (currentRecipeIndex > 0) router.push(buildDetailHref(allRecipes[currentRecipeIndex - 1].id));
     };
     const handleNextRecipe = () => {
-        if (currentRecipeIndex < allRecipes.length - 1) router.push(`/recipes/${allRecipes[currentRecipeIndex + 1].id}`);
+        if (currentRecipeIndex < allRecipes.length - 1) router.push(buildDetailHref(allRecipes[currentRecipeIndex + 1].id));
     };
 
     const handleDelete = async () => {
@@ -704,7 +711,7 @@ function RecipeDetailContent() {
                 {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
                 <div className="relative bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
                     <Link
-                        href="/recipes"
+                        href={buildBackHref()}
                         aria-label="Volver a recetas"
                         className={cn(
                             "absolute left-2 top-2 md:left-3 md:top-2",
@@ -715,24 +722,49 @@ function RecipeDetailContent() {
                     >
                         <ArrowLeft className="w-6 h-6" />
                     </Link>
-                    <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
-                        {/* Zona izquierda: nombre receta */}
-                        <div className="min-w-0">
-                            <div className="text-white font-black text-[13px] md:text-[15px] leading-tight truncate">
-                                {recipe.name}
-                            </div>
+                    {/* Nombre centrado arriba */}
+                    <div className="w-full text-center">
+                        <div className="text-white font-black text-[13px] md:text-[15px] leading-tight truncate">
+                            {recipe.name}
                         </div>
+                    </div>
 
-                        {/* Centro: foto + navegación */}
-                        <div className="relative flex items-center justify-center w-fit shrink-0">
-                        <button 
-                            onClick={handlePreviousRecipe} 
-                            disabled={currentRecipeIndex <= 0} 
+                    {/* Importar (arriba derecha, no rompe centrado) */}
+                    {canImportRecipe && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={handleImportIconClick}
+                                disabled={importingRecipe}
+                                title="Importar (sobrescribe esta receta)"
+                                className={cn(
+                                    "absolute right-2 top-2 md:right-3 md:top-2",
+                                    "w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95",
+                                    importingRecipe ? "opacity-40 pointer-events-none" : ""
+                                )}
+                            >
+                                <Import className="w-5 h-5" />
+                            </button>
+                            <input
+                                ref={importInputRef}
+                                type="file"
+                                accept=".xlsx,.xls,.csv"
+                                className="hidden"
+                                onChange={handleImportFileSelected}
+                            />
+                        </>
+                    )}
+
+                    {/* Foto + navegación centrada debajo */}
+                    <div className="relative mt-1 flex items-center justify-center w-fit shrink-0">
+                        <button
+                            onClick={handlePreviousRecipe}
+                            disabled={currentRecipeIndex <= 0}
                             className="absolute -left-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
                         >
                             <ChevronLeft className="w-8 h-8" />
                         </button>
-                        
+
                         <div className="bg-white rounded-xl p-0.5 shadow-sm">
                             <div className="relative group w-24 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-100/50">
                                 {recipe.photo_url ? (
@@ -750,41 +782,13 @@ function RecipeDetailContent() {
                             </div>
                         </div>
 
-                        <button 
-                            onClick={handleNextRecipe} 
-                            disabled={currentRecipeIndex >= allRecipes.length - 1} 
+                        <button
+                            onClick={handleNextRecipe}
+                            disabled={currentRecipeIndex >= allRecipes.length - 1}
                             className="absolute -right-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
                         >
                             <ChevronRight className="w-8 h-8" />
                         </button>
-                    </div>
-
-                        {/* Zona derecha: reserva (mantiene centrado) */}
-                        <div className="min-w-0 flex items-center justify-end">
-                            {canImportRecipe && (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={handleImportIconClick}
-                                        disabled={importingRecipe}
-                                        title="Importar (sobrescribe esta receta)"
-                                        className={cn(
-                                            "w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95",
-                                            importingRecipe ? "opacity-40 pointer-events-none" : ""
-                                        )}
-                                    >
-                                        <Import className="w-5 h-5" />
-                                    </button>
-                                    <input
-                                        ref={importInputRef}
-                                        type="file"
-                                        accept=".xlsx,.xls,.csv"
-                                        className="hidden"
-                                        onChange={handleImportFileSelected}
-                                    />
-                                </>
-                            )}
-                        </div>
                     </div>
 
                     <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
@@ -924,7 +928,7 @@ function RecipeDetailContent() {
                                     </div>
 
                                     <div className="flex justify-between items-center mt-2 px-2 shrink-0">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado ({activeTargetFC}%)</span>
                                         <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
                                     </div>
                                 </div>
@@ -1055,10 +1059,10 @@ function RecipeDetailContent() {
                         </div>
                     </div>
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
                             {!isRestricted && (
-                                <div className="flex items-center gap-1 shrink-0 -my-2">
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     {canImportRecipe && (
                                         <button
                                             type="button"
@@ -1185,10 +1189,10 @@ function RecipeDetailContent() {
                     </div>
 
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
                             {!isRestricted && (
-                                <div className="flex items-center gap-1 shrink-0 -my-2">
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     {canImportRecipe && (
                                         <button
                                             type="button"

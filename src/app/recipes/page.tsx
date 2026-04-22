@@ -47,6 +47,32 @@ function RecipesContent() {
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
+    const categoryFromUrl = searchParams.get('cat');
+
+    const buildRecipesHref = (id: string) => {
+        const qs = new URLSearchParams(searchParams.toString());
+        return qs.toString() ? `/recipes/${id}?${qs.toString()}` : `/recipes/${id}`;
+    };
+
+    useEffect(() => {
+        // Mantener el filtro al navegar/back/refresh
+        if (categoryFromUrl && categoryFromUrl !== selectedCategory) {
+            setSelectedCategory(categoryFromUrl);
+        }
+        if (!categoryFromUrl && selectedCategory !== null) {
+            setSelectedCategory(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [categoryFromUrl]);
+
+    const setCategoryAndUrl = (cat: string | null) => {
+        setSelectedCategory(cat);
+        const qs = new URLSearchParams(searchParams.toString());
+        if (cat) qs.set('cat', cat);
+        else qs.delete('cat');
+        const next = qs.toString();
+        router.replace(next ? `/recipes?${next}` : '/recipes');
+    };
 
     useEffect(() => {
         fetchRecipes();
@@ -219,9 +245,9 @@ function RecipesContent() {
                                             <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
                                             <div className="absolute top-full right-0 mt-2 w-40 md:w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
                                                 <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
-                                                <button onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
+                                                <button onClick={() => { setCategoryAndUrl(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
                                                 {uniqueDbCategories.map(cat => (
-                                                    <button key={cat} onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
+                                                    <button key={cat} onClick={() => { setCategoryAndUrl(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
                                                 ))}
                                             </div>
                                         </>
@@ -230,7 +256,7 @@ function RecipesContent() {
                             ) : (
                                 <div className="flex items-center gap-1 bg-white rounded-xl md:rounded-2xl pl-2.5 md:pl-4 pr-1 md:pr-1.5 py-1 md:py-1.5 shadow-md border border-white max-w-[100px] md:max-w-none">
                                     <span className="text-zinc-800 font-black text-[9px] md:text-[10px] uppercase tracking-widest truncate">{selectedCategory}</span>
-                                    <button onClick={() => setSelectedCategory(null)} className="p-1 md:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors shrink-0"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
+                                    <button onClick={() => setCategoryAndUrl(null)} className="p-1 md:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors shrink-0"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
                                 </div>
                             )}
                             {!isRestricted && (
@@ -249,7 +275,7 @@ function RecipesContent() {
                                             if (isStaffView) {
                                                 setSelectedRecipeId(recipe.id);
                                             } else {
-                                                router.push(`/recipes/${recipe.id}`);
+                                                router.push(buildRecipesHref(recipe.id));
                                             }
                                         }}
                                         className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
@@ -307,7 +333,7 @@ function RecipesContent() {
                                     <button
                                         onClick={() => {
                                             setSelectedRecipeId(null);
-                                            router.push(`/recipes/${selectedRecipeId}`);
+                                            router.push(buildRecipesHref(selectedRecipeId));
                                         }}
                                         className="w-12 h-12 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
                                         aria-label="Editar"
