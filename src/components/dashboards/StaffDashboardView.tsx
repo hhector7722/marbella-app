@@ -33,6 +33,7 @@ import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
+import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, type StaffManualMenuId } from '@/lib/staff-manuals';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -64,6 +65,8 @@ interface ShiftMock {
     endTime: string;
     activity?: string;
 }
+
+type ManualMediaViewerState = { type: 'video' | 'image'; src: string; title: string } | null;
 
 const applyRoundingRule = (totalMinutes: number): number => {
     if (totalMinutes <= 0) return 0;
@@ -108,6 +111,9 @@ export default function StaffDashboardView() {
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | 'carta' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
+    const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
+    const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
+    const [manualMediaViewer, setManualMediaViewer] = useState<ManualMediaViewerState>(null);
     const [preferStock, setPreferStock] = useState(false);
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
@@ -602,7 +608,60 @@ export default function StaffDashboardView() {
     );
 
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); setIsProductModalOpen(false); };
-    const closeManualsModal = () => setIsManualsModalOpen(false);
+    const closeManualsModal = () => {
+        setIsManualsModalOpen(false);
+        setIsTpvManualModalOpen(false);
+        setIsHornoManualModalOpen(false);
+    };
+    const closeTpvManualModal = () => setIsTpvManualModalOpen(false);
+    const closeHornoManualModal = () => setIsHornoManualModalOpen(false);
+
+    /** Misma UX que nóminas: visor PDF nativo del navegador en nueva pestaña (`NominasModal.openNomina`). */
+    const openStaffPdf = (url: string) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleStaffManualItem = (id: StaffManualMenuId) => {
+        switch (id) {
+            case 'check-list':
+                openStaffPdf(STAFF_MANUAL_ASSETS.checkListPdf);
+                break;
+            case 'horno':
+                setIsTpvManualModalOpen(false);
+                setIsHornoManualModalOpen(true);
+                break;
+            case 'tpv':
+                setIsHornoManualModalOpen(false);
+                setIsTpvManualModalOpen(true);
+                break;
+            case 'altavoces':
+                setIsTpvManualModalOpen(false);
+                setIsHornoManualModalOpen(false);
+                setIsManualsModalOpen(false);
+                setManualMediaViewer({ type: 'video', src: STAFF_MANUAL_ASSETS.altavocesVideo, title: 'Altavoces' });
+                break;
+            case 'bebidas':
+                setIsTpvManualModalOpen(false);
+                setIsHornoManualModalOpen(false);
+                setIsManualsModalOpen(false);
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.bebidasImage, title: 'Bebidas' });
+                break;
+            case 'cambios-lluvia':
+                setIsTpvManualModalOpen(false);
+                setIsHornoManualModalOpen(false);
+                setIsManualsModalOpen(false);
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cambiosLluviaImage, title: 'Cambios por Lluvia' });
+                break;
+            case 'cuadro-electrico':
+                setIsTpvManualModalOpen(false);
+                setIsHornoManualModalOpen(false);
+                setIsManualsModalOpen(false);
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cuadroElectricoImage, title: 'Acceso Cuadro Eléctrico' });
+                break;
+            default:
+                break;
+        }
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
@@ -989,7 +1048,7 @@ export default function StaffDashboardView() {
                                             className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
                                         >
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/guide.png" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                <Image src="/icons/guide" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">Manuales</span>
                                         </button>
@@ -1103,18 +1162,10 @@ export default function StaffDashboardView() {
                         </div>
 
                         <div className="p-8 space-y-1 overflow-y-auto">
-                            {[
-                                { label: 'Check List', icon: '/icons/inventory.png' },
-                                { label: 'Tpv', icon: '/icons/pos.png' },
-                                { label: 'Altavoces', icon: '/icons/altav.png' },
-                                { label: 'Bebidas', icon: '/icons/ingrediente.png' },
-                                { label: 'Horno', icon: '/icons/horno.png' },
-                                { label: 'Cambios por Lluvia', icon: '/icons/lluvia.png' },
-                                { label: 'Acceso Cuadro Eléctrico', icon: '/icons/electrico.png' },
-                            ].map((item) => (
+                            {STAFF_MANUAL_MENU.map((item) => (
                                 <button
-                                    key={item.label}
-                                    onClick={() => toast.info('Pendiente de configurar destino')}
+                                    key={item.id}
+                                    onClick={() => handleStaffManualItem(item.id)}
                                     className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
                                     type="button"
                                 >
@@ -1130,6 +1181,163 @@ export default function StaffDashboardView() {
                                     <span className="font-bold text-sm tracking-tight text-left">{item.label}</span>
                                 </button>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isManualsModalOpen && isTpvManualModalOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
+                    onClick={closeTpvManualModal}
+                >
+                    <div
+                        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-label="Manual TPV"
+                    >
+                        <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative gap-3">
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={closeTpvManualModal}
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 min-h-[48px] min-w-[48px]"
+                                    aria-label="Volver a manuales"
+                                >
+                                    <ArrowLeft size={18} strokeWidth={3} />
+                                </button>
+                                <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">TPV</h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeTpvManualModal}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-90 min-h-[48px] min-w-[48px]"
+                                aria-label="Cerrar submenú TPV"
+                            >
+                                <X size={18} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="max-h-[60vh] space-y-1 overflow-y-auto p-6">
+                            {STAFF_TPV_MANUAL_ITEMS.map((label) => (
+                                <button
+                                    key={label}
+                                    type="button"
+                                    onClick={() => toast.info('Destino pendiente de configurar', { description: label })}
+                                    className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isManualsModalOpen && isHornoManualModalOpen && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in"
+                    onClick={closeHornoManualModal}
+                >
+                    <div
+                        className="flex max-h-[85vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all"
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-label="Manual horno"
+                    >
+                        <div className="relative flex shrink-0 items-center justify-between gap-3 bg-[#36606F] px-6 py-4 text-white">
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={closeHornoManualModal}
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 min-h-[48px] min-w-[48px]"
+                                    aria-label="Volver a manuales"
+                                >
+                                    <ArrowLeft size={18} strokeWidth={3} />
+                                </button>
+                                <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">Horno</h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeHornoManualModal}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-90 min-h-[48px] min-w-[48px]"
+                                aria-label="Cerrar submenú horno"
+                            >
+                                <X size={18} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="space-y-3 p-6">
+                            <button
+                                type="button"
+                                onClick={() => openStaffPdf(STAFF_MANUAL_ASSETS.hornoLimpiezaPdf)}
+                                className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
+                            >
+                                Limpieza Horno
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsHornoManualModalOpen(false);
+                                    setIsTpvManualModalOpen(false);
+                                    setIsManualsModalOpen(false);
+                                    setManualMediaViewer({
+                                        type: 'video',
+                                        src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
+                                        title: 'Funcionamiento Horno',
+                                    });
+                                }}
+                                className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
+                            >
+                                Funcionamiento Horno
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {manualMediaViewer && (
+                <div
+                    className="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in"
+                    onClick={() => setManualMediaViewer(null)}
+                    role="dialog"
+                    aria-label={manualMediaViewer.title}
+                >
+                    <div
+                        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-[#36606F] px-4 py-3 text-white">
+                            <h3 className="min-w-0 truncate text-sm font-black uppercase tracking-wide">{manualMediaViewer.title}</h3>
+                            <button
+                                type="button"
+                                onClick={() => setManualMediaViewer(null)}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white transition-colors hover:bg-rose-600 min-h-[48px] min-w-[48px]"
+                                aria-label="Cerrar visor"
+                            >
+                                <X size={18} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 p-4">
+                            {manualMediaViewer.type === 'video' ? (
+                                <video
+                                    src={manualMediaViewer.src}
+                                    controls
+                                    playsInline
+                                    className="mx-auto w-full max-h-[75vh] rounded-xl bg-black"
+                                >
+                                    Tu navegador no reproduce vídeo embebido.
+                                </video>
+                            ) : (
+                                <div className="flex justify-center">
+                                    <Image
+                                        src={manualMediaViewer.src}
+                                        alt={manualMediaViewer.title}
+                                        width={1200}
+                                        height={1600}
+                                        className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

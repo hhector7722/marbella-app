@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-21 (Inventario / Stock: UI alineada a Mermas)
+**Última actualización:** 2026-04-21 (Staff: manuales Info → rutas en `public/docs/manuals`)
+
+- [x] **Staff `/staff/dashboard` → Info → Manuales (2026-04-21)**: PDFs con `window.open` (misma UX que nóminas en nueva pestaña); vídeo e imágenes en modal nativo. Ficheros estáticos esperados en `public/docs/manuals/` (`check-list.pdf`, `horno-limpieza.pdf`, `horno-funcionamiento.mp4`, `altavoces.mp4`, `bebidas.png`, `cambios-lluvia.png`, `cuadro-electrico.png`). Entrada **Horno**: submodal con Limpieza (PDF) y Funcionamiento (vídeo). Submenú TPV con entradas placeholder hasta definir destinos. Constantes en `src/lib/staff-manuals.ts`.
 
 - [x] **Recetas `/recipes/[id]`: guardar Elaboración/Presentación en BD (2026-04-21)**: En modo edición, los cambios manuales ya no se quedan solo en estado local. Añadidos botones táctiles **Guardar** y **Cerrar (Guardar)** para Elaboración y Presentación; el guardado ahora valida error de Supabase/RLS y muestra `toast.error` si falla (anti-silent).
 
