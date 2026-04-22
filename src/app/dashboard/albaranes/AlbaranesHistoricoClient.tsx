@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ExternalLink, FileText, Loader2, RefreshCw, Search, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem } from './actions'
-import { getPurchaseInvoiceDetailAction, listPurchaseInvoicesAction } from './actions'
+import { getPurchaseInvoiceDetailAction, listPurchaseInvoicesAction, updatePurchaseInvoiceLineAction } from './actions'
 
 function formatDateTitle(v: string | null | undefined) {
   const t = String(v ?? '').trim()
@@ -48,6 +48,10 @@ export default function AlbaranesHistoricoClient({
   const [detailError, setDetailError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
+  const [savingLineId, setSavingLineId] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveWarning, setSaveWarning] = useState<string | null>(null)
+  const [draftLines, setDraftLines] = useState<Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }>>({})
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -85,6 +89,9 @@ export default function AlbaranesHistoricoClient({
     setDetail(null)
     setDetailError(null)
     setIsLoadingDetail(true)
+    setSaveError(null)
+    setSaveWarning(null)
+    setDraftLines({})
     try {
       const res = await getPurchaseInvoiceDetailAction(id)
       if (!res.success) {
@@ -92,8 +99,97 @@ export default function AlbaranesHistoricoClient({
         return
       }
       setDetail(res.detail)
+      const nextDraft: Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }> = {}
+      for (const l of res.detail.lines) {
+        nextDraft[l.id] = {
+          original_name: l.original_name ?? '',
+          quantity: l.quantity == null ? '' : String(l.quantity),
+          unit_price: l.unit_price == null ? '' : String(l.unit_price),
+          total_price: l.total_price == null ? '' : String(l.total_price),
+        }
+      }
+      setDraftLines(nextDraft)
     } finally {
       setIsLoadingDetail(false)
+    }
+  }
+
+  function setDraft(lineId: string, patch: Partial<{ original_name: string; quantity: string; unit_price: string; total_price: string }>) {
+    setDraftLines((prev) => ({
+      ...prev,
+      [lineId]: {
+        original_name: prev[lineId]?.original_name ?? '',
+        quantity: prev[lineId]?.quantity ?? '',
+        unit_price: prev[lineId]?.unit_price ?? '',
+        total_price: prev[lineId]?.total_price ?? '',
+        ...patch,
+      },
+    }))
+  }
+
+  async function saveLine(lineId: string) {
+    if (!detail) return
+    setSaveError(null)
+    setSaveWarning(null)
+    setSavingLineId(lineId)
+    try {
+      const d = draftLines[lineId]
+      if (!d) {
+        setSaveError('No hay borrador para esta línea.')
+        return
+      }
+
+      const qty = d.quantity.trim() === '' ? null : Number(d.quantity)
+      const unit = d.unit_price.trim() === '' ? null : Number(d.unit_price)
+      const total = d.total_price.trim() === '' ? null : Number(d.total_price)
+
+      if (qty != null && !Number.isFinite(qty)) {
+        setSaveError('Cantidad inválida.')
+        return
+      }
+      if (unit != null && !Number.isFinite(unit)) {
+        setSaveError('Precio unitario inválido.')
+        return
+      }
+      if (total != null && !Number.isFinite(total)) {
+        setSaveError('Total inválido.')
+        return
+      }
+
+      const res = await updatePurchaseInvoiceLineAction({
+        lineId,
+        patch: {
+          original_name: d.original_name,
+          quantity: qty,
+          unit_price: unit,
+          total_price: total,
+        },
+      })
+      if (!res.success) {
+        setSaveError(res.message)
+        return
+      }
+      if (res.warning) setSaveWarning(res.warning)
+
+      // Refrescar detalle para ver cambios y mantener consistencia
+      const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
+      if (!refreshed.success) {
+        setSaveError(`Guardado OK, pero no se pudo recargar: ${refreshed.message}`)
+        return
+      }
+      setDetail(refreshed.detail)
+      const nextDraft: Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }> = {}
+      for (const l of refreshed.detail.lines) {
+        nextDraft[l.id] = {
+          original_name: l.original_name ?? '',
+          quantity: l.quantity == null ? '' : String(l.quantity),
+          unit_price: l.unit_price == null ? '' : String(l.unit_price),
+          total_price: l.total_price == null ? '' : String(l.total_price),
+        }
+      }
+      setDraftLines(nextDraft)
+    } finally {
+      setSavingLineId(null)
     }
   }
 
@@ -135,11 +231,8 @@ export default function AlbaranesHistoricoClient({
           <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-wider text-zinc-700">Modo Gestión</p>
             <p className="text-sm font-semibold text-zinc-700 mt-1">
-              Desde aquí validas el histórico. Para extracción de precios desde imagen (mapeo de ingredientes), usa{' '}
-              <Link href="/dashboard/albaranes-precios" className="underline font-black">
-                Precios (IA)
-              </Link>
-              .
+              Desde aquí validas el histórico. La extracción y el precio del ingrediente se sincronizan automáticamente al recibir un
+              albarán (y al guardar correcciones en una línea mapeada).
             </p>
           </div>
         </div>
@@ -219,6 +312,14 @@ export default function AlbaranesHistoricoClient({
           </div>
 
           <div className="p-4 overflow-auto flex-1 min-h-0">
+            {saveError ? (
+              <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{saveError}</div>
+            ) : null}
+            {saveWarning ? (
+              <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm font-bold text-amber-800">
+                {saveWarning}
+              </div>
+            ) : null}
             {!selectedId ? (
               <div className="text-sm font-bold text-zinc-500">Selecciona un albarán para ver imagen/PDF y extracción.</div>
             ) : isLoadingDetail ? (
@@ -292,17 +393,90 @@ export default function AlbaranesHistoricoClient({
                     {detail.lines.length === 0 ? (
                       <div className="p-3 text-sm font-bold text-zinc-500">No hay líneas guardadas.</div>
                     ) : (
-                      detail.lines.map((l) => (
-                        <div key={l.id} className="p-3">
-                          <p className="text-sm font-black text-zinc-900">{l.original_name || 'Sin nombre'}</p>
-                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-bold text-zinc-600">
-                            <span>Cant: {l.quantity == null ? '—' : String(l.quantity)}</span>
-                            <span>PU: {formatMaybeMoney(l.unit_price)}</span>
-                            <span>Total: {formatMaybeMoney(l.total_price)}</span>
-                            {l.ingredient_name ? <span className="text-emerald-700">→ {l.ingredient_name}</span> : null}
+                      detail.lines.map((l) => {
+                        const d = draftLines[l.id]
+                        const canEdit = isManager
+                        return (
+                          <div key={l.id} className="p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                {canEdit ? (
+                                  <input
+                                    value={d?.original_name ?? ''}
+                                    onChange={(e) => setDraft(l.id, { original_name: e.target.value })}
+                                    className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
+                                    placeholder="Nombre línea"
+                                  />
+                                ) : (
+                                  <p className="text-sm font-black text-zinc-900">{l.original_name || 'Sin nombre'}</p>
+                                )}
+                                <div className="mt-2 grid grid-cols-3 gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
+                                    {canEdit ? (
+                                      <input
+                                        inputMode="decimal"
+                                        value={d?.quantity ?? ''}
+                                        onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
+                                        className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                        placeholder="—"
+                                      />
+                                    ) : (
+                                      <p className="text-sm font-bold text-zinc-800 mt-1">{l.quantity == null ? '—' : String(l.quantity)}</p>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">PU</p>
+                                    {canEdit ? (
+                                      <input
+                                        inputMode="decimal"
+                                        value={d?.unit_price ?? ''}
+                                        onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
+                                        className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                        placeholder="—"
+                                      />
+                                    ) : (
+                                      <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.unit_price)}</p>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Total</p>
+                                    {canEdit ? (
+                                      <input
+                                        inputMode="decimal"
+                                        value={d?.total_price ?? ''}
+                                        onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
+                                        className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                        placeholder="—"
+                                      />
+                                    ) : (
+                                      <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.total_price)}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-bold text-zinc-600">
+                                  {l.ingredient_name ? <span className="text-emerald-700">→ {l.ingredient_name}</span> : null}
+                                </div>
+                              </div>
+
+                              {canEdit ? (
+                                <button
+                                  type="button"
+                                  onClick={() => saveLine(l.id)}
+                                  disabled={savingLineId === l.id}
+                                  className={cn(
+                                    'shrink-0 min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition',
+                                    savingLineId === l.id && 'opacity-60 pointer-events-none'
+                                  )}
+                                >
+                                  {savingLineId === l.id ? 'Guardando…' : 'Guardar'}
+                                </button>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        )
+                      })
                     )}
                   </div>
                 </div>
