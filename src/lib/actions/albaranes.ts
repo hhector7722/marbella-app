@@ -74,18 +74,29 @@ export async function confirmarMapeoAction(formData: FormData) {
   const quantityToAdd = lineQuantity * conversionFactor
 
   if (quantityToAdd > 0) {
-    const { error: ledgerError } = await supabase
+    const ref = `ALB-LINE-${lineId}`
+    const { data: existing, error: existingErr } = await supabase
       .from('stock_movements')
-      .insert({
+      .select('id')
+      .eq('movement_type', 'PURCHASE')
+      .eq('ingredient_id', ingredientId)
+      .eq('reference_doc', ref)
+      .limit(1)
+      .maybeSingle()
+    if (existingErr) throw new Error(`Error comprobando stock existente: ${existingErr.message}`)
+
+    if (!existing?.id) {
+      const { error: ledgerError } = await supabase.from('stock_movements').insert({
         movement_type: 'PURCHASE',
         ingredient_id: ingredientId,
         quantity: quantityToAdd,
         unit: ingredientUnit,
-        reference_doc: `ALB-LINE-${lineId}`,
+        reference_doc: ref,
         original_description: `Recepción: ${originalName} (Factor: ${conversionFactor})`,
-        processed_by: 'Consolidación UI'
+        processed_by: 'Consolidación UI',
       })
-    if (ledgerError) throw new Error(`Error inyectando stock: ${ledgerError.message}`)
+      if (ledgerError) throw new Error(`Error inyectando stock: ${ledgerError.message}`)
+    }
   }
 
   // 5. Marcar línea como mapeada (Cierre)
