@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import type { KDSItemStatus, KDSOrder, KDSOrderLine } from '@/components/kds/types';
-import { getStartOfLocalToday } from '@/utils/date-utils';
+import { getStartOfEuropeMadridToday } from '@/utils/date-utils';
 
 type ProjectionOrderRow = {
   id_ticket: string;
@@ -75,7 +75,7 @@ export function useKDSv2() {
       if (opts.initial) setLoading(true);
       if (!opts.silent) setSyncStatus('syncing');
 
-      const startIso = getStartOfLocalToday().toISOString();
+      const startIso = getStartOfEuropeMadridToday().toISOString();
       try {
         const { data: projOrders, error: oErr } = await supabase
           .from('kds_projection_orders')

@@ -73,3 +73,47 @@ export function getStartOfLocalToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 }
+
+const MADRID_TZ = 'Europe/Madrid';
+
+function madridDatePartsFromInstant(d: Date): { y: number; m: number; day: number } {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: MADRID_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = fmt.formatToParts(d);
+  const y = Number(parts.find((p) => p.type === 'year')?.value);
+  const m = Number(parts.find((p) => p.type === 'month')?.value);
+  const day = Number(parts.find((p) => p.type === 'day')?.value);
+  return { y, m, day };
+}
+
+/**
+ * Inicio del día operativo en Marbella: **00:00 Europe/Madrid** convertido a un `Date` JS correcto.
+ *
+ * Importante: NO usar `new Date('YYYY-MM-DD')` (regla anti-shift) y NO asumir la TZ del navegador
+ * para el “día en curso” del KDS (kioscos mal configurados en UTC colaban comandas de ayer).
+ */
+export function getStartOfEuropeMadridToday(now: Date = new Date()): Date {
+  const { y, m, day } = madridDatePartsFromInstant(now);
+
+  // Ancla: mismo calendario "numérico" a mediodía UTC (evita ambigüedades cerca de medianoche).
+  const pMid = madridDatePartsFromInstant(new Date(Date.UTC(y, m - 1, day, 12, 0, 0, 0)));
+
+  // Diferencia de días entre el calendario numérico UTC y el calendario Madrid en ese instante.
+  const utcNoon = Date.UTC(y, m - 1, day, 12, 0, 0, 0);
+  const madNoon = Date.UTC(pMid.y, pMid.m - 1, pMid.day, 12, 0, 0, 0);
+  const dayDeltaMs = madNoon - utcNoon;
+
+  // Medianoche Madrid (00:00) expresada como instante UTC: restamos 12h desde el "mediodía Madrid"
+  // alineado con el día objetivo (y-m-day).
+  return new Date(Date.UTC(y, m - 1, day, 12, 0, 0, 0) - dayDeltaMs - 12 * 60 * 60 * 1000);
+}
+
+/** Próxima medianoche Europe/Madrid (00:00) después de `now`. */
+export function getNextEuropeMadridMidnight(now: Date = new Date()): Date {
+  const startToday = getStartOfEuropeMadridToday(now);
+  return new Date(startToday.getTime() + 24 * 60 * 60 * 1000);
+}
