@@ -4,6 +4,32 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+function normalizeSupplierName(v: string) {
+  return String(v ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function scoreSupplierMatch(inputNorm: string, candidateNorm: string) {
+  if (!inputNorm || !candidateNorm) return 0
+  if (inputNorm === candidateNorm) return 1000
+
+  const a = new Set(inputNorm.split(' ').filter((t) => t.length >= 3))
+  const bTokens = candidateNorm.split(' ').filter((t) => t.length >= 3)
+  let common = 0
+  for (const t of bTokens) if (a.has(t)) common++
+
+  let score = common * 25
+  if (candidateNorm.includes(inputNorm) || inputNorm.includes(candidateNorm)) score += 40
+  const lenDelta = Math.abs(candidateNorm.length - inputNorm.length)
+  score -= Math.min(lenDelta, 30)
+  return score
+}
+
 async function gateAuthenticated() {
   const supabase = await createClient()
   const {
@@ -94,17 +120,31 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 
     let matchedSupplierId: number | null = null
     if (aiData?.proveedor) {
-      const searchTerm = String(aiData.proveedor).substring(0, 10).trim()
-      if (searchTerm) {
-        const { data: supplierMatch, error: supplierMatchError } = await supabase
-          .from('suppliers')
-          .select('id')
-          .ilike('name', `%${searchTerm}%`)
-          .limit(1)
-          .maybeSingle()
-        if (supplierMatchError) console.error('Scanner supplierMatch error:', supplierMatchError)
-        if (supplierMatch) matchedSupplierId = supplierMatch.id
+      const input = String(aiData.proveedor ?? '').trim()
+      const inputNorm = normalizeSupplierName(input)
+      const tokens = inputNorm.split(' ').filter((t) => t.length >= 3).slice(0, 4)
+
+      let candidates: Array<{ id: number; name: string }> = []
+      if (tokens.length > 0) {
+        const or = tokens.map((t) => `name.ilike.%${t}%`).join(',')
+        const { data, error } = await supabase.from('suppliers').select('id,name').or(or).limit(30)
+        if (error) console.error('Scanner supplierMatch error:', error)
+        candidates = (data as any[])?.map((r) => ({ id: r.id, name: r.name })) ?? []
       }
+
+      if (candidates.length === 0 && inputNorm.length >= 3) {
+        const searchTerm = inputNorm.slice(0, Math.min(18, inputNorm.length))
+        const { data, error } = await supabase.from('suppliers').select('id,name').ilike('name', `%${searchTerm}%`).limit(30)
+        if (error) console.error('Scanner supplierMatch fallback error:', error)
+        candidates = (data as any[])?.map((r) => ({ id: r.id, name: r.name })) ?? []
+      }
+
+      let best: { id: number; score: number } | null = null
+      for (const c of candidates) {
+        const s = scoreSupplierMatch(inputNorm, normalizeSupplierName(c.name))
+        if (!best || s > best.score) best = { id: c.id, score: s }
+      }
+      if (best && best.score >= 45) matchedSupplierId = best.id
     }
 
     // 2b) Duplicados (hash + semántico) con función SECURITY DEFINER (no requiere SELECT global)

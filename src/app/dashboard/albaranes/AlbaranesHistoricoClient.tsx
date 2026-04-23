@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ExternalLink, FileText, Loader2, RefreshCw, Search, Shield } from 'lucide-react'
+import { ExternalLink, FileText, Loader2, RefreshCw, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem } from './actions'
 import { getPurchaseInvoiceDetailAction, listPurchaseInvoicesAction, updatePurchaseInvoiceLineAction } from './actions'
@@ -225,19 +225,6 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
 
-      {isManager ? (
-        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 flex items-start gap-3">
-          <Shield className="h-5 w-5 text-zinc-500 mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-wider text-zinc-700">Modo Gestión</p>
-            <p className="text-sm font-semibold text-zinc-700 mt-1">
-              Desde aquí validas el histórico. La extracción y el precio del ingrediente se sincronizan automáticamente al recibir un
-              albarán (y al guardar correcciones en una línea mapeada).
-            </p>
-          </div>
-        </div>
-      ) : null}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
           <div className="px-4 py-3 border-b border-zinc-100 shrink-0">
@@ -398,7 +385,7 @@ export default function AlbaranesHistoricoClient({
                         const canEdit = isManager
                         return (
                           <div key={l.id} className="p-3">
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                               <div className="min-w-0 flex-1">
                                 {canEdit ? (
                                   <input
@@ -410,7 +397,7 @@ export default function AlbaranesHistoricoClient({
                                 ) : (
                                   <p className="text-sm font-black text-zinc-900">{l.original_name || 'Sin nombre'}</p>
                                 )}
-                                <div className="mt-2 grid grid-cols-3 gap-2">
+                                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                   <div className="min-w-0">
                                     <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
                                     {canEdit ? (
@@ -466,7 +453,7 @@ export default function AlbaranesHistoricoClient({
                                   onClick={() => saveLine(l.id)}
                                   disabled={savingLineId === l.id}
                                   className={cn(
-                                    'shrink-0 min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition',
+                                    'shrink-0 w-full sm:w-auto min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition',
                                     savingLineId === l.id && 'opacity-60 pointer-events-none'
                                   )}
                                 >

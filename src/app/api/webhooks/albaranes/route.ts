@@ -2,6 +2,37 @@ import { createHash } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+function normalizeSupplierName(v: string) {
+    return String(v ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // quitar acentos
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
+}
+
+function scoreSupplierMatch(inputNorm: string, candidateNorm: string) {
+    if (!inputNorm || !candidateNorm) return 0;
+    if (inputNorm === candidateNorm) return 1000;
+
+    // scoring por tokens + substrings (robusto contra "S.L.", guiones, etc.)
+    const a = new Set(inputNorm.split(' ').filter((t) => t.length >= 3));
+    const bTokens = candidateNorm.split(' ').filter((t) => t.length >= 3);
+
+    let common = 0;
+    for (const t of bTokens) if (a.has(t)) common++;
+
+    let score = common * 25;
+    if (candidateNorm.includes(inputNorm) || inputNorm.includes(candidateNorm)) score += 40;
+
+    // preferir candidato no demasiado corto vs input
+    const lenDelta = Math.abs(candidateNorm.length - inputNorm.length);
+    score -= Math.min(lenDelta, 30);
+
+    return score;
+}
+
 export async function POST(req: Request) {
     try {
         // 1. Barrera de Seguridad
@@ -116,19 +147,34 @@ export async function POST(req: Request) {
         // 3. Coincidencia de proveedor y duplicado lógico (antes de subir el PDF a Storage)
         let matchedSupplierId = null;
         if (aiData.proveedor) {
-            const searchTerm = aiData.proveedor.substring(0, 10).trim();
-            if (searchTerm.length > 0) {
-                const { data: supplierMatch, error: supplierError } = await supabase
-                    .from('suppliers')
-                    .select('id')
-                    .ilike('name', `%${searchTerm}%`)
-                    .limit(1)
-                    .maybeSingle();
+            const input = String(aiData.proveedor ?? '').trim();
+            const inputNorm = normalizeSupplierName(input);
+            const tokens = inputNorm.split(' ').filter((t) => t.length >= 3).slice(0, 4);
 
-                if (supplierMatch && !supplierError) {
-                    matchedSupplierId = supplierMatch.id;
-                }
+            // 1) Candidatos por OR de tokens (más robusto que substring(0,10))
+            let candidates: Array<{ id: number; name: string }> = [];
+            if (tokens.length > 0) {
+                const or = tokens.map((t) => `name.ilike.%${t}%`).join(',');
+                const { data } = await supabase.from('suppliers').select('id,name').or(or).limit(30);
+                candidates = (data as any[])?.map((r) => ({ id: r.id, name: r.name })) ?? [];
             }
+
+            // 2) Fallback: si no hay tokens útiles, usar un trozo corto sin cortar a 10 fijo
+            if (candidates.length === 0 && inputNorm.length >= 3) {
+                const searchTerm = inputNorm.slice(0, Math.min(18, inputNorm.length));
+                const { data } = await supabase.from('suppliers').select('id,name').ilike('name', `%${searchTerm}%`).limit(30);
+                candidates = (data as any[])?.map((r) => ({ id: r.id, name: r.name })) ?? [];
+            }
+
+            // 3) Elegir el mejor candidato por scoring local
+            let best: { id: number; score: number } | null = null;
+            for (const c of candidates) {
+                const s = scoreSupplierMatch(inputNorm, normalizeSupplierName(c.name));
+                if (!best || s > best.score) best = { id: c.id, score: s };
+            }
+
+            // Umbral: evita matches falsos con tokens genéricos (ej. "ALIMENTOS")
+            if (best && best.score >= 45) matchedSupplierId = best.id;
         }
 
         const invoiceNumRaw = String(aiData.numero_factura ?? '').trim();
