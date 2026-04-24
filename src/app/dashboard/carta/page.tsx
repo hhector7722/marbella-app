@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
-import CartaEditorClient, { type CartaEditorMappingRow, type CartaOverrideRow } from './CartaEditorClient.tsx'
+import CartaEditorClient from './CartaEditorClient'
+import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 import Link from 'next/link'
 import { ArrowRightLeft } from 'lucide-react'
 
