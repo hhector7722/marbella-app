@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import CartaEditorClient, { type CartaEditorMappingRow, type CartaOverrideRow } from './CartaEditorClient'
+import Link from 'next/link'
+import { ArrowRightLeft } from 'lucide-react'
 
 export default async function CartaDashboardPage() {
   const supabase = await createClient()
@@ -22,6 +24,16 @@ export default async function CartaDashboardPage() {
       title="Carta"
       subtitle="Ocultar, ordenar y sobrescribir nombre/descr/precio/foto (sin tocar TPV)"
       maxWidthClass="max-w-7xl"
+      rightSlot={
+        <Link
+          href="/dashboard/recetas-tpv"
+          className="h-12 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-black uppercase tracking-wider text-[11px] flex items-center gap-2 transition-colors min-h-[48px]"
+          aria-label="Ir a Mapeo TPV"
+        >
+          <ArrowRightLeft size={18} strokeWidth={2.5} />
+          Mapeo TPV
+        </Link>
+      }
     >
       <CartaEditorClient
         mappings={(mappings ?? []) as unknown as CartaEditorMappingRow[]}
