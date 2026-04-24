@@ -385,7 +385,14 @@ function ProfileContent() {
             </div>
 
             {/* Modales */}
-            <DatosPersonalesModal isOpen={modalDatosPersonales} onClose={() => setModalDatosPersonales(false)} dni={profile.dni} email={profile.email} />
+            <DatosPersonalesModal
+                isOpen={modalDatosPersonales}
+                onClose={() => setModalDatosPersonales(false)}
+                dni={profile.dni}
+                email={profile.email}
+                ownerUserId={profile.id}
+                canManageDniImage={viewMode === 'manager-employee'}
+            />
             <ContactoModal isOpen={modalContacto} onClose={() => setModalContacto(false)} phone={profile.phone} />
             <DatosBancariosModal isOpen={modalDatosBancarios} onClose={() => setModalDatosBancarios(false)} iban={profile.bank_account} />
             <NominasMenuModal isOpen={nominasMenuOpen} onClose={() => setNominasMenuOpen(false)} onSelect={handleNominasMenuSelect} />

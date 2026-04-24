@@ -4,7 +4,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const ALLOWED_TIPOS = new Set(['comunicado', 'contrato', 'sancion']);
+const ALLOWED_TIPOS = new Set(['comunicado', 'contrato', 'sancion', 'dni']);
 
 function bucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
     // Legacy nóminas guardadas con rutas tipo "04/2026/..." en el bucket `nominas`.
