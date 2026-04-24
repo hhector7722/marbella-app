@@ -4,6 +4,23 @@ Este documento está diseñado para **copiar/pegar** como contexto en un LLM cua
 
 ---
 
+## 0) Mantenimiento (OBLIGATORIO)
+
+Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. Debe estar **siempre** actualizado y listo para copiar/pegar.
+
+- **Regla**: tras **cualquier cambio** relevante en el repo (código, migraciones, rutas, permisos, env vars, reglas duras), **revisar y actualizar** este documento si aplica.
+- **Fuente de verdad**:
+  - Estado funcional y roadmap: `PROJECT_STATUS.md`
+  - Esquema y cambios DB: `supabase/migrations/` (y `schema_dump.sql` si existe)
+- **Qué cambios obligan a tocar este archivo** (no exhaustivo):
+  - Nuevas rutas o cambios de comportamiento en `/dashboard/*`, `/staff/*`, `/api/*`
+  - Nuevas tablas/columnas/RPCs/triggers/RLS o cambios de permisos
+  - Cambios de stack/versiones, build (Webpack/Turbopack), o librerías base
+  - Nuevas variables de entorno o cambios en nombres/contratos
+  - Nuevas “reglas duras” del proyecto (UX táctil, fechas, zero-display, anti-silent)
+
+---
+
 ## 1) Identidad del proyecto (qué es)
 
 **Bar La Marbella** es un sistema operativo táctil para hostelería con varios dominios:
@@ -189,4 +206,22 @@ Nota: este dominio puede no estar reflejado en `schema_dump.sql` si el dump est�
 Pega esto como “contexto del proyecto”:
 
 > Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, backend Supabase (Auth + RLS + Realtime + Storage) con SSR via @supabase/ssr. Dominio: sala/radar, KDS cocina, tesorería/caja, personal/horas, propinas, recetas/escandallo, pedidos, proveedores/albaranes cognitivos y documentos empleados. Regla clave: frontend tonto (agregaciones/reglas en SQL RPCs), RLS estricto, anti-silent-fail, zero-display (0→" "), y fechas inmunes a timezone shifts (prohibido new Date('YYYY-MM-DD')). No inventes columnas/tabla; usa schema_dump.sql y migraciones como fuente de verdad.
+
+---
+
+## 11) Estado actual (snapshot operativo)
+
+**Fuente**: `PROJECT_STATUS.md` (última actualización indicada allí: **2026-04-22**).
+
+Hitos recientes relevantes para el contexto (para evitar drift al trabajar con un LLM):
+
+- **KDS v1 operativo (UI actual)**: restaurado trigger v1 sobre cambios en `estado_sala` para poblar `kds_orders` / `kds_order_lines` (hotfix **2026-04-22**).
+- **Albaranes (histórico + automatizaciones)**:
+  - Trigger **auto-precio** al insertar líneas de albarán (`purchase_invoice_lines`) (**2026-04-22**).
+  - Trigger **auto-stock** al mapear línea (`status='mapped'`) con `stock_movements` idempotente por `ALB-LINE-<lineId>` (fix posterior indicado en estado).
+- **Recetas**:
+  - Elaboración/Presentación guardan en BD (anti-silent en fallos).
+  - Soporte de **vídeo de elaboración**: Storage `recipe_videos` y `recipes.elaboration_video_url` (**2026-04-22**).
+- **Horas extras**: filtradas para no listar semanas abiertas/futuras (solo semanas completadas) y UI alineada a esa regla.
+
 
