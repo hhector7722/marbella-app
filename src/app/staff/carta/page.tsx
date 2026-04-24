@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Settings } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { DigitalMenu } from '@/components/staff/DigitalMenu';
 
@@ -13,6 +13,19 @@ export default async function StaffCartaPage() {
     if (!user) {
         redirect('/login');
     }
+
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (profileError) {
+        console.error('Error fetching profile role (staff/carta):', profileError);
+    }
+
+    const role = (profile?.role ?? null) as string | null;
+    const canEditMenu = role === 'manager' || role === 'admin';
 
     return (
         <div className="min-h-screen bg-[#5B8FB9] pb-24 pt-4">
@@ -29,6 +42,16 @@ export default async function StaffCartaPage() {
                         <h1 className="text-xs font-black uppercase tracking-widest text-[#36606F]">La carta</h1>
                         <p className="truncate text-[10px] font-medium text-zinc-400">Platos y precios del TPV</p>
                     </div>
+                    {canEditMenu ? (
+                        <Link
+                            href="/dashboard/carta"
+                            className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-100 bg-white p-3 text-[#36606F] shadow-sm active:scale-[0.98]"
+                            aria-label="Editar carta"
+                            title="Editar carta"
+                        >
+                            <Settings className="h-5 w-5" strokeWidth={2.5} />
+                        </Link>
+                    ) : null}
                 </div>
 
                 <DigitalMenu />

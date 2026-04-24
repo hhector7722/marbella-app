@@ -6,9 +6,10 @@ export async function DigitalMenu() {
     const { data, error } = await supabase
         .from('v_digital_menu_items')
         .select(
-            'articulo_id, articulo_nombre, familia_id, familia_nombre, recipe_id, recipe_name, descripcion, precio, photo_url'
+            'articulo_id, articulo_nombre, familia_id, familia_nombre, recipe_id, recipe_name, descripcion, precio, photo_url, sort_order'
         )
         .order('familia_nombre', { ascending: true, nullsFirst: false })
+        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('articulo_nombre', { ascending: true });
 
     if (error) {
