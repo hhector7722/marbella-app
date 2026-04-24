@@ -89,7 +89,40 @@ export default async function FinanzasPage({
     p_end_date: endDate,
   });
   if (error) {
-    throw new Error(`RPC get_financial_statement falló: ${error.message}`);
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-8 pb-24 text-zinc-900">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-100/50">
+              <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
+                Finanzas
+              </div>
+              <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                Error crítico: no se pudo cargar el estado financiero
+              </div>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="text-[10px] md:text-[11px] font-bold text-zinc-700">
+                Periodo solicitado:{' '}
+                <span className="font-black">{startDate}</span> → <span className="font-black">{endDate}</span>
+              </div>
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-rose-700">
+                  Detalle del error (Supabase RPC)
+                </div>
+                <div className="mt-2 text-[12px] font-black tabular-nums text-rose-600 break-words">
+                  {error.message}
+                </div>
+              </div>
+              <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                Normalmente esto ocurre si el RPC no está desplegado en Supabase o faltan permisos/RLS.
+                Aplica la migración <span className="font-black">20260424120000_get_financial_statement_rpc.sql</span> y recarga.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
