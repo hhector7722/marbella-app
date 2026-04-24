@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { TrendingDown, TrendingUp, ArrowRightLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn, formatDisplayValue } from '@/lib/utils';
 import { parseTPVDate, getStartOfLocalToday } from '@/utils/date-utils';
 
@@ -67,7 +67,7 @@ function SignTrendIcon({ value }: { value: number }) {
   );
 }
 
-function SectionCard({
+function DetailCard({
   title,
   subtitle,
   children,
@@ -77,15 +77,13 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm overflow-hidden">
-      <div className="px-4 md:px-6 py-4 border-b border-zinc-50 flex items-center justify-between gap-3 shrink-0">
+    <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
           <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900 truncate">
             {title}
           </div>
-          <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">
-            {subtitle}
-          </div>
+          <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">{subtitle}</div>
         </div>
       </div>
       <div className="p-4 md:p-6">{children}</div>
@@ -113,11 +111,40 @@ function LineItem({
 
   return (
     <div className="flex items-center justify-between gap-3 min-h-12">
-      <div className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-500 truncate">
+      <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">
         {label}
       </div>
-      <div className={cn('text-[12px] md:text-[14px] font-black tabular-nums', cls)}>
+      <div className={cn('text-[13px] md:text-[14px] font-black tabular-nums', cls)}>
         {formatEurRead(amount)}
+      </div>
+    </div>
+  );
+}
+
+function KpiTile({
+  label,
+  value,
+  icon,
+  valueClassName,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0">
+      <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">{label}</div>
+      <div className="mt-1 flex items-center gap-2 min-w-0">
+        <div className="shrink-0">{icon}</div>
+        <div
+          className={cn(
+            'text-[20px] md:text-[24px] font-black tabular-nums tracking-tight truncate',
+            valueClassName ?? 'text-zinc-900',
+          )}
+        >
+          {formatEurRead(value)}
+        </div>
       </div>
     </div>
   );
@@ -151,7 +178,8 @@ export default function FinancialDashboardClient({
   );
 
   const reconciliation = statement.reconciliation;
-  const deltaTone = reconciliation.delta > 0 ? 'positive' : reconciliation.delta < 0 ? 'negative' : 'muted';
+  const deltaTone =
+    reconciliation.delta > 0 ? 'positive' : reconciliation.delta < 0 ? 'negative' : 'muted';
 
   const applyRange = () => {
     const s = clampYmdOrFallback(startDate, initialStartDate);
@@ -180,260 +208,295 @@ export default function FinancialDashboardClient({
   return (
     <div className="min-h-screen bg-white p-4 md:p-8 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
-        <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm overflow-hidden">
-          <div className="px-4 md:px-6 py-4 flex items-center justify-between gap-3 border-b border-zinc-50 shrink-0">
-            <div className="min-w-0">
-              <div className="text-[12px] md:text-[14px] font-black uppercase tracking-widest text-zinc-900 truncate">
-                Finanzas
-              </div>
-              <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">
-                Cuenta de Pérdidas y Ganancias (Devengo) vs Estado de Flujos de Efectivo (Caja)
+        {/* HEADER (Página Detalle) */}
+        <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-100/50 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard')}
+                className={cn(
+                  'min-h-12 min-w-12 shrink-0',
+                  'rounded-xl border border-zinc-200/60 bg-white hover:bg-zinc-50',
+                  'inline-flex items-center justify-center',
+                  'active:scale-[0.99] transition-transform',
+                )}
+                aria-label="Volver"
+              >
+                <ArrowLeft className="w-5 h-5 text-zinc-700" strokeWidth={2.75} aria-hidden />
+              </button>
+
+              <div className="min-w-0 pt-0.5">
+                <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900 truncate">
+                  Finanzas
+                </div>
+                <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                  Cuenta de Pérdidas y Ganancias (Devengo) vs Estado de Flujos de Efectivo (Caja)
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="hidden md:flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-2 shrink-0">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className={cn(
-                      'min-h-12 px-3 rounded-xl border border-zinc-200 bg-white text-zinc-900',
-                      'text-[12px] font-black tabular-nums',
-                      'focus:outline-none focus:ring-2 focus:ring-zinc-200',
-                    )}
-                    aria-label="Fecha inicio"
-                  />
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className={cn(
-                      'min-h-12 px-3 rounded-xl border border-zinc-200 bg-white text-zinc-900',
-                      'text-[12px] font-black tabular-nums',
-                      'focus:outline-none focus:ring-2 focus:ring-zinc-200',
-                    )}
-                    aria-label="Fecha fin"
-                  />
-                </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-2 shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 flex-wrap">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={cn(
+                    'min-h-12 px-3 rounded-xl border border-zinc-200/60 bg-white text-zinc-900 shrink-0',
+                    'text-[12px] font-black tabular-nums',
+                    'focus:outline-none focus:ring-2 focus:ring-zinc-200',
+                  )}
+                  aria-label="Fecha inicio"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={cn(
+                    'min-h-12 px-3 rounded-xl border border-zinc-200/60 bg-white text-zinc-900 shrink-0',
+                    'text-[12px] font-black tabular-nums',
+                    'focus:outline-none focus:ring-2 focus:ring-zinc-200',
+                  )}
+                  aria-label="Fecha fin"
+                />
               </div>
 
-              <button
-                type="button"
-                onClick={applyRange}
-                className={cn(
-                  'min-h-12 px-4 rounded-xl',
-                  'bg-zinc-900 text-white',
-                  'text-[11px] font-black uppercase tracking-widest',
-                  'active:scale-[0.99] transition-transform',
-                  isPending ? 'opacity-70 pointer-events-none' : '',
-                )}
-              >
-                {isPending ? 'Cargando…' : 'Aplicar'}
-              </button>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={applyRange}
+                  className={cn(
+                    'min-h-12 px-4 rounded-xl shrink-0',
+                    'bg-zinc-900 text-white hover:bg-zinc-800',
+                    'text-[11px] font-black uppercase tracking-widest',
+                    'active:scale-[0.99] transition-transform',
+                    isPending ? 'opacity-70 pointer-events-none' : '',
+                  )}
+                >
+                  {isPending ? 'Cargando…' : 'Aplicar'}
+                </button>
 
-              <button
-                type="button"
-                onClick={clearToLast30}
-                className={cn(
-                  'min-h-12 px-3 rounded-xl border border-zinc-200 bg-white text-zinc-700',
-                  'text-[11px] font-black uppercase tracking-widest',
-                  'hover:bg-zinc-50 active:scale-[0.99] transition-transform',
-                  isPending ? 'opacity-70 pointer-events-none' : '',
-                )}
-              >
-                Últimos 30
-              </button>
+                <button
+                  type="button"
+                  onClick={clearToLast30}
+                  className={cn(
+                    'min-h-12 px-3 rounded-xl shrink-0',
+                    'border border-zinc-200/60 bg-white text-zinc-900 hover:bg-zinc-50',
+                    'text-[11px] font-black uppercase tracking-widest',
+                    'active:scale-[0.99] transition-transform',
+                    isPending ? 'opacity-70 pointer-events-none' : '',
+                  )}
+                >
+                  Últimos 30
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="px-4 md:px-6 py-4">
-            <div className="grid grid-cols-3 gap-2 md:gap-3">
-              <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 shrink-0">
-                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                  PyG neto (devengo)
-                </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <SignTrendIcon value={statement.pyg.net} />
-                  <div className="text-[16px] md:text-[20px] font-black tabular-nums text-zinc-900">
-                    {formatEurRead(statement.pyg.net)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 shrink-0">
-                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                  Caja neta (operativa)
-                </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <SignTrendIcon value={statement.cashFlow.net} />
-                  <div className="text-[16px] md:text-[20px] font-black tabular-nums text-zinc-900">
-                    {formatEurRead(statement.cashFlow.net)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 shrink-0">
-                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                  Delta (devengo − caja)
-                </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <ArrowRightLeft className="w-5 h-5 shrink-0 text-zinc-400" strokeWidth={2.5} aria-hidden />
-                  <div
-                    className={cn(
-                      'text-[16px] md:text-[20px] font-black tabular-nums',
-                      deltaTone === 'positive'
-                        ? 'text-emerald-600'
-                        : deltaTone === 'negative'
-                          ? 'text-rose-500'
-                          : 'text-zinc-400',
-                    )}
-                  >
-                    {formatEurRead(reconciliation.delta)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 text-[9px] font-bold text-zinc-400">
-              Periodo: <span className="font-black">{formatDisplayValue(statement.meta.startDate) as string}</span> →{' '}
+          <div className="px-5 py-3">
+            <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+              Periodo:{' '}
+              <span className="font-black">{formatDisplayValue(statement.meta.startDate) as string}</span> →{' '}
               <span className="font-black">{formatDisplayValue(statement.meta.endDate) as string}</span>
               {statement.meta.timezone ? ` · ${statement.meta.timezone}` : ''}
             </div>
           </div>
         </div>
 
+        {/* KPIs CLAVE (bloque unificado) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <KpiTile
+            label="PyG neto (devengo)"
+            value={statement.pyg.net}
+            icon={<SignTrendIcon value={statement.pyg.net} />}
+            valueClassName={statement.pyg.net > 0 ? 'text-emerald-600' : statement.pyg.net < 0 ? 'text-rose-500' : 'text-zinc-400'}
+          />
+          <KpiTile
+            label="Caja neta (operativa)"
+            value={statement.cashFlow.net}
+            icon={<SignTrendIcon value={statement.cashFlow.net} />}
+            valueClassName={statement.cashFlow.net > 0 ? 'text-emerald-600' : statement.cashFlow.net < 0 ? 'text-rose-500' : 'text-zinc-400'}
+          />
+          <KpiTile
+            label="Delta (devengo − caja)"
+            value={reconciliation.delta}
+            icon={<ArrowRightLeft className="w-5 h-5 text-zinc-700" strokeWidth={2.75} aria-hidden />}
+            valueClassName={
+              deltaTone === 'positive'
+                ? 'text-emerald-600'
+                : deltaTone === 'negative'
+                  ? 'text-rose-500'
+                  : 'text-zinc-400'
+            }
+          />
+        </div>
+
+        {/* BENTO: PyG vs Cash Flow */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <SectionCard
-            title="PyG (Devengo)"
-            subtitle="Ingresos devengados vs gastos devengados"
-          >
+          <DetailCard title="PyG (Devengo)" subtitle="Ingresos devengados vs gastos devengados">
             <div className="grid grid-cols-1 gap-4">
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Ingresos (neto)
                   </div>
-                  <div className="text-[14px] font-black tabular-nums text-emerald-600">
+                  <div className="text-[20px] md:text-[24px] font-black tabular-nums tracking-tight text-emerald-600">
                     {formatEurRead(statement.pyg.income.total)}
                   </div>
                 </div>
-                <div className="mt-2 space-y-1">
-                  {statement.pyg.income.lines.map((l) => (
-                    <LineItem
-                      key={l.key}
-                      label={l.label}
-                      amount={l.amount}
-                      tone={l.amount < 0 ? 'negative' : 'neutral'}
-                    />
-                  ))}
+                <div className="p-4">
+                  <div className="space-y-2">
+                    {statement.pyg.income.lines.map((l) => (
+                      <LineItem
+                        key={l.key}
+                        label={l.label}
+                        amount={l.amount}
+                        tone={l.amount < 0 ? 'negative' : 'neutral'}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Gastos
                   </div>
-                  <div className="text-[14px] font-black tabular-nums text-rose-500">
+                  <div className="text-[20px] md:text-[24px] font-black tabular-nums tracking-tight text-rose-500">
                     {formatEurRead(statement.pyg.expenses.total)}
                   </div>
                 </div>
-                <div className="mt-2 space-y-1">
-                  {statement.pyg.expenses.lines.map((l) => (
-                    <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
-                  ))}
+                <div className="p-4">
+                  <div className="space-y-2">
+                    {statement.pyg.expenses.lines.map((l) => (
+                      <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Resultado (PyG)
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <SignTrendIcon value={statement.pyg.net} />
-                    <div className="text-[16px] font-black tabular-nums text-zinc-900">
+                    <div
+                      className={cn(
+                        'text-[20px] md:text-[24px] font-black tabular-nums tracking-tight',
+                        statement.pyg.net > 0
+                          ? 'text-emerald-600'
+                          : statement.pyg.net < 0
+                            ? 'text-rose-500'
+                            : 'text-zinc-400',
+                      )}
+                    >
                       {formatEurRead(statement.pyg.net)}
                     </div>
                   </div>
                 </div>
+                <div className="p-4">
+                  <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                    {statement.pyg.net > 0
+                      ? 'Rentabilidad positiva en devengo.'
+                      : statement.pyg.net < 0
+                        ? 'Rentabilidad negativa en devengo.'
+                        : 'Sin variación en devengo.'}
+                  </div>
+                </div>
               </div>
             </div>
-          </SectionCard>
+          </DetailCard>
 
-          <SectionCard
-            title="Cash Flow (Caja)"
-            subtitle="Entradas de caja vs salidas de caja (operativo)"
-          >
+          <DetailCard title="Cash Flow (Caja)" subtitle="Entradas de caja vs salidas de caja (operativo)">
             <div className="grid grid-cols-1 gap-4">
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Entradas (orgánicas)
                   </div>
-                  <div className="text-[14px] font-black tabular-nums text-emerald-600">
+                  <div className="text-[20px] md:text-[24px] font-black tabular-nums tracking-tight text-emerald-600">
                     {formatEurRead(statement.cashFlow.inflows.total)}
                   </div>
                 </div>
-                <div className="mt-2 space-y-1">
-                  {statement.cashFlow.inflows.lines.map((l) => (
-                    <LineItem key={l.key} label={l.label} amount={l.amount} tone="positive" />
-                  ))}
+                <div className="p-4">
+                  <div className="space-y-2">
+                    {statement.cashFlow.inflows.lines.map((l) => (
+                      <LineItem key={l.key} label={l.label} amount={l.amount} tone="positive" />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Salidas (orgánicas)
                   </div>
-                  <div className="text-[14px] font-black tabular-nums text-rose-500">
+                  <div className="text-[20px] md:text-[24px] font-black tabular-nums tracking-tight text-rose-500">
                     {formatEurRead(statement.cashFlow.outflows.total)}
                   </div>
                 </div>
-                <div className="mt-2 space-y-1">
-                  {statement.cashFlow.outflows.lines.map((l) => (
-                    <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
-                  ))}
+                <div className="p-4">
+                  <div className="space-y-2">
+                    {statement.cashFlow.outflows.lines.map((l) => (
+                      <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Other (no orgánico)
                   </div>
-                  <div className="text-[12px] font-black tabular-nums text-zinc-700">
-                    {formatDisplayValue(0)}
+                  <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                    SWAP y ADJUSTMENT fuera del neto orgánico
                   </div>
                 </div>
-                <div className="mt-2 space-y-1">
+                <div className="p-4 space-y-2">
                   <LineItem label="SWAP (cambios)" amount={statement.cashFlow.other.swap} tone="muted" />
-                  <LineItem
-                    label="ADJUSTMENT (descuadres)"
-                    amount={statement.cashFlow.other.adjustment}
-                    tone="muted"
-                  />
+                  <LineItem label="ADJUSTMENT (descuadres)" amount={statement.cashFlow.other.adjustment} tone="muted" />
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-100 p-4">
-                <div className="flex items-center justify-between gap-3 min-h-12 shrink-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-100/50 flex items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                     Neto (Caja)
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <SignTrendIcon value={statement.cashFlow.net} />
-                    <div className="text-[16px] font-black tabular-nums text-zinc-900">
+                    <div
+                      className={cn(
+                        'text-[20px] md:text-[24px] font-black tabular-nums tracking-tight',
+                        statement.cashFlow.net > 0
+                          ? 'text-emerald-600'
+                          : statement.cashFlow.net < 0
+                            ? 'text-rose-500'
+                            : 'text-zinc-400',
+                      )}
+                    >
                       {formatEurRead(statement.cashFlow.net)}
                     </div>
                   </div>
                 </div>
+                <div className="p-4">
+                  <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                    {statement.cashFlow.net > 0
+                      ? 'Caja positiva en el periodo.'
+                      : statement.cashFlow.net < 0
+                        ? 'Caja negativa en el periodo.'
+                        : 'Sin variación de caja.'}
+                  </div>
+                </div>
               </div>
             </div>
-          </SectionCard>
+          </DetailCard>
         </div>
       </div>
     </div>
