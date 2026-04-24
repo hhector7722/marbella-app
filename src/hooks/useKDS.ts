@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, startTransition } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { KDSOrder, KDSOrderLine, KDSItemStatus } from '@/components/kds/types';
-import { getStartOfLocalToday, parseTPVDate, parseDBDate } from '@/utils/date-utils';
+import { getStartOfEuropeMadridToday, getNextEuropeMadridMidnight, parseTPVDate, parseDBDate } from '@/utils/date-utils';
 
 type KDSTicketKitchenState = 'activa' | 'completada';
 type KDSTicketStateRow = {
@@ -127,7 +127,7 @@ export function useKDS() {
             setOrders((prev) => {
                 const prevMap = new Map(prev.map((o) => [o.id, o]));
 
-                const startOfToday = getStartOfLocalToday();
+                const startOfToday = getStartOfEuropeMadridToday();
                 const isFromToday = (o: KDSOrder) => {
                     // Regla operativa (ver PROJECT_STATUS): día en curso por medianoche local.
                     // - Activas: si cabecera creada hoy o existe alguna línea creada hoy.
@@ -187,7 +187,7 @@ export function useKDS() {
         if (options.isInitial) setLoading(true);
         if (!options.isSilent) setSyncStatus('syncing');
 
-        const startOfToday = getStartOfLocalToday();
+        const startOfToday = getStartOfEuropeMadridToday();
         const startIso = startOfToday.toISOString();
         try {
             // Solo día en curso (inicio día local → ahora):
@@ -313,7 +313,7 @@ export function useKDS() {
             const channel = supabase
                 .channel('kds_resilient_sync_v2')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_orders' }, (p) => {
-                    const startOfToday = getStartOfLocalToday().getTime();
+                    const startOfToday = getStartOfEuropeMadridToday().getTime();
                     const isOrderRowFromToday = (row: any) => {
                         try {
                             const estado = row?.estado as string | undefined;
@@ -468,7 +468,7 @@ export function useKDS() {
     useEffect(() => {
         const scheduleMidnightRefresh = () => {
             const now = new Date();
-            const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 50);
+            const nextMidnight = new Date(getNextEuropeMadridMidnight(now).getTime() + 50);
             const ms = nextMidnight.getTime() - now.getTime();
             return setTimeout(async () => {
                 await fetchActiveOrders({ isInitial: false, isSilent: true });
