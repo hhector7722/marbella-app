@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-22 (Staff: manuales Info → rutas en `public/docs/manuals`)
+**Última actualización:** 2026-04-24 (Finanzas: PyG vs Cash Flow)
+
+- [x] **Finanzas `/dashboard/finanzas`: PyG (Devengo) vs Cash Flow (Caja) (2026-04-24)**: Nueva vista SSR con UI Bento y selectores de rango (interactividad por querystring). Arquitectura “frontend tonto”: consolidación en RPC `get_financial_statement(p_start_date, p_end_date)` (JSON) sin descargar tablas completas. Devengo: ventas desde `tickets_marbella` (incluye devoluciones negativas), compras solo `purchase_invoices.status IN ('mapped','completed')` por `invoice_date`, coste laboral desde `weekly_snapshots.total_cost` por solape de semanas; Caja: `treasury_log` con IN+CLOSE_ENTRY vs OUT y “Other” separado (SWAP/ADJUSTMENT). Migración `20260424120000_get_financial_statement_rpc.sql`.
 
 - [x] **Staff `/staff/dashboard` → Info → Manuales (2026-04-21)**: PDFs con `window.open` (misma UX que nóminas en nueva pestaña); vídeo e imágenes en modal nativo. Ficheros estáticos esperados en `public/docs/manuals/` (`check-list.pdf`, `horno-limpieza.pdf`, `horno-funcionamiento.mp4`, `altavoces.mp4`, `bebidas.png`, `cambios-lluvia.png`, `cuadro-electrico.png`). Entrada **Horno**: submodal con Limpieza (PDF) y Funcionamiento (vídeo). Submenú TPV con entradas placeholder hasta definir destinos. Constantes en `src/lib/staff-manuals.ts`.
 
