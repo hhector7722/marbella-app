@@ -86,3 +86,25 @@ export async function deleteMenuOverride(articulo_id: number) {
   return { success: true as const }
 }
 
+export async function setArticuloFamilia(articulo_id: number, familia_id: number | null) {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+
+  const supabase = gate.supabase
+
+  const { error } = await supabase
+    .from('bdp_articulos')
+    .update({ familia_id })
+    .eq('id', articulo_id)
+
+  if (error) {
+    console.error('setArticuloFamilia error:', error)
+    return { success: false as const, error: error.message }
+  }
+
+  revalidatePath('/dashboard/carta')
+  revalidatePath('/dashboard/recetas-tpv')
+  revalidatePath('/staff/carta')
+  return { success: true as const }
+}
+

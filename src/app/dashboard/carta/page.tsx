@@ -17,6 +17,7 @@ export default async function CartaDashboardPage() {
     { data: overrides, error: overridesError },
     { data: articles, error: articlesError },
     { data: recipes, error: recipesError },
+    { data: familias, error: familiasError },
   ] = await Promise.all([
     supabase
       .from('map_tpv_receta')
@@ -27,12 +28,14 @@ export default async function CartaDashboardPage() {
     supabase.from('digital_menu_overrides').select('*').limit(5000),
     supabase.from('bdp_articulos').select('id, nombre, familia_id, bdp_familias(nombre)').limit(5000),
     supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
+    supabase.from('bdp_familias').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
   ])
 
   if (mappingsError) console.error('Error fetching map_tpv_receta (carta):', mappingsError)
   if (overridesError) console.error('Error fetching digital_menu_overrides (carta):', overridesError)
   if (articlesError) console.error('Error fetching bdp_articulos (carta):', articlesError)
   if (recipesError) console.error('Error fetching recipes (carta):', recipesError)
+  if (familiasError) console.error('Error fetching bdp_familias (carta):', familiasError)
 
   const mappedIds = new Set(((mappings ?? []) as any[]).map((m) => m.articulo_id))
   const unmappedArticles = ((articles ?? []) as unknown as CartaTpvArticle[]).filter((a) => !mappedIds.has(a.id))
@@ -57,6 +60,7 @@ export default async function CartaDashboardPage() {
         <CartaMappingCreatorClient
           unmappedArticles={unmappedArticles}
           recipes={(recipes ?? []) as unknown as CartaRecipe[]}
+          familias={(familias ?? []) as any[]}
         />
 
         <CartaEditorClient

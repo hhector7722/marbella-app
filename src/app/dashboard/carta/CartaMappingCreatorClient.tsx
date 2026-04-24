@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Check, ChevronDown, Loader2, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { upsertMapping } from '@/app/dashboard/recetas-tpv/actions'
+import { setArticuloFamilia } from './actions'
 
 export type CartaRecipe = { id: string; name: string }
 export type CartaTpvArticle = {
@@ -14,17 +15,22 @@ export type CartaTpvArticle = {
   bdp_familias?: { nombre: string } | null
 }
 
+export type CartaFamilia = { id: number; nombre: string }
+
 export default function CartaMappingCreatorClient({
   unmappedArticles,
   recipes,
+  familias,
 }: {
   unmappedArticles: CartaTpvArticle[]
   recipes: CartaRecipe[]
+  familias: CartaFamilia[]
 }) {
   const [query, setQuery] = useState('')
   const [isPending, startTransition] = useTransition()
   const [busyId, setBusyId] = useState<number | null>(null)
   const [drafts, setDrafts] = useState<Record<number, { recipe_id: string | null }>>({})
+  const [familiaDrafts, setFamiliaDrafts] = useState<Record<number, number | null>>({})
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -58,6 +64,15 @@ export default function CartaMappingCreatorClient({
 
     setBusyId(articulo_id)
     startTransition(async () => {
+      const familiaId = familiaDrafts[articulo_id] ?? null
+      if (familiaId != null) {
+        const famRes = await setArticuloFamilia(articulo_id, familiaId)
+        if (!famRes.success) {
+          setBusyId(null)
+          toast.error(famRes.error ?? 'No se pudo asignar familia')
+          return
+        }
+      }
       // factor_porcion por defecto 1 (1 unidad TPV = 1 receta)
       const res = await upsertMapping(articulo_id, recipeId, 1)
       setBusyId(null)
@@ -114,11 +129,32 @@ export default function CartaMappingCreatorClient({
                         key={a.id}
                         className={cn('grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-4 items-start', isBusy && 'opacity-60 pointer-events-none')}
                       >
-                        <div className="md:col-span-5">
+                        <div className="md:col-span-4">
                           <div className="truncate font-semibold text-zinc-900">{a.nombre}</div>
                           <div className="mt-1 text-xs text-zinc-500 font-mono">ID {a.id}</div>
                         </div>
-                        <div className="md:col-span-5">
+                        <div className="md:col-span-3">
+                          <select
+                            className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                            value={familiaDrafts[a.id] ?? a.familia_id ?? ''}
+                            onChange={(e) =>
+                              setFamiliaDrafts((p) => ({
+                                ...p,
+                                [a.id]: e.target.value === '' ? null : Number(e.target.value),
+                              }))
+                            }
+                            title="Familia (opcional)"
+                          >
+                            <option value="">Sin familia</option>
+                            {familias.map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.nombre}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="mt-1 text-[11px] text-zinc-400">Opcional: asigna familia para agrupar en carta</div>
+                        </div>
+                        <div className="md:col-span-3">
                           <RecipeCombobox
                             recipes={recipes}
                             selectedId={selected}
