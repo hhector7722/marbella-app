@@ -11,8 +11,8 @@ const config = {
     user: 'proxmox_reader', 
     password: 'heyJUDE5!', 
     server: 'localhost',
-    database: 'Bdp-Net_NetHos_34',
-    options: { encrypt: false, trustServerCertificate: true, instanceName: 'BDPSOFTWARE', enableArithAbort: true }
+    database: 'Bdp-Net_NetHos_38',
+    options: { encrypt: false, trustServerCertificate: true, instanceName: 'BDPSOFTWARECF', enableArithAbort: true }
 };
 
 let memoriaTickets = new Set();
