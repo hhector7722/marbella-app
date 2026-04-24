@@ -28,7 +28,8 @@ begin
       sort_order integer,
       override_nombre text,
       override_descripcion text,
-      override_precio numeric(12,2),
+      -- Mantener precisión compatible con la vista histórica (numeric(10,2))
+      override_precio numeric(10,2),
       override_photo_url text,
       created_by uuid not null default auth.uid(),
       created_at timestamptz not null default now(),
@@ -82,7 +83,8 @@ select
     ),
     ''
   ) as descripcion,
-  coalesce(o.override_precio, a.precio_base, r.sale_price) as precio,
+  -- IMPORTANTE: no cambiar el tipo de columna de la vista al hacer OR REPLACE
+  coalesce(o.override_precio, a.precio_base, r.sale_price)::numeric(10,2) as precio,
   coalesce(nullif(trim(o.override_photo_url), ''), r.photo_url) as photo_url,
   o.sort_order as sort_order
 from public.map_tpv_receta m

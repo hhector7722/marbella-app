@@ -109,7 +109,7 @@ export default function StaffDashboardView() {
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
     const [showConsumptionModal, setShowConsumptionModal] = useState(false);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
-    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | 'carta' | null>(null);
+    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
     const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
@@ -994,7 +994,15 @@ export default function StaffDashboardView() {
                                         </button>
                                     )}
                                     <h3 className="text-[10px] font-black uppercase tracking-widest">
-                                        {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
+                                        {infoSubMenu === 'contactos'
+                                            ? 'Contactos'
+                                            : infoSubMenu === 'convenio'
+                                                ? 'Convenio'
+                                                : infoSubMenu === 'conducta'
+                                                    ? 'Código Conducta'
+                                                    : infoSubMenu === 'reservas'
+                                                        ? 'Reservas'
+                                                        : 'Información'}
                                     </h3>
                                 </div>
                                 <button onClick={closeMenus} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
@@ -1033,12 +1041,16 @@ export default function StaffDashboardView() {
                                             <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
                                         </button>
 
-                                        <button onClick={() => setInfoSubMenu('carta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                        <Link
+                                            href="/staff/carta"
+                                            onClick={closeMenus}
+                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                                        >
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
-                                        </button>
+                                        </Link>
 
                                         <button
                                             onClick={() => {
@@ -1112,26 +1124,6 @@ export default function StaffDashboardView() {
                                         <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
                                             <span className="text-sm">En desarrollo</span>
                                         </div>
-                                    </div>
-                                )}
-                                {infoSubMenu === 'carta' && (
-                                    <div className="flex flex-col items-stretch gap-4 py-2">
-                                        <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50">
-                                                <BookOpen size={28} className="text-amber-500" strokeWidth={1.5} />
-                                            </div>
-                                            <div className="min-w-0 flex-1 text-left">
-                                                <p className="text-sm font-black text-gray-800">Carta del restaurante</p>
-                                                <p className="text-xs text-gray-500">Familias, platos, precio TPV y foto de la receta.</p>
-                                            </div>
-                                        </div>
-                                        <Link
-                                            href="/staff/carta"
-                                            onClick={closeMenus}
-                                            className="flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-[#5B8FB9] px-4 py-3 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-blue-200/40 transition-all active:scale-[0.98]"
-                                        >
-                                            Abrir la carta
-                                        </Link>
                                     </div>
                                 )}
                             </div>
