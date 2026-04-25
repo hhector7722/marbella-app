@@ -258,7 +258,7 @@ function ProfileContent() {
     type ViewMode = 'staff' | 'manager-self' | 'manager-employee';
     const viewMode: ViewMode = !isManager ? 'staff' : viewingOtherProfile ? 'manager-employee' : 'manager-self';
     const showPersonalPurchasesAccountsButton =
-        String(profile.email || '').toLowerCase() === 'hhector7722@gmail.com';
+        String(profile?.email || '').toLowerCase() === 'hhector7722@gmail.com';
 
     const gridItems = showAccountSection
         ? PROFILE_GRID
