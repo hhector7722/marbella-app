@@ -121,8 +121,21 @@ app.post('/api/telemetria', async (req, res) => {
 
         res.status(200).json({ success: true });
     } catch (err) {
-        console.error("[TELEMETRIA] Error:", err.message);
-        res.status(500).send(err.message);
+        // Importante: el error de PostgREST/Supabase suele traer `details/hint/code`
+        // y a veces `message` está truncado o no es lo relevante.
+        const safe = {
+            name: err?.name,
+            message: err?.message,
+            details: err?.details,
+            hint: err?.hint,
+            code: err?.code,
+            status: err?.status,
+            statusCode: err?.statusCode,
+        };
+        console.error("[TELEMETRIA] Error (safe):", JSON.stringify(safe, null, 2));
+        // también dejamos el objeto original por si pm2 lo captura completo
+        console.error("[TELEMETRIA] Error (raw):", err);
+        res.status(500).json({ error: safe });
     }
 });
 
