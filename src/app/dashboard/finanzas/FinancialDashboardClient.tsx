@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRightLeft, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft, TrendingDown, TrendingUp, Landmark, Receipt, Wallet } from 'lucide-react';
 import { cn, formatDisplayValue } from '@/lib/utils';
 import { parseTPVDate, getStartOfLocalToday } from '@/utils/date-utils';
 
@@ -67,6 +67,52 @@ function SignTrendIcon({ value }: { value: number }) {
   );
 }
 
+function MiniBars({
+  a,
+  b,
+  aLabel,
+  bLabel,
+  aTone,
+  bTone,
+}: {
+  a: number;
+  b: number;
+  aLabel: string;
+  bLabel: string;
+  aTone: 'emerald' | 'rose' | 'zinc';
+  bTone: 'emerald' | 'rose' | 'zinc';
+}) {
+  const absA = Math.abs(Number(a) || 0);
+  const absB = Math.abs(Number(b) || 0);
+  const max = Math.max(absA, absB, 1);
+  const wA = Math.round((absA / max) * 100);
+  const wB = Math.round((absB / max) * 100);
+
+  const toneToBg = (t: 'emerald' | 'rose' | 'zinc') =>
+    t === 'emerald' ? 'bg-emerald-500' : t === 'rose' ? 'bg-rose-500' : 'bg-zinc-400';
+
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-2">
+      <div className="flex items-center gap-3">
+        <div className="w-20 shrink-0 text-[9px] font-black uppercase tracking-widest text-zinc-400 truncate">
+          {aLabel}
+        </div>
+        <div className="flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden">
+          <div className={cn('h-full rounded-full', toneToBg(aTone))} style={{ width: `${wA}%` }} />
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="w-20 shrink-0 text-[9px] font-black uppercase tracking-widest text-zinc-400 truncate">
+          {bLabel}
+        </div>
+        <div className="flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden">
+          <div className={cn('h-full rounded-full', toneToBg(bTone))} style={{ width: `${wB}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DetailCard({
   title,
   subtitle,
@@ -127,15 +173,17 @@ function KpiTile({
   icon,
   valueClassName,
   footer,
+  micro,
 }: {
   label: string;
   value: number;
   icon: React.ReactNode;
   valueClassName?: string;
   footer?: React.ReactNode;
+  micro?: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0">
+    <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0 overflow-hidden">
       <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">{label}</div>
       <div className="mt-1 flex items-center gap-2 min-w-0">
         <div className="shrink-0">{icon}</div>
@@ -148,6 +196,7 @@ function KpiTile({
           {formatEurRead(value)}
         </div>
       </div>
+      {micro ? <div className="mt-2">{micro}</div> : null}
       {footer ? <div className="mt-1">{footer}</div> : null}
     </div>
   );
@@ -339,6 +388,16 @@ export default function FinancialDashboardClient({
                     Rentabilidad: <span className="font-black text-zinc-900">{rentabilidadText}</span>
                   </div>
                 }
+                micro={
+                  <MiniBars
+                    a={statement.pyg.income.total}
+                    b={statement.pyg.expenses.total}
+                    aLabel="Ventas"
+                    bLabel="Gastos"
+                    aTone="emerald"
+                    bTone="rose"
+                  />
+                }
               />
               <KpiTile
                 label="Caja neta (operativa)"
@@ -351,17 +410,37 @@ export default function FinancialDashboardClient({
                       ? 'text-rose-500'
                       : 'text-zinc-400'
                 }
+                micro={
+                  <MiniBars
+                    a={statement.cashFlow.inflows.total}
+                    b={statement.cashFlow.outflows.total}
+                    aLabel="Entradas"
+                    bLabel="Salidas"
+                    aTone="emerald"
+                    bTone="rose"
+                  />
+                }
               />
               <KpiTile
                 label="Delta (devengo − caja)"
                 value={reconciliation.delta}
-                icon={<ArrowRightLeft className="w-5 h-5 text-zinc-700" strokeWidth={2.75} aria-hidden />}
+                icon={<ArrowRightLeft className="w-5 h-5 text-zinc-700" strokeWidth={3} aria-hidden />}
                 valueClassName={
                   deltaTone === 'positive'
                     ? 'text-emerald-600'
                     : deltaTone === 'negative'
                       ? 'text-rose-500'
                       : 'text-zinc-400'
+                }
+                micro={
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Landmark className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={2.5} aria-hidden />
+                      <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">
+                        Si el delta es alto: desfase devengo/caja
+                      </div>
+                    </div>
+                  </div>
                 }
               />
             </div>
@@ -385,6 +464,12 @@ export default function FinancialDashboardClient({
                       </div>
                     </div>
                     <div className="p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={2.5} aria-hidden />
+                        <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                          Ventas netas (tickets; devoluciones restan)
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         {statement.pyg.income.lines.map((l) => (
                           <LineItem
@@ -408,6 +493,12 @@ export default function FinancialDashboardClient({
                       </div>
                     </div>
                     <div className="p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={2.5} aria-hidden />
+                        <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                          Nóminas + alquiler + compras verificadas
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         {statement.pyg.expenses.lines.map((l) => (
                           <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
