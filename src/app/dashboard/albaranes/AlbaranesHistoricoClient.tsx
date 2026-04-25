@@ -5,8 +5,14 @@ import Image from 'next/image'
 import { createPortal } from 'react-dom'
 import { ExternalLink, FileText, Loader2, RefreshCw, Search, Truck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem } from './actions'
-import { getPurchaseInvoiceDetailAction, listPurchaseInvoicesAction, updatePurchaseInvoiceLineAction } from './actions'
+import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
+import {
+  getPurchaseInvoiceDetailAction,
+  listPurchaseInvoicesAction,
+  searchSuppliersForInvoiceAction,
+  setPurchaseInvoiceSupplierAction,
+  updatePurchaseInvoiceLineAction,
+} from './actions'
 
 function formatDateTitle(v: string | null | undefined) {
   const t = String(v ?? '').trim()
@@ -54,6 +60,12 @@ export default function AlbaranesHistoricoClient({
   const [draftLines, setDraftLines] = useState<Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }>>({})
   const [modalContainer, setModalContainer] = useState<HTMLElement | null>(null)
   const detailReqRef = useRef(0)
+  const [supplierPickerOpen, setSupplierPickerOpen] = useState(false)
+  const [supplierQuery, setSupplierQuery] = useState('')
+  const [supplierResults, setSupplierResults] = useState<SupplierListItem[]>([])
+  const [supplierLoading, setSupplierLoading] = useState(false)
+  const [supplierError, setSupplierError] = useState<string | null>(null)
+  const [supplierSaving, setSupplierSaving] = useState(false)
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
@@ -146,6 +158,12 @@ export default function AlbaranesHistoricoClient({
     setSaveError(null)
     setSaveWarning(null)
     setDraftLines({})
+    setSupplierPickerOpen(false)
+    setSupplierQuery('')
+    setSupplierResults([])
+    setSupplierLoading(false)
+    setSupplierError(null)
+    setSupplierSaving(false)
   }
 
   function setDraft(lineId: string, patch: Partial<{ original_name: string; quantity: string; unit_price: string; total_price: string }>) {
@@ -228,6 +246,50 @@ export default function AlbaranesHistoricoClient({
   }
 
   const activeItem = useMemo(() => items.find((it) => it.id === selectedId) ?? null, [items, selectedId])
+
+  async function runSupplierSearch(nextQuery: string) {
+    setSupplierError(null)
+    const q = nextQuery.trim()
+    if (q.length < 2) {
+      setSupplierResults([])
+      return
+    }
+    setSupplierLoading(true)
+    try {
+      const res = await searchSuppliersForInvoiceAction({ query: q, limit: 60 })
+      if (!res.success) {
+        setSupplierError(res.message)
+        return
+      }
+      setSupplierResults(res.suppliers)
+    } finally {
+      setSupplierLoading(false)
+    }
+  }
+
+  async function assignSupplier(supplierId: number) {
+    if (!detail) return
+    setSupplierError(null)
+    setSupplierSaving(true)
+    try {
+      const res = await setPurchaseInvoiceSupplierAction({ invoiceId: detail.id, supplierId })
+      if (!res.success) {
+        setSupplierError(res.message)
+        return
+      }
+
+      // Refrescar detalle y lista para que título/logo se actualicen al instante
+      const [dRes, lRes] = await Promise.all([getPurchaseInvoiceDetailAction(detail.id), listPurchaseInvoicesAction({ limit: 60 })])
+      if (dRes.success) setDetail(dRes.detail)
+      if (lRes.success) setItems(lRes.items)
+
+      setSupplierPickerOpen(false)
+      setSupplierQuery('')
+      setSupplierResults([])
+    } finally {
+      setSupplierSaving(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -373,6 +435,20 @@ export default function AlbaranesHistoricoClient({
                         <ExternalLink className="h-4 w-4" />
                         Abrir
                       </a>
+                    ) : null}
+                    {isManager && detail && !detail.supplier_id ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSupplierPickerOpen(true)
+                          setSupplierQuery('')
+                          setSupplierResults([])
+                          setSupplierError(null)
+                        }}
+                        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-3 rounded-xl bg-white/10 hover:bg-white/15 transition"
+                      >
+                        Asignar proveedor
+                      </button>
                     ) : null}
                     <button
                       type="button"
@@ -550,6 +626,90 @@ export default function AlbaranesHistoricoClient({
                     <div className="text-sm font-bold text-zinc-500">Sin datos.</div>
                   )}
                 </div>
+
+                {supplierPickerOpen ? (
+                  <div
+                    className="fixed inset-0 z-[10060] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget && !supplierSaving) setSupplierPickerOpen(false)
+                    }}
+                  >
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+                      <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
+                        <div className="min-w-0">
+                          <p className="text-sm font-black uppercase tracking-wider truncate">Asignar proveedor</p>
+                          <p className="text-[11px] font-bold text-white/70 truncate mt-1">Busca y selecciona el proveedor correcto</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSupplierPickerOpen(false)}
+                          disabled={supplierSaving}
+                          className={cn(
+                            'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-rose-500/70 transition active:scale-[0.99]',
+                            supplierSaving && 'opacity-60 pointer-events-none'
+                          )}
+                          aria-label="Cerrar"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      <div className="p-4 flex flex-col gap-3 overflow-auto flex-1 min-h-0">
+                        {supplierError ? (
+                          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{supplierError}</div>
+                        ) : null}
+
+                        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 flex items-center gap-2 min-h-[56px]">
+                          <Search className="h-5 w-5 text-zinc-400 shrink-0" />
+                          <input
+                            value={supplierQuery}
+                            onChange={(e) => {
+                              const next = e.target.value
+                              setSupplierQuery(next)
+                              void runSupplierSearch(next)
+                            }}
+                            placeholder="Escribe el nombre del proveedor…"
+                            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[48px]"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          {supplierLoading ? (
+                            <div className="flex items-center gap-3 text-sm font-bold text-zinc-600 px-1">
+                              <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+                              Buscando…
+                            </div>
+                          ) : supplierQuery.trim().length < 2 ? (
+                            <div className="text-sm font-bold text-zinc-500 px-1">Escribe al menos 2 letras.</div>
+                          ) : supplierResults.length === 0 ? (
+                            <div className="text-sm font-bold text-zinc-500 px-1">Sin resultados.</div>
+                          ) : (
+                            supplierResults.map((s) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => assignSupplier(s.id)}
+                                disabled={supplierSaving}
+                                className={cn(
+                                  'w-full text-left rounded-xl border border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50 p-3 min-h-[64px] active:scale-[0.995] transition flex items-center gap-3',
+                                  supplierSaving && 'opacity-60 pointer-events-none'
+                                )}
+                              >
+                                <div className="h-10 w-10 rounded-xl border border-zinc-100 bg-zinc-50 overflow-hidden flex items-center justify-center shrink-0">
+                                  {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-contain" /> : <Truck className="h-5 w-5 text-zinc-300" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-black text-zinc-900 truncate">{s.name}</p>
+                                  <p className="text-xs font-bold text-zinc-500 mt-1">ID {s.id}</p>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>,
             modalContainer

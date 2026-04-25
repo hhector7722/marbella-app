@@ -115,6 +115,12 @@ export type PurchaseInvoiceDetail = {
   lines: PurchaseInvoiceLine[]
 }
 
+export type SupplierListItem = {
+  id: number
+  name: string
+  image_url: string | null
+}
+
 export async function getPurchaseInvoiceDetailAction(
   invoiceId: string
 ): Promise<{ success: true; detail: PurchaseInvoiceDetail } | { success: false; message: string }> {
@@ -197,6 +203,67 @@ export async function getPurchaseInvoiceDetailAction(
   }
 
   return { success: true, detail }
+}
+
+export async function searchSuppliersForInvoiceAction(params: {
+  query: string
+  limit?: number
+}): Promise<{ success: true; suppliers: SupplierListItem[] } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const q = String(params?.query ?? '').trim()
+  if (q.length < 2) return { success: true, suppliers: [] }
+
+  const limit = Math.min(Math.max(Number(params?.limit ?? 40) || 40, 1), 200)
+
+  const { data, error } = await gate.supabase
+    .from('suppliers')
+    .select('id,name,image_url')
+    .ilike('name', `%${q}%`)
+    .order('name')
+    .limit(limit)
+
+  if (error) return { success: false, message: error.message }
+
+  const suppliers: SupplierListItem[] = (data ?? []).map((r: any) => ({
+    id: Number(r.id),
+    name: String(r.name ?? ''),
+    image_url: r.image_url ?? null,
+  }))
+
+  return { success: true, suppliers }
+}
+
+export async function setPurchaseInvoiceSupplierAction(params: {
+  invoiceId: string
+  supplierId: number | null
+}): Promise<{ success: true } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
+
+  const supplierId = params?.supplierId == null ? null : Number(params.supplierId)
+  if (supplierId != null && (!Number.isFinite(supplierId) || supplierId <= 0)) {
+    return { success: false, message: 'ID de proveedor inválido' }
+  }
+
+  const { data: updated, error } = await gate.supabase
+    .from('purchase_invoices')
+    .update({ supplier_id: supplierId })
+    .eq('id', invoiceId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return { success: false, message: error.message }
+  if (!updated) return { success: false, message: 'No se pudo actualizar (RLS o no existe)' }
+
+  return { success: true }
 }
 
 export async function updatePurchaseInvoiceLineAction(params: {
