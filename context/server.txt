@@ -88,13 +88,11 @@ app.post('/api/telemetria', async (req, res) => {
     console.log("======================================\n");
  try {
         const { total_mesas_vivas, sala } = req.body;
-        // IMPORTANTÍSIMO: si `sala` llega vacío/undefined, igualmente actualizamos `estado_sala`
-        // para limpiar Radar/KDS y evitar que queden mesas "abiertas" por estado viejo.
-        const salaArray = Array.isArray(sala) ? sala : [];
+        if (!sala) return res.status(200).send();
 
         // EL TRUCO MAGICO: Recorremos el JSON y le metemos "id_ticket" a cada mesa
         // para que tu Trigger de Supabase no falle.
-        const salaDisfrazada = salaArray.map(mesa => ({
+        const salaDisfrazada = sala.map(mesa => ({
             ...mesa,
             id_ticket: mesa.numero_documento, // <--- ESTO ARREGLA EL ERROR 500
             nombre_cliente:
@@ -103,39 +101,21 @@ app.post('/api/telemetria', async (req, res) => {
                     : '',
         }));
 
-        const mesasActivas =
-            Number.isFinite(Number(total_mesas_vivas))
-                ? parseInt(String(total_mesas_vivas), 10) || 0
-                : salaDisfrazada.length;
-
         const { error } = await supabase.from('estado_sala').upsert([{
             id: 1,
             ultima_actualizacion: new Date().toISOString(),
-            mesas_activas: mesasActivas,
+            mesas_activas: parseInt(total_mesas_vivas) || 0,
             radiografia_completa: salaDisfrazada // Mandamos el JSON disfrazado
         }], { onConflict: 'id' });
 
         if (error) throw error;
 
-        console.log(`[RADAR] Sala y KDS actualizados: ${mesasActivas} mesas activas.`);
+        console.log(`[RADAR] Sala y KDS actualizados: ${total_mesas_vivas} mesas activas.`);
 
         res.status(200).json({ success: true });
     } catch (err) {
-        // Importante: el error de PostgREST/Supabase suele traer `details/hint/code`
-        // y a veces `message` está truncado o no es lo relevante.
-        const safe = {
-            name: err?.name,
-            message: err?.message,
-            details: err?.details,
-            hint: err?.hint,
-            code: err?.code,
-            status: err?.status,
-            statusCode: err?.statusCode,
-        };
-        console.error("[TELEMETRIA] Error (safe):", JSON.stringify(safe, null, 2));
-        // también dejamos el objeto original por si pm2 lo captura completo
-        console.error("[TELEMETRIA] Error (raw):", err);
-        res.status(500).json({ error: safe });
+        console.error("[TELEMETRIA] Error:", err.message);
+        res.status(500).send(err.message);
     }
 });
 

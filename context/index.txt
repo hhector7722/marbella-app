@@ -3,7 +3,6 @@ const axios = require('axios');
 
 // ✨ CONEXIÓN DIRECTA POR RED LOCAL ✨
 const DOMINIO = "http://erp-marbella.duckdns.org:3000";
-// Receptor Express (producción actual): sin auth, rutas legacy
 const URL_VENTAS = `${DOMINIO}/api/ventas`;
 const URL_TELEMETRIA = `${DOMINIO}/api/telemetria`;
 
@@ -203,7 +202,6 @@ async function start() {
                 const estadoActual = JSON.stringify(sala); // <-- AÑADIDO: Convierte el estado actual a un bloque de texto
 
                 if (estadoActual !== ultimoEstadoSala) {   // <-- AÑADIDO: Solo si ha cambiado respecto al anterior
-                    // IMPORTANTE: enviamos `sala` aunque sea [] para que el Radar se limpie.
                     await axios.post(URL_TELEMETRIA, { sala, total_mesas_vivas: sala.length });
                     process.stdout.write(`\r[${new Date().toLocaleTimeString()}] 📡 Enviando a Cocina: ${sala.length} mesas vivas en curso.  `);
                     ultimoEstadoSala = estadoActual;       // <-- AÑADIDO: Guardamos el nuevo estado como referencia
