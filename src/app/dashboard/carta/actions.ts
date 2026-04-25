@@ -86,7 +86,7 @@ export async function deleteMenuOverride(articulo_id: number) {
   return { success: true as const }
 }
 
-export async function setArticuloFamilia(articulo_id: number, familia_id: number | null) {
+export async function setArticuloDepartamento(articulo_id: number, departamento_id: number | null) {
   const gate = await requireManager()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
@@ -94,11 +94,11 @@ export async function setArticuloFamilia(articulo_id: number, familia_id: number
 
   const { error } = await supabase
     .from('bdp_articulos')
-    .update({ familia_id })
+    .update({ departamento_id })
     .eq('id', articulo_id)
 
   if (error) {
-    console.error('setArticuloFamilia error:', error)
+    console.error('setArticuloDepartamento error:', error)
     return { success: false as const, error: error.message }
   }
 

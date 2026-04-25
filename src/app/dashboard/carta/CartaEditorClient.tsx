@@ -9,7 +9,7 @@ import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 
 type UiRow = {
   articulo_id: number
-  familia: string
+  departamento: string
   tpv_nombre: string
   recipe_name: string
   recipe_photo_url: string | null
@@ -52,10 +52,12 @@ export default function CartaEditorClient({
       const a = m.bdp_articulos
       const r = m.recipes
       if (!a || !r) continue
-      const familia = a.bdp_familias?.nombre ?? (a.familia_id != null ? `Familia ${a.familia_id}` : 'Sin familia')
+      const departamento =
+        a.bdp_departamentos?.nombre ??
+        (a.departamento_id != null ? `Dept ${a.departamento_id}` : 'Sin departamento')
       rows.push({
         articulo_id: m.articulo_id,
-        familia,
+        departamento,
         tpv_nombre: a.nombre,
         recipe_name: r.name,
         recipe_photo_url: r.photo_url ?? null,
@@ -79,9 +81,9 @@ export default function CartaEditorClient({
   const grouped = useMemo(() => {
     const groups = new Map<string, UiRow[]>()
     for (const r of filtered) {
-      const list = groups.get(r.familia) ?? []
+      const list = groups.get(r.departamento) ?? []
       list.push(r)
-      groups.set(r.familia, list)
+      groups.set(r.departamento, list)
     }
     return Array.from(groups.entries())
       .sort(([a], [b]) => a.localeCompare(b))

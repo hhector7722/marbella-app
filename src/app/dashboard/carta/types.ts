@@ -4,8 +4,8 @@ export type CartaEditorMappingRow = {
   bdp_articulos?: {
     id: number
     nombre: string
-    familia_id: number | null
-    bdp_familias?: { nombre: string } | null
+    departamento_id: number | null
+    bdp_departamentos?: { nombre: string } | null
   } | null
   recipes?: { id: string; name: string; photo_url: string | null } | null
 }

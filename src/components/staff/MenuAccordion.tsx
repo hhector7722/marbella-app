@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 export type DigitalMenuRow = {
     articulo_id: number;
     articulo_nombre: string;
-    familia_id: number | null;
-    familia_nombre: string | null;
+    departamento_id: number | null;
+    departamento_nombre: string | null;
     recipe_id: string;
     recipe_name: string;
     descripcion: string | null;
@@ -63,7 +63,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
     const grouped = useMemo(() => {
         const m = new Map<string, DigitalMenuRow[]>();
         for (const row of items) {
-            const key = (row.familia_nombre?.trim() || 'Sin familia').trim();
+            const key = (row.departamento_nombre?.trim() || 'Sin departamento').trim();
             if (!m.has(key)) m.set(key, []);
             m.get(key)!.push(row);
         }

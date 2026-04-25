@@ -69,8 +69,8 @@ create or replace view public.v_digital_menu_items as
 select
   a.id as articulo_id,
   coalesce(nullif(trim(o.override_nombre), ''), a.nombre) as articulo_nombre,
-  f.id as familia_id,
-  f.nombre as familia_nombre,
+  d.id as departamento_id,
+  d.nombre as departamento_nombre,
   r.id as recipe_id,
   r.name as recipe_name,
   nullif(
@@ -90,7 +90,7 @@ select
 from public.map_tpv_receta m
 join public.bdp_articulos a on a.id = m.articulo_id
 join public.recipes r on r.id = m.recipe_id
-left join public.bdp_familias f on f.id = a.familia_id
+left join public.bdp_departamentos d on d.id = a.departamento_id
 left join public.digital_menu_overrides o on o.articulo_id = a.id
 where coalesce(o.is_hidden, false) = false;
 

@@ -5,32 +5,32 @@ import { toast } from 'sonner'
 import { Check, ChevronDown, Loader2, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { upsertMapping } from '@/app/dashboard/recetas-tpv/actions'
-import { setArticuloFamilia } from './actions'
+import { setArticuloDepartamento } from './actions'
 
 export type CartaRecipe = { id: string; name: string }
 export type CartaTpvArticle = {
   id: number
   nombre: string
-  familia_id: number | null
-  bdp_familias?: { nombre: string } | null
+  departamento_id: number | null
+  bdp_departamentos?: { nombre: string } | null
 }
 
-export type CartaFamilia = { id: number; nombre: string }
+export type CartaDepartamento = { id: number; nombre: string }
 
 export default function CartaMappingCreatorClient({
   unmappedArticles,
   recipes,
-  familias,
+  departamentos,
 }: {
   unmappedArticles: CartaTpvArticle[]
   recipes: CartaRecipe[]
-  familias: CartaFamilia[]
+  departamentos: CartaDepartamento[]
 }) {
   const [query, setQuery] = useState('')
   const [isPending, startTransition] = useTransition()
   const [busyId, setBusyId] = useState<number | null>(null)
   const [drafts, setDrafts] = useState<Record<number, { recipe_id: string | null }>>({})
-  const [familiaDrafts, setFamiliaDrafts] = useState<Record<number, number | null>>({})
+  const [departamentoDrafts, setDepartamentoDrafts] = useState<Record<number, number | null>>({})
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -41,14 +41,16 @@ export default function CartaMappingCreatorClient({
   const grouped = useMemo(() => {
     const groups = new Map<string, CartaTpvArticle[]>()
     for (const a of filtered) {
-      const family = a.bdp_familias?.nombre ?? (a.familia_id != null ? `Familia ${a.familia_id}` : 'Sin familia')
-      const list = groups.get(family) ?? []
+      const key =
+        a.bdp_departamentos?.nombre ??
+        (a.departamento_id != null ? `Dept ${a.departamento_id}` : 'Sin departamento')
+      const list = groups.get(key) ?? []
       list.push(a)
-      groups.set(family, list)
+      groups.set(key, list)
     }
     return Array.from(groups.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([family, rows]) => ({ family, rows: rows.sort((x, y) => x.nombre.localeCompare(y.nombre)) }))
+      .map(([groupKey, rows]) => ({ groupKey, rows: rows.sort((x, y) => x.nombre.localeCompare(y.nombre)) }))
   }, [filtered])
 
   const getDraft = (articulo_id: number) => drafts[articulo_id]?.recipe_id ?? null
@@ -64,14 +66,12 @@ export default function CartaMappingCreatorClient({
 
     setBusyId(articulo_id)
     startTransition(async () => {
-      const familiaId = familiaDrafts[articulo_id] ?? null
-      if (familiaId != null) {
-        const famRes = await setArticuloFamilia(articulo_id, familiaId)
-        if (!famRes.success) {
-          setBusyId(null)
-          toast.error(famRes.error ?? 'No se pudo asignar familia')
-          return
-        }
+      const departamentoId = departamentoDrafts[articulo_id] ?? null
+      const depRes = await setArticuloDepartamento(articulo_id, departamentoId)
+      if (!depRes.success) {
+        setBusyId(null)
+        toast.error(depRes.error ?? 'No se pudo asignar departamento')
+        return
       }
       // factor_porcion por defecto 1 (1 unidad TPV = 1 receta)
       const res = await upsertMapping(articulo_id, recipeId, 1)
@@ -112,10 +112,10 @@ export default function CartaMappingCreatorClient({
           </div>
         ) : (
           <div className="space-y-4">
-            {grouped.map(({ family, rows }) => (
-              <section key={family} className="rounded-xl border border-zinc-100 overflow-hidden">
+            {grouped.map(({ groupKey, rows }) => (
+              <section key={groupKey} className="rounded-xl border border-zinc-100 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 bg-zinc-50/60 border-b border-zinc-100">
-                  <div className="truncate text-xs font-black uppercase tracking-widest text-zinc-700">{family}</div>
+                  <div className="truncate text-xs font-black uppercase tracking-widest text-zinc-700">{groupKey}</div>
                   <div className="shrink-0 rounded-full bg-zinc-200 px-2.5 py-1 text-xs font-semibold text-zinc-700">
                     {rows.length}
                   </div>
@@ -136,23 +136,23 @@ export default function CartaMappingCreatorClient({
                         <div className="md:col-span-3">
                           <select
                             className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                            value={familiaDrafts[a.id] ?? a.familia_id ?? ''}
+                            value={departamentoDrafts[a.id] ?? a.departamento_id ?? ''}
                             onChange={(e) =>
-                              setFamiliaDrafts((p) => ({
+                              setDepartamentoDrafts((p) => ({
                                 ...p,
                                 [a.id]: e.target.value === '' ? null : Number(e.target.value),
                               }))
                             }
-                            title="Familia (opcional)"
+                            title="Departamento"
                           >
-                            <option value="">Sin familia</option>
-                            {familias.map((f) => (
-                              <option key={f.id} value={f.id}>
-                                {f.nombre}
+                            <option value="">Sin departamento</option>
+                            {departamentos.map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {d.nombre}
                               </option>
                             ))}
                           </select>
-                          <div className="mt-1 text-[11px] text-zinc-400">Opcional: asigna familia para agrupar en carta</div>
+                          <div className="mt-1 text-[11px] text-zinc-400">Agrupación de carta por departamento</div>
                         </div>
                         <div className="md:col-span-3">
                           <RecipeCombobox
