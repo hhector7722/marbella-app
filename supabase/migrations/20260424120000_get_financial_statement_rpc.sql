@@ -13,12 +13,14 @@ DECLARE
   v_sales_net numeric := 0;
 
   v_purchases_total numeric := 0;
-  v_labor_total numeric := 0;
+  v_payroll_total numeric := 0;
+  v_rent_total numeric := 0;
   v_pyg_expenses_total numeric := 0;
   v_pyg_net numeric := 0;
 
   v_cash_in numeric := 0;
   v_cash_out numeric := 0;
+  v_cash_bank_transfer_out numeric := 0;
   v_cash_adjustment numeric := 0;
   v_cash_swap numeric := 0;
   v_cash_net numeric := 0;
@@ -61,28 +63,58 @@ BEGIN
     AND pi.invoice_date <= p_end_date
     AND pi.status IN ('mapped', 'completed');
 
-  -- PY&L (Devengo): Coste laboral desde weekly_snapshots.total_cost (repositorio de coste real).
-  -- Regla: sumar snapshots que solapen el rango (sin prorrateo intra-semana).
+  -- PY&L (Devengo): Nóminas (coste empresa) desde PDF resumen mensual.
   SELECT
-    COALESCE(SUM(ws.total_cost), 0)
-  INTO v_labor_total
-  FROM public.weekly_snapshots ws
-  WHERE ws.week_start <= p_end_date
-    AND ws.week_end >= p_start_date;
+    COALESCE(SUM(pmt.total_company_cost), 0)
+  INTO v_payroll_total
+  FROM public.payroll_monthly_totals pmt
+  WHERE pmt.period_start <= p_end_date
+    AND pmt.period_end >= p_start_date;
 
-  v_pyg_expenses_total := COALESCE(v_purchases_total, 0) + COALESCE(v_labor_total, 0);
+  -- PY&L (Devengo): Costes fijos mensuales (sin prorrateo). Se cuentan solo meses COMPLETOS dentro del rango.
+  WITH bounds AS (
+    SELECT
+      -- primer mes completo:
+      CASE
+        WHEN p_start_date > date_trunc('month', p_start_date)::date
+          THEN (date_trunc('month', p_start_date)::date + interval '1 month')::date
+        ELSE date_trunc('month', p_start_date)::date
+      END AS first_month_start,
+      -- último mes completo:
+      CASE
+        WHEN p_end_date < ((date_trunc('month', p_end_date)::date + interval '1 month')::date - interval '1 day')::date
+          THEN (date_trunc('month', p_end_date)::date - interval '1 month')::date
+        ELSE date_trunc('month', p_end_date)::date
+      END AS last_month_start
+  ),
+  months AS (
+    SELECT gs::date AS month_start
+    FROM bounds b
+    CROSS JOIN LATERAL generate_series(b.first_month_start, b.last_month_start, interval '1 month') gs
+  )
+  SELECT
+    COALESCE(SUM(fmc.amount), 0)
+  INTO v_rent_total
+  FROM months m
+  JOIN public.fixed_monthly_costs fmc
+    ON (fmc.active_from <= (m.month_start + interval '1 month' - interval '1 day')::date)
+   AND (fmc.active_to IS NULL OR fmc.active_to >= m.month_start)
+  WHERE lower(fmc.name) = 'alquiler';
+
+  v_pyg_expenses_total := COALESCE(v_purchases_total, 0) + COALESCE(v_payroll_total, 0) + COALESCE(v_rent_total, 0);
   v_pyg_net := COALESCE(v_sales_net, 0) - COALESCE(v_pyg_expenses_total, 0);
 
   -- CASH FLOW (Caja): treasury_log por created_at convertido a fecha Europe/Madrid.
   -- Entradas: IN + CLOSE_ENTRY
-  -- Salidas: OUT
+  -- Salidas: OUT (orgánico). Excluye retiradas/transferencias a banco detectadas por nota (banc/a banc).
   -- Other: ADJUSTMENT + SWAP (separado para no distorsionar orgánico)
   SELECT
     COALESCE(SUM(CASE WHEN tl.type IN ('IN', 'CLOSE_ENTRY') THEN tl.amount ELSE 0 END), 0),
-    COALESCE(SUM(CASE WHEN tl.type = 'OUT' THEN tl.amount ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN tl.type = 'OUT' AND NOT (COALESCE(tl.notes,'') ILIKE '%banc%') THEN tl.amount ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN tl.type = 'OUT' AND (COALESCE(tl.notes,'') ILIKE '%banc%') THEN tl.amount ELSE 0 END), 0),
     COALESCE(SUM(CASE WHEN tl.type = 'ADJUSTMENT' THEN tl.amount ELSE 0 END), 0),
     COALESCE(SUM(CASE WHEN tl.type = 'SWAP' THEN tl.amount ELSE 0 END), 0)
-  INTO v_cash_in, v_cash_out, v_cash_adjustment, v_cash_swap
+  INTO v_cash_in, v_cash_out, v_cash_bank_transfer_out, v_cash_adjustment, v_cash_swap
   FROM public.treasury_log tl
   WHERE ((tl.created_at AT TIME ZONE 'Europe/Madrid')::date) >= p_start_date
     AND ((tl.created_at AT TIME ZONE 'Europe/Madrid')::date) <= p_end_date;
@@ -97,7 +129,8 @@ BEGIN
     'sources', jsonb_build_object(
       'accrualIncome', 'tickets_marbella(total_documento) by fecha',
       'accrualPurchases', 'purchase_invoices(total_amount) by invoice_date, status IN (mapped, completed)',
-      'accrualLabor', 'weekly_snapshots(total_cost) by week_start/week_end overlap',
+      'accrualPayroll', 'payroll_monthly_totals(total_company_cost) by monthly period overlap',
+      'accrualRent', 'fixed_monthly_costs(name=alquiler) by full months in range (no proration)',
       'cashFlow', 'treasury_log by created_at Europe/Madrid date'
     )
   );
@@ -114,7 +147,8 @@ BEGIN
       'total', v_pyg_expenses_total,
       'lines', jsonb_build_array(
         jsonb_build_object('key', 'purchases_invoices', 'label', 'Compras verificadas', 'amount', v_purchases_total),
-        jsonb_build_object('key', 'labor_cost', 'label', 'Coste laboral', 'amount', v_labor_total)
+        jsonb_build_object('key', 'payroll_total', 'label', 'Nóminas (coste empresa)', 'amount', v_payroll_total),
+        jsonb_build_object('key', 'rent_monthly', 'label', 'Alquiler', 'amount', v_rent_total)
       )
     ),
     'net', v_pyg_net
@@ -134,6 +168,7 @@ BEGIN
       )
     ),
     'other', jsonb_build_object(
+      'bankTransferOut', v_cash_bank_transfer_out,
       'adjustment', v_cash_adjustment,
       'swap', v_cash_swap
     ),
