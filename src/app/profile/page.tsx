@@ -346,11 +346,7 @@ function ProfileContent() {
                                 {showPersonalPurchasesAccountsButton ? (
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            router.push(
-                                                `/dashboard/consumo-personal?workerId=${encodeURIComponent(profile.id)}`
-                                            )
-                                        }
+                                        onClick={() => router.push('/dashboard/ledger')}
                                         className={cn(
                                             'shrink-0',
                                             'min-h-[48px] min-w-[48px]',
