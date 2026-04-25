@@ -30,35 +30,35 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
     return (
         <div
             className={cn(
-                'flex overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm',
-                row.photo_url ? 'flex-col md:flex-row' : 'flex-col'
+                // En grid: tarjeta "auto-height" (no estirar a toda la fila)
+                'flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm self-start'
             )}
         >
             {row.photo_url ? (
-                <div className="relative w-full shrink-0 bg-white md:w-[180px]">
-                    <div className="aspect-[4/3] w-full bg-white">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD */}
-                    <img
-                        src={row.photo_url}
-                        alt=""
-                        className="h-full w-full object-contain p-2"
-                    />
+                <div className="w-full shrink-0 bg-white">
+                    <div className="h-28 w-full bg-white sm:h-32">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD */}
+                        <img
+                            src={row.photo_url}
+                            alt=""
+                            className="h-full w-full object-contain p-2"
+                        />
                     </div>
                 </div>
             ) : null}
-            <div className="flex min-h-[48px] min-w-0 flex-1 flex-col justify-center gap-2 p-5">
-                <div className="flex items-start justify-between gap-3">
-                    <h3 className="min-w-0 flex-1 text-[18px] font-black leading-snug text-zinc-900 break-words">
+            <div className="flex min-h-[48px] min-w-0 flex-col gap-2 p-4">
+                <div className="flex items-start justify-between gap-2">
+                    <h3 className="min-w-0 flex-1 text-[15px] font-black leading-snug text-zinc-900 line-clamp-2">
                         {row.articulo_nombre}
                     </h3>
                     {showPrice ? (
-                        <span className="shrink-0 rounded-xl bg-[#36606F]/10 px-3 py-2 font-mono text-[15px] font-black text-[#36606F]">
+                        <span className="shrink-0 rounded-xl bg-[#36606F]/10 px-2.5 py-1.5 font-mono text-[13px] font-black text-[#36606F]">
                             {priceStr}
                         </span>
                     ) : null}
                 </div>
                 {row.descripcion ? (
-                    <p className="text-[13px] leading-relaxed text-zinc-600">{row.descripcion}</p>
+                    <p className="text-[12px] leading-relaxed text-zinc-600 line-clamp-3">{row.descripcion}</p>
                 ) : null}
             </div>
         </div>
@@ -122,7 +122,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                         </button>
                         {isOpen ? (
                             <div className="shrink-0 border-t border-zinc-100 px-3 pb-3 pt-1">
-                                <div className="grid max-h-[min(72vh,720px)] grid-cols-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid max-h-[min(72vh,720px)] auto-rows-min items-start grid-cols-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
                                     {rows.map((row) => (
                                         <MenuCard key={row.articulo_id} row={row} />
                                     ))}
