@@ -126,11 +126,13 @@ function KpiTile({
   value,
   icon,
   valueClassName,
+  footer,
 }: {
   label: string;
   value: number;
   icon: React.ReactNode;
   valueClassName?: string;
+  footer?: React.ReactNode;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0">
@@ -146,6 +148,7 @@ function KpiTile({
           {formatEurRead(value)}
         </div>
       </div>
+      {footer ? <div className="mt-1">{footer}</div> : null}
     </div>
   );
 }
@@ -180,6 +183,19 @@ export default function FinancialDashboardClient({
   const reconciliation = statement.reconciliation;
   const deltaTone =
     reconciliation.delta > 0 ? 'positive' : reconciliation.delta < 0 ? 'negative' : 'muted';
+
+  const rentabilidadPct = useMemo(() => {
+    const ventasNetas = Number(statement.pyg.income.total) || 0;
+    const neto = Number(statement.pyg.net) || 0;
+    if (ventasNetas <= 0) return null;
+    return (neto / ventasNetas) * 100;
+  }, [statement.pyg.income.total, statement.pyg.net]);
+
+  const rentabilidadText = useMemo(() => {
+    if (rentabilidadPct === null) return ' ';
+    if (rentabilidadPct === 0 || Object.is(rentabilidadPct, -0)) return ' ';
+    return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(rentabilidadPct)}%`;
+  }, [rentabilidadPct]);
 
   const applyRange = () => {
     const s = clampYmdOrFallback(startDate, initialStartDate);
@@ -318,6 +334,11 @@ export default function FinancialDashboardClient({
                       ? 'text-rose-500'
                       : 'text-zinc-400'
                 }
+                footer={
+                  <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                    Rentabilidad: <span className="font-black text-zinc-900">{rentabilidadText}</span>
+                  </div>
+                }
               />
               <KpiTile
                 label="Caja neta (operativa)"
@@ -354,8 +375,13 @@ export default function FinancialDashboardClient({
                       <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-900">
                         Ingresos (neto)
                       </div>
-                      <div className="text-[20px] md:text-[24px] font-black tabular-nums tracking-tight text-emerald-600">
-                        {formatEurRead(statement.pyg.income.total)}
+                      <div className="flex items-baseline gap-3 shrink-0">
+                        <div className="text-[20px] md:text-[24px] font-black tabular-nums tracking-tight text-emerald-600">
+                          {formatEurRead(statement.pyg.income.total)}
+                        </div>
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                          Rentab. <span className="text-zinc-900">{rentabilidadText}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="p-4">
