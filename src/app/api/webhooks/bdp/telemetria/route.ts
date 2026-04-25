@@ -14,9 +14,9 @@ export async function POST(req: Request) {
     )
     
     const { total_mesas_vivas, sala } = await req.json()
-    if (!sala) return NextResponse.json({ success: true })
+    const salaArray = Array.isArray(sala) ? sala : []
 
-    const salaDisfrazada = sala.map((mesa: any) => {
+    const salaDisfrazada = salaArray.map((mesa: any) => {
       const mesaNorm = {
         ...mesa,
         // Fuente de verdad del ticket en nuestros triggers KDS v2
@@ -57,10 +57,15 @@ export async function POST(req: Request) {
       return mesaNorm
     })
 
+    const mesasActivas =
+      Number.isFinite(Number(total_mesas_vivas))
+        ? parseInt(String(total_mesas_vivas), 10) || 0
+        : salaDisfrazada.length
+
     const { error } = await supabase.from('estado_sala').upsert([{
       id: 1,
       ultima_actualizacion: new Date().toISOString(),
-      mesas_activas: parseInt(total_mesas_vivas) || 0,
+      mesas_activas: mesasActivas,
       radiografia_completa: salaDisfrazada
     }], { onConflict: 'id' })
 
