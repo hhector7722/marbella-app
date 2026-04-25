@@ -27,6 +27,7 @@ export type PurchaseInvoiceListItem = {
   status: string | null
   supplier_id: number | null
   supplier_name: string | null
+  supplier_image_url: string | null
   invoice_number: string | null
   invoice_date: string | null
   total_amount: number | null
@@ -56,9 +57,10 @@ export async function listPurchaseInvoicesAction(params?: {
       invoice_date,
       total_amount,
       file_path,
-      suppliers(name)
+      suppliers(name,image_url)
     `
     )
+    .order('invoice_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -75,6 +77,7 @@ export async function listPurchaseInvoicesAction(params?: {
     status: r.status ?? null,
     supplier_id: r.supplier_id ?? null,
     supplier_name: r.suppliers?.name ?? null,
+    supplier_image_url: r.suppliers?.image_url ?? null,
     invoice_number: r.invoice_number ?? null,
     invoice_date: r.invoice_date ?? null,
     total_amount: r.total_amount ?? null,
@@ -103,6 +106,7 @@ export type PurchaseInvoiceDetail = {
   status: string | null
   supplier_id: number | null
   supplier_name: string | null
+  supplier_image_url: string | null
   invoice_number: string | null
   invoice_date: string | null
   total_amount: number | null
@@ -136,7 +140,7 @@ export async function getPurchaseInvoiceDetailAction(
       invoice_date,
       total_amount,
       file_path,
-      suppliers(name),
+      suppliers(name,image_url),
       purchase_invoice_lines(
         id,
         original_name,
@@ -183,6 +187,7 @@ export async function getPurchaseInvoiceDetailAction(
     status: (data as any).status ?? null,
     supplier_id: (data as any).supplier_id ?? null,
     supplier_name: (data as any).suppliers?.name ?? null,
+    supplier_image_url: (data as any).suppliers?.image_url ?? null,
     invoice_number: (data as any).invoice_number ?? null,
     invoice_date: (data as any).invoice_date ?? null,
     total_amount: (data as any).total_amount ?? null,
