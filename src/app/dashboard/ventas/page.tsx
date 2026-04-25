@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Landmark } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -59,6 +59,7 @@ export default function VentasPage() {
     const searchParams = useSearchParams();
 
     const [activeTab, setActiveTab] = useState<VentasTab>('VENTAS');
+    const [isHector, setIsHector] = useState(false);
 
     // Leer el parámetro ?tab=X al montar (viene desde /dashboard/sala via SubNavVentas)
     useEffect(() => {
@@ -69,6 +70,18 @@ export default function VentasPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        void (async () => {
+            const { data } = await supabase.auth.getUser();
+            const email = data?.user?.email ?? '';
+            if (!cancelled) setIsHector(String(email).toLowerCase() === 'hhector7722@gmail.com');
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [supabase]);
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
@@ -583,6 +596,24 @@ export default function VentasPage() {
                                     }}
                                     className="text-white"
                                 />
+
+                                {isHector ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/dashboard/finanzas')}
+                                        aria-label="Abrir finanzas"
+                                        title="Finanzas"
+                                        className={cn(
+                                            'min-h-12 min-w-12 shrink-0',
+                                            'bg-transparent border-0 outline-none',
+                                            'text-white/90 hover:text-white',
+                                            'inline-flex items-center justify-center',
+                                            'active:scale-95 transition-transform',
+                                        )}
+                                    >
+                                        <Landmark className="w-[18px] h-[18px]" strokeWidth={2.75} />
+                                    </button>
+                                ) : null}
                             </div>
                         </div>
                     </div>
