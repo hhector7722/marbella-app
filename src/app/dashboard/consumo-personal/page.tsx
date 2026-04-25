@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
 import { ChevronLeft, ChevronRight, User, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   addMonths,
   eachDayOfInterval,
@@ -104,6 +104,7 @@ function consumptionProductDisplayName(raw: string): string {
 export default function ConsumoPersonalDashboardPage() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const def = defaultFullMonthPeriod();
   const [periodStart, setPeriodStart] = useState<string>(def.start);
@@ -214,6 +215,14 @@ export default function ConsumoPersonalDashboardPage() {
       cancelledEmployees = true;
     };
   }, [supabase, router]);
+
+  // Permite abrir la pantalla ya filtrada: /dashboard/consumo-personal?workerId=<uuid>
+  useEffect(() => {
+    const raw = searchParams?.get('workerId');
+    const id = raw ? String(raw).trim() : '';
+    if (!id) return;
+    setWorkerFilterId(id);
+  }, [searchParams]);
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);

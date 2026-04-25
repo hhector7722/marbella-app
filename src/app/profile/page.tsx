@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
+import { CreditCard } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -256,6 +257,8 @@ function ProfileContent() {
     const showAccountSection = !viewingOtherProfile;
     type ViewMode = 'staff' | 'manager-self' | 'manager-employee';
     const viewMode: ViewMode = !isManager ? 'staff' : viewingOtherProfile ? 'manager-employee' : 'manager-self';
+    const showPersonalPurchasesAccountsButton =
+        String(profile.email || '').toLowerCase() === 'hhector7722@gmail.com';
 
     const gridItems = showAccountSection
         ? PROFILE_GRID
@@ -339,8 +342,31 @@ function ProfileContent() {
                                 )}
                             </div>
 
-                            {/* Spacer para centrar el título respecto a todo el ancho */}
-                            <div className="shrink-0 w-20" />
+                            <div className="shrink-0 w-20 flex items-start justify-end">
+                                {showPersonalPurchasesAccountsButton ? (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            router.push(
+                                                `/dashboard/consumo-personal?workerId=${encodeURIComponent(profile.id)}`
+                                            )
+                                        }
+                                        className={cn(
+                                            'shrink-0',
+                                            'min-h-[48px] min-w-[48px]',
+                                            'inline-flex items-center justify-center',
+                                            'rounded-xl',
+                                            'bg-transparent border-0 shadow-none',
+                                            'text-white/90 hover:text-white hover:bg-white/10',
+                                            'active:scale-95 transition'
+                                        )}
+                                        aria-label="Cuentas de compras personales"
+                                        title="Compras personales"
+                                    >
+                                        <CreditCard size={20} strokeWidth={2.25} className="shrink-0" />
+                                    </button>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
 
