@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRightLeft, TrendingDown, TrendingUp, Landmark, Receipt, Wallet } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, ArrowRightLeft, TrendingDown, TrendingUp, Landmark, Receipt, Wallet, X, Info } from 'lucide-react';
 import { cn, formatDisplayValue } from '@/lib/utils';
 import { parseTPVDate, getStartOfLocalToday } from '@/utils/date-utils';
 
@@ -23,7 +24,7 @@ type FinancialStatement = {
   cashFlow: {
     inflows: { total: number; lines: MoneyLine[] };
     outflows: { total: number; lines: MoneyLine[] };
-    other: { adjustment: number; swap: number };
+    other: { adjustment: number; swap: number; bankTransferOut?: number };
     net: number;
   };
   reconciliation: {
@@ -174,6 +175,7 @@ function KpiTile({
   valueClassName,
   footer,
   micro,
+  onClick,
 }: {
   label: string;
   value: number;
@@ -181,9 +183,20 @@ function KpiTile({
   valueClassName?: string;
   footer?: React.ReactNode;
   micro?: React.ReactNode;
+  onClick?: () => void;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0 overflow-hidden">
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'text-left',
+        'bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0 overflow-hidden',
+        'active:scale-[0.99] transition-transform',
+        onClick ? 'cursor-pointer hover:shadow-md' : 'cursor-default',
+      )}
+      aria-disabled={!onClick}
+    >
       <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">{label}</div>
       <div className="mt-1 flex items-center gap-2 min-w-0">
         <div className="shrink-0">{icon}</div>
@@ -198,7 +211,84 @@ function KpiTile({
       </div>
       {micro ? <div className="mt-2">{micro}</div> : null}
       {footer ? <div className="mt-1">{footer}</div> : null}
+    </button>
+  );
+}
+
+type FinanceModal =
+  | { kind: 'pyg' }
+  | { kind: 'cash' }
+  | { kind: 'delta' }
+  | { kind: 'line'; scope: 'pyg-income' | 'pyg-expense' | 'cash-in' | 'cash-out' | 'cash-other'; key: string };
+
+function ModalShell({
+  title,
+  subtitle,
+  children,
+  onClose,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[10050] bg-black/60 backdrop-blur-md p-4 flex items-center justify-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="presentation"
+    >
+      <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="shrink-0 bg-[#36606F] px-5 py-4 flex items-start justify-between gap-3 text-white">
+          <div className="min-w-0">
+            <div className="text-[11px] md:text-[12px] font-black uppercase tracking-widest truncate">
+              {title}
+            </div>
+            <div className="text-[9px] md:text-[10px] font-bold text-white/80 truncate">
+              {subtitle}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 min-w-12 shrink-0 rounded-xl hover:bg-white/15 inline-flex items-center justify-center active:scale-95 transition-transform"
+            aria-label="Cerrar"
+          >
+            <X className="w-5 h-5" strokeWidth={2.75} aria-hidden />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5">{children}</div>
+      </div>
     </div>
+  );
+}
+
+function ClickableLineItem({
+  label,
+  amount,
+  tone,
+  onClick,
+}: {
+  label: string;
+  amount: number;
+  tone: 'neutral' | 'positive' | 'negative' | 'muted';
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'w-full text-left',
+        'min-h-12 rounded-xl px-3 py-2',
+        'border border-zinc-100 hover:bg-zinc-50 active:bg-zinc-100',
+        'transition-colors',
+      )}
+    >
+      <LineItem label={label} amount={amount} tone={tone} />
+    </button>
   );
 }
 
@@ -246,6 +336,18 @@ export default function FinancialDashboardClient({
     return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(rentabilidadPct)}%`;
   }, [rentabilidadPct]);
 
+  const [modal, setModal] = useState<FinanceModal | null>(null);
+  const closeModal = () => setModal(null);
+
+  useEffect(() => {
+    if (!modal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [modal]);
+
   const applyRange = () => {
     const s = clampYmdOrFallback(startDate, initialStartDate);
     const e = clampYmdOrFallback(endDate, initialEndDate);
@@ -269,6 +371,15 @@ export default function FinancialDashboardClient({
       router.refresh();
     });
   };
+
+  const deltaExplain = useMemo(() => {
+    const d = Number(reconciliation.delta) || 0;
+    if (d === 0 || Object.is(d, -0)) return ' ';
+    if (d > 0) {
+      return 'Devengo > Caja: estás generando rentabilidad contable, pero no está entrando caja al mismo ritmo (cobros pendientes / desfase).';
+    }
+    return 'Caja > Devengo: está entrando caja “por fuera del devengo” (p. ej. cobros de deuda anterior / ajustes), o el devengo tiene más gasto ahora.';
+  }, [reconciliation.delta]);
 
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24 text-zinc-900">
@@ -398,6 +509,7 @@ export default function FinancialDashboardClient({
                     bTone="rose"
                   />
                 }
+                onClick={() => setModal({ kind: 'pyg' })}
               />
               <KpiTile
                 label="Caja neta (operativa)"
@@ -420,6 +532,7 @@ export default function FinancialDashboardClient({
                     bTone="rose"
                   />
                 }
+                onClick={() => setModal({ kind: 'cash' })}
               />
               <KpiTile
                 label="Delta (devengo − caja)"
@@ -442,6 +555,7 @@ export default function FinancialDashboardClient({
                     </div>
                   </div>
                 }
+                onClick={() => setModal({ kind: 'delta' })}
               />
             </div>
 
@@ -472,11 +586,12 @@ export default function FinancialDashboardClient({
                       </div>
                       <div className="space-y-2">
                         {statement.pyg.income.lines.map((l) => (
-                          <LineItem
+                          <ClickableLineItem
                             key={l.key}
                             label={l.label}
                             amount={l.amount}
                             tone={l.amount < 0 ? 'negative' : 'neutral'}
+                            onClick={() => setModal({ kind: 'line', scope: 'pyg-income', key: l.key })}
                           />
                         ))}
                       </div>
@@ -501,7 +616,13 @@ export default function FinancialDashboardClient({
                       </div>
                       <div className="space-y-2">
                         {statement.pyg.expenses.lines.map((l) => (
-                          <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
+                          <ClickableLineItem
+                            key={l.key}
+                            label={l.label}
+                            amount={l.amount}
+                            tone="negative"
+                            onClick={() => setModal({ kind: 'line', scope: 'pyg-expense', key: l.key })}
+                          />
                         ))}
                       </div>
                     </div>
@@ -555,7 +676,13 @@ export default function FinancialDashboardClient({
                     <div className="p-4">
                       <div className="space-y-2">
                         {statement.cashFlow.inflows.lines.map((l) => (
-                          <LineItem key={l.key} label={l.label} amount={l.amount} tone="positive" />
+                          <ClickableLineItem
+                            key={l.key}
+                            label={l.label}
+                            amount={l.amount}
+                            tone="positive"
+                            onClick={() => setModal({ kind: 'line', scope: 'cash-in', key: l.key })}
+                          />
                         ))}
                       </div>
                     </div>
@@ -573,7 +700,13 @@ export default function FinancialDashboardClient({
                     <div className="p-4">
                       <div className="space-y-2">
                         {statement.cashFlow.outflows.lines.map((l) => (
-                          <LineItem key={l.key} label={l.label} amount={l.amount} tone="negative" />
+                          <ClickableLineItem
+                            key={l.key}
+                            label={l.label}
+                            amount={l.amount}
+                            tone="negative"
+                            onClick={() => setModal({ kind: 'line', scope: 'cash-out', key: l.key })}
+                          />
                         ))}
                       </div>
                     </div>
@@ -589,12 +722,26 @@ export default function FinancialDashboardClient({
                       </div>
                     </div>
                     <div className="p-4 space-y-2">
-                      <LineItem label="SWAP (cambios)" amount={statement.cashFlow.other.swap} tone="muted" />
-                      <LineItem
+                      <ClickableLineItem
+                        label="SWAP (cambios)"
+                        amount={statement.cashFlow.other.swap}
+                        tone="muted"
+                        onClick={() => setModal({ kind: 'line', scope: 'cash-other', key: 'swap' })}
+                      />
+                      <ClickableLineItem
                         label="ADJUSTMENT (descuadres)"
                         amount={statement.cashFlow.other.adjustment}
                         tone="muted"
+                        onClick={() => setModal({ kind: 'line', scope: 'cash-other', key: 'adjustment' })}
                       />
+                      {typeof statement.cashFlow.other.bankTransferOut === 'number' ? (
+                        <ClickableLineItem
+                          label="BANCO (transferencias)"
+                          amount={statement.cashFlow.other.bankTransferOut}
+                          tone="muted"
+                          onClick={() => setModal({ kind: 'line', scope: 'cash-other', key: 'bankTransferOut' })}
+                        />
+                      ) : null}
                     </div>
                   </div>
 
@@ -635,6 +782,178 @@ export default function FinancialDashboardClient({
           </div>
         </div>
       </div>
+
+      {modal && typeof document !== 'undefined'
+        ? createPortal(
+            (() => {
+              if (modal.kind === 'pyg') {
+                return (
+                  <ModalShell
+                    title="PyG (Devengo)"
+                    subtitle="Rentabilidad contable del periodo"
+                    onClose={closeModal}
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-zinc-200/60 bg-white p-4">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                          Ventas netas
+                        </div>
+                        <div className="mt-1 text-[18px] font-black tabular-nums text-emerald-600">
+                          {formatEurRead(statement.pyg.income.total)}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-zinc-200/60 bg-white p-4">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                          Gastos devengo
+                        </div>
+                        <div className="mt-1 text-[18px] font-black tabular-nums text-rose-500">
+                          {formatEurRead(statement.pyg.expenses.total)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-zinc-200/60 bg-white p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-900">
+                          Resultado (PyG)
+                        </div>
+                        <div className="text-[18px] font-black tabular-nums text-zinc-900">
+                          {formatEurRead(statement.pyg.net)}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-[10px] font-bold text-zinc-400">
+                        Rentabilidad sobre ventas: <span className="font-black text-zinc-900">{rentabilidadText}</span>
+                      </div>
+                      <MiniBars
+                        a={statement.pyg.income.total}
+                        b={statement.pyg.expenses.total}
+                        aLabel="Ventas"
+                        bLabel="Gastos"
+                        aTone="emerald"
+                        bTone="rose"
+                      />
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-zinc-200/60 bg-white p-4">
+                      <div className="flex items-center gap-2">
+                        <Info className="w-4 h-4 text-zinc-400" strokeWidth={2.5} aria-hidden />
+                        <div className="text-[9px] md:text-[10px] font-bold text-zinc-400">
+                          Devengo ≠ Caja. Aquí se mide rentabilidad, no liquidez.
+                        </div>
+                      </div>
+                    </div>
+                  </ModalShell>
+                );
+              }
+
+              if (modal.kind === 'cash') {
+                return (
+                  <ModalShell
+                    title="Cash Flow (Caja)"
+                    subtitle="Viabilidad operativa del periodo"
+                    onClose={closeModal}
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-zinc-200/60 bg-white p-4">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                          Entradas
+                        </div>
+                        <div className="mt-1 text-[18px] font-black tabular-nums text-emerald-600">
+                          {formatEurRead(statement.cashFlow.inflows.total)}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-zinc-200/60 bg-white p-4">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                          Salidas
+                        </div>
+                        <div className="mt-1 text-[18px] font-black tabular-nums text-rose-500">
+                          {formatEurRead(statement.cashFlow.outflows.total)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-zinc-200/60 bg-white p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-900">
+                          Neto (Caja)
+                        </div>
+                        <div className="text-[18px] font-black tabular-nums text-zinc-900">
+                          {formatEurRead(statement.cashFlow.net)}
+                        </div>
+                      </div>
+                      <MiniBars
+                        a={statement.cashFlow.inflows.total}
+                        b={statement.cashFlow.outflows.total}
+                        aLabel="Entradas"
+                        bLabel="Salidas"
+                        aTone="emerald"
+                        bTone="rose"
+                      />
+                      <div className="mt-3 text-[9px] md:text-[10px] font-bold text-zinc-400">
+                        “Other” (swap/ajustes/banco) no distorsiona orgánico.
+                      </div>
+                    </div>
+                  </ModalShell>
+                );
+              }
+
+              if (modal.kind === 'delta') {
+                return (
+                  <ModalShell
+                    title="Delta (Devengo − Caja)"
+                    subtitle="La diferencia entre rentabilidad y liquidez"
+                    onClose={closeModal}
+                  >
+                    <div className="rounded-2xl border border-zinc-200/60 bg-white p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-900">
+                          Delta
+                        </div>
+                        <div
+                          className={cn(
+                            'text-[18px] font-black tabular-nums',
+                            deltaTone === 'positive'
+                              ? 'text-emerald-600'
+                              : deltaTone === 'negative'
+                                ? 'text-rose-500'
+                                : 'text-zinc-400',
+                          )}
+                        >
+                          {formatEurRead(reconciliation.delta)}
+                        </div>
+                      </div>
+                      <div className="mt-3 text-[10px] font-bold text-zinc-400">
+                        {deltaExplain}
+                      </div>
+                    </div>
+                  </ModalShell>
+                );
+              }
+
+              // modal.kind === 'line'
+              return (
+                <ModalShell
+                  title="Detalle de partida"
+                  subtitle="Origen de datos (sin cálculos en cliente)"
+                  onClose={closeModal}
+                >
+                  <div className="rounded-2xl border border-zinc-200/60 bg-white p-4">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                      Clave
+                    </div>
+                    <div className="mt-1 text-[13px] font-black tabular-nums text-zinc-900 break-words">
+                      {modal.scope}:{modal.key}
+                    </div>
+                    <div className="mt-3 text-[9px] md:text-[10px] font-bold text-zinc-400">
+                      Esta partida se calcula íntegramente en el RPC <span className="font-black">get_financial_statement</span>.
+                    </div>
+                  </div>
+                </ModalShell>
+              );
+            })(),
+            document.body,
+          )
+        : null}
     </div>
   );
 }
