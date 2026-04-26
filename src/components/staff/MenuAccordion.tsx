@@ -121,7 +121,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
             const parentSort = row.category_parent_sort_order ?? 9999;
             const parentKey = row.category_parent_id ?? `__no_parent__:${parentTitle}`;
 
-            const childTitle = row.category_child_name?.trim() || 'General';
+            const childTitle = row.category_child_name?.trim() || '';
             const childSort = row.category_child_sort_order ?? 9999;
             const childKey = row.category_child_id ?? `__no_child__:${childTitle}`;
 
@@ -208,11 +208,13 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                 <div className="max-h-[min(72vh,720px)] overflow-y-auto pr-1 space-y-5">
                                     {group._subList.map((sub) => (
                                         <section key={sub.key} className="space-y-3">
-                                            <div className="px-1">
-                                                <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                                                    {sub.title}
+                                            {sub.title ? (
+                                                <div className="px-1">
+                                                    <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                                                        {sub.title}
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            ) : null}
                                             <div className="grid grid-cols-3 gap-4 items-stretch">
                                                 {sub.rows.map((row) => (
                                                     <MenuCard key={row.articulo_id} row={row} />
