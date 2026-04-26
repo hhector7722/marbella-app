@@ -151,7 +151,7 @@ export default function SuppliersPage() {
     });
 
     return (
-        <div className="p-6 md:p-8 w-full bg-[#3E6A8A] min-h-screen">
+        <div className="p-6 md:p-8 w-full bg-[#5F7F99] min-h-screen">
             <Toaster position="top-right" />
 
             <div className="mb-6 md:mb-8 flex flex-row gap-2 items-center px-0">

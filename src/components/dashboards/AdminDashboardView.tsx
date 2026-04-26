@@ -657,7 +657,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#3E6A8A] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#5F7F99] flex items-center justify-center p-4">
             <LoadingSpinner size="xl" className="text-white" />
         </div>
     );
