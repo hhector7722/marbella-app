@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
@@ -127,6 +127,7 @@ export function IngredientWizard({
   initialCategory,
   initialHowCharged,
   initialPricingMode,
+  mode,
   onSaved,
   onClose,
 }: {
@@ -135,6 +136,7 @@ export function IngredientWizard({
   initialCategory?: IngredientWizardCategory | null
   initialHowCharged?: IngredientWizardHowCharged | null
   initialPricingMode?: IngredientWizardPricing | null
+  mode?: 'create' | 'editPricing' | 'editFull'
   onSaved?: (ingredientId: string) => void
   onClose?: () => void
 }) {
@@ -161,6 +163,89 @@ export function IngredientWizard({
   }))
 
   const unitCost = useMemo(() => computeUnitCost(draft), [draft])
+
+  useEffect(() => {
+    const id = initialIngredientId ?? null
+    if (!id) return
+    let cancelled = false
+
+    async function loadExistingIngredient() {
+      setSaving(true)
+      try {
+        const { data, error } = await supabase
+          .from('ingredients')
+          .select(
+            'id,name,category,supplier_pricing_mode,purchase_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2'
+          )
+          .eq('id', id)
+          .maybeSingle()
+        if (cancelled) return
+        if (error) throw error
+        if (!data?.id) throw new Error('Ingrediente no encontrado')
+
+        setIngredientId(String(data.id))
+
+        const catDb = String((data as any).category ?? 'Alimentos')
+        const cat: IngredientWizardCategory =
+          catDb === 'Bebidas'
+            ? 'Bebida'
+            : catDb === 'Packaging'
+              ? 'Packaging'
+              : catDb === 'Limpieza'
+                ? 'Limpieza'
+                : catDb === 'Otros'
+                  ? 'Otros'
+                  : 'Comida'
+
+        const purchaseUnit = String((data as any).purchase_unit ?? 'kg').toLowerCase()
+        const baseUnit: WizardBaseUnit = purchaseUnit === 'l' ? 'l' : purchaseUnit === 'ud' ? 'ud' : 'kg'
+
+        const spm = ((data as any).supplier_pricing_mode ?? 'per_purchase_unit') as IngredientWizardPricing
+        const pricingMode: IngredientWizardPricing = spm === 'per_pack' ? 'per_pack' : 'per_purchase_unit'
+
+        const howCharged: IngredientWizardHowCharged =
+          pricingMode === 'per_pack' ? 'pack' : baseUnit === 'kg' ? 'kilo' : baseUnit === 'l' ? 'litro' : 'unidad'
+
+        const packPrice = (data as any).pack_price == null ? null : Number((data as any).pack_price)
+        const currentPrice = (data as any).current_price == null ? 0 : Number((data as any).current_price)
+        const supplierPrice = pricingMode === 'per_pack' ? (Number.isFinite(packPrice as any) ? (packPrice as number) : 0) : currentPrice
+
+        setDraft((d) => ({
+          ...d,
+          name: String((data as any).name ?? '').trim(),
+          category: cat,
+          pricingMode,
+          howCharged,
+          containsLiquid: baseUnit === 'l' ? true : d.containsLiquid,
+          supplierPrice: Number.isFinite(supplierPrice) ? supplierPrice : 0,
+          unitsInside: (data as any).pack_units == null ? null : Number((data as any).pack_units),
+          contentPerUnitQty: (data as any).pack_unit_size_qty == null ? null : Number((data as any).pack_unit_size_qty),
+          contentPerUnitUnit: ((data as any).pack_unit_size_unit ?? 'ud') as any,
+          baseUnit,
+          wastePercentage: (data as any).waste_percentage == null ? 0 : Number((data as any).waste_percentage),
+          orderUnit: String((data as any).order_unit ?? 'unidad'),
+          recommendedStock: (data as any).recommended_stock == null ? null : Number((data as any).recommended_stock),
+          supplier: (data as any).supplier ?? null,
+          supplier2: (data as any).supplier_2 ?? null,
+        }))
+
+        // Si el objetivo es editar precio, entrar directo en el paso 4.
+        const m = mode ?? 'create'
+        if (m === 'editPricing') setStep(4)
+        else if (m === 'editFull') setStep(2)
+      } catch (e: any) {
+        toast.error(e?.message || 'Error cargando ingrediente')
+      } finally {
+        if (!cancelled) setSaving(false)
+      }
+    }
+
+    void loadExistingIngredient()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialIngredientId])
 
   async function upsertDraft(patch: Partial<WizardDraft>) {
     setDraft((d) => ({ ...d, ...patch }))

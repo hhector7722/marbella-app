@@ -1108,6 +1108,7 @@ export default function AlbaranesHistoricoClient({
                       <IngredientWizard
                         ingredientId={wizardIngredientId}
                         initialName={wizardInitialName ?? undefined}
+                        mode={wizardIngredientId ? 'editPricing' : 'create'}
                         onSaved={(id) => {
                           if (wizardTargetLineId) {
                             setSelectedIngredientByLineId((p) => ({ ...p, [wizardTargetLineId]: id }))
