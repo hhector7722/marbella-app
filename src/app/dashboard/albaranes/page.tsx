@@ -1,7 +1,7 @@
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { listPurchaseInvoicesAction } from './actions'
+import { listPurchaseInvoicesDefaultWeekAction } from './actions'
 import AlbaranesHistoricoClient from './AlbaranesHistoricoClient'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,7 @@ export default async function AlbaranesHistoricoPage() {
   const role = profile?.role ?? null
   const isManager = role === 'manager' || role === 'admin'
 
-  const res = await listPurchaseInvoicesAction({ limit: 60 })
+  const res = await listPurchaseInvoicesDefaultWeekAction()
 
   return (
     <DashboardDetailLayout

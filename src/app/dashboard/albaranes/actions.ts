@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
@@ -86,6 +87,121 @@ export async function listPurchaseInvoicesAction(params?: {
   }))
 
   return { success: true, items, canViewAll }
+}
+
+function parseYmd(ymd: string): { y: number; m: number; d: number } | null {
+  const t = String(ymd ?? '').trim()
+  const m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return null
+  const y = Number(m[1])
+  const mo = Number(m[2])
+  const d = Number(m[3])
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null
+  return { y, m: mo, d }
+}
+
+function formatYmd(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function mondayOfWeek(ymd: string): string {
+  const p = parseYmd(ymd)
+  if (!p) return ymd
+  const dt = new Date(p.y, p.m - 1, p.d)
+  // JS: 0=domingo ... 6=sábado. Queremos lunes.
+  const js = dt.getDay()
+  const delta = (js + 6) % 7 // lunes->0, martes->1, domingo->6
+  dt.setDate(dt.getDate() - delta)
+  return formatYmd(dt)
+}
+
+function addDays(ymd: string, days: number): string {
+  const p = parseYmd(ymd)
+  if (!p) return ymd
+  const dt = new Date(p.y, p.m - 1, p.d)
+  dt.setDate(dt.getDate() + days)
+  return formatYmd(dt)
+}
+
+async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true }>, startYmd: string, endYmd: string, limit = 200) {
+  const canViewAll = gate.role === 'manager' || gate.role === 'admin'
+  let q = gate.supabase
+    .from('purchase_invoices')
+    .select(
+      `
+      id,
+      created_at,
+      created_by,
+      source,
+      status,
+      supplier_id,
+      invoice_number,
+      invoice_date,
+      total_amount,
+      file_path,
+      suppliers(name,image_url)
+    `
+    )
+    .gte('invoice_date', startYmd)
+    .lte('invoice_date', endYmd)
+    .order('invoice_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (!canViewAll) q = q.eq('created_by', gate.userId)
+  const { data, error } = await q
+  if (error) throw error
+  const items: PurchaseInvoiceListItem[] = (data ?? []).map((r: any) => ({
+    id: r.id,
+    created_at: r.created_at,
+    created_by: r.created_by ?? null,
+    source: r.source ?? null,
+    status: r.status ?? null,
+    supplier_id: r.supplier_id ?? null,
+    supplier_name: r.suppliers?.name ?? null,
+    supplier_image_url: r.suppliers?.image_url ?? null,
+    invoice_number: r.invoice_number ?? null,
+    invoice_date: r.invoice_date ?? null,
+    total_amount: r.total_amount ?? null,
+    file_path: r.file_path ?? null,
+  }))
+  return { items, canViewAll }
+}
+
+export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
+  | { success: true; items: PurchaseInvoiceListItem[]; canViewAll: boolean; weekStart: string; weekEnd: string }
+  | { success: false; message: string }
+> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const todayYmd = formatYmdInMadrid(new Date())
+  const weekStart = mondayOfWeek(todayYmd)
+  const weekEnd = addDays(weekStart, 6)
+
+  try {
+    const cur = await listPurchaseInvoicesByRange(gate, weekStart, weekEnd, 200)
+    if (cur.items.length > 0) return { success: true, items: cur.items, canViewAll: cur.canViewAll, weekStart, weekEnd }
+
+    const prevStart = addDays(weekStart, -7)
+    const prevEnd = addDays(weekEnd, -7)
+    const prev = await listPurchaseInvoicesByRange(gate, prevStart, prevEnd, 200)
+    return { success: true, items: prev.items, canViewAll: prev.canViewAll, weekStart: prevStart, weekEnd: prevEnd }
+  } catch (e: any) {
+    return { success: false, message: e?.message ?? 'Error listando albaranes' }
+  }
+}
+
+export async function listSuppliersForFilterAction(): Promise<{ success: true; suppliers: { id: number; name: string }[] } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.from('suppliers').select('id,name').order('name').limit(2000)
+  if (error) return { success: false, message: error.message }
+  const suppliers = (data ?? []).map((r: any) => ({ id: Number(r.id), name: String(r.name ?? '') })).filter((s) => s.id > 0 && s.name)
+  return { success: true, suppliers }
 }
 
 export type PurchaseInvoiceLine = {

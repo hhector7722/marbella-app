@@ -13,6 +13,7 @@ import {
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
   listPurchaseInvoicesAction,
+  listSuppliersForFilterAction,
   rectifyInvoiceLineStockAction,
   searchSuppliersForInvoiceAction,
   searchIngredientsForMappingAction,
@@ -100,6 +101,8 @@ export default function AlbaranesHistoricoClient({
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
   const [filterSupplier, setFilterSupplier] = useState('')
+  const [filterSuppliers, setFilterSuppliers] = useState<Array<{ id: number; name: string }>>([])
+  const [filterSuppliersLoading, setFilterSuppliersLoading] = useState(false)
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
@@ -519,15 +522,25 @@ export default function AlbaranesHistoricoClient({
     <div className="flex flex-col gap-4">
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
           <Search className="h-5 w-5 text-zinc-400 shrink-0" />
-          <input
+            <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por proveedor, número, fecha, estado…"
             className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[40px]"
           />
           <button
             type="button"
-            onClick={() => setFilterOpen(true)}
+            onClick={async () => {
+              setFilterOpen(true)
+              if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
+                setFilterSuppliersLoading(true)
+                try {
+                  const res = await listSuppliersForFilterAction()
+                  if (res.success) setFilterSuppliers(res.suppliers)
+                } finally {
+                  setFilterSuppliersLoading(false)
+                }
+              }
+            }}
             aria-label="Filtrar"
             className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
           >
@@ -554,11 +567,6 @@ export default function AlbaranesHistoricoClient({
       ) : null}
 
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
-          <div className="px-4 py-3 border-b border-zinc-100 shrink-0">
-            <p className="text-xs font-black uppercase tracking-wider text-zinc-600">
-              Histórico ({filtered.length})
-            </p>
-          </div>
           <div className="p-2 overflow-auto flex-1 min-h-0">
             {filtered.length === 0 ? (
               <div className="p-6 text-sm font-bold text-zinc-500">No hay albaranes que coincidan.</div>
@@ -1154,12 +1162,19 @@ export default function AlbaranesHistoricoClient({
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
-                <input
+                <select
                   value={filterSupplier}
                   onChange={(e) => setFilterSupplier(e.target.value)}
-                  placeholder="Ej: Santa Teresa"
                   className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
-                />
+                >
+                  <option value="">Todos</option>
+                  {filterSuppliers.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
               </div>
               <div className="flex gap-2">
                 <button
