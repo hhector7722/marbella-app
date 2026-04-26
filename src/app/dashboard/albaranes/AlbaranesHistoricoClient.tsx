@@ -100,7 +100,7 @@ export default function AlbaranesHistoricoClient({
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
-  const [filterSupplier, setFilterSupplier] = useState('')
+  const [filterSupplierId, setFilterSupplierId] = useState<string>('') // '' = todos
   const [filterSuppliers, setFilterSuppliers] = useState<Array<{ id: number; name: string }>>([])
   const [filterSuppliersLoading, setFilterSuppliersLoading] = useState(false)
 
@@ -124,7 +124,7 @@ export default function AlbaranesHistoricoClient({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const supplierQ = filterSupplier.trim().toLowerCase()
+    const supplierId = filterSupplierId.trim() ? Number(filterSupplierId) : null
     const from = filterFrom.trim()
     const to = filterTo.trim()
 
@@ -136,9 +136,9 @@ export default function AlbaranesHistoricoClient({
 
       if (q && !hay.includes(q)) return false
 
-      if (supplierQ) {
-        const s = String(it.supplier_name ?? '').toLowerCase()
-        if (!s.includes(supplierQ)) return false
+      if (supplierId != null) {
+        const sid = it.supplier_id == null ? null : Number(it.supplier_id)
+        if (sid !== supplierId) return false
       }
 
       const d = String(it.invoice_date ?? '').trim()
@@ -148,7 +148,7 @@ export default function AlbaranesHistoricoClient({
 
       return true
     })
-  }, [items, query])
+  }, [items, query, filterSupplierId, filterFrom, filterTo])
 
   function isLineDirty(l: PurchaseInvoiceDetail['lines'][number]) {
     const d = draftLines[l.id]
@@ -1163,13 +1163,13 @@ export default function AlbaranesHistoricoClient({
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
                 <select
-                  value={filterSupplier}
-                  onChange={(e) => setFilterSupplier(e.target.value)}
+                  value={filterSupplierId}
+                  onChange={(e) => setFilterSupplierId(e.target.value)}
                   className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
                 >
                   <option value="">Todos</option>
                   {filterSuppliers.map((s) => (
-                    <option key={s.id} value={s.name}>
+                    <option key={s.id} value={String(s.id)}>
                       {s.name}
                     </option>
                   ))}
@@ -1182,7 +1182,7 @@ export default function AlbaranesHistoricoClient({
                   onClick={() => {
                     setFilterFrom('')
                     setFilterTo('')
-                    setFilterSupplier('')
+                    setFilterSupplierId('')
                   }}
                   className="min-h-[48px] flex-1 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700"
                 >
