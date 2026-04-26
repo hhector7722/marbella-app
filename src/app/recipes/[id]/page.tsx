@@ -699,11 +699,11 @@ function RecipeDetailContent() {
         return <input {...props} type="number" step="0.01" className={className} value={localValue} onChange={handleChange} onBlur={handleBlurLocal} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />;
     };
 
-    if (loading) return <div className="min-h-screen bg-[#3E6A8A] flex items-center justify-center text-white"><LoadingSpinner size="xl" className="text-white" /></div>;
-    if (!recipe) return <div className="min-h-screen bg-[#3E6A8A] flex items-center justify-center text-white">No encontrada</div>;
+    if (loading) return <div className="min-h-screen bg-[#5F7F99] flex items-center justify-center text-white"><LoadingSpinner size="xl" className="text-white" /></div>;
+    if (!recipe) return <div className="min-h-screen bg-[#5F7F99] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
-        <div className="min-h-screen bg-[#3E6A8A] p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
+        <div className="min-h-screen bg-[#5F7F99] p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
             <Toaster position="top-right" />
 
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
@@ -1048,7 +1048,7 @@ function RecipeDetailContent() {
                                         );
                                     })}
                                     {!isRestricted && (
-                                        <tr className="bg-[#3E6A8A]/5 font-black text-[10px] sticky bottom-0">
+                                        <tr className="bg-[#5F7F99]/5 font-black text-[10px] sticky bottom-0">
                                             <td className="py-2 px-3 text-gray-800" colSpan={3}>COSTO TOTAL</td>
                                             <td className="py-2 text-right text-[#5B8FB9] pr-1">{totalCost.toFixed(2)}€</td>
                                             <td></td>
@@ -1354,7 +1354,7 @@ function RecipeDetailContent() {
 export default function RecipeDetailPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#3E6A8A]"></div>
+            <div className="min-h-screen bg-[#5F7F99]"></div>
         }>
             <RecipeDetailContent />
         </Suspense>
