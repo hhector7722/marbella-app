@@ -19,7 +19,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#3E6A8A",
+  themeColor: "#5F7F99",
 };
 
 export const metadata: Metadata = {
@@ -59,7 +59,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className="light">
-      <body className={`${inter.className} bg-[#3E6A8A] touch-manipulation`}>
+      <body className={`${inter.className} bg-[#5F7F99] touch-manipulation`}>
         <SileoProvider />
         <ServiceWorkerRegistration />
         <Navbar />
