@@ -38,7 +38,9 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
         <div
             className={cn(
                 // En grid: tarjeta "auto-height" (no estirar a toda la fila)
-                'flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm self-start'
+                // Igualar altura: la rejilla usa items-stretch y la card es h-full
+                // Sin marco/contorno: sin border ni shadow
+                'flex h-full flex-col overflow-hidden rounded-2xl bg-white'
             )}
         >
             {row.photo_url ? (
@@ -53,13 +55,13 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
                     </div>
                 </div>
             ) : null}
-            <div className="flex min-h-[48px] min-w-0 flex-col gap-2 p-4">
+            <div className="flex min-h-[48px] min-w-0 flex-1 flex-col gap-2 p-4">
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="min-w-0 flex-1 text-[15px] font-black leading-snug text-zinc-900 line-clamp-2">
                         {row.articulo_nombre}
                     </h3>
                     {showPrice ? (
-                        <span className="shrink-0 rounded-xl bg-[#36606F]/10 px-2.5 py-1.5 font-mono text-[13px] font-black text-[#36606F]">
+                        <span className="shrink-0 font-mono text-[13px] font-black text-[#36606F] leading-none h-5 flex items-center">
                             {priceStr}
                         </span>
                     ) : null}
@@ -67,6 +69,8 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
                 {row.descripcion ? (
                     <p className="text-[12px] leading-relaxed text-zinc-600 line-clamp-3">{row.descripcion}</p>
                 ) : null}
+                {/* Spacer para igualar altura aunque no haya descripción */}
+                {!row.descripcion ? <div className="flex-1" /> : null}
             </div>
         </div>
     );
@@ -180,7 +184,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                                     {sub.title}
                                                 </div>
                                             </div>
-                                            <div className="grid auto-rows-min items-start grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-3 gap-4 items-stretch">
                                                 {sub.rows.map((row) => (
                                                     <MenuCard key={row.articulo_id} row={row} />
                                                 ))}

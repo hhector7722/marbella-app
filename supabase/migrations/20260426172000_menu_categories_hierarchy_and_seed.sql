@@ -26,8 +26,10 @@ parents as (
   from (
     values
       ('menu','tapas','Tapas',10),
+      ('menu','snacks','Snacks',15),
       ('menu','bocadillos','Bocadillos',20),
       ('menu','platos','Platos',30),
+      ('menu','extras','Extras',35),
       ('menu','bebidas','Bebidas',40),
       ('menu','cafeteria','Cafetería',50)
   ) as v(scope, slug, name, sort_order)
@@ -49,7 +51,7 @@ parent_ids as (
   select scope, slug, id
   from public.categories
   where scope = 'menu'
-    and slug in ('tapas','bocadillos','platos','bebidas','cafeteria')
+    and slug in ('tapas','snacks','bocadillos','platos','extras','bebidas','cafeteria')
 ),
 children as (
   select *

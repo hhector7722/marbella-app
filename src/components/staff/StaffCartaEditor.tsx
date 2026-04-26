@@ -10,13 +10,9 @@ import { upsertMenuOverride } from '@/app/dashboard/carta/actions'
 type MenuItemRow = {
   articulo_id: number
   articulo_nombre: string
-  category_id: string | null
-  category_parent_name: string | null
-  category_child_name: string | null
+  articulo_nombre_raw: string
   precio: number | string | null
-  photo_url: string | null
   sort_order: number | null
-  // Nota: en la vista "solo visibles" no vendrá is_hidden. Aquí lo inferimos por override.
 }
 
 type OverrideRow = {
@@ -89,8 +85,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
       return (
         it.articulo_nombre.toLowerCase().includes(q) ||
         String(it.articulo_id).includes(q) ||
-        (it.category_parent_name ?? '').toLowerCase().includes(q) ||
-        (it.category_child_name ?? '').toLowerCase().includes(q)
+        (overrideByArticulo.get(it.articulo_id)?.category_id ?? '').toLowerCase().includes(q)
       )
     })
   }, [items, query, tab, overrideByArticulo])
@@ -98,16 +93,16 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
   async function load() {
     setLoading(true)
     try {
-      // OJO: v_digital_menu_items filtra ocultos. Para editar “inactivos” usamos tabla overrides + mapping.
-      // Como pediste solo activar/desactivar y categorías, cargamos:
-      // - items visibles desde vista
-      // - overrides (incluye ocultos)
+      // OJO: v_digital_menu_items filtra ocultos, por eso un "desactivado" no aparecería.
+      // Aquí cargamos el catálogo de carta desde:
+      // - map_tpv_receta + bdp_articulos (todos los mapeados)
+      // - overrides (para saber oculto/categoría)
       // - categories menú
-      const [itemsRes, overridesRes, categoriesRes] = await Promise.all([
+      const [mappingsRes, overridesRes, categoriesRes] = await Promise.all([
         supabase
-          .from('v_digital_menu_items')
+          .from('map_tpv_receta')
           .select(
-            'articulo_id, articulo_nombre, category_id, category_parent_name, category_child_name, precio, photo_url, sort_order'
+            'articulo_id, factor_porcion, bdp_articulos(id, nombre, precio_base)'
           )
           .limit(5000),
         supabase.from('digital_menu_overrides').select('articulo_id, is_hidden, category_id, sort_order').limit(5000),
@@ -118,11 +113,26 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
           .limit(5000),
       ])
 
-      if (itemsRes.error) throw itemsRes.error
+      if (mappingsRes.error) throw mappingsRes.error
       if (overridesRes.error) throw overridesRes.error
       if (categoriesRes.error) throw categoriesRes.error
 
-      setItems((itemsRes.data ?? []) as any)
+      const rows = (mappingsRes.data ?? []) as any[]
+      setItems(
+        rows
+          .map((r) => {
+            const a = r.bdp_articulos
+            if (!a) return null
+            return {
+              articulo_id: r.articulo_id,
+              articulo_nombre: a.nombre,
+              articulo_nombre_raw: a.nombre,
+              precio: a.precio_base ?? null,
+              sort_order: null,
+            } satisfies MenuItemRow
+          })
+          .filter(Boolean) as any
+      )
       setOverrides((overridesRes.data ?? []) as any)
       setCategories((categoriesRes.data ?? []) as any)
     } catch (e: any) {
@@ -310,14 +320,9 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                           </select>
 
                           <div className="flex items-center justify-end gap-2 text-[11px] font-semibold text-zinc-500">
-                            {it.category_parent_name ? (
-                              <span className="rounded-xl bg-zinc-100 px-3 py-2">
-                                {it.category_parent_name}
-                                {it.category_child_name ? ` · ${it.category_child_name}` : ''}
-                              </span>
-                            ) : (
-                              <span className="rounded-xl bg-zinc-100 px-3 py-2">Sin categoría</span>
-                            )}
+                            <span className="rounded-xl bg-zinc-100 px-3 py-2">
+                              {current?.category_id ? 'Asignado' : 'Sin categoría'}
+                            </span>
                           </div>
                         </div>
                       </div>
