@@ -229,9 +229,10 @@ export function IngredientWizard({
           supplier2: (data as any).supplier_2 ?? null,
         }))
 
-        // Si el objetivo es editar precio, entrar directo en el paso 4.
+        // Si el objetivo es editar precio, entrar en el asistente de cobro (paso 3)
+        // para replicar el flujo completo de /ingredients (cómo lo cobra → precio).
         const m = mode ?? 'create'
-        if (m === 'editPricing') setStep(4)
+        if (m === 'editPricing') setStep(3)
         else if (m === 'editFull') setStep(2)
       } catch (e: any) {
         toast.error(e?.message || 'Error cargando ingrediente')
