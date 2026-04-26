@@ -35,6 +35,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<'active' | 'inactive' | 'all'>('active')
+  const [parentFilter, setParentFilter] = useState<string>('all')
   const [loading, setLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -74,6 +75,19 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
     return m
   }, [categories])
 
+  const categoryById = useMemo(() => {
+    const m = new Map<string, Category>()
+    for (const c of categories) m.set(c.id, c)
+    return m
+  }, [categories])
+
+  const resolveParentId = (category_id: string | null) => {
+    if (!category_id) return null
+    const c = categoryById.get(category_id)
+    if (!c) return null
+    return c.parent_id ?? c.id
+  }
+
   const visibleState = (articulo_id: number) => !(overrideByArticulo.get(articulo_id)?.is_hidden ?? false)
 
   const filtered = useMemo(() => {
@@ -82,6 +96,14 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
       const isVisible = visibleState(it.articulo_id)
       if (tab === 'active' && !isVisible) return false
       if (tab === 'inactive' && isVisible) return false
+
+      const current = overrideByArticulo.get(it.articulo_id)
+      const parentId = resolveParentId(current?.category_id ?? null)
+      if (parentFilter !== 'all') {
+        if (parentFilter === 'none' && parentId != null) return false
+        if (parentFilter !== 'none' && parentId !== parentFilter) return false
+      }
+
       if (!q) return true
       return (
         it.articulo_nombre.toLowerCase().includes(q) ||
@@ -89,7 +111,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         (overrideByArticulo.get(it.articulo_id)?.category_id ?? '').toLowerCase().includes(q)
       )
     })
-  }, [items, query, tab, overrideByArticulo])
+  }, [items, query, tab, parentFilter, overrideByArticulo, categoryById])
 
   async function load() {
     setLoading(true)
@@ -277,6 +299,21 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                   Todos
                 </TabButton>
               </div>
+
+              <select
+                className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                value={parentFilter}
+                onChange={(e) => setParentFilter(e.target.value)}
+                title="Filtrar por categoría"
+              >
+                <option value="all">Todas las categorías</option>
+                <option value="none">Sin categoría</option>
+                {parents.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-0">
