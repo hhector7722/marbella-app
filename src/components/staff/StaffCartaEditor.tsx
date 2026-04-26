@@ -342,7 +342,11 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                                           {k.name}
                                         </option>
                                       ))
-                                    : null}
+                                    : (
+                                        <option key={p.id} value={p.id}>
+                                          {p.name}
+                                        </option>
+                                      )}
                                 </optgroup>
                               )
                             })}
