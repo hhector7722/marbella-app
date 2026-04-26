@@ -29,7 +29,7 @@ export default async function StaffCartaPage() {
     const canEditMenu = role === 'manager' || role === 'admin';
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] pb-24 pt-4">
+        <div className="min-h-screen bg-[#5B8FB9] pb-24 pt-4">
             <div className="mx-auto w-full max-w-lg px-4 md:max-w-2xl">
                 <div className="mb-4 flex shrink-0 items-center gap-2">
                     <Link

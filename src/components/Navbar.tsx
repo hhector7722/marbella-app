@@ -61,7 +61,7 @@ export default function Navbar() {
         <>
             <nav
                 className={cn(
-                    'bg-transparent text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden'
+                    'bg-[#5B8FB9] text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden'
                 )}
             >
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full">

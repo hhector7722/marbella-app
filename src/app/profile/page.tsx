@@ -265,12 +265,12 @@ function ProfileContent() {
         : PROFILE_GRID.filter(i => i.id !== 'cambiar-password' && i.id !== 'cerrar-sesion');
 
     if (loading) {
-        return <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8]" />;
+        return <div className="min-h-screen bg-[#5B8FB9]" />;
     }
 
     if (!profile) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] flex items-center justify-center p-6">
+            <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-6">
                 <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-2xl max-w-sm w-full">
                     <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Perfil no encontrado</p>
                     <button onClick={() => router.back()} className="mt-6 w-full py-4 bg-[#36606F] text-white rounded-2xl font-black uppercase text-xs tracking-widest">Volver</button>
@@ -280,7 +280,7 @@ function ProfileContent() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] pb-24 p-4">
+        <div className="min-h-screen bg-[#5B8FB9] pb-24 p-4">
             <div className="max-w-2xl mx-auto">
                 {/* Un solo contenedor: esquinas redondeadas, cabecera petróleo + contenido */}
                 <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden min-h-[60vh] flex flex-col">
@@ -454,7 +454,7 @@ function ProfileContent() {
 
 export default function StaffProfilePage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8]" />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#5B8FB9]" />}>
             <ProfileContent />
         </Suspense>
     );

@@ -382,7 +382,7 @@ export default function FinancialDashboardClient({
   }, [reconciliation.delta]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] p-4 md:p-6 pb-24 text-zinc-900">
+    <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* CABECERA PETRÓLEO (Página Detalle) */}
