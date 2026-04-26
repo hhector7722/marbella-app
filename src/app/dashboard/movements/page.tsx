@@ -748,7 +748,7 @@ export default function MovementsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900">
+        <div className="min-h-screen bg-[#3E6A8A] p-4 md:p-8 pb-24 text-zinc-900">
             <div className="max-w-4xl mx-auto space-y-6">
 
                 {/* TARJETA GLOBAL INTEGRADA (TODO EN UN BLOQUE) */}

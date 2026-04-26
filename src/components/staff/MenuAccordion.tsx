@@ -9,6 +9,13 @@ export type DigitalMenuRow = {
     articulo_nombre: string;
     departamento_id: number | null;
     departamento_nombre: string | null;
+    category_id: string | null;
+    category_parent_id: string | null;
+    category_parent_name: string | null;
+    category_parent_sort_order: number | null;
+    category_child_id: string | null;
+    category_child_name: string | null;
+    category_child_sort_order: number | null;
     recipe_id: string;
     recipe_name: string;
     descripcion: string | null;
@@ -67,24 +74,67 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
 
 export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
     const grouped = useMemo(() => {
-        const m = new Map<string, DigitalMenuRow[]>();
+        type Group = {
+            key: string;
+            title: string;
+            sortOrder: number;
+            // subKey -> rows
+            subs: Map<string, { title: string; sortOrder: number; rows: DigitalMenuRow[] }>;
+        };
+
+        const groups = new Map<string, Group>();
         for (const row of items) {
-            const key = (row.departamento_nombre?.trim() || 'Sin departamento').trim();
-            if (!m.has(key)) m.set(key, []);
-            m.get(key)!.push(row);
+            const parentTitle = (row.category_parent_name?.trim() || 'Sin categoría').trim();
+            const parentSort = row.category_parent_sort_order ?? 9999;
+            const parentKey = row.category_parent_id ?? `__no_parent__:${parentTitle}`;
+
+            const childTitle = row.category_child_name?.trim() || 'General';
+            const childSort = row.category_child_sort_order ?? 9999;
+            const childKey = row.category_child_id ?? `__no_child__:${childTitle}`;
+
+            const g = groups.get(parentKey) ?? {
+                key: parentKey,
+                title: parentTitle,
+                sortOrder: parentSort,
+                subs: new Map(),
+            };
+
+            const sg = g.subs.get(childKey) ?? { title: childTitle, sortOrder: childSort, rows: [] as DigitalMenuRow[] };
+            sg.rows.push(row);
+            g.subs.set(childKey, sg);
+
+            groups.set(parentKey, g);
         }
-        const entries = Array.from(m.entries()).sort((a, b) =>
-            a[0].localeCompare(b[0], 'es', { sensitivity: 'base' })
-        );
-        for (const [, rows] of entries) {
-            rows.sort((a, b) =>
-                a.articulo_nombre.localeCompare(b.articulo_nombre, 'es', { sensitivity: 'base' })
-            );
+
+        const groupList = Array.from(groups.values()).sort((a, b) => {
+            if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+            return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
+        });
+
+        for (const g of groupList) {
+            const subList = Array.from(g.subs.entries())
+                .map(([k, v]) => ({ key: k, ...v }))
+                .sort((a, b) => {
+                    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+                    return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
+                });
+
+            // ordenar items dentro de subgrupo
+            for (const s of subList) {
+                s.rows.sort((a, b) => a.articulo_nombre.localeCompare(b.articulo_nombre, 'es', { sensitivity: 'base' }));
+            }
+
+            // rehidratar subs como array ya ordenado
+            (g as any)._subList = subList.map((s) => ({
+                ...s,
+                title: prettifyChildTitle(g.title, s.title),
+            }));
         }
-        return entries;
+
+        return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: DigitalMenuRow[] }> }>;
     }, [items]);
 
-    const [openKey, setOpenKey] = useState<string | null>(() => grouped[0]?.[0] ?? null);
+    const [openKey, setOpenKey] = useState<string | null>(() => grouped[0]?.key ?? null);
 
     if (items.length === 0) {
         return (
@@ -96,21 +146,21 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
 
     return (
         <div className="space-y-2">
-            {grouped.map(([familia, rows]) => {
-                const isOpen = openKey === familia;
+            {grouped.map((group) => {
+                const isOpen = openKey === group.key;
                 return (
                     <div
-                        key={familia}
+                        key={group.key}
                         className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm"
                     >
                         <button
                             type="button"
-                            onClick={() => setOpenKey((o) => (o === familia ? null : familia))}
+                            onClick={() => setOpenKey((o) => (o === group.key ? null : group.key))}
                             className="flex min-h-[48px] w-full items-center justify-between gap-3 p-4 text-left active:bg-zinc-50/80"
                             aria-expanded={isOpen}
                         >
                             <span className="text-sm font-black uppercase tracking-wide text-[#36606F]">
-                                {familia}
+                                {group.title}
                             </span>
                             <ChevronDown
                                 className={cn(
@@ -122,9 +172,20 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                         </button>
                         {isOpen ? (
                             <div className="shrink-0 border-t border-zinc-100 px-3 pb-3 pt-1">
-                                <div className="grid max-h-[min(72vh,720px)] auto-rows-min items-start grid-cols-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-                                    {rows.map((row) => (
-                                        <MenuCard key={row.articulo_id} row={row} />
+                                <div className="max-h-[min(72vh,720px)] overflow-y-auto pr-1 space-y-5">
+                                    {group._subList.map((sub) => (
+                                        <section key={sub.key} className="space-y-3">
+                                            <div className="px-1">
+                                                <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                                                    {sub.title}
+                                                </div>
+                                            </div>
+                                            <div className="grid auto-rows-min items-start grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                {sub.rows.map((row) => (
+                                                    <MenuCard key={row.articulo_id} row={row} />
+                                                ))}
+                                            </div>
+                                        </section>
                                     ))}
                                 </div>
                             </div>
@@ -134,4 +195,11 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
             })}
         </div>
     );
+}
+
+function prettifyChildTitle(parentTitle: string, rawChildTitle: string) {
+    // Soportar seed con names únicos tipo "Bebidas - Cervezas"
+    const prefix = `${parentTitle} - `;
+    if (rawChildTitle.startsWith(prefix)) return rawChildTitle.slice(prefix.length).trim();
+    return rawChildTitle;
 }

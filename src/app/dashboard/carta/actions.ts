@@ -7,6 +7,7 @@ export type MenuOverrideUpsertInput = {
   articulo_id: number
   is_hidden: boolean
   sort_order: number | null
+  category_id: string | null
   override_nombre: string | null
   override_descripcion: string | null
   override_precio: number | null
@@ -50,6 +51,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
         articulo_id: input.articulo_id,
         is_hidden: input.is_hidden,
         sort_order: input.sort_order,
+        category_id: input.category_id,
         override_nombre: input.override_nombre,
         override_descripcion: input.override_descripcion,
         override_precio: input.override_precio,

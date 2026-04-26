@@ -294,7 +294,7 @@ export default function ManagerLedgerView() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900">
+        <div className="min-h-screen bg-[#3E6A8A] p-4 md:p-8 pb-24 text-zinc-900">
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
                     {/* CABECERA (como movements: título + Nuevo apunte, sin Arqueo) */}

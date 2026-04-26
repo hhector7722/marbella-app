@@ -26,6 +26,7 @@ begin
       articulo_id bigint primary key references public.bdp_articulos(id) on delete cascade,
       is_hidden boolean not null default false,
       sort_order integer,
+      category_id uuid references public.categories(id) on delete set null,
       override_nombre text,
       override_descripcion text,
       -- Mantener precisión compatible con la vista histórica (numeric(10,2))
@@ -44,6 +45,10 @@ begin
     for each row execute function public.update_updated_at_column();
   end if;
 end $$;
+
+-- Si la tabla ya existía antes, asegurar nueva columna (idempotente)
+alter table public.digital_menu_overrides
+  add column if not exists category_id uuid references public.categories(id) on delete set null;
 
 alter table public.digital_menu_overrides enable row level security;
 
@@ -71,6 +76,13 @@ select
   coalesce(nullif(trim(o.override_nombre), ''), a.nombre) as articulo_nombre,
   d.id as departamento_id,
   d.nombre as departamento_nombre,
+  o.category_id as category_id,
+  cp.id as category_parent_id,
+  cp.name as category_parent_name,
+  cp.sort_order as category_parent_sort_order,
+  c.id as category_child_id,
+  c.name as category_child_name,
+  c.sort_order as category_child_sort_order,
   r.id as recipe_id,
   r.name as recipe_name,
   nullif(
@@ -92,6 +104,8 @@ join public.bdp_articulos a on a.id = m.articulo_id
 join public.recipes r on r.id = m.recipe_id
 left join public.bdp_departamentos d on d.id = a.departamento_id
 left join public.digital_menu_overrides o on o.articulo_id = a.id
+left join public.categories c on c.id = o.category_id
+left join public.categories cp on cp.id = c.parent_id
 where coalesce(o.is_hidden, false) = false;
 
 comment on view public.v_digital_menu_items is 'Carta digital: TPV mapeado a receta + overrides operativos (ocultar/orden/sobrescrituras).';

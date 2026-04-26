@@ -156,7 +156,7 @@ export default function OvertimePage() {
 
     return (
         <>
-            <div className="bg-[#5B8FB9] p-4 md:p-6 pb-24">
+            <div className="bg-[#3E6A8A] p-4 md:p-6 pb-24">
                 <div className="max-w-4xl mx-auto">
                     {/* Vista detalle: contenedor que se adapta al contenido (calendario + filas) */}
                     <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col w-full">

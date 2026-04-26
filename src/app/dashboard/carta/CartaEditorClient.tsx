@@ -7,6 +7,15 @@ import { cn } from '@/lib/utils'
 import { deleteMenuOverride, upsertMenuOverride } from './actions'
 import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 
+type MenuCategory = {
+  id: string
+  name: string
+  parent_id: string | null
+  sort_order: number | null
+  scope?: string | null
+  slug?: string | null
+}
+
 type UiRow = {
   articulo_id: number
   departamento: string
@@ -19,9 +28,11 @@ type UiRow = {
 export default function CartaEditorClient({
   mappings,
   overrides,
+  categories,
 }: {
   mappings: CartaEditorMappingRow[]
   overrides: CartaOverrideRow[]
+  categories: MenuCategory[]
 }) {
   const [query, setQuery] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -32,6 +43,7 @@ export default function CartaEditorClient({
       {
         is_hidden: boolean
         sort_order: string
+        category_id: string
         override_nombre: string
         override_descripcion: string
         override_precio: string
@@ -39,6 +51,32 @@ export default function CartaEditorClient({
       }
     >
   >({})
+
+  const menuParents = useMemo(() => {
+    return categories
+      .filter((c) => !c.parent_id)
+      .slice()
+      .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || a.name.localeCompare(b.name))
+  }, [categories])
+
+  const childrenByParent = useMemo(() => {
+    const m = new Map<string, MenuCategory[]>()
+    for (const c of categories) {
+      if (!c.parent_id) continue
+      const list = m.get(c.parent_id) ?? []
+      list.push(c)
+      m.set(c.parent_id, list)
+    }
+    for (const [k, list] of m) {
+      m.set(
+        k,
+        list
+          .slice()
+          .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || a.name.localeCompare(b.name))
+      )
+    }
+    return m
+  }, [categories])
 
   const overrideByArticulo = useMemo(() => {
     const m = new Map<number, CartaOverrideRow>()
@@ -107,6 +145,7 @@ export default function CartaEditorClient({
     return {
       is_hidden: row.override?.is_hidden ?? false,
       sort_order: row.override?.sort_order != null ? String(row.override.sort_order) : '',
+      category_id: row.override?.category_id ?? '',
       override_nombre: row.override?.override_nombre ?? '',
       override_descripcion: row.override?.override_descripcion ?? '',
       override_precio: row.override?.override_precio != null ? String(row.override.override_precio) : '',
@@ -119,6 +158,7 @@ export default function CartaEditorClient({
     next: Partial<{
       is_hidden: boolean
       sort_order: string
+      category_id: string
       override_nombre: string
       override_descripcion: string
       override_precio: string
@@ -148,6 +188,7 @@ export default function CartaEditorClient({
     return (
       (o?.is_hidden ?? false) !== d.is_hidden ||
       (o?.sort_order ?? null) !== sort ||
+      (o?.category_id ?? null) !== emptyToNull(d.category_id) ||
       (o?.override_nombre ?? null) !== emptyToNull(d.override_nombre) ||
       (o?.override_descripcion ?? null) !== emptyToNull(d.override_descripcion) ||
       (o?.override_precio ?? null) !== precio ||
@@ -175,6 +216,7 @@ export default function CartaEditorClient({
         articulo_id: row.articulo_id,
         is_hidden: d.is_hidden,
         sort_order: sort,
+        category_id: emptyToNull(d.category_id),
         override_nombre: emptyToNull(d.override_nombre),
         override_descripcion: emptyToNull(d.override_descripcion),
         override_precio: precio,
@@ -281,6 +323,32 @@ export default function CartaEditorClient({
                     </div>
 
                     <div className="md:col-span-4 grid grid-cols-1 gap-3">
+                      <select
+                        className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                        value={d.category_id}
+                        onChange={(e) => setDraft(row.articulo_id, { category_id: e.target.value })}
+                        title="Categoría de carta"
+                      >
+                        <option value="">Sin categoría (no se agrupa)</option>
+                        {menuParents.map((p) => {
+                          const kids = childrenByParent.get(p.id) ?? []
+                          return (
+                            <optgroup key={p.id} label={p.name}>
+                              {kids.length ? (
+                                kids.map((k) => (
+                                  <option key={k.id} value={k.id}>
+                                    {k.name}
+                                  </option>
+                                ))
+                              ) : (
+                                <option key={`${p.id}:general`} value={p.id}>
+                                  {p.name}
+                                </option>
+                              )}
+                            </optgroup>
+                          )
+                        })}
+                      </select>
                       <input
                         className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
                         placeholder="Nombre (override)"

@@ -14,6 +14,7 @@ export type CartaOverrideRow = {
   articulo_id: number
   is_hidden: boolean
   sort_order: number | null
+  category_id: string | null
   override_nombre: string | null
   override_descripcion: string | null
   override_precio: number | null

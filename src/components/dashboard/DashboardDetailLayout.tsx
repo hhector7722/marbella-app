@@ -28,7 +28,7 @@ export function DashboardDetailLayout({
   const router = useRouter()
 
   return (
-    <div className={cn('min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24', className)}>
+    <div className={cn('min-h-screen bg-[#3E6A8A] p-4 md:p-6 pb-24', className)}>
       <div className={cn('mx-auto w-full', maxWidthClass)}>
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-[85vh]">
           <div className="bg-[#36606F] px-4 md:px-8 py-4 md:py-5 flex items-center justify-between gap-3 shrink-0">
