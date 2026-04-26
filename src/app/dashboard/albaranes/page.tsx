@@ -22,10 +22,9 @@ export default async function AlbaranesHistoricoPage() {
   return (
     <DashboardDetailLayout
       title="Albaranes"
-      subtitle="Histórico de documentos subidos (imagen/PDF) y su extracción"
       backHref="/dashboard"
       maxWidthClass="max-w-5xl"
-      showBackButton
+      showBackButton={false}
     >
       <AlbaranesHistoricoClient
         initialItems={res.success ? res.items : []}

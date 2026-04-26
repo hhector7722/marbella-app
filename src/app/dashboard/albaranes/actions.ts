@@ -691,3 +691,95 @@ export async function rectifyInvoiceLineStockAction(params: {
   return { success: true }
 }
 
+export async function applyInvoiceLineStockAction(params: {
+  invoiceId: string
+  lineId: string
+}): Promise<{ success: true; appliedQty: number } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!invoiceId || !lineId) return { success: false, message: 'Datos incompletos' }
+
+  // Proveedor obligatorio
+  const { data: inv, error: invErr } = await gate.supabase.from('purchase_invoices').select('supplier_id').eq('id', invoiceId).maybeSingle()
+  if (invErr) return { success: false, message: invErr.message }
+  const supplierId = (inv as any)?.supplier_id as number | null
+  if (supplierId == null) return { success: false, message: 'Este albarán no tiene proveedor asignado.' }
+
+  // Leer línea: requiere match + cantidad + nombre original
+  const { data: line, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, original_name, quantity, mapped_ingredient_id, status')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  const originalName = String((line as any)?.original_name ?? '').trim()
+  const qty = Number((line as any)?.quantity)
+  const ingredientId = String((line as any)?.mapped_ingredient_id ?? '').trim()
+  if (!ingredientId) return { success: false, message: 'La línea no tiene ingrediente asignado.' }
+  if (!originalName) return { success: false, message: 'La línea no tiene nombre.' }
+  if (!Number.isFinite(qty) || qty <= 0) return { success: false, message: 'Cantidad inválida en la línea.' }
+
+  // Factor desde el diccionario (debe existir)
+  const { data: map, error: mapErr } = await gate.supabase
+    .from('supplier_item_mappings')
+    .select('conversion_factor')
+    .eq('supplier_id', supplierId)
+    .eq('supplier_item_name', originalName)
+    .eq('ingredient_id', ingredientId)
+    .maybeSingle()
+  if (mapErr) return { success: false, message: mapErr.message }
+  const factor = Number((map as any)?.conversion_factor)
+  if (!Number.isFinite(factor) || factor <= 0) return { success: false, message: 'Falta factor de conversión (mapeo incompleto).' }
+
+  const appliedQty = qty * factor
+  if (!Number.isFinite(appliedQty) || appliedQty <= 0) return { success: false, message: 'Cantidad aplicada inválida.' }
+
+  // Unidad del ingrediente (unit)
+  const { data: ing, error: ingErr } = await gate.supabase.from('ingredients').select('unit').eq('id', ingredientId).maybeSingle()
+  if (ingErr) return { success: false, message: ingErr.message }
+  const unit = String((ing as any)?.unit ?? 'ud') || 'ud'
+
+  const ref = `ALB-LINE-${lineId}`
+
+  // Idempotencia: no duplicar
+  const { data: existing, error: exErr } = await gate.supabase
+    .from('stock_movements')
+    .select('id')
+    .eq('movement_type', 'PURCHASE')
+    .eq('ingredient_id', ingredientId)
+    .eq('reference_doc', ref)
+    .limit(1)
+    .maybeSingle()
+  if (exErr) return { success: false, message: exErr.message }
+  if (existing?.id) return { success: false, message: 'Ya estaba aplicado a stock.' }
+
+  const { error: insErr } = await gate.supabase.from('stock_movements').insert({
+    movement_type: 'PURCHASE',
+    ingredient_id: ingredientId,
+    quantity: appliedQty,
+    unit,
+    movement_date: new Date().toISOString(),
+    reference_doc: ref,
+    original_description: `Recepción (manual): ${originalName}`,
+    processed_by: 'Albaranes-UI',
+  })
+  if (insErr) return { success: false, message: insErr.message }
+
+  // Asegurar status='mapped' si estaba inconsistente
+  if (String((line as any)?.status ?? '') !== 'mapped') {
+    await gate.supabase.from('purchase_invoice_lines').update({ status: 'mapped' }).eq('id', lineId)
+  }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true, appliedQty: Math.round(appliedQty * 1000) / 1000 }
+}
+

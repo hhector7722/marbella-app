@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { ExternalLink, FileText, Loader2, RefreshCw, Search, Truck, X } from 'lucide-react'
+import { ExternalLink, FileText, Filter, Loader2, RefreshCw, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
 import {
+  applyInvoiceLineStockAction,
   confirmInvoiceLineMappingAction,
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
@@ -89,6 +90,11 @@ export default function AlbaranesHistoricoClient({
   const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
   const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
   const [wizardTargetLineId, setWizardTargetLineId] = useState<string | null>(null)
+  const [expandedLineIds, setExpandedLineIds] = useState<Record<string, boolean>>({})
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
+  const [filterSupplier, setFilterSupplier] = useState('')
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
@@ -110,20 +116,29 @@ export default function AlbaranesHistoricoClient({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return items
+    const supplierQ = filterSupplier.trim().toLowerCase()
+    const from = filterFrom.trim()
+    const to = filterTo.trim()
+
     return items.filter((it) => {
-      const hay = [
-        it.supplier_name,
-        it.invoice_number,
-        it.invoice_date,
-        it.source,
-        it.status,
-        String(it.id),
-      ]
+      const hay = [it.supplier_name, it.invoice_number, it.invoice_date, it.source, it.status, String(it.id)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
-      return hay.includes(q)
+
+      if (q && !hay.includes(q)) return false
+
+      if (supplierQ) {
+        const s = String(it.supplier_name ?? '').toLowerCase()
+        if (!s.includes(supplierQ)) return false
+      }
+
+      const d = String(it.invoice_date ?? '').trim()
+      if (from && d && d < from) return false
+      if (to && d && d > to) return false
+      if ((from || to) && !d) return false
+
+      return true
     })
   }, [items, query])
 
@@ -220,6 +235,7 @@ export default function AlbaranesHistoricoClient({
     setWizardIngredientId(null)
     setWizardInitialName(null)
     setWizardTargetLineId(null)
+    setExpandedLineIds({})
   }
 
   function setDraft(lineId: string, patch: Partial<{ original_name: string; quantity: string; unit_price: string; total_price: string }>) {
@@ -463,30 +479,57 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  async function applyStock(lineId: string) {
+    if (!detail) return
+    setMappingError(null)
+    setMappingLoading(true)
+    try {
+      const res = await applyInvoiceLineStockAction({ invoiceId: detail.id, lineId })
+      if (!res.success) {
+        setMappingError(res.message)
+        return
+      }
+      const st = await getInvoiceStockStatusesAction({ lineIds: detail.lines.map((l) => l.id) })
+      if (st.success) {
+        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+        for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
+        setStockStatusByLineId(map)
+      }
+    } finally {
+      setMappingLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
-        <div className="md:col-span-2 bg-white rounded-xl border border-zinc-100 shadow-sm p-3 flex items-center gap-2 min-h-[56px]">
+      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
           <Search className="h-5 w-5 text-zinc-400 shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por proveedor, número, fecha, estado…"
-            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[48px]"
+            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[40px]"
           />
-        </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={isPending}
-          className={cn(
-            'bg-[#36606F] text-white rounded-xl shadow-sm px-4 py-3 font-black uppercase tracking-wider text-xs min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.99] transition',
-            isPending && 'opacity-60 pointer-events-none'
-          )}
-        >
-          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-          Recargar
-        </button>
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            aria-label="Filtrar"
+            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
+          >
+            <Filter className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={isPending}
+            aria-label="Recargar"
+            className={cn(
+              'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0',
+              isPending && 'opacity-60 pointer-events-none'
+            )}
+          >
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+          </button>
       </div>
 
       {error ? (
@@ -495,8 +538,7 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
+      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
           <div className="px-4 py-3 border-b border-zinc-100 shrink-0">
             <p className="text-xs font-black uppercase tracking-wider text-zinc-600">
               Histórico ({filtered.length})
@@ -508,9 +550,8 @@ export default function AlbaranesHistoricoClient({
             ) : (
               <div className="flex flex-col gap-2">
                 {filtered.map((it) => {
-                  const supplier = it.supplier_name ?? (it.supplier_id ? `Proveedor #${it.supplier_id}` : 'Proveedor (sin match)')
+                  const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
                   const title = `${supplier} · ${formatDateTitle(it.invoice_date)}`
-                  const meta = `${formatMaybeText(it.invoice_number)} · ${formatMaybeText(it.source)} · ${formatMaybeText(it.status)}`
                   return (
                     <button
                       key={it.id}
@@ -523,21 +564,12 @@ export default function AlbaranesHistoricoClient({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex items-start gap-3">
-                          <div className="h-10 w-10 rounded-xl border border-zinc-100 bg-zinc-50 overflow-hidden flex items-center justify-center shrink-0">
-                            {it.supplier_image_url ? (
-                              <img src={it.supplier_image_url} alt="" className="h-full w-full object-contain" />
-                            ) : (
-                              <Truck className="h-5 w-5 text-zinc-300" />
-                            )}
-                          </div>
                           <div className="min-w-0">
                             <p className="text-sm font-black text-zinc-900 truncate">{title}</p>
-                            <p className="text-xs font-bold text-zinc-500 mt-1 truncate">{meta}</p>
                           </div>
                         </div>
                         <div className="shrink-0 text-right">
                           <p className="text-sm font-black text-zinc-900">{formatMaybeMoney(it.total_amount)}</p>
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mt-1">ID {it.id}</p>
                         </div>
                       </div>
                     </button>
@@ -546,17 +578,6 @@ export default function AlbaranesHistoricoClient({
               </div>
             )}
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
-          <div className="px-4 py-3 border-b border-zinc-100 shrink-0">
-            <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Detalle</p>
-            <p className="text-[11px] font-bold text-zinc-500 mt-1">Pulsa un pedido para abrirlo en un modal.</p>
-          </div>
-          <div className="p-4 flex-1 min-h-0">
-            <div className="text-sm font-bold text-zinc-500">Aquí no se muestra nada en línea.</div>
-          </div>
-        </div>
       </div>
 
       {selectedId && modalContainer
@@ -570,25 +591,25 @@ export default function AlbaranesHistoricoClient({
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
                 <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
                   <div className="min-w-0 flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-2xl bg-white/10 overflow-hidden flex items-center justify-center shrink-0">
-                      {detail?.supplier_image_url || activeItem?.supplier_image_url ? (
-                        <img
-                          src={(detail?.supplier_image_url || activeItem?.supplier_image_url) ?? ''}
-                          alt=""
-                          className="h-full w-full object-contain"
-                        />
-                      ) : (
-                        <Truck className="h-6 w-6 text-white/60" />
-                      )}
-                    </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-black uppercase tracking-wider truncate">
-                        {detail?.supplier_name
-                          ? detail.supplier_name
-                          : activeItem?.supplier_name
-                            ? activeItem.supplier_name
-                            : 'Detalle'}
-                      </p>
+                      {detail?.supplier_name ? (
+                        <p className="text-sm font-black uppercase tracking-wider truncate">{detail.supplier_name}</p>
+                      ) : isManager && detail && !detail.supplier_id ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSupplierPickerOpen(true)
+                            setSupplierQuery('')
+                            setSupplierResults([])
+                            setSupplierError(null)
+                          }}
+                          className="text-sm font-black uppercase tracking-wider underline underline-offset-4 hover:opacity-80"
+                        >
+                          Añadir proveedor
+                        </button>
+                      ) : (
+                        <p className="text-sm font-black uppercase tracking-wider truncate">Proveedor pendiente</p>
+                      )}
                       <p className="text-[11px] font-bold text-white/70 truncate mt-1">
                         {formatDateTitle(detail?.invoice_date ?? activeItem?.invoice_date)}
                         {detail?.invoice_number ? ` · ${detail.invoice_number}` : activeItem?.invoice_number ? ` · ${activeItem.invoice_number}` : ''}
@@ -602,30 +623,16 @@ export default function AlbaranesHistoricoClient({
                         href={detail.signed_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-3 rounded-xl bg-white/10 hover:bg-white/15 transition"
+                        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-2 rounded-xl hover:opacity-80 transition"
                       >
                         <ExternalLink className="h-4 w-4" />
                         Abrir
                       </a>
                     ) : null}
-                    {isManager && detail && !detail.supplier_id ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSupplierPickerOpen(true)
-                          setSupplierQuery('')
-                          setSupplierResults([])
-                          setSupplierError(null)
-                        }}
-                        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-3 rounded-xl bg-white/10 hover:bg-white/15 transition"
-                      >
-                        Asignar proveedor
-                      </button>
-                    ) : null}
                     <button
                       type="button"
                       onClick={closeModal}
-                      className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-rose-500/70 transition active:scale-[0.99]"
+                      className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:opacity-80 transition active:scale-[0.99]"
                       aria-label="Cerrar"
                     >
                       <X className="h-5 w-5" />
@@ -652,149 +659,101 @@ export default function AlbaranesHistoricoClient({
                     <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{detailError}</div>
                   ) : detail ? (
                     <div className="flex flex-col gap-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-zinc-50 rounded-xl border border-zinc-100 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
-                          <p className="text-sm font-black text-zinc-900 mt-1">{formatMaybeText(detail.supplier_name)}</p>
-                        </div>
-                        <div className="bg-zinc-50 rounded-xl border border-zinc-100 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Número</p>
-                          <p className="text-sm font-black text-zinc-900 mt-1">{formatMaybeText(detail.invoice_number)}</p>
-                        </div>
-                        <div className="bg-zinc-50 rounded-xl border border-zinc-100 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Fecha</p>
-                          <p className="text-sm font-black text-zinc-900 mt-1">{formatMaybeText(detail.invoice_date)}</p>
-                        </div>
-                        <div className="bg-zinc-50 rounded-xl border border-zinc-100 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Total</p>
-                          <p className="text-sm font-black text-zinc-900 mt-1">{formatMaybeMoney(detail.total_amount)}</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
-                        <div className="px-3 py-2 border-b border-zinc-100 flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-zinc-500" />
-                          <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Documento</p>
-                        </div>
-                        <div className="p-3">
-                          {!detail.signed_url ? (
-                            <p className="text-sm font-bold text-zinc-500">No hay fichero asociado.</p>
-                          ) : isImagePath(detail.file_path) ? (
-                            <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-zinc-50 border border-zinc-100">
-                              <Image src={detail.signed_url} alt="Albarán" fill className="object-contain" sizes="(max-width: 1024px) 100vw, 800px" />
-                            </div>
-                          ) : (
-                            <a
-                              href={detail.signed_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center justify-center gap-2 w-full bg-zinc-50 hover:bg-zinc-100 rounded-xl border border-zinc-200 min-h-[56px] font-black uppercase tracking-wider text-xs text-zinc-700"
-                            >
-                              <FileText className="h-5 w-5" />
-                              Abrir PDF
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
-                        <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between gap-2">
-                          <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Extracción (líneas)</p>
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">{detail.lines.length}</p>
-                        </div>
-                        <div className="divide-y divide-zinc-100">
+                      <div className="divide-y divide-zinc-100">
                           {detail.lines.length === 0 ? (
                             <div className="p-3 text-sm font-bold text-zinc-500">No hay líneas guardadas.</div>
                           ) : (
                             detail.lines.map((l) => {
                               const d = draftLines[l.id]
                               const canEdit = isManager
+                              const isExpanded = Boolean(expandedLineIds[l.id])
+                              const stock = stockStatusByLineId[l.id]
+                              const stockApplied = Boolean(stock?.stockApplied)
+                              const rectified = (stock?.rectifiedCount ?? 0) > 0
                               return (
                                 <div key={l.id} className="p-3">
-                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
-                                      {canEdit ? (
-                                        <input
-                                          value={d?.original_name ?? ''}
-                                          onChange={(e) => setDraft(l.id, { original_name: e.target.value })}
-                                          className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
-                                          placeholder="Nombre línea"
-                                        />
-                                      ) : (
-                                        <p className="text-sm font-black text-zinc-900">{l.original_name || 'Sin nombre'}</p>
-                                      )}
-                                      <div className="mt-2 grid grid-cols-3 gap-2">
-                                        <div className="min-w-0">
-                                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
-                                          {canEdit ? (
-                                            <input
-                                              inputMode="decimal"
-                                              value={d?.quantity ?? ''}
-                                              onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
-                                              className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                              placeholder="—"
-                                            />
-                                          ) : (
-                                            <p className="text-sm font-bold text-zinc-800 mt-1">{l.quantity == null ? '—' : String(l.quantity)}</p>
-                                          )}
-                                        </div>
-                                        <div className="min-w-0">
-                                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">PU</p>
-                                          {canEdit ? (
-                                            <input
-                                              inputMode="decimal"
-                                              value={d?.unit_price ?? ''}
-                                              onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
-                                              className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                              placeholder="—"
-                                            />
-                                          ) : (
-                                            <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.unit_price)}</p>
-                                          )}
-                                        </div>
-                                        <div className="min-w-0">
-                                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Total</p>
-                                          {canEdit ? (
-                                            <input
-                                              inputMode="decimal"
-                                              value={d?.total_price ?? ''}
-                                              onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
-                                              className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                              placeholder="—"
-                                            />
-                                          ) : (
-                                            <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.total_price)}</p>
-                                          )}
-                                        </div>
-                                      </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedLineIds((p) => ({ ...p, [l.id]: !Boolean(p[l.id]) }))}
+                                    className="w-full text-left"
+                                  >
+                                    <p className="text-sm font-black text-zinc-900 truncate">
+                                      {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-x-2 gap-y-2 text-xs font-bold text-zinc-600">
+                                      {l.ingredient_name ? null : <span className="text-rose-700">Sin match</span>}
+                                      <span
+                                        className={cn(
+                                          'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
+                                          stockApplied ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
+                                        )}
+                                      >
+                                        {stockApplied ? 'Stock aplicado' : 'Stock pendiente'}
+                                      </span>
+                                      {rectified ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800">
+                                          Rectificado (REV{stock?.rectifiedCount})
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </button>
 
-                                      {(() => {
-                                        const stock = stockStatusByLineId[l.id]
-                                        const stockApplied = Boolean(stock?.stockApplied)
-                                        const rectified = (stock?.rectifiedCount ?? 0) > 0
-                                        return (
-                                          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-2 text-xs font-bold text-zinc-600">
-                                            {l.ingredient_name ? (
-                                              <span className="text-emerald-700">→ {l.ingredient_name}</span>
+                                  {isExpanded ? (
+                                    <div className="mt-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                      <div className="min-w-0 flex-1">
+                                        {canEdit ? (
+                                          <input
+                                            value={d?.original_name ?? ''}
+                                            onChange={(e) => setDraft(l.id, { original_name: e.target.value })}
+                                            className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
+                                            placeholder="Nombre línea"
+                                          />
+                                        ) : null}
+
+                                        <div className="mt-2 grid grid-cols-3 gap-2">
+                                          <div className="min-w-0">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
+                                            {canEdit ? (
+                                              <input
+                                                inputMode="decimal"
+                                                value={d?.quantity ?? ''}
+                                                onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
+                                                className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                                placeholder="—"
+                                              />
                                             ) : (
-                                              <span className="text-rose-700">Sin match</span>
+                                              <p className="text-sm font-bold text-zinc-800 mt-1">{l.quantity == null ? '—' : String(l.quantity)}</p>
                                             )}
-                                            <span
-                                              className={cn(
-                                                'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
-                                                stockApplied ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
-                                              )}
-                                            >
-                                              {stockApplied ? 'Stock aplicado' : 'Stock pendiente'}
-                                            </span>
-                                            {rectified ? (
-                                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800">
-                                                Rectificado (REV{stock?.rectifiedCount})
-                                              </span>
-                                            ) : null}
                                           </div>
-                                        )
-                                      })()}
+                                          <div className="min-w-0">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">PU</p>
+                                            {canEdit ? (
+                                              <input
+                                                inputMode="decimal"
+                                                value={d?.unit_price ?? ''}
+                                                onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
+                                                className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                                placeholder="—"
+                                              />
+                                            ) : (
+                                              <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.unit_price)}</p>
+                                            )}
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Total</p>
+                                            {canEdit ? (
+                                              <input
+                                                inputMode="decimal"
+                                                value={d?.total_price ?? ''}
+                                                onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
+                                                className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                                placeholder="—"
+                                              />
+                                            ) : (
+                                              <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.total_price)}</p>
+                                            )}
+                                          </div>
+                                        </div>
 
                                       {!detail.supplier_id ? (
                                         <div className="mt-3 bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700">
@@ -886,26 +845,18 @@ export default function AlbaranesHistoricoClient({
                                               {suggestedByLineId[l.id]?.candidates?.length ? (
                                                 <div>
                                                   <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Sugerencias</p>
-                                                  <div className="mt-2 grid grid-cols-1 gap-2">
+                                                  <select
+                                                    value={selectedIngredientByLineId[l.id] ?? ''}
+                                                    onChange={(e) => setSelectedIngredientByLineId((p) => ({ ...p, [l.id]: e.target.value || null }))}
+                                                    className="mt-2 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none"
+                                                  >
+                                                    <option value="">Selecciona una sugerencia…</option>
                                                     {suggestedByLineId[l.id]!.candidates.map((c: any) => (
-                                                      <button
-                                                        key={c.id}
-                                                        type="button"
-                                                        onClick={() => setSelectedIngredientByLineId((p) => ({ ...p, [l.id]: c.id }))}
-                                                        className={cn(
-                                                          'min-h-[48px] rounded-xl border px-3 py-2 text-left',
-                                                          selectedIngredientByLineId[l.id] === c.id
-                                                            ? 'border-[#36606F] bg-[#36606F]/5'
-                                                            : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                                                        )}
-                                                      >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                          <span className="text-xs font-black text-zinc-900 truncate">{c.name}</span>
-                                                          <span className="text-[10px] font-black text-zinc-500 shrink-0">{c.score}</span>
-                                                        </div>
-                                                      </button>
+                                                      <option key={c.id} value={c.id}>
+                                                        {c.name} ({c.score})
+                                                      </option>
                                                     ))}
-                                                  </div>
+                                                  </select>
                                                 </div>
                                               ) : null}
 
@@ -970,19 +921,33 @@ export default function AlbaranesHistoricoClient({
                                           {savingLineId === l.id ? 'Guardando…' : 'Guardar'}
                                         </button>
 
-                                        {!l.ingredient_id ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => void openMapping(l.id)}
+                                          disabled={mappingLoading}
+                                          className={cn(
+                                            'w-full min-h-[48px] px-4 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700 active:scale-[0.99] transition',
+                                            mappingLoading && 'opacity-60 pointer-events-none'
+                                          )}
+                                        >
+                                          {l.ingredient_id ? 'Editar match' : 'Resolver match'}
+                                        </button>
+
+                                        {!stockApplied && l.ingredient_id && detail.supplier_id ? (
                                           <button
                                             type="button"
-                                            onClick={() => void openMapping(l.id)}
+                                            onClick={() => void applyStock(l.id)}
                                             disabled={mappingLoading}
                                             className={cn(
-                                              'w-full min-h-[48px] px-4 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700 active:scale-[0.99] transition',
+                                              'w-full min-h-[48px] px-4 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-black uppercase tracking-wider text-emerald-800 active:scale-[0.99] transition',
                                               mappingLoading && 'opacity-60 pointer-events-none'
                                             )}
                                           >
-                                            Resolver match
+                                            Aplicar a stock
                                           </button>
-                                        ) : stockStatusByLineId[l.id]?.stockApplied ? (
+                                        ) : null}
+
+                                        {stockApplied ? (
                                           <button
                                             type="button"
                                             onClick={() => void rectifyLine(l.id)}
@@ -998,12 +963,12 @@ export default function AlbaranesHistoricoClient({
                                       </div>
                                     ) : null}
                                   </div>
+                                  ) : null}
                                 </div>
                               )
                             })
                           )}
                         </div>
-                      </div>
                     </div>
                   ) : (
                     <div className="text-sm font-bold text-zinc-500">Sin datos.</div>
@@ -1079,7 +1044,7 @@ export default function AlbaranesHistoricoClient({
                                 )}
                               >
                                 <div className="h-10 w-10 rounded-xl border border-zinc-100 bg-zinc-50 overflow-hidden flex items-center justify-center shrink-0">
-                                  {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-contain" /> : <Truck className="h-5 w-5 text-zinc-300" />}
+                                  {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-contain" /> : null}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-sm font-black text-zinc-900 truncate">{s.name}</p>
@@ -1129,6 +1094,80 @@ export default function AlbaranesHistoricoClient({
             modalContainer
           )
         : null}
+
+      {filterOpen ? (
+        <div
+          className="fixed inset-0 z-[10040] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setFilterOpen(false)
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white">
+              <p className="text-sm font-black uppercase tracking-wider">Filtrar</p>
+              <button
+                type="button"
+                onClick={() => setFilterOpen(false)}
+                className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:opacity-80 transition"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Desde</p>
+                  <input
+                    type="date"
+                    value={filterFrom}
+                    onChange={(e) => setFilterFrom(e.target.value)}
+                    className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Hasta</p>
+                  <input
+                    type="date"
+                    value={filterTo}
+                    onChange={(e) => setFilterTo(e.target.value)}
+                    className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
+                <input
+                  value={filterSupplier}
+                  onChange={(e) => setFilterSupplier(e.target.value)}
+                  placeholder="Ej: Santa Teresa"
+                  className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterFrom('')
+                    setFilterTo('')
+                    setFilterSupplier('')
+                  }}
+                  className="min-h-[48px] flex-1 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700"
+                >
+                  Limpiar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen(false)}
+                  className="min-h-[48px] flex-1 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider"
+                >
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
