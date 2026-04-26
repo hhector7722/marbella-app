@@ -80,12 +80,14 @@ select
   d.id as departamento_id,
   d.nombre as departamento_nombre,
   o.category_id as category_id,
-  cp.id as category_parent_id,
-  cp.name as category_parent_name,
-  cp.sort_order as category_parent_sort_order,
-  c.id as category_child_id,
-  c.name as category_child_name,
-  c.sort_order as category_child_sort_order,
+  -- Si category_id apunta a una categoría padre (sin parent_id), esa categoría es el padre y NO hay hijo.
+  -- Si apunta a una subcategoría, el padre es c.parent_id y el hijo es c.
+  case when c.parent_id is null then c.id else cp.id end as category_parent_id,
+  case when c.parent_id is null then c.name else cp.name end as category_parent_name,
+  case when c.parent_id is null then c.sort_order else cp.sort_order end as category_parent_sort_order,
+  case when c.parent_id is null then null else c.id end as category_child_id,
+  case when c.parent_id is null then null else c.name end as category_child_name,
+  case when c.parent_id is null then null else c.sort_order end as category_child_sort_order,
   r.id as recipe_id,
   r.name as recipe_name,
   nullif(
