@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
