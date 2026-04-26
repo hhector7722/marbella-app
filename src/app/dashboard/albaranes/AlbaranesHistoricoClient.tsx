@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { ExternalLink, FileText, Filter, Loader2, RefreshCw, Search, X } from 'lucide-react'
+import { CheckCircle2, ExternalLink, FileText, Filter, Loader2, RefreshCw, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
@@ -566,7 +566,7 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
 
-      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[320px]">
           <div className="p-2 overflow-auto flex-1 min-h-0">
             {filtered.length === 0 ? (
               <div className="p-6 text-sm font-bold text-zinc-500">No hay albaranes que coincidan.</div>
@@ -580,10 +580,7 @@ export default function AlbaranesHistoricoClient({
                       key={it.id}
                       type="button"
                       onClick={() => openDetail(it.id)}
-                      className={cn(
-                        'w-full text-left rounded-xl border p-3 transition min-h-[72px] active:scale-[0.995]',
-                        'border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50'
-                      )}
+                      className="w-full text-left rounded-xl p-3 transition min-h-[72px] active:scale-[0.995] hover:bg-zinc-50"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex items-start gap-3">
@@ -591,7 +588,8 @@ export default function AlbaranesHistoricoClient({
                             <p className="text-sm font-black text-zinc-900 truncate">{title}</p>
                           </div>
                         </div>
-                        <div className="shrink-0 text-right">
+                        <div className="shrink-0 text-right flex items-center gap-2">
+                          {it.is_fully_processed ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
                           <p className="text-sm font-black text-zinc-900">{formatMaybeMoney(it.total_amount)}</p>
                         </div>
                       </div>

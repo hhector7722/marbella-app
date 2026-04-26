@@ -34,6 +34,7 @@ export type PurchaseInvoiceListItem = {
   invoice_date: string | null
   total_amount: number | null
   file_path: string | null
+  is_fully_processed: boolean
 }
 
 export async function listPurchaseInvoicesAction(params?: {
@@ -71,7 +72,7 @@ export async function listPurchaseInvoicesAction(params?: {
   const { data, error } = await q
   if (error) return { success: false, message: error.message }
 
-  const items: PurchaseInvoiceListItem[] = (data ?? []).map((r: any) => ({
+  const baseItems = (data ?? []).map((r: any) => ({
     id: r.id,
     created_at: r.created_at,
     created_by: r.created_by ?? null,
@@ -84,7 +85,9 @@ export async function listPurchaseInvoicesAction(params?: {
     invoice_date: r.invoice_date ?? null,
     total_amount: r.total_amount ?? null,
     file_path: r.file_path ?? null,
-  }))
+  })) as Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
+
+  const items = await enrichInvoicesWithProcessingState(gate.supabase, baseItems)
 
   return { success: true, items, canViewAll }
 }
@@ -153,7 +156,7 @@ async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true 
   if (!canViewAll) q = q.eq('created_by', gate.userId)
   const { data, error } = await q
   if (error) throw error
-  const items: PurchaseInvoiceListItem[] = (data ?? []).map((r: any) => ({
+  const baseItems = (data ?? []).map((r: any) => ({
     id: r.id,
     created_at: r.created_at,
     created_by: r.created_by ?? null,
@@ -166,8 +169,63 @@ async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true 
     invoice_date: r.invoice_date ?? null,
     total_amount: r.total_amount ?? null,
     file_path: r.file_path ?? null,
-  }))
+  })) as Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
+
+  const items = await enrichInvoicesWithProcessingState(gate.supabase, baseItems)
   return { items, canViewAll }
+}
+
+async function enrichInvoicesWithProcessingState(
+  supabase: Extract<GateResult, { ok: true }>['supabase'],
+  baseItems: Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
+): Promise<PurchaseInvoiceListItem[]> {
+  const invoiceIds = baseItems.map((x) => x.id)
+  if (invoiceIds.length === 0) return baseItems.map((b) => ({ ...b, is_fully_processed: false }))
+
+  // 1) Leer líneas por invoice (mínimo para decidir “todo matcheado”)
+  const { data: lines, error: linesErr } = await supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, mapped_ingredient_id, status')
+    .in('invoice_id', invoiceIds)
+    .limit(5000)
+  if (linesErr) {
+    return baseItems.map((b) => ({ ...b, is_fully_processed: false }))
+  }
+
+  const byInv = new Map<string, Array<{ id: string; mapped: boolean }>>()
+  for (const r of (lines as any[]) ?? []) {
+    const invId = String(r.invoice_id ?? '')
+    const id = String(r.id ?? '')
+    const mapped = Boolean(r.mapped_ingredient_id) && String(r.status ?? '') === 'mapped'
+    if (!invId || !id) continue
+    const arr = byInv.get(invId) ?? []
+    arr.push({ id, mapped })
+    byInv.set(invId, arr)
+  }
+
+  // 2) Stock aplicado: existe movimiento PURCHASE con ref ALB-LINE-<lineId>
+  const allLineIds = Array.from(new Set(((lines as any[]) ?? []).map((r) => String(r.id ?? '')).filter(Boolean)))
+  const refs = allLineIds.map((id) => `ALB-LINE-${id}`)
+  let appliedSet = new Set<string>()
+  if (refs.length) {
+    const { data: moves, error: mvErr } = await supabase
+      .from('stock_movements')
+      .select('reference_doc')
+      .eq('movement_type', 'PURCHASE')
+      .in('reference_doc', refs)
+      .limit(5000)
+    if (!mvErr) {
+      appliedSet = new Set(((moves as any[]) ?? []).map((m) => String(m.reference_doc ?? '')).filter(Boolean))
+    }
+  }
+
+  return baseItems.map((b) => {
+    const arr = byInv.get(b.id) ?? []
+    if (arr.length === 0) return { ...b, is_fully_processed: false }
+    const allMapped = arr.every((x) => x.mapped)
+    const allApplied = arr.every((x) => appliedSet.has(`ALB-LINE-${x.id}`))
+    return { ...b, is_fully_processed: allMapped && allApplied }
+  })
 }
 
 export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
