@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, ExternalLink, FileText, Filter, Loader2, RefreshCw, Search, X } from 'lucide-react'
+import { CheckCircle2, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
@@ -646,8 +646,8 @@ export default function AlbaranesHistoricoClient({
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-2 rounded-xl hover:opacity-80 transition"
                       >
-                        <ExternalLink className="h-4 w-4" />
-                        Abrir
+                        <SearchIcon className="h-4 w-4" />
+                        Ver imagen
                       </a>
                     ) : null}
                     <button

@@ -220,7 +220,12 @@ export function IngredientWizard({
           supplierPrice: Number.isFinite(supplierPrice) ? supplierPrice : 0,
           unitsInside: (data as any).pack_units == null ? null : Number((data as any).pack_units),
           contentPerUnitQty: (data as any).pack_unit_size_qty == null ? null : Number((data as any).pack_unit_size_qty),
-          contentPerUnitUnit: ((data as any).pack_unit_size_unit ?? 'ud') as any,
+          contentPerUnitUnit: (() => {
+            const raw = String((data as any).pack_unit_size_unit ?? 'ud').toLowerCase()
+            // Si la unidad base es litros, nunca permitir ud.
+            if (baseUnit === 'l' && raw === 'ud') return 'ml'
+            return (raw as any) || 'ud'
+          })(),
           baseUnit,
           wastePercentage: (data as any).waste_percentage == null ? 0 : Number((data as any).waste_percentage),
           orderUnit: String((data as any).order_unit ?? 'unidad'),
@@ -470,6 +475,13 @@ export function IngredientWizard({
       }
       const qty = draft.contentPerUnitQty ?? 1
       const unit = draft.contentPerUnitUnit ?? 'ud'
+
+      // Blindaje: evitar estados imposibles (ej. ud -> l).
+      const converted = convertQty(qty, unit, draft.baseUnit)
+      if (converted == null) {
+        return toast.error(`Conversión no soportada: ${unit} -> ${draft.baseUnit}`)
+      }
+
       await savePatch({
         supplier_pricing_mode: 'per_pack',
         pack_price: draft.supplierPrice,
@@ -547,6 +559,11 @@ export function IngredientWizard({
     } catch (e: any) {
       toast.error(e?.message || 'Error al guardar')
     }
+  }
+
+  function closeWithoutSavingOptional() {
+    if (ingredientId) onSaved?.(ingredientId)
+    onClose?.()
   }
 
   return (
@@ -997,10 +1014,10 @@ export function IngredientWizard({
           </button>
           <button
             type="button"
-            onClick={saveOptionalFieldsAndClose}
+            onClick={closeWithoutSavingOptional}
             className="w-full min-h-12 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300"
           >
-            Añadir más tarde
+            Cerrar sin tocar
           </button>
         </div>
       )}
