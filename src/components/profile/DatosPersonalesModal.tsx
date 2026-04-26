@@ -51,11 +51,10 @@ export default function DatosPersonalesModal({
         setTimeout(() => setCopied(null), 2000);
     };
 
-    if (!isOpen) return null;
-
     useEffect(() => {
         let cancelled = false;
         async function loadExisting() {
+            if (!isOpen) return;
             if (!canDni || !ownerUserId) {
                 setDniDoc(null);
                 return;
@@ -92,7 +91,9 @@ export default function DatosPersonalesModal({
         return () => {
             cancelled = true;
         };
-    }, [canDni, ownerUserId]);
+    }, [isOpen, canDni, ownerUserId]);
+
+    if (!isOpen) return null;
 
     const handlePickDniImage = () => {
         if (!canDni) return;
