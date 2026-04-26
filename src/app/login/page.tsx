@@ -60,7 +60,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5F7F99] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] flex items-center justify-center p-4">
             <Toaster position="top-center" />
 
             {/* Tarjeta Flotante Estilo "La Marbella" */}
@@ -118,7 +118,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-[#5F7F99] hover:bg-[#2A4D59] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
+                        className="w-full bg-[#36606F] hover:bg-[#2A4D59] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
                     >
                         {loading ? (
                             <LoadingSpinner size="sm" className="text-white" />

@@ -16,7 +16,7 @@ export default function RegistrosRedirectPage() {
     }, [router]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#5F7F99]">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8]">
             <LoadingSpinner size="lg" className="text-white" />
         </div>
     );

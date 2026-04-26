@@ -598,7 +598,7 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5F7F99] p-1 md:p-3 pb-20 print:bg-white print:p-0 print:pb-0">
+        <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] p-1 md:p-3 pb-20 print:bg-white print:p-0 print:pb-0">
             <div className="max-w-5xl mx-auto print:max-w-none">
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">

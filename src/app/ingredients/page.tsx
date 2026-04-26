@@ -266,7 +266,7 @@ export default function IngredientsPage() {
     };
 
     return (
-        <div className="p-4 md:p-6 w-full bg-[#5F7F99] min-h-screen pb-24">
+        <div className="p-4 md:p-6 w-full bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] min-h-screen pb-24">
             <Toaster position="top-right" />
 
             <div className="max-w-7xl mx-auto">

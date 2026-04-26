@@ -431,7 +431,7 @@ export default function StaffDashboard() {
 
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); };
 
-    if (loading) return <div className="min-h-screen bg-[#5F7F99]"></div>;
+    if (loading) return <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8]"></div>;
 
     return (
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6">

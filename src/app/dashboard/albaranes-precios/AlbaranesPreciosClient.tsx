@@ -227,7 +227,7 @@ export default function AlbaranesPreciosClient({
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#5F7F99] pb-24">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] pb-24">
       <div className="max-w-4xl mx-auto px-4 md:px-6 pt-6 space-y-6">
         <div className="bg-[#36606F] rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-sm">
           <div className="flex items-start gap-4">

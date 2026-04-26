@@ -355,7 +355,7 @@ export default function ConsumoPersonalDashboardPage() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <div className="bg-[#5F7F99] p-4 md:p-6 pb-24">
+    <div className="bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] p-4 md:p-6 pb-24">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
           <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0">

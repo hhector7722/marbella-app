@@ -221,7 +221,7 @@ function RecipesContent() {
     });
 
     return (
-        <div className="p-4 md:p-6 w-full bg-[#5F7F99] min-h-screen pb-24">
+        <div className="p-4 md:p-6 w-full bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] min-h-screen pb-24">
             <Toaster position="top-right" />
             <div className="max-w-7xl mx-auto">
                 <div className="bg-[#36606F] rounded-2xl px-3 md:px-6 py-3 md:py-5">
@@ -484,7 +484,7 @@ function RecipesContent() {
 export default function RecipesPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#5F7F99]"></div>
+            <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8]"></div>
         }>
             <RecipesContent />
         </Suspense>

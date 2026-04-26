@@ -121,7 +121,7 @@ export default function BulkImportPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5F7F99] p-6 text-white flex flex-col items-center">
+        <div className="min-h-screen bg-gradient-to-br from-[#8FAFC4] to-[#7FA1B8] p-6 text-white flex flex-col items-center">
             <Toaster position="top-right" />
 
             <div className="w-full max-w-4xl">
