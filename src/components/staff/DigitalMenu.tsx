@@ -6,14 +6,14 @@ export async function DigitalMenu() {
     const { data, error } = await supabase
         .from('v_digital_menu_items')
         .select(
-            'articulo_id, articulo_nombre, departamento_id, departamento_nombre, category_id, category_parent_id, category_parent_name, category_parent_sort_order, category_child_id, category_child_name, category_child_sort_order, recipe_id, recipe_name, descripcion, precio, photo_url, sort_order'
+            'articulo_id, articulo_nombre, carta_nombre, departamento_id, departamento_nombre, category_id, category_parent_id, category_parent_name, category_parent_sort_order, category_child_id, category_child_name, category_child_sort_order, recipe_id, recipe_name, descripcion, precio, photo_url, sort_order'
         )
         .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
         .order('category_parent_name', { ascending: true, nullsFirst: false })
         .order('category_child_sort_order', { ascending: true, nullsFirst: false })
         .order('category_child_name', { ascending: true, nullsFirst: false })
         .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('articulo_nombre', { ascending: true });
+        .order('carta_nombre', { ascending: true });
 
     if (error) {
         return (

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 export type DigitalMenuRow = {
     articulo_id: number;
     articulo_nombre: string;
+    carta_nombre: string;
     departamento_id: number | null;
     departamento_nombre: string | null;
     category_id: string | null;
@@ -33,7 +34,7 @@ function formatPriceDisplay(precio: number | string | null | undefined): string 
 function MenuCard({ row }: { row: DigitalMenuRow }) {
     const priceStr = formatPriceDisplay(row.precio);
     const showPrice = priceStr.trim() !== '';
-    const displayName = abbreviateMenuName(row.articulo_nombre);
+    const displayName = abbreviateMenuName(row.carta_nombre);
 
     return (
         <div
@@ -65,7 +66,7 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
                 <div className="flex items-center justify-between gap-3">
                     <h3
                         className="min-w-0 flex-1 text-left font-black text-zinc-900 leading-none truncate text-[clamp(10px,1.3vw,13px)]"
-                        title={row.articulo_nombre}
+                        title={row.carta_nombre}
                     >
                         {displayName}
                     </h3>
@@ -153,7 +154,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
 
             // ordenar items dentro de subgrupo
             for (const s of subList) {
-                s.rows.sort((a, b) => a.articulo_nombre.localeCompare(b.articulo_nombre, 'es', { sensitivity: 'base' }));
+                s.rows.sort((a, b) => a.carta_nombre.localeCompare(b.carta_nombre, 'es', { sensitivity: 'base' }));
             }
 
             // rehidratar subs como array ya ordenado

@@ -20,6 +20,7 @@ type OverrideRow = {
   is_hidden: boolean
   category_id: string | null
   sort_order: number | null
+  override_nombre: string | null
 }
 
 type Category = {
@@ -105,7 +106,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
             'articulo_id, factor_porcion, bdp_articulos(id, nombre, precio_base)'
           )
           .limit(5000),
-        supabase.from('digital_menu_overrides').select('articulo_id, is_hidden, category_id, sort_order').limit(5000),
+        supabase.from('digital_menu_overrides').select('articulo_id, is_hidden, category_id, sort_order, override_nombre').limit(5000),
         supabase
           .from('categories')
           .select('id, name, parent_id, sort_order')
@@ -156,7 +157,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         is_hidden: nextHidden,
         sort_order: current?.sort_order ?? null,
         category_id: current?.category_id ?? null,
-        override_nombre: null,
+        override_nombre: current?.override_nombre ?? null,
         override_descripcion: null,
         override_precio: null,
         override_photo_url: null,
@@ -178,7 +179,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         is_hidden: current?.is_hidden ?? false,
         sort_order: current?.sort_order ?? null,
         category_id,
-        override_nombre: null,
+        override_nombre: current?.override_nombre ?? null,
         override_descripcion: null,
         override_precio: null,
         override_photo_url: null,
@@ -188,6 +189,28 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         return
       }
       toast.success('Categoría guardada')
+      await load()
+    })
+  }
+
+  const onSetCartaNombre = (articulo_id: number, override_nombre: string) => {
+    const current = overrideByArticulo.get(articulo_id)
+    startTransition(async () => {
+      const res = await upsertMenuOverride({
+        articulo_id,
+        is_hidden: current?.is_hidden ?? false,
+        sort_order: current?.sort_order ?? null,
+        category_id: current?.category_id ?? null,
+        override_nombre: override_nombre.trim() === '' ? null : override_nombre,
+        override_descripcion: null,
+        override_precio: null,
+        override_photo_url: null,
+      })
+      if (!res.success) {
+        toast.error(res.error ?? 'No se pudo guardar el nombre')
+        return
+      }
+      toast.success('Nombre guardado')
       await load()
     })
   }
@@ -296,6 +319,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                         </div>
 
                         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+                          <input
+                            className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                            defaultValue={current?.override_nombre ?? ''}
+                            placeholder="Nombre en carta (vacío = TPV)"
+                            onBlur={(e) => onSetCartaNombre(it.articulo_id, e.target.value)}
+                          />
                           <select
                             className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
                             value={current?.category_id ?? ''}

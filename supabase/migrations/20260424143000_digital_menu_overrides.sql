@@ -73,7 +73,10 @@ create policy "Managers manage digital_menu_overrides"
 create or replace view public.v_digital_menu_items as
 select
   a.id as articulo_id,
-  coalesce(nullif(trim(o.override_nombre), ''), a.nombre) as articulo_nombre,
+  -- Nombre TPV/BDP puro (no override)
+  a.nombre as articulo_nombre,
+  -- Nombre en carta (override_nombre si existe; si no, nombre TPV)
+  coalesce(nullif(trim(o.override_nombre), ''), a.nombre) as carta_nombre,
   d.id as departamento_id,
   d.nombre as departamento_nombre,
   o.category_id as category_id,
