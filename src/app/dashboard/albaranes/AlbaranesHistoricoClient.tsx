@@ -723,7 +723,7 @@ export default function AlbaranesHistoricoClient({
                                       ) : (
                                         <p className="text-sm font-black text-zinc-900">{l.original_name || 'Sin nombre'}</p>
                                       )}
-                                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                      <div className="mt-2 grid grid-cols-3 gap-2">
                                         <div className="min-w-0">
                                           <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
                                           {canEdit ? (
