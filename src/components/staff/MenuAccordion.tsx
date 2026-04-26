@@ -33,6 +33,7 @@ function formatPriceDisplay(precio: number | string | null | undefined): string 
 function MenuCard({ row }: { row: DigitalMenuRow }) {
     const priceStr = formatPriceDisplay(row.precio);
     const showPrice = priceStr.trim() !== '';
+    const displayName = abbreviateMenuName(row.articulo_nombre);
 
     return (
         <div
@@ -54,7 +55,7 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
                             className="h-full w-full object-contain p-2"
                         />
                     ) : (
-                        <div className="h-full w-full bg-zinc-50" />
+                        <div className="h-full w-full bg-white" />
                     )}
                 </div>
             </div>
@@ -62,15 +63,18 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
             {/* Texto: una sola fila (nombre izq + precio dcha) */}
             <div className="flex min-h-[48px] min-w-0 flex-1 flex-col justify-start p-4">
                 <div className="flex items-center justify-between gap-3">
-                    <h3 className="min-w-0 flex-1 text-left font-black text-zinc-900 whitespace-nowrap leading-none text-[clamp(11px,1.6vw,15px)]">
-                        {row.articulo_nombre}
+                    <h3
+                        className="min-w-0 flex-1 text-left font-black text-zinc-900 leading-none truncate text-[clamp(10px,1.3vw,13px)]"
+                        title={row.articulo_nombre}
+                    >
+                        {displayName}
                     </h3>
                     {showPrice ? (
-                        <span className="shrink-0 text-right font-mono font-black text-[#36606F] whitespace-nowrap leading-none text-[clamp(11px,1.4vw,14px)]">
+                        <span className="shrink-0 text-right font-mono font-black text-[#36606F] whitespace-nowrap leading-none text-[clamp(10px,1.2vw,13px)]">
                             {priceStr}
                         </span>
                     ) : (
-                        <span className="shrink-0 text-right font-mono font-black text-transparent select-none whitespace-nowrap leading-none text-[clamp(11px,1.4vw,14px)]">
+                        <span className="shrink-0 text-right font-mono font-black text-transparent select-none whitespace-nowrap leading-none text-[clamp(10px,1.2vw,13px)]">
                             00.00€
                         </span>
                     )}
@@ -78,6 +82,26 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
             </div>
         </div>
     );
+}
+
+function abbreviateMenuName(name: string, maxLen = 26) {
+    const cleaned = name.replace(/\s+/g, ' ').trim();
+    if (cleaned.length <= maxLen) return cleaned;
+
+    // Abreviación "con sentido": intenta mantener palabras completas; si no cabe, acorta la última.
+    const words = cleaned.split(' ');
+    let out = '';
+    for (const w of words) {
+        const next = out ? `${out} ${w}` : w;
+        if (next.length <= maxLen - 1) {
+            out = next;
+            continue;
+        }
+        break;
+    }
+    if (!out) return cleaned.slice(0, maxLen - 1).trimEnd() + '…';
+    if (out.length < cleaned.length) return out.trimEnd() + '…';
+    return out;
 }
 
 export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
