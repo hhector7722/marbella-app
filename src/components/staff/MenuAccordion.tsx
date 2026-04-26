@@ -180,7 +180,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                                     {sub.title}
                                                 </div>
                                             </div>
-                                            <div className="grid auto-rows-min items-start grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                            <div className="grid auto-rows-min items-start grid-cols-3 gap-4">
                                                 {sub.rows.map((row) => (
                                                     <MenuCard key={row.articulo_id} row={row} />
                                                 ))}
