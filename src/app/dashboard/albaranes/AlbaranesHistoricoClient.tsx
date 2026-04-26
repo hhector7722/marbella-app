@@ -39,6 +39,11 @@ function formatMaybeText(v: string | null | undefined) {
   return t ? t : '—'
 }
 
+function numOrNull(v: any): number | null {
+  const n = v == null ? null : Number(v)
+  return typeof n === 'number' && Number.isFinite(n) ? n : null
+}
+
 function isImagePath(filePath: string | null) {
   const p = (filePath ?? '').toLowerCase()
   return p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png') || p.endsWith('.webp')
@@ -141,6 +146,16 @@ export default function AlbaranesHistoricoClient({
       return true
     })
   }, [items, query])
+
+  function isLineDirty(l: PurchaseInvoiceDetail['lines'][number]) {
+    const d = draftLines[l.id]
+    if (!d) return false
+    const nameDirty = String(d.original_name ?? '') !== String(l.original_name ?? '')
+    const qtyDirty = numOrNull(d.quantity?.trim?.() === '' ? null : d.quantity) !== numOrNull(l.quantity)
+    const unitDirty = numOrNull(d.unit_price?.trim?.() === '' ? null : d.unit_price) !== numOrNull(l.unit_price)
+    const totalDirty = numOrNull(d.total_price?.trim?.() === '' ? null : d.total_price) !== numOrNull(l.total_price)
+    return nameDirty || qtyDirty || unitDirty || totalDirty
+  }
 
   function refresh() {
     setError(null)
@@ -681,15 +696,39 @@ export default function AlbaranesHistoricoClient({
                                       {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
                                     </p>
                                     <div className="mt-2 flex flex-wrap gap-x-2 gap-y-2 text-xs font-bold text-zinc-600">
-                                      {l.ingredient_name ? null : <span className="text-rose-700">Sin match</span>}
-                                      <span
-                                        className={cn(
-                                          'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
-                                          stockApplied ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
-                                        )}
-                                      >
-                                        {stockApplied ? 'Stock aplicado' : 'Stock pendiente'}
-                                      </span>
+                                      {l.ingredient_name ? null : (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            void openMapping(l.id)
+                                          }}
+                                          className="text-rose-700 underline underline-offset-4"
+                                        >
+                                          Sin match
+                                        </button>
+                                      )}
+                                      {stockApplied ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700">
+                                          Stock aplicado
+                                        </span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (!l.ingredient_id || !detail.supplier_id) return
+                                            void applyStock(l.id)
+                                          }}
+                                          className={cn(
+                                            'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider underline underline-offset-4',
+                                            l.ingredient_id && detail.supplier_id ? 'text-zinc-700' : 'text-zinc-400'
+                                          )}
+                                          title={!l.ingredient_id ? 'Asigna ingrediente primero' : !detail.supplier_id ? 'Asigna proveedor primero' : 'Aplicar a stock'}
+                                        >
+                                          Stock pendiente
+                                        </button>
+                                      )}
                                       {rectified ? (
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800">
                                           Rectificado (REV{stock?.rectifiedCount})
@@ -765,9 +804,9 @@ export default function AlbaranesHistoricoClient({
                                         <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 space-y-3">
                                           <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                              <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Resolver match</p>
+                                              <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Match</p>
                                               <p className="text-[11px] font-bold text-zinc-500 mt-1">
-                                                Confirma ingrediente + factor. Se guardará para el futuro y aplicará stock una sola vez.
+                                                Confirma ingrediente + factor. Se guardará para el futuro.
                                               </p>
                                             </div>
                                             <button
@@ -851,11 +890,13 @@ export default function AlbaranesHistoricoClient({
                                                     className="mt-2 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none"
                                                   >
                                                     <option value="">Selecciona una sugerencia…</option>
-                                                    {suggestedByLineId[l.id]!.candidates.map((c: any) => (
-                                                      <option key={c.id} value={c.id}>
-                                                        {c.name} ({c.score})
-                                                      </option>
-                                                    ))}
+                                                    {suggestedByLineId[l.id]!.candidates
+                                                      .filter((c: any) => c.id !== (selectedIngredientByLineId[l.id] ?? null))
+                                                      .map((c: any) => (
+                                                        <option key={c.id} value={c.id}>
+                                                          {c.name} ({c.score})
+                                                        </option>
+                                                      ))}
                                                   </select>
                                                 </div>
                                               ) : null}
@@ -898,7 +939,7 @@ export default function AlbaranesHistoricoClient({
                                                     (mappingLoading || !detail.supplier_id) && 'opacity-60 pointer-events-none'
                                                   )}
                                                 >
-                                                  Confirmar y aplicar stock
+                                                  Confirmar match
                                                 </button>
                                               </div>
                                             </>
@@ -909,41 +950,17 @@ export default function AlbaranesHistoricoClient({
 
                                     {canEdit ? (
                                       <div className="shrink-0 w-full sm:w-auto flex flex-col gap-2">
-                                        <button
-                                          type="button"
-                                          onClick={() => saveLine(l.id)}
-                                          disabled={savingLineId === l.id}
-                                          className={cn(
-                                            'w-full min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition',
-                                            savingLineId === l.id && 'opacity-60 pointer-events-none'
-                                          )}
-                                        >
-                                          {savingLineId === l.id ? 'Guardando…' : 'Guardar'}
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => void openMapping(l.id)}
-                                          disabled={mappingLoading}
-                                          className={cn(
-                                            'w-full min-h-[48px] px-4 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700 active:scale-[0.99] transition',
-                                            mappingLoading && 'opacity-60 pointer-events-none'
-                                          )}
-                                        >
-                                          {l.ingredient_id ? 'Editar match' : 'Resolver match'}
-                                        </button>
-
-                                        {!stockApplied && l.ingredient_id && detail.supplier_id ? (
+                                        {isLineDirty(l) ? (
                                           <button
                                             type="button"
-                                            onClick={() => void applyStock(l.id)}
-                                            disabled={mappingLoading}
+                                            onClick={() => saveLine(l.id)}
+                                            disabled={savingLineId === l.id}
                                             className={cn(
-                                              'w-full min-h-[48px] px-4 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-black uppercase tracking-wider text-emerald-800 active:scale-[0.99] transition',
-                                              mappingLoading && 'opacity-60 pointer-events-none'
+                                              'w-full min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition',
+                                              savingLineId === l.id && 'opacity-60 pointer-events-none'
                                             )}
                                           >
-                                            Aplicar a stock
+                                            {savingLineId === l.id ? 'Guardando…' : 'Guardar cambios'}
                                           </button>
                                         ) : null}
 
