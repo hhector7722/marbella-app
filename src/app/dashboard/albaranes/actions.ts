@@ -377,3 +377,316 @@ export async function updatePurchaseInvoiceLineAction(params: {
   return { success: true }
 }
 
+export type StockLineStatus = {
+  lineId: string
+  stockApplied: boolean
+  stockAppliedQty: number | null
+  rectifiedCount: number
+}
+
+export async function getInvoiceStockStatusesAction(params: {
+  lineIds: string[]
+}): Promise<{ success: true; statuses: StockLineStatus[] } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const lineIds = Array.from(new Set((params?.lineIds ?? []).map((x) => String(x ?? '').trim()).filter(Boolean)))
+  if (lineIds.length === 0) return { success: true, statuses: [] }
+
+  // 1) Movimientos aplicados (referencia exacta ALB-LINE-<id>)
+  const appliedRefs = lineIds.map((id) => `ALB-LINE-${id}`)
+  const { data: appliedRows, error: appliedErr } = await gate.supabase
+    .from('stock_movements')
+    .select('reference_doc, quantity')
+    .eq('movement_type', 'PURCHASE')
+    .in('reference_doc', appliedRefs)
+  if (appliedErr) return { success: false, message: appliedErr.message }
+
+  const appliedMap = new Map<string, number>()
+  for (const r of appliedRows ?? []) {
+    const ref = String((r as any).reference_doc ?? '')
+    const qty = Number((r as any).quantity)
+    if (!ref) continue
+    if (Number.isFinite(qty)) appliedMap.set(ref, qty)
+  }
+
+  // 2) Rectificaciones (ALB-LINE-<id>-REVn-...)
+  const or = lineIds.map((id) => `reference_doc.ilike.ALB-LINE-${id}-REV%`).join(',')
+  let rectRows: any[] = []
+  if (or) {
+    const { data, error } = await gate.supabase.from('stock_movements').select('reference_doc').or(or).limit(5000)
+    if (error) return { success: false, message: error.message }
+    rectRows = (data as any[]) ?? []
+  }
+
+  const rectCountMap = new Map<string, number>()
+  for (const row of rectRows) {
+    const ref = String(row.reference_doc ?? '')
+    const m = ref.match(/^ALB-LINE-([0-9a-fA-F-]{36})-REV(\d+)-/i)
+    if (!m) continue
+    const lid = m[1]!
+    const n = Number(m[2])
+    if (!Number.isFinite(n)) continue
+    rectCountMap.set(lid, Math.max(rectCountMap.get(lid) ?? 0, n))
+  }
+
+  const statuses: StockLineStatus[] = lineIds.map((lineId) => {
+    const appliedRef = `ALB-LINE-${lineId}`
+    const qty = appliedMap.get(appliedRef)
+    return {
+      lineId,
+      stockApplied: qty != null,
+      stockAppliedQty: qty != null ? qty : null,
+      rectifiedCount: rectCountMap.get(lineId) ?? 0,
+    }
+  })
+
+  return { success: true, statuses }
+}
+
+export type IngredientCandidate = {
+  id: string
+  name: string
+  score: number
+  current_price: number
+  purchase_unit: string
+}
+
+export async function suggestIngredientsForLineAction(params: {
+  extractedName: string
+}): Promise<
+  | { success: true; suggestedIngredientId: string | null; candidates: IngredientCandidate[] }
+  | { success: false; message: string }
+> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const extractedName = String(params?.extractedName ?? '').trim()
+  if (!extractedName) return { success: true, suggestedIngredientId: null, candidates: [] }
+
+  // Lazy import to keep this file lightweight.
+  const { matchIngredientCandidates, pickSuggestedCandidate } = await import('@/lib/albaran-price-match')
+
+  const { data: ingRows, error } = await gate.supabase
+    .from('ingredients')
+    .select('id, name, current_price, purchase_unit')
+    .order('name')
+    .limit(4000)
+  if (error) return { success: false, message: error.message }
+
+  const ingredients = (ingRows ?? []).map((r: any) => ({
+    id: r.id,
+    name: String(r.name ?? ''),
+    current_price: Number(r.current_price) || 0,
+    purchase_unit: r.purchase_unit ?? 'kg',
+  }))
+
+  const cands = matchIngredientCandidates(extractedName, ingredients, 8)
+  const suggested = pickSuggestedCandidate(cands)
+
+  const enriched: IngredientCandidate[] = cands.map((c: any) => {
+    const row = ingredients.find((i: any) => i.id === c.id)
+    return {
+      id: c.id,
+      name: c.name,
+      score: c.score,
+      current_price: row?.current_price ?? 0,
+      purchase_unit: row?.purchase_unit ?? 'kg',
+    }
+  })
+
+  return { success: true, suggestedIngredientId: suggested, candidates: enriched }
+}
+
+export async function searchIngredientsForMappingAction(params: {
+  query: string
+  limit?: number
+}): Promise<{ success: true; items: { id: string; name: string; purchase_unit: string; current_price: number }[] } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const q = String(params?.query ?? '').trim()
+  if (q.length < 2) return { success: true, items: [] }
+  const limit = Math.min(Math.max(Number(params?.limit ?? 30) || 30, 1), 200)
+
+  const { data, error } = await gate.supabase
+    .from('ingredients')
+    .select('id,name,purchase_unit,current_price')
+    .ilike('name', `%${q}%`)
+    .order('name')
+    .limit(limit)
+  if (error) return { success: false, message: error.message }
+
+  const items = (data ?? []).map((r: any) => ({
+    id: String(r.id),
+    name: String(r.name ?? ''),
+    purchase_unit: r.purchase_unit ?? 'kg',
+    current_price: Number(r.current_price) || 0,
+  }))
+
+  return { success: true, items }
+}
+
+export async function confirmInvoiceLineMappingAction(params: {
+  lineId: string
+  invoiceId: string
+  ingredientId: string
+  conversionFactor: number
+}): Promise<{ success: true } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  const ingredientId = String(params?.ingredientId ?? '').trim()
+  const factor = Number(params?.conversionFactor)
+
+  if (!lineId || !invoiceId || !ingredientId) return { success: false, message: 'Datos incompletos' }
+  if (!Number.isFinite(factor) || factor <= 0) return { success: false, message: 'Factor inválido' }
+
+  // Proveedor obligatorio (regla 2A): sin supplier_id no se permite confirmar.
+  const { data: inv, error: invErr } = await gate.supabase.from('purchase_invoices').select('supplier_id').eq('id', invoiceId).maybeSingle()
+  if (invErr) return { success: false, message: invErr.message }
+  const supplierId = (inv as any)?.supplier_id as number | null
+  if (supplierId == null) return { success: false, message: 'Este albarán no tiene proveedor asignado.' }
+
+  // Leer nombre original y precio/cantidad para aprendizaje y precio.
+  const { data: line, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('original_name, unit_price')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  const originalName = String((line as any)?.original_name ?? '').trim()
+  if (!originalName) return { success: false, message: 'La línea no tiene nombre' }
+
+  // 1) Aprendizaje: diccionario proveedor+texto -> ingrediente+factor
+  const { error: mapErr } = await gate.supabase
+    .from('supplier_item_mappings')
+    .upsert(
+      {
+        supplier_id: supplierId,
+        supplier_item_name: originalName,
+        ingredient_id: ingredientId,
+        conversion_factor: factor,
+        last_known_price: (line as any)?.unit_price ?? null,
+      },
+      { onConflict: 'supplier_id,supplier_item_name' }
+    )
+  if (mapErr) return { success: false, message: `Error guardando aprendizaje: ${mapErr.message}` }
+
+  // 2) Marcar línea como mapeada (esto dispara auto-stock en BD)
+  const { error: updErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .update({ mapped_ingredient_id: ingredientId, status: 'mapped' })
+    .eq('id', lineId)
+  if (updErr) return { success: false, message: updErr.message }
+
+  // 3) Revalidaciones para refrescar UI
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true }
+}
+
+export async function rectifyInvoiceLineStockAction(params: {
+  lineId: string
+  ingredientId: string
+  newQtyApplied: number
+}): Promise<{ success: true } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  const ingredientId = String(params?.ingredientId ?? '').trim()
+  const newQty = Number(params?.newQtyApplied)
+  if (!lineId || !ingredientId) return { success: false, message: 'Datos incompletos' }
+  if (!Number.isFinite(newQty) || newQty <= 0) return { success: false, message: 'Cantidad nueva inválida' }
+
+  // 1) Leer cantidad aplicada original (si no existe, no rectificar aquí)
+  const baseRef = `ALB-LINE-${lineId}`
+  const { data: applied, error: appErr } = await gate.supabase
+    .from('stock_movements')
+    .select('quantity, unit')
+    .eq('movement_type', 'PURCHASE')
+    .eq('ingredient_id', ingredientId)
+    .eq('reference_doc', baseRef)
+    .maybeSingle()
+  if (appErr) return { success: false, message: appErr.message }
+  const oldQty = Number((applied as any)?.quantity)
+  const unit = String((applied as any)?.unit ?? 'ud')
+  if (!Number.isFinite(oldQty) || oldQty <= 0) return { success: false, message: 'No hay stock aplicado previo para rectificar.' }
+
+  // 2) Calcular REVn siguiente
+  const { data: revRows, error: revErr } = await gate.supabase
+    .from('stock_movements')
+    .select('reference_doc')
+    .or(`reference_doc.ilike.${baseRef}-REV%`)
+    .limit(5000)
+  if (revErr) return { success: false, message: revErr.message }
+
+  let maxRev = 0
+  for (const r of (revRows as any[]) ?? []) {
+    const ref = String(r.reference_doc ?? '')
+    const m = ref.match(/-REV(\d+)-/i)
+    if (!m) continue
+    const n = Number(m[1])
+    if (Number.isFinite(n)) maxRev = Math.max(maxRev, n)
+  }
+  const next = maxRev + 1
+
+  const undoRef = `${baseRef}-REV${next}-UNDO`
+  const applyRef = `${baseRef}-REV${next}-APPLY`
+
+  // 3) Insertar 2 movimientos (ADJUSTMENT): -old y +new
+  const payload = [
+    {
+      movement_type: 'ADJUSTMENT',
+      ingredient_id: ingredientId,
+      quantity: -oldQty,
+      unit,
+      movement_date: new Date().toISOString(),
+      reference_doc: undoRef,
+      original_description: `Rectificación albarán: deshacer ${baseRef}`,
+      processed_by: 'Albaranes-Rectificar',
+      notes: `Antes: ${oldQty} → Ahora: ${newQty}`,
+    },
+    {
+      movement_type: 'ADJUSTMENT',
+      ingredient_id: ingredientId,
+      quantity: newQty,
+      unit,
+      movement_date: new Date().toISOString(),
+      reference_doc: applyRef,
+      original_description: `Rectificación albarán: aplicar ${baseRef}`,
+      processed_by: 'Albaranes-Rectificar',
+      notes: `Antes: ${oldQty} → Ahora: ${newQty}`,
+    },
+  ]
+
+  const { error: insErr } = await gate.supabase.from('stock_movements').insert(payload)
+  if (insErr) return { success: false, message: insErr.message }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true }
+}
+
