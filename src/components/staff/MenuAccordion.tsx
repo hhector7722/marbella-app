@@ -43,34 +43,38 @@ function MenuCard({ row }: { row: DigitalMenuRow }) {
                 'flex h-full flex-col overflow-hidden rounded-2xl bg-white'
             )}
         >
-            {row.photo_url ? (
-                <div className="w-full shrink-0 bg-white">
-                    <div className="h-28 w-full bg-white sm:h-32">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD */}
+            {/* Imagen: siempre reservamos espacio aunque esté vacía */}
+            <div className="w-full shrink-0 bg-white">
+                <div className="h-28 w-full bg-white sm:h-32">
+                    {row.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD
                         <img
                             src={row.photo_url}
                             alt=""
                             className="h-full w-full object-contain p-2"
                         />
-                    </div>
+                    ) : (
+                        <div className="h-full w-full bg-zinc-50" />
+                    )}
                 </div>
-            ) : null}
-            <div className="flex min-h-[48px] min-w-0 flex-1 flex-col gap-2 p-4">
-                <div className="flex items-start justify-between gap-2">
-                    <h3 className="min-w-0 flex-1 text-[15px] font-black leading-snug text-zinc-900 line-clamp-2">
+            </div>
+
+            {/* Texto: una sola fila (nombre izq + precio dcha) */}
+            <div className="flex min-h-[48px] min-w-0 flex-1 flex-col justify-start p-4">
+                <div className="flex items-center justify-between gap-3">
+                    <h3 className="min-w-0 flex-1 text-left font-black text-zinc-900 whitespace-nowrap leading-none text-[clamp(11px,1.6vw,15px)]">
                         {row.articulo_nombre}
                     </h3>
                     {showPrice ? (
-                        <span className="shrink-0 font-mono text-[13px] font-black text-[#36606F] leading-none h-5 flex items-center">
+                        <span className="shrink-0 text-right font-mono font-black text-[#36606F] whitespace-nowrap leading-none text-[clamp(11px,1.4vw,14px)]">
                             {priceStr}
                         </span>
-                    ) : null}
+                    ) : (
+                        <span className="shrink-0 text-right font-mono font-black text-transparent select-none whitespace-nowrap leading-none text-[clamp(11px,1.4vw,14px)]">
+                            00.00€
+                        </span>
+                    )}
                 </div>
-                {row.descripcion ? (
-                    <p className="text-[12px] leading-relaxed text-zinc-600 line-clamp-3">{row.descripcion}</p>
-                ) : null}
-                {/* Spacer para igualar altura aunque no haya descripción */}
-                {!row.descripcion ? <div className="flex-1" /> : null}
             </div>
         </div>
     );
