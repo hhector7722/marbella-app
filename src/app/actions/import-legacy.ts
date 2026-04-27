@@ -440,7 +440,14 @@ export async function importRecipes(
             const pavRaw = getCell(header, ['precio_pavelló', 'precio_pavello', 'sales_price_pavello', 'pvp_pavello'])
             const servingsRaw = getCell(header, ['raciones', 'servings', 'comensales'])
             const elaboration = getCell(header, ['elaboration', 'elaboración', 'elaboracion', 'elaboració', 'elaboracio', 'preparacion'])
-            const presentation = getCell(header, ['presentation', 'presentación', 'presentacion', 'presentació', 'presentacio'])
+            const presentation = getCell(header, [
+                'presentation',
+                'presentación',
+                'presentacion',
+                'resentacion',
+                'presentació',
+                'presentacio',
+            ])
             const halfRaw = getCell(header, ['has_half_ration', 'media_racion', 'mitades'])
 
             const category = categoryRaw != null ? String(categoryRaw).trim() : ''
