@@ -218,6 +218,11 @@ function ProfileContent() {
         }
     };
 
+    const viewingOtherProfile = isManager && !!targetId && currentUser?.id !== profile?.id;
+    const showAccountSection = !viewingOtherProfile;
+    type ViewMode = 'staff' | 'manager-self' | 'manager-employee';
+    const viewMode: ViewMode = !isManager ? 'staff' : viewingOtherProfile ? 'manager-employee' : 'manager-self';
+
     const saveJoiningDate = useCallback(async () => {
         if (!profile) return;
         if (!viewingOtherProfile) return;
@@ -279,11 +284,6 @@ function ProfileContent() {
         if (action === 'comunicados') setComunicadosOpen(true);
         if (action === 'contrato') setContratoOpen(true);
     };
-
-    const viewingOtherProfile = isManager && !!targetId && currentUser?.id !== profile?.id;
-    const showAccountSection = !viewingOtherProfile;
-    type ViewMode = 'staff' | 'manager-self' | 'manager-employee';
-    const viewMode: ViewMode = !isManager ? 'staff' : viewingOtherProfile ? 'manager-employee' : 'manager-self';
     const showPersonalPurchasesAccountsButton =
         String(profile?.email || '').toLowerCase() === 'hhector7722@gmail.com';
 
