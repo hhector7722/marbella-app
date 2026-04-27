@@ -24,7 +24,31 @@ DECLARE
     v_clock_in TEXT;
     v_clock_out TEXT;
     v_has_log BOOLEAN;
+    v_joining_date DATE;
+    v_week_limit NUMERIC := COALESCE(p_contracted_hours, 0);
+    v_active_days INT;
 BEGIN
+    SELECT p.joining_date
+    INTO v_joining_date
+    FROM public.profiles p
+    WHERE p.id = p_user_id;
+
+    -- Ajuste automático de límite semanal si el empleado empieza a mitad de semana.
+    -- Regla: si joining_date cae dentro de la semana (Mon..Sun), el "contrato" de esa semana
+    -- se prorratea por días activos (incluyendo el día de incorporación).
+    IF v_joining_date IS NOT NULL AND v_week_limit > 0 THEN
+        IF v_joining_date <= p_start_date THEN
+            -- Semana completa (sin prorrateo)
+            v_week_limit := v_week_limit;
+        ELSIF v_joining_date > (p_start_date + 6) THEN
+            -- Aún no incorporado en esa semana
+            v_week_limit := 0;
+        ELSE
+            v_active_days := GREATEST(0, 7 - (v_joining_date - p_start_date));
+            v_week_limit := v_week_limit * (v_active_days::numeric / 7.0);
+        END IF;
+    END IF;
+
     FOR i IN 0..6 LOOP
         v_date := p_start_date + i;
         
@@ -35,18 +59,22 @@ BEGIN
             COUNT(id) > 0
         INTO v_day_hours, v_clock_in, v_clock_out, v_has_log
         FROM public.time_logs 
-        WHERE user_id = p_user_id AND DATE(clock_in) = v_date;
+        WHERE user_id = p_user_id AND DATE(clock_in AT TIME ZONE 'Europe/Madrid') = v_date;
         
         v_day_extras := 0;
-        IF (v_accumulated + v_day_hours) > p_contracted_hours THEN
-            IF v_accumulated >= p_contracted_hours THEN
-                v_day_extras := v_day_hours;
-            ELSE
-                v_day_extras := (v_accumulated + v_day_hours) - p_contracted_hours;
+        IF v_joining_date IS NOT NULL AND v_date < v_joining_date THEN
+            -- Antes de incorporarse: todo lo trabajado es "extra" y NO consume contrato.
+            v_day_extras := v_day_hours;
+        ELSE
+            IF (v_accumulated + v_day_hours) > v_week_limit THEN
+                IF v_accumulated >= v_week_limit THEN
+                    v_day_extras := v_day_hours;
+                ELSE
+                    v_day_extras := (v_accumulated + v_day_hours) - v_week_limit;
+                END IF;
             END IF;
+            v_accumulated := v_accumulated + v_day_hours;
         END IF;
-        
-        v_accumulated := v_accumulated + v_day_hours;
         
         v_result := v_result || jsonb_build_object(
             'date', v_date,
