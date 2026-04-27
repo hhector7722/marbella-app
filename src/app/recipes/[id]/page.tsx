@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
 import { translateCaToEsTextAction } from '@/app/actions/translate-ca-es';
@@ -67,6 +68,7 @@ function RecipeDetailContent() {
     const [isEditingPrice, setIsEditingPrice] = useState(false);
     const [priceDraft, setPriceDraft] = useState('');
     const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
+    const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -705,6 +707,12 @@ function RecipeDetailContent() {
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
             <Toaster position="top-right" />
+            <ImageLightbox
+                open={isPhotoLightboxOpen}
+                src={recipe?.photo_url}
+                alt={recipe?.name}
+                onClose={() => setIsPhotoLightboxOpen(false)}
+            />
 
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
             <div className="max-w-6xl mx-auto w-full flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden">
@@ -768,14 +776,42 @@ function RecipeDetailContent() {
                         <div className="bg-white rounded-xl p-0.5 shadow-sm">
                             <div className="relative group w-24 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-100/50">
                                 {recipe.photo_url ? (
-                                    <img src={recipe.photo_url} alt={recipe.name} className="w-full h-full object-contain" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPhotoLightboxOpen(true)}
+                                        className={cn(
+                                            'absolute inset-0',
+                                            'w-full h-full',
+                                            'cursor-zoom-in',
+                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                        )}
+                                        aria-label="Ver foto ampliada"
+                                    >
+                                        <img src={recipe.photo_url} alt={recipe.name} className="w-full h-full object-contain" />
+                                    </button>
                                 ) : (
                                     <Camera className="w-5 h-5 text-gray-300" />
                                 )}
                                 {!isRestricted && (
-                                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition cursor-pointer text-white">
+                                    <label
+                                        className={cn(
+                                            'absolute right-1 bottom-1',
+                                            'w-10 h-10 rounded-xl',
+                                            'bg-black/35 hover:bg-black/45 backdrop-blur-[2px]',
+                                            'flex items-center justify-center cursor-pointer text-white transition active:scale-95',
+                                            'shadow-sm',
+                                        )}
+                                        title="Cambiar foto"
+                                        aria-label="Cambiar foto"
+                                    >
                                         <Camera className="w-4 h-4" />
-                                        <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handlePhotoUpload}
+                                            className="hidden"
+                                            disabled={uploadingPhoto}
+                                        />
                                     </label>
                                 )}
                                 {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="sm" className="text-blue-600" /></div>}

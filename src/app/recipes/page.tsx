@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { recipeLineCost } from '@/lib/recipe-cost';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
 interface Recipe {
     id: string;
@@ -42,6 +43,7 @@ function RecipesContent() {
     const [fullRecipeData, setFullRecipeData] = useState<any>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
+    const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
     const router = useRouter();
 
@@ -223,6 +225,12 @@ function RecipesContent() {
     return (
         <div className="p-4 md:p-6 w-full bg-[#5B8FB9] min-h-screen pb-24">
             <Toaster position="top-right" />
+            <ImageLightbox
+                open={isPhotoLightboxOpen}
+                src={fullRecipeData?.photo_url}
+                alt={fullRecipeData?.name}
+                onClose={() => setIsPhotoLightboxOpen(false)}
+            />
             <div className="max-w-7xl mx-auto">
                 <div className="bg-[#36606F] rounded-2xl px-3 md:px-6 py-3 md:py-5">
                     <div className="flex flex-row gap-2 items-center">
@@ -308,13 +316,24 @@ function RecipesContent() {
                         {/* Header del Modal */}
                         <div className="relative bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0 border-b border-white/10">
                             <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (fullRecipeData?.photo_url) setIsPhotoLightboxOpen(true);
+                                    }}
+                                    className={cn(
+                                        'w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0 p-1',
+                                        fullRecipeData?.photo_url ? 'cursor-zoom-in' : 'cursor-default',
+                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                    )}
+                                    aria-label={fullRecipeData?.photo_url ? 'Ver foto ampliada' : 'Sin foto'}
+                                >
                                     {fullRecipeData?.photo_url ? (
                                         <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-contain" />
                                     ) : (
                                         <ChefHat className="w-8 h-8 text-zinc-200" />
                                     )}
-                                </div>
+                                </button>
                                 <div className="flex flex-col">
                                     <h3 className="text-white text-lg font-black uppercase tracking-widest leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px] md:max-w-[400px]">
                                         {fullRecipeData?.name || 'Cargando...'}
