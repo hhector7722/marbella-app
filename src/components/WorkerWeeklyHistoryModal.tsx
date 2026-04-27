@@ -100,7 +100,8 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
                 p_start_date: mondayISO,
                 p_end_date: sundayISO,
-                p_user_id: workerId
+                p_user_id: workerId,
+                p_only_completed_weeks: false,
             });
 
             if (rpcError) throw rpcError;

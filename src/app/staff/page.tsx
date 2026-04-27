@@ -173,7 +173,8 @@ export default function StaffDashboard() {
             const { data: rpcStats, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
                 p_start_date: mondayStr,
                 p_end_date: sundayStr,
-                p_user_id: user.id
+                p_user_id: user.id,
+                p_only_completed_weeks: false,
             });
 
             if (rpcError) console.error("RPC Error in Staff Dash:", rpcError);

@@ -197,6 +197,7 @@ export default function HistoryPage() {
                         p_start_date: startStr,
                         p_end_date: endStr,
                         p_user_id: targetUserId,
+                        p_only_completed_weeks: false,
                     });
                 })(),
             ]);
