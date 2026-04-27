@@ -79,9 +79,13 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
         setLoading(true);
         try {
             // 1. Fetch Profile
-            const { data: profile } = await supabase.from('profiles')
-                .select('first_name, last_name')
-                .eq('id', workerId).single();
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, contracted_hours_weekly, is_fixed_salary, role')
+                .eq('id', workerId)
+                .single();
+
+            if (profileError) throw profileError;
 
             if (profile) {
                 setWorkerName(`${profile.first_name} ${profile.last_name || ''}`);
@@ -104,25 +108,30 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             const rpcWeek = rpcData?.weeksResult?.[0];
             const rpcStaff = rpcWeek?.staff?.[0];
 
-            // 3. Fetch grid days from get_monthly_timesheet (misma fuente que /staff/history — extraHours correctos)
-            const year = mondayDate.getFullYear();
-            const month = mondayDate.getMonth() + 1; // 1-indexed for PostgreSQL
+            // 3. Fetch grid days from SSOT semanal (no depende del monthly_timesheet)
+            // Regla contrato: manager / fijo => 0; resto => contracted_hours_weekly (default 40)
+            const profileRole = (profile?.role ?? '') as string;
+            const effContract =
+                profileRole === 'manager' || !!profile?.is_fixed_salary
+                    ? 0
+                    : (profile?.contracted_hours_weekly ?? 40);
 
-            const { data: timesheetData, error: tsError } = await supabase.rpc('get_monthly_timesheet', {
+            const { data: gridDays, error: gridErr } = await supabase.rpc('get_worker_weekly_log_grid', {
                 p_user_id: workerId,
-                p_year: year,
-                p_month: month
+                p_start_date: mondayISO,
+                p_contracted_hours: effContract
             });
 
-            if (tsError) throw tsError;
+            if (gridErr) throw gridErr;
 
-            const weeks = (timesheetData || []) as Array<{ startDate: string; days: Array<{ date: string; hasLog: boolean; clockIn: string | null; clockOut: string | null; totalHours: number; extraHours: number }>; summary?: any }>;
-            const targetWeek = weeks.find((w) => {
-                const ws = typeof w.startDate === 'string' ? w.startDate : (w.startDate as string)?.split?.('T')?.[0];
-                return ws === weekStart;
-            });
-
-            const rawDays = targetWeek?.days || [];
+            const rawDays = (gridDays || []) as Array<{
+                date: string;
+                hasLog: boolean;
+                clockIn: string | null;
+                clockOut: string | null;
+                totalHours: number;
+                extraHours: number;
+            }>;
 
             // 4. Build presentation array (formato unificado con /staff/history)
             const weekDays: DailyLog[] = rawDays.map((day: any) => {
@@ -138,29 +147,30 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 };
             });
 
-            // 5. Set Final State (Perfect Photocopy Mapping)
-            // Usamos startBalance de get_monthly_timesheet y preferStock de get_weekly_worker_stats
-            const summaryFromTS = targetWeek?.summary;
-            
+            // 5. Set Final State (SSOT)
             setWeekData({
                 weekNumber: parseInt(format(mondayDate, 'w')),
                 startDate: mondayDate,
                 endDate: sundayDate,
                 days: weekDays,
                 summary: {
-                    totalHours: rpcStaff?.totalHours ?? summaryFromTS?.totalHours ?? 0,
-                    weeklyBalance: rpcStaff?.overtimeHours ?? summaryFromTS?.weeklyBalance ?? 0,
-                    estimatedValue: rpcStaff?.totalCost ?? summaryFromTS?.estimatedValue ?? 0,
-                    finalBalance: rpcStaff?.overtimeHours ?? summaryFromTS?.finalBalance ?? 0,
-                    isPaid: rpcStaff?.isPaid ?? summaryFromTS?.isPaid ?? false,
-                    contractedHours: 0,
-                    startBalance: summaryFromTS?.startBalance ?? 0,
+                    totalHours: rpcStaff?.totalHours ?? 0,
+                    weeklyBalance: rpcStaff?.overtimeHours ?? 0,
+                    estimatedValue: rpcStaff?.totalCost ?? 0,
+                    finalBalance: rpcStaff?.overtimeHours ?? 0,
+                    isPaid: rpcStaff?.isPaid ?? false,
+                    contractedHours: effContract,
+                    startBalance: rpcStaff?.startBalance ?? 0,
                     preferStock: rpcStaff?.preferStock ?? false
                 }
             });
         } catch (error) {
             console.error("Error in Modal:", error);
-            toast.error("Error al cargar detalles semanales");
+            const msg =
+                (typeof error === 'object' && error && 'message' in error && typeof (error as any).message === 'string')
+                    ? (error as any).message
+                    : 'Error al cargar detalles semanales';
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
