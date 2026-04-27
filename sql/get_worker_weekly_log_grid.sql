@@ -16,7 +16,7 @@ SET search_path = public
 AS $$
 DECLARE
     i INT;
-    v_accumulated NUMERIC := 0;
+    v_accumulated NUMERIC := 0; -- acumulado SOLO desde joining_date
     v_day_hours NUMERIC;
     v_day_extras NUMERIC;
     v_date DATE;
@@ -26,28 +26,11 @@ DECLARE
     v_has_log BOOLEAN;
     v_joining_date DATE;
     v_week_limit NUMERIC := COALESCE(p_contracted_hours, 0);
-    v_active_days INT;
 BEGIN
     SELECT p.joining_date
     INTO v_joining_date
     FROM public.profiles p
     WHERE p.id = p_user_id;
-
-    -- Ajuste automático de límite semanal si el empleado empieza a mitad de semana.
-    -- Regla: si joining_date cae dentro de la semana (Mon..Sun), el "contrato" de esa semana
-    -- se prorratea por días activos (incluyendo el día de incorporación).
-    IF v_joining_date IS NOT NULL AND v_week_limit > 0 THEN
-        IF v_joining_date <= p_start_date THEN
-            -- Semana completa (sin prorrateo)
-            v_week_limit := v_week_limit;
-        ELSIF v_joining_date > (p_start_date + 6) THEN
-            -- Aún no incorporado en esa semana
-            v_week_limit := 0;
-        ELSE
-            v_active_days := GREATEST(0, 7 - (v_joining_date - p_start_date));
-            v_week_limit := v_week_limit * (v_active_days::numeric / 7.0);
-        END IF;
-    END IF;
 
     FOR i IN 0..6 LOOP
         v_date := p_start_date + i;
