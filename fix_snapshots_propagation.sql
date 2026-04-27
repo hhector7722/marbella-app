@@ -158,8 +158,9 @@ BEGIN
         IF v_prev_final_balance IS NOT NULL THEN
             IF v_prev_final_balance > 0 THEN
                 -- CRÉDITO: Solo se arrastra si la SEMANA ANTERIOR tenía Bolsa (prefer_stock)
+                -- y ADEMÁS NO está marcada como pagada/liquidada (is_paid=true implica que ya se liquidó).
                 IF v_prev_prefer_stock THEN
-                    v_pending_balance := v_prev_final_balance;
+                    v_pending_balance := CASE WHEN COALESCE(v_prev_is_paid, false) THEN 0 ELSE v_prev_final_balance END;
                 ELSE
                     v_pending_balance := 0;
                 END IF;
