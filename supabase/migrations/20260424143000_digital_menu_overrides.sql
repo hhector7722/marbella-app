@@ -77,6 +77,10 @@ select
   a.nombre as articulo_nombre,
   -- Nombre en carta (override_nombre si existe; si no, nombre TPV)
   coalesce(nullif(trim(o.override_nombre), ''), a.nombre) as carta_nombre,
+  -- i18n: nombre por idioma (fallback a override_nombre -> articulo_nombre)
+  coalesce(nullif(trim(o.override_nombre_es), ''), nullif(trim(o.override_nombre), ''), a.nombre) as carta_nombre_es,
+  coalesce(nullif(trim(o.override_nombre_ca), ''), nullif(trim(o.override_nombre), ''), a.nombre) as carta_nombre_ca,
+  coalesce(nullif(trim(o.override_nombre_en), ''), nullif(trim(o.override_nombre), ''), a.nombre) as carta_nombre_en,
   d.id as departamento_id,
   d.nombre as departamento_nombre,
   o.category_id as category_id,

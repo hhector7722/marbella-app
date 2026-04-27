@@ -27,13 +27,14 @@ export default async function StaffCartaPage() {
 
     const role = (profile?.role ?? null) as string | null;
     const canEditMenu = role === 'manager' || role === 'admin';
+    const homeHref = canEditMenu ? '/dashboard' : '/staff/dashboard';
 
     return (
         <div className="min-h-screen bg-[#5B8FB9] pb-24 pt-4">
             <div className="mx-auto w-full max-w-lg px-4 md:max-w-2xl">
                 <div className="mb-4 flex shrink-0 items-center gap-2">
                     <Link
-                        href="/staff/dashboard"
+                        href={homeHref}
                         className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-100 bg-white p-3 text-[#36606F] shadow-sm active:scale-[0.98]"
                         aria-label="Volver al inicio"
                     >
@@ -43,7 +44,7 @@ export default async function StaffCartaPage() {
                         <h1 className="text-xs font-black uppercase tracking-widest text-[#36606F]">La carta</h1>
                         <p className="truncate text-[10px] font-medium text-zinc-400">Platos y precios del TPV</p>
                     </div>
-                    <StaffCartaEditor canEdit={canEditMenu} />
+                    {canEditMenu ? <StaffCartaEditor canEdit={canEditMenu} /> : null}
                 </div>
 
                 <DigitalMenu />

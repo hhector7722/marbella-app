@@ -68,7 +68,7 @@ function SignTrendIcon({ value }: { value: number }) {
   );
 }
 
-function MiniBars({
+function MiniBarsSvg({
   a,
   b,
   aLabel,
@@ -89,8 +89,8 @@ function MiniBars({
   const wA = Math.round((absA / max) * 100);
   const wB = Math.round((absB / max) * 100);
 
-  const toneToBg = (t: 'emerald' | 'rose' | 'zinc') =>
-    t === 'emerald' ? 'bg-emerald-500' : t === 'rose' ? 'bg-rose-500' : 'bg-zinc-400';
+  const toneToFill = (t: 'emerald' | 'rose' | 'zinc') =>
+    t === 'emerald' ? '#10b981' : t === 'rose' ? '#f43f5e' : '#a1a1aa';
 
   return (
     <div className="mt-3 grid grid-cols-1 gap-2">
@@ -98,17 +98,95 @@ function MiniBars({
         <div className="w-20 shrink-0 text-[9px] font-black uppercase tracking-widest text-zinc-400 truncate">
           {aLabel}
         </div>
-        <div className="flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden">
-          <div className={cn('h-full rounded-full', toneToBg(aTone))} style={{ width: `${wA}%` }} />
+        <div className="flex-1 h-3 rounded-full bg-zinc-100 overflow-hidden">
+          <svg viewBox="0 0 100 10" className="w-full h-full" role="img" aria-label={`${aLabel} vs ${bLabel}`}>
+            <rect x="0" y="0" width={wA} height="10" rx="5" fill={toneToFill(aTone)} opacity="0.95" />
+          </svg>
         </div>
       </div>
       <div className="flex items-center gap-3">
         <div className="w-20 shrink-0 text-[9px] font-black uppercase tracking-widest text-zinc-400 truncate">
           {bLabel}
         </div>
-        <div className="flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden">
-          <div className={cn('h-full rounded-full', toneToBg(bTone))} style={{ width: `${wB}%` }} />
+        <div className="flex-1 h-3 rounded-full bg-zinc-100 overflow-hidden">
+          <svg viewBox="0 0 100 10" className="w-full h-full" role="presentation" aria-hidden>
+            <rect x="0" y="0" width={wB} height="10" rx="5" fill={toneToFill(bTone)} opacity="0.95" />
+          </svg>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniSparkline({
+  values,
+  tone,
+  label,
+}: {
+  values: number[];
+  tone: 'emerald' | 'rose' | 'amber' | 'sky' | 'zinc';
+  label: string;
+}) {
+  const nums = values.map((v) => Number(v) || 0);
+  const min = Math.min(...nums, 0);
+  const max = Math.max(...nums, 0);
+  const span = Math.max(max - min, 1);
+
+  const points = nums
+    .map((v, i) => {
+      const x = nums.length <= 1 ? 0 : (i / (nums.length - 1)) * 100;
+      const y = 100 - ((v - min) / span) * 100;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+
+  const toneToStroke = (t: typeof tone) =>
+    t === 'emerald'
+      ? 'stroke-emerald-600'
+      : t === 'rose'
+        ? 'stroke-rose-500'
+        : t === 'amber'
+          ? 'stroke-amber-600'
+          : t === 'sky'
+            ? 'stroke-sky-600'
+            : 'stroke-zinc-500';
+
+  const toneToFill = (t: typeof tone) =>
+    t === 'emerald'
+      ? 'fill-emerald-500/15'
+      : t === 'rose'
+        ? 'fill-rose-500/15'
+        : t === 'amber'
+          ? 'fill-amber-500/15'
+          : t === 'sky'
+            ? 'fill-sky-500/15'
+            : 'fill-zinc-500/10';
+
+  return (
+    <div className="mt-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">{label}</div>
+        <svg
+          viewBox="0 0 100 100"
+          className="h-8 w-20 shrink-0"
+          role="img"
+          aria-label={label}
+          preserveAspectRatio="none"
+        >
+          <polyline
+            points={`0,100 ${points} 100,100`}
+            className={cn(toneToFill(tone))}
+            vectorEffect="non-scaling-stroke"
+          />
+          <polyline
+            points={points}
+            className={cn('fill-none', toneToStroke(tone))}
+            strokeWidth="6"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
       </div>
     </div>
   );
@@ -176,6 +254,7 @@ function KpiTile({
   footer,
   micro,
   onClick,
+  tone = 'zinc',
 }: {
   label: string;
   value: number;
@@ -184,14 +263,27 @@ function KpiTile({
   footer?: React.ReactNode;
   micro?: React.ReactNode;
   onClick?: () => void;
+  tone?: 'emerald' | 'sky' | 'amber' | 'rose' | 'zinc';
 }) {
+  const toneBg =
+    tone === 'emerald'
+      ? 'bg-gradient-to-br from-emerald-50 via-white to-white border-emerald-100'
+      : tone === 'sky'
+        ? 'bg-gradient-to-br from-sky-50 via-white to-white border-sky-100'
+        : tone === 'amber'
+          ? 'bg-gradient-to-br from-amber-50 via-white to-white border-amber-100'
+          : tone === 'rose'
+            ? 'bg-gradient-to-br from-rose-50 via-white to-white border-rose-100'
+            : 'bg-white border-zinc-200/60';
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         'text-left',
-        'bg-white rounded-2xl border border-zinc-200/60 shadow-sm px-5 py-4 shrink-0 min-w-0 overflow-hidden',
+        'rounded-2xl border shadow-sm px-5 py-4 shrink-0 min-w-0 overflow-hidden',
+        toneBg,
         'active:scale-[0.99] transition-transform',
         onClick ? 'cursor-pointer hover:shadow-md' : 'cursor-default',
       )}
@@ -487,6 +579,7 @@ export default function FinancialDashboardClient({
                 label="PyG neto (devengo)"
                 value={statement.pyg.net}
                 icon={<SignTrendIcon value={statement.pyg.net} />}
+                tone={statement.pyg.net > 0 ? 'emerald' : statement.pyg.net < 0 ? 'rose' : 'zinc'}
                 valueClassName={
                   statement.pyg.net > 0
                     ? 'text-emerald-600'
@@ -500,14 +593,21 @@ export default function FinancialDashboardClient({
                   </div>
                 }
                 micro={
-                  <MiniBars
-                    a={statement.pyg.income.total}
-                    b={statement.pyg.expenses.total}
-                    aLabel="Ventas"
-                    bLabel="Gastos"
-                    aTone="emerald"
-                    bTone="rose"
-                  />
+                  <div>
+                    <MiniBarsSvg
+                      a={statement.pyg.income.total}
+                      b={statement.pyg.expenses.total}
+                      aLabel="Ventas"
+                      bLabel="Gastos"
+                      aTone="emerald"
+                      bTone="rose"
+                    />
+                    <MiniSparkline
+                      values={[statement.pyg.income.total, statement.pyg.net, -Math.abs(statement.pyg.expenses.total)]}
+                      tone={statement.pyg.net >= 0 ? 'emerald' : 'rose'}
+                      label="Ingresos → Neto → Gastos"
+                    />
+                  </div>
                 }
                 onClick={() => setModal({ kind: 'pyg' })}
               />
@@ -515,6 +615,7 @@ export default function FinancialDashboardClient({
                 label="Caja neta (operativa)"
                 value={statement.cashFlow.net}
                 icon={<SignTrendIcon value={statement.cashFlow.net} />}
+                tone={statement.cashFlow.net > 0 ? 'sky' : statement.cashFlow.net < 0 ? 'rose' : 'zinc'}
                 valueClassName={
                   statement.cashFlow.net > 0
                     ? 'text-emerald-600'
@@ -523,14 +624,25 @@ export default function FinancialDashboardClient({
                       : 'text-zinc-400'
                 }
                 micro={
-                  <MiniBars
-                    a={statement.cashFlow.inflows.total}
-                    b={statement.cashFlow.outflows.total}
-                    aLabel="Entradas"
-                    bLabel="Salidas"
-                    aTone="emerald"
-                    bTone="rose"
-                  />
+                  <div>
+                    <MiniBarsSvg
+                      a={statement.cashFlow.inflows.total}
+                      b={statement.cashFlow.outflows.total}
+                      aLabel="Entradas"
+                      bLabel="Salidas"
+                      aTone="emerald"
+                      bTone="rose"
+                    />
+                    <MiniSparkline
+                      values={[
+                        statement.cashFlow.inflows.total,
+                        statement.cashFlow.net,
+                        -Math.abs(statement.cashFlow.outflows.total),
+                      ]}
+                      tone={statement.cashFlow.net >= 0 ? 'sky' : 'rose'}
+                      label="Entradas → Neto → Salidas"
+                    />
+                  </div>
                 }
                 onClick={() => setModal({ kind: 'cash' })}
               />
@@ -538,6 +650,7 @@ export default function FinancialDashboardClient({
                 label="Delta (devengo − caja)"
                 value={reconciliation.delta}
                 icon={<ArrowRightLeft className="w-5 h-5 text-zinc-700" strokeWidth={3} aria-hidden />}
+                tone={deltaTone === 'positive' ? 'amber' : deltaTone === 'negative' ? 'rose' : 'zinc'}
                 valueClassName={
                   deltaTone === 'positive'
                     ? 'text-emerald-600'
@@ -546,11 +659,18 @@ export default function FinancialDashboardClient({
                       : 'text-zinc-400'
                 }
                 micro={
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Landmark className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={2.5} aria-hidden />
-                      <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">
-                        Si el delta es alto: desfase devengo/caja
+                  <div>
+                    <MiniSparkline
+                      values={[reconciliation.accrualNet, reconciliation.cashNet, reconciliation.delta]}
+                      tone={deltaTone === 'positive' ? 'amber' : deltaTone === 'negative' ? 'rose' : 'zinc'}
+                      label="Devengo → Caja → Delta"
+                    />
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Landmark className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={2.5} aria-hidden />
+                        <div className="text-[9px] md:text-[10px] font-bold text-zinc-400 truncate">
+                          Si el delta es alto: desfase devengo/caja
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -824,7 +944,7 @@ export default function FinancialDashboardClient({
                       <div className="mt-2 text-[10px] font-bold text-zinc-400">
                         Rentabilidad sobre ventas: <span className="font-black text-zinc-900">{rentabilidadText}</span>
                       </div>
-                      <MiniBars
+                      <MiniBarsSvg
                         a={statement.pyg.income.total}
                         b={statement.pyg.expenses.total}
                         aLabel="Ventas"
@@ -881,7 +1001,7 @@ export default function FinancialDashboardClient({
                           {formatEurRead(statement.cashFlow.net)}
                         </div>
                       </div>
-                      <MiniBars
+                      <MiniBarsSvg
                         a={statement.cashFlow.inflows.total}
                         b={statement.cashFlow.outflows.total}
                         aLabel="Entradas"
