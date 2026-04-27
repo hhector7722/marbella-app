@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { isProbablyCatalan, parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
+import { catalanSignalHits, isProbablyCatalan, parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
 
 export type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
 
@@ -93,7 +93,12 @@ export async function getLatestImportRuns(): Promise<{ success: true; runs: Part
 export async function translateCaToEsIfNeeded(text: string): Promise<string> {
     const cleaned = String(text ?? '').trim()
     if (!cleaned) return ''
-    if (!isProbablyCatalan(cleaned)) return cleaned
+    // En textos cortos (sobre todo "presentación") la heurística estricta (>=2 señales)
+    // se queda corta y no traduce aunque sea catalán. Relajamos a >=1 señal si el texto
+    // tiene suficiente "cuerpo" (saltos de línea o longitud), manteniendo >=2 por defecto.
+    const hits = catalanSignalHits(cleaned)
+    const looksCa = hits >= 2 || (hits >= 1 && (cleaned.includes('\n') || cleaned.length >= 80))
+    if (!looksCa) return cleaned
 
     const geminiKey = process.env.GEMINI_API_KEY
     if (!geminiKey) {

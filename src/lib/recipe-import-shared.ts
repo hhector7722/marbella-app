@@ -1,16 +1,19 @@
 import { normalizeRecipeImportUnit, type MassVolumeUnit } from '@/lib/recipe-cost'
 
-/** Heurística simple para detectar texto probablemente en catalán (fichas típicas). */
-export function isProbablyCatalan(s: string): boolean {
-  const t = String(s || '')
+function normalizeForLangHeuristics(s: string): string {
+  return String(s || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+}
+
+export function catalanSignalHits(s: string): number {
+  const t = normalizeForLangHeuristics(s)
 
   // Señales fuertes (muy específicas de catalán)
-  if (t.includes('·') || t.includes('ç')) return true
+  if (t.includes('·') || t.includes('ç')) return 99
 
-  const hits = [
+  return [
     // conectores / gramática muy común en fichas
     /\bamb\b/,
     /\bdespres\b/,
@@ -52,9 +55,12 @@ export function isProbablyCatalan(s: string): boolean {
     /\babocar\b/,
     /\bhi ha\b/,
   ].reduce((acc, re) => acc + (re.test(t) ? 1 : 0), 0)
+}
 
+/** Heurística simple para detectar texto probablemente en catalán (fichas típicas). */
+export function isProbablyCatalan(s: string): boolean {
   // Con 2 señales evitamos falsos positivos en español.
-  return hits >= 2
+  return catalanSignalHits(s) >= 2
 }
 
 export function parseNum(v: unknown): number | null {
