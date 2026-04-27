@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { isProbablyCatalan } from '@/lib/recipe-import-shared'
 import { translateCaToEsIfNeeded } from '@/app/actions/import-legacy'
 
 export async function translateCaToEsTextAction(input: { text: string }): Promise<{
@@ -28,10 +27,6 @@ export async function translateCaToEsTextAction(input: { text: string }): Promis
   const role = String(profile?.role ?? '').trim()
   if (role !== 'manager' && role !== 'admin') {
     return { text: cleaned, translated: false, warning: 'Sin permisos de gestión (manager/admin) para traducir.' }
-  }
-
-  if (!isProbablyCatalan(cleaned)) {
-    return { text: cleaned, translated: false }
   }
 
   if (!process.env.GEMINI_API_KEY) {
