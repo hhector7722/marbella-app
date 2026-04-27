@@ -52,6 +52,7 @@ export default function Navbar() {
     }, [supabase]);
 
     if (pathname === '/login') return null;
+    if (pathname === '/carta') return null;
 
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';

@@ -11,6 +11,12 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // --- 1.5 BYPASS PÚBLICO PARA LA CARTA (QR) ---
+    // La ruta /carta debe ser accesible sin login (anon).
+    if (path === '/carta' || path.startsWith('/carta/')) {
+        return NextResponse.next();
+    }
+
     // --- 2. INICIALIZACIÓN (Tu código original) ---
     let response = NextResponse.next({
         request: {

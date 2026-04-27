@@ -6,6 +6,17 @@ export const dynamic = 'force-dynamic'
 export default async function PublicCartaPage() {
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let homeHref: string | null = null
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const role = (profile?.role ?? null) as string | null
+    homeHref = role === 'manager' || role === 'admin' ? '/dashboard' : '/staff/dashboard'
+  }
+
   const { data, error } = await supabase
     .from('v_public_menu_items')
     .select(
@@ -29,6 +40,6 @@ export default async function PublicCartaPage() {
     )
   }
 
-  return <PublicCarta items={(data ?? []) as PublicMenuRow[]} />
+  return <PublicCarta items={(data ?? []) as PublicMenuRow[]} homeHref={homeHref} />
 }
 

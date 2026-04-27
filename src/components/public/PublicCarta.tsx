@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import { ChevronDown, Search } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, Home, Search } from 'lucide-react'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -70,7 +71,7 @@ function getDisplayName(row: PublicMenuRow, lang: Lang) {
   return row.carta_nombre_es?.trim() || row.carta_nombre?.trim()
 }
 
-export function PublicCarta({ items }: { items: PublicMenuRow[] }) {
+export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeHref: string | null }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [lang, setLang] = useState<Lang>('es')
@@ -167,6 +168,16 @@ export function PublicCarta({ items }: { items: PublicMenuRow[] }) {
             </div>
             <div className="shrink-0">
               <div className="inline-flex h-12 items-center gap-1 rounded-2xl border border-zinc-100 bg-white p-1 shadow-sm">
+                {homeHref ? (
+                  <Link
+                    href={homeHref}
+                    className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl bg-transparent text-[#36606F] active:bg-zinc-50"
+                    aria-label="Inicio"
+                    title="Inicio"
+                  >
+                    <Home className="h-5 w-5" strokeWidth={2.5} />
+                  </Link>
+                ) : null}
                 <LangButton active={lang === 'es'} onClick={() => setLang('es')}>
                   ES
                 </LangButton>
@@ -226,17 +237,21 @@ export function PublicCarta({ items }: { items: PublicMenuRow[] }) {
                             {sub.rows.map((row) => (
                               <div
                                 key={row.articulo_id}
-                                className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm"
+                                className="flex flex-col overflow-hidden rounded-2xl bg-white"
                               >
-                                {row.photo_url ? (
+                                {row.category_parent_name && ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
                                   <div className="relative h-24 w-full bg-white">
-                                    <Image
-                                      src={row.photo_url}
-                                      alt={getDisplayName(row, lang)}
-                                      fill
-                                      sizes="(max-width: 768px) 50vw, 33vw"
-                                      className="object-contain p-2"
-                                    />
+                                    {row.photo_url ? (
+                                      <Image
+                                        src={row.photo_url}
+                                        alt={getDisplayName(row, lang)}
+                                        fill
+                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                        className="object-contain p-2"
+                                      />
+                                    ) : (
+                                      <div className="h-full w-full bg-white" />
+                                    )}
                                   </div>
                                 ) : null}
                                 <div className="flex min-h-[56px] items-center justify-between gap-2 px-3 py-2">
