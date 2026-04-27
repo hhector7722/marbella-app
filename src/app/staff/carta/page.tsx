@@ -26,7 +26,7 @@ export default async function StaffCartaPage() {
     }
 
     const role = (profile?.role ?? null) as string | null;
-    const canEditMenu = role === 'manager' || role === 'admin';
+    const canEditMenu = role === 'manager' || role === 'admin' || role === 'supervisor';
     const homeHref = canEditMenu ? '/dashboard' : '/staff/dashboard';
 
     return (

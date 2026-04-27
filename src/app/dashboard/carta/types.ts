@@ -16,6 +16,9 @@ export type CartaOverrideRow = {
   sort_order: number | null
   category_id: string | null
   override_nombre: string | null
+  override_nombre_es: string | null
+  override_nombre_ca: string | null
+  override_nombre_en: string | null
   override_descripcion: string | null
   override_precio: number | null
   override_photo_url: string | null

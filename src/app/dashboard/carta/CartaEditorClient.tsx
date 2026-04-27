@@ -45,6 +45,9 @@ export default function CartaEditorClient({
         sort_order: string
         category_id: string
         override_nombre: string
+        override_nombre_es: string
+        override_nombre_ca: string
+        override_nombre_en: string
         override_descripcion: string
         override_precio: string
         override_photo_url: string
@@ -147,6 +150,9 @@ export default function CartaEditorClient({
       sort_order: row.override?.sort_order != null ? String(row.override.sort_order) : '',
       category_id: row.override?.category_id ?? '',
       override_nombre: row.override?.override_nombre ?? '',
+      override_nombre_es: (row.override as any)?.override_nombre_es ?? '',
+      override_nombre_ca: (row.override as any)?.override_nombre_ca ?? '',
+      override_nombre_en: (row.override as any)?.override_nombre_en ?? '',
       override_descripcion: row.override?.override_descripcion ?? '',
       override_precio: row.override?.override_precio != null ? String(row.override.override_precio) : '',
       override_photo_url: row.override?.override_photo_url ?? '',
@@ -160,6 +166,9 @@ export default function CartaEditorClient({
       sort_order: string
       category_id: string
       override_nombre: string
+      override_nombre_es: string
+      override_nombre_ca: string
+      override_nombre_en: string
       override_descripcion: string
       override_precio: string
       override_photo_url: string
@@ -172,6 +181,9 @@ export default function CartaEditorClient({
           is_hidden: false,
           sort_order: '',
           override_nombre: '',
+          override_nombre_es: '',
+          override_nombre_ca: '',
+          override_nombre_en: '',
           override_descripcion: '',
           override_precio: '',
           override_photo_url: '',
@@ -190,6 +202,9 @@ export default function CartaEditorClient({
       (o?.sort_order ?? null) !== sort ||
       (o?.category_id ?? null) !== emptyToNull(d.category_id) ||
       (o?.override_nombre ?? null) !== emptyToNull(d.override_nombre) ||
+      ((o as any)?.override_nombre_es ?? null) !== emptyToNull(d.override_nombre_es) ||
+      ((o as any)?.override_nombre_ca ?? null) !== emptyToNull(d.override_nombre_ca) ||
+      ((o as any)?.override_nombre_en ?? null) !== emptyToNull(d.override_nombre_en) ||
       (o?.override_descripcion ?? null) !== emptyToNull(d.override_descripcion) ||
       (o?.override_precio ?? null) !== precio ||
       (o?.override_photo_url ?? null) !== emptyToNull(d.override_photo_url)
@@ -218,6 +233,9 @@ export default function CartaEditorClient({
         sort_order: sort,
         category_id: emptyToNull(d.category_id),
         override_nombre: emptyToNull(d.override_nombre),
+        override_nombre_es: emptyToNull(d.override_nombre_es),
+        override_nombre_ca: emptyToNull(d.override_nombre_ca),
+        override_nombre_en: emptyToNull(d.override_nombre_en),
         override_descripcion: emptyToNull(d.override_descripcion),
         override_precio: precio,
         override_photo_url: emptyToNull(d.override_photo_url),
@@ -349,12 +367,26 @@ export default function CartaEditorClient({
                           )
                         })}
                       </select>
-                      <input
-                        className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                        placeholder="Nombre (override)"
-                        value={d.override_nombre}
-                        onChange={(e) => setDraft(row.articulo_id, { override_nombre: e.target.value })}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                          placeholder="Nombre ES (override)"
+                          value={d.override_nombre_es}
+                          onChange={(e) => setDraft(row.articulo_id, { override_nombre_es: e.target.value })}
+                        />
+                        <input
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                          placeholder="Nom CA (override)"
+                          value={d.override_nombre_ca}
+                          onChange={(e) => setDraft(row.articulo_id, { override_nombre_ca: e.target.value })}
+                        />
+                        <input
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                          placeholder="Name EN (override)"
+                          value={d.override_nombre_en}
+                          onChange={(e) => setDraft(row.articulo_id, { override_nombre_en: e.target.value })}
+                        />
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <input
                           className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"

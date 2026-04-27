@@ -21,6 +21,9 @@ type OverrideRow = {
   category_id: string | null
   sort_order: number | null
   override_nombre: string | null
+  override_nombre_es: string | null
+  override_nombre_ca: string | null
+  override_nombre_en: string | null
 }
 
 type Category = {
@@ -128,7 +131,10 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
             'articulo_id, factor_porcion, bdp_articulos(id, nombre, precio_base)'
           )
           .limit(5000),
-        supabase.from('digital_menu_overrides').select('articulo_id, is_hidden, category_id, sort_order, override_nombre').limit(5000),
+        supabase
+          .from('digital_menu_overrides')
+          .select('articulo_id, is_hidden, category_id, sort_order, override_nombre, override_nombre_es, override_nombre_ca, override_nombre_en')
+          .limit(5000),
         supabase
           .from('categories')
           .select('id, name, parent_id, sort_order')
@@ -228,6 +234,34 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         override_precio: null,
         override_photo_url: null,
       })
+      if (!res.success) {
+        toast.error(res.error ?? 'No se pudo guardar el nombre')
+        return
+      }
+      toast.success('Nombre guardado')
+      await load()
+    })
+  }
+
+  const onSetCartaNombreI18n = (
+    articulo_id: number,
+    input: { override_nombre_es?: string; override_nombre_ca?: string; override_nombre_en?: string }
+  ) => {
+    const current = overrideByArticulo.get(articulo_id)
+    startTransition(async () => {
+      const res = await upsertMenuOverride({
+        articulo_id,
+        is_hidden: current?.is_hidden ?? false,
+        sort_order: current?.sort_order ?? null,
+        category_id: current?.category_id ?? null,
+        override_nombre: current?.override_nombre ?? null,
+        override_nombre_es: input.override_nombre_es != null && input.override_nombre_es.trim() !== '' ? input.override_nombre_es : null,
+        override_nombre_ca: input.override_nombre_ca != null && input.override_nombre_ca.trim() !== '' ? input.override_nombre_ca : null,
+        override_nombre_en: input.override_nombre_en != null && input.override_nombre_en.trim() !== '' ? input.override_nombre_en : null,
+        override_descripcion: null,
+        override_precio: null,
+        override_photo_url: null,
+      } as any)
       if (!res.success) {
         toast.error(res.error ?? 'No se pudo guardar el nombre')
         return
@@ -356,12 +390,32 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                         </div>
 
                         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-                          <input
-                            className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                            defaultValue={current?.override_nombre ?? ''}
-                            placeholder="Nombre en carta (vacío = TPV)"
-                            onBlur={(e) => onSetCartaNombre(it.articulo_id, e.target.value)}
-                          />
+                          <div className="space-y-2">
+                            <input
+                              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                              defaultValue={current?.override_nombre_es ?? ''}
+                              placeholder="Nombre ES (vacío = fallback)"
+                              onBlur={(e) =>
+                                onSetCartaNombreI18n(it.articulo_id, { override_nombre_es: e.target.value })
+                              }
+                            />
+                            <input
+                              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                              defaultValue={current?.override_nombre_ca ?? ''}
+                              placeholder="Nom CA (buit = fallback)"
+                              onBlur={(e) =>
+                                onSetCartaNombreI18n(it.articulo_id, { override_nombre_ca: e.target.value })
+                              }
+                            />
+                            <input
+                              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                              defaultValue={current?.override_nombre_en ?? ''}
+                              placeholder="Name EN (blank = fallback)"
+                              onBlur={(e) =>
+                                onSetCartaNombreI18n(it.articulo_id, { override_nombre_en: e.target.value })
+                              }
+                            />
+                          </div>
                           <select
                             className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
                             value={current?.category_id ?? ''}
