@@ -97,7 +97,9 @@ export async function translateCaToEsIfNeeded(text: string): Promise<string> {
     // se queda corta y no traduce aunque sea catalán. Relajamos a >=1 señal si el texto
     // tiene suficiente "cuerpo" (saltos de línea o longitud), manteniendo >=2 por defecto.
     const hits = catalanSignalHits(cleaned)
-    const looksCa = hits >= 2 || (hits >= 1 && (cleaned.includes('\n') || cleaned.length >= 80))
+    // Para "presentación" muchas veces son 1-2 frases cortas: bajamos el umbral
+    // de longitud para permitir traducción con 1 señal.
+    const looksCa = hits >= 2 || (hits >= 1 && (cleaned.includes('\n') || cleaned.length >= 20))
     if (!looksCa) return cleaned
 
     const geminiKey = process.env.GEMINI_API_KEY
