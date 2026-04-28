@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 import { useAIStore } from '@/store/aiStore';
 
 type UiMessage = { role: 'user' | 'assistant'; content: string };
@@ -91,11 +92,8 @@ export default function ChatMarbella() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#3F5E7A] p-4 flex justify-between items-center text-white shrink-0">
-          <div className="flex flex-col">
-            <span className="font-black text-[10px] tracking-[0.2em] uppercase">Asistente Operativo</span>
-            <span className="text-[10px] text-white/80">
-              {sessionId ? `Sesión: ${sessionId.slice(0, 8)}…` : 'Sesión nueva'}
-            </span>
+          <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0">
+            <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -117,23 +115,17 @@ export default function ChatMarbella() {
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-          {messages.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-100 shadow-sm p-4 text-[12px] text-zinc-700">
-              Escribe una consulta operativa. Si no hay datos autorizados por RLS/RBAC, la IA devolverá “Dato no disponible”.
+          {messages.map((m, idx) => (
+            <div
+              key={idx}
+              className={[
+                'max-w-[90%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-sm border border-zinc-100',
+                m.role === 'user' ? 'ml-auto bg-[#F5F7FA]' : 'mr-auto bg-white',
+              ].join(' ')}
+            >
+              <div className="whitespace-pre-wrap break-words">{m.content}</div>
             </div>
-          ) : (
-            messages.map((m, idx) => (
-              <div
-                key={idx}
-                className={[
-                  'max-w-[90%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-sm border border-zinc-100',
-                  m.role === 'user' ? 'ml-auto bg-[#F5F7FA]' : 'mr-auto bg-white',
-                ].join(' ')}
-              >
-                <div className="whitespace-pre-wrap break-words">{m.content}</div>
-              </div>
-            ))
-          )}
+          ))}
         </div>
 
         <div className="shrink-0 border-t border-zinc-100 p-3 bg-white">
@@ -147,7 +139,7 @@ export default function ChatMarbella() {
                   void sendMessage();
                 }
               }}
-              placeholder="Consultar I+D Marbella…"
+              placeholder=""
               className="flex-1 min-h-[48px] max-h-28 resize-none rounded-2xl border border-zinc-200 px-4 py-3 text-[13px] outline-none focus:ring-2 focus:ring-zinc-200"
               disabled={isSending}
             />
