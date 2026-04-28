@@ -4,13 +4,13 @@ import { createClient } from '@/utils/supabase/server'
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
 
 const SYSTEM_PROMPT_TEMPLATE = `Eres el Asistente Operativo IA de Bar La Marbella. 
-Misión: Datos precisos sobre Sala/KDS, Tesorería, Personal, Recetas y Stock.
+Misión: Proporcionar datos precisos sobre Sala/KDS, Tesorería, Personal, Recetas y Proveedores.
 Reglas:
-1. Tono: Directo, técnico, riguroso. Sin saludos ni cortesía.
-2. Cero Alucinación: Si el dato no está en {contexto_autorizado}, di: "Dato no disponible".
-3. Fechas: Zona horaria Barcelona (CEST/CET).
-4. Zero-Display: Valores 0 se muestran como " ".
-5. Seguridad: Solo usa la información en {contexto_autorizado}.
+1. Tono: Directo, técnico, escéptico y riguroso. Sin saludos, introducciones ni cortesía.
+2. Cero Alucinación: Si el dato no está en {contexto_autorizado}, responde EXACTAMENTE: "Dato no disponible en el contexto actual. Verifica permisos o la vista nativa." NUNCA inventes cifras.
+3. Fechas: Asume zona horaria Barcelona (CEST/CET).
+4. Zero-Display: Valores monetarios, numéricos o contadores iguales a 0 se muestran como un espacio en blanco " ".
+5. Seguridad: Basa tus cálculos y respuestas ÚNICAMENTE en la información inyectada en el contexto.
 
 Contexto autorizado: {contexto_autorizado}
 `
@@ -19,14 +19,16 @@ function ymdInEuropeMadrid(d: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(d) // YYYY-MM-DD
 }
 
-function inferIntent(lastUserMessage: string): 'sales' | 'treasury' | 'suppliers' | 'recipes' | 'personal' | 'kds' | 'unknown' {
+type Intent = 'sales' | 'treasury' | 'personal' | 'kds' | 'recipes' | 'suppliers' | 'unknown'
+
+function inferIntent(lastUserMessage: string): Intent {
   const q = lastUserMessage.toLowerCase()
-  if (/\b(caja|tesorer[ií]a|arqueo|cierres?|cash)\b/.test(q)) return 'treasury'
+  if (/\b(caja|tesorer[ií]a|arqueo|cierres?|cash|descuadre)\b/.test(q)) return 'treasury'
   if (/\b(ventas?|facturaci[oó]n|ingresos?|tickets?)\b/.test(q)) return 'sales'
-  if (/\b(proveedores?|supplier|suppliers|albar[aá]n|albaranes|factura(s)?\s+de\s+compra|purchase\s+invoice)\b/.test(q)) return 'suppliers'
-  if (/\b(recetas?|escandallo|coste(s)?\s+receta|margen|food\s*cost)\b/.test(q)) return 'recipes'
-  if (/\b(horas?|turnos?|fichaj|timesheet|n[oó]mina|personal)\b/.test(q)) return 'personal'
-  if (/\b(kds|cocina|comandas?|mesa|sala|radar)\b/.test(q)) return 'kds'
+  if (/\b(horas?|turnos?|fichajes?|timesheet|n[oó]mina|personal|extras?)\b/.test(q)) return 'personal'
+  if (/\b(kds|cocina|comandas?|mesa|sala|radar|preparaci[oó]n)\b/.test(q)) return 'kds'
+  if (/\b(recetas?|escandallos?|ingredientes?|elaboraci[oó]n|preparar|plato)\b/.test(q)) return 'recipes'
+  if (/\b(proveedores?|albaranes?|facturas?|compras?)\b/.test(q)) return 'suppliers'
   return 'unknown'
 }
 
@@ -42,27 +44,35 @@ function resolveTargetDate(message: string): Date {
 async function buildAuthorizedContext(params: {
   supabase: Awaited<ReturnType<typeof createClient>>
   userId: string
-  intent: ReturnType<typeof inferIntent>
+  intent: Intent
   lastUserMessage: string
 }): Promise<Record<string, unknown>> {
   const { supabase, userId, intent, lastUserMessage } = params
 
-  // Fuente de verdad RBAC: public.profiles.role (también usado en middleware).
+  // 1. LECTURA DE ROL (RBAC)
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', userId)
     .single()
+    
   if (profileErr) throw new Error(`RBAC: no se pudo leer profiles.role: ${profileErr.message}`)
+  
+  const role = profile?.role ?? 'staff'
+  const isManager = role === 'manager'
+  const isChef = role === 'chef'
 
-  const role = profile?.role ?? null
-  const isGerencia = role === 'manager' // schema_dump.sql: CHECK role IN ('manager','staff','chef')
-
-  // Intenciones de gerencia (deny-by-default)
-  if ((intent === 'sales' || intent === 'treasury' || intent === 'suppliers' || intent === 'recipes') && !isGerencia) {
-    throw new Error('ACCESO DENEGADO: Tu rol no permite consultar estos datos.')
+  // 2. GATES DE SEGURIDAD ESTRICTOS
+  const requiresManager = ['sales', 'treasury', 'suppliers']
+  if (requiresManager.includes(intent) && !isManager) {
+    throw new Error('ACCESO DENEGADO: Tu rol no permite consultar datos financieros o estratégicos.')
   }
 
+  if (intent === 'recipes' && !isManager && !isChef) {
+    throw new Error('ACCESO DENEGADO: Solo gerencia y cocina pueden consultar escandallos.')
+  }
+
+  // 3. EXTRACCIÓN DE DATOS POR INTENCIÓN
   if (intent === 'treasury') {
     const { data, error } = await supabase.rpc('get_operational_box_status')
     if (error) throw new Error(`RPC get_operational_box_status: ${error.message}`)
@@ -72,28 +82,9 @@ async function buildAuthorizedContext(params: {
   if (intent === 'sales') {
     const targetDateObj = resolveTargetDate(lastUserMessage)
     const target_date = ymdInEuropeMadrid(targetDateObj)
-    
     const { data, error } = await supabase.rpc('get_daily_sales_stats', { target_date })
     if (error) throw new Error(`RPC get_daily_sales_stats: ${error.message}`)
     return { intent, role, rpc: 'get_daily_sales_stats', args: { target_date }, data }
-  }
-
-  if (intent === 'suppliers') {
-    return {
-      intent,
-      role,
-      warning:
-        'Intent suppliers detectado, pero no hay un RPC específico cableado aquí. Para evitar lecturas masivas/tablas completas, este endpoint no consulta suppliers/purchase_invoices por defecto.',
-    }
-  }
-
-  if (intent === 'recipes') {
-    return {
-      intent,
-      role,
-      warning:
-        'Intent recipes (costes) detectado, pero no hay un RPC de coste parametrizado por receta en este router. Si necesitas costes, expón un RPC agregador o pasa un recipe_id explícito y mapea a public.get_recipe_cost.',
-    }
   }
 
   if (intent === 'personal') {
@@ -112,23 +103,73 @@ async function buildAuthorizedContext(params: {
     
     const { data, error } = await supabase.rpc('get_monthly_timesheet', { p_user_id: userId, p_year, p_month })
     if (error) throw new Error(`RPC get_monthly_timesheet: ${error.message}`)
-    return { intent, role, rpc: 'get_monthly_timesheet', args: { p_user_id: userId, p_year, p_month }, data }
+    
+    const { data: snapshots } = await supabase
+      .from('weekly_snapshots')
+      .select('week_start, week_end, total_hours, ordinary_hours, extra_hours, pending_balance')
+      .eq('user_id', userId)
+      .order('week_start', { ascending: false })
+      .limit(2)
+
+    return { 
+      intent, 
+      role,
+      rpc: 'get_monthly_timesheet', 
+      args: { p_user_id: userId, p_year, p_month }, 
+      timesheet_data: data,
+      recent_snapshots: snapshots 
+    }
   }
 
   if (intent === 'kds') {
-    return {
-      intent,
-      role,
-      warning:
-        'No hay RPC KDS verificado en schema_dump.sql para este intent. Dato no disponible en el contexto actual. Verifica RBAC o añade un RPC agregador.',
+    const { data, error } = await supabase
+      .from('kds_projection_orders')
+      .select('id_ticket, mesa, estado, opened_at, notas_comanda')
+      .eq('estado', 'activa')
+      .order('opened_at', { ascending: true })
+    if (error) throw new Error(`KDS Query: ${error.message}`)
+    return { intent, role, table: 'kds_projection_orders', filter: "estado = 'activa'", active_orders: data }
+  }
+
+  if (intent === 'recipes') {
+    const match = lastUserMessage.match(/(?:receta|escandallo|plato)(?:\s+de)?\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+)/i)
+    const queryTerm = match ? match[1].trim() : null
+
+    let query = supabase
+      .from('recipes')
+      .select('name, elaboration, category, servings, sale_price, target_food_cost_pct')
+
+    if (queryTerm) {
+      query = query.ilike('name', `%${queryTerm}%`).limit(3)
+    } else {
+      query = query.order('updated_at', { ascending: false }).limit(5)
     }
+
+    const { data, error } = await query
+    if (error) throw new Error(`Recipes Query: ${error.message}`)
+    return { intent, role, table: 'recipes', query_term: queryTerm || 'recent', results: data }
+  }
+
+  if (intent === 'suppliers') {
+    const { data, error } = await supabase
+      .from('purchase_invoices')
+      .select(`
+        invoice_number, 
+        invoice_date, 
+        total_amount, 
+        status, 
+        suppliers (name)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(5)
+    if (error) throw new Error(`Suppliers Query: ${error.message}`)
+    return { intent, role, table: 'purchase_invoices', recent_invoices: data }
   }
 
   return {
     intent,
     role,
-    warning:
-      'Intención no mapeada a ningún RPC verificado. Dato no disponible en el contexto actual. Verifica RBAC o consulta la vista nativa.',
+    warning: 'Intención no mapeada en el enrutador. Dato no disponible en el contexto actual.',
   }
 }
 
@@ -161,7 +202,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Falta el mensaje del usuario' }, { status: 400 })
     }
 
-    // 1) Validar o crear sesión (RLS)
+    // 1) Validar o crear sesión (RLS en ai_chat_sessions)
     let effectiveSessionId: string
     if (sessionId) {
       const { data: existing, error: selErr } = await supabase
@@ -201,7 +242,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'DB error', detail: msgUserErr.message }, { status: 500 })
     }
 
-    // 3) Contexto por intención (RPCs verificados)
+    // 3) Construir Contexto Autorizado
     const intent = inferIntent(lastUserMessage)
     let authorizedContext: Record<string, unknown>
     try {
@@ -209,19 +250,20 @@ export async function POST(req: Request) {
         supabase, 
         userId: user.id, 
         intent,
-        lastUserMessage // Se pasa el mensaje para extraer modificadores de tiempo
+        lastUserMessage
       })
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      return NextResponse.json({ error: 'Context build failed', detail: msg }, { status: 500 })
+      // Si el error es de ACCESO DENEGADO (nuestro RBAC), lo devolvemos como 403 para que la UI lo maneje limpiamente
+      const status = msg.includes('ACCESO DENEGADO') ? 403 : 500
+      return NextResponse.json({ error: 'Acceso o Contexto denegado', detail: msg }, { status })
     }
 
     const contexto_autorizado = JSON.stringify(authorizedContext)
     const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replaceAll('{contexto_autorizado}', contexto_autorizado)
 
-    // 4) Llamada a Gemini (patrón fetch HTTP del repo)
+    // 4) Llamada a Gemini (Determinista)
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`
-
     const transcript = messages
       .map((m) => `${m.role === 'assistant' ? 'ASSISTANT' : 'USER'}: ${String(m.content ?? '')}`)
       .join('\n')
@@ -232,7 +274,7 @@ export async function POST(req: Request) {
           parts: [{ text: systemPrompt }, { text: transcript }],
         },
       ],
-      generationConfig: { temperature: 0.1 },
+      generationConfig: { temperature: 0.05 },
     }
 
     const geminiRes = await fetch(geminiUrl, {
