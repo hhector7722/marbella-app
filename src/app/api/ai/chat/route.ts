@@ -19,10 +19,12 @@ function ymdInEuropeMadrid(d: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(d) // YYYY-MM-DD
 }
 
-function inferIntent(lastUserMessage: string): 'sales' | 'treasury' | 'personal' | 'kds' | 'unknown' {
+function inferIntent(lastUserMessage: string): 'sales' | 'treasury' | 'suppliers' | 'recipes' | 'personal' | 'kds' | 'unknown' {
   const q = lastUserMessage.toLowerCase()
   if (/\b(caja|tesorer[ií]a|arqueo|cierres?|cash)\b/.test(q)) return 'treasury'
   if (/\b(ventas?|facturaci[oó]n|ingresos?|tickets?)\b/.test(q)) return 'sales'
+  if (/\b(proveedores?|supplier|suppliers|albar[aá]n|albaranes|factura(s)?\s+de\s+compra|purchase\s+invoice)\b/.test(q)) return 'suppliers'
+  if (/\b(recetas?|escandallo|coste(s)?\s+receta|margen|food\s*cost)\b/.test(q)) return 'recipes'
   if (/\b(horas?|turnos?|fichaj|timesheet|n[oó]mina|personal)\b/.test(q)) return 'personal'
   if (/\b(kds|cocina|comandas?|mesa|sala|radar)\b/.test(q)) return 'kds'
   return 'unknown'
@@ -45,10 +47,26 @@ async function buildAuthorizedContext(params: {
 }): Promise<Record<string, unknown>> {
   const { supabase, userId, intent, lastUserMessage } = params
 
+  // Fuente de verdad RBAC: public.profiles.role (también usado en middleware).
+  const { data: profile, error: profileErr } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
+  if (profileErr) throw new Error(`RBAC: no se pudo leer profiles.role: ${profileErr.message}`)
+
+  const role = profile?.role ?? null
+  const isGerencia = role === 'manager' // schema_dump.sql: CHECK role IN ('manager','staff','chef')
+
+  // Intenciones de gerencia (deny-by-default)
+  if ((intent === 'sales' || intent === 'treasury' || intent === 'suppliers' || intent === 'recipes') && !isGerencia) {
+    throw new Error('ACCESO DENEGADO: Tu rol no permite consultar estos datos.')
+  }
+
   if (intent === 'treasury') {
     const { data, error } = await supabase.rpc('get_operational_box_status')
     if (error) throw new Error(`RPC get_operational_box_status: ${error.message}`)
-    return { intent, rpc: 'get_operational_box_status', data }
+    return { intent, role, rpc: 'get_operational_box_status', data }
   }
 
   if (intent === 'sales') {
@@ -57,7 +75,25 @@ async function buildAuthorizedContext(params: {
     
     const { data, error } = await supabase.rpc('get_daily_sales_stats', { target_date })
     if (error) throw new Error(`RPC get_daily_sales_stats: ${error.message}`)
-    return { intent, rpc: 'get_daily_sales_stats', args: { target_date }, data }
+    return { intent, role, rpc: 'get_daily_sales_stats', args: { target_date }, data }
+  }
+
+  if (intent === 'suppliers') {
+    return {
+      intent,
+      role,
+      warning:
+        'Intent suppliers detectado, pero no hay un RPC específico cableado aquí. Para evitar lecturas masivas/tablas completas, este endpoint no consulta suppliers/purchase_invoices por defecto.',
+    }
+  }
+
+  if (intent === 'recipes') {
+    return {
+      intent,
+      role,
+      warning:
+        'Intent recipes (costes) detectado, pero no hay un RPC de coste parametrizado por receta en este router. Si necesitas costes, expón un RPC agregador o pasa un recipe_id explícito y mapea a public.get_recipe_cost.',
+    }
   }
 
   if (intent === 'personal') {
@@ -76,12 +112,13 @@ async function buildAuthorizedContext(params: {
     
     const { data, error } = await supabase.rpc('get_monthly_timesheet', { p_user_id: userId, p_year, p_month })
     if (error) throw new Error(`RPC get_monthly_timesheet: ${error.message}`)
-    return { intent, rpc: 'get_monthly_timesheet', args: { p_user_id: userId, p_year, p_month }, data }
+    return { intent, role, rpc: 'get_monthly_timesheet', args: { p_user_id: userId, p_year, p_month }, data }
   }
 
   if (intent === 'kds') {
     return {
       intent,
+      role,
       warning:
         'No hay RPC KDS verificado en schema_dump.sql para este intent. Dato no disponible en el contexto actual. Verifica RBAC o añade un RPC agregador.',
     }
@@ -89,6 +126,7 @@ async function buildAuthorizedContext(params: {
 
   return {
     intent,
+    role,
     warning:
       'Intención no mapeada a ningún RPC verificado. Dato no disponible en el contexto actual. Verifica RBAC o consulta la vista nativa.',
   }
