@@ -28,12 +28,22 @@ function inferIntent(lastUserMessage: string): 'sales' | 'treasury' | 'personal'
   return 'unknown'
 }
 
+function resolveTargetDate(message: string): Date {
+  const q = message.toLowerCase()
+  const d = new Date()
+  if (/\bayer\b/.test(q)) {
+    d.setDate(d.getDate() - 1)
+  }
+  return d
+}
+
 async function buildAuthorizedContext(params: {
   supabase: Awaited<ReturnType<typeof createClient>>
   userId: string
   intent: ReturnType<typeof inferIntent>
+  lastUserMessage: string
 }): Promise<Record<string, unknown>> {
-  const { supabase, userId, intent } = params
+  const { supabase, userId, intent, lastUserMessage } = params
 
   if (intent === 'treasury') {
     const { data, error } = await supabase.rpc('get_operational_box_status')
@@ -42,21 +52,28 @@ async function buildAuthorizedContext(params: {
   }
 
   if (intent === 'sales') {
-    const target_date = ymdInEuropeMadrid(new Date())
+    const targetDateObj = resolveTargetDate(lastUserMessage)
+    const target_date = ymdInEuropeMadrid(targetDateObj)
+    
     const { data, error } = await supabase.rpc('get_daily_sales_stats', { target_date })
     if (error) throw new Error(`RPC get_daily_sales_stats: ${error.message}`)
     return { intent, rpc: 'get_daily_sales_stats', args: { target_date }, data }
   }
 
   if (intent === 'personal') {
-    const now = new Date()
+    const targetDateObj = resolveTargetDate(lastUserMessage)
+    if (/\b(mes pasado|anterior)\b/.test(lastUserMessage.toLowerCase())) {
+      targetDateObj.setMonth(targetDateObj.getMonth() - 1)
+    }
+
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Europe/Madrid',
       year: 'numeric',
       month: '2-digit',
-    }).formatToParts(now)
+    }).formatToParts(targetDateObj)
     const p_year = Number(parts.find((p) => p.type === 'year')?.value)
     const p_month = Number(parts.find((p) => p.type === 'month')?.value)
+    
     const { data, error } = await supabase.rpc('get_monthly_timesheet', { p_user_id: userId, p_year, p_month })
     if (error) throw new Error(`RPC get_monthly_timesheet: ${error.message}`)
     return { intent, rpc: 'get_monthly_timesheet', args: { p_user_id: userId, p_year, p_month }, data }
@@ -150,14 +167,18 @@ export async function POST(req: Request) {
     const intent = inferIntent(lastUserMessage)
     let authorizedContext: Record<string, unknown>
     try {
-      authorizedContext = await buildAuthorizedContext({ supabase, userId: user.id, intent })
+      authorizedContext = await buildAuthorizedContext({ 
+        supabase, 
+        userId: user.id, 
+        intent,
+        lastUserMessage // Se pasa el mensaje para extraer modificadores de tiempo
+      })
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       return NextResponse.json({ error: 'Context build failed', detail: msg }, { status: 500 })
     }
 
     const contexto_autorizado = JSON.stringify(authorizedContext)
-    // FIX: Uso de replaceAll para asegurar inyección en todas las instancias de la variable
     const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replaceAll('{contexto_autorizado}', contexto_autorizado)
 
     // 4) Llamada a Gemini (patrón fetch HTTP del repo)
