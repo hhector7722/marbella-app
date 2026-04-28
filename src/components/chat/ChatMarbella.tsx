@@ -84,7 +84,7 @@ export default function ChatMarbella() {
 
   return (
     <div 
-      className="fixed inset-0 z-[999] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4 pb-safe md:items-center"
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-safe"
       onClick={onClose}
     >
       <div 
@@ -106,7 +106,7 @@ export default function ChatMarbella() {
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 active:bg-white/15 transition-colors"
               aria-label="Cerrar chat"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
@@ -128,7 +128,7 @@ export default function ChatMarbella() {
           ))}
         </div>
 
-        <div className="shrink-0 border-t border-zinc-100 p-3 bg-white">
+        <div className="shrink-0 border-t border-zinc-100 p-2 bg-white">
           <div className="flex items-end gap-2">
             <textarea
               value={input}
@@ -140,14 +140,14 @@ export default function ChatMarbella() {
                 }
               }}
               placeholder=""
-              className="flex-1 min-h-[48px] max-h-28 resize-none rounded-2xl border border-zinc-200 px-4 py-3 text-[13px] outline-none focus:ring-2 focus:ring-zinc-200"
+              className="flex-1 min-h-[48px] max-h-24 resize-none rounded-2xl border border-zinc-200 px-4 py-2 text-[13px] outline-none focus:ring-2 focus:ring-zinc-200"
               disabled={isSending}
             />
             <button
               type="button"
               onClick={() => void sendMessage()}
               disabled={isSending || !input.trim()}
-              className="h-12 px-4 rounded-2xl bg-[#36606F] text-white text-[11px] font-black tracking-[0.18em] uppercase shadow-sm border border-zinc-100 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] transition"
+              className="h-12 px-3 rounded-2xl bg-[#36606F] text-white text-[10px] font-black tracking-[0.18em] uppercase shadow-sm border border-zinc-100 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] transition"
             >
               {isSending ? 'Enviando' : 'Enviar'}
             </button>
