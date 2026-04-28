@@ -108,6 +108,9 @@ export default function VentasPage() {
     const [tickets, setTickets] = useState<TicketSummary[]>([]);
     const [products, setProducts] = useState<ProductRanking[]>([]);
     const [summary, setSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
+    const [pageOffset, setPageOffset] = useState(0);
+    const pageSize = 200;
+    const [pageInput, setPageInput] = useState<string>('1');
 
     // Estados para Drill-down (Lazy Loading)
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
@@ -125,7 +128,18 @@ export default function VentasPage() {
 
     useEffect(() => {
         fetchVentas();
+    }, [rangeStart, rangeEnd, selectedDate, filterMode, hourFilter, pageOffset]);
+
+    // Reset paginación cuando cambia el rango/filtro
+    useEffect(() => {
+        setPageOffset(0);
+        setPageInput('1');
     }, [rangeStart, rangeEnd, selectedDate, filterMode, hourFilter]);
+
+    useEffect(() => {
+        const page = Math.floor(pageOffset / pageSize) + 1;
+        setPageInput(String(page));
+    }, [pageOffset]);
 
     useEffect(() => {
         let cancelled = false;
@@ -207,17 +221,12 @@ export default function VentasPage() {
         try {
             let productStartYmd: string;
             let productEndYmd: string;
-
-            let ticketsQuery = supabase
-                .from('tickets_marbella')
-                .select('numero_documento, fecha, hora_cierre, total_documento, mesa')
-                .order('fecha', { ascending: false })
-                .order('hora_cierre', { ascending: false });
+            const startTime = hourFilter?.startTime ?? null;
+            const endTime = hourFilter?.endTime ?? null;
 
             if (filterMode === 'single') {
                 productStartYmd = selectedDate;
                 productEndYmd = selectedDate;
-                ticketsQuery = ticketsQuery.eq('fecha', selectedDate);
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setTickets([]);
@@ -228,17 +237,32 @@ export default function VentasPage() {
                 }
                 productStartYmd = rangeStart;
                 productEndYmd = rangeEnd;
-                ticketsQuery = ticketsQuery.gte('fecha', rangeStart).lte('fecha', rangeEnd);
             }
 
-            const ticketsPromise = ticketsQuery;
+            // Importante: Supabase/PostgREST puede aplicar un max de filas (p.ej. 2000).
+            // Para rangos grandes (mes/año), el listado va paginado (200) pero los KPIs se calculan por SQL (sin tope).
+            const ticketsPromise = supabase.rpc('get_tickets_marbella_page', {
+                p_start_date: productStartYmd,
+                p_end_date: productEndYmd,
+                p_limit: pageSize,
+                p_offset: pageOffset,
+                p_start_time: startTime,
+                p_end_time: endTime,
+            });
+
+            const summaryPromise = supabase.rpc('get_ticket_sales_summary', {
+                p_start_date: productStartYmd,
+                p_end_date: productEndYmd,
+                p_start_time: startTime,
+                p_end_time: endTime,
+            });
 
             const productsPromise = supabase.rpc('get_product_sales_ranking', {
                 p_start_date: productStartYmd,
                 p_end_date: productEndYmd
             });
 
-            const [ticketsRes, productsRes] = await Promise.all([ticketsPromise, productsPromise]);
+            const [ticketsRes, productsRes, summaryRes] = await Promise.all([ticketsPromise, productsPromise, summaryPromise]);
 
             if (ticketsRes.error) {
                 if (ticketsRes.error.code === '42P01') {
@@ -251,32 +275,25 @@ export default function VentasPage() {
             if (productsRes.error) {
                 console.warn("Error en RPC get_product_sales_ranking o no existe.", productsRes.error);
             }
+            if (summaryRes.error) {
+                console.warn("Error en RPC get_ticket_sales_summary o no existe.", summaryRes.error);
+                toast.error("Ventas: falta cálculo de KPIs en BD (aplicar migración).");
+            }
 
             const activeData = ticketsRes.data || [];
             const activeProducts = productsRes.data || [];
 
-            const filteredTickets = (() => {
-                if (!hourFilter) return activeData;
-                const [sH, sM] = hourFilter.startTime.split(':').map(Number);
-                const [eH, eM] = hourFilter.endTime.split(':').map(Number);
-                const startTotal = (Number.isFinite(sH) ? sH : 0) * 60 + (Number.isFinite(sM) ? sM : 0);
-                const endTotal = (Number.isFinite(eH) ? eH : 0) * 60 + (Number.isFinite(eM) ? eM : 0);
-                return activeData.filter((t: any) => {
-                    const hour = getBusinessHourFromTicket(t);
-                    const minutes = hour * 60; // aproximación por hora
-                    return minutes >= startTotal && minutes <= endTotal;
-                });
-            })();
+            const sum = summaryRes.data as any;
+            const total = Number(sum?.total_ventas ?? 0);
+            const count = Number(sum?.recuento_tickets ?? 0);
+            const avg = Number(sum?.ticket_medio ?? 0);
 
-            const total = filteredTickets.reduce((acc, t) => acc + (Number((t as any).total_documento) || 0), 0);
-            const count = filteredTickets.length;
-
-            setTickets(filteredTickets as any);
+            setTickets(activeData as any);
             setProducts(activeProducts.map((p: any, i: number) => ({ ...p, rank: i + 1 })) as ProductRanking[]);
             setSummary({
                 totalSales: total,
                 count: count,
-                avgTicket: count > 0 ? total / count : 0
+                avgTicket: avg || (count > 0 ? total / count : 0)
             });
 
         } catch (err: any) {
@@ -755,6 +772,70 @@ export default function VentasPage() {
                                     </div>
                                 ) : (
                                     <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
+                                        <div className="flex items-center justify-between gap-2 px-3 md:px-6 py-2 border-b border-zinc-100 print:hidden">
+                                            <div className="flex flex-col gap-1 min-w-0">
+                                                <div className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                                    Mostrando {tickets.length} de {summary.count || 0}
+                                                </div>
+                                                <div className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300">
+                                                    Página {Math.floor(pageOffset / pageSize) + 1} / {summary.count > 0 ? Math.max(1, Math.ceil(summary.count / pageSize)) : 1}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Ir a</span>
+                                                    <input
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]*"
+                                                        value={pageInput}
+                                                        onChange={(e) => setPageInput(e.target.value.replace(/[^\d]/g, ''))}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key !== 'Enter') return;
+                                                            const totalPages = summary.count > 0 ? Math.max(1, Math.ceil(summary.count / pageSize)) : 1;
+                                                            const raw = Number(pageInput || '1');
+                                                            const page = Number.isFinite(raw) ? Math.min(totalPages, Math.max(1, Math.trunc(raw))) : 1;
+                                                            setPageOffset((page - 1) * pageSize);
+                                                        }}
+                                                        onBlur={() => {
+                                                            const totalPages = summary.count > 0 ? Math.max(1, Math.ceil(summary.count / pageSize)) : 1;
+                                                            const raw = Number(pageInput || '1');
+                                                            const page = Number.isFinite(raw) ? Math.min(totalPages, Math.max(1, Math.trunc(raw))) : 1;
+                                                            setPageOffset((page - 1) * pageSize);
+                                                        }}
+                                                        className={cn(
+                                                            "min-h-12 w-20 rounded-xl border border-zinc-200 bg-white px-3",
+                                                            "text-[12px] font-black text-zinc-800 tabular-nums",
+                                                            "outline-none focus:ring-2 focus:ring-[#36606F]/20"
+                                                        )}
+                                                        aria-label="Ir a página"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPageOffset((v) => Math.max(0, v - pageSize))}
+                                                    disabled={pageOffset <= 0}
+                                                    className={cn(
+                                                        "min-h-12 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors",
+                                                        pageOffset <= 0 ? "bg-zinc-100 text-zinc-300" : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
+                                                    )}
+                                                >
+                                                    Anterior
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPageOffset((v) => v + pageSize)}
+                                                    disabled={summary.count > 0 ? (pageOffset + pageSize) >= summary.count : tickets.length < pageSize}
+                                                    className={cn(
+                                                        "min-h-12 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors",
+                                                        (summary.count > 0 ? (pageOffset + pageSize) >= summary.count : tickets.length < pageSize)
+                                                            ? "bg-zinc-100 text-zinc-300"
+                                                            : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
+                                                    )}
+                                                >
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                        </div>
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                 <tr>
