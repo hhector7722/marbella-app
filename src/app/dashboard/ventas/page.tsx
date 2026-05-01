@@ -112,6 +112,11 @@ export default function VentasPage() {
     const pageSize = 200;
     const [pageInput, setPageInput] = useState<string>('1');
 
+    const totalPages = useMemo(() => {
+        if (!summary.count || summary.count <= 0) return 1;
+        return Math.max(1, Math.ceil(summary.count / pageSize));
+    }, [summary.count]);
+
     // Estados para Drill-down (Lazy Loading)
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [ticketLines, setTicketLines] = useState<any[]>([]);
@@ -544,7 +549,7 @@ export default function VentasPage() {
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
 
                     {/* CABECERA Y FILTROS (formato alineado con /dashboard/history) */}
-                    <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
+                    <div className="bg-[#36606F] p-1.5 md:p-3 relative rounded-t-2xl print:hidden">
                         <div className="relative flex items-center justify-between gap-1 min-w-0">
                             <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0">
                                 <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Ventas</h1>
@@ -772,70 +777,6 @@ export default function VentasPage() {
                                     </div>
                                 ) : (
                                     <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
-                                        <div className="flex items-center justify-between gap-2 px-3 md:px-6 py-2 border-b border-zinc-100 print:hidden">
-                                            <div className="flex flex-col gap-1 min-w-0">
-                                                <div className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-400">
-                                                    Mostrando {tickets.length} de {summary.count || 0}
-                                                </div>
-                                                <div className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300">
-                                                    Página {Math.floor(pageOffset / pageSize) + 1} / {summary.count > 0 ? Math.max(1, Math.ceil(summary.count / pageSize)) : 1}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Ir a</span>
-                                                    <input
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]*"
-                                                        value={pageInput}
-                                                        onChange={(e) => setPageInput(e.target.value.replace(/[^\d]/g, ''))}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key !== 'Enter') return;
-                                                            const totalPages = summary.count > 0 ? Math.max(1, Math.ceil(summary.count / pageSize)) : 1;
-                                                            const raw = Number(pageInput || '1');
-                                                            const page = Number.isFinite(raw) ? Math.min(totalPages, Math.max(1, Math.trunc(raw))) : 1;
-                                                            setPageOffset((page - 1) * pageSize);
-                                                        }}
-                                                        onBlur={() => {
-                                                            const totalPages = summary.count > 0 ? Math.max(1, Math.ceil(summary.count / pageSize)) : 1;
-                                                            const raw = Number(pageInput || '1');
-                                                            const page = Number.isFinite(raw) ? Math.min(totalPages, Math.max(1, Math.trunc(raw))) : 1;
-                                                            setPageOffset((page - 1) * pageSize);
-                                                        }}
-                                                        className={cn(
-                                                            "min-h-12 w-20 rounded-xl border border-zinc-200 bg-white px-3",
-                                                            "text-[12px] font-black text-zinc-800 tabular-nums",
-                                                            "outline-none focus:ring-2 focus:ring-[#36606F]/20"
-                                                        )}
-                                                        aria-label="Ir a página"
-                                                    />
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPageOffset((v) => Math.max(0, v - pageSize))}
-                                                    disabled={pageOffset <= 0}
-                                                    className={cn(
-                                                        "min-h-12 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors",
-                                                        pageOffset <= 0 ? "bg-zinc-100 text-zinc-300" : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
-                                                    )}
-                                                >
-                                                    Anterior
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPageOffset((v) => v + pageSize)}
-                                                    disabled={summary.count > 0 ? (pageOffset + pageSize) >= summary.count : tickets.length < pageSize}
-                                                    className={cn(
-                                                        "min-h-12 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors",
-                                                        (summary.count > 0 ? (pageOffset + pageSize) >= summary.count : tickets.length < pageSize)
-                                                            ? "bg-zinc-100 text-zinc-300"
-                                                            : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
-                                                    )}
-                                                >
-                                                    Siguiente
-                                                </button>
-                                            </div>
-                                        </div>
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                 <tr>
@@ -941,6 +882,35 @@ export default function VentasPage() {
                                                 })}
                                             </tbody>
                                         </table>
+
+                                        {totalPages > 1 ? (
+                                            <div className="flex items-center justify-between gap-2 px-3 md:px-6 py-3 border-t border-zinc-100 print:hidden shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPageOffset((v) => Math.max(0, v - pageSize))}
+                                                    disabled={pageOffset <= 0}
+                                                    className={cn(
+                                                        "min-h-12 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shrink-0",
+                                                        pageOffset <= 0 ? "bg-zinc-100 text-zinc-300" : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
+                                                    )}
+                                                >
+                                                    Anterior
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPageOffset((v) => v + pageSize)}
+                                                    disabled={(pageOffset + pageSize) >= summary.count}
+                                                    className={cn(
+                                                        "min-h-12 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shrink-0",
+                                                        (pageOffset + pageSize) >= summary.count
+                                                            ? "bg-zinc-100 text-zinc-300"
+                                                            : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
+                                                    )}
+                                                >
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )
                             ) : activeTab === 'PRODUCTOS' ? (
