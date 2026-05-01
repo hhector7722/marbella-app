@@ -222,19 +222,21 @@ function RecipesContent() {
                 onClose={() => setIsPhotoLightboxOpen(false)}
             />
             <div className="max-w-7xl mx-auto">
-                <div className="bg-[#36606F] rounded-2xl px-3 md:px-6 py-3 md:py-5">
-                    <div className="flex flex-row gap-2 items-center">
-                        <div className="relative flex-1 min-w-0">
-                            <Search className="absolute left-2.5 md:left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-white/70" />
-                            <input
-                                type="text"
-                                placeholder="Buscar..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-8 md:pl-10 pr-2 md:pr-4 py-2 md:py-2.5 bg-white/95 rounded-xl md:rounded-2xl shadow-sm outline-none text-xs md:text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30"
-                            />
-                        </div>
-                        <div className="flex gap-1.5 md:gap-2 items-center shrink-0">
+                <div className="flex flex-row items-center gap-2">
+                    <div className="relative min-w-0 flex-1">
+                        <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 md:left-4 md:h-4 md:w-4" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={cn(
+                                'w-full rounded-xl bg-white py-2 pr-2 pl-8 text-xs font-medium text-gray-700 shadow-sm outline-none md:rounded-2xl md:py-2.5 md:pr-4 md:pl-10 md:text-sm',
+                                'focus:ring-2 focus:ring-[#36606F]/25',
+                            )}
+                        />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
                             {!selectedCategory ? (
                                 <div className="relative">
                                     <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-2.5 md:px-5 py-2 md:py-2.5 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50"><span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" /></button>
@@ -257,10 +259,15 @@ function RecipesContent() {
                                     <button onClick={() => setCategoryAndUrl(null)} className="p-1 md:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors shrink-0"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
                                 </div>
                             )}
-                            {!isRestricted && (
-                                <button onClick={() => setShowCreateModal(true)} className="bg-emerald-600 text-white w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-5 h-5 md:w-6 md:h-6" /></button>
-                            )}
-                        </div>
+                        {!isRestricted && (
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateModal(true)}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95 md:h-12 md:w-12 md:rounded-2xl"
+                            >
+                                <Plus className="h-5 w-5 md:h-6 md:w-6" />
+                            </button>
+                        )}
                     </div>
                 </div>
                 {!loading && (
