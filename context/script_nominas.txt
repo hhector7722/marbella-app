@@ -11,9 +11,41 @@ var CONFIG = {
   ADMIN_EMAIL: 'hhector7722@gmail.com',
   LABEL_PROCESADO: 'nominas/procesada',
   LABEL_ERROR: 'nominas/error',
-  EXCLUDED_PATTERNS: ['Registro de jornada'],
+  // Excluir "Registro de jornada..." (varía por mes / separadores / mayúsculas)
+  // Se evalúan contra el nombre normalizado (minúsculas, sin tildes, solo a-z0-9 y espacios).
+  // Regla base: si contiene "registro" (o "reg") y "jornada" en cualquier orden/posición → excluir.
+  EXCLUDED_FILENAME_REGEXES: [
+    /\breg(?:istro)?\b[\s\S]*\bjornada\b/i,
+    /\bjornada\b[\s\S]*\breg(?:istro)?\b/i
+  ],
   SUMMARY_PATTERNS: ['Costes de empres', 'Costes de empresa', 'Resumen de Nómina']
 };
+
+function _normalizeFilenameForMatch(name) {
+  if (!name) return '';
+  // Quita tildes/diacríticos y normaliza separadores para hacer match estable.
+  return name
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    // Convierte cualquier separador/puntuación a espacio (guiones, puntos, underscores, paréntesis, etc.)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function _shouldExcludeAttachmentByFilename(filename) {
+  var normalized = _normalizeFilenameForMatch(filename);
+
+  return (CONFIG.EXCLUDED_FILENAME_REGEXES || []).some(function (re) {
+    try {
+      return re.test(normalized);
+    } catch (e) {
+      return false;
+    }
+  });
+}
 
 function isValidDNI(dni) {
   var validChars = 'TRWAGMYFPDXBNJZSQVHLCKE';
@@ -75,11 +107,7 @@ function procesarNominasEntrantes() {
       if (att.getContentType() !== 'application/pdf' && !att.getName().toLowerCase().endsWith('.pdf')) return;
       var filename = att.getName();
 
-      var isExcluded = CONFIG.EXCLUDED_PATTERNS.some(function(pattern) {
-        return filename.toLowerCase().indexOf(pattern.toLowerCase()) !== -1;
-      });
-
-      if (isExcluded) {
+      if (_shouldExcludeAttachmentByFilename(filename)) {
         Logger.log('⏭️ Archivo omitido por regla de exclusión: ' + filename);
         return; 
       }
