@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, Pencil, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { recipeLineCost } from '@/lib/recipe-cost';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 
 interface Recipe {
     id: string;
@@ -44,6 +45,7 @@ function RecipesContent() {
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     /** Lista para flechas anterior/siguiente (misma regla que `/recipes/[id]`: orden nombre, opcional filtro categoría URL). */
     const [staffNavRecipes, setStaffNavRecipes] = useState<Array<{ id: string }>>([]);
+    const [recipeMetaModalOpen, setRecipeMetaModalOpen] = useState(false);
     const router = useRouter();
 
     const searchParams = useSearchParams();
@@ -94,6 +96,10 @@ function RecipesContent() {
         } else {
             setFullRecipeData(null);
         }
+    }, [selectedRecipeId]);
+
+    useEffect(() => {
+        if (!selectedRecipeId) setRecipeMetaModalOpen(false);
     }, [selectedRecipeId]);
 
     useEffect(() => {
@@ -329,10 +335,26 @@ function RecipesContent() {
                                 </button>
                             )}
 
-                            <div className="w-full text-center px-10 md:px-14">
-                                <div className="text-white font-black text-[13px] md:text-[15px] leading-tight truncate">
-                                    {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
+                            <div className="flex w-full items-center justify-center gap-1 px-10 md:px-14">
+                                <div className="min-w-0 max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
+                                    <span className="inline-block max-w-full truncate">
+                                        {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
+                                    </span>
                                 </div>
+                                {canEditRecipeFromModal && fullRecipeData && !loadingDetails && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setRecipeMetaModalOpen(true)}
+                                        className={cn(
+                                            'flex h-12 w-12 shrink-0 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
+                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                        )}
+                                        title="Editar nombre e imagen"
+                                        aria-label="Editar nombre e imagen"
+                                    >
+                                        <Pencil className="h-5 w-5" strokeWidth={2.2} />
+                                    </button>
+                                )}
                             </div>
 
                             <div className="relative mt-1 flex items-center justify-center w-fit shrink-0">
@@ -493,6 +515,20 @@ function RecipesContent() {
                         </div>
                     </div>
                 </div>
+            )}
+            {selectedRecipeId && fullRecipeData && (
+                <RecipeNamePhotoEditModal
+                    open={recipeMetaModalOpen && canEditRecipeFromModal}
+                    onClose={() => setRecipeMetaModalOpen(false)}
+                    recipeId={selectedRecipeId}
+                    initialName={fullRecipeData.name ?? ''}
+                    initialPhotoUrl={fullRecipeData.photo_url ?? null}
+                    onSaved={(payload) => {
+                        setFullRecipeData((prev: any) => (prev ? { ...prev, ...payload } : prev));
+                        void fetchRecipes();
+                        setRecipeMetaModalOpen(false);
+                    }}
+                />
             )}
             <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={uniqueDbCategories} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
         </div>

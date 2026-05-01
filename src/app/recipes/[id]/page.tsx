@@ -10,6 +10,7 @@ import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
 import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
+import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import * as XLSX from 'xlsx';
@@ -61,7 +62,6 @@ function RecipeDetailContent() {
     const [addIngredientUnit, setAddIngredientUnit] = useState<string>('kg');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [importingRecipe, setImportingRecipe] = useState(false);
@@ -70,6 +70,7 @@ function RecipeDetailContent() {
     const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     const [simulatorExpanded, setSimulatorExpanded] = useState(false);
+    const [recipeMetaModalOpen, setRecipeMetaModalOpen] = useState(false);
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -576,34 +577,6 @@ function RecipeDetailContent() {
         router.push('/recipes');
     };
 
-    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("La imagen es muy grande (Máx 5MB)");
-            return;
-        }
-
-        setUploadingPhoto(true);
-        try {
-            const fileExt = file.name.split('.').pop();
-            const cleanName = file.name
-                .toLowerCase()
-                .replace(/\.[^/.]+$/, "")
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9]/g, "_");
-
-            const fileName = `${Date.now()}-${cleanName}.${fileExt}`;
-
-            await supabase.storage.from('recipes').upload(fileName, file, { upsert: true });
-            const { data } = supabase.storage.from('recipes').getPublicUrl(fileName);
-            await updateRecipeField('photo_url', data.publicUrl);
-            toast.success('Foto actualizada');
-        } catch (e) { toast.error('Error foto'); }
-        finally { setUploadingPhoto(false); }
-    };
-
     const handleAddIngredient = async (ingredientId: string, unit: string) => {
         await supabase.from('recipe_ingredients').insert({
             recipe_id: recipeId,
@@ -735,11 +708,25 @@ function RecipeDetailContent() {
                     >
                         <ArrowLeft className="w-6 h-6" />
                     </Link>
-                    {/* Nombre centrado arriba */}
-                    <div className="w-full text-center">
-                        <div className="text-white font-black text-[13px] md:text-[15px] leading-tight truncate">
-                            {recipe.name}
+                    {/* Nombre + edición nombre/imagen */}
+                    <div className="flex w-full items-center justify-center gap-1 px-12 md:px-16">
+                        <div className="min-w-0 max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
+                            <span className="truncate inline-block max-w-full">{recipe.name}</span>
                         </div>
+                        {!isRestricted && (
+                            <button
+                                type="button"
+                                onClick={() => setRecipeMetaModalOpen(true)}
+                                className={cn(
+                                    'shrink-0 flex h-12 w-12 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
+                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                )}
+                                title="Editar nombre e imagen"
+                                aria-label="Editar nombre e imagen"
+                            >
+                                <Pencil className="h-5 w-5" strokeWidth={2.2} />
+                            </button>
+                        )}
                     </div>
 
                     {/* Importar (arriba derecha, no rompe centrado) */}
@@ -797,29 +784,6 @@ function RecipeDetailContent() {
                                 ) : (
                                     <Camera className="w-5 h-5 text-gray-300" />
                                 )}
-                                {!isRestricted && (
-                                    <label
-                                        className={cn(
-                                            'absolute right-1 bottom-1',
-                                            'w-10 h-10 rounded-xl',
-                                            'bg-black/35 hover:bg-black/45 backdrop-blur-[2px]',
-                                            'flex items-center justify-center cursor-pointer text-white transition active:scale-95',
-                                            'shadow-sm',
-                                        )}
-                                        title="Cambiar foto"
-                                        aria-label="Cambiar foto"
-                                    >
-                                        <Camera className="w-4 h-4" />
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handlePhotoUpload}
-                                            className="hidden"
-                                            disabled={uploadingPhoto}
-                                        />
-                                    </label>
-                                )}
-                                {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="sm" className="text-blue-600" /></div>}
                             </div>
                         </div>
 
@@ -1432,6 +1396,19 @@ function RecipeDetailContent() {
                     </div>
                 </div>
             )}
+
+            <RecipeNamePhotoEditModal
+                open={recipeMetaModalOpen && !isRestricted}
+                onClose={() => setRecipeMetaModalOpen(false)}
+                recipeId={recipeId}
+                initialName={recipe.name}
+                initialPhotoUrl={recipe.photo_url ?? null}
+                onSaved={(payload) => {
+                    setRecipe((r: any) => (r ? { ...r, ...payload } : r));
+                    void fetchAllRecipes();
+                    setRecipeMetaModalOpen(false);
+                }}
+            />
         </div>
     );
 }
