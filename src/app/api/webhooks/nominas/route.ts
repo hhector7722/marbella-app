@@ -38,7 +38,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { fileBase64, filename, emailDate } = await request.json();
+        const { fileBase64, filename, emailDate, extractedDni } = await request.json();
 
         if (!fileBase64 || !filename) {
             return NextResponse.json({ error: 'Payload incompleto' }, { status: 400 });
@@ -46,53 +46,61 @@ export async function POST(request: Request) {
 
         const pdfBuffer = Buffer.from(fileBase64, 'base64');
 
-        const textContent = await new Promise<string>((resolve, reject) => {
-            const pdfParser = new PDFParser(null, 1);
-            pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
-            pdfParser.on("pdfParser_dataReady", () => {
-                try { resolve(decodeURIComponent(pdfParser.getRawTextContent())); }
-                catch (e) { resolve(pdfParser.getRawTextContent()); }
+        // Preferir DNI ya extraído en origen (GAS OCR) para evitar timeouts/fallos de parseo en Vercel.
+        let resolvedDni: string | null = null;
+        if (typeof extractedDni === 'string') {
+            const clean = extractedDni.replace(/[- \.]/g, '').toUpperCase();
+            if (isValidDNI(clean)) resolvedDni = clean;
+        }
+
+        if (!resolvedDni) {
+            const textContent = await new Promise<string>((resolve, reject) => {
+                const pdfParser = new PDFParser(null, 1);
+                pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
+                pdfParser.on("pdfParser_dataReady", () => {
+                    try { resolve(decodeURIComponent(pdfParser.getRawTextContent())); }
+                    catch (e) { resolve(pdfParser.getRawTextContent()); }
+                });
+                pdfParser.parseBuffer(pdfBuffer);
             });
-            pdfParser.parseBuffer(pdfBuffer);
-        });
 
-        // 🧠 Regex Evolucionado: Captura sin límites de palabra, acepta guiones, puntos, espacios y ceros extra
-        const dniRegex = /(?:[XYZ][- \.]?[0-9]{7,8}[- \.]?[A-Z]|[0-9]{7,8}[- \.]?[A-Z])/gi;
-        const potentialMatches = textContent.match(dniRegex) || [];
+            // 🧠 Regex Evolucionado: Captura sin límites de palabra, acepta guiones, puntos, espacios y ceros extra
+            const dniRegex = /(?:[XYZ][- \.]?[0-9]{7,8}[- \.]?[A-Z]|[0-9]{7,8}[- \.]?[A-Z])/gi;
+            const potentialMatches = textContent.match(dniRegex) || [];
 
-        let extractedDni = null;
-        for (const rawMatch of potentialMatches) {
-            // 1. Limpieza inicial: Quitar basura visual
-            let cleanMatch = rawMatch.replace(/[- \.]/g, '').toUpperCase();
+            for (const rawMatch of potentialMatches) {
+                // 1. Limpieza inicial: Quitar basura visual
+                let cleanMatch = rawMatch.replace(/[- \.]/g, '').toUpperCase();
 
-            // 2. Normalización de NIE: Si la gestoría añadió un 0 (Z01706686E), lo quitamos (Z1706686E)
-            if (/^[XYZ]0\d{7}[A-Z]$/.test(cleanMatch)) {
-                cleanMatch = cleanMatch.charAt(0) + cleanMatch.substring(2);
-            }
+                // 2. Normalización de NIE: Si la gestoría añadió un 0 (Z01706686E), lo quitamos (Z1706686E)
+                if (/^[XYZ]0\d{7}[A-Z]$/.test(cleanMatch)) {
+                    cleanMatch = cleanMatch.charAt(0) + cleanMatch.substring(2);
+                }
 
-            // 3. Normalización de DNI: Si falta un 0 inicial (1234567A), lo añadimos (01234567A)
-            if (/^\d{7}[A-Z]$/.test(cleanMatch)) {
-                cleanMatch = '0' + cleanMatch;
-            }
+                // 3. Normalización de DNI: Si falta un 0 inicial (1234567A), lo añadimos (01234567A)
+                if (/^\d{7}[A-Z]$/.test(cleanMatch)) {
+                    cleanMatch = '0' + cleanMatch;
+                }
 
-            if (isValidDNI(cleanMatch)) {
-                extractedDni = cleanMatch;
-                break;
+                if (isValidDNI(cleanMatch)) {
+                    resolvedDni = cleanMatch;
+                    break;
+                }
             }
         }
 
-        if (!extractedDni) {
-            return NextResponse.json({ error: 'No se detectó DNI/NIE matemáticamente válido en el texto' }, { status: 422 });
+        if (!resolvedDni) {
+            return NextResponse.json({ error: 'No se detectó DNI/NIE matemáticamente válido (ni en payload ni en PDF)' }, { status: 422 });
         }
 
         const { data: profile, error: dbError } = await supabase
             .from('profiles')
             .select('id, first_name, codigo_empleado')
-            .eq('dni', extractedDni)
+            .eq('dni', resolvedDni)
             .single();
 
         if (dbError || !profile) {
-            return NextResponse.json({ error: `DNI ${extractedDni} no encontrado en perfiles activos` }, { status: 404 });
+            return NextResponse.json({ error: `DNI ${resolvedDni} no encontrado en perfiles activos` }, { status: 404 });
         }
 
         let mesDevengo = '';
@@ -169,7 +177,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             empleado: profile.first_name,
-            dni: extractedDni,
+            dni: resolvedDni,
             periodo: `${mesDevengo} ${anioDevengo}`
         }, { status: 200 });
 

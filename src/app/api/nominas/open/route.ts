@@ -4,11 +4,15 @@ import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function bucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
-    // Legacy: nóminas guardadas como "MM/YYYY/..." en el bucket `nominas`.
-    // Novedad: si la nómina está espejada en `employee_documents`, su ruta puede ser "<userId>/nominas/..."
-    if (/^\d{2}\/\d{4}\//.test(storagePath)) return 'nominas';
-    return 'employee-documents';
+function bucketForStoragePath(storagePath: string, hasLegacyRow: boolean): 'nominas' | 'employee-documents' {
+    // Fuente de verdad:
+    // - Si existe fila en tabla legacy `public.nominas`, el PDF está en bucket `nominas`.
+    // - Si solo existe en `employee_documents`, puede estar en `employee-documents` (manual) o `nominas` (espejo del webhook).
+    // Heurística consistente con `fetchNominasListForUser`:
+    // - Subidas manuales usan "<userId>/nominas/..." en bucket `employee-documents`.
+    if (hasLegacyRow) return 'nominas';
+    if (storagePath.includes('/nominas/')) return 'employee-documents';
+    return 'nominas';
 }
 
 /**
@@ -74,7 +78,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Documento no encontrado' }, { status: 404 });
     }
 
-    const bucket = bucketForPath(storagePath);
+    const bucket = bucketForStoragePath(storagePath, Boolean(leg));
     const { data: fileData, error: dlError } = await admin.storage.from(bucket).download(storagePath);
 
     if (dlError || !fileData) {
