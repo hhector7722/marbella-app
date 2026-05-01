@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -69,6 +69,7 @@ function RecipeDetailContent() {
     const [priceDraft, setPriceDraft] = useState('');
     const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
+    const [simulatorExpanded, setSimulatorExpanded] = useState(false);
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -143,6 +144,10 @@ function RecipeDetailContent() {
         };
         checkRole();
     }, [recipeId, catFilter]);
+
+    useEffect(() => {
+        setSimulatorExpanded(false);
+    }, [recipeId]);
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canImportRecipe = !isStaffView && userRole === 'manager';
@@ -969,60 +974,104 @@ function RecipeDetailContent() {
                                     </div>
                                 </div>
 
-                                {/* Sección 2: simulador dentro de tarjeta lila propia */}
-                                <div className="border-t border-gray-100 p-3">
-                                    <div className="rounded-xl bg-purple-600 p-3 text-white">
-                                        <div className="flex items-center justify-between gap-2 shrink-0">
-                                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador</h3>
+                                {/* Sección 2: simulador (plegado por defecto) */}
+                                <div className="border-t border-gray-100 p-3 shrink-0">
+                                    <div className="rounded-xl bg-purple-600 text-white overflow-hidden">
+                                        <div
+                                            className={cn(
+                                                'flex items-stretch gap-2 px-3 shrink-0',
+                                                simulatorExpanded && 'border-b border-white/15',
+                                            )}
+                                        >
                                             <button
                                                 type="button"
-                                                onClick={async () => {
-                                                    try {
-                                                        await applySimulatedPrice()
-                                                    } catch {
-                                                        // applySimulatedPrice ya emite toast en caso de fallo vía updateRecipeField
-                                                    }
-                                                }}
-                                                disabled={applyingSimulation || isRestricted}
+                                                onClick={() => setSimulatorExpanded((v) => !v)}
+                                                aria-expanded={simulatorExpanded}
                                                 className={cn(
-                                                    "text-[10px] font-black uppercase tracking-widest text-white/90 hover:text-white transition active:scale-[0.99]",
-                                                    (applyingSimulation || isRestricted) ? "opacity-50 pointer-events-none" : ""
+                                                    'flex flex-1 items-center justify-between gap-2 min-h-12 py-3 text-left',
+                                                    'transition-colors hover:bg-white/10 active:bg-white/15',
+                                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-inset',
                                                 )}
-                                                title="Aplicar precio simulado"
-                                                aria-label="Aplicar precio simulado"
                                             >
-                                                {applyingSimulation ? "Aplicando…" : "Aplicar"}
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Simulador</span>
+                                                <ChevronDown
+                                                    className={cn(
+                                                        'h-5 w-5 shrink-0 text-white/80 transition-transform duration-200',
+                                                        simulatorExpanded && 'rotate-180',
+                                                    )}
+                                                    aria-hidden
+                                                />
                                             </button>
+                                            {simulatorExpanded && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await applySimulatedPrice();
+                                                        } catch {
+                                                            // applySimulatedPrice ya emite toast en caso de fallo vía updateRecipeField
+                                                        }
+                                                    }}
+                                                    disabled={applyingSimulation || isRestricted}
+                                                    className={cn(
+                                                        'shrink-0 self-center px-3 py-3 min-h-12',
+                                                        'text-[10px] font-black uppercase tracking-widest text-white/90 hover:text-white hover:bg-white/10 transition active:scale-[0.99]',
+                                                        (applyingSimulation || isRestricted) ? 'opacity-50 pointer-events-none' : '',
+                                                    )}
+                                                    title="Aplicar precio simulado"
+                                                    aria-label="Aplicar precio simulado"
+                                                >
+                                                    {applyingSimulation ? 'Aplicando…' : 'Aplicar'}
+                                                </button>
+                                            )}
                                         </div>
 
-                                        <div className="mt-3 flex flex-col gap-4">
-                                            <div className="px-1 text-center">
-                                                <span className="text-3xl font-black text-white">{(simulatedPrice || 0).toFixed(2)}€</span>
+                                        {simulatorExpanded && (
+                                            <div className="flex flex-col gap-4 p-3">
+                                                <div className="px-1 text-center">
+                                                    <span className="text-3xl font-black text-white">
+                                                        {(simulatedPrice || 0).toFixed(2)}€
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={Math.floor(currentPrice * 0.5 * 10) / 10}
+                                                    max={Math.ceil(currentPrice * 2 * 10) / 10 || 20}
+                                                    step={0.1}
+                                                    value={simulatedPrice}
+                                                    onChange={(e) =>
+                                                        setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)
+                                                    }
+                                                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/25 accent-white"
+                                                />
+                                                <div className="grid grid-cols-3 gap-2 text-center">
+                                                    <div>
+                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                            FC
+                                                        </div>
+                                                        <div className="text-lg font-black text-white">
+                                                            {(simulatedFoodCost || 0).toFixed(0)}%
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                            Base
+                                                        </div>
+                                                        <div className="text-lg font-black text-white">
+                                                            {(simulatedBasePrice || 0).toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                            Margen
+                                                        </div>
+                                                        <div className="text-lg font-black text-white">
+                                                            {(simulatedMargin || 0).toFixed(2)}€
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <input
-                                                type="range"
-                                                min={Math.floor((currentPrice * 0.5) * 10) / 10}
-                                                max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
-                                                step={0.10}
-                                                value={simulatedPrice}
-                                                onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
-                                                className="w-full h-1.5 bg-white/25 rounded-lg appearance-none cursor-pointer accent-white"
-                                            />
-                                            <div className="grid grid-cols-3 gap-2 text-center">
-                                                <div>
-                                                    <div className="text-[9px] text-white/80 font-bold uppercase tracking-widest">FC</div>
-                                                    <div className="text-lg font-black text-white">{(simulatedFoodCost || 0).toFixed(0)}%</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-[9px] text-white/80 font-bold uppercase tracking-widest">Base</div>
-                                                    <div className="text-lg font-black text-white">{(simulatedBasePrice || 0).toFixed(2)}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-[9px] text-white/80 font-bold uppercase tracking-widest">Margen</div>
-                                                    <div className="text-lg font-black text-white">{(simulatedMargin || 0).toFixed(2)}€</div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

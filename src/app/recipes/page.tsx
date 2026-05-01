@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import Link from 'next/link';
-import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, BookOpen, UtensilsCrossed, Beaker, Camera, Edit2, PlayCircle } from 'lucide-react';
+import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -42,9 +41,9 @@ function RecipesContent() {
     const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
     const [fullRecipeData, setFullRecipeData] = useState<any>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
-    const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
-    const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
+    /** Lista para flechas anterior/siguiente (misma regla que `/recipes/[id]`: orden nombre, opcional filtro categoría URL). */
+    const [staffNavRecipes, setStaffNavRecipes] = useState<Array<{ id: string }>>([]);
     const router = useRouter();
 
     const searchParams = useSearchParams();
@@ -97,59 +96,42 @@ function RecipesContent() {
         }
     }, [selectedRecipeId]);
 
+    useEffect(() => {
+        if (!isStaffView || !selectedRecipeId) return;
+        let q = supabase.from('recipes').select('id').order('name');
+        const cat = categoryFromUrl ?? selectedCategory;
+        if (cat) q = q.eq('category', cat);
+        void q.then(({ data, error }) => {
+            if (!error && data) setStaffNavRecipes(data);
+            else setStaffNavRecipes([]);
+        });
+    }, [isStaffView, selectedRecipeId, categoryFromUrl, selectedCategory]);
+
+    const staffNavIndex = staffNavRecipes.findIndex((r) => r.id === selectedRecipeId);
+
+    const modalElaborationSteps = useMemo(() => {
+        const raw = fullRecipeData?.elaboration;
+        if (!raw || typeof raw !== 'string') return [] as string[];
+        const lines = raw.includes('\n') ? raw.split('\n') : [raw];
+        return lines.map((s) => s.trim()).filter(Boolean);
+    }, [fullRecipeData?.elaboration]);
+
+    const modalPresentationSteps = useMemo(() => {
+        const raw = fullRecipeData?.presentation;
+        if (!raw || typeof raw !== 'string') return [] as string[];
+        const lines = raw.includes('\n') ? raw.split('\n') : [raw];
+        return lines.map((s) => s.trim()).filter(Boolean);
+    }, [fullRecipeData?.presentation]);
+
+    const modalSortedIngredients = useMemo(() => {
+        const list = fullRecipeData?.recipe_ingredients ?? [];
+        return [...list].sort((a: any, b: any) =>
+            (a.ingredients?.name || '').localeCompare(b.ingredients?.name || ''),
+        );
+    }, [fullRecipeData?.recipe_ingredients]);
+
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canEditRecipeFromModal = userRole === 'manager' || userRole === 'supervisor';
-    const canManageRecipeVideo = userRole === 'manager';
-
-    async function handleElaborationVideoSelected(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0] ?? null;
-        // permitir re-seleccionar el mismo archivo
-        e.target.value = '';
-        if (!file) return;
-        if (!selectedRecipeId) return;
-        if (!canManageRecipeVideo) return;
-
-        try {
-            setUploadingElaborationVideo(true);
-
-            const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-            const cleanBase = file.name
-                .toLowerCase()
-                .replace(/\.[^/.]+$/, '')
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '')
-                .slice(0, 60);
-
-            const fileName = `${Date.now()}-${cleanBase || 'elaboracion'}.${ext}`;
-            const path = `${selectedRecipeId}/${fileName}`;
-
-            const up = await supabase.storage.from('recipe_videos').upload(path, file, {
-                upsert: true,
-                contentType: file.type || undefined,
-            });
-            if (up.error) throw up.error;
-
-            const { data: publicUrl } = supabase.storage.from('recipe_videos').getPublicUrl(path);
-            const url = publicUrl?.publicUrl;
-            if (!url) throw new Error('No se pudo obtener URL pública del vídeo.');
-
-            const { error: updateErr } = await supabase
-                .from('recipes')
-                .update({ elaboration_video_url: url })
-                .eq('id', selectedRecipeId);
-            if (updateErr) throw updateErr;
-
-            toast.success('Vídeo de elaboración guardado');
-            await fetchRecipeDetails(selectedRecipeId);
-        } catch (err: any) {
-            console.error(err);
-            toast.error(err?.message || 'Error subiendo vídeo');
-        } finally {
-            setUploadingElaborationVideo(false);
-        }
-    }
 
     async function fetchRecipeDetails(id: string) {
         try {
@@ -303,98 +285,153 @@ function RecipesContent() {
                 )}
             </div>
 
-            {/* MODAL DE DETALLE (PARA STAFF) */}
+            {/* MODAL DE DETALLE (PARA STAFF): misma composición visual que `/recipes/[id]` en modo restringido */}
             {selectedRecipeId && (
                 <div
                     className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300"
                     onClick={() => setSelectedRecipeId(null)}
                 >
                     <div
-                        className="bg-[#fafafa] w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
+                        className="bg-white w-full max-w-6xl max-h-[90vh] rounded-[20px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header del Modal */}
-                        <div className="relative bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0 border-b border-white/10">
-                            <div className="flex items-center gap-4">
+                        <div className="relative bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedRecipeId(null)}
+                                aria-label="Volver a la lista de recetas"
+                                className={cn(
+                                    'absolute left-2 top-2 md:left-3 md:top-2',
+                                    'w-12 h-12 flex items-center justify-center shrink-0',
+                                    'text-white/70 hover:text-white active:scale-95 transition',
+                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                )}
+                            >
+                                <ArrowLeft className="w-6 h-6" />
+                            </button>
+
+                            {canEditRecipeFromModal && selectedRecipeId && (
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        if (fullRecipeData?.photo_url) setIsPhotoLightboxOpen(true);
+                                        const id = selectedRecipeId;
+                                        setSelectedRecipeId(null);
+                                        router.push(buildRecipesHref(id));
                                     }}
                                     className={cn(
-                                        'w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0 p-1',
-                                        fullRecipeData?.photo_url ? 'cursor-zoom-in' : 'cursor-default',
-                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                        'absolute right-2 top-2 md:right-3 md:top-2',
+                                        'w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95',
                                     )}
-                                    aria-label={fullRecipeData?.photo_url ? 'Ver foto ampliada' : 'Sin foto'}
+                                    aria-label="Editar receta"
+                                    title="Editar receta"
                                 >
-                                    {fullRecipeData?.photo_url ? (
-                                        <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-contain" />
-                                    ) : (
-                                        <ChefHat className="w-8 h-8 text-zinc-200" />
-                                    )}
+                                    <Edit2 className="w-5 h-5" strokeWidth={2.5} />
                                 </button>
-                                <div className="flex flex-col">
-                                    <h3 className="text-white text-lg font-black uppercase tracking-widest leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px] md:max-w-[400px]">
-                                        {fullRecipeData?.name || 'Cargando...'}
-                                    </h3>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{fullRecipeData?.category}</span>
-                                        <div className="flex items-center gap-1.5 text-white/50 text-[10px] font-bold">
-                                            <Users className="w-3 h-3" />
-                                            <span>{fullRecipeData?.servings || 1} raciones</span>
-                                        </div>
-                                    </div>
+                            )}
+
+                            <div className="w-full text-center px-10 md:px-14">
+                                <div className="text-white font-black text-[13px] md:text-[15px] leading-tight truncate">
+                                    {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                                {canEditRecipeFromModal && selectedRecipeId && (
-                                    <button
-                                        onClick={() => {
-                                            setSelectedRecipeId(null);
-                                            router.push(buildRecipesHref(selectedRecipeId));
-                                        }}
-                                        className="w-12 h-12 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
-                                        aria-label="Editar"
-                                        title="Editar"
-                                    >
-                                        <Edit2 size={16} strokeWidth={3} />
-                                    </button>
-                                )}
+
+                            <div className="relative mt-1 flex items-center justify-center w-fit shrink-0">
                                 <button
-                                    onClick={() => setSelectedRecipeId(null)}
-                                    className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 text-white transition-all active:scale-90"
-                                    aria-label="Cerrar"
+                                    type="button"
+                                    onClick={() => {
+                                        if (staffNavIndex > 0) setSelectedRecipeId(staffNavRecipes[staffNavIndex - 1].id);
+                                    }}
+                                    disabled={staffNavIndex <= 0}
+                                    className="absolute -left-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                                    aria-label="Receta anterior"
                                 >
-                                    <X size={20} strokeWidth={3} />
+                                    <ChevronLeft className="w-8 h-8" />
                                 </button>
+
+                                <div className="bg-white rounded-xl p-0.5 shadow-sm">
+                                    <div className="relative group w-24 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-100/50">
+                                        {fullRecipeData?.photo_url ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsPhotoLightboxOpen(true)}
+                                                className={cn(
+                                                    'absolute inset-0 w-full h-full cursor-zoom-in',
+                                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                                )}
+                                                aria-label="Ver foto ampliada"
+                                            >
+                                                <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-contain" />
+                                            </button>
+                                        ) : (
+                                            <Camera className="w-5 h-5 text-gray-300" aria-hidden />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (staffNavIndex >= 0 && staffNavIndex < staffNavRecipes.length - 1) {
+                                            setSelectedRecipeId(staffNavRecipes[staffNavIndex + 1].id);
+                                        }
+                                    }}
+                                    disabled={staffNavIndex < 0 || staffNavIndex >= staffNavRecipes.length - 1}
+                                    className="absolute -right-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                                    aria-label="Receta siguiente"
+                                >
+                                    <ChevronRight className="w-8 h-8" />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
+                                <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">
+                                    {fullRecipeData?.category || ' '}
+                                </span>
+                                <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                                    <Users className="w-3.5 h-3.5" />
+                                    <span>{fullRecipeData?.servings || 1} rac</span>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Contenido Scrollable */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-[#fafafa]">
                             {loadingDetails ? (
                                 <div className="h-64 flex flex-col items-center justify-center text-[#36606F]/60">
                                     <LoadingSpinner size="lg" className="text-[#36606F] mb-4" />
                                     <p className="text-[10px] font-black uppercase tracking-widest">Cargando receta...</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
-                                        <div className="bg-[#36606F] px-5 py-3 flex items-center justify-between shrink-0">
-                                            <div className="flex items-center gap-2">
-                                                <UtensilsCrossed size={14} className="text-white/70" />
-                                                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes</h4>
-                                            </div>
+                                <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
+                                    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
+                                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                                                Ingredientes{' '}
+                                                <span className="opacity-50">({modalSortedIngredients.length})</span>
+                                            </h2>
                                         </div>
-                                        <div className="flex-1 overflow-y-auto">
-                                            <table className="w-full text-left">
-                                                <tbody className="divide-y divide-zinc-50">
-                                                    {fullRecipeData?.recipe_ingredients?.map((ing: any) => (
-                                                        <tr key={ing.id} className="hover:bg-zinc-50/50 transition-colors">
-                                                            <td className="px-4 py-3 text-xs font-bold text-zinc-800">{ing.ingredients?.name}</td>
-                                                            <td className="px-4 py-3 text-xs font-black text-zinc-600 text-right">{ing.quantity_gross || 0}</td>
-                                                            <td className="px-4 py-3 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{ing.unit}</td>
+                                        <div className="custom-scrollbar relative">
+                                            <table className="w-full text-[10px] border-collapse">
+                                                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                                                    <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
+                                                        <th className="text-left py-2 px-3">Ingrediente</th>
+                                                        <th className="text-center">Cant</th>
+                                                        <th className="text-center">Ud</th>
+                                                        <th className="w-8" />
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {modalSortedIngredients.map((ing: any) => (
+                                                        <tr key={ing.id} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="py-2 px-3 text-gray-800 font-bold truncate max-w-[120px]">
+                                                                {ing.ingredients?.name}
+                                                            </td>
+                                                            <td className="text-center py-2">
+                                                                <span className="text-gray-700 font-bold">{ing.quantity_gross}</span>
+                                                            </td>
+                                                            <td className="text-center py-2">
+                                                                <span className="text-gray-400 font-bold">{ing.unit}</span>
+                                                            </td>
+                                                            <td className="py-2" />
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -402,92 +439,54 @@ function RecipesContent() {
                                         </div>
                                     </div>
 
-                                    {/* Columna Derecha: Elaboración y Presentación */}
-                                    <div className="space-y-4">
-                                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
-                                            <div className="bg-[#36606F] px-5 py-3 flex items-center justify-between shrink-0">
-                                                <div className="flex items-center gap-2">
-                                                    <BookOpen size={14} className="text-white/70" />
-                                                    <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h4>
-                                                </div>
-                                                {canManageRecipeVideo && (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => elaborationVideoInputRef.current?.click()}
-                                                            disabled={uploadingElaborationVideo}
-                                                            title="Añadir vídeo de elaboración"
-                                                            aria-label="Añadir vídeo de elaboración"
-                                                            className={cn(
-                                                                "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white active:scale-95",
-                                                                uploadingElaborationVideo ? "opacity-50 pointer-events-none" : ""
-                                                            )}
-                                                        >
-                                                            <PlayCircle className="w-5 h-5" />
-                                                        </button>
-                                                        <input
-                                                            ref={elaborationVideoInputRef}
-                                                            type="file"
-                                                            accept="video/*"
-                                                            className="hidden"
-                                                            onChange={handleElaborationVideoSelected}
-                                                        />
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="p-5 overflow-y-auto max-h-[400px]">
-                                                {fullRecipeData?.elaboration ? (
-                                                    <ul className="space-y-4">
-                                                        {fullRecipeData.elaboration.split('\n').filter(Boolean).map((step: string, i: number) => (
-                                                            <li key={i} className="flex gap-4 group">
-                                                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[10px] shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                                                    {i + 1}
-                                                                </div>
-                                                                <p className="text-[11px] leading-relaxed text-zinc-600 font-medium">
-                                                                    {step}
-                                                                </p>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <div className="h-32 flex flex-col items-center justify-center text-zinc-300 italic">
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest">Sin pasos registrados</p>
-                                                    </div>
-                                                )}
-
+                                    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
+                                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
+                                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
+                                        </div>
+                                        <div className="p-3">
+                                            <div className="custom-scrollbar space-y-3">
+                                                <ul className="space-y-2">
+                                                    {modalElaborationSteps.map((s, i) => (
+                                                        <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
+                                                            <span className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[8px]">
+                                                                {i + 1}
+                                                            </span>
+                                                            <span>{s}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                                 {fullRecipeData?.elaboration_video_url && (
-                                                    <div className="mt-5">
-                                                        <video
-                                                            controls
-                                                            preload="metadata"
-                                                            src={fullRecipeData.elaboration_video_url}
-                                                            className="w-full rounded-2xl bg-black"
-                                                        />
-                                                    </div>
+                                                    <video
+                                                        controls
+                                                        preload="metadata"
+                                                        src={fullRecipeData.elaboration_video_url}
+                                                        className="w-full rounded-2xl bg-black"
+                                                    />
                                                 )}
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {fullRecipeData?.presentation && (
-                                            <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
-                                                <div className="bg-[#36606F] px-5 py-3 flex items-center gap-2 shrink-0">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                                    <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h4>
-                                                </div>
-                                                <div className="p-5">
-                                                    <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
-                                                        <ul className="space-y-3">
-                                                            {fullRecipeData.presentation.split('\n').filter(Boolean).map((step: string, i: number) => (
-                                                                <li key={i} className="flex gap-3 text-emerald-800/90 text-[11px] leading-relaxed font-medium">
-                                                                    <X className="rotate-45 w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={4} />
-                                                                    <span>{step}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                </div>
+                                    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
+                                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
+                                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
+                                        </div>
+                                        <div className="p-3 bg-zinc-50/30">
+                                            <div className="custom-scrollbar">
+                                                <ul className="space-y-2">
+                                                    {modalPresentationSteps.map((s, i) => (
+                                                        <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
+                                                            <X
+                                                                className="rotate-45 w-2 h-2 text-emerald-500 mt-1 flex-shrink-0"
+                                                                strokeWidth={5}
+                                                                aria-hidden
+                                                            />
+                                                            <span>{s}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
