@@ -718,7 +718,8 @@ function RecipeDetailContent() {
                                 type="button"
                                 onClick={() => setRecipeMetaModalOpen(true)}
                                 className={cn(
-                                    'absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
+                                    'absolute top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
+                                    canImportRecipe ? 'right-14 md:right-[3.75rem]' : 'right-2 md:right-3',
                                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
                                 )}
                                 title="Editar nombre e imagen"

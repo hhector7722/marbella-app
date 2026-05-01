@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, Pencil, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { recipeLineCost } from '@/lib/recipe-cost';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
-import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 
 interface Recipe {
     id: string;
@@ -45,7 +44,6 @@ function RecipesContent() {
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     /** Lista para flechas anterior/siguiente (misma regla que `/recipes/[id]`: orden nombre, opcional filtro categoría URL). */
     const [staffNavRecipes, setStaffNavRecipes] = useState<Array<{ id: string }>>([]);
-    const [recipeMetaModalOpen, setRecipeMetaModalOpen] = useState(false);
     const router = useRouter();
 
     const searchParams = useSearchParams();
@@ -55,6 +53,14 @@ function RecipesContent() {
     const buildRecipesHref = (id: string) => {
         const qs = new URLSearchParams(searchParams.toString());
         return qs.toString() ? `/recipes/${id}?${qs.toString()}` : `/recipes/${id}`;
+    };
+
+    /** Ficha completa con edición (quita `view=staff` para no forzar modo restringido en `/recipes/[id]`). */
+    const buildRecipesFullEditHref = (id: string) => {
+        const qs = new URLSearchParams(searchParams.toString());
+        qs.delete('view');
+        const s = qs.toString();
+        return s ? `/recipes/${id}?${s}` : `/recipes/${id}`;
     };
 
     useEffect(() => {
@@ -96,10 +102,6 @@ function RecipesContent() {
         } else {
             setFullRecipeData(null);
         }
-    }, [selectedRecipeId]);
-
-    useEffect(() => {
-        if (!selectedRecipeId) setRecipeMetaModalOpen(false);
     }, [selectedRecipeId]);
 
     useEffect(() => {
@@ -322,14 +324,14 @@ function RecipesContent() {
                                     onClick={() => {
                                         const id = selectedRecipeId;
                                         setSelectedRecipeId(null);
-                                        router.push(buildRecipesHref(id));
+                                        router.push(buildRecipesFullEditHref(id));
                                     }}
                                     className={cn(
                                         'absolute right-2 top-2 md:right-3 md:top-2',
                                         'w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95',
                                     )}
-                                    aria-label="Editar receta"
-                                    title="Editar receta"
+                                    aria-label="Abrir ficha de edición completa"
+                                    title="Editar ingredientes, elaboración y presentación"
                                 >
                                     <Edit2 className="w-5 h-5" strokeWidth={2.5} />
                                 </button>
@@ -341,20 +343,6 @@ function RecipesContent() {
                                         {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
                                     </span>
                                 </div>
-                                {canEditRecipeFromModal && fullRecipeData && !loadingDetails && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setRecipeMetaModalOpen(true)}
-                                        className={cn(
-                                            'absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
-                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                        )}
-                                        title="Editar nombre e imagen"
-                                        aria-label="Editar nombre e imagen"
-                                    >
-                                        <Pencil className="h-5 w-5" strokeWidth={2.2} />
-                                    </button>
-                                )}
                             </div>
 
                             <div className="relative mt-1 flex items-center justify-center w-fit shrink-0">
@@ -515,20 +503,6 @@ function RecipesContent() {
                         </div>
                     </div>
                 </div>
-            )}
-            {selectedRecipeId && fullRecipeData && (
-                <RecipeNamePhotoEditModal
-                    open={recipeMetaModalOpen && canEditRecipeFromModal}
-                    onClose={() => setRecipeMetaModalOpen(false)}
-                    recipeId={selectedRecipeId}
-                    initialName={fullRecipeData.name ?? ''}
-                    initialPhotoUrl={fullRecipeData.photo_url ?? null}
-                    onSaved={(payload) => {
-                        setFullRecipeData((prev: any) => (prev ? { ...prev, ...payload } : prev));
-                        void fetchRecipes();
-                        setRecipeMetaModalOpen(false);
-                    }}
-                />
             )}
             <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={uniqueDbCategories} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
         </div>
