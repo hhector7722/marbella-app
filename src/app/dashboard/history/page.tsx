@@ -105,7 +105,27 @@ const DonutChart = ({ size = 60, percentage = 75, color = "#10b981" }: { size?: 
     );
 };
 
-const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing = false, onUpdate }: { isOpen: boolean, onClose: () => void, breakdown: any, date: string, total: number, isEditing?: boolean, onUpdate?: (den: string, qty: number) => void }) => {
+const CashBreakdownModal = ({
+    isOpen,
+    onClose,
+    breakdown,
+    date,
+    total,
+    isEditing = false,
+    onUpdate,
+    onSave,
+    saving = false,
+}: {
+    isOpen: boolean,
+    onClose: () => void,
+    breakdown: any,
+    date: string,
+    total: number,
+    isEditing?: boolean,
+    onUpdate?: (den: string, qty: number) => void,
+    onSave?: () => void,
+    saving?: boolean,
+}) => {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     if (!isOpen) return null;
 
@@ -163,8 +183,16 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
                 </div>
                 {isEditing && (
                     <div className="p-6 bg-gray-50/50 border-t border-gray-100">
-                        <button onClick={onClose} className="w-full h-12 bg-[#36606F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all">
-                            Confirmar Arqueo
+                        <button
+                            onClick={onSave}
+                            disabled={saving}
+                            className={cn(
+                                "w-full h-12 bg-[#36606F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg transition-all",
+                                "hover:scale-[1.02] active:scale-[0.98]",
+                                saving ? "opacity-70 pointer-events-none" : ""
+                            )}
+                        >
+                            {saving ? 'Guardando…' : 'Guardar desglose'}
                         </button>
                     </div>
                 )}
@@ -541,7 +569,7 @@ export default function HistoryPage() {
         setEditData({ ...editData, breakdown: newBreakdown, cash_counted: totalCounted, difference: diff, cash_withdrawn: withDrawn, cash_left: cLeft });
     };
 
-    const handleSaveEdit = async () => {
+    const persistEditData = async (opts?: { exitEdit?: boolean }) => {
         if (!editData) return;
         setLoading(true);
         try {
@@ -556,12 +584,15 @@ export default function HistoryPage() {
                 cash_expected: editData.cash_expected,
                 cash_counted: editData.cash_counted,
                 difference: editData.difference,
-                breakdown: editData.breakdown
+                breakdown: editData.breakdown,
+                cash_withdrawn: editData.cash_withdrawn,
+                cash_left: editData.cash_left,
             }).eq('id', editData.id);
             if (error) throw error;
             toast.success("Cierre actualizado");
             setSelectedClosing(editData);
-            setIsEditing(false);
+            setEditData({ ...editData });
+            if (opts?.exitEdit !== false) setIsEditing(false);
             fetchHistory();
         } catch (err: any) {
             toast.error("Error al actualizar: " + err.message);
@@ -1115,7 +1146,7 @@ export default function HistoryPage() {
                                             />
                                             <div
                                                 className="flex flex-col items-center justify-center text-center min-w-[70px] cursor-pointer"
-                                                onClick={() => !isEditing && setShowCashDetails(true)}
+                                                onClick={() => setShowCashDetails(true)}
                                             >
                                                 <span className="text-sm md:text-base font-black text-gray-900 leading-none">
                                                     {formatMoneyModal(getValue('cash_counted'))}
@@ -1161,7 +1192,7 @@ export default function HistoryPage() {
                             })()}
 
                             {isEditing && (
-                                <button onClick={handleSaveEdit} disabled={loading} className="w-full h-16 bg-[#36606F] text-white rounded-[2rem] shadow-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                                <button onClick={() => persistEditData({ exitEdit: true })} disabled={loading} className="w-full h-16 bg-[#36606F] text-white rounded-[2rem] shadow-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2">
                                     {loading ? <LoadingSpinner size="sm" /> : <><Save size={20} /> Guardar Cierre</>}
                                 </button>
                             )}
@@ -1179,6 +1210,16 @@ export default function HistoryPage() {
                     total={isEditing ? editData.cash_counted : selectedClosing.cash_counted}
                     isEditing={isEditing}
                     onUpdate={handleBreakdownUpdate}
+                    saving={loading}
+                    onSave={async () => {
+                        // En edición: persistir YA el desglose para que el trigger actualice treasury_log (CLOSE_ENTRY).
+                        if (!isEditing) {
+                            setShowCashDetails(false);
+                            return;
+                        }
+                        await persistEditData({ exitEdit: false });
+                        setShowCashDetails(false);
+                    }}
                 />
             )}
 
