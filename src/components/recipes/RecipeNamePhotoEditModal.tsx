@@ -141,19 +141,26 @@ export function RecipeNamePhotoEditModal({
                 aria-modal="true"
                 aria-labelledby="recipe-name-photo-edit-title"
                 className={cn(
-                    'w-full max-w-md rounded-2xl border border-zinc-100 bg-white shadow-xl',
+                    'w-full max-w-md overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-xl',
                     'flex max-h-[90vh] flex-col',
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 px-4 py-3">
-                    <h2 id="recipe-name-photo-edit-title" className="text-sm font-black uppercase tracking-widest text-zinc-800">
+                <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 bg-[#36606F] px-4 py-3">
+                    <h2
+                        id="recipe-name-photo-edit-title"
+                        className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-white md:text-xs"
+                    >
                         Nombre e imagen
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-12 w-12 shrink-0 items-center justify-center text-zinc-400 transition hover:text-zinc-700"
+                        className={cn(
+                            'absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center',
+                            'text-white/70 transition hover:text-white',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                        )}
                         aria-label="Cerrar"
                     >
                         <X className="h-5 w-5" strokeWidth={2.5} />

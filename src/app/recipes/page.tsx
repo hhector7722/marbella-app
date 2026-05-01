@@ -335,7 +335,7 @@ function RecipesContent() {
                                 </button>
                             )}
 
-                            <div className="flex w-full items-center justify-center gap-1 px-10 md:px-14">
+                            <div className="relative flex w-full min-h-12 items-center justify-center px-10 md:px-14">
                                 <div className="min-w-0 max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
                                     <span className="inline-block max-w-full truncate">
                                         {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
@@ -346,7 +346,7 @@ function RecipesContent() {
                                         type="button"
                                         onClick={() => setRecipeMetaModalOpen(true)}
                                         className={cn(
-                                            'flex h-12 w-12 shrink-0 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
+                                            'absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
                                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
                                         )}
                                         title="Editar nombre e imagen"
