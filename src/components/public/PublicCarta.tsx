@@ -157,7 +157,7 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:mt-10">
+        <section className="mt-8 grid grid-cols-2 gap-2 sm:gap-4 md:mt-10">
           {grouped.map((group) => {
             const isOpen = openKey === group.key
             return (
