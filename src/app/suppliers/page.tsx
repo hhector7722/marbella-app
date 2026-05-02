@@ -125,17 +125,30 @@ export default function SuppliersPage() {
     }
 
     async function handleCreateSupplier() {
-        if (!newSupplier.name) { toast.error('El nombre es obligatorio'); return; }
+        const name = newSupplier.name?.trim();
+        if (!name) {
+            toast.error('El nombre es obligatorio');
+            return;
+        }
         try {
             setIsCreating(true);
-            const { error } = await supabase.from('suppliers').insert(newSupplier);
+            const phone = newSupplier.phone?.trim() || null;
+            const notes = newSupplier.category
+                ? `Categoría (app): ${newSupplier.category}`
+                : null;
+            const { error } = await supabase.from('suppliers').insert({
+                name,
+                phone,
+                ...(notes ? { notes } : {}),
+            });
             if (error) throw error;
             toast.success('Proveedor creado');
             await fetchSuppliers();
             setShowCreateModal(false);
             setNewSupplier({ name: '', category: 'Alimentos' });
-        } catch (error: any) {
-            toast.error('Error: ' + error.message);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast.error(`Error: ${message}`);
         } finally {
             setIsCreating(false);
         }
@@ -333,6 +346,7 @@ export default function SuppliersPage() {
                                 <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nombre Empresa</label>
                                 <input
                                     autoFocus
+                                    value={newSupplier.name ?? ''}
                                     onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })}
                                     className="w-full p-3 border rounded-xl font-bold outline-none focus:border-[#5E35B1]"
                                     placeholder="Ej. Suministros Marbella"
@@ -343,6 +357,7 @@ export default function SuppliersPage() {
                                 <div>
                                     <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Categoría</label>
                                     <select
+                                        value={newSupplier.category ?? 'Alimentos'}
                                         onChange={e => setNewSupplier({ ...newSupplier, category: e.target.value })}
                                         className="w-full p-3 border rounded-xl bg-white font-bold outline-none focus:border-[#5E35B1]"
                                     >
@@ -352,6 +367,7 @@ export default function SuppliersPage() {
                                 <div>
                                     <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Teléfono</label>
                                     <input
+                                        value={newSupplier.phone ?? ''}
                                         onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })}
                                         className="w-full p-3 border rounded-xl font-bold outline-none focus:border-[#5E35B1]"
                                         placeholder="600 000 000"
@@ -360,7 +376,10 @@ export default function SuppliersPage() {
                             </div>
 
                             <button
-                                className="w-full py-4 bg-[#5E35B1] text-white rounded-xl font-bold mt-2 shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                type="button"
+                                disabled={isCreating}
+                                onClick={() => void handleCreateSupplier()}
+                                className="w-full min-h-[48px] py-4 bg-[#5E35B1] text-white rounded-xl font-bold mt-2 shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
                             >
                                 {isCreating ? (
                                     <>

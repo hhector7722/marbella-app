@@ -236,14 +236,16 @@ export async function importSuppliers(data: Record<string, any>[], meta?: Import
                 continue
             }
 
+            const noteParts: string[] = []
+            if (row.contacto) noteParts.push(`Contacto: ${row.contacto}`)
+            if (row.email) noteParts.push(`Email: ${row.email}`)
+            const notes = noteParts.length > 0 ? noteParts.join(' · ') : null
+
             const { error } = await supabase.from('suppliers').insert({
                 name: row.nombre,
-                contact_name: row.contacto || null,
                 phone: row.telefono ? String(row.telefono) : null,
-                email: row.email || null,
-                // Default values
-                frequency: row.frecuencia_revisión || 'Semanal',
-                active: true,
+                delivery_schedule: row.frecuencia_revisión || 'Semanal',
+                ...(notes ? { notes } : {}),
             })
 
             if (error) throw error
