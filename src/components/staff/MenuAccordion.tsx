@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
     type CartaLang,
@@ -232,27 +231,22 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                 onClick={() =>
                                     setOpenKey((current) => (current === group.key ? null : group.key))
                                 }
-                                className="flex min-h-[48px] w-full items-center justify-between gap-3 p-4 text-left active:bg-zinc-50/80"
+                                className="flex min-h-[48px] w-full items-center justify-center p-4 active:bg-zinc-50/80"
                                 aria-expanded={isOpen}
                             >
-                                {!isOpen && group.coverPhotoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
-                                    <img
-                                        src={group.coverPhotoUrl}
-                                        alt=""
-                                        className="h-12 w-12 shrink-0 rounded-xl border border-zinc-100 object-cover"
-                                    />
-                                ) : null}
-                                <span className="min-w-0 flex-1 text-sm font-black uppercase tracking-wide text-[#36606F]">
-                                    {group.title}
+                                <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
+                                    {!isOpen && group.coverPhotoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
+                                        <img
+                                            src={group.coverPhotoUrl}
+                                            alt=""
+                                            className="h-12 w-12 shrink-0 object-contain object-center"
+                                        />
+                                    ) : null}
+                                    <span className="min-w-0 text-center text-sm font-black uppercase tracking-wide text-[#36606F]">
+                                        {group.title}
+                                    </span>
                                 </span>
-                                <ChevronDown
-                                    className={cn(
-                                        'h-5 w-5 shrink-0 text-zinc-400 transition-transform',
-                                        isOpen && 'rotate-180'
-                                    )}
-                                    aria-hidden
-                                />
                             </button>
                             {isOpen ? (
                                 <div className="shrink-0 border-t border-zinc-100 px-3 pb-3 pt-1">

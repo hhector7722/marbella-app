@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { ChevronDown, Home, Search } from 'lucide-react'
+import { Home, Search } from 'lucide-react'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -195,27 +195,25 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                   onClick={() =>
                     setOpenKey((current) => (current === group.key ? null : group.key))
                   }
-                  className="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-zinc-50"
+                  className="flex min-h-[56px] w-full items-center justify-center px-4 py-3 active:bg-zinc-50"
                   aria-expanded={isOpen}
                 >
-                  {!isOpen && group.coverPhotoUrl ? (
-                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
-                      <Image
-                        src={group.coverPhotoUrl}
-                        alt=""
-                        fill
-                        sizes="56px"
-                        className="object-cover"
-                      />
+                  <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
+                    {!isOpen && group.coverPhotoUrl ? (
+                      <span className="relative h-14 w-14 shrink-0 overflow-hidden">
+                        <Image
+                          src={group.coverPhotoUrl}
+                          alt=""
+                          fill
+                          sizes="56px"
+                          className="object-contain object-center"
+                        />
+                      </span>
+                    ) : null}
+                    <span className="min-w-0 text-center text-sm font-black uppercase tracking-widest text-[#36606F]">
+                      {group.title}
                     </span>
-                  ) : null}
-                  <span className="min-w-0 flex-1 text-sm font-black uppercase tracking-widest text-[#36606F]">
-                    {group.title}
                   </span>
-                  <ChevronDown
-                    className={cn('h-5 w-5 shrink-0 text-zinc-400 transition-transform', isOpen && 'rotate-180')}
-                    aria-hidden
-                  />
                 </button>
 
                 {isOpen ? (
