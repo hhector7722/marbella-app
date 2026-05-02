@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { Pencil } from 'lucide-react'
+import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   type CartaLang,
@@ -62,6 +63,7 @@ export function PublicCarta({
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [lang, setLang] = useState<CartaLang>('es')
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Group>()
@@ -210,33 +212,54 @@ export function PublicCarta({
                                 key={row.articulo_id}
                                 className="flex flex-col overflow-hidden rounded-2xl bg-white"
                               >
-                                {row.category_parent_name && ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                  <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
-                                    {row.photo_url ? (
+                                {row.category_parent_name &&
+                                ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
+                                  row.photo_url ? (
+                                    <button
+                                      type="button"
+                                      className="relative h-12 w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
+                                      aria-label="Ver foto ampliada"
+                                      onClick={() =>
+                                        setLightbox({
+                                          src: row.photo_url!,
+                                          alt: getCartaDisplayName(row, lang),
+                                        })
+                                      }
+                                    >
                                       <Image
                                         src={row.photo_url}
-                                        alt={getCartaDisplayName(row, lang)}
+                                        alt=""
                                         fill
                                         sizes="(max-width: 640px) 33vw, 20vw"
-                                        className="object-contain p-1.5"
+                                        className="pointer-events-none object-contain p-1.5"
                                       />
-                                    ) : (
+                                    </button>
+                                  ) : (
+                                    <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
                                       <div className="h-full w-full bg-white" />
-                                    )}
-                                  </div>
+                                    </div>
+                                  )
                                 ) : null}
-                                <div className="flex min-h-[48px] shrink-0 items-center justify-center px-2 py-1">
-                                  <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
-                                    {formatPrice(row.precio)}
-                                  </span>
-                                </div>
-                                <div className="flex min-h-[48px] flex-1 items-center justify-center px-2 pb-2 pt-0">
+                                <div
+                                  className={cn(
+                                    'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-2',
+                                    row.category_parent_name &&
+                                      ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
+                                      ? 'pt-1'
+                                      : 'pt-2'
+                                  )}
+                                >
                                   <p
-                                    className="line-clamp-3 w-full text-center text-[11px] font-bold leading-snug text-zinc-900"
+                                    className="line-clamp-3 w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
                                     title={getCartaDisplayName(row, lang)}
                                   >
                                     {getCartaDisplayName(row, lang)}
                                   </p>
+                                  <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
+                                    <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
+                                      {formatPrice(row.precio)}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -251,6 +274,13 @@ export function PublicCarta({
           })}
         </section>
       </div>
+
+      <CartaImageLightbox
+        src={lightbox?.src ?? null}
+        alt={lightbox?.alt ?? ''}
+        open={lightbox != null}
+        onClose={() => setLightbox(null)}
+      />
     </main>
   )
 }

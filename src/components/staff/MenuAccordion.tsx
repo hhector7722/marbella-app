@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { cn } from '@/lib/utils'
 import {
@@ -43,6 +44,7 @@ function formatPriceDisplay(precio: number | string | null | undefined): string 
 }
 
 function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
+    const [lightboxOpen, setLightboxOpen] = useState(false)
     const priceStr = formatPriceDisplay(row.precio)
     const showPrice = priceStr.trim() !== ''
     const displayName = getCartaDisplayName(row, lang)
@@ -56,38 +58,51 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
             <div className="w-full shrink-0 bg-white">
                 <div className="h-14 w-full bg-white sm:h-16">
                     {row.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD
-                        <img
-                            src={row.photo_url}
-                            alt=""
-                            className="h-full w-full object-contain p-1.5"
-                        />
+                        <button
+                            type="button"
+                            className="relative flex h-full w-full cursor-zoom-in touch-manipulation items-center justify-center bg-white active:bg-zinc-50"
+                            aria-label="Ver foto ampliada"
+                            onClick={() => setLightboxOpen(true)}
+                        >
+                            {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD */}
+                            <img
+                                src={row.photo_url}
+                                alt=""
+                                className="pointer-events-none h-full w-full max-h-full object-contain p-1.5"
+                            />
+                        </button>
                     ) : (
                         <div className="h-full w-full bg-white" />
                     )}
                 </div>
             </div>
 
-            <div className="flex min-h-[48px] shrink-0 items-center justify-center px-2 py-1">
-                {showPrice ? (
-                    <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)]">
-                        {priceStr}
-                    </span>
-                ) : (
-                    <span className="min-h-[1em] font-mono text-[clamp(9px,1.2vw,11px)] text-transparent select-none" aria-hidden>
-                        {' '}
-                    </span>
-                )}
-            </div>
-
-            <div className="flex min-h-[48px] flex-1 items-center justify-center px-2 pb-3 pt-0">
+            <div className="flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-3 pt-1">
                 <p
-                    className="line-clamp-3 w-full text-center text-[10px] font-black leading-snug text-zinc-900 sm:text-[11px]"
+                    className="line-clamp-3 w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
                     title={displayName}
                 >
                     {displayName}
                 </p>
+                <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
+                    {showPrice ? (
+                        <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)]">
+                            {priceStr}
+                        </span>
+                    ) : (
+                        <span className="min-h-[1em] font-mono text-[clamp(9px,1.2vw,11px)] text-transparent select-none" aria-hidden>
+                            {' '}
+                        </span>
+                    )}
+                </div>
             </div>
+
+            <CartaImageLightbox
+                src={row.photo_url}
+                alt={displayName}
+                open={lightboxOpen && !!row.photo_url}
+                onClose={() => setLightboxOpen(false)}
+            />
         </div>
     )
 }
