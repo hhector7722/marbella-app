@@ -35,8 +35,8 @@ export default async function PublicCartaPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-zinc-100 px-5 py-8">
-        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-red-200/80 bg-red-50/90 p-5 shadow-none">
+      <main className="min-h-screen bg-[#5B8FB9] px-5 py-8">
+        <div className="mx-auto w-full max-w-3xl rounded-2xl border border-red-200/80 bg-red-50/90 p-5 shadow-none">
           <p className="text-sm font-black uppercase tracking-widest text-red-800">No se pudo cargar la carta</p>
           <p className="mt-2 font-mono text-xs text-red-700">{error.message}</p>
         </div>

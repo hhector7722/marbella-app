@@ -122,8 +122,8 @@ export function PublicCarta({
   }, [items, lang])
 
   return (
-    <main className="min-h-screen bg-zinc-100">
-      <div className="mx-auto w-full max-w-4xl px-5 pb-12 pt-8 md:px-10 md:pb-16 md:pt-10">
+    <main className="min-h-screen bg-[#5B8FB9]">
+      <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
         <header className="grid grid-cols-3 items-center gap-2 pb-2 pt-1">
           <div className="flex shrink-0 justify-start">
             <div className="rounded-lg bg-[#36606F] px-2 py-1.5">
@@ -138,13 +138,13 @@ export function PublicCarta({
             </div>
           </div>
 
-          <CartaLangPicker lang={lang} onChange={setLang} />
+          <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" />
 
           <div className="flex shrink-0 justify-end">
             {cartaEditHref ? (
               <Link
                 href={cartaEditHref}
-                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-200/60 active:bg-zinc-200"
+                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-white transition-colors hover:bg-white/15 active:bg-white/10"
                 aria-label="Editar carta"
                 title="Editar carta"
               >

@@ -92,8 +92,21 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
     )
 }
 
-export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
-    const [lang, setLang] = useState<CartaLang>('es')
+export function MenuAccordion({
+    items,
+    lang: controlledLang,
+    onLangChange,
+    hideLangPicker = false,
+}: {
+    items: DigitalMenuRow[]
+    lang?: CartaLang
+    onLangChange?: (next: CartaLang) => void
+    hideLangPicker?: boolean
+}) {
+    const [internalLang, setInternalLang] = useState<CartaLang>('es')
+    const controlled = controlledLang !== undefined && onLangChange !== undefined
+    const lang = controlled ? controlledLang : internalLang
+    const setLang = controlled ? onLangChange : setInternalLang
 
     const grouped = useMemo(() => {
         type Group = {
@@ -185,12 +198,19 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="w-full pt-1">
-                <CartaLangPicker lang={lang} onChange={setLang} />
-            </div>
+        <div className={hideLangPicker ? undefined : 'space-y-6'}>
+            {!hideLangPicker ? (
+                <div className="w-full pt-1">
+                    <CartaLangPicker lang={lang} onChange={setLang} />
+                </div>
+            ) : null}
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <div
+                className={cn(
+                    'grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4',
+                    hideLangPicker && 'pt-0'
+                )}
+            >
                 {grouped.map((group) => {
                     const isOpen = openKey === group.key
                     return (

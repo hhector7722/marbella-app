@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
-import { DigitalMenu } from '@/components/staff/DigitalMenu';
-import { StaffCartaEditor } from '@/components/staff/StaffCartaEditor';
+import { StaffCartaView } from '@/components/staff/StaffCartaView';
+import type { DigitalMenuRow } from '@/components/staff/MenuAccordion';
 
 export default async function StaffCartaPage() {
     const supabase = await createClient();
@@ -27,37 +25,34 @@ export default async function StaffCartaPage() {
 
     const role = (profile?.role ?? null) as string | null;
     const canEditMenu = role === 'manager' || role === 'admin' || role === 'supervisor';
-    const homeHref = canEditMenu ? '/dashboard' : '/staff/dashboard';
+
+    const { data, error } = await supabase
+        .from('v_digital_menu_items')
+        .select(
+            'articulo_id, articulo_nombre, carta_nombre, carta_nombre_es, carta_nombre_ca, carta_nombre_en, departamento_id, departamento_nombre, category_id, category_parent_id, category_parent_name, category_parent_sort_order, category_parent_cover_photo_url, category_child_id, category_child_name, category_child_sort_order, recipe_id, recipe_name, descripcion, precio, photo_url, sort_order'
+        )
+        .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
+        .order('category_parent_name', { ascending: true, nullsFirst: false })
+        .order('category_child_sort_order', { ascending: true, nullsFirst: false })
+        .order('category_child_name', { ascending: true, nullsFirst: false })
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('carta_nombre', { ascending: true });
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#5B8FB9] px-4 py-10">
+                <div
+                    className="mx-auto max-w-2xl rounded-xl border border-red-200 bg-red-50 p-4 text-center shadow-sm"
+                    role="alert"
+                >
+                    <p className="text-sm font-bold text-red-800">No se pudo cargar la carta.</p>
+                    <p className="mt-1 font-mono text-xs text-red-700">{error.message}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-zinc-100">
-            <div className="mx-auto w-full max-w-4xl px-5 pb-12 pt-8 md:px-10 md:pb-16 md:pt-10">
-                <header className="mb-8 grid grid-cols-3 items-center gap-2 pb-2 pt-1">
-                    <div className="flex justify-start">
-                        <Link
-                            href={homeHref}
-                            className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-200/60 active:bg-zinc-200"
-                            aria-label="Volver al inicio"
-                        >
-                            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-                        </Link>
-                    </div>
-                    <div className="flex justify-center">
-                        <span className="text-xs font-black uppercase tracking-widest text-[#36606F]">
-                            La carta
-                        </span>
-                    </div>
-                    <div className="flex justify-end">
-                        {canEditMenu ? (
-                            <StaffCartaEditor canEdit={canEditMenu} />
-                        ) : (
-                            <span className="inline-flex min-h-[48px] min-w-[48px]" aria-hidden />
-                        )}
-                    </div>
-                </header>
-
-                <DigitalMenu />
-            </div>
-        </div>
+        <StaffCartaView items={(data ?? []) as DigitalMenuRow[]} canEditMenu={canEditMenu} />
     );
 }
