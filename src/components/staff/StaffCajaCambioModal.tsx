@@ -222,7 +222,7 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
             <div
-                className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-[#f8fafb] shadow-2xl animate-in zoom-in-95 duration-200"
+                className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="relative shrink-0 bg-[#36606F] shadow-lg">
@@ -244,11 +244,11 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
 
                 {step === 'importe' && (
                     <>
-                        <div className="shrink-0 border-b border-gray-100 bg-gray-50 px-4 py-4 sm:px-6">
+                        <div className="shrink-0 border-b border-gray-100 bg-gray-50 px-4 py-4 sm:p-6">
                             <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Importe a cambiar</h3>
                             <span className="text-3xl font-black text-[#5B8FB9]">{totalStep1 > 0.005 ? `${totalStep1.toFixed(2)}€` : ' '}</span>
                         </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                        <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8fafb] p-4 sm:p-6">
                             <div className="grid grid-cols-3 gap-3 sm:gap-4">
                                 {STEP1_BILLS_ROW1.map((d) => denomCell(d, step1Counts[d] || 0, adjustStep1, setStep1Qty))}
                             </div>
@@ -275,67 +275,111 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
 
                 {step === 'retirado' && (
                     <>
-                        <div className="shrink-0 border-b border-gray-100 bg-gray-50 px-4 py-4 sm:px-6">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Desglose del cambio retirado</h3>
-                            <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
-                                <span className="text-3xl font-black text-[#5B8FB9]">{totalStep2 > 0.005 ? `${totalStep2.toFixed(2)}€` : ' '}</span>
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                            {/* Misma cabecera + layout de rejilla que el paso «Arqueo en Caja» de CashClosingModal */}
+                            <div className="flex shrink-0 items-center justify-between border-b bg-gray-50 p-4 sm:p-6">
+                                <div>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Desglose del cambio retirado</h3>
+                                    <span className="text-3xl font-black text-[#5B8FB9]">{totalStep2 > 0.005 ? `${totalStep2.toFixed(2)}€` : ' '}</span>
+                                </div>
                                 <div className="text-right">
                                     <span className="text-[10px] font-black uppercase text-gray-400">Importe a cambiar</span>
-                                    <div className="text-lg font-bold text-gray-600">{totalStep1 > 0.005 ? `${totalStep1.toFixed(2)}€` : ' '}</div>
+                                    <div className="text-lg font-bold text-gray-500">{totalStep1 > 0.005 ? `${totalStep1.toFixed(2)}€` : ' '}</div>
                                 </div>
                             </div>
-                            {!totalsMatch && totalStep2 > 0.005 && (
-                                <p className="mt-2 text-xs font-bold text-rose-600">Los importes deben coincidir</p>
-                            )}
-                            {hasStockIssueStep2 && (
-                                <p className="mt-2 text-xs font-bold text-rose-600">Cantidad insuficiente en caja para el retiro</p>
-                            )}
-                        </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
-                            <div className="grid grid-cols-4 gap-x-3 gap-y-5 sm:grid-cols-6 sm:gap-y-6">
-                                {BILLS.map((bill) => denomCell(bill, step2Counts[bill] || 0, adjustStep2, setStep2Qty))}
-                                {COINS.map((coin) => (
-                                    <div key={coin} className="flex flex-col items-center gap-1.5">
-                                        <div className="flex h-11 w-full items-center justify-center sm:h-14">
-                                            <Image
-                                                src={CURRENCY_IMAGES[coin]}
-                                                alt={`${coin}€`}
-                                                width={140}
-                                                height={140}
-                                                className="h-full w-auto object-contain drop-shadow-md"
-                                            />
-                                        </div>
-                                        <div className="w-full text-center">
-                                            <span className="mb-0.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">
-                                                {coin < 1 ? `${(coin * 100).toFixed(0)}c` : `${coin}€`}
-                                            </span>
-                                            <div className="flex h-10 w-full items-center justify-between overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20 focus-within:ring-offset-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => adjustStep2(coin, -1)}
-                                                    className="flex h-full min-h-[44px] w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
-                                                >
-                                                    <Minus size={14} strokeWidth={3} />
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    min={0}
-                                                    placeholder=""
-                                                    className="h-full w-0 flex-1 bg-transparent p-0 text-center text-[10px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
-                                                    value={step2Counts[coin] || ''}
-                                                    onChange={(e) => setStep2Qty(coin, e.target.value)}
+                            {(!totalsMatch && totalStep2 > 0.005) || hasStockIssueStep2 ? (
+                                <div className="shrink-0 border-b border-rose-100 bg-rose-50/90 px-4 py-2 sm:px-6">
+                                    {!totalsMatch && totalStep2 > 0.005 && (
+                                        <p className="text-xs font-bold text-rose-600">Los importes deben coincidir</p>
+                                    )}
+                                    {hasStockIssueStep2 && (
+                                        <p className="text-xs font-bold text-rose-600">Cantidad insuficiente en caja para el retiro</p>
+                                    )}
+                                </div>
+                            ) : null}
+                            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4">
+                                <div className="grid grid-cols-4 gap-y-5 gap-x-3 sm:grid-cols-6 sm:gap-y-6 sm:gap-x-4 lg:grid-cols-8">
+                                    {BILLS.map((bill) => (
+                                        <div key={bill} className="group flex flex-col items-center gap-1.5 transition-all">
+                                            <div className="flex h-11 w-full items-center justify-center transition-transform group-hover:scale-110 sm:h-14">
+                                                <Image
+                                                    src={CURRENCY_IMAGES[bill]}
+                                                    alt={`${bill}€`}
+                                                    width={140}
+                                                    height={140}
+                                                    className="h-full w-auto object-contain drop-shadow-lg"
                                                 />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => adjustStep2(coin, 1)}
-                                                    className="flex h-full min-h-[44px] w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
-                                                >
-                                                    <Plus size={14} strokeWidth={3} />
-                                                </button>
+                                            </div>
+                                            <div className="w-full text-center">
+                                                <span className="mb-0.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">{bill}€</span>
+                                                <div className="flex h-10 w-full items-center justify-between overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20 focus-within:ring-offset-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => adjustStep2(bill, -1)}
+                                                        className="flex h-full w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
+                                                    >
+                                                        <Minus size={14} strokeWidth={3} />
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        placeholder=""
+                                                        className="h-full w-0 flex-1 bg-transparent p-0 text-center text-[10px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
+                                                        value={step2Counts[bill] || ''}
+                                                        onChange={(e) => setStep2Qty(bill, e.target.value)}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => adjustStep2(bill, 1)}
+                                                        className="flex h-full w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
+                                                    >
+                                                        <Plus size={14} strokeWidth={3} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                    {COINS.map((coin) => (
+                                        <div key={coin} className="group flex flex-col items-center gap-1.5 transition-all">
+                                            <div className="flex h-11 w-full items-center justify-center transition-transform group-hover:scale-110 sm:h-14">
+                                                <Image
+                                                    src={CURRENCY_IMAGES[coin]}
+                                                    alt={`${coin}€`}
+                                                    width={140}
+                                                    height={140}
+                                                    className="h-full w-auto object-contain drop-shadow-md"
+                                                />
+                                            </div>
+                                            <div className="w-full text-center">
+                                                <span className="mb-0.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">
+                                                    {coin < 1 ? `${(coin * 100).toFixed(0)}c` : `${coin}€`}
+                                                </span>
+                                                <div className="flex h-10 w-full items-center justify-between overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20 focus-within:ring-offset-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => adjustStep2(coin, -1)}
+                                                        className="flex h-full w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
+                                                    >
+                                                        <Minus size={14} strokeWidth={3} />
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        placeholder=""
+                                                        className="h-full w-0 flex-1 bg-transparent p-0 text-center text-[10px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
+                                                        value={step2Counts[coin] || ''}
+                                                        onChange={(e) => setStep2Qty(coin, e.target.value)}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => adjustStep2(coin, 1)}
+                                                        className="flex h-full w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
+                                                    >
+                                                        <Plus size={14} strokeWidth={3} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                         <div className="flex shrink-0 gap-3 border-t border-gray-100 bg-gray-50 p-3 sm:p-4">
