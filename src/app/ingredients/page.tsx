@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from '@/lib/utils';
 import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight, Settings, Pencil } from 'lucide-react';
@@ -33,7 +33,6 @@ interface Ingredient {
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
 // Unidad de pedido (humana/operativa). Mantener sin duplicados.
 const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
-const STANDARD_SUPPLIERS = ['Santa Teresa', 'Sant Aniol', 'Ametller', 'Sanilec', 'Shers', 'Panabad', 'Zander', 'Videla', 'Abril', 'Nestle', 'Fritz Ravich', 'Paellador', 'Vins Pons'];
 const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas', 'Limpieza', 'Otros'];
 
 function normalizeUnit(u: string | null | undefined): 'g' | 'kg' | 'ml' | 'l' | 'ud' | 'cl' {
@@ -136,9 +135,23 @@ export default function IngredientsPage() {
     }
 
     async function fetchSuppliers() {
-        const { data } = await supabase.from('suppliers').select('*').order('name');
+        const { data, error } = await supabase.from('suppliers').select('id,name').order('name');
+        if (error) {
+            toast.error('No se pudieron cargar los proveedores');
+            return;
+        }
         if (data) setAllSuppliers(data);
     }
+
+    const supplierNamesFromDb = useMemo(
+        () =>
+            new Set(
+                allSuppliers
+                    .map((s: { name?: string | null }) => String(s?.name ?? '').trim())
+                    .filter(Boolean)
+            ),
+        [allSuppliers]
+    );
 
     async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, target: 'edit' | 'create') {
         const file = e.target.files?.[0];
@@ -234,7 +247,14 @@ export default function IngredientsPage() {
 
             const { error } = await supabase.from('ingredients').insert(payload);
             if (error) throw error;
-            toast.success('Creado'); setShowCreateModal(false); setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' }); fetchIngredients();
+            toast.success('Creado');
+            setShowCreateModal(false);
+            setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
+            setIsCustomSupplier(false);
+            setIsCustomSupplier2(false);
+            setCustomSupplierName('');
+            setCustomSupplier2Name('');
+            fetchIngredients();
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
 
@@ -263,6 +283,14 @@ export default function IngredientsPage() {
         const nextIng = filteredIngredients[newIndex];
         setEditingIngredient(nextIng);
         setEditForm({ ...nextIng });
+
+        const isCustom1 = !!nextIng.supplier && !supplierNamesFromDb.has(nextIng.supplier);
+        setIsCustomSupplier(isCustom1);
+        setCustomSupplierName(isCustom1 ? nextIng.supplier || '' : '');
+
+        const isCustom2 = !!nextIng.supplier_2 && !supplierNamesFromDb.has(nextIng.supplier_2);
+        setIsCustomSupplier2(isCustom2);
+        setCustomSupplier2Name(isCustom2 ? nextIng.supplier_2 || '' : '');
     };
 
     return (
@@ -350,6 +378,10 @@ export default function IngredientsPage() {
                             onClick={() => {
                                 setCreateMode('wizard');
                                 setCreateSettingsOpen(false);
+                                setIsCustomSupplier(false);
+                                setIsCustomSupplier2(false);
+                                setCustomSupplierName('');
+                                setCustomSupplier2Name('');
                                 setShowCreateModal(true);
                             }}
                             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95 md:h-12 md:w-12 md:rounded-2xl"
@@ -369,11 +401,11 @@ export default function IngredientsPage() {
                                             setEditingIngredient(ing);
                                             setEditForm({ ...ing });
 
-                                            const isCustom1 = !!ing.supplier && !STANDARD_SUPPLIERS.includes(ing.supplier);
+                                            const isCustom1 = !!ing.supplier && !supplierNamesFromDb.has(ing.supplier);
                                             setIsCustomSupplier(isCustom1);
                                             setCustomSupplierName(isCustom1 ? ing.supplier || '' : '');
 
-                                            const isCustom2 = !!ing.supplier_2 && !STANDARD_SUPPLIERS.includes(ing.supplier_2);
+                                            const isCustom2 = !!ing.supplier_2 && !supplierNamesFromDb.has(ing.supplier_2);
                                             setIsCustomSupplier2(isCustom2);
                                             setCustomSupplier2Name(isCustom2 ? ing.supplier_2 || '' : '');
                                         }}
@@ -717,9 +749,11 @@ export default function IngredientsPage() {
                                 </div>
                             </div>
                             {!isCustomSupplier ? (
-                                <select value={editForm.supplier || ''} onChange={e => { if (e.target.value === 'custom') setIsCustomSupplier(true); else setEditForm({ ...editForm, supplier: e.target.value }) }} className="w-full p-3 border rounded-2xl bg-white">
+                                <select value={editForm.supplier || ''} onChange={e => { if (e.target.value === 'custom') { setIsCustomSupplier(true); setCustomSupplierName(''); setEditForm({ ...editForm, supplier: null }); } else setEditForm({ ...editForm, supplier: e.target.value }) }} className="w-full p-3 border rounded-2xl bg-white">
                                     <option value="">Proveedor...</option>
-                                    {STANDARD_SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {allSuppliers.map((s: { id: number; name: string }) => (
+                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                    ))}
                                     <option value="custom">+ Nuevo...</option>
                                 </select>
                             ) : (
@@ -744,6 +778,8 @@ export default function IngredientsPage() {
                                     onChange={e => {
                                         if (e.target.value === 'custom') {
                                             setIsCustomSupplier2(true);
+                                            setCustomSupplier2Name('');
+                                            setEditForm({ ...editForm, supplier_2: null });
                                         } else {
                                             setEditForm({ ...editForm, supplier_2: e.target.value });
                                         }
@@ -751,7 +787,9 @@ export default function IngredientsPage() {
                                     className="w-full p-3 border rounded-2xl bg-white"
                                 >
                                     <option value="">Proveedor 2 (opcional)...</option>
-                                    {STANDARD_SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {allSuppliers.map((s: { id: number; name: string }) => (
+                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                    ))}
                                     <option value="custom">+ Nuevo...</option>
                                 </select>
                             ) : (
@@ -1041,6 +1079,90 @@ export default function IngredientsPage() {
                                     <input type="number" step="1" value={newIngredient.recommended_stock || ''} onChange={e => setNewIngredient({ ...newIngredient, recommended_stock: parseFloat(e.target.value) || null })} className="w-full p-3 border rounded-2xl font-bold" placeholder="0" />
                                 </div>
                             </div>
+                            {!isCustomSupplier ? (
+                                <select
+                                    value={newIngredient.supplier || ''}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'custom') {
+                                            setIsCustomSupplier(true);
+                                            setCustomSupplierName('');
+                                            setNewIngredient({ ...newIngredient, supplier: undefined });
+                                        } else setNewIngredient({ ...newIngredient, supplier: e.target.value || undefined });
+                                    }}
+                                    className="w-full p-3 border rounded-2xl bg-white"
+                                >
+                                    <option value="">Proveedor...</option>
+                                    {allSuppliers.map((s: { id: number; name: string }) => (
+                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                    ))}
+                                    <option value="custom">+ Nuevo...</option>
+                                </select>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <input
+                                        value={customSupplierName}
+                                        onChange={(e) => {
+                                            setCustomSupplierName(e.target.value);
+                                            setNewIngredient({ ...newIngredient, supplier: e.target.value });
+                                        }}
+                                        className="flex-1 p-3 border rounded-2xl"
+                                        placeholder="Proveedor"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCustomSupplier(false);
+                                            setCustomSupplierName('');
+                                            setNewIngredient({ ...newIngredient, supplier: undefined });
+                                        }}
+                                        className="text-xs text-red-500 font-bold"
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                            )}
+                            {!isCustomSupplier2 ? (
+                                <select
+                                    value={newIngredient.supplier_2 || ''}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'custom') {
+                                            setIsCustomSupplier2(true);
+                                            setCustomSupplier2Name('');
+                                            setNewIngredient({ ...newIngredient, supplier_2: undefined });
+                                        } else setNewIngredient({ ...newIngredient, supplier_2: e.target.value || undefined });
+                                    }}
+                                    className="w-full p-3 border rounded-2xl bg-white"
+                                >
+                                    <option value="">Proveedor 2 (opcional)...</option>
+                                    {allSuppliers.map((s: { id: number; name: string }) => (
+                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                    ))}
+                                    <option value="custom">+ Nuevo...</option>
+                                </select>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <input
+                                        value={customSupplier2Name}
+                                        onChange={(e) => {
+                                            setCustomSupplier2Name(e.target.value);
+                                            setNewIngredient({ ...newIngredient, supplier_2: e.target.value });
+                                        }}
+                                        className="flex-1 p-3 border rounded-2xl"
+                                        placeholder="Proveedor 2"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCustomSupplier2(false);
+                                            setCustomSupplier2Name('');
+                                            setNewIngredient({ ...newIngredient, supplier_2: undefined });
+                                        }}
+                                        className="text-xs text-red-500 font-bold"
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                            )}
                             <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Crear</button>
                             </div>
                             )}

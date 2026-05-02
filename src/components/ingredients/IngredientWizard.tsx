@@ -164,6 +164,28 @@ export function IngredientWizard({
 
   const unitCost = useMemo(() => computeUnitCost(draft), [draft])
 
+  const [dbSuppliers, setDbSuppliers] = useState<{ id: number; name: string }[]>([])
+  const [isCustomSupplier, setIsCustomSupplier] = useState(false)
+  const [isCustomSupplier2, setIsCustomSupplier2] = useState(false)
+  const [customSupplierName, setCustomSupplierName] = useState('')
+  const [customSupplier2Name, setCustomSupplier2Name] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase.from('suppliers').select('id,name').order('name')
+      if (cancelled) return
+      if (error) {
+        toast.error('No se pudieron cargar los proveedores')
+        return
+      }
+      if (data) setDbSuppliers(data as { id: number; name: string }[])
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [supabase])
+
   useEffect(() => {
     const id = initialIngredientId ?? null
     if (!id) return
@@ -172,16 +194,27 @@ export function IngredientWizard({
     async function loadExistingIngredient() {
       setSaving(true)
       try {
-        const { data, error } = await supabase
-          .from('ingredients')
-          .select(
-            'id,name,category,supplier_pricing_mode,purchase_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2'
-          )
-          .eq('id', id)
-          .maybeSingle()
+        const [supRes, ingRes] = await Promise.all([
+          supabase.from('suppliers').select('id,name').order('name'),
+          supabase
+            .from('ingredients')
+            .select(
+              'id,name,category,supplier_pricing_mode,purchase_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2'
+            )
+            .eq('id', id)
+            .maybeSingle(),
+        ])
+        const { data: supRows, error: supErr } = supRes
+        const { data, error } = ingRes
         if (cancelled) return
+        if (supErr) toast.error('No se pudieron cargar los proveedores')
+        if (supRows?.length) setDbSuppliers(supRows as { id: number; name: string }[])
         if (error) throw error
         if (!data?.id) throw new Error('Ingrediente no encontrado')
+
+        const nameSet = new Set(
+          (supRows ?? []).map((s) => String((s as { name?: string }).name ?? '').trim()).filter(Boolean)
+        )
 
         setIngredientId(String(data.id))
 
@@ -233,6 +266,15 @@ export function IngredientWizard({
           supplier: (data as any).supplier ?? null,
           supplier2: (data as any).supplier_2 ?? null,
         }))
+
+        const rawS1 = (data as any).supplier
+        const rawS2 = (data as any).supplier_2
+        const s1 = rawS1 != null ? String(rawS1).trim() : null
+        const s2 = rawS2 != null ? String(rawS2).trim() : null
+        setIsCustomSupplier(!!s1 && !nameSet.has(s1))
+        setCustomSupplierName(!!s1 && !nameSet.has(s1) ? s1 : '')
+        setIsCustomSupplier2(!!s2 && !nameSet.has(s2))
+        setCustomSupplier2Name(!!s2 && !nameSet.has(s2) ? s2 : '')
 
         // Si el objetivo es editar precio, entrar en el asistente de cobro (paso 3)
         // para replicar el flujo completo de /ingredients (cómo lo cobra → precio).
@@ -984,19 +1026,105 @@ export function IngredientWizard({
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] font-bold uppercase text-zinc-400">Proveedor (opcional)</span>
-              <input
-                value={draft.supplier ?? ''}
-                onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value }))}
-                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
-              />
+              {!isCustomSupplier ? (
+                <select
+                  value={draft.supplier ?? ''}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setIsCustomSupplier(true)
+                      setCustomSupplierName('')
+                      setDraft((d) => ({ ...d, supplier: null }))
+                    } else {
+                      setDraft((d) => ({ ...d, supplier: e.target.value || null }))
+                    }
+                  }}
+                  className={cn(
+                    'w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold bg-white'
+                  )}
+                >
+                  <option value="">Proveedor...</option>
+                  {dbSuppliers.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                  <option value="custom">+ Nuevo...</option>
+                </select>
+              ) : (
+                <div className="flex gap-2 items-center">
+                  <input
+                    value={customSupplierName}
+                    onChange={(e) => {
+                      setCustomSupplierName(e.target.value)
+                      setDraft((d) => ({ ...d, supplier: e.target.value || null }))
+                    }}
+                    className="flex-1 min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
+                    placeholder="Proveedor"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomSupplier(false)
+                      setCustomSupplierName('')
+                      setDraft((d) => ({ ...d, supplier: null }))
+                    }}
+                    className="shrink-0 text-xs font-black text-rose-500 px-2"
+                  >
+                    X
+                  </button>
+                </div>
+              )}
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] font-bold uppercase text-zinc-400">Proveedor 2 (opcional)</span>
-              <input
-                value={draft.supplier2 ?? ''}
-                onChange={(e) => setDraft((d) => ({ ...d, supplier2: e.target.value }))}
-                className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
-              />
+              {!isCustomSupplier2 ? (
+                <select
+                  value={draft.supplier2 ?? ''}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setIsCustomSupplier2(true)
+                      setCustomSupplier2Name('')
+                      setDraft((d) => ({ ...d, supplier2: null }))
+                    } else {
+                      setDraft((d) => ({ ...d, supplier2: e.target.value || null }))
+                    }
+                  }}
+                  className={cn(
+                    'w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold bg-white'
+                  )}
+                >
+                  <option value="">Proveedor 2...</option>
+                  {dbSuppliers.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                  <option value="custom">+ Nuevo...</option>
+                </select>
+              ) : (
+                <div className="flex gap-2 items-center">
+                  <input
+                    value={customSupplier2Name}
+                    onChange={(e) => {
+                      setCustomSupplier2Name(e.target.value)
+                      setDraft((d) => ({ ...d, supplier2: e.target.value || null }))
+                    }}
+                    className="flex-1 min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
+                    placeholder="Proveedor 2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomSupplier2(false)
+                      setCustomSupplier2Name('')
+                      setDraft((d) => ({ ...d, supplier2: null }))
+                    }}
+                    className="shrink-0 text-xs font-black text-rose-500 px-2"
+                  >
+                    X
+                  </button>
+                </div>
+              )}
             </label>
           </div>
           <div className="rounded-2xl border border-zinc-100 bg-white p-4">
