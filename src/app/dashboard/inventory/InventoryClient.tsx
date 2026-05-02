@@ -18,6 +18,8 @@ type Ingredient = {
 
 interface InventoryClientProps {
   initialIngredients: Ingredient[]
+  /** Solo gerencia: si no hay artículos visibles, muestra ayuda para el icono de edición. */
+  managerEmptyHint?: boolean
 }
 
 function abbreviateLabel(name: string, maxChars = 22): string {
@@ -198,7 +200,10 @@ function InventoryIngredientCard({
   )
 }
 
-export function InventoryClient({ initialIngredients }: InventoryClientProps) {
+export function InventoryClient({
+  initialIngredients,
+  managerEmptyHint = false,
+}: InventoryClientProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [physicalCounts, setPhysicalCounts] = useState<Record<string, string>>({})
   const [numericById, setNumericById] = useState<Record<string, number>>({})
@@ -304,6 +309,19 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
   )
 
   const submitDisabled = isSubmitting || !hasAnyCount
+
+  if (initialIngredients.length === 0) {
+    return (
+      <div className="flex flex-col gap-3 min-h-0 flex-1 items-center justify-center py-12 px-2 text-center">
+        <p className="text-sm font-medium text-zinc-600">No hay artículos visibles en el recuento.</p>
+        {managerEmptyHint ? (
+          <p className="text-xs text-zinc-500 max-w-sm">
+            Pulsa el icono de edición en la cabecera para activar artículos en esta pantalla.
+          </p>
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4 min-h-0 flex-1">
