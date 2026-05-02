@@ -227,19 +227,9 @@ export function PublicCarta({
 
                 {openGroup && insertAfterIndex === idx ? (
                   <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
-                    <div className="border-b border-zinc-200/40 bg-white p-2">
-                      <div className="flex min-h-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-center text-sm font-black uppercase tracking-widest text-[#36606F]">
-                        {openGroup.title}
-                      </div>
-                    </div>
-
                     <div className="px-3 pb-4 pt-3">
                       {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
-                        <div className="space-y-3">
-                          <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                            {tPublicUi(lang).pickSubcategoryTitle}
-                          </p>
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {openGroup._subList.map((sub) => (
                               <button
                                 key={sub.key}
@@ -253,7 +243,6 @@ export function PublicCarta({
                               </button>
                             ))}
                           </div>
-                        </div>
                       ) : (
                         <div className="space-y-5">
                           {openGroup._subList.length > 1 ? (
