@@ -310,94 +310,104 @@ function RecipesContent() {
                         className="bg-white w-full max-w-6xl max-h-[90vh] rounded-[20px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="relative bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setSelectedRecipeId(null)}
-                                aria-label="Volver a la lista de recetas"
-                                className={cn(
-                                    'absolute left-2 top-2 md:left-3 md:top-2',
-                                    'w-12 h-12 flex items-center justify-center shrink-0',
-                                    'text-white/70 hover:text-white active:scale-95 transition',
-                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                )}
-                            >
-                                <ArrowLeft className="w-6 h-6" />
-                            </button>
-
-                            {canEditRecipeFromModal && selectedRecipeId && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const id = selectedRecipeId;
-                                        setSelectedRecipeId(null);
-                                        router.push(buildRecipesFullEditHref(id));
-                                    }}
-                                    className={cn(
-                                        'absolute right-2 top-2 md:right-3 md:top-2',
-                                        'w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95',
+                        <div className="bg-[#36606F] px-3 md:px-5 py-2 flex flex-col shrink-0">
+                            {/* Misma rejilla que `/recipes/[id]`: columnas fijas a los lados → título e imagen centrados en el mismo eje */}
+                            <div className="grid w-full grid-cols-[3rem_1fr_3rem] items-center gap-2 min-h-[48px]">
+                                <div className="flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedRecipeId(null)}
+                                        aria-label="Volver a la lista de recetas"
+                                        className={cn(
+                                            'flex h-12 w-12 shrink-0 items-center justify-center',
+                                            'text-white/70 hover:text-white active:scale-95 transition',
+                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                        )}
+                                    >
+                                        <ArrowLeft className="w-6 h-6" />
+                                    </button>
+                                </div>
+                                <div className="min-w-0 flex justify-center px-1">
+                                    <div className="max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
+                                        <span className="inline-block max-w-full truncate">
+                                            {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-center">
+                                    {canEditRecipeFromModal && selectedRecipeId ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const id = selectedRecipeId;
+                                                setSelectedRecipeId(null);
+                                                router.push(buildRecipesFullEditHref(id));
+                                            }}
+                                            className={cn(
+                                                'flex h-10 w-10 shrink-0 items-center justify-center transition text-white/60 hover:text-white active:scale-95',
+                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                            )}
+                                            aria-label="Abrir ficha de edición completa"
+                                            title="Editar ingredientes, elaboración y presentación"
+                                        >
+                                            <Edit2 className="w-5 h-5" strokeWidth={2.5} />
+                                        </button>
+                                    ) : (
+                                        <span className="inline-flex h-10 w-10 shrink-0" aria-hidden />
                                     )}
-                                    aria-label="Abrir ficha de edición completa"
-                                    title="Editar ingredientes, elaboración y presentación"
-                                >
-                                    <Edit2 className="w-5 h-5" strokeWidth={2.5} />
-                                </button>
-                            )}
-
-                            <div className="relative flex w-full min-h-12 items-center justify-center">
-                                <div className="w-full min-w-0 px-12 text-center text-[13px] font-black leading-tight text-white md:px-14 md:text-[15px]">
-                                    <span className="block truncate">
-                                        {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
-                                    </span>
                                 </div>
                             </div>
 
-                            <div className="relative mt-1 flex items-center justify-center w-fit shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (staffNavIndex > 0) setSelectedRecipeId(staffNavRecipes[staffNavIndex - 1].id);
-                                    }}
-                                    disabled={staffNavIndex <= 0}
-                                    className="absolute -left-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
-                                    aria-label="Receta anterior"
-                                >
-                                    <ChevronLeft className="w-8 h-8" />
-                                </button>
-
-                                <div className="bg-white rounded-xl p-0.5 shadow-sm">
-                                    <div className="relative group w-24 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-100/50">
-                                        {fullRecipeData?.photo_url ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsPhotoLightboxOpen(true)}
-                                                className={cn(
-                                                    'absolute inset-0 w-full h-full cursor-zoom-in',
-                                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                                )}
-                                                aria-label="Ver foto ampliada"
-                                            >
-                                                <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-contain" />
-                                            </button>
-                                        ) : (
-                                            <Camera className="w-5 h-5 text-gray-300" aria-hidden />
-                                        )}
+                            <div className="mt-1 grid w-full grid-cols-[3rem_1fr_3rem] items-center gap-2">
+                                <div className="flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (staffNavIndex > 0) setSelectedRecipeId(staffNavRecipes[staffNavIndex - 1].id);
+                                        }}
+                                        disabled={staffNavIndex <= 0}
+                                        className="flex h-10 w-10 shrink-0 items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                                        aria-label="Receta anterior"
+                                    >
+                                        <ChevronLeft className="w-8 h-8" />
+                                    </button>
+                                </div>
+                                <div className="flex justify-center">
+                                    <div className="rounded-xl bg-white p-0.5 shadow-sm">
+                                        <div className="relative group h-14 w-24 rounded-lg border border-gray-100/50 bg-white flex items-center justify-center overflow-hidden">
+                                            {fullRecipeData?.photo_url ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsPhotoLightboxOpen(true)}
+                                                    className={cn(
+                                                        'absolute inset-0 h-full w-full cursor-zoom-in',
+                                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                                    )}
+                                                    aria-label="Ver foto ampliada"
+                                                >
+                                                    <img src={fullRecipeData.photo_url} alt="" className="h-full w-full object-contain" />
+                                                </button>
+                                            ) : (
+                                                <Camera className="h-5 w-5 text-gray-300" aria-hidden />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (staffNavIndex >= 0 && staffNavIndex < staffNavRecipes.length - 1) {
-                                            setSelectedRecipeId(staffNavRecipes[staffNavIndex + 1].id);
-                                        }
-                                    }}
-                                    disabled={staffNavIndex < 0 || staffNavIndex >= staffNavRecipes.length - 1}
-                                    className="absolute -right-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
-                                    aria-label="Receta siguiente"
-                                >
-                                    <ChevronRight className="w-8 h-8" />
-                                </button>
+                                <div className="flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (staffNavIndex >= 0 && staffNavIndex < staffNavRecipes.length - 1) {
+                                                setSelectedRecipeId(staffNavRecipes[staffNavIndex + 1].id);
+                                            }
+                                        }}
+                                        disabled={staffNavIndex < 0 || staffNavIndex >= staffNavRecipes.length - 1}
+                                        className="flex h-10 w-10 shrink-0 items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                                        aria-label="Receta siguiente"
+                                    >
+                                        <ChevronRight className="w-8 h-8" />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
