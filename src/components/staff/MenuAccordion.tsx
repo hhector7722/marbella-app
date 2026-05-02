@@ -237,7 +237,7 @@ export function MenuAccordion({
                             className={cn(
                                 'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
                                 isOpen
-                                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20 sm:col-span-2'
                                     : 'border-zinc-200/60'
                             )}
                         >
@@ -261,10 +261,10 @@ export function MenuAccordion({
                                         return group.key
                                     })
                                 }}
-                                className="flex min-h-[52px] w-full shrink-0 items-center justify-center px-3 py-2.5 active:bg-zinc-50"
+                                className="flex min-h-[52px] w-full shrink-0 items-center justify-start gap-3 px-4 py-2.5 active:bg-zinc-50"
                                 aria-expanded={isOpen}
                             >
-                                <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
+                                <span className="flex min-w-0 flex-1 items-center justify-start gap-3">
                                     {group.coverPhotoUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
                                         <img
@@ -273,7 +273,7 @@ export function MenuAccordion({
                                             className="h-10 w-10 shrink-0 rounded-lg bg-white object-contain object-center"
                                         />
                                     ) : null}
-                                    <span className="min-w-0 text-center text-sm font-black uppercase tracking-wide text-[#36606F]">
+                                    <span className="min-w-0 text-left text-sm font-black uppercase tracking-wide text-[#36606F]">
                                         {group.title}
                                     </span>
                                 </span>
