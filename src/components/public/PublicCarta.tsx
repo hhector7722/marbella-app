@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { Pencil } from 'lucide-react'
+import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -137,17 +138,7 @@ export function PublicCarta({
             </div>
           </div>
 
-          <div className="flex min-w-0 items-center justify-center gap-4 sm:gap-6">
-            <LangText active={lang === 'es'} onClick={() => setLang('es')}>
-              Español
-            </LangText>
-            <LangText active={lang === 'ca'} onClick={() => setLang('ca')}>
-              Català
-            </LangText>
-            <LangText active={lang === 'en'} onClick={() => setLang('en')}>
-              English
-            </LangText>
-          </div>
+          <CartaLangPicker lang={lang} onChange={setLang} />
 
           <div className="flex shrink-0 justify-end">
             {cartaEditHref ? (
@@ -266,27 +257,3 @@ export function PublicCarta({
   )
 }
 
-function LangText({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'min-h-[48px] px-1 text-xs font-black uppercase tracking-widest sm:text-sm',
-        active ? 'text-[#36606F]' : 'text-zinc-400',
-        'bg-transparent shadow-none'
-      )}
-      aria-pressed={active}
-    >
-      {children}
-    </button>
-  )
-}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { cn } from '@/lib/utils'
 import {
     type CartaLang,
@@ -184,27 +185,19 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex w-full min-h-12 items-center justify-center gap-1 rounded-xl border border-zinc-100 bg-white p-1.5 shadow-sm">
-                <LangSeg active={lang === 'es'} onClick={() => setLang('es')}>
-                    Español
-                </LangSeg>
-                <LangSeg active={lang === 'ca'} onClick={() => setLang('ca')}>
-                    Català
-                </LangSeg>
-                <LangSeg active={lang === 'en'} onClick={() => setLang('en')}>
-                    English
-                </LangSeg>
+        <div className="space-y-6">
+            <div className="w-full pt-1">
+                <CartaLangPicker lang={lang} onChange={setLang} />
             </div>
 
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 {grouped.map((group) => {
                     const isOpen = openKey === group.key
                     return (
                         <div
                             key={group.key}
                             className={cn(
-                                'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm',
+                                'overflow-hidden rounded-xl border border-zinc-200/60 bg-white/85 shadow-none backdrop-blur-[2px]',
                                 isOpen && 'md:col-span-2'
                             )}
                         >
@@ -213,7 +206,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                 onClick={() =>
                                     setOpenKey((current) => (current === group.key ? null : group.key))
                                 }
-                                className="flex min-h-[48px] w-full items-center justify-center p-4 active:bg-zinc-50/80"
+                                className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-white/60"
                                 aria-expanded={isOpen}
                             >
                                 <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
@@ -231,7 +224,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                 </span>
                             </button>
                             {isOpen ? (
-                                <div className="shrink-0 border-t border-zinc-100 px-3 pb-3 pt-1">
+                                <div className="shrink-0 border-t border-zinc-200/50 px-3 pb-3 pt-1">
                                     <div className="max-h-[min(72vh,720px)] overflow-y-auto pr-1 space-y-5">
                                         {group._subList.map((sub) => (
                                             <section key={sub.key} className="space-y-3">
@@ -257,29 +250,5 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                 })}
             </div>
         </div>
-    )
-}
-
-function LangSeg({
-    active,
-    onClick,
-    children,
-}: {
-    active: boolean
-    onClick: () => void
-    children: React.ReactNode
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                'min-h-[48px] flex-1 rounded-xl px-3 text-xs font-black uppercase tracking-widest',
-                active ? 'bg-[#36606F] text-white' : 'bg-transparent text-[#36606F] active:bg-zinc-50'
-            )}
-            aria-pressed={active}
-        >
-            {children}
-        </button>
     )
 }

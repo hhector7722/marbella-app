@@ -30,22 +30,31 @@ export default async function StaffCartaPage() {
     const homeHref = canEditMenu ? '/dashboard' : '/staff/dashboard';
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] pb-24 pt-4">
-            <div className="mx-auto w-full max-w-lg px-4 md:max-w-2xl">
-                <div className="mb-4 flex shrink-0 items-center gap-2">
-                    <Link
-                        href={homeHref}
-                        className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-100 bg-white p-3 text-[#36606F] shadow-sm active:scale-[0.98]"
-                        aria-label="Volver al inicio"
-                    >
-                        <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-                    </Link>
-                    <div className="min-w-0 flex-1 rounded-xl border border-zinc-100 bg-white px-4 py-3 shadow-sm">
-                        <h1 className="text-xs font-black uppercase tracking-widest text-[#36606F]">La carta</h1>
-                        <p className="truncate text-[10px] font-medium text-zinc-400">Platos y precios del TPV</p>
+        <div className="min-h-screen bg-zinc-100">
+            <div className="mx-auto w-full max-w-4xl px-5 pb-12 pt-8 md:px-10 md:pb-16 md:pt-10">
+                <header className="mb-8 grid grid-cols-3 items-center gap-2 pb-2 pt-1">
+                    <div className="flex justify-start">
+                        <Link
+                            href={homeHref}
+                            className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-200/60 active:bg-zinc-200"
+                            aria-label="Volver al inicio"
+                        >
+                            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+                        </Link>
                     </div>
-                    {canEditMenu ? <StaffCartaEditor canEdit={canEditMenu} /> : null}
-                </div>
+                    <div className="flex justify-center">
+                        <span className="text-xs font-black uppercase tracking-widest text-[#36606F]">
+                            La carta
+                        </span>
+                    </div>
+                    <div className="flex justify-end">
+                        {canEditMenu ? (
+                            <StaffCartaEditor canEdit={canEditMenu} />
+                        ) : (
+                            <span className="inline-flex min-h-[48px] min-w-[48px]" aria-hidden />
+                        )}
+                    </div>
+                </header>
 
                 <DigitalMenu />
             </div>
