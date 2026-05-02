@@ -228,41 +228,44 @@ export function PublicCarta({
                 {openGroup && insertAfterIndex === idx ? (
                   <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
                     <div className="px-3 pb-4 pt-3">
-                      {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {openGroup._subList.map((sub) => (
+                      {openGroup._subList.length > 1 ? (
+                        <div className="-mx-1 mb-3 flex shrink-0 flex-nowrap gap-1.5 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                          {openGroup._subList.map((sub) => {
+                            const sel = selectedSubKeyByGroup[openGroup.key]
+                            const isActive = sel === sub.key
+                            return (
                               <button
                                 key={sub.key}
                                 type="button"
                                 onClick={() =>
-                                  setSelectedSubKeyByGroup((p) => ({ ...p, [openGroup.key]: sub.key }))
+                                  setSelectedSubKeyByGroup((p) => ({
+                                    ...p,
+                                    [openGroup.key]: sub.key,
+                                  }))
                                 }
-                                className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                                className={cn(
+                                  'flex min-h-[48px] min-w-[4.25rem] max-w-[6rem] shrink-0 flex-col items-center justify-center rounded-xl border px-2 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:max-w-[7rem] sm:text-[11px]',
+                                  isActive
+                                    ? 'border-[#36606F] bg-[#36606F]/10 text-[#36606F]'
+                                    : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
+                                )}
                               >
-                                {sub.title.trim() || tPublicUi(lang).uncategorized}
+                                <span className="line-clamp-3">
+                                  {sub.title.trim() || tPublicUi(lang).uncategorized}
+                                </span>
                               </button>
-                            ))}
-                          </div>
-                      ) : (
-                        <div className="space-y-5">
-                          {openGroup._subList.length > 1 ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSelectedSubKeyByGroup((p) => {
-                                  const n = { ...p }
-                                  delete n[openGroup.key]
-                                  return n
-                                })
-                              }
-                              className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
-                            >
-                              {tPublicUi(lang).backToSubcategories}
-                            </button>
-                          ) : null}
+                            )
+                          })}
+                        </div>
+                      ) : null}
 
+                      {openGroup._subList.length > 1 &&
+                      !selectedSubKeyByGroup[openGroup.key] ? null : (
+                        <div className="space-y-5">
                           {(openGroup._subList.length > 1
-                            ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
+                            ? openGroup._subList.filter(
+                                (s) => s.key === selectedSubKeyByGroup[openGroup.key]
+                              )
                             : openGroup._subList
                           ).map((sub) => (
                             <div key={sub.key} className="space-y-3">
