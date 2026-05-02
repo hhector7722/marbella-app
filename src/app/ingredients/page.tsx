@@ -270,78 +270,92 @@ export default function IngredientsPage() {
             <Toaster position="top-right" />
 
             <div className="max-w-7xl mx-auto">
-                <div className="bg-[#36606F] rounded-2xl px-4 md:px-6 py-4 md:py-5">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                        <div className="relative w-full sm:max-w-xs">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
-                            <input
-                                type="text"
-                                placeholder="Buscar ingrediente..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30"
-                            />
-                        </div>
-                        <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
-                            <div className="flex gap-2 items-center">
-                                {!selectedSupplier ? (
-                                    <div className="relative">
-                                        <button
-                                            onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                                            className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
-                                        >
-                                            Proveedor <ChevronDown size={14} className="text-zinc-400" />
-                                        </button>
+                <div className="flex flex-row items-center gap-2">
+                    <div className="relative min-w-0 flex-1">
+                        <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 md:left-4 md:h-4 md:w-4" />
+                        <input
+                            type="text"
+                            placeholder="Buscar ingrediente..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={cn(
+                                'w-full rounded-xl bg-white py-2 pr-2 pl-8 text-xs font-medium text-gray-700 shadow-sm outline-none md:rounded-2xl md:py-2.5 md:pr-4 md:pl-10 md:text-sm',
+                                'focus:ring-2 focus:ring-[#36606F]/25',
+                            )}
+                        />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+                        {!selectedSupplier ? (
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowSupplierPopup(!showSupplierPopup)}
+                                    className="flex items-center gap-1 rounded-xl border border-white/50 bg-white/90 px-2.5 py-2 font-black text-[9px] uppercase tracking-widest text-zinc-800 shadow-sm transition-all hover:bg-white md:gap-2 md:rounded-2xl md:px-5 md:py-2.5 md:text-[10px]"
+                                >
+                                    <span className="hidden sm:inline">Proveedor</span>
+                                    <span className="sm:hidden">Prov.</span>
+                                    <ChevronDown size={12} className="text-zinc-400 md:h-3.5 md:w-3.5" />
+                                </button>
 
-                                        {showSupplierPopup && (
-                                            <>
-                                                <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
-                                                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto">
-                                                    <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
-                                                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
-                                                    >
-                                                        Todos
-                                                    </button>
-                                                    {suppliersList.map(sup => (
-                                                        <button
-                                                            key={sup}
-                                                            onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
-                                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
-                                                        >
-                                                            {sup}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
-                                        <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
-                                        <button
-                                            onClick={() => setSelectedSupplier(null)}
-                                            className="p-1.5 hover:bg-zinc-100 rounded-2xl transition-colors"
-                                        >
-                                            <X size={14} className="text-rose-500" strokeWidth={4} />
-                                        </button>
-                                    </div>
+                                {showSupplierPopup && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)} />
+                                        <div className="absolute right-0 top-full z-40 mt-2 w-40 animate-in fade-in slide-in-from-top-2 rounded-2xl border border-gray-100 bg-white py-2 shadow-xl duration-200 md:w-48 pointer-events-auto">
+                                            <div className="mb-1 border-b border-gray-50 px-4 py-2">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Seleccionar</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedSupplier(null);
+                                                    setShowSupplierPopup(false);
+                                                }}
+                                                className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-zinc-50"
+                                            >
+                                                Todos
+                                            </button>
+                                            {suppliersList.map((sup) => (
+                                                <button
+                                                    key={sup}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedSupplier(sup);
+                                                        setShowSupplierPopup(false);
+                                                    }}
+                                                    className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-zinc-50"
+                                                >
+                                                    {sup}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
                                 )}
                             </div>
-                            <button
-                                onClick={() => {
-                                    setCreateMode('wizard');
-                                    setCreateSettingsOpen(false);
-                                    setShowCreateModal(true);
-                                }}
-                                className="bg-[#5E35B1] text-white w-10 h-10 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
-                            >
-                                <Plus className="w-6 h-6" />
-                            </button>
-                        </div>
+                        ) : (
+                            <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-none md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
+                                <span className="truncate font-black text-[9px] uppercase tracking-widest text-zinc-800 md:text-[10px]">
+                                    {selectedSupplier}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedSupplier(null)}
+                                    className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"
+                                >
+                                    <X size={12} className="text-rose-500 md:h-3.5 md:w-3.5" strokeWidth={4} />
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCreateMode('wizard');
+                                setCreateSettingsOpen(false);
+                                setShowCreateModal(true);
+                            }}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95 md:h-12 md:w-12 md:rounded-2xl"
+                        >
+                            <Plus className="h-5 w-5 md:h-6 md:w-6" />
+                        </button>
                     </div>
                 </div>
 
