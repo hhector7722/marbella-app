@@ -132,6 +132,11 @@ export function PublicCarta({
     return Math.min(openIndex + 1, grouped.length - 1)
   }, [openIndex, grouped.length])
 
+  const openGroup = useMemo(
+    () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
+    [grouped, openKey]
+  )
+
   return (
     <main className="min-h-screen bg-[#5B8FB9]">
       <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
@@ -220,27 +225,27 @@ export function PublicCarta({
                   </button>
                 </div>
 
-                {isOpen && insertAfterIndex === idx ? (
+                {openGroup && insertAfterIndex === idx ? (
                   <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
                     <div className="border-b border-zinc-200/40 bg-white p-2">
                       <div className="flex min-h-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-center text-sm font-black uppercase tracking-widest text-[#36606F]">
-                        {group.title}
+                        {openGroup.title}
                       </div>
                     </div>
 
                     <div className="px-3 pb-4 pt-3">
-                      {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
+                      {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
                         <div className="space-y-3">
                           <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
                             {tPublicUi(lang).pickSubcategoryTitle}
                           </p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {group._subList.map((sub) => (
+                            {openGroup._subList.map((sub) => (
                               <button
                                 key={sub.key}
                                 type="button"
                                 onClick={() =>
-                                  setSelectedSubKeyByGroup((p) => ({ ...p, [group.key]: sub.key }))
+                                  setSelectedSubKeyByGroup((p) => ({ ...p, [openGroup.key]: sub.key }))
                                 }
                                 className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
                               >
@@ -251,13 +256,13 @@ export function PublicCarta({
                         </div>
                       ) : (
                         <div className="space-y-5">
-                          {group._subList.length > 1 ? (
+                          {openGroup._subList.length > 1 ? (
                             <button
                               type="button"
                               onClick={() =>
                                 setSelectedSubKeyByGroup((p) => {
                                   const n = { ...p }
-                                  delete n[group.key]
+                                  delete n[openGroup.key]
                                   return n
                                 })
                               }
@@ -267,9 +272,9 @@ export function PublicCarta({
                             </button>
                           ) : null}
 
-                          {(group._subList.length > 1
-                            ? group._subList.filter((s) => s.key === selectedSubKeyByGroup[group.key])
-                            : group._subList
+                          {(openGroup._subList.length > 1
+                            ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
+                            : openGroup._subList
                           ).map((sub) => (
                             <div key={sub.key} className="space-y-3">
                               <div className="grid grid-cols-3 gap-2 sm:gap-3">

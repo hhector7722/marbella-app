@@ -207,6 +207,17 @@ export function MenuAccordion({
     const [openKey, setOpenKey] = useState<string | null>(null)
     const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
 
+    const openIndex = useMemo(() => grouped.findIndex((g) => g.key === openKey), [grouped, openKey])
+    const insertAfterIndex = useMemo(() => {
+        if (openIndex < 0) return -1
+        if (openIndex % 2 === 1) return openIndex
+        return Math.min(openIndex + 1, grouped.length - 1)
+    }, [openIndex, grouped.length])
+    const openGroup = useMemo(
+        () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
+        [grouped, openKey]
+    )
+
     if (items.length === 0) {
         return (
             <div className="rounded-xl border border-zinc-100 bg-white p-6 text-center shadow-sm">
@@ -231,13 +242,6 @@ export function MenuAccordion({
             >
                 {grouped.map((group, idx) => {
                     const isOpen = openKey === group.key
-                    const openIndex = grouped.findIndex((g) => g.key === openKey)
-                    const insertAfterIndex =
-                        openIndex < 0
-                            ? -1
-                            : openIndex % 2 === 1
-                              ? openIndex
-                              : Math.min(openIndex + 1, grouped.length - 1)
                     return (
                         <div key={group.key} className="contents">
                             <div
@@ -287,23 +291,23 @@ export function MenuAccordion({
                                 </button>
                             </div>
 
-                            {isOpen && insertAfterIndex === idx ? (
+                            {openGroup && insertAfterIndex === idx ? (
                                 <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
                                     <div className="border-b border-zinc-200/40 bg-white p-2">
                                         <div className="flex min-h-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-center text-sm font-black uppercase tracking-widest text-[#36606F]">
-                                            {group.title}
+                                            {openGroup.title}
                                         </div>
                                     </div>
                                     <div className="px-3 pb-3 pt-3">
                                         <div className="space-y-5">
-                                            {group._subList.length > 1 &&
-                                            !selectedSubKeyByGroup[group.key] ? (
+                                            {openGroup._subList.length > 1 &&
+                                            !selectedSubKeyByGroup[openGroup.key] ? (
                                                 <div className="space-y-3">
                                                     <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
                                                         {tPublicUi(lang).pickSubcategoryTitle}
                                                     </p>
                                                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                                        {group._subList.map((sub) => (
+                                                        {openGroup._subList.map((sub) => (
                                                             <button
                                                                 key={sub.key}
                                                                 type="button"
@@ -311,7 +315,7 @@ export function MenuAccordion({
                                                                     setSelectedSubKeyByGroup(
                                                                         (p) => ({
                                                                             ...p,
-                                                                            [group.key]: sub.key,
+                                                                            [openGroup.key]: sub.key,
                                                                         })
                                                                     )
                                                                 }
@@ -325,13 +329,13 @@ export function MenuAccordion({
                                                 </div>
                                             ) : (
                                                 <>
-                                                    {group._subList.length > 1 ? (
+                                                    {openGroup._subList.length > 1 ? (
                                                         <button
                                                             type="button"
                                                             onClick={() =>
                                                                 setSelectedSubKeyByGroup((p) => {
                                                                     const n = { ...p }
-                                                                    delete n[group.key]
+                                                                    delete n[openGroup.key]
                                                                     return n
                                                                 })
                                                             }
@@ -341,13 +345,13 @@ export function MenuAccordion({
                                                         </button>
                                                     ) : null}
 
-                                                    {(group._subList.length > 1
-                                                        ? group._subList.filter(
+                                                    {(openGroup._subList.length > 1
+                                                        ? openGroup._subList.filter(
                                                               (s) =>
                                                                   s.key ===
-                                                                  selectedSubKeyByGroup[group.key]
+                                                                  selectedSubKeyByGroup[openGroup.key]
                                                           )
-                                                        : group._subList
+                                                        : openGroup._subList
                                                     ).map((sub) => (
                                                         <section key={sub.key} className="space-y-3">
                                                             <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
