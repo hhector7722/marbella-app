@@ -100,6 +100,7 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
             <CartaImageLightbox
                 src={row.photo_url}
                 alt={displayName}
+                title={displayName}
                 open={lightboxOpen && !!row.photo_url}
                 onClose={() => setLightboxOpen(false)}
             />

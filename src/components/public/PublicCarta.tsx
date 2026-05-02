@@ -278,6 +278,7 @@ export function PublicCarta({
       <CartaImageLightbox
         src={lightbox?.src ?? null}
         alt={lightbox?.alt ?? ''}
+        title={lightbox?.alt ?? ''}
         open={lightbox != null}
         onClose={() => setLightbox(null)}
       />
