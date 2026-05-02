@@ -1,7 +1,6 @@
 'use client'
 
 import { X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 export function CartaImageLightbox({
   src,
@@ -49,12 +48,12 @@ export function CartaImageLightbox({
           </button>
         </header>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-950 p-3 md:p-5">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-white">
           {/* eslint-disable-next-line @next/next/no-img-element -- URL externa / Storage */}
           <img
             src={src}
             alt={alt}
-            className={cn('max-h-[min(72vh,780px)] w-auto max-w-full object-contain')}
+            className="max-h-[min(72vh,780px)] w-auto max-w-full border-0 object-contain p-0 outline-none ring-0"
           />
         </div>
       </div>
