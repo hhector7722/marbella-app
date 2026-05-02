@@ -309,7 +309,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-100 bg-white p-3 text-[#36606F] shadow-sm active:scale-[0.98]"
+        className="flex min-h-[48px] min-w-[48px] items-center justify-center p-3 text-white transition-opacity hover:opacity-85 active:opacity-70"
         aria-label="Editar carta"
         title="Editar carta"
       >

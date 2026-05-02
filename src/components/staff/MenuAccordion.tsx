@@ -217,7 +217,7 @@ export function MenuAccordion({
                         <div
                             key={group.key}
                             className={cn(
-                                'overflow-hidden rounded-xl border border-zinc-200/60 bg-white/85 shadow-none backdrop-blur-[2px]',
+                                'overflow-hidden rounded-xl border border-zinc-200/60 bg-white shadow-sm',
                                 isOpen && 'md:col-span-2'
                             )}
                         >
@@ -226,7 +226,7 @@ export function MenuAccordion({
                                 onClick={() =>
                                     setOpenKey((current) => (current === group.key ? null : group.key))
                                 }
-                                className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-white/60"
+                                className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-zinc-50"
                                 aria-expanded={isOpen}
                             >
                                 <span className="flex min-w-0 max-w-full items-center justify-center gap-3">

@@ -21,16 +21,14 @@ export function StaffCartaView({
       <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
         <header className="grid grid-cols-3 items-center gap-2 pb-6 pt-1">
           <div className="flex shrink-0 justify-start">
-            <div className="rounded-lg bg-[#36606F] px-2 py-1.5">
-              <Image
-                src="/icons/logo-white.png"
-                alt="Bar La Marbella"
-                width={120}
-                height={32}
-                className="h-5 w-auto max-w-[110px]"
-                priority
-              />
-            </div>
+            <Image
+              src="/icons/logo-white.png"
+              alt="Bar La Marbella"
+              width={180}
+              height={48}
+              className="h-8 w-auto max-w-[160px] sm:h-9 sm:max-w-[180px]"
+              priority
+            />
           </div>
 
           <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" />

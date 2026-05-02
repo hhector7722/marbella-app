@@ -126,16 +126,14 @@ export function PublicCarta({
       <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
         <header className="grid grid-cols-3 items-center gap-2 pb-2 pt-1">
           <div className="flex shrink-0 justify-start">
-            <div className="rounded-lg bg-[#36606F] px-2 py-1.5">
-              <Image
-                src="/icons/logo-white.png"
-                alt="Bar La Marbella"
-                width={120}
-                height={32}
-                className="h-5 w-auto max-w-[110px]"
-                priority
-              />
-            </div>
+            <Image
+              src="/icons/logo-white.png"
+              alt="Bar La Marbella"
+              width={180}
+              height={48}
+              className="h-8 w-auto max-w-[160px] sm:h-9 sm:max-w-[180px]"
+              priority
+            />
           </div>
 
           <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" />
@@ -144,7 +142,7 @@ export function PublicCarta({
             {cartaEditHref ? (
               <Link
                 href={cartaEditHref}
-                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-white transition-colors hover:bg-white/15 active:bg-white/10"
+                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
                 aria-label="Editar carta"
                 title="Editar carta"
               >
@@ -163,7 +161,7 @@ export function PublicCarta({
               <div
                 key={group.key}
                 className={cn(
-                  'overflow-hidden rounded-xl border border-zinc-200/60 bg-white/85 shadow-none backdrop-blur-[2px]',
+                  'overflow-hidden rounded-xl border border-zinc-200/60 bg-white shadow-sm',
                   isOpen && 'sm:col-span-2'
                 )}
               >
@@ -172,7 +170,7 @@ export function PublicCarta({
                   onClick={() =>
                     setOpenKey((current) => (current === group.key ? null : group.key))
                   }
-                  className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-white/60"
+                  className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-zinc-50"
                   aria-expanded={isOpen}
                 >
                   <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
