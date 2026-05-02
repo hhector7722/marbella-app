@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -121,12 +121,6 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
     return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }> }>
   }, [filtered, lang])
 
-  useEffect(() => {
-    if (openKey != null) return
-    const initialKey = grouped[0]?.key ?? null
-    if (initialKey) setOpenKey(initialKey)
-  }, [grouped, openKey])
-
   return (
     <main className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-4xl px-4 pb-10 pt-6">
@@ -189,10 +183,18 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
           {grouped.map((group) => {
             const isOpen = openKey === group.key
             return (
-              <div key={group.key} className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+              <div
+                key={group.key}
+                className={cn(
+                  'overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm',
+                  isOpen && 'sm:col-span-2'
+                )}
+              >
                 <button
                   type="button"
-                  onClick={() => setOpenKey((o) => (o === group.key ? null : group.key))}
+                  onClick={() =>
+                    setOpenKey((current) => (current === group.key ? null : group.key))
+                  }
                   className="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-zinc-50"
                   aria-expanded={isOpen}
                 >

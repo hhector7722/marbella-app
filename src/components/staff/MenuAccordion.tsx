@@ -192,7 +192,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
         >
     }, [items, lang])
 
-    const [openKey, setOpenKey] = useState<string | null>(() => grouped[0]?.key ?? null)
+    const [openKey, setOpenKey] = useState<string | null>(null)
 
     if (items.length === 0) {
         return (
@@ -222,11 +222,16 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                     return (
                         <div
                             key={group.key}
-                            className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm"
+                            className={cn(
+                                'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm',
+                                isOpen && 'md:col-span-2'
+                            )}
                         >
                             <button
                                 type="button"
-                                onClick={() => setOpenKey((o) => (o === group.key ? null : group.key))}
+                                onClick={() =>
+                                    setOpenKey((current) => (current === group.key ? null : group.key))
+                                }
                                 className="flex min-h-[48px] w-full items-center justify-between gap-3 p-4 text-left active:bg-zinc-50/80"
                                 aria-expanded={isOpen}
                             >
