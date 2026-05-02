@@ -237,7 +237,7 @@ export function MenuAccordion({
                             className={cn(
                                 'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
                                 isOpen
-                                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20 sm:col-span-2'
+                                    ? 'col-span-2 border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
                                     : 'border-zinc-200/60'
                             )}
                         >
@@ -261,19 +261,19 @@ export function MenuAccordion({
                                         return group.key
                                     })
                                 }}
-                                className="flex min-h-[52px] w-full shrink-0 items-center justify-start gap-3 px-4 py-2.5 active:bg-zinc-50"
+                                className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
                                 aria-expanded={isOpen}
                             >
-                                <span className="flex min-w-0 flex-1 items-center justify-start gap-3">
+                                <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
                                     {group.coverPhotoUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
                                         <img
                                             src={group.coverPhotoUrl}
                                             alt=""
-                                            className="h-10 w-10 shrink-0 rounded-lg bg-white object-contain object-center"
+                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
                                         />
                                     ) : null}
-                                    <span className="min-w-0 text-left text-sm font-black uppercase tracking-wide text-[#36606F]">
+                                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
                                         {group.title}
                                     </span>
                                 </span>
