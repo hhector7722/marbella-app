@@ -5,7 +5,11 @@ import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { Check, Loader2, Pencil, Search, X, Eye, EyeOff, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { upsertMenuOverride, setMenuSectionCoverArticulo } from '@/app/dashboard/carta/actions'
+import {
+  upsertMenuOverride,
+  setMenuSectionCoverArticulo,
+  type MenuOverrideUpsertInput,
+} from '@/app/dashboard/carta/actions'
 
 type MenuItemRow = {
   articulo_id: number
@@ -43,6 +47,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
   const [coverArticleFilter, setCoverArticleFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [savingArticuloId, setSavingArticuloId] = useState<number | null>(null)
 
   const [items, setItems] = useState<MenuItemRow[]>([])
   const [overrides, setOverrides] = useState<OverrideRow[]>([])
@@ -211,66 +216,41 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
     const current = overrideByArticulo.get(articulo_id)
     const nextHidden = !(current?.is_hidden ?? false) // si estaba visible -> ocultar
     startTransition(async () => {
-      const res = await upsertMenuOverride({
-        articulo_id,
-        is_hidden: nextHidden,
-        sort_order: current?.sort_order ?? null,
-        category_id: current?.category_id ?? null,
-        override_nombre: current?.override_nombre ?? null,
-        override_descripcion: null,
-        override_precio: null,
-        override_photo_url: null,
-      })
-      if (!res.success) {
-        toast.error(res.error ?? 'No se pudo guardar')
-        return
+      setSavingArticuloId(articulo_id)
+      try {
+        const res = await upsertMenuOverride({
+          articulo_id,
+          is_hidden: nextHidden,
+        })
+        if (!res.success) {
+          toast.error(res.error ?? 'No se pudo guardar')
+          return
+        }
+        toast.success(nextHidden ? 'Desactivado (oculto)' : 'Activado (visible)')
+        await load()
+      } finally {
+        setSavingArticuloId(null)
       }
-      toast.success(nextHidden ? 'Desactivado (oculto)' : 'Activado (visible)')
-      await load()
     })
   }
 
   const onSetCategory = (articulo_id: number, category_id: string | null) => {
-    const current = overrideByArticulo.get(articulo_id)
     startTransition(async () => {
-      const res = await upsertMenuOverride({
-        articulo_id,
-        is_hidden: current?.is_hidden ?? false,
-        sort_order: current?.sort_order ?? null,
-        category_id,
-        override_nombre: current?.override_nombre ?? null,
-        override_descripcion: null,
-        override_precio: null,
-        override_photo_url: null,
-      })
-      if (!res.success) {
-        toast.error(res.error ?? 'No se pudo guardar categoría')
-        return
+      setSavingArticuloId(articulo_id)
+      try {
+        const res = await upsertMenuOverride({
+          articulo_id,
+          category_id,
+        })
+        if (!res.success) {
+          toast.error(res.error ?? 'No se pudo guardar categoría')
+          return
+        }
+        toast.success('Categoría guardada')
+        await load()
+      } finally {
+        setSavingArticuloId(null)
       }
-      toast.success('Categoría guardada')
-      await load()
-    })
-  }
-
-  const onSetCartaNombre = (articulo_id: number, override_nombre: string) => {
-    const current = overrideByArticulo.get(articulo_id)
-    startTransition(async () => {
-      const res = await upsertMenuOverride({
-        articulo_id,
-        is_hidden: current?.is_hidden ?? false,
-        sort_order: current?.sort_order ?? null,
-        category_id: current?.category_id ?? null,
-        override_nombre: override_nombre.trim() === '' ? null : override_nombre,
-        override_descripcion: null,
-        override_precio: null,
-        override_photo_url: null,
-      })
-      if (!res.success) {
-        toast.error(res.error ?? 'No se pudo guardar el nombre')
-        return
-      }
-      toast.success('Nombre guardado')
-      await load()
     })
   }
 
@@ -278,27 +258,32 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
     articulo_id: number,
     input: { override_nombre_es?: string; override_nombre_ca?: string; override_nombre_en?: string }
   ) => {
-    const current = overrideByArticulo.get(articulo_id)
     startTransition(async () => {
-      const res = await upsertMenuOverride({
-        articulo_id,
-        is_hidden: current?.is_hidden ?? false,
-        sort_order: current?.sort_order ?? null,
-        category_id: current?.category_id ?? null,
-        override_nombre: current?.override_nombre ?? null,
-        override_nombre_es: input.override_nombre_es != null && input.override_nombre_es.trim() !== '' ? input.override_nombre_es : null,
-        override_nombre_ca: input.override_nombre_ca != null && input.override_nombre_ca.trim() !== '' ? input.override_nombre_ca : null,
-        override_nombre_en: input.override_nombre_en != null && input.override_nombre_en.trim() !== '' ? input.override_nombre_en : null,
-        override_descripcion: null,
-        override_precio: null,
-        override_photo_url: null,
-      } as any)
-      if (!res.success) {
-        toast.error(res.error ?? 'No se pudo guardar el nombre')
-        return
+      setSavingArticuloId(articulo_id)
+      try {
+        const patch: MenuOverrideUpsertInput = { articulo_id }
+        if (input.override_nombre_es !== undefined) {
+          const v = input.override_nombre_es
+          patch.override_nombre_es = v.trim() === '' ? null : v
+        }
+        if (input.override_nombre_ca !== undefined) {
+          const v = input.override_nombre_ca
+          patch.override_nombre_ca = v.trim() === '' ? null : v
+        }
+        if (input.override_nombre_en !== undefined) {
+          const v = input.override_nombre_en
+          patch.override_nombre_en = v.trim() === '' ? null : v
+        }
+        const res = await upsertMenuOverride(patch)
+        if (!res.success) {
+          toast.error(res.error ?? 'No se pudo guardar el nombre')
+          return
+        }
+        toast.success('Nombre guardado')
+        await load()
+      } finally {
+        setSavingArticuloId(null)
       }
-      toast.success('Nombre guardado')
-      await load()
     })
   }
 
@@ -410,7 +395,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                         className="h-12 min-h-[48px] min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
                         title={`Producto para portada: ${p.name}`}
                         value={p.cover_articulo_id ?? ''}
-                        disabled={isPending}
+                        disabled={isPending || savingArticuloId != null}
                         onChange={(e) => {
                           const v = e.target.value
                           onSetSectionCover(p.id, v === '' ? null : Number(v))
@@ -445,7 +430,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                         key={it.articulo_id}
                         className={cn(
                           'rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm',
-                          isPending && 'opacity-70 pointer-events-none'
+                          savingArticuloId === it.articulo_id && 'opacity-70 pointer-events-none'
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
