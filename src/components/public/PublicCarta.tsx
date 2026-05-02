@@ -62,6 +62,7 @@ export function PublicCarta({
   cartaEditHref: string | null
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
+  const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<CartaLang>('es')
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
 
@@ -169,9 +170,24 @@ export function PublicCarta({
               >
                 <button
                   type="button"
-                  onClick={() =>
-                    setOpenKey((current) => (current === group.key ? null : group.key))
-                  }
+                  onClick={() => {
+                    setOpenKey((current) => {
+                      if (current === group.key) {
+                        setSelectedSubKeyByGroup((p) => {
+                          const n = { ...p }
+                          delete n[group.key]
+                          return n
+                        })
+                        return null
+                      }
+                      setSelectedSubKeyByGroup((p) => {
+                        const n = { ...p }
+                        delete n[group.key]
+                        return n
+                      })
+                      return group.key
+                    })
+                  }}
                   className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-zinc-50"
                   aria-expanded={isOpen}
                 >
@@ -195,78 +211,119 @@ export function PublicCarta({
 
                 {isOpen ? (
                   <div className="border-t border-zinc-200/50 px-3 pb-4 pt-3">
-                    <div className="space-y-5">
-                      {group._subList.map((sub) => (
-                        <div key={sub.key} className="space-y-3">
-                          {sub.title ? (
-                            <div className="px-1">
-                              <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                                {sub.title}
-                              </div>
-                            </div>
-                          ) : null}
+                    {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
+                      <div className="space-y-3">
+                        <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                          {tPublicUi(lang).pickSubcategoryTitle}
+                        </p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {group._subList.map((sub) => (
+                            <button
+                              key={sub.key}
+                              type="button"
+                              onClick={() =>
+                                setSelectedSubKeyByGroup((p) => ({ ...p, [group.key]: sub.key }))
+                              }
+                              className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                            >
+                              {sub.title.trim() || tPublicUi(lang).uncategorized}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {group._subList.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedSubKeyByGroup((p) => {
+                                const n = { ...p }
+                                delete n[group.key]
+                                return n
+                              })
+                            }
+                            className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
+                          >
+                            {tPublicUi(lang).backToSubcategories}
+                          </button>
+                        ) : null}
 
-                          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                            {sub.rows.map((row) => (
-                              <div
-                                key={row.articulo_id}
-                                className="flex flex-col overflow-hidden rounded-2xl bg-white"
-                              >
-                                {row.category_parent_name &&
-                                ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                  row.photo_url ? (
-                                    <button
-                                      type="button"
-                                      className="relative h-12 w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
-                                      aria-label="Ver foto ampliada"
-                                      onClick={() =>
-                                        setLightbox({
-                                          src: row.photo_url!,
-                                          alt: getCartaDisplayName(row, lang),
-                                        })
-                                      }
-                                    >
-                                      <Image
-                                        src={row.photo_url}
-                                        alt=""
-                                        fill
-                                        sizes="(max-width: 640px) 33vw, 20vw"
-                                        className="pointer-events-none object-contain p-1.5"
-                                      />
-                                    </button>
-                                  ) : (
-                                    <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
-                                      <div className="h-full w-full bg-white" />
-                                    </div>
-                                  )
-                                ) : null}
-                                <div
-                                  className={cn(
-                                    'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-2',
-                                    row.category_parent_name &&
-                                      ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
-                                      ? 'pt-1'
-                                      : 'pt-2'
-                                  )}
-                                >
-                                  <p
-                                    className="line-clamp-3 w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
-                                    title={getCartaDisplayName(row, lang)}
-                                  >
-                                    {getCartaDisplayName(row, lang)}
-                                  </p>
-                                  <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
-                                    <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
-                                      {formatPrice(row.precio)}
-                                    </span>
-                                  </div>
+                        {(group._subList.length > 1
+                          ? group._subList.filter((s) => s.key === selectedSubKeyByGroup[group.key])
+                          : group._subList
+                        ).map((sub) => (
+                          <div key={sub.key} className="space-y-3">
+                            {group._subList.length === 1 && sub.title ? (
+                              <div className="px-1">
+                                <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                                  {sub.title}
                                 </div>
                               </div>
-                            ))}
+                            ) : null}
+
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                              {sub.rows.map((row) => (
+                                <div
+                                  key={row.articulo_id}
+                                  className="flex flex-col overflow-hidden rounded-2xl bg-white"
+                                >
+                                  {row.category_parent_name &&
+                                  ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
+                                    row.photo_url ? (
+                                      <button
+                                        type="button"
+                                        className="relative h-12 w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
+                                        aria-label="Ver foto ampliada"
+                                        onClick={() =>
+                                          setLightbox({
+                                            src: row.photo_url!,
+                                            alt: getCartaDisplayName(row, lang),
+                                          })
+                                        }
+                                      >
+                                        <Image
+                                          src={row.photo_url}
+                                          alt=""
+                                          fill
+                                          sizes="(max-width: 640px) 33vw, 20vw"
+                                          className="pointer-events-none object-contain p-1.5"
+                                        />
+                                      </button>
+                                    ) : (
+                                      <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
+                                        <div className="h-full w-full bg-white" />
+                                      </div>
+                                    )
+                                  ) : null}
+                                  <div
+                                    className={cn(
+                                      'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-2',
+                                      row.category_parent_name &&
+                                        ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
+                                        ? 'pt-1'
+                                        : 'pt-2'
+                                    )}
+                                  >
+                                    <p
+                                      className="line-clamp-3 w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
+                                      title={getCartaDisplayName(row, lang)}
+                                    >
+                                      {getCartaDisplayName(row, lang)}
+                                    </p>
+                                    <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
+                                      <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
+                                        {formatPrice(row.precio)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>

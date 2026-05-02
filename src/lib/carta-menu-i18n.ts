@@ -2,9 +2,30 @@ export type CartaLang = 'es' | 'ca' | 'en'
 
 export function tPublicUi(lang: CartaLang) {
   const dict = {
-    es: { title: 'La carta', subtitle: 'Nombre y precio', search: 'Buscar…', uncategorized: 'Sin categoría' },
-    ca: { title: 'La carta', subtitle: 'Nom i preu', search: 'Cercar…', uncategorized: 'Sense categoria' },
-    en: { title: 'Menu', subtitle: 'Name & price', search: 'Search…', uncategorized: 'Uncategorized' },
+    es: {
+      title: 'La carta',
+      subtitle: 'Nombre y precio',
+      search: 'Buscar…',
+      uncategorized: 'Sin categoría',
+      pickSubcategoryTitle: 'Elige una subcategoría',
+      backToSubcategories: 'Ver todas las subcategorías',
+    },
+    ca: {
+      title: 'La carta',
+      subtitle: 'Nom i preu',
+      search: 'Cercar…',
+      uncategorized: 'Sense categoria',
+      pickSubcategoryTitle: 'Tria una subcategoria',
+      backToSubcategories: 'Veure totes les subcategories',
+    },
+    en: {
+      title: 'Menu',
+      subtitle: 'Name & price',
+      search: 'Search…',
+      uncategorized: 'Uncategorized',
+      pickSubcategoryTitle: 'Choose a subcategory',
+      backToSubcategories: 'All subcategories',
+    },
   } as const
   return dict[lang]
 }

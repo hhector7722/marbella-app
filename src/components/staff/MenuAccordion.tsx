@@ -8,6 +8,7 @@ import {
     type CartaLang,
     getCartaDisplayName,
     prettifyChildTitle,
+    tPublicUi,
     translateChildCategoryTitle,
     translateParentCategoryTitle,
 } from '@/lib/carta-menu-i18n'
@@ -204,6 +205,7 @@ export function MenuAccordion({
     }, [items, lang])
 
     const [openKey, setOpenKey] = useState<string | null>(null)
+    const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
 
     if (items.length === 0) {
         return (
@@ -239,9 +241,24 @@ export function MenuAccordion({
                         >
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setOpenKey((current) => (current === group.key ? null : group.key))
-                                }
+                                onClick={() => {
+                                    setOpenKey((current) => {
+                                        if (current === group.key) {
+                                            setSelectedSubKeyByGroup((p) => {
+                                                const n = { ...p }
+                                                delete n[group.key]
+                                                return n
+                                            })
+                                            return null
+                                        }
+                                        setSelectedSubKeyByGroup((p) => {
+                                            const n = { ...p }
+                                            delete n[group.key]
+                                            return n
+                                        })
+                                        return group.key
+                                    })
+                                }}
                                 className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-zinc-50"
                                 aria-expanded={isOpen}
                             >
@@ -261,23 +278,75 @@ export function MenuAccordion({
                             </button>
                             {isOpen ? (
                                 <div className="shrink-0 border-t border-zinc-200/50 px-3 pb-3 pt-1">
-                                    <div className="max-h-[min(72vh,720px)] overflow-y-auto pr-1 space-y-5">
-                                        {group._subList.map((sub) => (
-                                            <section key={sub.key} className="space-y-3">
-                                                {sub.title ? (
-                                                    <div className="px-1">
-                                                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                                                            {sub.title}
-                                                        </div>
-                                                    </div>
-                                                ) : null}
-                                                <div className="grid grid-cols-3 gap-3 md:gap-4 items-stretch">
-                                                    {sub.rows.map((row) => (
-                                                        <MenuCard key={row.articulo_id} row={row} lang={lang} />
+                                    <div className="max-h-[min(72vh,720px)] overflow-y-auto space-y-5 pr-1">
+                                        {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
+                                            <div className="space-y-3">
+                                                <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                                                    {tPublicUi(lang).pickSubcategoryTitle}
+                                                </p>
+                                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                    {group._subList.map((sub) => (
+                                                        <button
+                                                            key={sub.key}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setSelectedSubKeyByGroup((p) => ({
+                                                                    ...p,
+                                                                    [group.key]: sub.key,
+                                                                }))
+                                                            }
+                                                            className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                                                        >
+                                                            {sub.title.trim() || tPublicUi(lang).uncategorized}
+                                                        </button>
                                                     ))}
                                                 </div>
-                                            </section>
-                                        ))}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {group._subList.length > 1 ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setSelectedSubKeyByGroup((p) => {
+                                                                const n = { ...p }
+                                                                delete n[group.key]
+                                                                return n
+                                                            })
+                                                        }
+                                                        className="flex min-h-[48px] w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
+                                                    >
+                                                        {tPublicUi(lang).backToSubcategories}
+                                                    </button>
+                                                ) : null}
+
+                                                {(group._subList.length > 1
+                                                    ? group._subList.filter(
+                                                          (s) => s.key === selectedSubKeyByGroup[group.key]
+                                                      )
+                                                    : group._subList
+                                                ).map((sub) => (
+                                                    <section key={sub.key} className="space-y-3">
+                                                        {group._subList.length === 1 && sub.title ? (
+                                                            <div className="px-1">
+                                                                <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                                                                    {sub.title}
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+                                                        <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                            {sub.rows.map((row) => (
+                                                                <MenuCard
+                                                                    key={row.articulo_id}
+                                                                    row={row}
+                                                                    lang={lang}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </section>
+                                                ))}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ) : null}
