@@ -315,7 +315,9 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
             <div className="flex items-center justify-between gap-3 bg-[#36606F] px-4 py-3 text-white">
               <div className="min-w-0">
                 <div className="text-xs font-black uppercase tracking-widest">Edición de carta</div>
-                <div className="text-[10px] font-semibold text-white/70">Activar/desactivar + categorías</div>
+                <div className="text-[10px] font-semibold text-white/70">
+                  Artículos (activar, categoría, nombres ES/CA/EN) · portadas abajo
+                </div>
               </div>
               <button
                 type="button"
@@ -327,7 +329,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 p-4">
+            <div className="shrink-0 space-y-3 border-b border-zinc-100 p-4">
               <div className="relative w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
                 <input
@@ -364,59 +366,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                   </option>
                 ))}
               </select>
-
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-3 shadow-sm">
-                <div className="flex items-center gap-2 text-amber-950">
-                  <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Portada al plegar</span>
-                </div>
-                <p className="mt-1 text-[11px] font-medium leading-snug text-amber-950/80">
-                  Solo disponible en esta edición. Elige producto por nombre (mapeado a receta); se guarda por ID TPV.
-                </p>
-                <div className="relative mt-2">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                  <input
-                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                    placeholder="Filtrar lista de artículos…"
-                    value={coverArticleFilter}
-                    onChange={(e) => setCoverArticleFilter(e.target.value)}
-                  />
-                </div>
-                <div className="mt-3 max-h-52 space-y-2 overflow-y-auto pr-1">
-                  {parents.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-white p-2 shadow-sm sm:flex-row sm:items-center sm:gap-3"
-                    >
-                      <span className="min-w-0 shrink-0 truncate text-xs font-black uppercase tracking-wide text-[#36606F] sm:w-40">
-                        {p.name}
-                      </span>
-                      <select
-                        className="h-12 min-h-[48px] min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                        title={`Producto para portada: ${p.name}`}
-                        value={p.cover_articulo_id ?? ''}
-                        disabled={isPending || savingArticuloId != null}
-                        onChange={(e) => {
-                          const v = e.target.value
-                          onSetSectionCover(p.id, v === '' ? null : Number(v))
-                        }}
-                      >
-                        <option value="">Sin imagen</option>
-                        {coverArticleOptions.map((it) => (
-                          <option key={it.articulo_id} value={it.articulo_id}>
-                            {it.articulo_nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-0">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
               {loading ? (
-                <div className="flex items-center justify-center py-10 text-sm font-semibold text-zinc-500">
+                <div className="flex min-h-[200px] items-center justify-center py-10 text-sm font-semibold text-zinc-500">
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Cargando…
                 </div>
@@ -453,38 +408,17 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                           </button>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <input
-                              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                              defaultValue={current?.override_nombre_es ?? ''}
-                              placeholder="Nombre ES (vacío = fallback)"
-                              onBlur={(e) =>
-                                onSetCartaNombreI18n(it.articulo_id, { override_nombre_es: e.target.value })
-                              }
-                            />
-                            <input
-                              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                              defaultValue={current?.override_nombre_ca ?? ''}
-                              placeholder="Nom CA (buit = fallback)"
-                              onBlur={(e) =>
-                                onSetCartaNombreI18n(it.articulo_id, { override_nombre_ca: e.target.value })
-                              }
-                            />
-                            <input
-                              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                              defaultValue={current?.override_nombre_en ?? ''}
-                              placeholder="Name EN (blank = fallback)"
-                              onBlur={(e) =>
-                                onSetCartaNombreI18n(it.articulo_id, { override_nombre_en: e.target.value })
-                              }
-                            />
-                          </div>
+                        <div className="mt-3 flex flex-col gap-3">
+                          <ArticleNombreI18nFields
+                            articuloId={it.articulo_id}
+                            o={current}
+                            onCommit={(patch) => onSetCartaNombreI18n(it.articulo_id, patch)}
+                          />
                           <select
-                            className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                            className="h-12 min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
                             value={current?.category_id ?? ''}
                             onChange={(e) => onSetCategory(it.articulo_id, e.target.value ? e.target.value : null)}
-                            title="Categoría"
+                            title="Categoría y subcategoría"
                           >
                             <option value="">Sin categoría</option>
                             {parents.map((p) => {
@@ -524,6 +458,65 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                   ) : null}
                 </div>
               )}
+              </div>
+
+              <details className="group shrink-0 border-t border-amber-100 bg-amber-50/50 px-4 py-2 [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex min-h-[48px] cursor-pointer list-none items-center gap-2 rounded-xl px-1 py-2 text-amber-950 marker:content-none hover:bg-amber-100/60">
+                  <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="text-xs font-black uppercase tracking-widest">
+                    Portada al plegar (secciones)
+                  </span>
+                  <span className="ml-auto text-[10px] font-semibold text-amber-900/70 group-open:hidden">
+                    Mostrar
+                  </span>
+                  <span className="ml-auto hidden text-[10px] font-semibold text-amber-900/70 group-open:inline">
+                    Ocultar
+                  </span>
+                </summary>
+                <div className="mt-2 space-y-3 pb-3">
+                  <p className="text-[11px] font-medium leading-snug text-amber-950/80">
+                    Elige producto por nombre (mapeado a receta); se guarda por ID TPV.
+                  </p>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                    <input
+                      className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                      placeholder="Filtrar lista de artículos…"
+                      value={coverArticleFilter}
+                      onChange={(e) => setCoverArticleFilter(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-[min(40vh,280px)] space-y-2 overflow-y-auto pr-1">
+                    {parents.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-white p-2 shadow-sm sm:flex-row sm:items-center sm:gap-3"
+                      >
+                        <span className="min-w-0 shrink-0 truncate text-xs font-black uppercase tracking-wide text-[#36606F] sm:w-40">
+                          {p.name}
+                        </span>
+                        <select
+                          className="h-12 min-h-[48px] min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                          title={`Producto para portada: ${p.name}`}
+                          value={p.cover_articulo_id ?? ''}
+                          disabled={isPending || savingArticuloId != null}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            onSetSectionCover(p.id, v === '' ? null : Number(v))
+                          }}
+                        >
+                          <option value="">Sin imagen</option>
+                          {coverArticleOptions.map((it) => (
+                            <option key={it.articulo_id} value={it.articulo_id}>
+                              {it.articulo_nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </details>
             </div>
 
             <div className="shrink-0 border-t border-zinc-100 bg-white p-3 text-right">
@@ -540,6 +533,62 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         </div>
       ) : null}
     </>
+  )
+}
+
+function ArticleNombreI18nFields({
+  articuloId,
+  o,
+  onCommit,
+}: {
+  articuloId: number
+  o: OverrideRow | undefined
+  onCommit: (patch: {
+    override_nombre_es?: string
+    override_nombre_ca?: string
+    override_nombre_en?: string
+  }) => void
+}) {
+  const [es, setEs] = useState(o?.override_nombre_es ?? '')
+  const [ca, setCa] = useState(o?.override_nombre_ca ?? '')
+  const [en, setEn] = useState(o?.override_nombre_en ?? '')
+
+  useEffect(() => {
+    setEs(o?.override_nombre_es ?? '')
+    setCa(o?.override_nombre_ca ?? '')
+    setEn(o?.override_nombre_en ?? '')
+  }, [articuloId, o?.override_nombre_es, o?.override_nombre_ca, o?.override_nombre_en])
+
+  const inp =
+    'h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]'
+
+  return (
+    <div className="space-y-2">
+      <input
+        className={inp}
+        value={es}
+        placeholder="Nombre ES (vacío = fallback)"
+        aria-label="Nombre en carta ES"
+        onChange={(e) => setEs(e.target.value)}
+        onBlur={(e) => onCommit({ override_nombre_es: e.target.value })}
+      />
+      <input
+        className={inp}
+        value={ca}
+        placeholder="Nom CA (buit = fallback)"
+        aria-label="Nom en carta CA"
+        onChange={(e) => setCa(e.target.value)}
+        onBlur={(e) => onCommit({ override_nombre_ca: e.target.value })}
+      />
+      <input
+        className={inp}
+        value={en}
+        placeholder="Name EN (blank = fallback)"
+        aria-label="Name on menu EN"
+        onChange={(e) => setEn(e.target.value)}
+        onBlur={(e) => onCommit({ override_nombre_en: e.target.value })}
+      />
+    </div>
   )
 }
 
