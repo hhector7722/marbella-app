@@ -235,8 +235,10 @@ export function MenuAccordion({
                         <div
                             key={group.key}
                             className={cn(
-                                'overflow-hidden rounded-xl border border-zinc-200/60 bg-white shadow-sm',
-                                isOpen && 'md:col-span-2'
+                                'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                                isOpen
+                                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                                    : 'border-zinc-200/60'
                             )}
                         >
                             <button
@@ -259,16 +261,16 @@ export function MenuAccordion({
                                         return group.key
                                     })
                                 }}
-                                className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-zinc-50"
+                                className="flex min-h-[52px] w-full shrink-0 items-center justify-center px-3 py-2.5 active:bg-zinc-50"
                                 aria-expanded={isOpen}
                             >
                                 <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
-                                    {!isOpen && group.coverPhotoUrl ? (
+                                    {group.coverPhotoUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
                                         <img
                                             src={group.coverPhotoUrl}
                                             alt=""
-                                            className="h-10 w-10 shrink-0 object-contain object-center"
+                                            className="h-10 w-10 shrink-0 rounded-lg bg-white object-contain object-center"
                                         />
                                     ) : null}
                                     <span className="min-w-0 text-center text-sm font-black uppercase tracking-wide text-[#36606F]">
@@ -277,7 +279,7 @@ export function MenuAccordion({
                                 </span>
                             </button>
                             {isOpen ? (
-                                <div className="shrink-0 border-t border-zinc-200/50 px-3 pb-3 pt-1">
+                                <div className="shrink-0 border-t border-zinc-200/40 bg-white px-3 pb-3 pt-1">
                                     <div className="max-h-[min(72vh,720px)] overflow-y-auto space-y-5 pr-1">
                                         {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
                                             <div className="space-y-3">
@@ -327,13 +329,6 @@ export function MenuAccordion({
                                                     : group._subList
                                                 ).map((sub) => (
                                                     <section key={sub.key} className="space-y-3">
-                                                        {group._subList.length === 1 && sub.title ? (
-                                                            <div className="px-1">
-                                                                <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                                                                    {sub.title}
-                                                                </div>
-                                                            </div>
-                                                        ) : null}
                                                         <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
                                                             {sub.rows.map((row) => (
                                                                 <MenuCard

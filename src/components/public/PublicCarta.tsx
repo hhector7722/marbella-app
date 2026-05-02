@@ -164,8 +164,10 @@ export function PublicCarta({
               <div
                 key={group.key}
                 className={cn(
-                  'overflow-hidden rounded-xl border border-zinc-200/60 bg-white shadow-sm',
-                  isOpen && 'sm:col-span-2'
+                  'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                  isOpen
+                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                    : 'border-zinc-200/60'
                 )}
               >
                 <button
@@ -188,17 +190,17 @@ export function PublicCarta({
                       return group.key
                     })
                   }}
-                  className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-zinc-50"
+                  className="flex min-h-[52px] w-full shrink-0 items-center justify-center px-3 py-2.5 active:bg-zinc-50"
                   aria-expanded={isOpen}
                 >
                   <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
-                    {!isOpen && group.coverPhotoUrl ? (
-                    <span className="relative h-11 w-11 shrink-0 overflow-hidden">
-                      <Image
-                        src={group.coverPhotoUrl}
-                        alt=""
-                        fill
-                        sizes="44px"
+                    {group.coverPhotoUrl ? (
+                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white">
+                        <Image
+                          src={group.coverPhotoUrl}
+                          alt=""
+                          fill
+                          sizes="44px"
                           className="object-contain object-center"
                         />
                       </span>
@@ -210,7 +212,7 @@ export function PublicCarta({
                 </button>
 
                 {isOpen ? (
-                  <div className="border-t border-zinc-200/50 px-3 pb-4 pt-3">
+                  <div className="border-t border-zinc-200/40 bg-white px-3 pb-4 pt-3">
                     {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
                       <div className="space-y-3">
                         <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
@@ -254,14 +256,6 @@ export function PublicCarta({
                           : group._subList
                         ).map((sub) => (
                           <div key={sub.key} className="space-y-3">
-                            {group._subList.length === 1 && sub.title ? (
-                              <div className="px-1">
-                                <div className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                                  {sub.title}
-                                </div>
-                              </div>
-                            ) : null}
-
                             <div className="grid grid-cols-3 gap-2 sm:gap-3">
                               {sub.rows.map((row) => (
                                 <div
