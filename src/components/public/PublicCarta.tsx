@@ -236,7 +236,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                                 className="flex flex-col overflow-hidden rounded-2xl bg-white"
                               >
                                 {row.category_parent_name && ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                  <div className="relative h-24 w-full bg-white">
+                                  <div className="relative h-24 w-full shrink-0 bg-white">
                                     {row.photo_url ? (
                                       <Image
                                         src={row.photo_url}
@@ -250,18 +250,18 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                                     )}
                                   </div>
                                 ) : null}
-                                <div className="flex min-h-[56px] items-center justify-between gap-2 px-3 py-2">
-                                  <div className="min-w-0 flex-1">
-                                    <div
-                                      className="truncate text-sm font-extrabold text-zinc-900"
-                                      title={getCartaDisplayName(row, lang)}
-                                    >
-                                      {getCartaDisplayName(row, lang)}
-                                    </div>
-                                  </div>
-                                  <div className="shrink-0 text-sm font-black tabular-nums text-[#36606F]">
+                                <div className="flex min-h-[48px] shrink-0 items-center justify-center px-2 py-1">
+                                  <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
                                     {formatPrice(row.precio)}
-                                  </div>
+                                  </span>
+                                </div>
+                                <div className="flex min-h-[48px] flex-1 items-center justify-center px-2 pb-2 pt-0">
+                                  <p
+                                    className="line-clamp-3 w-full text-center text-[11px] font-bold leading-snug text-zinc-900"
+                                    title={getCartaDisplayName(row, lang)}
+                                  >
+                                    {getCartaDisplayName(row, lang)}
+                                  </p>
                                 </div>
                               </div>
                             ))}
