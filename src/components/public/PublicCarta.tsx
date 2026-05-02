@@ -200,12 +200,12 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                 >
                   <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
                     {!isOpen && group.coverPhotoUrl ? (
-                      <span className="relative h-14 w-14 shrink-0 overflow-hidden">
-                        <Image
-                          src={group.coverPhotoUrl}
-                          alt=""
-                          fill
-                          sizes="56px"
+                    <span className="relative h-11 w-11 shrink-0 overflow-hidden">
+                      <Image
+                        src={group.coverPhotoUrl}
+                        alt=""
+                        fill
+                        sizes="44px"
                           className="object-contain object-center"
                         />
                       </span>
@@ -236,7 +236,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                                 className="flex flex-col overflow-hidden rounded-2xl bg-white"
                               >
                                 {row.category_parent_name && ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                  <div className="relative h-24 w-full shrink-0 bg-white">
+                                  <div className="relative h-16 w-full shrink-0 bg-white">
                                     {row.photo_url ? (
                                       <Image
                                         src={row.photo_url}

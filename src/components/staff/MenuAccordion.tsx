@@ -53,7 +53,7 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
             )}
         >
             <div className="w-full shrink-0 bg-white">
-                <div className="h-28 w-full bg-white sm:h-32">
+                <div className="h-20 w-full bg-white sm:h-24">
                     {row.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD
                         <img
@@ -222,7 +222,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                         <img
                                             src={group.coverPhotoUrl}
                                             alt=""
-                                            className="h-12 w-12 shrink-0 object-contain object-center"
+                                            className="h-10 w-10 shrink-0 object-contain object-center"
                                         />
                                     ) : null}
                                     <span className="min-w-0 text-center text-sm font-black uppercase tracking-wide text-[#36606F]">
