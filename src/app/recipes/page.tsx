@@ -344,9 +344,9 @@ function RecipesContent() {
                                 </button>
                             )}
 
-                            <div className="relative flex w-full min-h-12 items-center justify-center px-10 md:px-14">
-                                <div className="min-w-0 max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
-                                    <span className="inline-block max-w-full truncate">
+                            <div className="relative flex w-full min-h-12 items-center justify-center">
+                                <div className="w-full min-w-0 px-12 text-center text-[13px] font-black leading-tight text-white md:px-14 md:text-[15px]">
+                                    <span className="block truncate">
                                         {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
                                     </span>
                                 </div>
