@@ -10,11 +10,15 @@ export default async function PublicCartaPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  let homeHref: string | null = null
+  let cartaEditHref: string | null = null
   if (user) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const role = (profile?.role ?? null) as string | null
-    homeHref = role === 'manager' || role === 'admin' ? '/dashboard' : '/staff/dashboard'
+    if (role === 'manager' || role === 'admin') {
+      cartaEditHref = '/dashboard/carta'
+    } else if (role === 'supervisor') {
+      cartaEditHref = '/staff/carta'
+    }
   }
 
   const { data, error } = await supabase
@@ -31,8 +35,8 @@ export default async function PublicCartaPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-white px-4 py-8">
-        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <main className="min-h-screen bg-zinc-100 px-5 py-8">
+        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-red-200/80 bg-red-50/90 p-5 shadow-none">
           <p className="text-sm font-black uppercase tracking-widest text-red-800">No se pudo cargar la carta</p>
           <p className="mt-2 font-mono text-xs text-red-700">{error.message}</p>
         </div>
@@ -40,6 +44,8 @@ export default async function PublicCartaPage() {
     )
   }
 
-  return <PublicCarta items={(data ?? []) as PublicMenuRow[]} homeHref={homeHref} />
+  return (
+    <PublicCarta items={(data ?? []) as PublicMenuRow[]} cartaEditHref={cartaEditHref} />
+  )
 }
 

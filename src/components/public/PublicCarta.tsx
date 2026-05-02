@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Home, Search } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -52,21 +52,20 @@ function subHeading(lang: CartaLang, parentTitleRaw: string, childTitleRaw: stri
   return translateChildCategoryTitle(lang, childShort)
 }
 
-export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeHref: string | null }) {
+export function PublicCarta({
+  items,
+  cartaEditHref,
+}: {
+  items: PublicMenuRow[]
+  cartaEditHref: string | null
+}) {
   const [openKey, setOpenKey] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
   const [lang, setLang] = useState<CartaLang>('es')
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((it) => getCartaDisplayName(it, lang).toLowerCase().includes(q))
-  }, [items, query, lang])
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Group>()
 
-    for (const row of filtered) {
+    for (const row of items) {
       const parentTitleRaw = (row.category_parent_name?.trim() || tPublicUi(lang).uncategorized).trim()
       const parentTitle = translateParentCategoryTitle(lang, parentTitleRaw)
       const parentSort = row.category_parent_sort_order ?? 9999
@@ -119,74 +118,61 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
     }
 
     return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }> }>
-  }, [filtered, lang])
+  }, [items, lang])
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-4xl px-4 pb-10 pt-6">
-        <header className="space-y-4">
-          <div className="flex w-full min-h-12 items-center justify-center gap-1 rounded-2xl border border-zinc-100 bg-white p-1.5 shadow-sm">
-            <LangButton active={lang === 'es'} onClick={() => setLang('es')}>
+    <main className="min-h-screen bg-zinc-100">
+      <div className="mx-auto w-full max-w-4xl px-5 pb-12 pt-8 md:px-10 md:pb-16 md:pt-10">
+        <header className="grid grid-cols-3 items-center gap-2 pb-2 pt-1">
+          <div className="flex shrink-0 justify-start">
+            <div className="rounded-lg bg-[#36606F] px-2 py-1.5">
+              <Image
+                src="/icons/logo-white.png"
+                alt="Bar La Marbella"
+                width={120}
+                height={32}
+                className="h-5 w-auto max-w-[110px]"
+                priority
+              />
+            </div>
+          </div>
+
+          <div className="flex min-w-0 items-center justify-center gap-4 sm:gap-6">
+            <LangText active={lang === 'es'} onClick={() => setLang('es')}>
               Español
-            </LangButton>
-            <LangButton active={lang === 'ca'} onClick={() => setLang('ca')}>
+            </LangText>
+            <LangText active={lang === 'ca'} onClick={() => setLang('ca')}>
               Català
-            </LangButton>
-            <LangButton active={lang === 'en'} onClick={() => setLang('en')}>
+            </LangText>
+            <LangText active={lang === 'en'} onClick={() => setLang('en')}>
               English
-            </LangButton>
+            </LangText>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="inline-flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm">
-                <div className="shrink-0 rounded-xl bg-[#36606F] px-3 py-2">
-                  <img
-                    src="/icons/logo-white.png"
-                    alt="Bar La Marbella"
-                    className="h-6 w-auto"
-                    loading="eager"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-xs font-black uppercase tracking-widest text-[#36606F]">{tPublicUi(lang).title}</h1>
-                  <p className="truncate text-[11px] font-semibold text-zinc-500">{tPublicUi(lang).subtitle}</p>
-                </div>
-              </div>
-            </div>
-            <div className="shrink-0">
-              {homeHref ? (
-                <Link
-                  href={homeHref}
-                  className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-2xl border border-zinc-100 bg-white p-1 shadow-sm text-[#36606F] active:bg-zinc-50"
-                  aria-label="Inicio"
-                  title="Inicio"
-                >
-                  <Home className="h-5 w-5" strokeWidth={2.5} />
-                </Link>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-zinc-100 bg-white px-4 shadow-sm">
-            <Search className="h-5 w-5 shrink-0 text-zinc-400" aria-hidden />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={tPublicUi(lang).search}
-              className="h-12 w-full bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
-            />
+          <div className="flex shrink-0 justify-end">
+            {cartaEditHref ? (
+              <Link
+                href={cartaEditHref}
+                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-200/60 active:bg-zinc-200"
+                aria-label="Editar carta"
+                title="Editar carta"
+              >
+                <Pencil className="h-5 w-5" strokeWidth={2.25} />
+              </Link>
+            ) : (
+              <span className="inline-flex min-h-[48px] min-w-[48px]" aria-hidden />
+            )}
           </div>
         </header>
 
-        <section className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <section className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:mt-10">
           {grouped.map((group) => {
             const isOpen = openKey === group.key
             return (
               <div
                 key={group.key}
                 className={cn(
-                  'overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm',
+                  'overflow-hidden rounded-xl border border-zinc-200/60 bg-white/85 shadow-none backdrop-blur-[2px]',
                   isOpen && 'sm:col-span-2'
                 )}
               >
@@ -195,7 +181,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                   onClick={() =>
                     setOpenKey((current) => (current === group.key ? null : group.key))
                   }
-                  className="flex min-h-[56px] w-full items-center justify-center px-4 py-3 active:bg-zinc-50"
+                  className="flex min-h-[52px] w-full items-center justify-center px-3 py-2.5 active:bg-white/60"
                   aria-expanded={isOpen}
                 >
                   <span className="flex min-w-0 max-w-full items-center justify-center gap-3">
@@ -217,7 +203,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                 </button>
 
                 {isOpen ? (
-                  <div className="border-t border-zinc-100 px-3 pb-4 pt-3">
+                  <div className="border-t border-zinc-200/50 px-3 pb-4 pt-3">
                     <div className="space-y-5">
                       {group._subList.map((sub) => (
                         <div key={sub.key} className="space-y-3">
@@ -280,7 +266,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
   )
 }
 
-function LangButton({
+function LangText({
   active,
   onClick,
   children,
@@ -294,8 +280,9 @@ function LangButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'min-h-[48px] flex-1 rounded-xl px-3 text-xs font-black uppercase tracking-widest sm:flex-none sm:px-6',
-        active ? 'bg-[#36606F] text-white' : 'bg-transparent text-[#36606F] active:bg-zinc-50'
+        'min-h-[48px] px-1 text-xs font-black uppercase tracking-widest sm:text-sm',
+        active ? 'text-[#36606F]' : 'text-zinc-400',
+        'bg-transparent shadow-none'
       )}
       aria-pressed={active}
     >
