@@ -13,7 +13,7 @@ import {
     Settings
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
-import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
+import { StaffCajaCambioModal } from '@/components/staff/StaffCajaCambioModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
@@ -401,7 +401,7 @@ export default function StaffDashboardView() {
         }
     };
 
-    const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
+    const buildPaymentSources = (): PaymentSourceOption[] => {
         const list: any[] = [];
         const op = allBoxes.find(b => b.type === 'operational');
         const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
@@ -418,6 +418,12 @@ export default function StaffDashboardView() {
             list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         }
         return list;
+    };
+
+    const getCajaCambio1 = () => {
+        const changeBoxes = allBoxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const b = changeBoxes[0];
+        return b ? { id: b.id as string, name: (b.name as string) || 'Caja cambio 1' } : null;
     };
 
     const openPurchaseMultiSourceModal = async () => {
@@ -1379,17 +1385,13 @@ export default function StaffDashboardView() {
                 userId={userId}
             />
 
-            {/* MODAL: Cambio entre cajas (selector Caja A / Caja B, luego De A→B y De B→A) */}
-            {
-                showSwapModal && (
-                    <CashChangeModal
-                        boxOptions={buildPaymentSources()}
-                        isManager={userRole === 'manager'}
-                        onClose={() => setShowSwapModal(false)}
-                        onSuccess={() => { initialize(); setShowSwapModal(false); }}
-                    />
-                )
-            }
+            {/* MODAL: Cambio (Caja cambio 1): importe en billetes → desglose retirado; IN + OUT en BD */}
+            <StaffCajaCambioModal
+                isOpen={showSwapModal}
+                changeBox={getCajaCambio1()}
+                onClose={() => setShowSwapModal(false)}
+                onSuccess={() => { initialize(); setShowSwapModal(false); }}
+            />
 
             {/* MODAL: Opciones de Caja */}
             {
@@ -1442,6 +1444,10 @@ export default function StaffDashboardView() {
                                     <>
                                         <button
                                             onClick={() => {
+                                                if (!getCajaCambio1()) {
+                                                    toast.error('No hay caja de cambio configurada');
+                                                    return;
+                                                }
                                                 setIsCashOptionsModalOpen(false);
                                                 setShowSwapModal(true);
                                             }}
@@ -1452,7 +1458,7 @@ export default function StaffDashboardView() {
                                             </div>
                                             <div className="flex flex-col text-left">
                                                 <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
-                                                <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas entre cajas</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Caja cambio 1: importe y retirada (desglose)</span>
                                             </div>
                                         </button>
 
