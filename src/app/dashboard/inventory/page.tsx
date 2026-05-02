@@ -1,16 +1,26 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
-import { InventoryClient } from './InventoryClient'
-import {
-  InventoryManagerHeaderControls,
-  type InventoryCatalogRow,
-} from './InventoryManagerHeaderControls'
+import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
+import { InventoryPageShell } from './InventoryPageShell'
 
 export const dynamic = 'force-dynamic'
 
 const SELECT_FIELDS =
   'id, name, unit, stock_current, category, image_url, order_unit, inventory_visible'
+
+function toManagerRow(row: Record<string, unknown>): ManagerIngredientRow {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    unit: row.unit as string,
+    stock_current: Number(row.stock_current),
+    category: (row.category as string) ?? '',
+    image_url: (row.image_url as string | null) ?? null,
+    order_unit: (row.order_unit as string | null) ?? null,
+    inventory_visible: row.inventory_visible !== false,
+  }
+}
 
 export default async function InventoryPage() {
   const supabase = await createClient()
@@ -39,27 +49,15 @@ export default async function InventoryPage() {
       throw new Error('Fallo al cargar la base de inventario')
     }
 
-    const catalog: InventoryCatalogRow[] = (allRows ?? []).map((row) => ({
-      id: row.id,
-      name: row.name,
-      category: row.category,
-      inventory_visible: row.inventory_visible !== false,
-    }))
-
-    const visibleForGrid = (allRows ?? []).filter((row) => row.inventory_visible !== false)
+    const managerFullList = (allRows ?? []).map((row) => toManagerRow(row as Record<string, unknown>))
+    const visibleForGrid = managerFullList.filter((r) => r.inventory_visible)
 
     return (
-      <DashboardDetailLayout
-        title="Inventario"
-        maxWidthClass="max-w-7xl"
-        className="pt-6 md:pt-8"
-        rightSlot={<InventoryManagerHeaderControls catalog={catalog} />}
-      >
-        <InventoryClient
-          initialIngredients={visibleForGrid}
-          managerEmptyHint={visibleForGrid.length === 0}
-        />
-      </DashboardDetailLayout>
+      <InventoryPageShell
+        visibleIngredients={visibleForGrid}
+        managerFullList={managerFullList}
+        managerEmptyHint={visibleForGrid.length === 0}
+      />
     )
   }
 

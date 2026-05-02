@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { processInventoryCounts } from './actions'
+import { useRouter } from 'next/navigation'
+import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
 import { AlertCircle, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,10 +17,17 @@ type Ingredient = {
   order_unit: string | null
 }
 
+export type ManagerIngredientRow = Ingredient & {
+  inventory_visible: boolean
+}
+
 interface InventoryClientProps {
   initialIngredients: Ingredient[]
   /** Solo gerencia: si no hay artículos visibles, muestra ayuda para el icono de edición. */
   managerEmptyHint?: boolean
+  managerFullList?: ManagerIngredientRow[]
+  visibilityEditMode?: boolean
+  onCloseVisibilityEditMode?: () => void
 }
 
 function abbreviateLabel(name: string, maxChars = 22): string {
@@ -153,6 +161,9 @@ function InventoryIngredientCard({
   onBlur,
   onNumericChange,
   numeric,
+  visibilityMode,
+  visibilityOn,
+  onVisibilityToggle,
 }: {
   item: Ingredient
   raw: string
@@ -160,6 +171,9 @@ function InventoryIngredientCard({
   onBlur: () => void
   onNumericChange: (n: number) => void
   numeric: number
+  visibilityMode: boolean
+  visibilityOn: boolean
+  onVisibilityToggle: () => void
 }) {
   const u = normalizeUnit(item.unit)
   const label = abbreviateLabel(item.name)
@@ -168,7 +182,25 @@ function InventoryIngredientCard({
     <div
       className={cn('flex h-full min-h-0 flex-col rounded-xl bg-white overflow-hidden')}
     >
-      <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
+      <div className="relative shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
+        {visibilityMode && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={visibilityOn}
+            onClick={(e) => {
+              e.stopPropagation()
+              onVisibilityToggle()
+            }}
+            className={cn(
+              'absolute top-0.5 right-0.5 z-10 flex min-h-[40px] min-w-[3.75rem] items-center rounded-full p-1 transition-colors shadow-sm',
+              visibilityOn ? 'bg-emerald-600 justify-end' : 'bg-zinc-300/90 justify-start',
+            )}
+            title={visibilityOn ? 'Visible en inventario' : 'Oculto en inventario'}
+          >
+            <span className="h-8 w-8 max-h-full aspect-square rounded-full bg-white shadow-md shrink-0 pointer-events-none" />
+          </button>
+        )}
         {item.image_url ? (
           <img src={item.image_url} alt="" className="h-12 w-12 object-contain" />
         ) : (
@@ -183,19 +215,21 @@ function InventoryIngredientCard({
           {label}
         </span>
       </div>
-      <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
-        <label className="sr-only">Cantidad contada {item.name}</label>
-        <QuantityStepper
-          unit={u}
-          value={numeric}
-          onChange={onNumericChange}
-          raw={raw}
-          onRawChange={onRawChange}
-          onBlur={onBlur}
-          ariaLabel={`Cantidad contada ${item.name}`}
-          hideUnitSuffix
-        />
-      </div>
+      {!visibilityMode && (
+        <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
+          <label className="sr-only">Cantidad contada {item.name}</label>
+          <QuantityStepper
+            unit={u}
+            value={numeric}
+            onChange={onNumericChange}
+            raw={raw}
+            onRawChange={onRawChange}
+            onBlur={onBlur}
+            ariaLabel={`Cantidad contada ${item.name}`}
+            hideUnitSuffix
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -203,14 +237,36 @@ function InventoryIngredientCard({
 export function InventoryClient({
   initialIngredients,
   managerEmptyHint = false,
+  managerFullList,
+  visibilityEditMode = false,
+  onCloseVisibilityEditMode,
 }: InventoryClientProps) {
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [savingVisibility, setSavingVisibility] = useState(false)
   const [physicalCounts, setPhysicalCounts] = useState<Record<string, string>>({})
   const [numericById, setNumericById] = useState<Record<string, number>>({})
+  const [draftVisibility, setDraftVisibility] = useState<Record<string, boolean>>({})
 
   const [ingredientQuery, setIngredientQuery] = useState('')
   const [ingredientCategory, setIngredientCategory] = useState<string | null>(null)
   const [ingredientFilterOpen, setIngredientFilterOpen] = useState(false)
+
+  const sourceList: Ingredient[] = useMemo(() => {
+    if (visibilityEditMode && managerFullList && managerFullList.length > 0) {
+      return managerFullList
+    }
+    return initialIngredients
+  }, [visibilityEditMode, managerFullList, initialIngredients])
+
+  useEffect(() => {
+    if (!visibilityEditMode || !managerFullList?.length) return
+    const next: Record<string, boolean> = {}
+    for (const row of managerFullList) {
+      next[row.id] = row.inventory_visible !== false
+    }
+    setDraftVisibility(next)
+  }, [visibilityEditMode, managerFullList])
 
   useEffect(() => {
     if (!ingredientFilterOpen) return
@@ -233,16 +289,16 @@ export function InventoryClient({
 
   const ingredientCategories = useMemo(() => {
     const set = new Set<string>()
-    for (const i of initialIngredients) {
+    for (const i of sourceList) {
       const c = (i.category ?? '').trim()
       if (c) set.add(c)
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
-  }, [initialIngredients])
+  }, [sourceList])
 
   const grouped = useMemo(() => {
     const q = ingredientQuery.trim().toLowerCase()
-    const list = initialIngredients.filter((i) => {
+    const list = sourceList.filter((i) => {
       const okText = !q || i.name.toLowerCase().includes(q)
       const okCat = !ingredientCategory || i.category === ingredientCategory
       return okText && okCat
@@ -254,12 +310,47 @@ export function InventoryClient({
       },
       {} as Record<string, Ingredient[]>,
     )
-  }, [initialIngredients, ingredientQuery, ingredientCategory])
+  }, [sourceList, ingredientQuery, ingredientCategory])
 
   const setQty = (id: string, item: Ingredient, n: number) => {
     const u = normalizeUnit(item.unit)
     const rounded = roundQty(n, u)
     setNumericById((prev) => ({ ...prev, [id]: rounded }))
+  }
+
+  const toggleDraftVisibility = (id: string) => {
+    setDraftVisibility((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const handleSaveVisibility = async () => {
+    if (!managerFullList?.length) return
+    const updates = managerFullList
+      .filter((row) => {
+        const before = row.inventory_visible !== false
+        const after = draftVisibility[row.id] ?? before
+        return before !== after
+      })
+      .map((row) => ({
+        ingredient_id: row.id,
+        inventory_visible: draftVisibility[row.id] ?? (row.inventory_visible !== false),
+      }))
+
+    if (updates.length === 0) {
+      toast.message('Sin cambios que guardar.')
+      return
+    }
+
+    setSavingVisibility(true)
+    try {
+      await saveIngredientsInventoryVisibility(updates)
+      toast.success('Lista de inventario actualizada.')
+      onCloseVisibilityEditMode?.()
+      router.refresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al guardar.')
+    } finally {
+      setSavingVisibility(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -310,7 +401,9 @@ export function InventoryClient({
 
   const submitDisabled = isSubmitting || !hasAnyCount
 
-  if (initialIngredients.length === 0) {
+  const countForFilterTotal = sourceList.length
+
+  if (!visibilityEditMode && initialIngredients.length === 0) {
     return (
       <div className="flex flex-col gap-3 min-h-0 flex-1 items-center justify-center py-12 px-2 text-center">
         <p className="text-sm font-medium text-zinc-600">No hay artículos visibles en el recuento.</p>
@@ -328,7 +421,7 @@ export function InventoryClient({
       <div className="flex-1 min-h-0 overflow-auto pr-0.5">
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2 w-full shrink-0 relative">
-            <div className="relative w-full flex-1 min-w-0">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
               <input
                 type="text"
@@ -338,6 +431,23 @@ export function InventoryClient({
                 className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
               />
             </div>
+
+            {visibilityEditMode && managerFullList?.length ? (
+              <button
+                type="button"
+                onClick={handleSaveVisibility}
+                disabled={savingVisibility}
+                className={cn(
+                  'shrink-0 min-h-[48px] px-4 rounded-xl font-black uppercase tracking-wider text-xs sm:text-sm',
+                  'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
+                  'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
+                  'flex items-center justify-center gap-2',
+                )}
+              >
+                <Save className="w-4 h-4 shrink-0" />
+                {savingVisibility ? 'Guardando…' : 'Guardar lista'}
+              </button>
+            ) : null}
 
             <div className="shrink-0 relative">
               <button
@@ -372,7 +482,7 @@ export function InventoryClient({
                     )}
                   >
                     <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                    <span className="text-[10px] font-black text-zinc-400">{initialIngredients.length}</span>
+                    <span className="text-[10px] font-black text-zinc-400">{countForFilterTotal}</span>
                   </button>
                   <div className="h-px bg-zinc-100" />
                   <div className="max-h-72 overflow-auto">
@@ -415,12 +525,19 @@ export function InventoryClient({
                         : counted === undefined
                           ? ''
                           : String(counted)
+                    const visibilityOn =
+                      draftVisibility[item.id] ??
+                      (item as ManagerIngredientRow).inventory_visible !== false
+
                     return (
                       <InventoryIngredientCard
                         key={item.id}
                         item={item}
                         numeric={numeric}
                         raw={raw}
+                        visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
+                        visibilityOn={visibilityOn}
+                        onVisibilityToggle={() => toggleDraftVisibility(item.id)}
                         onRawChange={(s) => {
                           setPhysicalCounts((prev) => ({ ...prev, [item.id]: s }))
                           if (s.trim() === '') {
@@ -467,29 +584,31 @@ export function InventoryClient({
         </div>
       </div>
 
-      <div className="sticky bottom-0 left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100 space-y-2">
-        <div className="flex items-start gap-2 text-zinc-500 text-xs px-0.5">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>
-            Introduce solo las cantidades que hayas contado. Lo que dejes en blanco no se envía al
-            guardar.
-          </span>
+      {!visibilityEditMode && (
+        <div className="sticky bottom-0 left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100 space-y-2">
+          <div className="flex items-start gap-2 text-zinc-500 text-xs px-0.5">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Introduce solo las cantidades que hayas contado. Lo que dejes en blanco no se envía al
+              guardar.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitDisabled}
+            className={cn(
+              'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
+              'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
+              'disabled:opacity-45 disabled:cursor-not-allowed transition-colors',
+              'flex items-center justify-center gap-2 shrink-0',
+            )}
+          >
+            <Save className="w-5 h-5 shrink-0" />
+            {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitDisabled}
-          className={cn(
-            'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
-            'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-            'disabled:opacity-45 disabled:cursor-not-allowed transition-colors',
-            'flex items-center justify-center gap-2 shrink-0',
-          )}
-        >
-          <Save className="w-5 h-5 shrink-0" />
-          {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
-        </button>
-      </div>
+      )}
     </div>
   )
 }

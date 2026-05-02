@@ -78,7 +78,6 @@ function RecipeDetailContent() {
 
     const currentQueryString = searchParams.toString();
     const buildDetailHref = (id: string) => (currentQueryString ? `/recipes/${id}?${currentQueryString}` : `/recipes/${id}`);
-    const buildBackHref = () => (currentQueryString ? `/recipes?${currentQueryString}` : '/recipes');
 
     // --- 2. FUNCIONES DE CARGA ---
     const fetchAvailableIngredients = async () => {
@@ -695,65 +694,65 @@ function RecipeDetailContent() {
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
             <div className="max-w-6xl mx-auto w-full flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden">
                 {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
-                <div className="relative bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
-                    <Link
-                        href={buildBackHref()}
-                        aria-label="Volver a recetas"
-                        className={cn(
-                            "absolute left-2 top-2 md:left-3 md:top-2",
-                            "w-12 h-12 flex items-center justify-center shrink-0",
-                            "text-white/70 hover:text-white active:scale-95 transition",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]"
-                        )}
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </Link>
-                    {/* Nombre centrado en todo el ancho (lápiz absoluto a la derecha, no cuenta para el centrado) */}
-                    <div className="relative flex w-full min-h-12 items-center justify-center px-12 md:px-16">
-                        <div className="min-w-0 max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
-                            <span className="inline-block max-w-full truncate">{recipe.name}</span>
+                <div className="relative bg-[#36606F] px-3 md:px-5 py-2 flex flex-col items-center justify-center shrink-0">
+                    {/* Fila superior: atrás | título | editar + importar (misma altura y alineación vertical) */}
+                    <div className="grid w-full grid-cols-[minmax(2.5rem,auto)_1fr_auto] items-center gap-2 min-h-[48px]">
+                        <Link
+                            href="/recipes"
+                            aria-label="Volver a recetas"
+                            className={cn(
+                                'flex h-12 w-12 shrink-0 items-center justify-center',
+                                'text-white/70 hover:text-white active:scale-95 transition',
+                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                            )}
+                        >
+                            <ArrowLeft className="w-6 h-6" />
+                        </Link>
+                        <div className="min-w-0 flex justify-center px-1">
+                            <div className="max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
+                                <span className="inline-block max-w-full truncate">{recipe.name}</span>
+                            </div>
                         </div>
-                        {!isRestricted && (
-                            <button
-                                type="button"
-                                onClick={() => setRecipeMetaModalOpen(true)}
-                                className={cn(
-                                    'absolute top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white/65 transition hover:text-white active:scale-95',
-                                    canImportRecipe ? 'right-14 md:right-[3.75rem]' : 'right-2 md:right-3',
-                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                )}
-                                title="Editar nombre e imagen"
-                                aria-label="Editar nombre e imagen"
-                            >
-                                <Pencil className="h-5 w-5" strokeWidth={2.2} />
-                            </button>
-                        )}
+                        <div className="flex shrink-0 items-center justify-end gap-2">
+                            {!isRestricted && (
+                                <button
+                                    type="button"
+                                    onClick={() => setRecipeMetaModalOpen(true)}
+                                    className={cn(
+                                        'flex h-10 w-10 shrink-0 items-center justify-center text-white/60 transition hover:text-white active:scale-95',
+                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                    )}
+                                    title="Editar nombre e imagen"
+                                    aria-label="Editar nombre e imagen"
+                                >
+                                    <Pencil className="h-5 w-5" strokeWidth={2.2} />
+                                </button>
+                            )}
+                            {canImportRecipe && (
+                                <button
+                                    type="button"
+                                    onClick={handleImportIconClick}
+                                    disabled={importingRecipe}
+                                    title="Importar (sobrescribe esta receta)"
+                                    className={cn(
+                                        'flex h-10 w-10 shrink-0 items-center justify-center text-white/60 transition hover:text-white active:scale-95',
+                                        importingRecipe ? 'opacity-40 pointer-events-none' : '',
+                                    )}
+                                >
+                                    <Import className="h-5 w-5" />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Importar (arriba derecha, no rompe centrado) */}
                     {canImportRecipe && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={handleImportIconClick}
-                                disabled={importingRecipe}
-                                title="Importar (sobrescribe esta receta)"
-                                className={cn(
-                                    "absolute right-2 top-2 md:right-3 md:top-2",
-                                    "w-10 h-10 flex items-center justify-center transition text-white/60 hover:text-white active:scale-95",
-                                    importingRecipe ? "opacity-40 pointer-events-none" : ""
-                                )}
-                            >
-                                <Import className="w-5 h-5" />
-                            </button>
-                            <input
-                                ref={importInputRef}
-                                type="file"
-                                accept=".xlsx,.xls,.csv"
-                                className="hidden"
-                                onChange={handleImportFileSelected}
-                            />
-                        </>
+                        <input
+                            ref={importInputRef}
+                            type="file"
+                            accept=".xlsx,.xls,.csv"
+                            className="hidden"
+                            onChange={handleImportFileSelected}
+                        />
                     )}
 
                     {/* Foto + navegación centrada debajo */}
