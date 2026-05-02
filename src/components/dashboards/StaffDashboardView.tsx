@@ -423,7 +423,7 @@ export default function StaffDashboardView() {
     const getCajaCambio1 = () => {
         const changeBoxes = allBoxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         const b = changeBoxes[0];
-        return b ? { id: b.id as string, name: (b.name as string) || 'Caja cambio 1' } : null;
+        return b ? { id: b.id as string, name: (b.name as string) || 'Caja cambio' } : null;
     };
 
     const openPurchaseMultiSourceModal = async () => {
@@ -1385,7 +1385,7 @@ export default function StaffDashboardView() {
                 userId={userId}
             />
 
-            {/* MODAL: Cambio (Caja cambio 1): importe en billetes → desglose retirado; IN + OUT en BD */}
+            {/* MODAL: Cambio (primera caja change): importe en billetes → desglose retirado; IN + OUT en BD */}
             <StaffCajaCambioModal
                 isOpen={showSwapModal}
                 changeBox={getCajaCambio1()}
@@ -1458,7 +1458,7 @@ export default function StaffDashboardView() {
                                             </div>
                                             <div className="flex flex-col text-left">
                                                 <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
-                                                <span className="text-[10px] text-gray-400 font-medium">Caja cambio 1: importe y retirada (desglose)</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Caja cambio: importe y retirada (desglose)</span>
                                             </div>
                                         </button>
 

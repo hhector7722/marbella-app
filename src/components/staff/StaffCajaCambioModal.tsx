@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { X, Minus, Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,9 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 const STEP1_BILLS_ROW1 = [100, 50, 20] as const;
 const STEP1_BILLS_ROW2 = [10, 5] as const;
 const ALL_DENOMS = [...BILLS, ...COINS];
+/** Monedas del paso 2 salvo 1c (la fila final lleva 1c + botones). */
+const COINS_BEFORE_1C = COINS.slice(0, -1);
+const COIN_1C = 0.01;
 
 function buildBreakdown(counts: Record<number, number>): Record<string, number> {
     const out: Record<string, number> = {};
@@ -226,19 +229,10 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="relative shrink-0 bg-[#36606F] shadow-lg">
-                    <div className="flex items-center justify-between gap-2 px-4 py-3 text-white">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-95"
-                            aria-label="Cerrar"
-                        >
-                            <X size={20} strokeWidth={3} />
-                        </button>
-                        <p id="staff-caja-cambio-title" className="min-w-0 flex-1 truncate text-center text-xs font-black uppercase tracking-widest text-white/90">
-                            {changeBox?.name ?? 'Caja cambio'}
+                    <div className="flex items-center justify-center px-4 py-3 text-white">
+                        <p id="staff-caja-cambio-title" className="text-center text-xs font-black uppercase tracking-widest text-white/90">
+                            Cambio
                         </p>
-                        <div className="h-12 w-12 shrink-0" aria-hidden />
                     </div>
                 </div>
 
@@ -338,7 +332,7 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                                             </div>
                                         </div>
                                     ))}
-                                    {COINS.map((coin) => (
+                                    {COINS_BEFORE_1C.map((coin) => (
                                         <div key={coin} className="group flex flex-col items-center gap-1.5 transition-all">
                                             <div className="flex h-11 w-full items-center justify-center transition-transform group-hover:scale-110 sm:h-14">
                                                 <Image
@@ -380,34 +374,74 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                                         </div>
                                     ))}
                                 </div>
+                                {/* Misma fila: moneda 1c + Atrás + Guardar (ancho compacto) */}
+                                <div className="grid grid-cols-4 items-end gap-x-3 gap-y-5 sm:grid-cols-6 sm:gap-y-6 sm:gap-x-4 lg:grid-cols-8">
+                                    <div className="group flex flex-col items-center gap-1.5 transition-all">
+                                        <div className="flex h-11 w-full items-center justify-center transition-transform group-hover:scale-110 sm:h-14">
+                                            <Image
+                                                src={CURRENCY_IMAGES[COIN_1C]}
+                                                alt="1c"
+                                                width={140}
+                                                height={140}
+                                                className="h-full w-auto object-contain drop-shadow-md"
+                                            />
+                                        </div>
+                                        <div className="w-full text-center">
+                                            <span className="mb-0.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">1c</span>
+                                            <div className="flex h-10 w-full items-center justify-between overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20 focus-within:ring-offset-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => adjustStep2(COIN_1C, -1)}
+                                                    className="flex h-full w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
+                                                >
+                                                    <Minus size={14} strokeWidth={3} />
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    placeholder=""
+                                                    className="h-full w-0 flex-1 bg-transparent p-0 text-center text-[10px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
+                                                    value={step2Counts[COIN_1C] || ''}
+                                                    onChange={(e) => setStep2Qty(COIN_1C, e.target.value)}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => adjustStep2(COIN_1C, 1)}
+                                                    className="flex h-full w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
+                                                >
+                                                    <Plus size={14} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-3 flex min-h-[48px] items-end justify-end gap-2 pb-0.5 sm:col-span-5 lg:col-span-7">
+                                        <button
+                                            type="button"
+                                            onClick={() => setStep('importe')}
+                                            className="min-h-[48px] shrink-0 rounded-xl px-4 font-black uppercase tracking-widest text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200"
+                                        >
+                                            Atrás
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleGuardar}
+                                            disabled={
+                                                saving ||
+                                                !totalsMatch ||
+                                                totalStep2 < 0.005 ||
+                                                hasStockIssueStep2
+                                            }
+                                            className={cn(
+                                                'min-h-[48px] shrink-0 rounded-2xl px-5 font-black uppercase tracking-widest text-white shadow-lg transition-all active:scale-[0.98] sm:px-6',
+                                                saving || !totalsMatch || totalStep2 < 0.005 || hasStockIssueStep2
+                                                    ? 'cursor-not-allowed bg-zinc-300 shadow-none'
+                                                    : 'bg-emerald-600 shadow-emerald-200 hover:bg-emerald-700'
+                                            )}
+                                        >
+                                            {saving ? 'Guardando…' : 'Guardar'}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex shrink-0 gap-3 border-t border-gray-100 bg-gray-50 p-3 sm:p-4">
-                            <button
-                                type="button"
-                                onClick={() => setStep('importe')}
-                                className="min-h-[48px] shrink-0 rounded-xl px-4 font-black uppercase tracking-widest text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-700 active:bg-white/80"
-                            >
-                                Atrás
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleGuardar}
-                                disabled={
-                                    saving ||
-                                    !totalsMatch ||
-                                    totalStep2 < 0.005 ||
-                                    hasStockIssueStep2
-                                }
-                                className={cn(
-                                    'ml-auto min-h-[48px] min-w-[120px] flex-1 rounded-2xl font-black uppercase tracking-widest text-white shadow-lg transition-all active:scale-[0.98] sm:flex-none sm:px-10',
-                                    saving || !totalsMatch || totalStep2 < 0.005 || hasStockIssueStep2
-                                        ? 'cursor-not-allowed bg-zinc-300 shadow-none'
-                                        : 'bg-emerald-600 shadow-emerald-200 hover:bg-emerald-700'
-                                )}
-                            >
-                                {saving ? 'Guardando…' : 'Guardar'}
-                            </button>
                         </div>
                     </>
                 )}
