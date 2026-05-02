@@ -110,17 +110,6 @@ function formatYmd(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-function mondayOfWeek(ymd: string): string {
-  const p = parseYmd(ymd)
-  if (!p) return ymd
-  const dt = new Date(p.y, p.m - 1, p.d)
-  // JS: 0=domingo ... 6=sábado. Queremos lunes.
-  const js = dt.getDay()
-  const delta = (js + 6) % 7 // lunes->0, martes->1, domingo->6
-  dt.setDate(dt.getDate() - delta)
-  return formatYmd(dt)
-}
-
 function addDays(ymd: string, days: number): string {
   const p = parseYmd(ymd)
   if (!p) return ymd
@@ -228,6 +217,7 @@ async function enrichInvoicesWithProcessingState(
   })
 }
 
+/** Listado inicial del histórico: últimos 45 días (Madrid), no solo la semana calendario. */
 export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
   | { success: true; items: PurchaseInvoiceListItem[]; canViewAll: boolean; weekStart: string; weekEnd: string }
   | { success: false; message: string }
@@ -236,17 +226,12 @@ export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
   if (!gate.ok) return { success: false, message: gate.message }
 
   const todayYmd = formatYmdInMadrid(new Date())
-  const weekStart = mondayOfWeek(todayYmd)
-  const weekEnd = addDays(weekStart, 6)
+  const rangeEnd = todayYmd
+  const rangeStart = addDays(todayYmd, -44)
 
   try {
-    const cur = await listPurchaseInvoicesByRange(gate, weekStart, weekEnd, 200)
-    if (cur.items.length > 0) return { success: true, items: cur.items, canViewAll: cur.canViewAll, weekStart, weekEnd }
-
-    const prevStart = addDays(weekStart, -7)
-    const prevEnd = addDays(weekEnd, -7)
-    const prev = await listPurchaseInvoicesByRange(gate, prevStart, prevEnd, 200)
-    return { success: true, items: prev.items, canViewAll: prev.canViewAll, weekStart: prevStart, weekEnd: prevEnd }
+    const cur = await listPurchaseInvoicesByRange(gate, rangeStart, rangeEnd, 200)
+    return { success: true, items: cur.items, canViewAll: cur.canViewAll, weekStart: rangeStart, weekEnd: rangeEnd }
   } catch (e: any) {
     return { success: false, message: e?.message ?? 'Error listando albaranes' }
   }
