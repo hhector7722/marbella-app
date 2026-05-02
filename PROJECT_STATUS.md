@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-02 (Ingredientes: cabecera alineada a `/recipes`)
+**Última actualización:** 2026-05-02 (Carta: Bebidas 4 subcategorías + i18n UI + rejilla 2 columnas)
+
+- [x] **Carta pública `/carta` + staff `/staff/carta` (2026-05-02)**: Eliminada sección padre «Cervezas y aperitivos»; bajo **Bebidas** quedan subcategorías **Refrescos, Cervezas, Vinos, Aperitivos** (`slug` `bebidas-*`, orden 41–44). Nombres por idioma en `digital_menu_overrides.override_nombre_es|ca|en` (reafirmadas en migración). UI: selector de idioma arriba; **dos secciones (acordeones padre) por fila** en `sm+`; platos en **2 columnas**. Lógica i18n compartida en `src/lib/carta-menu-i18n.ts`. Migraciones `20260502160000_menu_sections_helados_cervezas_aperitivos.sql` (solo Helados) + `20260502170000_carta_bebidas_subcats_remove_cervezas_aperitivos_parent.sql`.
 
 - [x] **Finanzas `/dashboard/finanzas`: PyG (Devengo) vs Cash Flow (Caja) (2026-04-24)**: Nueva vista SSR con UI Bento y selectores de rango (interactividad por querystring). Arquitectura “frontend tonto”: consolidación en RPC `get_financial_statement(p_start_date, p_end_date)` (JSON) sin descargar tablas completas. Devengo: ventas desde `tickets_marbella` (incluye devoluciones negativas), compras solo `purchase_invoices.status IN ('mapped','completed')` por `invoice_date`, coste laboral desde `weekly_snapshots.total_cost` por solape de semanas; Caja: `treasury_log` con IN+CLOSE_ENTRY vs OUT y “Other” separado (SWAP/ADJUSTMENT). Migración `20260424120000_get_financial_statement_rpc.sql`.
 - [x] **Finanzas: KPIs con color + minigráficos (2026-04-27)**: Refinamiento de legibilidad en `/dashboard/finanzas` con tarjetas KPI por tono (gradiente suave) y minigráficos SVG (barras + sparkline) para diferenciar Devengo/Caja/Delta de un vistazo (sin CSS inline).

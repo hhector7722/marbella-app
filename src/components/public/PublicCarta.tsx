@@ -5,6 +5,14 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { ChevronDown, Home, Search } from 'lucide-react'
+import {
+  type CartaLang,
+  getCartaDisplayName,
+  prettifyChildTitle,
+  tPublicUi,
+  translateChildCategoryTitle,
+  translateParentCategoryTitle,
+} from '@/lib/carta-menu-i18n'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -37,57 +45,28 @@ function formatPrice(precio: PublicMenuRow['precio']) {
   return `${n.toFixed(2)}€`
 }
 
-type Lang = 'es' | 'ca' | 'en'
-
-function t(lang: Lang) {
-  const dict = {
-    es: { title: 'La carta', subtitle: 'Nombre y precio', search: 'Buscar…', uncategorized: 'Sin categoría', lang: 'Idioma' },
-    ca: { title: 'La carta', subtitle: 'Nom i preu', search: 'Cercar…', uncategorized: 'Sense categoria', lang: 'Idioma' },
-    en: { title: 'Menu', subtitle: 'Name & price', search: 'Search…', uncategorized: 'Uncategorized', lang: 'Language' },
-  } as const
-  return dict[lang]
-}
-
-function translateCategoryTitle(lang: Lang, raw: string) {
-  const s = raw.trim()
-  const map: Record<string, { es: string; ca: string; en: string }> = {
-    Tapas: { es: 'Tapas', ca: 'Tapes', en: 'Tapas' },
-    Bocadillos: { es: 'Bocadillos', ca: 'Entrepans', en: 'Sandwiches' },
-    Platos: { es: 'Platos', ca: 'Plats', en: 'Main dishes' },
-    Bebidas: { es: 'Bebidas', ca: 'Begudes', en: 'Drinks' },
-    'Cafetería': { es: 'Cafetería', ca: 'Cafeteria', en: 'Coffee' },
-    Snacks: { es: 'Snacks', ca: 'Snacks', en: 'Snacks' },
-    Extras: { es: 'Extras', ca: 'Extres', en: 'Extras' },
-    General: { es: 'General', ca: 'General', en: 'General' },
-  }
-  const hit = map[s]
-  if (!hit) return s
-  return hit[lang]
-}
-
-function getDisplayName(row: PublicMenuRow, lang: Lang) {
-  if (lang === 'ca') return row.carta_nombre_ca?.trim() || row.carta_nombre_es?.trim() || row.carta_nombre?.trim()
-  if (lang === 'en') return row.carta_nombre_en?.trim() || row.carta_nombre_es?.trim() || row.carta_nombre?.trim()
-  return row.carta_nombre_es?.trim() || row.carta_nombre?.trim()
+function subHeading(lang: CartaLang, parentTitleRaw: string, childTitleRaw: string) {
+  const childShort = prettifyChildTitle(parentTitleRaw, childTitleRaw)
+  return translateChildCategoryTitle(lang, childShort)
 }
 
 export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeHref: string | null }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [lang, setLang] = useState<Lang>('es')
+  const [lang, setLang] = useState<CartaLang>('es')
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items
-    return items.filter((it) => getDisplayName(it, lang).toLowerCase().includes(q))
+    return items.filter((it) => getCartaDisplayName(it, lang).toLowerCase().includes(q))
   }, [items, query, lang])
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Group>()
 
     for (const row of filtered) {
-      const parentTitleRaw = (row.category_parent_name?.trim() || t(lang).uncategorized).trim()
-      const parentTitle = translateCategoryTitle(lang, parentTitleRaw)
+      const parentTitleRaw = (row.category_parent_name?.trim() || tPublicUi(lang).uncategorized).trim()
+      const parentTitle = translateParentCategoryTitle(lang, parentTitleRaw)
       const parentSort = row.category_parent_sort_order ?? 9999
       const parentKey = row.category_parent_id ?? `__no_parent__:${parentTitle}`
 
@@ -105,7 +84,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
       const sg =
         g.subs.get(childKey) ?? {
           key: childKey,
-          title: translateCategoryTitle(lang, prettifyChildTitle(parentTitleRaw, childTitle)),
+          title: subHeading(lang, parentTitleRaw, childTitle),
           sortOrder: childSort,
           rows: [] as PublicMenuRow[],
         }
@@ -128,7 +107,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
         s.rows.sort(
           (a, b) =>
             (a.sort_order ?? 9999) - (b.sort_order ?? 9999) ||
-            getDisplayName(a, lang).localeCompare(getDisplayName(b, lang), 'es', { sensitivity: 'base' })
+            getCartaDisplayName(a, lang).localeCompare(getCartaDisplayName(b, lang), 'es', { sensitivity: 'base' })
         )
       }
       ;(g as any)._subList = subList
@@ -145,14 +124,24 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-2xl px-4 pb-10 pt-6">
+      <div className="mx-auto w-full max-w-4xl px-4 pb-10 pt-6">
         <header className="space-y-4">
+          <div className="flex w-full min-h-12 items-center justify-center gap-1 rounded-2xl border border-zinc-100 bg-white p-1.5 shadow-sm">
+            <LangButton active={lang === 'es'} onClick={() => setLang('es')}>
+              Español
+            </LangButton>
+            <LangButton active={lang === 'ca'} onClick={() => setLang('ca')}>
+              Català
+            </LangButton>
+            <LangButton active={lang === 'en'} onClick={() => setLang('en')}>
+              English
+            </LangButton>
+          </div>
+
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="inline-flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm">
                 <div className="shrink-0 rounded-xl bg-[#36606F] px-3 py-2">
-                  {/* El asset puede ser /public/icons/logo-white (con o sin extensión). */}
-                  {/* Si no existe, el navegador simplemente no lo mostrará. */}
                   <img
                     src="/icons/logo-white.png"
                     alt="Bar La Marbella"
@@ -161,33 +150,22 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                   />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-xs font-black uppercase tracking-widest text-[#36606F]">{t(lang).title}</h1>
-                  <p className="truncate text-[11px] font-semibold text-zinc-500">{t(lang).subtitle}</p>
+                  <h1 className="text-xs font-black uppercase tracking-widest text-[#36606F]">{tPublicUi(lang).title}</h1>
+                  <p className="truncate text-[11px] font-semibold text-zinc-500">{tPublicUi(lang).subtitle}</p>
                 </div>
               </div>
             </div>
             <div className="shrink-0">
-              <div className="inline-flex h-12 items-center gap-1 rounded-2xl border border-zinc-100 bg-white p-1 shadow-sm">
-                {homeHref ? (
-                  <Link
-                    href={homeHref}
-                    className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl bg-transparent text-[#36606F] active:bg-zinc-50"
-                    aria-label="Inicio"
-                    title="Inicio"
-                  >
-                    <Home className="h-5 w-5" strokeWidth={2.5} />
-                  </Link>
-                ) : null}
-                <LangButton active={lang === 'es'} onClick={() => setLang('es')}>
-                  ES
-                </LangButton>
-                <LangButton active={lang === 'ca'} onClick={() => setLang('ca')}>
-                  CA
-                </LangButton>
-                <LangButton active={lang === 'en'} onClick={() => setLang('en')}>
-                  EN
-                </LangButton>
-              </div>
+              {homeHref ? (
+                <Link
+                  href={homeHref}
+                  className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-2xl border border-zinc-100 bg-white p-1 shadow-sm text-[#36606F] active:bg-zinc-50"
+                  aria-label="Inicio"
+                  title="Inicio"
+                >
+                  <Home className="h-5 w-5" strokeWidth={2.5} />
+                </Link>
+              ) : null}
             </div>
           </div>
 
@@ -196,13 +174,13 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t(lang).search}
+              placeholder={tPublicUi(lang).search}
               className="h-12 w-full bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
             />
           </div>
         </header>
 
-        <section className="mt-6 space-y-2">
+        <section className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {grouped.map((group) => {
             const isOpen = openKey === group.key
             return (
@@ -233,7 +211,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                             </div>
                           ) : null}
 
-                          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                          <div className="grid grid-cols-2 gap-3">
                             {sub.rows.map((row) => (
                               <div
                                 key={row.articulo_id}
@@ -244,9 +222,9 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                                     {row.photo_url ? (
                                       <Image
                                         src={row.photo_url}
-                                        alt={getDisplayName(row, lang)}
+                                        alt={getCartaDisplayName(row, lang)}
                                         fill
-                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                        sizes="(max-width: 640px) 50vw, 25vw"
                                         className="object-contain p-2"
                                       />
                                     ) : (
@@ -258,9 +236,9 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                                   <div className="min-w-0 flex-1">
                                     <div
                                       className="truncate text-sm font-extrabold text-zinc-900"
-                                      title={getDisplayName(row, lang)}
+                                      title={getCartaDisplayName(row, lang)}
                                     >
-                                      {getDisplayName(row, lang)}
+                                      {getCartaDisplayName(row, lang)}
                                     </div>
                                   </div>
                                   <div className="shrink-0 text-sm font-black tabular-nums text-[#36606F]">
@@ -284,13 +262,6 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
   )
 }
 
-function prettifyChildTitle(parentTitle: string, rawChildTitle: string) {
-  if (!rawChildTitle) return ''
-  const prefix = `${parentTitle} - `
-  if (rawChildTitle.startsWith(prefix)) return rawChildTitle.slice(prefix.length).trim()
-  return rawChildTitle
-}
-
 function LangButton({
   active,
   onClick,
@@ -305,7 +276,7 @@ function LangButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'min-h-[48px] min-w-[48px] rounded-xl px-3 text-xs font-black tracking-widest',
+        'min-h-[48px] flex-1 rounded-xl px-3 text-xs font-black uppercase tracking-widest sm:flex-none sm:px-6',
         active ? 'bg-[#36606F] text-white' : 'bg-transparent text-[#36606F] active:bg-zinc-50'
       )}
       aria-pressed={active}
@@ -314,4 +285,3 @@ function LangButton({
     </button>
   )
 }
-
