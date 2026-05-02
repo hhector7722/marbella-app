@@ -211,14 +211,14 @@ export function PublicCarta({
                                 className="flex flex-col overflow-hidden rounded-2xl bg-white"
                               >
                                 {row.category_parent_name && ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                  <div className="relative h-16 w-full shrink-0 bg-white">
+                                  <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
                                     {row.photo_url ? (
                                       <Image
                                         src={row.photo_url}
                                         alt={getCartaDisplayName(row, lang)}
                                         fill
                                         sizes="(max-width: 640px) 33vw, 20vw"
-                                        className="object-contain p-2"
+                                        className="object-contain p-1.5"
                                       />
                                     ) : (
                                       <div className="h-full w-full bg-white" />

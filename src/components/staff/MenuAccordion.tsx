@@ -54,13 +54,13 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
             )}
         >
             <div className="w-full shrink-0 bg-white">
-                <div className="h-20 w-full bg-white sm:h-24">
+                <div className="h-14 w-full bg-white sm:h-16">
                     {row.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD
                         <img
                             src={row.photo_url}
                             alt=""
-                            className="h-full w-full object-contain p-2"
+                            className="h-full w-full object-contain p-1.5"
                         />
                     ) : (
                         <div className="h-full w-full bg-white" />
