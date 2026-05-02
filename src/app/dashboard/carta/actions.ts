@@ -76,6 +76,52 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
   return { success: true as const }
 }
 
+export async function setMenuSectionCoverArticulo(category_id: string, cover_articulo_id: number | null) {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+
+  const supabase = gate.supabase
+
+  const { data: cat, error: catErr } = await supabase
+    .from('categories')
+    .select('id, scope, parent_id')
+    .eq('id', category_id)
+    .maybeSingle()
+
+  if (catErr) return { success: false as const, error: catErr.message }
+  if (!cat || cat.scope !== 'menu' || cat.parent_id != null) {
+    return { success: false as const, error: 'Categoría inválida (solo secciones padre del menú).' }
+  }
+
+  if (cover_articulo_id != null) {
+    const { data: mapRow, error: mapErr } = await supabase
+      .from('map_tpv_receta')
+      .select('articulo_id')
+      .eq('articulo_id', cover_articulo_id)
+      .maybeSingle()
+    if (mapErr) return { success: false as const, error: mapErr.message }
+    if (!mapRow) {
+      return { success: false as const, error: 'El artículo debe estar mapeado a receta en carta.' }
+    }
+  }
+
+  const { error } = await supabase
+    .from('categories')
+    .update({ cover_articulo_id })
+    .eq('id', category_id)
+    .eq('scope', 'menu')
+    .is('parent_id', null)
+
+  if (error) {
+    console.error('setMenuSectionCoverArticulo error:', error)
+    return { success: false as const, error: error.message }
+  }
+
+  revalidatePath('/dashboard/carta')
+  revalidatePath('/staff/carta')
+  return { success: true as const }
+}
+
 export async function deleteMenuOverride(articulo_id: number) {
   const gate = await requireManager()
   if (!gate.ok) return { success: false as const, error: gate.error }

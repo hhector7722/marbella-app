@@ -26,6 +26,7 @@ export type PublicMenuRow = {
   category_parent_id: string | null
   category_parent_name: string | null
   category_parent_sort_order: number | null
+  category_parent_cover_photo_url: string | null
   category_child_id: string | null
   category_child_name: string | null
   category_child_sort_order: number | null
@@ -35,6 +36,7 @@ type Group = {
   key: string
   title: string
   sortOrder: number
+  coverPhotoUrl: string | null
   subs: Map<string, { key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }>
 }
 
@@ -78,8 +80,11 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
         key: parentKey,
         title: parentTitle,
         sortOrder: parentSort,
+        coverPhotoUrl: null as string | null,
         subs: new Map(),
       }
+      const cov = row.category_parent_cover_photo_url?.trim()
+      if (cov) g.coverPhotoUrl = cov
 
       const sg =
         g.subs.get(childKey) ?? {
@@ -191,7 +196,20 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                   className="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-zinc-50"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-sm font-black uppercase tracking-widest text-[#36606F]">{group.title}</span>
+                  {!isOpen && group.coverPhotoUrl ? (
+                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                      <Image
+                        src={group.coverPhotoUrl}
+                        alt=""
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                      />
+                    </span>
+                  ) : null}
+                  <span className="min-w-0 flex-1 text-sm font-black uppercase tracking-widest text-[#36606F]">
+                    {group.title}
+                  </span>
                   <ChevronDown
                     className={cn('h-5 w-5 shrink-0 text-zinc-400 transition-transform', isOpen && 'rotate-180')}
                     aria-hidden

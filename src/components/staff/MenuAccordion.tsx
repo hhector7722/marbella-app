@@ -24,6 +24,7 @@ export type DigitalMenuRow = {
     category_parent_id: string | null
     category_parent_name: string | null
     category_parent_sort_order: number | null
+    category_parent_cover_photo_url: string | null
     category_child_id: string | null
     category_child_name: string | null
     category_child_sort_order: number | null
@@ -117,6 +118,7 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
             key: string
             title: string
             sortOrder: number
+            coverPhotoUrl: string | null
             subs: Map<string, { title: string; sortOrder: number; rows: DigitalMenuRow[] }>
         }
 
@@ -135,8 +137,11 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                 key: parentKey,
                 title: parentTitle,
                 sortOrder: parentSort,
+                coverPhotoUrl: null as string | null,
                 subs: new Map(),
             }
+            const cov = row.category_parent_cover_photo_url?.trim()
+            if (cov) g.coverPhotoUrl = cov
 
             const childShort = prettifyChildTitle(parentTitleRaw, childTitleRaw)
             const subTitle = translateChildCategoryTitle(lang, childShort)
@@ -181,7 +186,9 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
         }
 
         return groupList as Array<
-            Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: DigitalMenuRow[] }> }
+            Group & {
+                _subList: Array<{ key: string; title: string; sortOrder: number; rows: DigitalMenuRow[] }>
+            }
         >
     }, [items, lang])
 
@@ -223,7 +230,15 @@ export function MenuAccordion({ items }: { items: DigitalMenuRow[] }) {
                                 className="flex min-h-[48px] w-full items-center justify-between gap-3 p-4 text-left active:bg-zinc-50/80"
                                 aria-expanded={isOpen}
                             >
-                                <span className="text-sm font-black uppercase tracking-wide text-[#36606F]">
+                                {!isOpen && group.coverPhotoUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
+                                    <img
+                                        src={group.coverPhotoUrl}
+                                        alt=""
+                                        className="h-12 w-12 shrink-0 rounded-xl border border-zinc-100 object-cover"
+                                    />
+                                ) : null}
+                                <span className="min-w-0 flex-1 text-sm font-black uppercase tracking-wide text-[#36606F]">
                                     {group.title}
                                 </span>
                                 <ChevronDown

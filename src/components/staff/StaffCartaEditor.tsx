@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { Check, Loader2, Pencil, Search, X, Eye, EyeOff } from 'lucide-react'
+import { Check, Loader2, Pencil, Search, X, Eye, EyeOff, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { upsertMenuOverride } from '@/app/dashboard/carta/actions'
+import { upsertMenuOverride, setMenuSectionCoverArticulo } from '@/app/dashboard/carta/actions'
 
 type MenuItemRow = {
   articulo_id: number
@@ -31,6 +31,7 @@ type Category = {
   name: string
   parent_id: string | null
   sort_order: number | null
+  cover_articulo_id: number | null
 }
 
 export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
@@ -39,6 +40,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<'active' | 'inactive' | 'all'>('active')
   const [parentFilter, setParentFilter] = useState<string>('all')
+  const [coverArticleFilter, setCoverArticleFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -93,6 +95,30 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
 
   const visibleState = (articulo_id: number) => !(overrideByArticulo.get(articulo_id)?.is_hidden ?? false)
 
+  const coverArticleOptions = useMemo(() => {
+    const q = coverArticleFilter.trim().toLowerCase()
+    const list = items
+      .slice()
+      .sort((a, b) => a.articulo_nombre.localeCompare(b.articulo_nombre, 'es', { sensitivity: 'base' }))
+    if (!q) return list
+    return list.filter(
+      (it) =>
+        it.articulo_nombre.toLowerCase().includes(q) || String(it.articulo_id).includes(q)
+    )
+  }, [items, coverArticleFilter])
+
+  const onSetSectionCover = (category_id: string, cover_articulo_id: number | null) => {
+    startTransition(async () => {
+      const res = await setMenuSectionCoverArticulo(category_id, cover_articulo_id)
+      if (!res.success) {
+        toast.error(res.error ?? 'No se pudo guardar la portada')
+        return
+      }
+      toast.success('Portada de sección guardada')
+      await load()
+    })
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return items.filter((it) => {
@@ -137,7 +163,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
           .limit(5000),
         supabase
           .from('categories')
-          .select('id, name, parent_id, sort_order')
+          .select('id, name, parent_id, sort_order, cover_articulo_id')
           .eq('scope', 'menu')
           .limit(5000),
       ])
@@ -163,7 +189,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
           .filter(Boolean) as any
       )
       setOverrides((overridesRes.data ?? []) as any)
-      setCategories((categoriesRes.data ?? []) as any)
+      setCategories(
+        (categoriesRes.data ?? []).map((c: any) => ({
+          ...c,
+          cover_articulo_id: c.cover_articulo_id ?? null,
+        })) as Category[]
+      )
     } catch (e: any) {
       toast.error(e?.message ?? 'No se pudo cargar el editor de carta')
     } finally {
@@ -348,6 +379,54 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                   </option>
                 ))}
               </select>
+
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-3 shadow-sm">
+                <div className="flex items-center gap-2 text-amber-950">
+                  <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Portada al plegar</span>
+                </div>
+                <p className="mt-1 text-[11px] font-medium leading-snug text-amber-950/80">
+                  Solo disponible en esta edición. Elige producto por nombre (mapeado a receta); se guarda por ID TPV.
+                </p>
+                <div className="relative mt-2">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                    placeholder="Filtrar lista de artículos…"
+                    value={coverArticleFilter}
+                    onChange={(e) => setCoverArticleFilter(e.target.value)}
+                  />
+                </div>
+                <div className="mt-3 max-h-52 space-y-2 overflow-y-auto pr-1">
+                  {parents.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-white p-2 shadow-sm sm:flex-row sm:items-center sm:gap-3"
+                    >
+                      <span className="min-w-0 shrink-0 truncate text-xs font-black uppercase tracking-wide text-[#36606F] sm:w-40">
+                        {p.name}
+                      </span>
+                      <select
+                        className="h-12 min-h-[48px] min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                        title={`Producto para portada: ${p.name}`}
+                        value={p.cover_articulo_id ?? ''}
+                        disabled={isPending}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          onSetSectionCover(p.id, v === '' ? null : Number(v))
+                        }}
+                      >
+                        <option value="">Sin imagen</option>
+                        {coverArticleOptions.map((it) => (
+                          <option key={it.articulo_id} value={it.articulo_id}>
+                            {it.articulo_nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-0">
