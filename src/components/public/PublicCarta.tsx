@@ -231,7 +231,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                             </div>
                           ) : null}
 
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             {sub.rows.map((row) => (
                               <div
                                 key={row.articulo_id}
@@ -244,7 +244,7 @@ export function PublicCarta({ items, homeHref }: { items: PublicMenuRow[]; homeH
                                         src={row.photo_url}
                                         alt={getCartaDisplayName(row, lang)}
                                         fill
-                                        sizes="(max-width: 640px) 50vw, 25vw"
+                                        sizes="(max-width: 640px) 33vw, 20vw"
                                         className="object-contain p-2"
                                       />
                                     ) : (
