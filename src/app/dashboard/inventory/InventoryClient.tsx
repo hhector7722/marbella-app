@@ -73,6 +73,7 @@ function QuantityStepper({
   onRawChange,
   onBlur,
   ariaLabel,
+  hideUnitSuffix,
 }: {
   unit: string
   value: number
@@ -81,6 +82,7 @@ function QuantityStepper({
   onRawChange: (s: string) => void
   onBlur: () => void
   ariaLabel: string
+  hideUnitSuffix?: boolean
 }) {
   const step = getStep(unit)
   const count = isCountUnit(unit)
@@ -113,7 +115,9 @@ function QuantityStepper({
         onChange={(e) => {
           const nextRaw = e.target.value
           onRawChange(nextRaw)
-          onChange(parseQuantity(nextRaw, unit))
+          if (nextRaw.trim() !== '') {
+            onChange(parseQuantity(nextRaw, unit))
+          }
         }}
         onBlur={onBlur}
         className={cn(
@@ -131,17 +135,13 @@ function QuantityStepper({
       >
         <Plus className="w-4 h-4" strokeWidth={3} />
       </button>
-      <span className="pr-3 text-[10px] font-black text-zinc-500 w-10 text-center shrink-0 uppercase tracking-wide">
-        {unit}
-      </span>
+      {!hideUnitSuffix ? (
+        <span className="pr-3 text-[10px] font-black text-zinc-500 w-10 text-center shrink-0 uppercase tracking-wide">
+          {unit}
+        </span>
+      ) : null}
     </div>
   )
-}
-
-function displayTheoretical(stock: number): string {
-  const n = Number(stock)
-  if (n === 0 || Object.is(n, -0)) return ' '
-  return String(n)
 }
 
 function InventoryIngredientCard({
@@ -161,13 +161,10 @@ function InventoryIngredientCard({
 }) {
   const u = normalizeUnit(item.unit)
   const label = abbreviateLabel(item.name)
-  const teor = displayTheoretical(item.stock_current)
 
   return (
     <div
-      className={cn(
-        'flex h-full min-h-0 flex-col rounded-xl border border-zinc-100 bg-white shadow-sm overflow-hidden',
-      )}
+      className={cn('flex h-full min-h-0 flex-col rounded-xl bg-white overflow-hidden')}
     >
       <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
         {item.image_url ? (
@@ -183,12 +180,9 @@ function InventoryIngredientCard({
         >
           {label}
         </span>
-        <span className="text-[9px] font-bold text-zinc-400 tabular-nums">
-          Teórico: {teor === ' ' ? '\u00A0' : `${teor}`}
-        </span>
       </div>
       <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
-        <label className="sr-only">Stock físico {item.name}</label>
+        <label className="sr-only">Cantidad contada {item.name}</label>
         <QuantityStepper
           unit={u}
           value={numeric}
@@ -196,7 +190,8 @@ function InventoryIngredientCard({
           raw={raw}
           onRawChange={onRawChange}
           onBlur={onBlur}
-          ariaLabel={`Stock físico ${item.name}`}
+          ariaLabel={`Cantidad contada ${item.name}`}
+          hideUnitSuffix
         />
       </div>
     </div>
@@ -268,14 +263,13 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
       const payload = initialIngredients
         .map((item) => {
           const u = normalizeUnit(item.unit)
-          const val = numericById[item.id] ?? item.stock_current
-          const safePhysical = roundQty(Number.isFinite(val) ? val : item.stock_current, u)
-          const theoretical = item.stock_current
-          if (roundQty(theoretical, u) === safePhysical) return null
+          if (numericById[item.id] === undefined) return null
+          const val = numericById[item.id]!
+          const safePhysical = roundQty(Number.isFinite(val) ? val : 0, u)
           return {
             ingredient_id: item.id,
             physical_stock: safePhysical,
-            theoretical_stock: theoretical,
+            theoretical_stock: item.stock_current,
             unit: item.unit || 'ud',
           }
         })
@@ -287,7 +281,7 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
         }[]
 
       if (payload.length === 0) {
-        toast.error('Indica al menos un recuento distinto del stock teórico.')
+        toast.error('Indica al menos una cantidad contada.')
         return
       }
 
@@ -304,24 +298,15 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
     }
   }
 
-  const hasChanges = useMemo(() => {
-    for (const item of initialIngredients) {
-      const u = normalizeUnit(item.unit)
-      const n = numericById[item.id] ?? item.stock_current
-      if (roundQty(n, u) !== roundQty(item.stock_current, u)) return true
-    }
-    return false
-  }, [numericById, initialIngredients])
+  const hasAnyCount = useMemo(
+    () => Object.keys(numericById).length > 0,
+    [numericById],
+  )
 
-  const submitDisabled = isSubmitting || !hasChanges
+  const submitDisabled = isSubmitting || !hasAnyCount
 
   return (
     <div className="flex flex-col gap-4 min-h-0 flex-1">
-      <p className="text-sm text-zinc-600">
-        Introduce el <span className="font-semibold text-zinc-800">stock físico</span> contado. Solo se
-        registrarán las diferencias respecto al teórico.
-      </p>
-
       <div className="flex-1 min-h-0 overflow-auto pr-0.5">
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2 w-full shrink-0 relative">
@@ -404,13 +389,14 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
                   {items.map((item) => {
                     const u = normalizeUnit(item.unit)
-                    const numeric = numericById[item.id] ?? item.stock_current
+                    const counted = numericById[item.id]
+                    const numeric = counted ?? 0
                     const raw =
                       physicalCounts[item.id] !== undefined
                         ? physicalCounts[item.id]!
-                        : numeric === 0
+                        : counted === undefined
                           ? ''
-                          : String(numeric)
+                          : String(counted)
                     return (
                       <InventoryIngredientCard
                         key={item.id}
@@ -419,7 +405,15 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
                         raw={raw}
                         onRawChange={(s) => {
                           setPhysicalCounts((prev) => ({ ...prev, [item.id]: s }))
-                          setQty(item.id, item, parseQuantity(s, u))
+                          if (s.trim() === '') {
+                            setNumericById((prev) => {
+                              const next = { ...prev }
+                              delete next[item.id]
+                              return next
+                            })
+                          } else {
+                            setQty(item.id, item, parseQuantity(s, u))
+                          }
                         }}
                         onBlur={() => {
                           const rawStr = physicalCounts[item.id] ?? ''
@@ -458,7 +452,10 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
       <div className="sticky bottom-0 left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100 space-y-2">
         <div className="flex items-start gap-2 text-zinc-500 text-xs px-0.5">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>Solo se ajustarán los ítems cuyo físico sea distinto del teórico.</span>
+          <span>
+            Introduce solo las cantidades que hayas contado. Lo que dejes en blanco no se envía al
+            guardar.
+          </span>
         </div>
         <button
           type="button"
@@ -472,7 +469,7 @@ export function InventoryClient({ initialIngredients }: InventoryClientProps) {
           )}
         >
           <Save className="w-5 h-5 shrink-0" />
-          {isSubmitting ? 'Guardando…' : 'Confirmar arqueo'}
+          {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
         </button>
       </div>
     </div>

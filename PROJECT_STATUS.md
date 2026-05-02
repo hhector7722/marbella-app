@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-28 (Horas: doc SSOT + diagnóstico motor)
+**Última actualización:** 2026-05-02 (Inventario: UI recuento)
 
 - [x] **Finanzas `/dashboard/finanzas`: PyG (Devengo) vs Cash Flow (Caja) (2026-04-24)**: Nueva vista SSR con UI Bento y selectores de rango (interactividad por querystring). Arquitectura “frontend tonto”: consolidación en RPC `get_financial_statement(p_start_date, p_end_date)` (JSON) sin descargar tablas completas. Devengo: ventas desde `tickets_marbella` (incluye devoluciones negativas), compras solo `purchase_invoices.status IN ('mapped','completed')` por `invoice_date`, coste laboral desde `weekly_snapshots.total_cost` por solape de semanas; Caja: `treasury_log` con IN+CLOSE_ENTRY vs OUT y “Other” separado (SWAP/ADJUSTMENT). Migración `20260424120000_get_financial_statement_rpc.sql`.
 - [x] **Finanzas: KPIs con color + minigráficos (2026-04-27)**: Refinamiento de legibilidad en `/dashboard/finanzas` con tarjetas KPI por tono (gradiente suave) y minigráficos SVG (barras + sparkline) para diferenciar Devengo/Caja/Delta de un vistazo (sin CSS inline).
@@ -11,6 +11,8 @@
 - [x] **Recetas `/recipes/[id]`: guardar Elaboración/Presentación en BD (2026-04-21)**: En modo edición, los cambios manuales ya no se quedan solo en estado local. Añadidos botones táctiles **Guardar** y **Cerrar (Guardar)** para Elaboración y Presentación; el guardado ahora valida error de Supabase/RLS y muestra `toast.error` si falla (anti-silent).
 
 - [x] **Recetas `/recipes?view=staff`: modal alineado a `/recipes/[id]` (solo lectura) (2026-05-02)**: Desde personal → Recetas, el modal replica la cabecera compacta del detalle (nombre centrado, foto con zoom, categoría + raciones, flechas anterior/siguiente dentro del mismo orden/filtro `cat` que la página `[id]`) y el cuerpo en rejilla (`rounded-[20px]`, `bg-[#fafafa]`, tarjetas Ingredientes con cabecera `px-4 py-2`, Elaboración y Presentación como en modo restringido). Sin precios ni edición inline; manager/supervisor: icono **Editar** abre `/recipes/[id]` **sin** `view=staff` (edición de ingredientes, elaboración, presentación y resto de la ficha). Sin lápiz de nombre/imagen en este modal (nombre e imagen solo desde `/recipes/[id]` vía `RecipeNamePhotoEditModal`). La subida de vídeo de elaboración queda solo en `/recipes/[id]` (no en listado).
+
+- [x] **Inventario `/dashboard/inventory`: UI recuento (2026-05-02)**: Interfaz solo de recuento: sin textos de stock teórico ni comparación con el real en pantalla; pie orientado a “cantidades contadas”; botón **Guardar recuento**; se envían todas las cantidades informadas (el servidor aplica movimientos solo donde haya diferencia interna). Mensajes y descripciones de movimiento sin mencionar teórico en la narrativa al usuario.
 
 - [x] **Inventario `/dashboard/inventory` + auditoría `/dashboard/inventory/ledger`: diseño tipo Mermas (2026-04-21)**: Rejilla responsive con imagen `h-12 w-12`, nombre abreviado, buscador + filtro por categoría; recuento con `QuantityStepper` (misma caja que mermas); ledger con tarjetas seleccionables y caja de solo lectura para stock teórico; `max-w-7xl` + `pt-6 md:pt-8`; consultas con `image_url` / `order_unit`.
 

@@ -20,7 +20,6 @@ export default async function InventoryPage() {
   return (
     <DashboardDetailLayout
       title="Inventario"
-      subtitle="Recuento físico: solo se registrarán las diferencias frente al stock teórico"
       maxWidthClass="max-w-7xl"
       className="pt-6 md:pt-8"
     >

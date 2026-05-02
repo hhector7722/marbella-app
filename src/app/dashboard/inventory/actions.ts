@@ -18,7 +18,11 @@ export async function processInventoryCounts(counts: CountPayload[]) {
   )
 
   if (actionableCounts.length === 0) {
-    return { success: true, message: 'No hay descuadres que registrar.' }
+    return {
+      success: true,
+      message:
+        'Recuento recibido. No fue necesario registrar movimientos de stock para las cantidades indicadas.',
+    }
   }
 
   const movements = actionableCounts.map((count) => {
@@ -30,7 +34,7 @@ export async function processInventoryCounts(counts: CountPayload[]) {
       quantity: delta,
       unit: count.unit,
       reference_doc: `INV-${new Date().getTime()}`,
-      original_description: `Recuento Físico UI. Teórico: ${count.theoretical_stock}, Físico: ${count.physical_stock}`,
+      original_description: `Recuento físico (${count.physical_stock} ${count.unit})`,
       processed_by: 'Mánager (Dashboard)'
     }
   })
@@ -44,5 +48,10 @@ export async function processInventoryCounts(counts: CountPayload[]) {
   }
 
   revalidatePath('/dashboard/inventory')
-  return { success: true, message: `Ajustados ${movements.length} ingredientes.` }
+  return {
+    success: true,
+    message: `Recuento aplicado: ${movements.length} ${
+      movements.length === 1 ? 'actualización' : 'actualizaciones'
+    } de stock.`,
+  }
 }
