@@ -229,119 +229,141 @@ export function MenuAccordion({
                     hideLangPicker && 'pt-0'
                 )}
             >
-                {grouped.map((group) => {
+                {grouped.map((group, idx) => {
                     const isOpen = openKey === group.key
+                    const openIndex = grouped.findIndex((g) => g.key === openKey)
+                    const insertAfterIndex =
+                        openIndex < 0
+                            ? -1
+                            : openIndex % 2 === 1
+                              ? openIndex
+                              : Math.min(openIndex + 1, grouped.length - 1)
                     return (
-                        <div
-                            key={group.key}
-                            className={cn(
-                                'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
-                                isOpen
-                                    ? 'col-span-2 border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                                    : 'border-zinc-200/60'
-                            )}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setOpenKey((current) => {
-                                        if (current === group.key) {
+                        <div key={group.key} className="contents">
+                            <div
+                                className={cn(
+                                    'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                                    isOpen
+                                        ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                                        : 'border-zinc-200/60'
+                                )}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpenKey((current) => {
+                                            if (current === group.key) {
+                                                setSelectedSubKeyByGroup((p) => {
+                                                    const n = { ...p }
+                                                    delete n[group.key]
+                                                    return n
+                                                })
+                                                return null
+                                            }
                                             setSelectedSubKeyByGroup((p) => {
                                                 const n = { ...p }
                                                 delete n[group.key]
                                                 return n
                                             })
-                                            return null
-                                        }
-                                        setSelectedSubKeyByGroup((p) => {
-                                            const n = { ...p }
-                                            delete n[group.key]
-                                            return n
+                                            return group.key
                                         })
-                                        return group.key
-                                    })
-                                }}
-                                className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
-                                aria-expanded={isOpen}
-                            >
-                                <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
-                                    {group.coverPhotoUrl ? (
-                                        // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
-                                        <img
-                                            src={group.coverPhotoUrl}
-                                            alt=""
-                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
-                                        />
-                                    ) : null}
-                                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
-                                        {group.title}
+                                    }}
+                                    className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
+                                    aria-expanded={isOpen}
+                                >
+                                    <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
+                                        {group.coverPhotoUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
+                                            <img
+                                                src={group.coverPhotoUrl}
+                                                alt=""
+                                                className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
+                                            />
+                                        ) : null}
+                                        <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
+                                            {group.title}
+                                        </span>
                                     </span>
-                                </span>
-                            </button>
-                            {isOpen ? (
-                                <div className="shrink-0 border-t border-zinc-200/40 bg-white px-3 pb-3 pt-1">
-                                    <div className="max-h-[min(72vh,720px)] overflow-y-auto space-y-5 pr-1">
-                                        {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
-                                            <div className="space-y-3">
-                                                <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                                                    {tPublicUi(lang).pickSubcategoryTitle}
-                                                </p>
-                                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                                    {group._subList.map((sub) => (
+                                </button>
+                            </div>
+
+                            {isOpen && insertAfterIndex === idx ? (
+                                <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
+                                    <div className="border-b border-zinc-200/40 bg-white p-2">
+                                        <div className="flex min-h-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-center text-sm font-black uppercase tracking-widest text-[#36606F]">
+                                            {group.title}
+                                        </div>
+                                    </div>
+                                    <div className="px-3 pb-3 pt-3">
+                                        <div className="space-y-5">
+                                            {group._subList.length > 1 &&
+                                            !selectedSubKeyByGroup[group.key] ? (
+                                                <div className="space-y-3">
+                                                    <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                                                        {tPublicUi(lang).pickSubcategoryTitle}
+                                                    </p>
+                                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                        {group._subList.map((sub) => (
+                                                            <button
+                                                                key={sub.key}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setSelectedSubKeyByGroup(
+                                                                        (p) => ({
+                                                                            ...p,
+                                                                            [group.key]: sub.key,
+                                                                        })
+                                                                    )
+                                                                }
+                                                                className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                                                            >
+                                                                {sub.title.trim() ||
+                                                                    tPublicUi(lang).uncategorized}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {group._subList.length > 1 ? (
                                                         <button
-                                                            key={sub.key}
                                                             type="button"
                                                             onClick={() =>
-                                                                setSelectedSubKeyByGroup((p) => ({
-                                                                    ...p,
-                                                                    [group.key]: sub.key,
-                                                                }))
+                                                                setSelectedSubKeyByGroup((p) => {
+                                                                    const n = { ...p }
+                                                                    delete n[group.key]
+                                                                    return n
+                                                                })
                                                             }
-                                                            className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                                                            className="flex min-h-[48px] w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
                                                         >
-                                                            {sub.title.trim() || tPublicUi(lang).uncategorized}
+                                                            {tPublicUi(lang).backToSubcategories}
                                                         </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {group._subList.length > 1 ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setSelectedSubKeyByGroup((p) => {
-                                                                const n = { ...p }
-                                                                delete n[group.key]
-                                                                return n
-                                                            })
-                                                        }
-                                                        className="flex min-h-[48px] w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
-                                                    >
-                                                        {tPublicUi(lang).backToSubcategories}
-                                                    </button>
-                                                ) : null}
+                                                    ) : null}
 
-                                                {(group._subList.length > 1
-                                                    ? group._subList.filter(
-                                                          (s) => s.key === selectedSubKeyByGroup[group.key]
-                                                      )
-                                                    : group._subList
-                                                ).map((sub) => (
-                                                    <section key={sub.key} className="space-y-3">
-                                                        <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
-                                                            {sub.rows.map((row) => (
-                                                                <MenuCard
-                                                                    key={row.articulo_id}
-                                                                    row={row}
-                                                                    lang={lang}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    </section>
-                                                ))}
-                                            </>
-                                        )}
+                                                    {(group._subList.length > 1
+                                                        ? group._subList.filter(
+                                                              (s) =>
+                                                                  s.key ===
+                                                                  selectedSubKeyByGroup[group.key]
+                                                          )
+                                                        : group._subList
+                                                    ).map((sub) => (
+                                                        <section key={sub.key} className="space-y-3">
+                                                            <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                                {sub.rows.map((row) => (
+                                                                    <MenuCard
+                                                                        key={row.articulo_id}
+                                                                        row={row}
+                                                                        lang={lang}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </section>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ) : null}

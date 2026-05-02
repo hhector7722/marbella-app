@@ -124,6 +124,14 @@ export function PublicCarta({
     return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }> }>
   }, [items, lang])
 
+  const openIndex = useMemo(() => grouped.findIndex((g) => g.key === openKey), [grouped, openKey])
+  const insertAfterIndex = useMemo(() => {
+    if (openIndex < 0) return -1
+    // grid de 2 columnas: insertar el panel tras terminar la fila del tile seleccionado
+    if (openIndex % 2 === 1) return openIndex
+    return Math.min(openIndex + 1, grouped.length - 1)
+  }, [openIndex, grouped.length])
+
   return (
     <main className="min-h-screen bg-[#5B8FB9]">
       <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
@@ -158,166 +166,175 @@ export function PublicCarta({
         </header>
 
         <section className="mt-8 grid grid-cols-2 gap-2 sm:gap-4 md:mt-10">
-          {grouped.map((group) => {
+          {grouped.map((group, idx) => {
             const isOpen = openKey === group.key
             return (
-              <div
-                key={group.key}
-                className={cn(
-                  'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
-                  isOpen
-                    ? 'col-span-2 border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                    : 'border-zinc-200/60'
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenKey((current) => {
-                      if (current === group.key) {
+              <div key={group.key} className="contents">
+                <div
+                  className={cn(
+                    'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                    isOpen
+                      ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                      : 'border-zinc-200/60'
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenKey((current) => {
+                        if (current === group.key) {
+                          setSelectedSubKeyByGroup((p) => {
+                            const n = { ...p }
+                            delete n[group.key]
+                            return n
+                          })
+                          return null
+                        }
                         setSelectedSubKeyByGroup((p) => {
                           const n = { ...p }
                           delete n[group.key]
                           return n
                         })
-                        return null
-                      }
-                      setSelectedSubKeyByGroup((p) => {
-                        const n = { ...p }
-                        delete n[group.key]
-                        return n
+                        return group.key
                       })
-                      return group.key
-                    })
-                  }}
-                  className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
-                  aria-expanded={isOpen}
-                >
-                  <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
-                    {group.coverPhotoUrl ? (
-                      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white sm:h-11 sm:w-11">
-                        <Image
-                          src={group.coverPhotoUrl}
-                          alt=""
-                          fill
-                          sizes="40px"
-                          className="object-contain object-left"
-                        />
+                    }}
+                    className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
+                    aria-expanded={isOpen}
+                  >
+                    <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
+                      {group.coverPhotoUrl ? (
+                        <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white sm:h-11 sm:w-11">
+                          <Image
+                            src={group.coverPhotoUrl}
+                            alt=""
+                            fill
+                            sizes="40px"
+                            className="object-contain object-left"
+                          />
+                        </span>
+                      ) : null}
+                      <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:text-sm">
+                        {group.title}
                       </span>
-                    ) : null}
-                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:text-sm">
-                      {group.title}
                     </span>
-                  </span>
-                </button>
+                  </button>
+                </div>
 
-                {isOpen ? (
-                  <div className="border-t border-zinc-200/40 bg-white px-3 pb-4 pt-3">
-                    {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
-                      <div className="space-y-3">
-                        <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
-                          {tPublicUi(lang).pickSubcategoryTitle}
-                        </p>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          {group._subList.map((sub) => (
+                {isOpen && insertAfterIndex === idx ? (
+                  <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
+                    <div className="border-b border-zinc-200/40 bg-white p-2">
+                      <div className="flex min-h-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-center text-sm font-black uppercase tracking-widest text-[#36606F]">
+                        {group.title}
+                      </div>
+                    </div>
+
+                    <div className="px-3 pb-4 pt-3">
+                      {group._subList.length > 1 && !selectedSubKeyByGroup[group.key] ? (
+                        <div className="space-y-3">
+                          <p className="px-1 text-center text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                            {tPublicUi(lang).pickSubcategoryTitle}
+                          </p>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {group._subList.map((sub) => (
+                              <button
+                                key={sub.key}
+                                type="button"
+                                onClick={() =>
+                                  setSelectedSubKeyByGroup((p) => ({ ...p, [group.key]: sub.key }))
+                                }
+                                className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                              >
+                                {sub.title.trim() || tPublicUi(lang).uncategorized}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-5">
+                          {group._subList.length > 1 ? (
                             <button
-                              key={sub.key}
                               type="button"
                               onClick={() =>
-                                setSelectedSubKeyByGroup((p) => ({ ...p, [group.key]: sub.key }))
+                                setSelectedSubKeyByGroup((p) => {
+                                  const n = { ...p }
+                                  delete n[group.key]
+                                  return n
+                                })
                               }
-                              className="flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-center text-sm font-black uppercase tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50"
+                              className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
                             >
-                              {sub.title.trim() || tPublicUi(lang).uncategorized}
+                              {tPublicUi(lang).backToSubcategories}
                             </button>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        {group._subList.length > 1 ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSelectedSubKeyByGroup((p) => {
-                                const n = { ...p }
-                                delete n[group.key]
-                                return n
-                              })
-                            }
-                            className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-black uppercase tracking-widest text-[#36606F] active:bg-zinc-100"
-                          >
-                            {tPublicUi(lang).backToSubcategories}
-                          </button>
-                        ) : null}
+                          ) : null}
 
-                        {(group._subList.length > 1
-                          ? group._subList.filter((s) => s.key === selectedSubKeyByGroup[group.key])
-                          : group._subList
-                        ).map((sub) => (
-                          <div key={sub.key} className="space-y-3">
-                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                              {sub.rows.map((row) => (
-                                <div
-                                  key={row.articulo_id}
-                                  className="flex flex-col overflow-hidden rounded-2xl bg-white"
-                                >
-                                  {row.category_parent_name &&
-                                  ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                    row.photo_url ? (
-                                      <button
-                                        type="button"
-                                        className="relative h-12 w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
-                                        aria-label="Ver foto ampliada"
-                                        onClick={() =>
-                                          setLightbox({
-                                            src: row.photo_url!,
-                                            alt: getCartaDisplayName(row, lang),
-                                          })
-                                        }
-                                      >
-                                        <Image
-                                          src={row.photo_url}
-                                          alt=""
-                                          fill
-                                          sizes="(max-width: 640px) 33vw, 20vw"
-                                          className="pointer-events-none object-contain p-1.5"
-                                        />
-                                      </button>
-                                    ) : (
-                                      <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
-                                        <div className="h-full w-full bg-white" />
-                                      </div>
-                                    )
-                                  ) : null}
+                          {(group._subList.length > 1
+                            ? group._subList.filter((s) => s.key === selectedSubKeyByGroup[group.key])
+                            : group._subList
+                          ).map((sub) => (
+                            <div key={sub.key} className="space-y-3">
+                              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                {sub.rows.map((row) => (
                                   <div
-                                    className={cn(
-                                      'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-2',
-                                      row.category_parent_name &&
-                                        ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
-                                        ? 'pt-1'
-                                        : 'pt-2'
-                                    )}
+                                    key={row.articulo_id}
+                                    className="flex flex-col overflow-hidden rounded-2xl bg-white"
                                   >
-                                    <p
-                                      className="line-clamp-3 w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
-                                      title={getCartaDisplayName(row, lang)}
+                                    {row.category_parent_name &&
+                                    ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
+                                      row.photo_url ? (
+                                        <button
+                                          type="button"
+                                          className="relative h-12 w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
+                                          aria-label="Ver foto ampliada"
+                                          onClick={() =>
+                                            setLightbox({
+                                              src: row.photo_url!,
+                                              alt: getCartaDisplayName(row, lang),
+                                            })
+                                          }
+                                        >
+                                          <Image
+                                            src={row.photo_url}
+                                            alt=""
+                                            fill
+                                            sizes="(max-width: 640px) 33vw, 20vw"
+                                            className="pointer-events-none object-contain p-1.5"
+                                          />
+                                        </button>
+                                      ) : (
+                                        <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
+                                          <div className="h-full w-full bg-white" />
+                                        </div>
+                                      )
+                                    ) : null}
+                                    <div
+                                      className={cn(
+                                        'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-2',
+                                        row.category_parent_name &&
+                                          ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
+                                          ? 'pt-1'
+                                          : 'pt-2'
+                                      )}
                                     >
-                                      {getCartaDisplayName(row, lang)}
-                                    </p>
-                                    <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
-                                      <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
-                                        {formatPrice(row.precio)}
-                                      </span>
+                                      <p
+                                        className="line-clamp-3 w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
+                                        title={getCartaDisplayName(row, lang)}
+                                      >
+                                        {getCartaDisplayName(row, lang)}
+                                      </p>
+                                      <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
+                                        <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
+                                          {formatPrice(row.precio)}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : null}
               </div>
