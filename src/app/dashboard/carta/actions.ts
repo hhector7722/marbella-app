@@ -190,3 +190,123 @@ export async function setArticuloDepartamento(articulo_id: number, departamento_
   return { success: true as const }
 }
 
+export type MenuCategoryOverrideUpsertInput = {
+  category_id: string
+} & Partial<{
+  override_name_es: string | null
+  override_name_ca: string | null
+  override_name_en: string | null
+}>
+
+export async function upsertMenuCategoryOverride(input: MenuCategoryOverrideUpsertInput) {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+
+  const supabase = gate.supabase
+
+  const { data: cat, error: catErr } = await supabase
+    .from('categories')
+    .select('id, scope')
+    .eq('id', input.category_id)
+    .maybeSingle()
+
+  if (catErr) return { success: false as const, error: catErr.message }
+  if (!cat || cat.scope !== 'menu') return { success: false as const, error: 'Categoría inválida.' }
+
+  const payload: Record<string, unknown> = { category_id: input.category_id }
+  if ('override_name_es' in input) payload.override_name_es = input.override_name_es
+  if ('override_name_ca' in input) payload.override_name_ca = input.override_name_ca
+  if ('override_name_en' in input) payload.override_name_en = input.override_name_en
+
+  const { error } = await supabase
+    .from('menu_category_overrides')
+    .upsert(payload, { onConflict: 'category_id', ignoreDuplicates: false })
+
+  if (error) {
+    console.error('upsertMenuCategoryOverride error:', error)
+    return { success: false as const, error: error.message }
+  }
+
+  revalidatePath('/dashboard/carta')
+  revalidatePath('/staff/carta')
+  revalidatePath('/carta')
+  return { success: true as const }
+}
+
+export type MenuCategorySortOrderInput = {
+  category_id: string
+  sort_order: number | null
+}
+
+export async function setMenuCategorySortOrders(input: MenuCategorySortOrderInput[]) {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+  const supabase = gate.supabase
+
+  for (const r of input) {
+    if (r.sort_order == null) continue
+    if (!Number.isFinite(r.sort_order) || r.sort_order < 0 || !Number.isInteger(r.sort_order)) {
+      return { success: false as const, error: 'Orden inválido (categorías).' }
+    }
+  }
+
+  for (const r of input) {
+    const { error } = await supabase
+      .from('categories')
+      .update({ sort_order: r.sort_order })
+      .eq('id', r.category_id)
+      .eq('scope', 'menu')
+    if (error) {
+      console.error('setMenuCategorySortOrders error:', error)
+      return { success: false as const, error: error.message }
+    }
+  }
+
+  revalidatePath('/dashboard/carta')
+  revalidatePath('/staff/carta')
+  revalidatePath('/carta')
+  return { success: true as const }
+}
+
+export type MenuItemSortOrderInput = {
+  articulo_id: number
+  sort_order: number | null
+  category_id?: string | null
+}
+
+export async function setMenuItemSortOrders(input: MenuItemSortOrderInput[]) {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+  const supabase = gate.supabase
+
+  for (const r of input) {
+    if (r.sort_order == null) continue
+    if (!Number.isFinite(r.sort_order) || r.sort_order < 0 || !Number.isInteger(r.sort_order)) {
+      return { success: false as const, error: 'Orden inválido (productos).' }
+    }
+  }
+
+  const rows = input.map((r) => {
+    const out: Record<string, unknown> = {
+      articulo_id: r.articulo_id,
+      sort_order: r.sort_order,
+    }
+    if ('category_id' in r) out.category_id = r.category_id ?? null
+    return out
+  })
+
+  const { error } = await supabase
+    .from('digital_menu_overrides')
+    .upsert(rows, { onConflict: 'articulo_id', ignoreDuplicates: false })
+
+  if (error) {
+    console.error('setMenuItemSortOrders error:', error)
+    return { success: false as const, error: error.message }
+  }
+
+  revalidatePath('/dashboard/carta')
+  revalidatePath('/staff/carta')
+  revalidatePath('/carta')
+  return { success: true as const }
+}
+

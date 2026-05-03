@@ -8,6 +8,7 @@ import CartaMappingCreatorClient, {
   type CartaRecipe,
   type CartaTpvArticle,
 } from './CartaMappingCreatorClient'
+import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
 
 export default async function CartaDashboardPage() {
   const supabase = await createClient()
@@ -65,6 +66,16 @@ export default async function CartaDashboardPage() {
           recipes={(recipes ?? []) as unknown as CartaRecipe[]}
           departamentos={(departamentos ?? []) as any[]}
         />
+
+        <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-widest text-[#36606F]">Edición visual (nueva)</p>
+          <p className="mt-1 text-xs text-zinc-600">
+            Editor inline en la misma página (categorías y productos). El editor avanzado por departamento se retirará cuando el nuevo flujo esté completo.
+          </p>
+          <div className="mt-4">
+            <StaffCartaInlineEditor canEdit lang="es" />
+          </div>
+        </div>
 
         <CartaEditorClient
           mappings={(mappings ?? []) as unknown as CartaEditorMappingRow[]}
