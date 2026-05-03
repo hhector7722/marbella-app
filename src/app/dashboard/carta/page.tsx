@@ -24,11 +24,11 @@ export default async function CartaDashboardPage() {
     supabase
       .from('map_tpv_receta')
       .select(
-        'articulo_id, recipe_id, bdp_articulos(id, nombre, departamento_id, bdp_departamentos(nombre)), recipes(id, name, photo_url)'
+        'articulo_id, recipe_id, bdp_articulos(id, nombre, departamento_id), recipes(id, name, photo_url)'
       )
       .limit(5000),
     supabase.from('digital_menu_overrides').select('*').limit(5000),
-    supabase.from('bdp_articulos').select('id, nombre, departamento_id, bdp_departamentos(nombre)').limit(5000),
+    supabase.from('bdp_articulos').select('id, nombre, departamento_id').limit(5000),
     supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
     supabase.from('bdp_departamentos').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
     supabase.from('categories').select('id, name, parent_id, sort_order, scope, slug').eq('scope', 'menu').limit(5000),
@@ -41,8 +41,26 @@ export default async function CartaDashboardPage() {
   if (departamentosError) console.error('Error fetching bdp_departamentos (carta):', departamentosError)
   if (categoriesError) console.error('Error fetching categories (carta):', categoriesError)
 
+  const deptNombreById = new Map<number, string>()
+  for (const d of (departamentos ?? []) as { id: number; nombre: string }[]) {
+    deptNombreById.set(d.id, d.nombre)
+  }
+  const withDeptNombre = <T extends { departamento_id?: number | null }>(row: T): T & { bdp_departamentos?: { nombre: string } | null } => {
+    const did = row.departamento_id
+    if (did == null || !deptNombreById.has(did)) {
+      return { ...row, bdp_departamentos: null }
+    }
+    return { ...row, bdp_departamentos: { nombre: deptNombreById.get(did) ?? '' } }
+  }
+
+  const enrichedMappings = ((mappings ?? []) as any[]).map((m) => ({
+    ...m,
+    bdp_articulos: m.bdp_articulos ? withDeptNombre(m.bdp_articulos) : null,
+  }))
+  const enrichedArticles = ((articles ?? []) as any[]).map((a) => withDeptNombre(a)) as unknown as CartaTpvArticle[]
+
   const mappedIds = new Set(((mappings ?? []) as any[]).map((m) => m.articulo_id))
-  const unmappedArticles = ((articles ?? []) as unknown as CartaTpvArticle[]).filter((a) => !mappedIds.has(a.id))
+  const unmappedArticles = enrichedArticles.filter((a) => !mappedIds.has(a.id))
 
   return (
     <DashboardDetailLayout
@@ -78,7 +96,7 @@ export default async function CartaDashboardPage() {
         </div>
 
         <CartaEditorClient
-          mappings={(mappings ?? []) as unknown as CartaEditorMappingRow[]}
+          mappings={enrichedMappings as unknown as CartaEditorMappingRow[]}
           overrides={(overrides ?? []) as unknown as CartaOverrideRow[]}
           categories={(categories ?? []) as any[]}
         />

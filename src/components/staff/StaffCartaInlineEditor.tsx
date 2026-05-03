@@ -48,7 +48,6 @@ type MapRow = {
     nombre: string
     precio_base: number | string | null
     departamento_id: number | null
-    bdp_departamentos: { nombre: string } | null
   } | null
 }
 
@@ -107,14 +106,15 @@ export function StaffCartaInlineEditor({
   async function load() {
     setLoading(true)
     try {
-      const [mapRes, overridesRes] = await Promise.all([
+      const [mapRes, overridesRes, deptRes] = await Promise.all([
         supabase
           .from('map_tpv_receta')
           .select(
-            'articulo_id, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration), bdp_articulos(id,nombre,precio_base,departamento_id,bdp_departamentos(nombre))'
+            'articulo_id, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration), bdp_articulos(id,nombre,precio_base,departamento_id)'
           )
           .limit(5000),
         supabase.from('digital_menu_overrides').select('*').limit(5000),
+        supabase.from('bdp_departamentos').select('id, nombre').limit(5000),
       ])
 
       let categoriesRes = await supabase
@@ -137,6 +137,12 @@ export function StaffCartaInlineEditor({
 
       if (mapRes.error) throw mapRes.error
       if (overridesRes.error) throw overridesRes.error
+      if (deptRes.error) throw deptRes.error
+
+      const deptNombreById = new Map<number, string>()
+      for (const d of (deptRes.data ?? []) as { id: number; nombre: string }[]) {
+        deptNombreById.set(d.id, d.nombre)
+      }
 
       const cats = ((categoriesRes.data ?? []) as any[]).map((c) => ({
         ...c,
@@ -228,8 +234,9 @@ export function StaffCartaInlineEditor({
 
         const photo_url = ntrim(o?.override_photo_url) ?? ntrim(r.photo_url)
 
-        const dept0 = a.bdp_departamentos
-        const dept = Array.isArray(dept0) ? dept0[0] : dept0
+        const did = a.departamento_id
+        const departamento_nombre =
+          did != null && deptNombreById.has(did) ? (deptNombreById.get(did) ?? null) : null
 
         rows.push({
           articulo_id: m.articulo_id,
@@ -240,7 +247,7 @@ export function StaffCartaInlineEditor({
           carta_nombre_ca: ntrim(o?.override_nombre_ca) ?? ntrim(o?.override_nombre) ?? a.nombre,
           carta_nombre_en: ntrim(o?.override_nombre_en) ?? ntrim(o?.override_nombre) ?? a.nombre,
           departamento_id: a.departamento_id ?? null,
-          departamento_nombre: dept?.nombre ?? null,
+          departamento_nombre,
           category_id: catId,
           category_parent_id,
           category_parent_name,
