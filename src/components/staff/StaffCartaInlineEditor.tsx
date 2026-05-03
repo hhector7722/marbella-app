@@ -75,7 +75,7 @@ export function StaffCartaInlineEditor({
   onLangChange?: (next: CartaLang) => void
 }) {
   const supabase = useMemo(() => createClient(), [])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [, startTransition] = useTransition()
   const [savingArticuloId, setSavingArticuloId] = useState<number | null>(null)
 
@@ -107,7 +107,7 @@ export function StaffCartaInlineEditor({
   async function load() {
     setLoading(true)
     try {
-      const [mapRes, overridesRes, categoriesRes] = await Promise.all([
+      const [mapRes, overridesRes] = await Promise.all([
         supabase
           .from('map_tpv_receta')
           .select(
@@ -115,12 +115,28 @@ export function StaffCartaInlineEditor({
           )
           .limit(5000),
         supabase.from('digital_menu_overrides').select('*').limit(5000),
-        supabase.from('categories').select('id, name, parent_id, sort_order, cover_articulo_id').eq('scope', 'menu').limit(5000),
       ])
+
+      let categoriesRes = await supabase
+        .from('categories')
+        .select('id, name, parent_id, sort_order, cover_articulo_id')
+        .eq('scope', 'menu')
+        .limit(5000)
+      if (categoriesRes.error) {
+        const legacy = await supabase
+          .from('categories')
+          .select('id, name, parent_id, sort_order')
+          .eq('scope', 'menu')
+          .limit(5000)
+        if (legacy.error) throw legacy.error
+        categoriesRes = {
+          ...legacy,
+          data: ((legacy.data ?? []) as any[]).map((c) => ({ ...c, cover_articulo_id: null })),
+        }
+      }
 
       if (mapRes.error) throw mapRes.error
       if (overridesRes.error) throw overridesRes.error
-      if (categoriesRes.error) throw categoriesRes.error
 
       const cats = ((categoriesRes.data ?? []) as any[]).map((c) => ({
         ...c,
