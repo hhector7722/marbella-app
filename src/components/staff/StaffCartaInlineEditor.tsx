@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
-import { upsertMenuOverride } from '@/app/dashboard/carta/actions'
+import { setMenuCategorySortOrders, upsertMenuOverride } from '@/app/dashboard/carta/actions'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import { MenuCategoryEditModal } from '@/components/carta/MenuCategoryEditModal'
 import { MenuItemEditModal } from '@/components/carta/MenuItemEditModal'
@@ -261,6 +261,7 @@ export function StaffCartaInlineEditor({
           descripcion: buildDescripcion(o, r),
           precio: precioRaw != null ? Number(precioRaw) : null,
           photo_url,
+          sort_order: o?.sort_order ?? null,
         })
       }
 
@@ -276,6 +277,51 @@ export function StaffCartaInlineEditor({
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const persistParentCategoryOrder = async (orderedKeys: string[]) => {
+    const uuidOrder = orderedKeys.filter((k) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k)
+    )
+    const input = uuidOrder.map((category_id, i) => ({ category_id, sort_order: (i + 1) * 10 }))
+    const res = await setMenuCategorySortOrders(input)
+    if (!res.success) {
+      toast.error(res.error ?? 'No se pudo guardar el orden de secciones')
+      return
+    }
+    toast.success('Orden de secciones guardado')
+    await load()
+  }
+
+  const persistChildCategoryOrder = async (_parentKey: string, orderedChildKeys: string[]) => {
+    const uuidOrder = orderedChildKeys.filter((k) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k)
+    )
+    const input = uuidOrder.map((category_id, i) => ({ category_id, sort_order: (i + 1) * 10 }))
+    const res = await setMenuCategorySortOrders(input)
+    if (!res.success) {
+      toast.error(res.error ?? 'No se pudo guardar el orden de subcategorías')
+      return
+    }
+    toast.success('Orden de subcategorías guardado')
+    await load()
+  }
+
+  const persistProductOrder = async (_parentKey: string, _subKey: string, orderedArticuloIds: number[]) => {
+    try {
+      for (let i = 0; i < orderedArticuloIds.length; i++) {
+        const articulo_id = orderedArticuloIds[i]!
+        const res = await upsertMenuOverride({ articulo_id, sort_order: i })
+        if (!res.success) {
+          toast.error(res.error ?? 'No se pudo guardar el orden de productos')
+          return
+        }
+      }
+      toast.success('Orden de productos guardado')
+      await load()
+    } catch (e: any) {
+      toast.error(e?.message ?? 'No se pudo guardar el orden de productos')
+    }
+  }
 
   const onToggleVisible = (articulo_id: number) => {
     const row = digitalRows.find((x) => x.articulo_id === articulo_id)
@@ -322,6 +368,9 @@ export function StaffCartaInlineEditor({
         onEditProduct={(id) => setItemModalArticuloId(id)}
         onToggleProductActive={onToggleVisible}
         productToggleBusyId={savingArticuloId}
+        onPersistParentCategoryOrder={persistParentCategoryOrder}
+        onPersistChildCategoryOrder={persistChildCategoryOrder}
+        onPersistProductOrder={persistProductOrder}
       />
 
       <MenuCategoryEditModal
