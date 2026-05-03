@@ -7,6 +7,7 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   closestCorners,
   useSensor,
   useSensors,
@@ -490,7 +491,8 @@ export function MenuAccordion({
     }, [editMode, onPersistProductOrder, clearLpTimer])
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 6, tolerance: 5 } }),
+        useSensor(PointerSensor, { activationConstraint: { distance: 8, tolerance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 12 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
@@ -634,34 +636,47 @@ export function MenuAccordion({
                                 ? clearLpTimer
                                 : undefined
                         }
-                        onPointerLeave={
-                            editMode && onPersistParentCategoryOrder && reorderScope !== 'parents'
-                                ? clearLpTimer
-                                : undefined
-                        }
                     >
-                        <button
-                            type="button"
-                            onClick={() => headerToggle(group.key)}
-                            className="flex min-h-[52px] w-full shrink-0 items-center justify-start gap-2 px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
-                            aria-expanded={isOpen}
-                        >
-                            <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
-                                {group.coverPhotoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
-                                    <img
-                                        src={group.coverPhotoUrl}
-                                        alt=""
-                                        className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
-                                    />
-                                ) : null}
-                                <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
-                                    {group.title}
+                        <div className="flex min-h-[52px] w-full items-stretch">
+                            {editMode && onPersistParentCategoryOrder && !reorderScope ? (
+                                <button
+                                    type="button"
+                                    className="flex min-h-[52px] w-11 shrink-0 touch-manipulation items-center justify-center border-r border-zinc-100 bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12"
+                                    aria-label="Reordenar secciones del menú"
+                                    title="Reordenar secciones (o mantén pulsada la cabecera)"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setOpenKey(null)
+                                        setReorderScope('parents')
+                                    }}
+                                >
+                                    <GripVertical className="h-5 w-5" strokeWidth={2.5} />
+                                </button>
+                            ) : null}
+                            <button
+                                type="button"
+                                onClick={() => headerToggle(group.key)}
+                                className="flex min-h-[52px] min-w-0 flex-1 items-center justify-start gap-2 px-2 py-2.5 text-left active:bg-zinc-50 sm:px-3"
+                                aria-expanded={isOpen}
+                            >
+                                <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
+                                    {group.coverPhotoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
+                                        <img
+                                            src={group.coverPhotoUrl}
+                                            alt=""
+                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
+                                        />
+                                    ) : null}
+                                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
+                                        {group.title}
+                                    </span>
                                 </span>
-                            </span>
+                            </button>
                             {editMode && isUuidLike(group.key) && onEditParentCategory ? (
                                 <span
-                                    className="shrink-0"
+                                    className="flex shrink-0 items-stretch pr-1"
                                     onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
@@ -670,7 +685,7 @@ export function MenuAccordion({
                                     <button
                                         type="button"
                                         onClick={() => onEditParentCategory?.(group.key)}
-                                        className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                        className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center self-center rounded-xl text-[#36606F] active:bg-zinc-100"
                                         aria-label="Editar categoría"
                                         title="Editar categoría"
                                     >
@@ -678,7 +693,7 @@ export function MenuAccordion({
                                     </button>
                                 </span>
                             ) : null}
-                        </button>
+                        </div>
                     </div>
                 )
 
@@ -699,9 +714,24 @@ export function MenuAccordion({
                         {openGroup && insertAfterIndex === idx ? (
                             <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
                                 <div className="px-3 pb-3 pt-3">
+                                    {editMode &&
+                                    onPersistChildCategoryOrder &&
+                                    !reorderScope &&
+                                    openGroup._subList.length > 1 ? (
+                                        <div className="mb-2 flex justify-end">
+                                            <button
+                                                type="button"
+                                                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
+                                                onClick={() => setReorderScope('subs')}
+                                            >
+                                                Reordenar pestañas
+                                            </button>
+                                        </div>
+                                    ) : null}
                                     {openGroup._subList.length > 1 ? (
                                         reorderScope === 'subs' ? (
                                             <SortableContext
+                                                id="carta-subs"
                                                 items={subSortIds}
                                                 strategy={horizontalListSortingStrategy}
                                             >
@@ -764,13 +794,6 @@ export function MenuAccordion({
                                                                     ? clearLpTimer
                                                                     : undefined
                                                             }
-                                                            onPointerLeave={
-                                                                editMode &&
-                                                                onPersistChildCategoryOrder &&
-                                                                !reorderScope
-                                                                    ? clearLpTimer
-                                                                    : undefined
-                                                            }
                                                         >
                                                             <button
                                                                 type="button"
@@ -809,9 +832,24 @@ export function MenuAccordion({
                                                 : openGroup._subList
                                             ).map((sub) => (
                                                 <section key={sub.key} className="space-y-3">
+                                                    {editMode &&
+                                                    onPersistProductOrder &&
+                                                    !reorderScope &&
+                                                    sub.rows.length > 0 ? (
+                                                        <div className="mb-2 flex justify-end">
+                                                            <button
+                                                                type="button"
+                                                                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
+                                                                onClick={() => setReorderScope('products')}
+                                                            >
+                                                                Reordenar platos
+                                                            </button>
+                                                        </div>
+                                                    ) : null}
                                                     {reorderScope === 'products' &&
                                                     sub.key === activeSubKeyForOpen ? (
                                                         <SortableContext
+                                                            id="carta-products"
                                                             items={productSortIds}
                                                             strategy={rectSortingStrategy}
                                                         >
@@ -832,13 +870,6 @@ export function MenuAccordion({
                                                                                     : undefined
                                                                             }
                                                                             onPointerUp={
-                                                                                editMode &&
-                                                                                onPersistProductOrder &&
-                                                                                !reorderScope
-                                                                                    ? clearLpTimer
-                                                                                    : undefined
-                                                                            }
-                                                                            onPointerLeave={
                                                                                 editMode &&
                                                                                 onPersistProductOrder &&
                                                                                 !reorderScope
@@ -880,13 +911,6 @@ export function MenuAccordion({
                                                                             : undefined
                                                                     }
                                                                     onPointerUp={
-                                                                        editMode &&
-                                                                        onPersistProductOrder &&
-                                                                        !reorderScope
-                                                                            ? clearLpTimer
-                                                                            : undefined
-                                                                    }
-                                                                    onPointerLeave={
                                                                         editMode &&
                                                                         onPersistProductOrder &&
                                                                         !reorderScope
@@ -955,11 +979,16 @@ export function MenuAccordion({
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCorners}
+                    autoScroll={false}
                     onDragStart={handleDragStart}
                     onDragEnd={(e) => void handleDragEnd(e)}
                 >
                     {reorderScope === 'parents' ? (
-                        <SortableContext items={parentSortIds} strategy={rectSortingStrategy}>
+                        <SortableContext
+                            id="carta-parents"
+                            items={parentSortIds}
+                            strategy={rectSortingStrategy}
+                        >
                             {gridBlock}
                         </SortableContext>
                     ) : (
