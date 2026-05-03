@@ -227,9 +227,8 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
 
             <div
                 className={cn(
-                    'bg-white border-t border-gray-100 relative z-10',
-                    'grid grid-cols-[auto_repeat(4,minmax(0,1fr))] gap-y-0.5 pr-14 md:pr-16',
-                    showWeekOverrides ? 'min-h-[48px] grid-rows-[1fr_auto]' : 'grid-rows-[auto_auto] py-1'
+                    'bg-white border-t border-gray-100 relative z-10 flex w-full items-center pr-14 md:pr-16',
+                    showWeekOverrides ? 'min-h-[48px]' : 'min-h-8 py-0.5'
                 )}
             >
                 {week.summary.isPaid && (
@@ -239,73 +238,74 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[48px] h-auto z-30 pointer-events-none md:w-[56px]"
                     />
                 )}
-                {/* Fila 1: «SEMANA N» y cifras misma línea base */}
-                {showWeekOverrides ? (
-                    <button
-                        type="button"
-                        onClick={() => setManagerOverridesOpen((o) => !o)}
-                        aria-expanded={managerOverridesOpen}
-                        className="row-start-1 col-start-1 flex h-full min-h-0 min-w-[6.5rem] items-end justify-start self-stretch pl-3 pb-0.5 text-left rounded-none border-0 bg-transparent hover:bg-zinc-50 active:bg-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F] focus-visible:ring-inset"
-                    >
-                        <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                            SEMANA {week.weekNumber}
-                        </span>
-                    </button>
-                ) : (
-                    <div className="row-start-1 col-start-1 flex h-full min-h-0 items-end self-stretch pl-3 pb-0.5">
-                        <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                            SEMANA {week.weekNumber}
+                {/* Bloque único: semana + 4 conceptos (valor + etiqueta); centrado en la altura de la fila */}
+                <div className="grid w-full min-w-0 flex-1 grid-cols-[auto_repeat(4,minmax(0,1fr))] grid-rows-[auto_auto] gap-y-0.5">
+                    {showWeekOverrides ? (
+                        <button
+                            type="button"
+                            onClick={() => setManagerOverridesOpen((o) => !o)}
+                            aria-expanded={managerOverridesOpen}
+                            className="row-start-1 col-start-1 flex min-w-[6.5rem] items-end justify-start self-stretch pl-3 text-left rounded-none border-0 bg-transparent hover:bg-zinc-50 active:bg-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F] focus-visible:ring-inset"
+                        >
+                            <span className="pb-0.5 font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
+                                SEMANA {week.weekNumber}
+                            </span>
+                        </button>
+                    ) : (
+                        <div className="row-start-1 col-start-1 flex items-end self-stretch pl-3">
+                            <span className="pb-0.5 font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
+                                SEMANA {week.weekNumber}
+                            </span>
+                        </div>
+                    )}
+                    <div className="row-start-1 col-start-2 flex items-end justify-center self-stretch">
+                        <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-black tabular-nums">
+                            {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : '\u00a0'}
                         </span>
                     </div>
-                )}
-                <div className="row-start-1 col-start-2 flex h-full min-h-0 items-end justify-center self-stretch pb-0.5">
-                    <span className="text-[11px] md:text-[12px] font-black leading-none text-black tabular-nums">
-                        {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : '\u00a0'}
-                    </span>
-                </div>
-                <div className="row-start-1 col-start-3 flex h-full min-h-0 items-end justify-center self-stretch pb-0.5">
-                    {(() => {
-                        const startBalance = week.summary.startBalance ?? 0;
-                        const hasPending = Math.abs(startBalance) > 0.05;
-                        const weekStartStr = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
-                        const weekStartDate = parseISO(weekStartStr);
-                        const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-                        const isFutureWeek = weekStartDate > currentWeekStart;
-                        const showPending = hasPending && !isFutureWeek;
-                        const colorClass = !showPending ? 'text-transparent' : startBalance >= 0 ? 'text-emerald-600' : 'text-red-600';
-                        const text = showPending ? fmtDecimal(Math.abs(startBalance)) : '\u00a0';
-                        return (
-                            <span className={cn('text-[11px] md:text-[12px] font-black leading-none tabular-nums', colorClass)}>
-                                {text}
-                            </span>
-                        );
-                    })()}
-                </div>
-                <div className="row-start-1 col-start-4 flex h-full min-h-0 items-end justify-center self-stretch pb-0.5">
-                    <span className="text-[11px] md:text-[12px] font-black leading-none text-black tabular-nums">
-                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : '\u00a0'}
-                    </span>
-                </div>
-                <div className="row-start-1 col-start-5 flex h-full min-h-0 items-end justify-center self-stretch pb-0.5">
-                    <span className="text-[11px] md:text-[12px] font-black leading-none text-emerald-600 tabular-nums">
-                        {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
-                            ? fmtMoney(week.summary.estimatedValue)
-                            : '\u00a0'}
-                    </span>
-                </div>
-                {/* Fila 2: solo etiquetas (alineadas bajo cada cifra) */}
-                <div className="row-start-2 col-start-1 shrink-0" aria-hidden />
-                <div className="row-start-2 col-start-2 flex justify-center">
-                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
-                </div>
-                <div className="row-start-2 col-start-3 flex justify-center">
-                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
-                </div>
-                <div className="row-start-2 col-start-4 flex justify-center">
-                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
-                </div>
-                <div className="row-start-2 col-start-5 flex justify-center">
-                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                    <div className="row-start-1 col-start-3 flex items-end justify-center self-stretch">
+                        {(() => {
+                            const startBalance = week.summary.startBalance ?? 0;
+                            const hasPending = Math.abs(startBalance) > 0.05;
+                            const weekStartStr = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
+                            const weekStartDate = parseISO(weekStartStr);
+                            const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+                            const isFutureWeek = weekStartDate > currentWeekStart;
+                            const showPending = hasPending && !isFutureWeek;
+                            const colorClass = !showPending ? 'text-transparent' : startBalance >= 0 ? 'text-emerald-600' : 'text-red-600';
+                            const text = showPending ? fmtDecimal(Math.abs(startBalance)) : '\u00a0';
+                            return (
+                                <span className={cn('pb-0.5 text-[11px] md:text-[12px] font-black leading-none tabular-nums', colorClass)}>
+                                    {text}
+                                </span>
+                            );
+                        })()}
+                    </div>
+                    <div className="row-start-1 col-start-4 flex items-end justify-center self-stretch">
+                        <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-black tabular-nums">
+                            {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : '\u00a0'}
+                        </span>
+                    </div>
+                    <div className="row-start-1 col-start-5 flex items-end justify-center self-stretch">
+                        <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-emerald-600 tabular-nums">
+                            {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
+                                ? fmtMoney(week.summary.estimatedValue)
+                                : '\u00a0'}
+                        </span>
+                    </div>
+                    <div className="row-start-2 col-start-1 shrink-0" aria-hidden />
+                    <div className="row-start-2 col-start-2 flex justify-center">
+                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
+                    </div>
+                    <div className="row-start-2 col-start-3 flex justify-center">
+                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                    </div>
+                    <div className="row-start-2 col-start-4 flex justify-center">
+                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
+                    </div>
+                    <div className="row-start-2 col-start-5 flex justify-center">
+                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                    </div>
                 </div>
             </div>
 
