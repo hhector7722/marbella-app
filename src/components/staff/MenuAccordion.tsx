@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { cn } from '@/lib/utils'
+import { CheckCircle2, Loader2, Pencil } from 'lucide-react'
 import {
     type CartaLang,
     getCartaDisplayName,
@@ -16,6 +17,8 @@ import {
 export type DigitalMenuRow = {
     articulo_id: number
     articulo_nombre: string
+    /** Solo modo edición: si el producto está oculto en carta (`digital_menu_overrides.is_hidden`). */
+    editor_is_hidden?: boolean
     carta_nombre: string
     carta_nombre_es: string | null
     carta_nombre_ca: string | null
@@ -44,20 +47,37 @@ function formatPriceDisplay(precio: number | string | null | undefined): string 
     return `${n.toFixed(2)}€`
 }
 
-function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
+function MenuCard({
+    row,
+    lang,
+    editMode = false,
+    onEditProduct,
+    onToggleProductActive,
+    productToggleBusyId,
+}: {
+    row: DigitalMenuRow
+    lang: CartaLang
+    editMode?: boolean
+    onEditProduct?: (articuloId: number) => void
+    onToggleProductActive?: (articuloId: number) => void
+    productToggleBusyId?: number | null
+}) {
     const [lightboxOpen, setLightboxOpen] = useState(false)
     const priceStr = formatPriceDisplay(row.precio)
     const showPrice = priceStr.trim() !== ''
     const displayName = getCartaDisplayName(row, lang)
+    const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
+    const busy = editMode && productToggleBusyId === row.articulo_id
 
     return (
         <div
             className={cn(
-                'flex h-full flex-col overflow-hidden rounded-2xl bg-white'
+                'flex h-full flex-col overflow-hidden rounded-2xl bg-white',
+                editMode && !isActive && 'opacity-75'
             )}
         >
             <div className="w-full shrink-0 bg-white">
-                <div className="h-14 w-full bg-white sm:h-16">
+                <div className="relative h-14 w-full bg-white sm:h-16">
                     {row.photo_url ? (
                         <button
                             type="button"
@@ -75,10 +95,56 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
                     ) : (
                         <div className="h-full w-full bg-white" />
                     )}
+                    {editMode && onToggleProductActive ? (
+                        <button
+                            type="button"
+                            className="absolute right-1 top-1 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/90 bg-white/95 text-[#36606F] shadow-sm active:bg-zinc-100 sm:right-1.5 sm:top-1.5 sm:min-h-[48px] sm:min-w-[48px]"
+                            aria-label={isActive ? 'Desactivar en carta' : 'Activar en carta'}
+                            title={isActive ? 'Visible en carta' : 'Oculto en carta'}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                onToggleProductActive(row.articulo_id)
+                            }}
+                        >
+                            {busy ? (
+                                <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+                            ) : (
+                                <CheckCircle2
+                                    className={cn('h-6 w-6', isActive ? 'text-emerald-600' : 'text-zinc-400')}
+                                    strokeWidth={2.5}
+                                />
+                            )}
+                        </button>
+                    ) : null}
                 </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-3 pt-1">
+            <div
+                className={cn(
+                    'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-3 pt-1',
+                    editMode && onEditProduct && 'cursor-pointer touch-manipulation active:bg-zinc-50'
+                )}
+                role={editMode && onEditProduct ? 'button' : undefined}
+                tabIndex={editMode && onEditProduct ? 0 : undefined}
+                onClick={
+                    editMode && onEditProduct
+                        ? () => {
+                              onEditProduct(row.articulo_id)
+                          }
+                        : undefined
+                }
+                onKeyDown={
+                    editMode && onEditProduct
+                        ? (e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  onEditProduct(row.articulo_id)
+                              }
+                          }
+                        : undefined
+                }
+            >
                 <p
                     className="line-clamp-3 w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
                     title={displayName}
@@ -109,16 +175,30 @@ function MenuCard({ row, lang }: { row: DigitalMenuRow; lang: CartaLang }) {
     )
 }
 
+function isUuidLike(s: string) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
+}
+
 export function MenuAccordion({
     items,
     lang: controlledLang,
     onLangChange,
     hideLangPicker = false,
+    editMode = false,
+    onEditParentCategory,
+    onEditProduct,
+    onToggleProductActive,
+    productToggleBusyId,
 }: {
     items: DigitalMenuRow[]
     lang?: CartaLang
     onLangChange?: (next: CartaLang) => void
     hideLangPicker?: boolean
+    editMode?: boolean
+    onEditParentCategory?: (parentCategoryId: string) => void
+    onEditProduct?: (articuloId: number) => void
+    onToggleProductActive?: (articuloId: number) => void
+    productToggleBusyId?: number | null
 }) {
     const [internalLang, setInternalLang] = useState<CartaLang>('es')
     const controlled = controlledLang !== undefined && onLangChange !== undefined
@@ -272,10 +352,10 @@ export function MenuAccordion({
                                             return group.key
                                         })
                                     }}
-                                    className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
+                                    className="flex min-h-[52px] w-full shrink-0 items-center justify-start gap-2 px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
                                     aria-expanded={isOpen}
                                 >
-                                    <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
+                                    <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
                                         {group.coverPhotoUrl ? (
                                             // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
                                             <img
@@ -288,6 +368,25 @@ export function MenuAccordion({
                                             {group.title}
                                         </span>
                                     </span>
+                                    {editMode && isUuidLike(group.key) && onEditParentCategory ? (
+                                        <span
+                                            className="shrink-0"
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                            }}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => onEditParentCategory(group.key)}
+                                                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                                aria-label="Editar categoría"
+                                                title="Editar categoría"
+                                            >
+                                                <Pencil className="h-5 w-5" strokeWidth={2.5} />
+                                            </button>
+                                        </span>
+                                    ) : null}
                                 </button>
                             </div>
 
@@ -344,6 +443,10 @@ export function MenuAccordion({
                                                                     key={row.articulo_id}
                                                                     row={row}
                                                                     lang={lang}
+                                                                    editMode={editMode}
+                                                                    onEditProduct={onEditProduct}
+                                                                    onToggleProductActive={onToggleProductActive}
+                                                                    productToggleBusyId={productToggleBusyId}
                                                                 />
                                                             ))}
                                                         </div>

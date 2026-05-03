@@ -57,7 +57,7 @@ export function StaffCartaView({
         </header>
 
         {editing && canEditMenu ? (
-          <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} />
+          <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
         ) : (
           <MenuAccordion items={items} lang={lang} onLangChange={setLang} hideLangPicker />
         )}

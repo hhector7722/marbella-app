@@ -3,29 +3,19 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { CheckCircle2, Loader2, Pencil } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
-import { getCartaDisplayName, tPublicUi } from '@/lib/carta-menu-i18n'
-import { arrayMove } from '@dnd-kit/sortable'
-import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import { SortableContext, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { setMenuCategorySortOrders, setMenuItemSortOrders, upsertMenuOverride } from '@/app/dashboard/carta/actions'
+import { upsertMenuOverride } from '@/app/dashboard/carta/actions'
+import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import { MenuCategoryEditModal } from '@/components/carta/MenuCategoryEditModal'
 import { MenuItemEditModal } from '@/components/carta/MenuItemEditModal'
 
-type MenuItemRow = {
-  articulo_id: number
-  articulo_nombre: string
-  precio: number | string | null
+type CategoryRow = {
+  id: string
+  name: string
+  parent_id: string | null
+  sort_order: number | null
+  cover_articulo_id: number | null
 }
 
 type OverrideRow = {
@@ -37,166 +27,68 @@ type OverrideRow = {
   override_nombre_es: string | null
   override_nombre_ca: string | null
   override_nombre_en: string | null
+  override_descripcion: string | null
+  override_precio: number | string | null
+  override_photo_url: string | null
 }
 
-type CategoryRow = {
-  id: string
-  name: string
-  parent_id: string | null
-  sort_order: number | null
-  cover_articulo_id: number | null
-}
-
-type UiItem = {
+type MapRow = {
   articulo_id: number
-  displayName: string
-  isActive: boolean
-  sort_order: number | null
-  category_id: string | null
-  overrideRow: OverrideRow | null
+  recipe_id: string
+  recipes: {
+    id: string
+    name: string
+    photo_url: string | null
+    sale_price: number | string | null
+    presentation: string | null
+    elaboration: string | null
+  } | null
+  bdp_articulos: {
+    id: number
+    nombre: string
+    precio_base: number | string | null
+    departamento_id: number | null
+    bdp_departamentos: { nombre: string } | null
+  } | null
 }
 
-type UiSubGroup = {
-  key: string
-  title: string
-  sortOrder: number
-  items: UiItem[]
+function ntrim(s: string | null | undefined): string | null {
+  const t = s?.trim()
+  return t ? t : null
 }
 
-type UiParentGroup = {
-  key: string
-  title: string
-  sortOrder: number
-  parentCategoryId: string
-  subs: UiSubGroup[]
+function buildDescripcion(o: OverrideRow | null, r: MapRow['recipes']): string | null {
+  const a = ntrim(o?.override_descripcion)
+  const b = ntrim(r?.presentation ?? null)
+  const c = ntrim(r?.elaboration ?? null)
+  const pick = a ?? b ?? c
+  return pick
 }
 
 export function StaffCartaInlineEditor({
   canEdit,
-  lang,
+  lang = 'es',
+  onLangChange,
 }: {
   canEdit: boolean
-  lang: CartaLang
+  lang?: CartaLang
+  onLangChange?: (next: CartaLang) => void
 }) {
   const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [savingArticuloId, setSavingArticuloId] = useState<number | null>(null)
-  const [savingSort, setSavingSort] = useState(false)
 
-  const [items, setItems] = useState<MenuItemRow[]>([])
-  const [overrides, setOverrides] = useState<OverrideRow[]>([])
+  const [digitalRows, setDigitalRows] = useState<DigitalMenuRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
+  const [itemsForCover, setItemsForCover] = useState<Array<{ articulo_id: number; articulo_nombre: string }>>([])
 
-  const [openParentKey, setOpenParentKey] = useState<string | null>(null)
-  const [selectedSubKeyByParent, setSelectedSubKeyByParent] = useState<Record<string, string>>({})
-  const [itemOrderByContainer, setItemOrderByContainer] = useState<Record<string, number[]>>({})
   const [categoryModalId, setCategoryModalId] = useState<string | null>(null)
   const [itemModalArticuloId, setItemModalArticuloId] = useState<number | null>(null)
-
-  async function load() {
-    setLoading(true)
-    try {
-      const [mappingsRes, overridesRes, categoriesRes] = await Promise.all([
-        supabase
-          .from('map_tpv_receta')
-          .select('articulo_id, bdp_articulos(id, nombre, precio_base)')
-          .limit(5000),
-        supabase
-          .from('digital_menu_overrides')
-          .select(
-            'articulo_id, is_hidden, category_id, sort_order, override_nombre, override_nombre_es, override_nombre_ca, override_nombre_en'
-          )
-          .limit(5000),
-        supabase
-          .from('categories')
-          .select('id, name, parent_id, sort_order, cover_articulo_id')
-          .eq('scope', 'menu')
-          .limit(5000),
-      ])
-
-      if (mappingsRes.error) throw mappingsRes.error
-      if (overridesRes.error) throw overridesRes.error
-      if (categoriesRes.error) throw categoriesRes.error
-
-      const mapRows = (mappingsRes.data ?? []) as any[]
-      setItems(
-        mapRows
-          .map((r) => {
-            const a = r.bdp_articulos
-            if (!a) return null
-            return {
-              articulo_id: r.articulo_id,
-              articulo_nombre: a.nombre,
-              precio: a.precio_base ?? null,
-            } satisfies MenuItemRow
-          })
-          .filter(Boolean) as any
-      )
-      setOverrides((overridesRes.data ?? []) as any)
-      setCategories(
-        (categoriesRes.data ?? []).map((c: any) => ({
-          ...c,
-          cover_articulo_id: c.cover_articulo_id ?? null,
-        })) as any
-      )
-    } catch (e: any) {
-      toast.error(e?.message ?? 'No se pudo cargar el editor de carta')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const overrideByArticulo = useMemo(() => {
-    const m = new Map<number, OverrideRow>()
-    for (const o of overrides) m.set(o.articulo_id, o)
-    return m
-  }, [overrides])
 
   const categoryById = useMemo(() => {
     const m = new Map<string, CategoryRow>()
     for (const c of categories) m.set(c.id, c)
-    return m
-  }, [categories])
-
-  const parents = useMemo(() => {
-    return categories
-      .filter((c) => !c.parent_id)
-      .slice()
-      .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || a.name.localeCompare(b.name))
-  }, [categories])
-
-  const [parentOrder, setParentOrder] = useState<string[]>([])
-  useEffect(() => {
-    setParentOrder((prev) => {
-      const next = parents.map((p) => p.id)
-      if (prev.length === 0) return next
-      // mantener si ya coincide (evita saltos)
-      const same =
-        prev.length === next.length && prev.every((id, idx) => id === next[idx])
-      return same ? prev : next
-    })
-  }, [parents])
-
-  const childrenByParent = useMemo(() => {
-    const m = new Map<string, CategoryRow[]>()
-    for (const c of categories) {
-      if (!c.parent_id) continue
-      const list = m.get(c.parent_id) ?? []
-      list.push(c)
-      m.set(c.parent_id, list)
-    }
-    for (const [k, list] of m) {
-      m.set(
-        k,
-        list.slice().sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || a.name.localeCompare(b.name))
-      )
-    }
     return m
   }, [categories])
 
@@ -212,135 +104,159 @@ export function StaffCartaInlineEditor({
     }
   }, [categoryModalId, categoryById])
 
-  const itemsForCover = useMemo(
-    () => items.map((it) => ({ articulo_id: it.articulo_id, articulo_nombre: it.articulo_nombre })),
-    [items]
-  )
+  async function load() {
+    setLoading(true)
+    try {
+      const [mapRes, overridesRes, categoriesRes] = await Promise.all([
+        supabase
+          .from('map_tpv_receta')
+          .select(
+            'articulo_id, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration), bdp_articulos(id,nombre,precio_base,departamento_id,bdp_departamentos(nombre))'
+          )
+          .limit(5000),
+        supabase.from('digital_menu_overrides').select('*').limit(5000),
+        supabase.from('categories').select('id, name, parent_id, sort_order, cover_articulo_id').eq('scope', 'menu').limit(5000),
+      ])
 
-  const uiItems = useMemo<UiItem[]>(() => {
-    return items.map((it) => {
-      const o = overrideByArticulo.get(it.articulo_id) ?? null
-      const isActive = !(o?.is_hidden ?? false)
-      const rowForName = {
-        carta_nombre: it.articulo_nombre,
-        carta_nombre_es: o?.override_nombre_es ?? null,
-        carta_nombre_ca: o?.override_nombre_ca ?? null,
-        carta_nombre_en: o?.override_nombre_en ?? null,
+      if (mapRes.error) throw mapRes.error
+      if (overridesRes.error) throw overridesRes.error
+      if (categoriesRes.error) throw categoriesRes.error
+
+      const cats = ((categoriesRes.data ?? []) as any[]).map((c) => ({
+        ...c,
+        cover_articulo_id: c.cover_articulo_id ?? null,
+      })) as CategoryRow[]
+      setCategories(cats)
+
+      const catMap = new Map(cats.map((c) => [c.id, c] as const))
+      const overrides = (overridesRes.data ?? []) as OverrideRow[]
+      const ovByArt = new Map<number, OverrideRow>()
+      for (const o of overrides) ovByArt.set(o.articulo_id, o)
+
+      const parents = cats.filter((c) => !c.parent_id)
+      const coverIds = [...new Set(parents.map((p) => p.cover_articulo_id).filter((x): x is number => x != null))]
+      const coverPhotoByArticulo = new Map<number, string | null>()
+      if (coverIds.length) {
+        const { data: covMaps, error: covErr } = await supabase
+          .from('map_tpv_receta')
+          .select('articulo_id, recipes(photo_url)')
+          .in('articulo_id', coverIds)
+        if (covErr) throw covErr
+        const { data: covOvs, error: covOvsErr } = await supabase
+          .from('digital_menu_overrides')
+          .select('articulo_id, override_photo_url')
+          .in('articulo_id', coverIds)
+        if (covOvsErr) throw covOvsErr
+        const ovPhoto = new Map<number, string | null>()
+        for (const r of (covOvs ?? []) as any[]) {
+          ovPhoto.set(r.articulo_id, ntrim(r.override_photo_url))
+        }
+        for (const r of (covMaps ?? []) as any[]) {
+          const rec0 = r.recipes
+          const rec = Array.isArray(rec0) ? rec0[0] : rec0
+          const ph = ntrim(rec?.photo_url ?? null)
+          const ovr = ovPhoto.get(r.articulo_id) ?? null
+          coverPhotoByArticulo.set(r.articulo_id, ovr ?? ph)
+        }
       }
-      return {
-        articulo_id: it.articulo_id,
-        displayName: getCartaDisplayName(rowForName, lang).trim() || it.articulo_nombre,
-        isActive,
-        sort_order: o?.sort_order ?? null,
-        category_id: o?.category_id ?? null,
-        overrideRow: o,
+
+      const parentCoverUrl = new Map<string, string | null>()
+      for (const p of parents) {
+        if (!p.cover_articulo_id) {
+          parentCoverUrl.set(p.id, null)
+          continue
+        }
+        parentCoverUrl.set(p.id, coverPhotoByArticulo.get(p.cover_articulo_id) ?? null)
       }
-    })
-  }, [items, overrideByArticulo, lang])
 
-  const grouped = useMemo(() => {
-    const parentGroups = new Map<string, UiParentGroup>()
+      const mapRows = (mapRes.data ?? []) as unknown as MapRow[]
+      const rows: DigitalMenuRow[] = []
 
-    for (const it of uiItems) {
-      const catId = it.category_id
-      const cat = catId ? categoryById.get(catId) ?? null : null
-      const parentId = cat ? (cat.parent_id ?? cat.id) : null
-      const childId = cat ? (cat.parent_id ? cat.id : null) : null
+      const coverOptions = mapRows
+        .map((r) => {
+          const a = r.bdp_articulos
+          if (!a) return null
+          return { articulo_id: r.articulo_id, articulo_nombre: a.nombre }
+        })
+        .filter(Boolean) as Array<{ articulo_id: number; articulo_nombre: string }>
+      setItemsForCover(coverOptions)
 
-      if (!parentId) continue
+      for (const m of mapRows) {
+        const a0 = m.bdp_articulos
+        const r0 = m.recipes
+        const a = Array.isArray(a0) ? a0[0] : a0
+        const r = Array.isArray(r0) ? r0[0] : r0
+        if (!a || !r) continue
+        const o = ovByArt.get(m.articulo_id) ?? null
+        const catId = o?.category_id ?? null
+        const c = catId ? catMap.get(catId) ?? null : null
+        const cp = c?.parent_id ? catMap.get(c.parent_id) ?? null : null
 
-      const parentCat = categoryById.get(parentId)
-      if (!parentCat) continue
+        const category_parent_id = c ? (c.parent_id ? cp?.id ?? null : c.id) : null
+        const category_parent_name = c ? (c.parent_id ? cp?.name ?? null : c.name) : null
+        const category_parent_sort_order = c ? (c.parent_id ? cp?.sort_order ?? null : c.sort_order) : null
+        const category_child_id = c?.parent_id ? c.id : null
+        const category_child_name = c?.parent_id ? c.name : null
+        const category_child_sort_order = c?.parent_id ? c.sort_order : null
 
-      const parentKey = parentId
-      const g =
-        parentGroups.get(parentKey) ??
-        ({
-          key: parentKey,
-          title: parentCat.name,
-          sortOrder: parentCat.sort_order ?? 9999,
-          parentCategoryId: parentId,
-          subs: [],
-        } satisfies UiParentGroup)
+        const parentForCover = category_parent_id
+        const category_parent_cover_photo_url =
+          parentForCover != null ? parentCoverUrl.get(parentForCover) ?? null : null
 
-      const subKey = childId ?? '__no_child__'
-      const subTitle = childId ? categoryById.get(childId)?.name ?? '' : ''
-      const subSort = childId ? categoryById.get(childId)?.sort_order ?? 9999 : 0
-      let sg = g.subs.find((s) => s.key === subKey)
-      if (!sg) {
-        sg = { key: subKey, title: subTitle, sortOrder: subSort, items: [] }
-        g.subs.push(sg)
+        const precioRaw =
+          o?.override_precio != null && String(o.override_precio).trim() !== ''
+            ? o.override_precio
+            : a.precio_base != null && String(a.precio_base).trim() !== ''
+              ? a.precio_base
+              : r.sale_price
+
+        const photo_url = ntrim(o?.override_photo_url) ?? ntrim(r.photo_url)
+
+        const dept0 = a.bdp_departamentos
+        const dept = Array.isArray(dept0) ? dept0[0] : dept0
+
+        rows.push({
+          articulo_id: m.articulo_id,
+          articulo_nombre: a.nombre,
+          editor_is_hidden: o?.is_hidden ?? false,
+          carta_nombre: ntrim(o?.override_nombre) ?? a.nombre,
+          carta_nombre_es: ntrim(o?.override_nombre_es) ?? ntrim(o?.override_nombre) ?? a.nombre,
+          carta_nombre_ca: ntrim(o?.override_nombre_ca) ?? ntrim(o?.override_nombre) ?? a.nombre,
+          carta_nombre_en: ntrim(o?.override_nombre_en) ?? ntrim(o?.override_nombre) ?? a.nombre,
+          departamento_id: a.departamento_id ?? null,
+          departamento_nombre: dept?.nombre ?? null,
+          category_id: catId,
+          category_parent_id,
+          category_parent_name,
+          category_parent_sort_order,
+          category_parent_cover_photo_url,
+          category_child_id,
+          category_child_name,
+          category_child_sort_order,
+          recipe_id: r.id,
+          recipe_name: r.name,
+          descripcion: buildDescripcion(o, r),
+          precio: precioRaw != null ? Number(precioRaw) : null,
+          photo_url,
+        })
       }
-      sg.items.push(it)
 
-      parentGroups.set(parentKey, g)
+      setDigitalRows(rows)
+    } catch (e: any) {
+      toast.error(e?.message ?? 'No se pudo cargar el editor de carta')
+    } finally {
+      setLoading(false)
     }
-
-    const result = Array.from(parentGroups.values())
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }))
-      .map((g) => {
-        const subsSorted = g.subs
-          .slice()
-          .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999) || a.title.localeCompare(b.title))
-          .map((s) => ({
-            ...s,
-            items: s.items
-              .slice()
-              .sort((x, y) => (x.sort_order ?? 9999) - (y.sort_order ?? 9999) || x.displayName.localeCompare(y.displayName)),
-          }))
-        return { ...g, subs: subsSorted }
-      })
-
-    return result
-  }, [uiItems, categoryById])
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { delay: 220, tolerance: 6 },
-    })
-  )
-
-  const orderedParents = useMemo(() => {
-    const byId = new Map(parents.map((p) => [p.id, p] as const))
-    return parentOrder.map((id) => byId.get(id)).filter(Boolean) as CategoryRow[]
-  }, [parents, parentOrder])
-
-  const onDragEndParent = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over) return
-    const activeId = String(active.id)
-    const overId = String(over.id)
-    if (activeId === overId) return
-    setParentOrder((prev) => {
-      const oldIndex = prev.indexOf(activeId)
-      const newIndex = prev.indexOf(overId)
-      if (oldIndex < 0 || newIndex < 0) return prev
-      const next = arrayMove(prev, oldIndex, newIndex)
-
-      startTransition(async () => {
-        setSavingSort(true)
-        const payload = next.map((category_id, idx) => ({ category_id, sort_order: (idx + 1) * 10 }))
-        const res = await setMenuCategorySortOrders(payload)
-        setSavingSort(false)
-        if (!res.success) toast.error(res.error ?? 'No se pudo guardar el orden de categorías')
-        else toast.success('Orden guardado')
-        await load()
-      })
-
-      return next
-    })
   }
 
-  const uncategorized = useMemo(() => {
-    return uiItems
-      .filter((it) => !it.category_id)
-      .slice()
-      .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || a.displayName.localeCompare(b.displayName))
-  }, [uiItems])
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onToggleVisible = (articulo_id: number) => {
-    const current = overrideByArticulo.get(articulo_id)
-    const nextHidden = !(current?.is_hidden ?? false)
+    const row = digitalRows.find((x) => x.articulo_id === articulo_id)
+    const nextHidden = !(row?.editor_is_hidden ?? false)
     startTransition(async () => {
       setSavingArticuloId(articulo_id)
       try {
@@ -354,178 +270,6 @@ export function StaffCartaInlineEditor({
         setSavingArticuloId(null)
       }
     })
-  }
-
-  function SortableProductCard({
-    item,
-    onPress,
-  }: {
-    item: UiItem
-    onPress: () => void
-  }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-      id: String(item.articulo_id),
-    })
-
-    return (
-      <button
-        ref={setNodeRef}
-        style={{ transform: CSS.Transform.toString(transform), transition }}
-        type="button"
-        onClick={onPress}
-        className={cn(
-          'flex min-h-[64px] flex-col items-stretch justify-between overflow-hidden rounded-2xl border border-zinc-100 bg-white px-2 py-2 text-left shadow-sm active:bg-zinc-50',
-          isDragging && 'opacity-80'
-        )}
-      >
-        <div className="flex items-start gap-2">
-          <span
-            className={cn(
-              'mt-0.5 inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl border',
-              item.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-zinc-200 bg-zinc-50 text-zinc-500'
-            )}
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onToggleVisible(item.articulo_id)
-            }}
-            role="button"
-            aria-label={item.isActive ? 'Desactivar producto' : 'Activar producto'}
-            title={item.isActive ? 'Activo' : 'Inactivo'}
-          >
-            {savingArticuloId === item.articulo_id && isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
-            )}
-          </span>
-
-          <div className="min-w-0 flex-1">
-            <p className={cn('line-clamp-3 text-[11px] font-bold leading-tight', !item.isActive && 'text-zinc-400')}>
-              {item.displayName}
-            </p>
-            <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-[#36606F]/70">#{item.articulo_id}</p>
-          </div>
-
-          <span className="shrink-0">
-            <span
-              {...attributes}
-              {...listeners}
-              className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white text-[#36606F] active:bg-zinc-50"
-              aria-label="Mantén pulsado y arrastra para reordenar"
-              title="Arrastrar"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-            >
-              <span className="text-lg font-black leading-none">≡</span>
-            </span>
-          </span>
-        </div>
-      </button>
-    )
-  }
-
-  const onDragEndItems = (containerId: string, itemsInContainer: UiItem[]) => (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over) return
-    const activeId = Number(active.id)
-    const overId = Number(over.id)
-    if (!Number.isFinite(activeId) || !Number.isFinite(overId)) return
-    if (activeId === overId) return
-
-    setItemOrderByContainer((prev) => {
-      const current = prev[containerId] ?? itemsInContainer.map((x) => x.articulo_id)
-      const oldIndex = current.indexOf(activeId)
-      const newIndex = current.indexOf(overId)
-      if (oldIndex < 0 || newIndex < 0) return prev
-      const nextOrder = arrayMove(current, oldIndex, newIndex)
-
-      startTransition(async () => {
-        setSavingSort(true)
-        const payload = nextOrder.map((articulo_id, idx) => {
-          const it = itemsInContainer.find((x) => x.articulo_id === articulo_id)
-          return {
-            articulo_id,
-            sort_order: (idx + 1) * 10,
-            category_id: it?.category_id ?? null,
-          }
-        })
-        const res = await setMenuItemSortOrders(payload)
-        setSavingSort(false)
-        if (!res.success) toast.error(res.error ?? 'No se pudo guardar el orden de productos')
-        else toast.success('Orden guardado')
-        await load()
-      })
-
-      return { ...prev, [containerId]: nextOrder }
-    })
-  }
-
-  function SortableParentTile({
-    category,
-    isOpen,
-    hasAny,
-    onToggleOpen,
-  }: {
-    category: CategoryRow
-    isOpen: boolean
-    hasAny: boolean
-    onToggleOpen: () => void
-  }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-      id: category.id,
-    })
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={{ transform: CSS.Transform.toString(transform), transition }}
-        className={cn(isDragging && 'opacity-80')}
-      >
-        <div
-          className={cn(
-            'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
-            isOpen ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20' : 'border-zinc-200/60',
-            !hasAny && 'opacity-70'
-          )}
-        >
-          <button
-            type="button"
-            onClick={onToggleOpen}
-            className="flex min-h-[52px] w-full items-center justify-start gap-2 px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
-            aria-expanded={isOpen}
-          >
-            <span className="min-w-0 flex-1 text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
-              {category.name}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sr-only"
-            {...attributes}
-            {...listeners}
-            aria-label="Reordenar categoría"
-          />
-
-          {/* Handle táctil: no colapsa, 48px */}
-          <div className="flex justify-end px-3 pb-2">
-            <button
-              type="button"
-              {...attributes}
-              {...listeners}
-              className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white text-[#36606F] active:bg-zinc-50"
-              aria-label="Mantén pulsado y arrastra para reordenar"
-              title="Arrastrar"
-            >
-              <span className="text-lg font-black leading-none">≡</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   if (!canEdit) {
@@ -545,152 +289,17 @@ export function StaffCartaInlineEditor({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm sm:p-4">
-        <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Edición de carta</p>
-        <p className="mt-1 text-xs text-zinc-600">
-          Toca el tick para activar/desactivar. Toca una categoría para ver sus productos.
-        </p>
-      </div>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] font-black uppercase tracking-widest text-white/90">Categorías</p>
-          {savingSort ? (
-            <span className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-white/10 px-3 text-xs font-black uppercase tracking-widest text-white">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Guardando…
-            </span>
-          ) : null}
-        </div>
-
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEndParent}>
-          <SortableContext items={orderedParents.map((p) => p.id)}>
-            <div className="grid grid-cols-2 gap-2 sm:gap-4">
-              {orderedParents.map((p) => {
-          const isOpen = openParentKey === p.id
-          const g = grouped.find((x) => x.key === p.id) ?? null
-          const hasAny = g != null
-          return (
-            <div key={p.id} className="contents">
-                <SortableParentTile
-                  category={p}
-                  isOpen={isOpen}
-                  hasAny={hasAny}
-                  onToggleOpen={() => {
-                    setOpenParentKey((cur) => (cur === p.id ? null : p.id))
-                    setSelectedSubKeyByParent((prev) => {
-                      const next = { ...prev }
-                      delete next[p.id]
-                      return next
-                    })
-                  }}
-                />
-
-              {isOpen ? (
-                <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
-                  <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">{p.name}</p>
-                    <button
-                      type="button"
-                      className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-zinc-200 bg-white text-[#36606F] active:bg-zinc-50"
-                      onClick={() => setCategoryModalId(p.id)}
-                      aria-label="Editar categoría"
-                      title="Editar categoría"
-                    >
-                      <Pencil className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                  </div>
-
-                  <div className="px-3 pb-4">
-                    {g && g.subs.length > 1 ? (
-                      <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
-                        {g.subs.map((s) => {
-                          const sel = selectedSubKeyByParent[p.id]
-                          const isActive = sel ? sel === s.key : s.key !== '__no_child__'
-                          return (
-                            <button
-                              key={s.key}
-                              type="button"
-                              onClick={() =>
-                                setSelectedSubKeyByParent((prev) => ({
-                                  ...prev,
-                                  [p.id]: s.key,
-                                }))
-                              }
-                              className={cn(
-                                'flex min-h-[48px] min-w-0 flex-1 basis-0 items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
-                                isActive ? 'border-[#36606F] bg-white text-[#36606F]' : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
-                              )}
-                            >
-                              <span className="line-clamp-2 min-w-0">{s.title || tPublicUi(lang).uncategorized}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ) : null}
-
-                    {(() => {
-                      const subKey =
-                        g && g.subs.length > 1 ? selectedSubKeyByParent[p.id] : g?.subs?.[0]?.key
-                      const containerId = `${p.id}:${subKey ?? '__none__'}`
-                      const itemsInContainer = g
-                        ? (g.subs.length > 1 ? g.subs.filter((s) => s.key === subKey) : g.subs).flatMap((s) => s.items)
-                        : []
-                      const order = itemOrderByContainer[containerId]
-                      const byId = new Map(itemsInContainer.map((x) => [x.articulo_id, x] as const))
-                      const ordered =
-                        order && order.length
-                          ? order.map((id) => byId.get(id)).filter(Boolean) as UiItem[]
-                          : itemsInContainer
-
-                      return (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEndItems(containerId, ordered)}>
-                          <SortableContext items={ordered.map((x) => String(x.articulo_id))}>
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                              {ordered.map((it) => (
-                                <SortableProductCard
-                                  key={it.articulo_id}
-                                  item={it}
-                                  onPress={() => setItemModalArticuloId(it.articulo_id)}
-                                />
-                              ))}
-                            </div>
-                          </SortableContext>
-                        </DndContext>
-                      )
-                    })()}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )
-              })}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </section>
-
-      <section className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm sm:p-4">
-        <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">{tPublicUi(lang).uncategorized}</p>
-        {uncategorized.length === 0 ? (
-          <p className="mt-2 text-xs text-zinc-500">No hay productos sin categoría.</p>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEndItems('uncat', uncategorized)}>
-            <SortableContext items={uncategorized.map((x) => String(x.articulo_id))}>
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                {uncategorized.map((it) => (
-                  <SortableProductCard
-                    key={it.articulo_id}
-                    item={it}
-                    onPress={() => setItemModalArticuloId(it.articulo_id)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        )}
-      </section>
+    <>
+      <MenuAccordion
+        items={digitalRows}
+        {...(onLangChange ? { lang, onLangChange } : {})}
+        hideLangPicker
+        editMode
+        onEditParentCategory={(id) => setCategoryModalId(id)}
+        onEditProduct={(id) => setItemModalArticuloId(id)}
+        onToggleProductActive={onToggleVisible}
+        productToggleBusyId={savingArticuloId}
+      />
 
       <MenuCategoryEditModal
         open={categoryForModal != null}
@@ -716,7 +325,6 @@ export function StaffCartaInlineEditor({
           sort_order: c.sort_order,
         }))}
       />
-    </div>
+    </>
   )
 }
-

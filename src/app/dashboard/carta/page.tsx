@@ -73,7 +73,7 @@ export default async function CartaDashboardPage() {
             Editor inline en la misma página (categorías y productos). El editor avanzado por departamento se retirará cuando el nuevo flujo esté completo.
           </p>
           <div className="mt-4">
-            <StaffCartaInlineEditor canEdit lang="es" />
+            <StaffCartaInlineEditor canEdit />
           </div>
         </div>
 
