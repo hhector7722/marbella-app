@@ -72,6 +72,7 @@ interface WeekCardProps {
 }
 
 export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showWeekOverrides, userId, onApplyWeekOverrides }: WeekCardProps) {
+    const [managerOverridesOpen, setManagerOverridesOpen] = useState(false);
     const [localContracted, setLocalContracted] = useState<string>(
         week.summary.limitHours !== undefined && week.summary.limitHours !== null 
             ? String(week.summary.limitHours) 
@@ -88,6 +89,11 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 : ""
         );
     }, [week.summary.preferStock, week.summary.limitHours]);
+
+    const weekStartKey = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
+    React.useEffect(() => {
+        setManagerOverridesOpen(false);
+    }, [weekStartKey, week.weekNumber, showWeekOverrides, userId]);
 
 
     const handleApplyOverrides = async () => {
@@ -219,7 +225,12 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 })}
             </div>
 
-            <div className="bg-white border-t border-gray-100 flex items-center h-8 relative z-10">
+            <div
+                className={cn(
+                    'bg-white border-t border-gray-100 flex items-center relative z-10',
+                    showWeekOverrides ? 'min-h-[48px]' : 'h-8'
+                )}
+            >
                 {week.summary.isPaid && (
                     <img
                         src="/sello/pagado.png"
@@ -227,12 +238,25 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[48px] h-auto z-30 pointer-events-none md:w-[56px]"
                     />
                 )}
-                <div className="w-24 pl-3 shrink-0 flex items-center h-full">
-                    <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                        SEMANA {week.weekNumber}
-                    </span>
-                </div>
-                <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-14 md:pr-16">
+                {showWeekOverrides ? (
+                    <button
+                        type="button"
+                        onClick={() => setManagerOverridesOpen((o) => !o)}
+                        aria-expanded={managerOverridesOpen}
+                        className="w-24 min-w-[6.5rem] pl-3 shrink-0 flex items-center justify-start min-h-[48px] h-full text-left rounded-none border-0 bg-transparent hover:bg-zinc-50 active:bg-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F] focus-visible:ring-inset"
+                    >
+                        <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
+                            SEMANA {week.weekNumber}
+                        </span>
+                    </button>
+                ) : (
+                    <div className="w-24 pl-3 shrink-0 flex items-center h-full">
+                        <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
+                            SEMANA {week.weekNumber}
+                        </span>
+                    </div>
+                )}
+                <div className="flex-1 grid grid-cols-4 h-full min-h-[48px] relative z-20 pr-14 md:pr-16">
                     <div className="flex flex-col items-center justify-between h-full py-1.5">
                         <span className="text-[9px] font-black leading-none text-black block">
                             {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : " "}
@@ -275,8 +299,8 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 </div>
             </div>
 
-            {showWeekOverrides && userId && onApplyWeekOverrides && (
-                <div className="bg-zinc-50 border-t border-gray-100 flex flex-wrap items-center gap-2 px-3 py-2">
+            {showWeekOverrides && managerOverridesOpen && userId && onApplyWeekOverrides && (
+                <div className="bg-zinc-50 border-t border-gray-100 flex flex-wrap items-center gap-2 px-3 py-2 shrink-0">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Overtime</span>
                         <div className="flex bg-zinc-200 p-0.5 rounded-lg">
