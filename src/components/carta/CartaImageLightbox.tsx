@@ -28,7 +28,7 @@ export function CartaImageLightbox({
       aria-label="Imagen ampliada"
     >
       <div
-        className="flex max-h-[min(92vh,920px)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="flex max-h-[min(92vh,920px)] w-full max-w-[calc((min(100vw,42rem)-5.5rem)/2)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-[calc((min(100vw,42rem)-6rem)/2)] md:max-w-[calc((min(100vw,42rem)-5rem)/2)]"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="relative flex min-h-[52px] shrink-0 items-center justify-center bg-[#36606F] px-12 py-3 text-white md:min-h-[56px] md:px-14">
@@ -53,7 +53,7 @@ export function CartaImageLightbox({
           <img
             src={src}
             alt={alt}
-            className="max-h-[min(72vh,780px)] w-auto max-w-full border-0 object-contain p-0 outline-none ring-0"
+            className="max-h-[min(58vh,520px)] w-auto max-w-full border-0 object-contain p-0 outline-none ring-0 sm:max-h-[min(62vh,560px)]"
           />
         </div>
       </div>
