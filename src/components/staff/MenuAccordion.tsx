@@ -312,7 +312,7 @@ export function MenuAccordion({
                                                             className={cn(
                                                                 'flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
                                                                 isActive
-                                                                    ? 'border-[#36606F] bg-[#36606F]/10 text-[#36606F]'
+                                                                    ? 'border-[#36606F] bg-white text-[#36606F]'
                                                                     : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
                                                             )}
                                                         >
