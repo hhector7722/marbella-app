@@ -1,27 +1,6 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core'
-import {
-    arrayMove,
-    horizontalListSortingStrategy,
-    rectSortingStrategy,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    useSortable,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { cn } from '@/lib/utils'
@@ -61,6 +40,110 @@ export type DigitalMenuRow = {
     photo_url: string | null
     /** `digital_menu_overrides.sort_order` (orden dentro de la subcategoría en carta). */
     sort_order?: number | null
+}
+
+type GroupedSub = { key: string; title: string; sortOrder: number; rows: DigitalMenuRow[] }
+type GroupedGroup = {
+    key: string
+    title: string
+    sortOrder: number
+    coverPhotoUrl: string | null
+    _subList: GroupedSub[]
+}
+
+type ReorderScope = 'parents' | 'subs' | 'products' | null
+
+function arrayMove<T>(arr: T[], from: number, to: number): T[] {
+    if (from < 0 || to < 0 || from >= arr.length || to >= arr.length) return [...arr]
+    const n = [...arr]
+    const [item] = n.splice(from, 1)
+    n.splice(to, 0, item as T)
+    return n
+}
+
+function orderGroupsByKeys(groups: GroupedGroup[], keys: string[]): GroupedGroup[] {
+    const m = new Map(groups.map((g) => [g.key, g] as const))
+    const out: GroupedGroup[] = []
+    const seen = new Set<string>()
+    for (const k of keys) {
+        const g = m.get(k)
+        if (g) {
+            out.push(g)
+            seen.add(k)
+        }
+    }
+    for (const g of groups) {
+        if (!seen.has(g.key)) out.push(g)
+    }
+    return out
+}
+
+function orderSubListByKeys(subs: GroupedSub[], keys: string[]): GroupedSub[] {
+    const m = new Map(subs.map((s) => [s.key, s] as const))
+    const out: GroupedSub[] = []
+    const seen = new Set<string>()
+    for (const k of keys) {
+        const s = m.get(k)
+        if (s) {
+            out.push({ ...s, rows: [...s.rows] })
+            seen.add(k)
+        }
+    }
+    for (const s of subs) {
+        if (!seen.has(s.key)) out.push({ ...s, rows: [...s.rows] })
+    }
+    return out
+}
+
+function orderRowsByArticuloIds(rows: DigitalMenuRow[], ids: number[]): DigitalMenuRow[] {
+    const m = new Map(rows.map((r) => [r.articulo_id, r] as const))
+    const out: DigitalMenuRow[] = []
+    const seen = new Set<number>()
+    for (const id of ids) {
+        const r = m.get(id)
+        if (r) {
+            out.push(r)
+            seen.add(id)
+        }
+    }
+    for (const r of rows) {
+        if (!seen.has(r.articulo_id)) out.push(r)
+    }
+    return out
+}
+
+function applyReorderDrafts(
+    base: GroupedGroup[],
+    scope: ReorderScope,
+    openKey: string | null,
+    activeSubKey: string | null,
+    parentKeysDraft: string[] | null,
+    subKeysDraft: string[] | null,
+    productIdsDraft: number[] | null
+): GroupedGroup[] {
+    if (!scope) return base
+    if (scope === 'parents' && parentKeysDraft?.length) {
+        return orderGroupsByKeys(base, parentKeysDraft)
+    }
+    if (scope === 'subs' && openKey && subKeysDraft?.length) {
+        return base.map((g) => {
+            if (g.key !== openKey) return g
+            return { ...g, _subList: orderSubListByKeys(g._subList, subKeysDraft) }
+        })
+    }
+    if (scope === 'products' && openKey && activeSubKey && productIdsDraft?.length) {
+        return base.map((g) => {
+            if (g.key !== openKey) return g
+            return {
+                ...g,
+                _subList: g._subList.map((s) => {
+                    if (s.key !== activeSubKey) return s
+                    return { ...s, rows: orderRowsByArticuloIds(s.rows, productIdsDraft) }
+                }),
+            }
+        })
+    }
+    return base
 }
 
 function formatPriceDisplay(precio: number | string | null | undefined): string {
@@ -201,132 +284,6 @@ function MenuCard({
     )
 }
 
-const LONG_PRESS_MS = 520
-
-type ReorderScope = 'parents' | 'subs' | 'products' | null
-
-function SortableParentCard({
-    id,
-    reorderActive,
-    disabled,
-    isOpen,
-    children,
-}: {
-    id: string
-    reorderActive: boolean
-    disabled: boolean
-    isOpen: boolean
-    children: ReactNode
-}) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id,
-        disabled: !reorderActive || disabled,
-    })
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.88 : 1,
-    }
-    const showHandle = reorderActive && !disabled
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className={cn(
-                'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
-                isOpen
-                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                    : 'border-zinc-200/60',
-                showHandle && 'relative z-10 ring-2 ring-amber-300/70'
-            )}
-        >
-            <div className="flex min-h-[52px] w-full items-stretch">
-                {showHandle ? (
-                    <button
-                        type="button"
-                        className="flex w-11 shrink-0 touch-none cursor-grab touch-manipulation items-center justify-center border-r border-zinc-100 bg-zinc-50/90 text-[#36606F] active:cursor-grabbing active:bg-zinc-100 sm:w-12"
-                        aria-label="Arrastrar para reordenar sección"
-                        {...listeners}
-                        {...attributes}
-                    >
-                        <GripVertical className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                ) : null}
-                <div className={cn('flex min-w-0 flex-1 items-stretch', showHandle && 'touch-none')}>{children}</div>
-            </div>
-        </div>
-    )
-}
-
-function SortableSubTab({
-    id,
-    reorderActive,
-    disabled,
-    children,
-}: {
-    id: string
-    reorderActive: boolean
-    disabled: boolean
-    children: ReactNode
-}) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id,
-        disabled: !reorderActive || disabled,
-    })
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.88 : 1,
-    }
-    const showHandle = reorderActive && !disabled
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className={cn('flex min-w-0 flex-1 basis-0 flex-col', showHandle && 'touch-none')}
-        >
-            {showHandle ? (
-                <button
-                    type="button"
-                    className="mb-1 flex min-h-[40px] w-full shrink-0 touch-none cursor-grab touch-manipulation items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-[10px] font-black uppercase text-zinc-600 active:cursor-grabbing"
-                    {...listeners}
-                    {...attributes}
-                >
-                    Arrastrar
-                </button>
-            ) : null}
-            <div className="min-h-0 min-w-0 flex-1">{children}</div>
-        </div>
-    )
-}
-
-function SortableProductShell({ id, reorderActive, children }: { id: string; reorderActive: boolean; children: ReactNode }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id,
-        disabled: !reorderActive,
-    })
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.88 : 1,
-    }
-    return (
-        <div ref={setNodeRef} style={style} className={cn('flex h-full flex-col gap-1', reorderActive && 'touch-none')}>
-            {reorderActive ? (
-                <button
-                    type="button"
-                    className="flex min-h-[36px] w-full shrink-0 touch-none cursor-grab touch-manipulation items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-[9px] font-black uppercase text-zinc-600 active:cursor-grabbing"
-                    {...listeners}
-                    {...attributes}
-                >
-                    ⇅
-                </button>
-            ) : null}
-            <div className="min-h-0 flex-1">{children}</div>
-        </div>
-    )
-}
-
 function isUuidLike(s: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
 }
@@ -354,9 +311,9 @@ export function MenuAccordion({
     onEditProduct?: (articuloId: number) => void
     onToggleProductActive?: (articuloId: number) => void
     productToggleBusyId?: number | null
-    onPersistParentCategoryOrder?: (orderedParentKeys: string[]) => void | Promise<void>
-    onPersistChildCategoryOrder?: (parentKey: string, orderedChildKeys: string[]) => void | Promise<void>
-    onPersistProductOrder?: (parentKey: string, subKey: string, orderedArticuloIds: number[]) => void | Promise<void>
+    onPersistParentCategoryOrder?: (orderedParentKeys: string[]) => boolean | Promise<boolean>
+    onPersistChildCategoryOrder?: (parentKey: string, orderedChildKeys: string[]) => boolean | Promise<boolean>
+    onPersistProductOrder?: (parentKey: string, subKey: string, orderedArticuloIds: number[]) => boolean | Promise<boolean>
 }) {
     const [internalLang, setInternalLang] = useState<CartaLang>('es')
     const controlled = controlledLang !== undefined && onLangChange !== undefined
@@ -438,45 +395,58 @@ export function MenuAccordion({
             }))
         }
 
-        return groupList as Array<
-            Group & {
-                _subList: Array<{ key: string; title: string; sortOrder: number; rows: DigitalMenuRow[] }>
-            }
-        >
+        return groupList as unknown as GroupedGroup[]
     }, [items, lang])
+
+    const groupedRef = useRef<GroupedGroup[]>([])
+    groupedRef.current = grouped as GroupedGroup[]
 
     const [openKey, setOpenKey] = useState<string | null>(null)
     const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
 
-    const openIndex = useMemo(() => grouped.findIndex((g) => g.key === openKey), [grouped, openKey])
-    const insertAfterIndex = useMemo(() => {
-        if (openIndex < 0) return -1
-        if (openIndex % 2 === 1) return openIndex
-        return Math.min(openIndex + 1, grouped.length - 1)
-    }, [openIndex, grouped.length])
-    const openGroup = useMemo(
-        () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
+    const [reorderScope, setReorderScope] = useState<ReorderScope>(null)
+    const [parentKeysDraft, setParentKeysDraft] = useState<string[] | null>(null)
+    const [subKeysDraft, setSubKeysDraft] = useState<string[] | null>(null)
+    const [productIdsDraft, setProductIdsDraft] = useState<number[] | null>(null)
+    const [reorderPick, setReorderPick] = useState<string | null>(null)
+    const [committingReorder, setCommittingReorder] = useState(false)
+
+    const openGroupBase = useMemo(
+        () => (openKey ? (grouped as GroupedGroup[]).find((g) => g.key === openKey) ?? null : null),
         [grouped, openKey]
     )
 
     const activeSubKeyForOpen = useMemo(() => {
-        if (!openGroup) return null
-        if (openGroup._subList.length <= 1) return openGroup._subList[0]?.key ?? null
-        return selectedSubKeyByGroup[openGroup.key] || openGroup._subList[0]?.key || null
-    }, [openGroup, selectedSubKeyByGroup])
+        if (!openGroupBase) return null
+        if (openGroupBase._subList.length <= 1) return openGroupBase._subList[0]?.key ?? null
+        return selectedSubKeyByGroup[openGroupBase.key] || openGroupBase._subList[0]?.key || null
+    }, [openGroupBase, selectedSubKeyByGroup])
 
-    const [reorderScope, setReorderScope] = useState<ReorderScope>(null)
-    const [activeDragId, setActiveDragId] = useState<string | null>(null)
-    const lpTimer = useRef<number | null>(null)
-    const reorderScopeRef = useRef<ReorderScope>(null)
-    const suppressToggleRef = useRef(false)
-    const openGroupRef = useRef(openGroup)
-    useEffect(() => {
-        reorderScopeRef.current = reorderScope
-    }, [reorderScope])
-    useEffect(() => {
-        openGroupRef.current = openGroup
-    }, [openGroup])
+    const displayGrouped = useMemo(
+        () =>
+            applyReorderDrafts(
+                grouped as GroupedGroup[],
+                reorderScope,
+                openKey,
+                activeSubKeyForOpen,
+                parentKeysDraft,
+                subKeysDraft,
+                productIdsDraft
+            ),
+        [grouped, reorderScope, openKey, activeSubKeyForOpen, parentKeysDraft, subKeysDraft, productIdsDraft]
+    )
+
+    const openIndex = useMemo(() => displayGrouped.findIndex((g) => g.key === openKey), [displayGrouped, openKey])
+    const insertAfterIndex = useMemo(() => {
+        if (openIndex < 0) return -1
+        if (openIndex % 2 === 1) return openIndex
+        return Math.min(openIndex + 1, displayGrouped.length - 1)
+    }, [openIndex, displayGrouped.length])
+
+    const openGroup = useMemo(
+        () => (openKey ? displayGrouped.find((g) => g.key === openKey) ?? null : null),
+        [displayGrouped, openKey]
+    )
 
     useEffect(() => {
         if (reorderScope === 'parents') {
@@ -484,137 +454,121 @@ export function MenuAccordion({
         }
     }, [reorderScope])
 
-    const clearLpTimer = useCallback(() => {
-        if (lpTimer.current) {
-            clearTimeout(lpTimer.current)
-            lpTimer.current = null
-        }
-    }, [])
-
-    const armParentsLp = useCallback(() => {
-        clearLpTimer()
-        if (!editMode || !onPersistParentCategoryOrder || reorderScopeRef.current) return
-        lpTimer.current = window.setTimeout(() => {
-            lpTimer.current = null
-            suppressToggleRef.current = true
-            setReorderScope('parents')
-        }, LONG_PRESS_MS)
-    }, [editMode, onPersistParentCategoryOrder, clearLpTimer])
-
-    const armSubsLp = useCallback(() => {
-        clearLpTimer()
-        if (!editMode || !onPersistChildCategoryOrder || reorderScopeRef.current) return
-        const og = openGroupRef.current
-        if (!og || og._subList.length <= 1) return
-        lpTimer.current = window.setTimeout(() => {
-            lpTimer.current = null
-            suppressToggleRef.current = true
-            setReorderScope('subs')
-        }, LONG_PRESS_MS)
-    }, [editMode, onPersistChildCategoryOrder, clearLpTimer])
-
-    const armProductsLp = useCallback(() => {
-        clearLpTimer()
-        if (!editMode || !onPersistProductOrder || reorderScopeRef.current) return
-        const og = openGroupRef.current
-        if (!og) return
-        lpTimer.current = window.setTimeout(() => {
-            lpTimer.current = null
-            suppressToggleRef.current = true
-            setReorderScope('products')
-        }, LONG_PRESS_MS)
-    }, [editMode, onPersistProductOrder, clearLpTimer])
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 6, tolerance: 8 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    )
-
-    const handleDragStart = useCallback((e: DragStartEvent) => {
-        setActiveDragId(String(e.active.id))
-    }, [])
-
-    const handleDragEnd = useCallback(
-        async (e: DragEndEvent) => {
-            const { active, over } = e
-            setActiveDragId(null)
-            const scope = reorderScopeRef.current
-            if (!over || active.id === over.id || !scope) return
-
-            if (scope === 'parents' && onPersistParentCategoryOrder) {
-                const ids = grouped.map((g) => g.key)
-                const oldIndex = ids.indexOf(String(active.id))
-                const newIndex = ids.indexOf(String(over.id))
-                if (oldIndex < 0 || newIndex < 0) return
-                const next = arrayMove(ids, oldIndex, newIndex)
-                await onPersistParentCategoryOrder(next)
-                setReorderScope(null)
+    const handleParentReorderTap = useCallback(
+        (groupKey: string) => {
+            if (!parentKeysDraft || !isUuidLike(groupKey)) return
+            if (!reorderPick) {
+                setReorderPick(groupKey)
                 return
             }
-
-            if (scope === 'subs' && onPersistChildCategoryOrder && openGroup) {
-                const keys = openGroup._subList.map((s) => s.key)
-                const oldIndex = keys.indexOf(String(active.id))
-                const newIndex = keys.indexOf(String(over.id))
-                if (oldIndex < 0 || newIndex < 0) return
-                const next = arrayMove(keys, oldIndex, newIndex)
-                await onPersistChildCategoryOrder(openGroup.key, next)
-                setReorderScope(null)
+            if (reorderPick === groupKey) {
+                setReorderPick(null)
                 return
             }
-
-            if (scope === 'products' && onPersistProductOrder && openGroup && activeSubKeyForOpen) {
-                const sub = openGroup._subList.find((s) => s.key === activeSubKeyForOpen)
-                if (!sub) return
-                const ids = sub.rows.map((r) => r.articulo_id)
-                const oid = Number(active.id)
-                const nid = Number(over.id)
-                const oldIndex = ids.indexOf(oid)
-                const newIndex = ids.indexOf(nid)
-                if (oldIndex < 0 || newIndex < 0) return
-                const next = arrayMove(ids, oldIndex, newIndex)
-                await onPersistProductOrder(openGroup.key, activeSubKeyForOpen, next)
-                setReorderScope(null)
+            const from = parentKeysDraft.indexOf(reorderPick)
+            const to = parentKeysDraft.indexOf(groupKey)
+            if (from < 0 || to < 0) {
+                setReorderPick(null)
+                return
             }
+            setParentKeysDraft(arrayMove(parentKeysDraft, from, to))
+            setReorderPick(null)
         },
-        [
-            grouped,
-            openGroup,
-            activeSubKeyForOpen,
-            onPersistParentCategoryOrder,
-            onPersistChildCategoryOrder,
-            onPersistProductOrder,
-        ]
+        [parentKeysDraft, reorderPick]
     )
 
-    const parentSortIds = reorderScope === 'parents' ? grouped.map((g) => g.key) : []
-    const subSortIds =
-        reorderScope === 'subs' && openGroup && openGroup._subList.length > 1
-            ? openGroup._subList.map((s) => s.key)
-            : []
-    const productSortIds =
-        reorderScope === 'products' && openGroup && activeSubKeyForOpen
-            ? (openGroup._subList.find((s) => s.key === activeSubKeyForOpen)?.rows.map((r) => String(r.articulo_id)) ??
-              [])
-            : []
+    const handleSubReorderTap = useCallback(
+        (subKey: string) => {
+            if (!subKeysDraft || !isUuidLike(subKey)) return
+            if (!reorderPick) {
+                setReorderPick(subKey)
+                return
+            }
+            if (reorderPick === subKey) {
+                setReorderPick(null)
+                return
+            }
+            const from = subKeysDraft.indexOf(reorderPick)
+            const to = subKeysDraft.indexOf(subKey)
+            if (from < 0 || to < 0) {
+                setReorderPick(null)
+                return
+            }
+            setSubKeysDraft(arrayMove(subKeysDraft, from, to))
+            setReorderPick(null)
+        },
+        [subKeysDraft, reorderPick]
+    )
 
-    const dragOverlayLabel = useMemo(() => {
-        if (!activeDragId) return ''
-        if (reorderScope === 'parents') {
-            const g = grouped.find((x) => x.key === activeDragId)
-            return g?.title ?? ''
+    const handleProductReorderTap = useCallback(
+        (articuloId: number) => {
+            if (!productIdsDraft) return
+            const idStr = String(articuloId)
+            if (!reorderPick) {
+                setReorderPick(idStr)
+                return
+            }
+            if (reorderPick === idStr) {
+                setReorderPick(null)
+                return
+            }
+            const from = productIdsDraft.indexOf(Number(reorderPick))
+            const to = productIdsDraft.indexOf(articuloId)
+            if (from < 0 || to < 0) {
+                setReorderPick(null)
+                return
+            }
+            setProductIdsDraft(arrayMove(productIdsDraft, from, to))
+            setReorderPick(null)
+        },
+        [productIdsDraft, reorderPick]
+    )
+
+    const cancelReorder = useCallback(() => {
+        setReorderScope(null)
+        setParentKeysDraft(null)
+        setSubKeysDraft(null)
+        setProductIdsDraft(null)
+        setReorderPick(null)
+    }, [])
+
+    const commitReorder = useCallback(async () => {
+        if (!reorderScope || committingReorder) return
+        setCommittingReorder(true)
+        try {
+            let ok = true
+            if (reorderScope === 'parents' && parentKeysDraft && onPersistParentCategoryOrder) {
+                ok = await onPersistParentCategoryOrder(parentKeysDraft)
+            } else if (reorderScope === 'subs' && openKey && subKeysDraft && onPersistChildCategoryOrder) {
+                ok = await onPersistChildCategoryOrder(openKey, subKeysDraft)
+            } else if (
+                reorderScope === 'products' &&
+                openKey &&
+                activeSubKeyForOpen &&
+                productIdsDraft &&
+                onPersistProductOrder
+            ) {
+                ok = await onPersistProductOrder(openKey, activeSubKeyForOpen, productIdsDraft)
+            }
+            if (ok) {
+                cancelReorder()
+            }
+        } finally {
+            setCommittingReorder(false)
         }
-        if (reorderScope === 'subs') {
-            const s = openGroup?._subList.find((x) => x.key === activeDragId)
-            return s?.title?.trim() || ''
-        }
-        if (reorderScope === 'products') {
-            const sub = openGroup?._subList.find((s) => s.key === activeSubKeyForOpen)
-            const row = sub?.rows.find((r) => String(r.articulo_id) === activeDragId)
-            return row ? getCartaDisplayName(row, lang) : ''
-        }
-        return ''
-    }, [activeDragId, reorderScope, grouped, openGroup, activeSubKeyForOpen, lang])
+    }, [
+        reorderScope,
+        committingReorder,
+        parentKeysDraft,
+        subKeysDraft,
+        productIdsDraft,
+        openKey,
+        activeSubKeyForOpen,
+        onPersistParentCategoryOrder,
+        onPersistChildCategoryOrder,
+        onPersistProductOrder,
+        cancelReorder,
+    ])
 
     if (items.length === 0) {
         return (
@@ -625,10 +579,6 @@ export function MenuAccordion({
     }
 
     const headerToggle = (groupKey: string) => {
-        if (suppressToggleRef.current) {
-            suppressToggleRef.current = false
-            return
-        }
         setOpenKey((current) => {
             if (current === groupKey) {
                 setSelectedSubKeyByGroup((p) => {
@@ -649,7 +599,7 @@ export function MenuAccordion({
 
     const gridBlock = (
         <div className={cn('grid grid-cols-2 gap-2 sm:gap-4', hideLangPicker && 'pt-0')}>
-            {grouped.map((group, idx) => {
+            {displayGrouped.map((group, idx) => {
                 const isOpen = openKey === group.key
                 const headerMain = (
                     <>
@@ -700,31 +650,22 @@ export function MenuAccordion({
                             'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
                             isOpen
                                 ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                                : 'border-zinc-200/60',
-                            reorderScope === 'parents' && isUuidLike(group.key) && 'ring-2 ring-amber-300/70'
+                                : 'border-zinc-200/60'
                         )}
-                        onPointerDown={
-                            editMode && onPersistParentCategoryOrder && reorderScope !== 'parents'
-                                ? armParentsLp
-                                : undefined
-                        }
-                        onPointerUp={
-                            editMode && onPersistParentCategoryOrder && reorderScope !== 'parents'
-                                ? clearLpTimer
-                                : undefined
-                        }
                     >
                         <div className="flex min-h-[52px] w-full items-stretch">
                             {editMode && onPersistParentCategoryOrder && !reorderScope ? (
                                 <button
                                     type="button"
                                     className="flex min-h-[52px] w-11 shrink-0 touch-manipulation items-center justify-center border-r border-zinc-100 bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12"
-                                    aria-label="Reordenar secciones del menú"
-                                    title="Reordenar secciones (o mantén pulsada la cabecera)"
+                                    aria-label="Cambiar posición de secciones"
+                                    title="Cambiar posición de secciones"
                                     onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
                                         setOpenKey(null)
+                                        setReorderPick(null)
+                                        setParentKeysDraft(groupedRef.current.map((g) => g.key))
                                         setReorderScope('parents')
                                     }}
                                 >
@@ -736,20 +677,66 @@ export function MenuAccordion({
                     </div>
                 )
 
+                const parentReorderCard = (
+                    <div
+                        className={cn(
+                            'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                            isOpen
+                                ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                                : 'border-zinc-200/60',
+                            reorderPick === group.key && isUuidLike(group.key) && 'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                        )}
+                    >
+                        <div className="flex min-h-[52px] w-full items-stretch">
+                            <button
+                                type="button"
+                                disabled={!isUuidLike(group.key)}
+                                onClick={() => handleParentReorderTap(group.key)}
+                                className={cn(
+                                    'flex min-h-[52px] min-w-0 flex-1 items-center justify-start gap-2 px-2 py-2.5 text-left active:bg-zinc-50 sm:px-3',
+                                    !isUuidLike(group.key) && 'cursor-not-allowed opacity-50'
+                                )}
+                            >
+                                <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
+                                    {group.coverPhotoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
+                                        <img
+                                            src={group.coverPhotoUrl}
+                                            alt=""
+                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
+                                        />
+                                    ) : null}
+                                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
+                                        {group.title}
+                                    </span>
+                                </span>
+                            </button>
+                            {editMode && isUuidLike(group.key) && onEditParentCategory ? (
+                                <span
+                                    className="flex shrink-0 items-stretch pr-1"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                    }}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => onEditParentCategory?.(group.key)}
+                                        className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center self-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                        aria-label="Editar categoría"
+                                        title="Editar categoría"
+                                    >
+                                        <Pencil className="h-5 w-5" strokeWidth={2.5} />
+                                    </button>
+                                </span>
+                            ) : null}
+                        </div>
+                    </div>
+                )
+
                 return (
                     <Fragment key={group.key}>
-                        {reorderScope === 'parents' ? (
-                            <SortableParentCard
-                                id={group.key}
-                                reorderActive
-                                disabled={!isUuidLike(group.key)}
-                                isOpen={isOpen}
-                            >
-                                {headerMain}
-                            </SortableParentCard>
-                        ) : (
-                            headerCard
-                        )}
+                        {reorderScope === 'parents' ? parentReorderCard : headerCard}
 
                         {openGroup && insertAfterIndex === idx ? (
                             <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
@@ -762,7 +749,11 @@ export function MenuAccordion({
                                             <button
                                                 type="button"
                                                 className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
-                                                onClick={() => setReorderScope('subs')}
+                                                onClick={() => {
+                                                    setReorderPick(null)
+                                                    setSubKeysDraft(openGroup._subList.map((s) => s.key))
+                                                    setReorderScope('subs')
+                                                }}
                                             >
                                                 Reordenar pestañas
                                             </button>
@@ -770,71 +761,50 @@ export function MenuAccordion({
                                     ) : null}
                                     {openGroup._subList.length > 1 ? (
                                         reorderScope === 'subs' ? (
-                                            <SortableContext
-                                                id="carta-subs"
-                                                items={subSortIds}
-                                                strategy={horizontalListSortingStrategy}
-                                            >
-                                                <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
-                                                    {openGroup._subList.map((sub) => {
-                                                        const sel = selectedSubKeyByGroup[openGroup.key]
-                                                        const isActive = sel === sub.key
-                                                        return (
-                                                            <SortableSubTab
-                                                                key={sub.key}
-                                                                id={sub.key}
-                                                                reorderActive
-                                                                disabled={!isUuidLike(sub.key)}
-                                                            >
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        setSelectedSubKeyByGroup((p) => ({
-                                                                            ...p,
-                                                                            [openGroup.key]: sub.key,
-                                                                        }))
+                                            <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                                                {openGroup._subList.map((sub) => {
+                                                    const sel = selectedSubKeyByGroup[openGroup.key]
+                                                    const isActive = sel === sub.key
+                                                    const picked = reorderPick === sub.key && isUuidLike(sub.key)
+                                                    return (
+                                                        <div key={sub.key} className="min-w-0 flex-1 basis-0">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (reorderScope === 'subs') {
+                                                                        handleSubReorderTap(sub.key)
+                                                                        return
                                                                     }
-                                                                    className={cn(
-                                                                        'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
-                                                                        isActive
-                                                                            ? 'border-[#36606F] bg-white text-[#36606F]'
-                                                                            : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
-                                                                    )}
-                                                                >
-                                                                    <span className="line-clamp-3 min-w-0">
-                                                                        {sub.title.trim() ||
-                                                                            tPublicUi(lang).uncategorized}
-                                                                    </span>
-                                                                </button>
-                                                            </SortableSubTab>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </SortableContext>
+                                                                    setSelectedSubKeyByGroup((p) => ({
+                                                                        ...p,
+                                                                        [openGroup.key]: sub.key,
+                                                                    }))
+                                                                }}
+                                                                className={cn(
+                                                                    'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                                                                    isActive
+                                                                        ? 'border-[#36606F] bg-white text-[#36606F]'
+                                                                        : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50',
+                                                                    picked &&
+                                                                        'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                                                                )}
+                                                            >
+                                                                <span className="line-clamp-3 min-w-0">
+                                                                    {sub.title.trim() ||
+                                                                        tPublicUi(lang).uncategorized}
+                                                                </span>
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
                                         ) : (
                                             <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
                                                 {openGroup._subList.map((sub) => {
                                                     const sel = selectedSubKeyByGroup[openGroup.key]
                                                     const isActive = sel === sub.key
                                                     return (
-                                                        <div
-                                                            key={sub.key}
-                                                            className="min-w-0 flex-1 basis-0"
-                                                            onPointerDown={
-                                                                editMode &&
-                                                                onPersistChildCategoryOrder &&
-                                                                !reorderScope
-                                                                    ? armSubsLp
-                                                                    : undefined
-                                                            }
-                                                            onPointerUp={
-                                                                editMode &&
-                                                                onPersistChildCategoryOrder &&
-                                                                !reorderScope
-                                                                    ? clearLpTimer
-                                                                    : undefined
-                                                            }
-                                                        >
+                                                        <div key={sub.key} className="min-w-0 flex-1 basis-0">
                                                             <button
                                                                 type="button"
                                                                 onClick={() =>
@@ -880,7 +850,11 @@ export function MenuAccordion({
                                                             <button
                                                                 type="button"
                                                                 className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
-                                                                onClick={() => setReorderScope('products')}
+                                                                onClick={() => {
+                                                                    setReorderPick(null)
+                                                                    setProductIdsDraft(sub.rows.map((r) => r.articulo_id))
+                                                                    setReorderScope('products')
+                                                                }}
                                                             >
                                                                 Reordenar platos
                                                             </button>
@@ -888,76 +862,53 @@ export function MenuAccordion({
                                                     ) : null}
                                                     {reorderScope === 'products' &&
                                                     sub.key === activeSubKeyForOpen ? (
-                                                        <SortableContext
-                                                            id="carta-products"
-                                                            items={productSortIds}
-                                                            strategy={rectSortingStrategy}
-                                                        >
-                                                            <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
-                                                                {sub.rows.map((row) => (
-                                                                    <SortableProductShell
+                                                        <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                            {sub.rows.map((row) => {
+                                                                const picked =
+                                                                    reorderPick === String(row.articulo_id)
+                                                                return (
+                                                                    <div
                                                                         key={row.articulo_id}
-                                                                        id={String(row.articulo_id)}
-                                                                        reorderActive
+                                                                        role="presentation"
+                                                                        className={cn(
+                                                                            'h-full cursor-pointer rounded-2xl transition-shadow',
+                                                                            picked &&
+                                                                                'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                                                                        )}
+                                                                        onClick={(e) => {
+                                                                            if (
+                                                                                (e.target as HTMLElement).closest(
+                                                                                    'button'
+                                                                                )
+                                                                            ) {
+                                                                                return
+                                                                            }
+                                                                            handleProductReorderTap(row.articulo_id)
+                                                                        }}
                                                                     >
-                                                                        <div
-                                                                            className="h-full"
-                                                                            onPointerDown={
-                                                                                editMode &&
-                                                                                onPersistProductOrder &&
-                                                                                !reorderScope
-                                                                                    ? armProductsLp
-                                                                                    : undefined
+                                                                        <MenuCard
+                                                                            row={row}
+                                                                            lang={lang}
+                                                                            editMode={editMode}
+                                                                            productReorderMode={
+                                                                                reorderScope === 'products'
                                                                             }
-                                                                            onPointerUp={
-                                                                                editMode &&
-                                                                                onPersistProductOrder &&
-                                                                                !reorderScope
-                                                                                    ? clearLpTimer
-                                                                                    : undefined
+                                                                            onEditProduct={onEditProduct}
+                                                                            onToggleProductActive={
+                                                                                onToggleProductActive
                                                                             }
-                                                                        >
-                                                                            <MenuCard
-                                                                                row={row}
-                                                                                lang={lang}
-                                                                                editMode={editMode}
-                                                                                productReorderMode={
-                                                                                    reorderScope === 'products'
-                                                                                }
-                                                                                onEditProduct={onEditProduct}
-                                                                                onToggleProductActive={
-                                                                                    onToggleProductActive
-                                                                                }
-                                                                                productToggleBusyId={
-                                                                                    productToggleBusyId
-                                                                                }
-                                                                            />
-                                                                        </div>
-                                                                    </SortableProductShell>
-                                                                ))}
-                                                            </div>
-                                                        </SortableContext>
+                                                                            productToggleBusyId={
+                                                                                productToggleBusyId
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
                                                     ) : (
                                                         <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
                                                             {sub.rows.map((row) => (
-                                                                <div
-                                                                    key={row.articulo_id}
-                                                                    className="h-full"
-                                                                    onPointerDown={
-                                                                        editMode &&
-                                                                        onPersistProductOrder &&
-                                                                        !reorderScope
-                                                                            ? armProductsLp
-                                                                            : undefined
-                                                                    }
-                                                                    onPointerUp={
-                                                                        editMode &&
-                                                                        onPersistProductOrder &&
-                                                                        !reorderScope
-                                                                            ? clearLpTimer
-                                                                            : undefined
-                                                                    }
-                                                                >
+                                                                <div key={row.articulo_id} className="h-full">
                                                                     <MenuCard
                                                                         row={row}
                                                                         lang={lang}
@@ -996,55 +947,43 @@ export function MenuAccordion({
             ) : null}
 
             {reorderScope ? (
-                <div className="flex min-h-[52px] shrink-0 items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm">
-                    <span className="flex min-w-0 items-center gap-2 text-[11px] font-black uppercase leading-tight tracking-wide text-amber-950">
-                        <GripVertical className="h-4 w-4 shrink-0 text-amber-800" aria-hidden />
+                <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <span className="flex min-w-0 items-start gap-2 text-[11px] font-black uppercase leading-snug tracking-wide text-amber-950 sm:items-center">
+                        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 sm:mt-0" aria-hidden />
                         <span className="min-w-0">
-                            {reorderScope === 'parents' && 'Mantén y arrastra secciones (suelta para guardar)'}
-                            {reorderScope === 'subs' && 'Orden de pestañas de subcategoría'}
-                            {reorderScope === 'products' && 'Orden de platos en esta subcategoría'}
+                            {reorderScope === 'parents' &&
+                                '1) Pulsa la sección a mover. 2) Pulsa la posición destino (el resto se corre). 3) Guardar orden.'}
+                            {reorderScope === 'subs' &&
+                                '1) Pulsa la pestaña a mover. 2) Pulsa la posición destino. 3) Guardar orden.'}
+                            {reorderScope === 'products' &&
+                                '1) Pulsa el plato a mover. 2) Pulsa el destino (otra tarjeta). 3) Guardar orden.'}
                         </span>
                     </span>
-                    <button
-                        type="button"
-                        className="shrink-0 rounded-xl border border-amber-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wide text-amber-950 min-h-[48px] active:bg-amber-100"
-                        onClick={() => setReorderScope(null)}
-                    >
-                        Listo
-                    </button>
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 min-h-[48px] active:bg-zinc-100"
+                            onClick={cancelReorder}
+                            disabled={committingReorder}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl border border-[#36606F] bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
+                            onClick={() => void commitReorder()}
+                            disabled={committingReorder}
+                        >
+                            {committingReorder ? (
+                                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                            ) : null}
+                            Guardar orden
+                        </button>
+                    </div>
                 </div>
             ) : null}
 
-            {reorderScope ? (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    autoScroll={false}
-                    onDragStart={handleDragStart}
-                    onDragEnd={(e) => void handleDragEnd(e)}
-                >
-                    {reorderScope === 'parents' ? (
-                        <SortableContext
-                            id="carta-parents"
-                            items={parentSortIds}
-                            strategy={rectSortingStrategy}
-                        >
-                            {gridBlock}
-                        </SortableContext>
-                    ) : (
-                        gridBlock
-                    )}
-                    <DragOverlay dropAnimation={null}>
-                        {activeDragId && dragOverlayLabel ? (
-                            <div className="max-w-[200px] rounded-xl border-2 border-[#36606F] bg-white px-3 py-2 text-center text-[10px] font-black uppercase leading-tight text-[#36606F] shadow-lg">
-                                {dragOverlayLabel}
-                            </div>
-                        ) : null}
-                    </DragOverlay>
-                </DndContext>
-            ) : (
-                gridBlock
-            )}
+            {gridBlock}
         </div>
     )
 }

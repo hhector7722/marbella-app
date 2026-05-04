@@ -278,7 +278,7 @@ export function StaffCartaInlineEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const persistParentCategoryOrder = async (orderedKeys: string[]) => {
+  const persistParentCategoryOrder = async (orderedKeys: string[]): Promise<boolean> => {
     const uuidOrder = orderedKeys.filter((k) =>
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k)
     )
@@ -286,13 +286,14 @@ export function StaffCartaInlineEditor({
     const res = await setMenuCategorySortOrders(input)
     if (!res.success) {
       toast.error(res.error ?? 'No se pudo guardar el orden de secciones')
-      return
+      return false
     }
     toast.success('Orden de secciones guardado')
     await load()
+    return true
   }
 
-  const persistChildCategoryOrder = async (_parentKey: string, orderedChildKeys: string[]) => {
+  const persistChildCategoryOrder = async (_parentKey: string, orderedChildKeys: string[]): Promise<boolean> => {
     const uuidOrder = orderedChildKeys.filter((k) =>
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k)
     )
@@ -300,26 +301,33 @@ export function StaffCartaInlineEditor({
     const res = await setMenuCategorySortOrders(input)
     if (!res.success) {
       toast.error(res.error ?? 'No se pudo guardar el orden de subcategorías')
-      return
+      return false
     }
     toast.success('Orden de subcategorías guardado')
     await load()
+    return true
   }
 
-  const persistProductOrder = async (_parentKey: string, _subKey: string, orderedArticuloIds: number[]) => {
+  const persistProductOrder = async (
+    _parentKey: string,
+    _subKey: string,
+    orderedArticuloIds: number[]
+  ): Promise<boolean> => {
     try {
       for (let i = 0; i < orderedArticuloIds.length; i++) {
         const articulo_id = orderedArticuloIds[i]!
         const res = await upsertMenuOverride({ articulo_id, sort_order: i })
         if (!res.success) {
           toast.error(res.error ?? 'No se pudo guardar el orden de productos')
-          return
+          return false
         }
       }
       toast.success('Orden de productos guardado')
       await load()
+      return true
     } catch (e: any) {
       toast.error(e?.message ?? 'No se pudo guardar el orden de productos')
+      return false
     }
   }
 
