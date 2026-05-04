@@ -1,14 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  TouchSensor,
-  closestCorners,
+  closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -210,11 +209,13 @@ function SortableParentCard({
     id,
     reorderActive,
     disabled,
+    isOpen,
     children,
 }: {
     id: string
     reorderActive: boolean
     disabled: boolean
+    isOpen: boolean
     children: ReactNode
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -226,14 +227,33 @@ function SortableParentCard({
         transition,
         opacity: isDragging ? 0.88 : 1,
     }
+    const showHandle = reorderActive && !disabled
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className={cn(reorderActive && !disabled && 'relative z-10 touch-none')}
-            {...(reorderActive && !disabled ? { ...attributes, ...listeners } : {})}
+            className={cn(
+                'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                isOpen
+                    ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
+                    : 'border-zinc-200/60',
+                showHandle && 'relative z-10 ring-2 ring-amber-300/70'
+            )}
         >
-            {children}
+            <div className="flex min-h-[52px] w-full items-stretch">
+                {showHandle ? (
+                    <button
+                        type="button"
+                        className="flex w-11 shrink-0 touch-none cursor-grab touch-manipulation items-center justify-center border-r border-zinc-100 bg-zinc-50/90 text-[#36606F] active:cursor-grabbing active:bg-zinc-100 sm:w-12"
+                        aria-label="Arrastrar para reordenar sección"
+                        {...listeners}
+                        {...attributes}
+                    >
+                        <GripVertical className="h-5 w-5" strokeWidth={2.5} />
+                    </button>
+                ) : null}
+                <div className={cn('flex min-w-0 flex-1 items-stretch', showHandle && 'touch-none')}>{children}</div>
+            </div>
         </div>
     )
 }
@@ -258,14 +278,24 @@ function SortableSubTab({
         transition,
         opacity: isDragging ? 0.88 : 1,
     }
+    const showHandle = reorderActive && !disabled
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className={cn(reorderActive && !disabled && 'min-w-0 flex-1 basis-0 touch-none')}
-            {...(reorderActive && !disabled ? { ...attributes, ...listeners } : {})}
+            className={cn('flex min-w-0 flex-1 basis-0 flex-col', showHandle && 'touch-none')}
         >
-            {children}
+            {showHandle ? (
+                <button
+                    type="button"
+                    className="mb-1 flex min-h-[40px] w-full shrink-0 touch-none cursor-grab touch-manipulation items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-[10px] font-black uppercase text-zinc-600 active:cursor-grabbing"
+                    {...listeners}
+                    {...attributes}
+                >
+                    Arrastrar
+                </button>
+            ) : null}
+            <div className="min-h-0 min-w-0 flex-1">{children}</div>
         </div>
     )
 }
@@ -281,13 +311,18 @@ function SortableProductShell({ id, reorderActive, children }: { id: string; reo
         opacity: isDragging ? 0.88 : 1,
     }
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className={cn('h-full', reorderActive && 'touch-none')}
-            {...(reorderActive ? { ...attributes, ...listeners } : {})}
-        >
-            {children}
+        <div ref={setNodeRef} style={style} className={cn('flex h-full flex-col gap-1', reorderActive && 'touch-none')}>
+            {reorderActive ? (
+                <button
+                    type="button"
+                    className="flex min-h-[36px] w-full shrink-0 touch-none cursor-grab touch-manipulation items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-[9px] font-black uppercase text-zinc-600 active:cursor-grabbing"
+                    {...listeners}
+                    {...attributes}
+                >
+                    ⇅
+                </button>
+            ) : null}
+            <div className="min-h-0 flex-1">{children}</div>
         </div>
     )
 }
@@ -491,8 +526,7 @@ export function MenuAccordion({
     }, [editMode, onPersistProductOrder, clearLpTimer])
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8, tolerance: 8 } }),
-        useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 12 } }),
+        useSensor(PointerSensor, { activationConstraint: { distance: 6, tolerance: 8 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
@@ -513,8 +547,8 @@ export function MenuAccordion({
                 const newIndex = ids.indexOf(String(over.id))
                 if (oldIndex < 0 || newIndex < 0) return
                 const next = arrayMove(ids, oldIndex, newIndex)
-                setReorderScope(null)
                 await onPersistParentCategoryOrder(next)
+                setReorderScope(null)
                 return
             }
 
@@ -524,8 +558,8 @@ export function MenuAccordion({
                 const newIndex = keys.indexOf(String(over.id))
                 if (oldIndex < 0 || newIndex < 0) return
                 const next = arrayMove(keys, oldIndex, newIndex)
-                setReorderScope(null)
                 await onPersistChildCategoryOrder(openGroup.key, next)
+                setReorderScope(null)
                 return
             }
 
@@ -539,8 +573,8 @@ export function MenuAccordion({
                 const newIndex = ids.indexOf(nid)
                 if (oldIndex < 0 || newIndex < 0) return
                 const next = arrayMove(ids, oldIndex, newIndex)
-                setReorderScope(null)
                 await onPersistProductOrder(openGroup.key, activeSubKeyForOpen, next)
+                setReorderScope(null)
             }
         },
         [
@@ -617,6 +651,49 @@ export function MenuAccordion({
         <div className={cn('grid grid-cols-2 gap-2 sm:gap-4', hideLangPicker && 'pt-0')}>
             {grouped.map((group, idx) => {
                 const isOpen = openKey === group.key
+                const headerMain = (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => headerToggle(group.key)}
+                            className="flex min-h-[52px] min-w-0 flex-1 items-center justify-start gap-2 px-2 py-2.5 text-left active:bg-zinc-50 sm:px-3"
+                            aria-expanded={isOpen}
+                        >
+                            <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
+                                {group.coverPhotoUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
+                                    <img
+                                        src={group.coverPhotoUrl}
+                                        alt=""
+                                        className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
+                                    />
+                                ) : null}
+                                <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
+                                    {group.title}
+                                </span>
+                            </span>
+                        </button>
+                        {editMode && isUuidLike(group.key) && onEditParentCategory ? (
+                            <span
+                                className="flex shrink-0 items-stretch pr-1"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                }}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => onEditParentCategory?.(group.key)}
+                                    className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center self-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                    aria-label="Editar categoría"
+                                    title="Editar categoría"
+                                >
+                                    <Pencil className="h-5 w-5" strokeWidth={2.5} />
+                                </button>
+                            </span>
+                        ) : null}
+                    </>
+                )
                 const headerCard = (
                     <div
                         className={cn(
@@ -654,58 +731,21 @@ export function MenuAccordion({
                                     <GripVertical className="h-5 w-5" strokeWidth={2.5} />
                                 </button>
                             ) : null}
-                            <button
-                                type="button"
-                                onClick={() => headerToggle(group.key)}
-                                className="flex min-h-[52px] min-w-0 flex-1 items-center justify-start gap-2 px-2 py-2.5 text-left active:bg-zinc-50 sm:px-3"
-                                aria-expanded={isOpen}
-                            >
-                                <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
-                                    {group.coverPhotoUrl ? (
-                                        // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
-                                        <img
-                                            src={group.coverPhotoUrl}
-                                            alt=""
-                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
-                                        />
-                                    ) : null}
-                                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
-                                        {group.title}
-                                    </span>
-                                </span>
-                            </button>
-                            {editMode && isUuidLike(group.key) && onEditParentCategory ? (
-                                <span
-                                    className="flex shrink-0 items-stretch pr-1"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                    }}
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={() => onEditParentCategory?.(group.key)}
-                                        className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center self-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                        aria-label="Editar categoría"
-                                        title="Editar categoría"
-                                    >
-                                        <Pencil className="h-5 w-5" strokeWidth={2.5} />
-                                    </button>
-                                </span>
-                            ) : null}
+                            {headerMain}
                         </div>
                     </div>
                 )
 
                 return (
-                    <div key={group.key} className="contents">
+                    <Fragment key={group.key}>
                         {reorderScope === 'parents' ? (
                             <SortableParentCard
                                 id={group.key}
                                 reorderActive
                                 disabled={!isUuidLike(group.key)}
+                                isOpen={isOpen}
                             >
-                                {headerCard}
+                                {headerMain}
                             </SortableParentCard>
                         ) : (
                             headerCard
@@ -941,7 +981,7 @@ export function MenuAccordion({
                                 </div>
                             </div>
                         ) : null}
-                    </div>
+                    </Fragment>
                 )
             })}
         </div>
@@ -978,7 +1018,7 @@ export function MenuAccordion({
             {reorderScope ? (
                 <DndContext
                     sensors={sensors}
-                    collisionDetection={closestCorners}
+                    collisionDetection={closestCenter}
                     autoScroll={false}
                     onDragStart={handleDragStart}
                     onDragEnd={(e) => void handleDragEnd(e)}
