@@ -13,3 +13,7 @@
 ✓ Ready in 3.8s
 ○ Compiling /login ...
  HEAD /login 200 in 157ms (compile: 10ms, proxy.ts: 16ms, render: 131ms)
+○ Compiling /profile ...
+ HEAD /profile?code=demo&type=recovery 200 in 6.0s (compile: 4.2s, proxy.ts: 425ms, render: 1407ms)
+ HEAD /profile 200 in 3.1s (compile: 1756ms, proxy.ts: 34ms, render: 1359ms)
+ HEAD /profile 200 in 3.6s (compile: 1801ms, proxy.ts: 439ms, render: 1370ms)
