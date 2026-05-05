@@ -6,58 +6,107 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import type { AuthError } from '@supabase/supabase-js';
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
     onClose: () => void;
+    isRecoveryMode?: boolean;
+    onSuccess?: () => void;
 }
 
-export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+function getErrorMessage(error: unknown, fallback: string) {
+    if (error && typeof error === 'object' && 'message' in error) {
+        const message = (error as AuthError).message;
+        if (typeof message === 'string' && message.trim()) {
+            return message;
+        }
+    }
+
+    return fallback;
+}
+
+export default function ChangePasswordModal({
+    isOpen,
+    onClose,
+    isRecoveryMode = false,
+    onSuccess,
+}: ChangePasswordModalProps) {
     const supabase = createClient();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     if (!isOpen) return null;
 
+    const resetForm = () => {
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowPassword(false);
+        setErrorMessage('');
+        setSuccessMessage('');
+    };
+
+    const handleClose = () => {
+        if (loading) return;
+        resetForm();
+        onClose();
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMessage('');
+        setSuccessMessage('');
 
-        if (!currentPassword.trim()) {
+        if (!isRecoveryMode && !currentPassword.trim()) {
+            setErrorMessage('Introduce tu contraseña actual');
             toast.error('Introduce tu contraseña actual');
             return;
         }
 
         if (newPassword.length < 6) {
+            setErrorMessage('La contraseña debe tener al menos 6 caracteres');
             toast.error('La contraseña debe tener al menos 6 caracteres');
             return;
         }
 
         if (newPassword !== confirmPassword) {
+            setErrorMessage('Las contraseñas no coinciden');
             toast.error('Las contraseñas no coinciden');
             return;
         }
 
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.email) {
-                toast.error('No se pudo obtener tu sesión. Cierra sesión y vuelve a entrar.');
-                setLoading(false);
-                return;
-            }
+            if (!isRecoveryMode) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user?.email) {
+                    const sessionError = 'No se pudo obtener tu sesión. Cierra sesión y vuelve a entrar.';
+                    setErrorMessage(sessionError);
+                    toast.error(sessionError);
+                    setLoading(false);
+                    return;
+                }
 
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-                email: user.email,
-                password: currentPassword
-            });
+                const { error: signInError } = await supabase.auth.signInWithPassword({
+                    email: user.email,
+                    password: currentPassword
+                });
 
-            if (signInError) {
-                toast.error(signInError.message?.includes('Invalid login') ? 'Contraseña actual incorrecta' : signInError.message);
-                setLoading(false);
-                return;
+                if (signInError) {
+                    const signInMessage = signInError.message?.includes('Invalid login')
+                        ? 'Contraseña actual incorrecta'
+                        : signInError.message;
+                    setErrorMessage(signInMessage);
+                    toast.error(signInMessage);
+                    setLoading(false);
+                    return;
+                }
             }
 
             const { error } = await supabase.auth.updateUser({
@@ -66,14 +115,19 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
             if (error) throw error;
 
-            toast.success('Contraseña actualizada correctamente');
+            const successText = isRecoveryMode
+                ? 'Contraseña actualizada. Ya puedes entrar con la nueva clave.'
+                : 'Contraseña actualizada correctamente';
+            setSuccessMessage(successText);
+            toast.success(successText);
+            onSuccess?.();
+            resetForm();
             onClose();
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error updating password:', error);
-            toast.error(error.message || 'Error al actualizar la contraseña');
+            const message = getErrorMessage(error, 'Error al actualizar la contraseña');
+            setErrorMessage(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -92,12 +146,12 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                     <div className="relative z-10">
                         <h3 className="text-xl font-black uppercase tracking-wider leading-none">Seguridad</h3>
                         <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-2 italic">
-                            Actualizar Contraseña
+                            {isRecoveryMode ? 'Nueva Contraseña' : 'Actualizar Contraseña'}
                         </p>
                     </div>
 
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="relative z-10 w-12 h-12 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all active:scale-90"
                     >
                         <X size={24} strokeWidth={3} />
@@ -107,31 +161,32 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                 {/* Formulario */}
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
                     <div className="space-y-5">
-                        {/* Campo Contraseña Actual */}
-                        <div className="relative group">
-                            <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Contraseña Actual</label>
-                            <div className="relative">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#36606F] transition-colors">
-                                    <Lock size={20} />
+                        {!isRecoveryMode && (
+                            <div className="relative group">
+                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Contraseña Actual</label>
+                                <div className="relative">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#36606F] transition-colors">
+                                        <Lock size={20} />
+                                    </div>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={currentPassword}
+                                        onChange={e => setCurrentPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        autoComplete="current-password"
+                                        className="w-full h-16 pl-14 pr-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-200"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
                                 </div>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={currentPassword}
-                                    onChange={e => setCurrentPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    autoComplete="current-password"
-                                    className="w-full h-16 pl-14 pr-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-200"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
                             </div>
-                        </div>
+                        )}
 
                         {/* Campo Nueva Contraseña */}
                         <div className="relative group">
@@ -145,6 +200,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                                     value={newPassword}
                                     onChange={e => setNewPassword(e.target.value)}
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                     className="w-full h-16 pl-14 pr-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-200"
                                     required
                                 />
@@ -170,28 +226,42 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                                     value={confirmPassword}
                                     onChange={e => setConfirmPassword(e.target.value)}
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                     className="w-full h-16 pl-14 pr-4 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-200"
                                     required
                                 />
                             </div>
                         </div>
+
+                        {(errorMessage || successMessage) && (
+                            <div
+                                className={cn(
+                                    'rounded-2xl border px-4 py-3 text-[11px] font-bold',
+                                    errorMessage
+                                        ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                        : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                )}
+                            >
+                                {errorMessage || successMessage}
+                            </div>
+                        )}
                     </div>
 
                     {/* Footer con Botones Táctiles 48px+ */}
                     <div className="pt-6 flex gap-4">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="flex-1 h-16 bg-gray-100 text-gray-500 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-200 transition-all active:scale-95"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || !currentPassword.trim() || !newPassword || !confirmPassword}
+                            disabled={loading || (!isRecoveryMode && !currentPassword.trim()) || !newPassword || !confirmPassword}
                             className={cn(
                                 "flex-[2] h-16 font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3",
-                                loading || !currentPassword.trim() || !newPassword || !confirmPassword
+                                loading || (!isRecoveryMode && !currentPassword.trim()) || !newPassword || !confirmPassword
                                     ? "bg-gray-200 text-gray-400 shadow-none cursor-not-allowed"
                                     : "bg-[#36606F] text-white shadow-[#36606F]/25 hover:brightness-110"
                             )}
@@ -199,7 +269,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                             {loading ? (
                                 <LoadingSpinner size="sm" className="text-white" />
                             ) : (
-                                <><Save size={20} strokeWidth={3} /> Actualizar</>
+                                <><Save size={20} strokeWidth={3} /> {isRecoveryMode ? 'Guardar nueva clave' : 'Actualizar'}</>
                             )}
                         </button>
                     </div>

@@ -1,0 +1,15 @@
+
+> bar-marbella-clean@0.1.0 dev
+> next dev --webpack --port 3005
+
+▲ Next.js 16.1.4 (webpack)
+- Local:         http://localhost:3005
+- Network:       http://169.254.83.107:3005
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+✓ Starting...
+✓ Ready in 3.8s
+○ Compiling /login ...
+ HEAD /login 200 in 157ms (compile: 10ms, proxy.ts: 16ms, render: 131ms)

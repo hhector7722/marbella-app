@@ -7,6 +7,20 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Image from 'next/image';
 import { toast, Toaster } from 'sonner';
+import type { AuthError } from '@supabase/supabase-js';
+
+const PASSWORD_RECOVERY_REDIRECT = 'https://marbella-app.vercel.app/profile';
+
+function getErrorMessage(error: unknown, fallback: string) {
+    if (error && typeof error === 'object' && 'message' in error) {
+        const message = (error as AuthError).message;
+        if (typeof message === 'string' && message.trim()) {
+            return message;
+        }
+    }
+
+    return fallback;
+}
 
 export default function LoginPage() {
     const supabase = createClient();
@@ -15,6 +29,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
 
     // Limpieza de tokens zombi: si hay un refresh_token inválido en el navegador
     // Supabase lanza AuthApiError en cada request. Hacemos signOut silencioso al montar.
@@ -51,11 +66,34 @@ export default function LoginPage() {
             router.push('/');
             router.refresh(); // Forzar actualización de estado de auth en la app
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Login error:', error);
-            toast.error(error.message || "Error al iniciar sesión");
+            toast.error(getErrorMessage(error, "Error al iniciar sesión"));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePasswordReset = async () => {
+        if (!email.trim()) {
+            toast.error('Introduce tu email para recuperar la contraseña');
+            return;
+        }
+
+        try {
+            setResetLoading(true);
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                redirectTo: PASSWORD_RECOVERY_REDIRECT,
+            });
+
+            if (error) throw error;
+
+            toast.success('Te hemos enviado un enlace para cambiar la contraseña');
+        } catch (error: unknown) {
+            console.error('Password recovery error:', error);
+            toast.error(getErrorMessage(error, 'No se pudo enviar el correo de recuperación'));
+        } finally {
+            setResetLoading(false);
         }
     };
 
@@ -94,7 +132,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-[#5B8FB9] rounded-2xl outline-none text-gray-700 font-bold placeholder:text-gray-300 transition-all focus:bg-white"
-                                disabled={loading}
+                                disabled={loading || resetLoading}
                             />
                         </div>
 
@@ -109,15 +147,26 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-[#5B8FB9] rounded-2xl outline-none text-gray-700 font-bold placeholder:text-gray-300 transition-all focus:bg-white"
-                                disabled={loading}
+                                disabled={loading || resetLoading}
                             />
                         </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handlePasswordReset}
+                            disabled={loading || resetLoading}
+                            className="text-[10px] font-black uppercase tracking-[0.2em] text-[#36606F] hover:text-[#2A4D59] disabled:opacity-50"
+                        >
+                            {resetLoading ? 'Enviando enlace…' : 'Olvidé mi contraseña'}
+                        </button>
                     </div>
 
                     {/* Botón Acción */}
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || resetLoading}
                         className="w-full bg-[#36606F] hover:bg-[#2A4D59] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
                     >
                         {loading ? (

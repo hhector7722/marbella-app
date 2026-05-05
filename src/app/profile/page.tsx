@@ -17,6 +17,7 @@ import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
 import { updateProfile } from '@/app/actions/profile';
+import type { User } from '@supabase/supabase-js';
 
 interface UserProfile {
     id: string;
@@ -52,9 +53,10 @@ function ProfileContent() {
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isManager, setIsManager] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
     const [modalDatosPersonales, setModalDatosPersonales] = useState(false);
     const [modalContacto, setModalContacto] = useState(false);
     const [modalDatosBancarios, setModalDatosBancarios] = useState(false);
@@ -74,7 +76,55 @@ function ProfileContent() {
 
     const profileTitleContainerRef = useRef<HTMLDivElement>(null);
     const profileNameHeadingRef = useRef<HTMLHeadingElement>(null);
+    const handledRecoveryRef = useRef(false);
     const [profileNameFontPx, setProfileNameFontPx] = useState(16);
+
+    const clearRecoveryUrl = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        const recoveryParams = [
+            'type',
+            'code',
+            'access_token',
+            'refresh_token',
+            'token',
+            'token_hash',
+            'expires_at',
+            'expires_in',
+        ];
+
+        recoveryParams.forEach((param) => {
+            url.searchParams.delete(param);
+        });
+
+        window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+    }, []);
+
+    const hasRecoveryParams = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+
+        const url = new URL(window.location.href);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const searchHasTypeRecovery = url.searchParams.get('type') === 'recovery';
+        const hashHasTypeRecovery = hashParams.get('type') === 'recovery';
+        const hasTokens =
+            hashParams.has('access_token') ||
+            hashParams.has('refresh_token') ||
+            hashParams.has('token') ||
+            hashParams.has('token_hash') ||
+            url.searchParams.has('code');
+
+        return searchHasTypeRecovery || hashHasTypeRecovery || hasTokens;
+    }, []);
+
+    const openRecoveryModal = useCallback((shouldClearUrl = false) => {
+        handledRecoveryRef.current = true;
+        setIsRecoveryFlow(true);
+        setIsPasswordModalOpen(true);
+        if (shouldClearUrl) {
+            clearRecoveryUrl();
+        }
+    }, [clearRecoveryUrl]);
 
     useLayoutEffect(() => {
         if (!fullName) return;
@@ -122,6 +172,31 @@ function ProfileContent() {
     useEffect(() => {
         fetchInitialData();
     }, [targetId]);
+
+    useEffect(() => {
+        if (handledRecoveryRef.current || typeof window === 'undefined') return;
+        if (!hasRecoveryParams()) return;
+
+        // Si llegamos con tokens/hash de recovery, abrimos el modal y limpiamos la URL.
+        openRecoveryModal(false);
+    }, [hasRecoveryParams, openRecoveryModal]);
+
+    useEffect(() => {
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                openRecoveryModal(true);
+                return;
+            }
+
+            if (event === 'SIGNED_IN' && !handledRecoveryRef.current && hasRecoveryParams()) {
+                openRecoveryModal(true);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [hasRecoveryParams, openRecoveryModal, supabase]);
 
     const handleAvatarCropSave = useCallback(
         async (blob: Blob) => {
@@ -208,8 +283,9 @@ function ProfileContent() {
             const effectiveId = (targetId && managerStatus) ? targetId : user.id;
             const { data, error } = await supabase.from('profiles').select('*').eq('id', effectiveId).single();
             if (error) throw error;
-            setProfile(data);
-            setJoiningDateYmd((data as any)?.joining_date ?? '');
+            const typedProfile = data as UserProfile;
+            setProfile(typedProfile);
+            setJoiningDateYmd(typedProfile.joining_date ?? '');
         } catch (error) {
             console.error('Error loading profile:', error);
             toast.error('Error al cargar el perfil');
@@ -487,7 +563,20 @@ function ProfileContent() {
             <NominasModal isOpen={nominasListOpen} onClose={() => setNominasListOpen(false)} targetUserId={viewingOtherProfile ? profile.id : undefined} isManager={isManager} />
             <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} isManager={isManager} />
             <ContratoModal isOpen={contratoOpen} onClose={() => setContratoOpen(false)} userId={profile.id} isManager={isManager} />
-            {isPasswordModalOpen && <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />}
+            {isPasswordModalOpen && (
+                <ChangePasswordModal
+                    isOpen={isPasswordModalOpen}
+                    isRecoveryMode={isRecoveryFlow}
+                    onClose={() => {
+                        setIsPasswordModalOpen(false);
+                        setIsRecoveryFlow(false);
+                    }}
+                    onSuccess={() => {
+                        clearRecoveryUrl();
+                        setIsRecoveryFlow(false);
+                    }}
+                />
+            )}
 
             {cropModalImageSrc && (
                 <AvatarCropModal
