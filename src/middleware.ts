@@ -4,15 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 export default async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     const searchParams = request.nextUrl.searchParams;
-    const isProfileRecoveryRequest =
-        path === '/profile' && (
-            searchParams.get('type') === 'recovery' ||
-            searchParams.has('code') ||
-            searchParams.has('token') ||
-            searchParams.has('token_hash') ||
-            searchParams.has('access_token') ||
-            searchParams.has('refresh_token')
-        );
+    const isPublicProfileRoute = path === '/profile';
 
     // --- 1. BYPASS CRÍTICO PARA EL TPV (Añadido) ---
     // Si la ruta es de la API, dejamos pasar sin ejecutar nada de auth.
@@ -65,7 +57,7 @@ export default async function middleware(request: NextRequest) {
     // --- 3. PROTECCIÓN DE RUTAS (Tu código original) ---
 
     // Protección Global: Si no hay usuario y no es login/auth, mandar a Login
-    if (!user && !path.startsWith('/login') && !path.startsWith('/auth') && !isProfileRecoveryRequest) {
+    if (!user && !path.startsWith('/login') && !path.startsWith('/auth') && !isPublicProfileRoute) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 

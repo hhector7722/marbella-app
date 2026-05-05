@@ -58,6 +58,7 @@ function ProfileContent() {
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
     const [isRecoveryPending, setIsRecoveryPending] = useState(false);
+    const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false);
     const [modalDatosPersonales, setModalDatosPersonales] = useState(false);
     const [modalContacto, setModalContacto] = useState(false);
     const [modalDatosBancarios, setModalDatosBancarios] = useState(false);
@@ -189,6 +190,7 @@ function ProfileContent() {
         } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'PASSWORD_RECOVERY') {
                 setIsRecoveryPending(false);
+                setShouldRedirectToLogin(false);
                 openRecoveryModal(true);
                 fetchInitialData();
                 return;
@@ -196,6 +198,7 @@ function ProfileContent() {
 
             if (event === 'SIGNED_IN' && !handledRecoveryRef.current && hasRecoveryParams()) {
                 setIsRecoveryPending(false);
+                setShouldRedirectToLogin(false);
                 openRecoveryModal(true);
                 fetchInitialData();
                 return;
@@ -203,11 +206,19 @@ function ProfileContent() {
 
             if (event === 'SIGNED_OUT') {
                 setIsRecoveryPending(false);
+                if (!hasRecoveryParams()) {
+                    setShouldRedirectToLogin(true);
+                }
             }
         });
 
         return () => subscription.unsubscribe();
     }, [hasRecoveryParams, openRecoveryModal, supabase]);
+
+    useEffect(() => {
+        if (!shouldRedirectToLogin) return;
+        router.replace('/login');
+    }, [router, shouldRedirectToLogin]);
 
     const handleAvatarCropSave = useCallback(
         async (blob: Blob) => {
@@ -289,10 +300,12 @@ function ProfileContent() {
                     return;
                 }
                 setIsRecoveryPending(false);
+                setShouldRedirectToLogin(true);
                 setLoading(false);
                 return;
             }
             setIsRecoveryPending(false);
+            setShouldRedirectToLogin(false);
             setCurrentUser(user);
             const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             const managerStatus = currentProfile?.role === 'manager';
