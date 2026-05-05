@@ -57,6 +57,7 @@ function ProfileContent() {
     const [isManager, setIsManager] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
+    const [isRecoveryPending, setIsRecoveryPending] = useState(false);
     const [modalDatosPersonales, setModalDatosPersonales] = useState(false);
     const [modalContacto, setModalContacto] = useState(false);
     const [modalDatosBancarios, setModalDatosBancarios] = useState(false);
@@ -177,7 +178,8 @@ function ProfileContent() {
         if (handledRecoveryRef.current || typeof window === 'undefined') return;
         if (!hasRecoveryParams()) return;
 
-        // Si llegamos con tokens/hash de recovery, abrimos el modal y limpiamos la URL.
+        setIsRecoveryPending(true);
+        // Si llegamos con tokens/hash de recovery, esperamos a que Supabase materialice la sesión.
         openRecoveryModal(false);
     }, [hasRecoveryParams, openRecoveryModal]);
 
@@ -186,12 +188,21 @@ function ProfileContent() {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'PASSWORD_RECOVERY') {
+                setIsRecoveryPending(false);
                 openRecoveryModal(true);
+                fetchInitialData();
                 return;
             }
 
             if (event === 'SIGNED_IN' && !handledRecoveryRef.current && hasRecoveryParams()) {
+                setIsRecoveryPending(false);
                 openRecoveryModal(true);
+                fetchInitialData();
+                return;
+            }
+
+            if (event === 'SIGNED_OUT') {
+                setIsRecoveryPending(false);
             }
         });
 
@@ -273,9 +284,15 @@ function ProfileContent() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
+                if (hasRecoveryParams()) {
+                    setIsRecoveryPending(true);
+                    return;
+                }
+                setIsRecoveryPending(false);
                 setLoading(false);
                 return;
             }
+            setIsRecoveryPending(false);
             setCurrentUser(user);
             const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             const managerStatus = currentProfile?.role === 'manager';
@@ -368,6 +385,10 @@ function ProfileContent() {
         : PROFILE_GRID.filter(i => i.id !== 'cambiar-password' && i.id !== 'cerrar-sesion');
 
     if (loading) {
+        return <div className="min-h-screen bg-[#5B8FB9]" />;
+    }
+
+    if (isRecoveryPending) {
         return <div className="min-h-screen bg-[#5B8FB9]" />;
     }
 
