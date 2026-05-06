@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, X, ChevronDown, Phone, Truck } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Save } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -76,6 +76,29 @@ export default function SuppliersPage() {
         const v = String(m[1] ?? '').trim();
         return v ? v : null;
     }
+
+    function stripCategoryFromNotes(notes: string | null): string | null {
+        if (!notes) return null;
+        const lines = notes
+            .split('\n')
+            .map((l) => l.trimEnd())
+            .filter((l) => !/^\s*Categoría\s*\(app\)\s*:\s*/i.test(l));
+        const joined = lines.join('\n').trim();
+        return joined ? joined : null;
+    }
+
+    function buildNotesWithCategory(category: string | null | undefined, notesWithoutCategory: string | null | undefined): string | null {
+        const cleanCategory = (category ?? '').trim();
+        const cleanNotes = (notesWithoutCategory ?? '').trim();
+        const parts = [
+            cleanCategory ? `Categoría (app): ${cleanCategory}` : null,
+            cleanNotes ? cleanNotes : null,
+        ].filter(Boolean) as string[];
+        const out = parts.join('\n').trim();
+        return out ? out : null;
+    }
+
+    const isDbSupplierId = useCallback((id: string) => /^\d+$/.test(id), []);
 
     const fetchSuppliers = useCallback(async (showLoading = true, showErrorToast = true) => {
         try {
@@ -207,7 +230,7 @@ export default function SuppliersPage() {
         try {
             setIsCreating(true);
             const phone = newSupplier.phone?.trim() || null;
-            const notes = newSupplier.category ? `Categoría (app): ${newSupplier.category}` : null;
+            const notes = buildNotesWithCategory(newSupplier.category ?? null, null);
             const { error } = await supabase.from('suppliers').insert({
                 name,
                 phone,
@@ -227,6 +250,110 @@ export default function SuppliersPage() {
     }
 
     const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
+    const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
+    const [editNotes, setEditNotes] = useState<string>('');
+    const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const canEditOrDelete = useMemo(() => {
+        if (!detailSupplier) return false;
+        return isDbSupplierId(detailSupplier.id);
+    }, [detailSupplier, isDbSupplierId]);
+
+    function openEditModalFromDetail(s: Supplier) {
+        const withoutCategory = stripCategoryFromNotes(s.notes ?? null) ?? '';
+        setEditSupplier(s);
+        setEditNotes(withoutCategory);
+        setEditEmailDomainsText(Array.isArray(s.email_domains) ? s.email_domains.join(', ') : '');
+    }
+
+    async function handleSaveEdit() {
+        if (!editSupplier) return;
+        const name = editSupplier.name.trim();
+        if (!name) {
+            toast.error('El nombre es obligatorio');
+            return;
+        }
+
+        const phone = editSupplier.phone?.trim() || null;
+        const imageUrl = editSupplier.image_url?.trim() || null;
+        const notes = buildNotesWithCategory(editSupplier.category ?? null, editNotes);
+
+        const emailDomains = editEmailDomainsText
+            .split(',')
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean);
+
+        try {
+            setIsSavingEdit(true);
+
+            if (isDbSupplierId(editSupplier.id)) {
+                const { error } = await supabase
+                    .from('suppliers')
+                    .update({
+                        name,
+                        phone,
+                        notes,
+                        image_url: imageUrl,
+                        email_domains: emailDomains.length ? emailDomains : null,
+                    })
+                    .eq('id', Number(editSupplier.id));
+
+                if (error) throw error;
+                toast.success('Proveedor actualizado');
+            } else {
+                // Plantilla/fallback: crear en BD como proveedor real
+                const { error } = await supabase
+                    .from('suppliers')
+                    .insert({
+                        name,
+                        phone,
+                        notes,
+                        image_url: imageUrl,
+                        email_domains: emailDomains.length ? emailDomains : null,
+                    });
+                if (error) throw error;
+                toast.success('Proveedor creado en la base de datos');
+            }
+
+            setEditSupplier(null);
+            await fetchSuppliers(false, true);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast.error(`Error de base de datos: ${message}`);
+        } finally {
+            setIsSavingEdit(false);
+        }
+    }
+
+    async function handleDeleteSupplier(s: Supplier) {
+        if (!isDbSupplierId(s.id)) {
+            toast.error('Este proveedor es una plantilla y no existe en la base de datos.');
+            return;
+        }
+
+        const ok = window.confirm(`¿Seguro que quieres eliminar "${s.name}"? Esta acción no se puede deshacer.`);
+        if (!ok) return;
+
+        try {
+            setIsDeleting(true);
+            const { error } = await supabase
+                .from('suppliers')
+                .delete()
+                .eq('id', Number(s.id));
+
+            if (error) throw error;
+            toast.success('Proveedor eliminado');
+            setDetailSupplier(null);
+            await fetchSuppliers(false, true);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast.error(`Error de base de datos: ${message}`);
+        } finally {
+            setIsDeleting(false);
+        }
+    }
 
     const filteredSuppliers = suppliers.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -378,6 +505,27 @@ export default function SuppliersPage() {
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <button
+                                type="button"
+                                onClick={() => openEditModalFromDetail(detailSupplier)}
+                                className="min-h-[48px] rounded-2xl bg-[#36606F] text-white font-black uppercase tracking-wider text-xs shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Pencil size={16} />
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                disabled={!canEditOrDelete || isDeleting}
+                                onClick={() => void handleDeleteSupplier(detailSupplier)}
+                                className="min-h-[48px] rounded-2xl bg-rose-600 text-white font-black uppercase tracking-wider text-xs shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+                                title={!canEditOrDelete ? 'Solo se pueden eliminar proveedores existentes en BD (no plantillas).' : undefined}
+                            >
+                                <Trash2 size={16} />
+                                {isDeleting ? 'Eliminando…' : 'Eliminar'}
+                            </button>
+                        </div>
+
                         <div className="flex items-center justify-center gap-6 mt-2">
                             {detailSupplier.phone && (
                                 <>
@@ -399,6 +547,120 @@ export default function SuppliersPage() {
                                     </a>
                                 </>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL EDICIÓN PROVEEDOR */}
+            {editSupplier && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4" onClick={() => setEditSupplier(null)}>
+                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-5">
+                            <div className="flex flex-col">
+                                <h2 className="text-lg font-black text-zinc-900 uppercase tracking-wider leading-none">
+                                    {isDbSupplierId(editSupplier.id) ? 'Editar proveedor' : 'Crear en BD'}
+                                </h2>
+                                {!isDbSupplierId(editSupplier.id) && (
+                                    <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] mt-1">
+                                        Este proveedor era plantilla. Al guardar se creará en Supabase.
+                                    </p>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setEditSupplier(null)}
+                                className="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-zinc-100 transition-colors shrink-0"
+                            >
+                                <X className="text-zinc-400" size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nombre</label>
+                                <input
+                                    value={editSupplier.name ?? ''}
+                                    onChange={(e) => setEditSupplier({ ...editSupplier, name: e.target.value })}
+                                    className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                    placeholder="Ej. Suministros Marbella"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Categoría</label>
+                                    <select
+                                        value={editSupplier.category ?? 'Alimentos'}
+                                        onChange={(e) => setEditSupplier({ ...editSupplier, category: e.target.value })}
+                                        className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 bg-white font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                    >
+                                        {CATEGORIES.map((cat) => (
+                                            <option key={cat} value={cat}>
+                                                {cat}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Teléfono</label>
+                                    <input
+                                        value={editSupplier.phone ?? ''}
+                                        onChange={(e) => setEditSupplier({ ...editSupplier, phone: e.target.value })}
+                                        className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                        placeholder="600 000 000"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Logo (URL)</label>
+                                <input
+                                    value={editSupplier.image_url ?? ''}
+                                    onChange={(e) => setEditSupplier({ ...editSupplier, image_url: e.target.value })}
+                                    className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                    placeholder="https://..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Dominios email (separados por coma)</label>
+                                <input
+                                    value={editEmailDomainsText}
+                                    onChange={(e) => setEditEmailDomainsText(e.target.value)}
+                                    className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                    placeholder="proveedor.com, proveedor.es"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Notas</label>
+                                <textarea
+                                    value={editNotes}
+                                    onChange={(e) => setEditNotes(e.target.value)}
+                                    className="w-full min-h-[96px] px-3 py-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20 resize-none"
+                                    placeholder="Observaciones internas…"
+                                />
+                            </div>
+
+                            <button
+                                type="button"
+                                disabled={isSavingEdit}
+                                onClick={() => void handleSaveEdit()}
+                                className="w-full min-h-[48px] rounded-2xl bg-emerald-600 text-white font-black uppercase tracking-wider text-xs shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
+                            >
+                                {isSavingEdit ? (
+                                    <>
+                                        <LoadingSpinner size="sm" className="text-white" />
+                                        <span>Guardando…</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={16} />
+                                        Guardar cambios
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>
