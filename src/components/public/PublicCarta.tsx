@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { ChevronLeft, Pencil } from 'lucide-react'
+import { ChevronLeft, Pencil, X } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
@@ -37,6 +37,8 @@ export type PublicMenuRow = {
 type Group = {
   key: string
   title: string
+  /** Nombre padre en BD (español base) para orden fijo */
+  parentTitleRaw: string
   sortOrder: number
   coverPhotoUrl: string | null
   subs: Map<string, { key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }>
@@ -56,12 +58,14 @@ function subHeading(lang: CartaLang, parentTitleRaw: string, childTitleRaw: stri
 
 export function PublicCarta({
   items,
+  backHref,
   cartaEditHref,
 }: {
   items: PublicMenuRow[]
+  /** Solo usuarios autenticados: destino del botón volver (Inicio). */
+  backHref: string | null
   cartaEditHref: string | null
 }) {
-  const homeHref = cartaEditHref?.startsWith('/dashboard') ? '/dashboard' : '/staff/dashboard'
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<CartaLang>('es')
@@ -83,6 +87,7 @@ export function PublicCarta({
       const g = groups.get(parentKey) ?? {
         key: parentKey,
         title: parentTitle,
+        parentTitleRaw,
         sortOrder: parentSort,
         coverPhotoUrl: null as string | null,
         subs: new Map(),
@@ -104,7 +109,7 @@ export function PublicCarta({
 
     const groupList = Array.from(groups.values()).sort((a, b) => {
       if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
-      return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
+      return a.parentTitleRaw.localeCompare(b.parentTitleRaw, 'es', { sensitivity: 'base' })
     })
 
     for (const g of groupList) {
@@ -125,13 +130,6 @@ export function PublicCarta({
     return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }> }>
   }, [items, lang])
 
-  const openIndex = useMemo(() => grouped.findIndex((g) => g.key === openKey), [grouped, openKey])
-  const insertAfterIndex = useMemo(() => {
-    if (openIndex < 0) return -1
-    // Una sección por fila: el panel va justo debajo del tile abierto
-    return openIndex
-  }, [openIndex])
-
   const openGroup = useMemo(
     () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
     [grouped, openKey]
@@ -140,217 +138,233 @@ export function PublicCarta({
   return (
     <main className="h-[100dvh] bg-[#5B8FB9]">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="grid grid-cols-3 items-center gap-2 pb-2 pt-1">
-          <div className="flex shrink-0 justify-start">
-            {cartaEditHref ? (
-              <Link
-                href={homeHref}
-                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
-                aria-label="Volver a inicio"
-                title="Volver a inicio"
-              >
-                <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
-              </Link>
-            ) : null}
-            <Image
-              src="/icons/logo-white.png"
-              alt="Bar La Marbella"
-              width={180}
-              height={48}
-              className="h-8 w-auto max-w-[160px] sm:h-9 sm:max-w-[180px]"
-              priority
-            />
+        <header className="shrink-0 pb-3 pt-1">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-1">
+            <div className="flex min-h-[52px] items-center justify-start">
+              {backHref ? (
+                <Link
+                  href={backHref}
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
+                  aria-label="Volver a inicio"
+                  title="Volver a inicio"
+                >
+                  <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.5} />
+                </Link>
+              ) : null}
+            </div>
+
+            <div className="flex justify-center px-1">
+              <Image
+                src="/icons/logo-white.png"
+                alt="Bar La Marbella"
+                width={260}
+                height={70}
+                className="h-11 w-auto max-w-[220px] sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
+                priority
+              />
+            </div>
+
+            <div className="flex min-h-[52px] items-center justify-end">
+              {cartaEditHref ? (
+                <Link
+                  href={cartaEditHref}
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-white shadow-none outline-none ring-0 transition-opacity hover:opacity-85 active:opacity-70 focus-visible:opacity-100"
+                  aria-label="Editar carta"
+                  title="Editar carta"
+                >
+                  <Pencil className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                </Link>
+              ) : null}
+            </div>
           </div>
 
-          <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" />
-
-          <div className="flex shrink-0 justify-end">
-            {cartaEditHref ? (
-              <Link
-                href={cartaEditHref}
-                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
-                aria-label="Editar carta"
-                title="Editar carta"
-              >
-                <Pencil className="h-5 w-5" strokeWidth={2.25} />
-              </Link>
-            ) : (
-              <span className="inline-flex min-h-[48px] min-w-[48px]" aria-hidden />
-            )}
+          <div className="mt-3 w-full px-0 sm:mt-4">
+            <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" />
           </div>
         </header>
 
-        <section className="mt-6 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-8">
+        <section className="mt-4 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-5">
           <div className="grid grid-cols-1 gap-2 sm:gap-4">
-            {grouped.map((group, idx) => {
-              const isOpen = openKey === group.key
-              return (
-                <div key={group.key} className="contents">
-                <div
-                  className={cn(
-                    'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
-                    isOpen
-                      ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                      : 'border-zinc-200/60'
-                  )}
+            {grouped.map((group) => (
+              <div
+                key={group.key}
+                className="overflow-hidden rounded-xl border-2 border-zinc-200/60 bg-white shadow-sm transition-colors duration-150"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSubKeyByGroup((p) => {
+                      const n = { ...p }
+                      delete n[group.key]
+                      return n
+                    })
+                    setOpenKey((prev) => (prev === group.key ? null : group.key))
+                  }}
+                  className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
+                  aria-expanded={openKey === group.key}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenKey((current) => {
-                        if (current === group.key) {
-                          setSelectedSubKeyByGroup((p) => {
-                            const n = { ...p }
-                            delete n[group.key]
-                            return n
-                          })
-                          return null
-                        }
-                        setSelectedSubKeyByGroup((p) => {
-                          const n = { ...p }
-                          delete n[group.key]
-                          return n
-                        })
-                        return group.key
-                      })
-                    }}
-                    className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
-                    aria-expanded={isOpen}
-                  >
-                    <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
-                      {group.coverPhotoUrl ? (
-                        <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white sm:h-11 sm:w-11">
-                          <Image
-                            src={group.coverPhotoUrl}
-                            alt=""
-                            fill
-                            sizes="40px"
-                            className="object-contain object-left"
-                          />
-                        </span>
-                      ) : null}
-                      <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:text-sm">
-                        {group.title}
+                  <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
+                    {group.coverPhotoUrl ? (
+                      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white sm:h-11 sm:w-11">
+                        <Image
+                          src={group.coverPhotoUrl}
+                          alt=""
+                          fill
+                          sizes="40px"
+                          className="object-contain object-left"
+                        />
                       </span>
+                    ) : null}
+                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:text-sm">
+                      {group.title}
                     </span>
-                  </button>
-                </div>
-
-                {openGroup && insertAfterIndex === idx ? (
-                  <div className="col-span-1 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
-                    <div className="px-3 pb-4 pt-3">
-                      {openGroup._subList.length > 1 ? (
-                        <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
-                          {openGroup._subList.map((sub) => {
-                            const sel = selectedSubKeyByGroup[openGroup.key]
-                            const isActive = sel === sub.key
-                            return (
-                              <button
-                                key={sub.key}
-                                type="button"
-                                onClick={() =>
-                                  setSelectedSubKeyByGroup((p) => ({
-                                    ...p,
-                                    [openGroup.key]: sub.key,
-                                  }))
-                                }
-                                className={cn(
-                                  'flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
-                                  isActive
-                                    ? 'border-[#36606F] bg-white text-[#36606F]'
-                                    : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
-                                )}
-                              >
-                                <span className="line-clamp-3 min-w-0">
-                                  {sub.title.trim() || tPublicUi(lang).uncategorized}
-                                </span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      ) : null}
-
-                      {openGroup._subList.length > 1 &&
-                      !selectedSubKeyByGroup[openGroup.key] ? null : (
-                        <div className="space-y-5">
-                          {(openGroup._subList.length > 1
-                            ? openGroup._subList.filter(
-                                (s) => s.key === selectedSubKeyByGroup[openGroup.key]
-                              )
-                            : openGroup._subList
-                          ).map((sub) => (
-                            <div key={sub.key} className="space-y-3">
-                              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                                {sub.rows.map((row) => (
-                                  <div
-                                    key={row.articulo_id}
-                                    className="flex flex-col overflow-hidden rounded-2xl bg-white"
-                                  >
-                                    {row.category_parent_name &&
-                                    ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
-                                      row.photo_url ? (
-                                        <button
-                                          type="button"
-                                          className="relative h-12 w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
-                                          aria-label="Ver foto ampliada"
-                                          onClick={() =>
-                                            setLightbox({
-                                              src: row.photo_url!,
-                                              alt: getCartaDisplayName(row, lang),
-                                            })
-                                          }
-                                        >
-                                          <Image
-                                            src={row.photo_url}
-                                            alt=""
-                                            fill
-                                            sizes="(max-width: 640px) 33vw, 20vw"
-                                            className="pointer-events-none object-contain p-1.5"
-                                          />
-                                        </button>
-                                      ) : (
-                                        <div className="relative h-12 w-full shrink-0 bg-white sm:h-14">
-                                          <div className="h-full w-full bg-white" />
-                                        </div>
-                                      )
-                                    ) : null}
-                                    <div
-                                      className={cn(
-                                        'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-2',
-                                        row.category_parent_name &&
-                                          ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
-                                          ? 'pt-1'
-                                          : 'pt-2'
-                                      )}
-                                    >
-                                      <p
-                                        className="line-clamp-3 w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
-                                        title={getCartaDisplayName(row, lang)}
-                                      >
-                                        {getCartaDisplayName(row, lang)}
-                                      </p>
-                                      <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
-                                        <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
-                                          {formatPrice(row.precio)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-                </div>
-              )
-            })}
+                  </span>
+                </button>
+              </div>
+            ))}
           </div>
         </section>
       </div>
+
+      {openGroup ? (
+        <div
+          className="fixed inset-0 z-[240] flex items-end justify-center sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="carta-section-modal-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-[#1e3a45]/55 backdrop-blur-md transition-opacity"
+            aria-label="Cerrar"
+            onClick={() => setOpenKey(null)}
+          />
+          <div className="relative z-10 flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.35rem] bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-2xl">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-white px-4 py-3">
+              <h2
+                id="carta-section-modal-title"
+                className="min-w-0 flex-1 text-left text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-base"
+              >
+                {openGroup.title}
+              </h2>
+              <button
+                type="button"
+                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                aria-label="Cerrar"
+                onClick={() => setOpenKey(null)}
+              >
+                <X className="h-6 w-6" strokeWidth={2.5} />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 pt-3 sm:px-4">
+              {openGroup._subList.length > 1 ? (
+                <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                  {openGroup._subList.map((sub) => {
+                    const sel = selectedSubKeyByGroup[openGroup.key]
+                    const isActive = sel === sub.key
+                    return (
+                      <button
+                        key={sub.key}
+                        type="button"
+                        onClick={() =>
+                          setSelectedSubKeyByGroup((p) => ({
+                            ...p,
+                            [openGroup.key]: sub.key,
+                          }))
+                        }
+                        className={cn(
+                          'flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                          isActive
+                            ? 'border-[#36606F] bg-white text-[#36606F]'
+                            : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
+                        )}
+                      >
+                        <span className="line-clamp-3 min-w-0">
+                          {sub.title.trim() || tPublicUi(lang).uncategorized}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+
+              {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
+                <p className="py-6 text-center text-sm font-semibold text-zinc-500">{tPublicUi(lang).pickSubcategoryTitle}</p>
+              ) : (
+                <div className="space-y-5">
+                  {(openGroup._subList.length > 1
+                    ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
+                    : openGroup._subList
+                  ).map((sub) => (
+                    <div key={sub.key} className="space-y-3">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                        {sub.rows.map((row) => (
+                          <div
+                            key={row.articulo_id}
+                            className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
+                          >
+                            <div className="flex w-full flex-col items-center px-2 pb-2 pt-2">
+                              {row.category_parent_name &&
+                              ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
+                                row.photo_url ? (
+                                  <button
+                                    type="button"
+                                    className="relative mx-auto h-12 w-full max-w-[min(100%,8rem)] shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
+                                    aria-label="Ver foto ampliada"
+                                    onClick={() =>
+                                      setLightbox({
+                                        src: row.photo_url!,
+                                        alt: getCartaDisplayName(row, lang),
+                                      })
+                                    }
+                                  >
+                                    <Image
+                                      src={row.photo_url}
+                                      alt=""
+                                      fill
+                                      sizes="(max-width: 640px) 33vw, 20vw"
+                                      className="pointer-events-none object-contain object-center p-1.5"
+                                    />
+                                  </button>
+                                ) : (
+                                  <div className="relative mx-auto h-12 w-full max-w-[min(100%,8rem)] shrink-0 bg-white sm:h-14">
+                                    <div className="h-full w-full bg-white" />
+                                  </div>
+                                )
+                              ) : null}
+                              <div
+                                className={cn(
+                                  'flex w-full min-w-0 flex-col items-center gap-0.5',
+                                  row.category_parent_name &&
+                                    ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
+                                    ? 'mt-1'
+                                    : 'mt-0'
+                                )}
+                              >
+                                <p
+                                  className="line-clamp-3 w-full max-w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
+                                  title={getCartaDisplayName(row, lang)}
+                                >
+                                  {getCartaDisplayName(row, lang)}
+                                </p>
+                                <div className="flex min-h-[44px] w-full shrink-0 items-center justify-center py-0.5">
+                                  <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
+                                    {formatPrice(row.precio)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <CartaImageLightbox
         src={lightbox?.src ?? null}

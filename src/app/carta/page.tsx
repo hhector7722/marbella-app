@@ -11,9 +11,11 @@ export default async function PublicCartaPage() {
   } = await supabase.auth.getUser()
 
   let cartaEditHref: string | null = null
+  let backHref: string | null = null
   if (user) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const role = (profile?.role ?? null) as string | null
+    backHref = role === 'manager' || role === 'admin' ? '/dashboard' : '/staff/dashboard'
     if (role === 'manager' || role === 'admin') {
       cartaEditHref = '/dashboard/carta'
     } else if (role === 'supervisor') {
@@ -45,7 +47,11 @@ export default async function PublicCartaPage() {
   }
 
   return (
-    <PublicCarta items={(data ?? []) as PublicMenuRow[]} cartaEditHref={cartaEditHref} />
+    <PublicCarta
+      items={(data ?? []) as PublicMenuRow[]}
+      backHref={backHref}
+      cartaEditHref={cartaEditHref}
+    />
   )
 }
 

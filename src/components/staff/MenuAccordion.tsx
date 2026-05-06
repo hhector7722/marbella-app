@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { cn } from '@/lib/utils'
-import { CheckCircle2, GripVertical, Loader2, Pencil } from 'lucide-react'
+import { CheckCircle2, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
     type CartaLang,
     getCartaDisplayName,
@@ -46,6 +46,8 @@ type GroupedSub = { key: string; title: string; sortOrder: number; rows: Digital
 type GroupedGroup = {
     key: string
     title: string
+    /** Nombre padre en BD (español base) para orden fijo */
+    parentTitleRaw: string
     sortOrder: number
     coverPhotoUrl: string | null
     _subList: GroupedSub[]
@@ -181,12 +183,12 @@ function MenuCard({
     return (
         <div
             className={cn(
-                'flex h-full flex-col overflow-hidden rounded-2xl bg-white',
+                'flex h-full flex-col items-center overflow-hidden rounded-2xl bg-white',
                 editMode && !isActive && 'opacity-75'
             )}
         >
-            <div className="w-full shrink-0 bg-white">
-                <div className="relative h-14 w-full bg-white sm:h-16">
+            <div className="flex w-full flex-col items-center px-2 pt-2">
+                <div className="relative mx-auto h-14 w-full max-w-[min(100%,8rem)] shrink-0 bg-white sm:h-16">
                     {row.photo_url ? (
                         <button
                             type="button"
@@ -198,7 +200,7 @@ function MenuCard({
                             <img
                                 src={row.photo_url}
                                 alt=""
-                                className="pointer-events-none h-full w-full max-h-full object-contain p-1.5"
+                                className="pointer-events-none h-full w-full max-h-full object-contain object-center p-1.5"
                             />
                         </button>
                     ) : (
@@ -231,7 +233,7 @@ function MenuCard({
 
             <div
                 className={cn(
-                    'flex min-h-0 flex-1 flex-col gap-0.5 px-2 pb-3 pt-1',
+                    'flex min-h-0 w-full flex-1 flex-col items-center gap-0.5 px-2 pb-3 pt-1',
                     editMode && onEditProduct && !productReorderMode && 'cursor-pointer touch-manipulation active:bg-zinc-50'
                 )}
                 role={editMode && onEditProduct && !productReorderMode ? 'button' : undefined}
@@ -255,12 +257,12 @@ function MenuCard({
                 }
             >
                 <p
-                    className="line-clamp-3 w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
+                    className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
                     title={displayName}
                 >
                     {displayName}
                 </p>
-                <div className="flex min-h-[44px] shrink-0 items-center justify-center py-0.5">
+                <div className="flex min-h-[44px] w-full shrink-0 items-center justify-center py-0.5">
                     {showPrice ? (
                         <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)]">
                             {priceStr}
@@ -324,6 +326,7 @@ export function MenuAccordion({
         type Group = {
             key: string
             title: string
+            parentTitleRaw: string
             sortOrder: number
             coverPhotoUrl: string | null
             subs: Map<string, { title: string; sortOrder: number; rows: DigitalMenuRow[] }>
@@ -343,6 +346,7 @@ export function MenuAccordion({
             const g = groups.get(parentKey) ?? {
                 key: parentKey,
                 title: parentTitle,
+                parentTitleRaw,
                 sortOrder: parentSort,
                 coverPhotoUrl: null as string | null,
                 subs: new Map(),
@@ -367,7 +371,7 @@ export function MenuAccordion({
 
         const groupList = Array.from(groups.values()).sort((a, b) => {
             if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
-            return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
+            return a.parentTitleRaw.localeCompare(b.parentTitleRaw, 'es', { sensitivity: 'base' })
         })
 
         for (const g of groupList) {
@@ -435,12 +439,6 @@ export function MenuAccordion({
             ),
         [grouped, reorderScope, openKey, activeSubKeyForOpen, parentKeysDraft, subKeysDraft, productIdsDraft]
     )
-
-    const openIndex = useMemo(() => displayGrouped.findIndex((g) => g.key === openKey), [displayGrouped, openKey])
-    const insertAfterIndex = useMemo(() => {
-        if (openIndex < 0) return -1
-        return openIndex
-    }, [openIndex])
 
     const openGroup = useMemo(
         () => (openKey ? displayGrouped.find((g) => g.key === openKey) ?? null : null),
@@ -578,27 +576,17 @@ export function MenuAccordion({
     }
 
     const headerToggle = (groupKey: string) => {
-        setOpenKey((current) => {
-            if (current === groupKey) {
-                setSelectedSubKeyByGroup((p) => {
-                    const n = { ...p }
-                    delete n[groupKey]
-                    return n
-                })
-                return null
-            }
-            setSelectedSubKeyByGroup((p) => {
-                const n = { ...p }
-                delete n[groupKey]
-                return n
-            })
-            return groupKey
+        setSelectedSubKeyByGroup((p) => {
+            const n = { ...p }
+            delete n[groupKey]
+            return n
         })
+        setOpenKey((prev) => (prev === groupKey ? null : groupKey))
     }
 
     const gridBlock = (
         <div className={cn('grid grid-cols-1 gap-2 sm:gap-4', hideLangPicker && 'pt-0')}>
-            {displayGrouped.map((group, idx) => {
+            {displayGrouped.map((group) => {
                 const isOpen = openKey === group.key
                 const headerMain = (
                     <>
@@ -736,201 +724,6 @@ export function MenuAccordion({
                 return (
                     <Fragment key={group.key}>
                         {reorderScope === 'parents' ? parentReorderCard : headerCard}
-
-                        {openGroup && insertAfterIndex === idx ? (
-                            <div className="col-span-1 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
-                                <div className="px-3 pb-3 pt-3">
-                                    {editMode &&
-                                    onPersistChildCategoryOrder &&
-                                    !reorderScope &&
-                                    openGroup._subList.length > 1 ? (
-                                        <div className="mb-2 flex justify-end">
-                                            <button
-                                                type="button"
-                                                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
-                                                onClick={() => {
-                                                    setReorderPick(null)
-                                                    setSubKeysDraft(openGroup._subList.map((s) => s.key))
-                                                    setReorderScope('subs')
-                                                }}
-                                            >
-                                                Reordenar pestañas
-                                            </button>
-                                        </div>
-                                    ) : null}
-                                    {openGroup._subList.length > 1 ? (
-                                        reorderScope === 'subs' ? (
-                                            <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
-                                                {openGroup._subList.map((sub) => {
-                                                    const sel = selectedSubKeyByGroup[openGroup.key]
-                                                    const isActive = sel === sub.key
-                                                    const picked = reorderPick === sub.key && isUuidLike(sub.key)
-                                                    return (
-                                                        <div key={sub.key} className="min-w-0 flex-1 basis-0">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (reorderScope === 'subs') {
-                                                                        handleSubReorderTap(sub.key)
-                                                                        return
-                                                                    }
-                                                                    setSelectedSubKeyByGroup((p) => ({
-                                                                        ...p,
-                                                                        [openGroup.key]: sub.key,
-                                                                    }))
-                                                                }}
-                                                                className={cn(
-                                                                    'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
-                                                                    isActive
-                                                                        ? 'border-[#36606F] bg-white text-[#36606F]'
-                                                                        : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50',
-                                                                    picked &&
-                                                                        'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
-                                                                )}
-                                                            >
-                                                                <span className="line-clamp-3 min-w-0">
-                                                                    {sub.title.trim() ||
-                                                                        tPublicUi(lang).uncategorized}
-                                                                </span>
-                                                            </button>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
-                                                {openGroup._subList.map((sub) => {
-                                                    const sel = selectedSubKeyByGroup[openGroup.key]
-                                                    const isActive = sel === sub.key
-                                                    return (
-                                                        <div key={sub.key} className="min-w-0 flex-1 basis-0">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    setSelectedSubKeyByGroup((p) => ({
-                                                                        ...p,
-                                                                        [openGroup.key]: sub.key,
-                                                                    }))
-                                                                }
-                                                                className={cn(
-                                                                    'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
-                                                                    isActive
-                                                                        ? 'border-[#36606F] bg-white text-[#36606F]'
-                                                                        : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
-                                                                )}
-                                                            >
-                                                                <span className="line-clamp-3 min-w-0">
-                                                                    {sub.title.trim() ||
-                                                                        tPublicUi(lang).uncategorized}
-                                                                </span>
-                                                            </button>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        )
-                                    ) : null}
-
-                                    {openGroup._subList.length > 1 &&
-                                    !selectedSubKeyByGroup[openGroup.key] ? null : (
-                                        <div className="space-y-5">
-                                            {(openGroup._subList.length > 1
-                                                ? openGroup._subList.filter(
-                                                      (s) => s.key === selectedSubKeyByGroup[openGroup.key]
-                                                  )
-                                                : openGroup._subList
-                                            ).map((sub) => (
-                                                <section key={sub.key} className="space-y-3">
-                                                    {editMode &&
-                                                    onPersistProductOrder &&
-                                                    !reorderScope &&
-                                                    sub.rows.length > 0 ? (
-                                                        <div className="mb-2 flex justify-end">
-                                                            <button
-                                                                type="button"
-                                                                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
-                                                                onClick={() => {
-                                                                    setReorderPick(null)
-                                                                    setProductIdsDraft(sub.rows.map((r) => r.articulo_id))
-                                                                    setReorderScope('products')
-                                                                }}
-                                                            >
-                                                                Reordenar platos
-                                                            </button>
-                                                        </div>
-                                                    ) : null}
-                                                    {reorderScope === 'products' &&
-                                                    sub.key === activeSubKeyForOpen ? (
-                                                        <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
-                                                            {sub.rows.map((row) => {
-                                                                const picked =
-                                                                    reorderPick === String(row.articulo_id)
-                                                                return (
-                                                                    <div
-                                                                        key={row.articulo_id}
-                                                                        role="presentation"
-                                                                        className={cn(
-                                                                            'h-full cursor-pointer rounded-2xl transition-shadow',
-                                                                            picked &&
-                                                                                'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
-                                                                        )}
-                                                                        onClick={(e) => {
-                                                                            if (
-                                                                                (e.target as HTMLElement).closest(
-                                                                                    'button'
-                                                                                )
-                                                                            ) {
-                                                                                return
-                                                                            }
-                                                                            handleProductReorderTap(row.articulo_id)
-                                                                        }}
-                                                                    >
-                                                                        <MenuCard
-                                                                            row={row}
-                                                                            lang={lang}
-                                                                            editMode={editMode}
-                                                                            productReorderMode={
-                                                                                reorderScope === 'products'
-                                                                            }
-                                                                            onEditProduct={onEditProduct}
-                                                                            onToggleProductActive={
-                                                                                onToggleProductActive
-                                                                            }
-                                                                            productToggleBusyId={
-                                                                                productToggleBusyId
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
-                                                            {sub.rows.map((row) => (
-                                                                <div key={row.articulo_id} className="h-full">
-                                                                    <MenuCard
-                                                                        row={row}
-                                                                        lang={lang}
-                                                                        editMode={editMode}
-                                                                        onEditProduct={onEditProduct}
-                                                                        onToggleProductActive={
-                                                                            onToggleProductActive
-                                                                        }
-                                                                        productToggleBusyId={
-                                                                            productToggleBusyId
-                                                                        }
-                                                                    />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </section>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ) : null}
                     </Fragment>
                 )
             })}
@@ -983,6 +776,230 @@ export function MenuAccordion({
             ) : null}
 
             {gridBlock}
+
+            {openGroup ? (
+                <div
+                    className="fixed inset-0 z-[250] flex items-end justify-center sm:items-center sm:p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="staff-carta-section-modal-title"
+                >
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-[#1e3a45]/55 backdrop-blur-md transition-opacity"
+                        aria-label="Cerrar"
+                        onClick={() => setOpenKey(null)}
+                    />
+                    <div className="relative z-10 flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.35rem] bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-2xl">
+                        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-white px-4 py-3">
+                            <h2
+                                id="staff-carta-section-modal-title"
+                                className="min-w-0 flex-1 text-left text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-base"
+                            >
+                                {openGroup.title}
+                            </h2>
+                            <button
+                                type="button"
+                                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                aria-label="Cerrar"
+                                onClick={() => setOpenKey(null)}
+                            >
+                                <X className="h-6 w-6" strokeWidth={2.5} />
+                            </button>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 pt-3 sm:px-4">
+                            {editMode &&
+                            onPersistChildCategoryOrder &&
+                            !reorderScope &&
+                            openGroup._subList.length > 1 ? (
+                                <div className="mb-2 flex justify-end">
+                                    <button
+                                        type="button"
+                                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
+                                        onClick={() => {
+                                            setReorderPick(null)
+                                            setSubKeysDraft(openGroup._subList.map((s) => s.key))
+                                            setReorderScope('subs')
+                                        }}
+                                    >
+                                        Reordenar pestañas
+                                    </button>
+                                </div>
+                            ) : null}
+                            {openGroup._subList.length > 1 ? (
+                                reorderScope === 'subs' ? (
+                                    <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                                        {openGroup._subList.map((sub) => {
+                                            const sel = selectedSubKeyByGroup[openGroup.key]
+                                            const isActive = sel === sub.key
+                                            const picked = reorderPick === sub.key && isUuidLike(sub.key)
+                                            return (
+                                                <div key={sub.key} className="min-w-0 flex-1 basis-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (reorderScope === 'subs') {
+                                                                handleSubReorderTap(sub.key)
+                                                                return
+                                                            }
+                                                            setSelectedSubKeyByGroup((p) => ({
+                                                                ...p,
+                                                                [openGroup.key]: sub.key,
+                                                            }))
+                                                        }}
+                                                        className={cn(
+                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                                                            isActive
+                                                                ? 'border-[#36606F] bg-white text-[#36606F]'
+                                                                : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50',
+                                                            picked &&
+                                                                'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                                                        )}
+                                                    >
+                                                        <span className="line-clamp-3 min-w-0">
+                                                            {sub.title.trim() ||
+                                                                tPublicUi(lang).uncategorized}
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                                        {openGroup._subList.map((sub) => {
+                                            const sel = selectedSubKeyByGroup[openGroup.key]
+                                            const isActive = sel === sub.key
+                                            return (
+                                                <div key={sub.key} className="min-w-0 flex-1 basis-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setSelectedSubKeyByGroup((p) => ({
+                                                                ...p,
+                                                                [openGroup.key]: sub.key,
+                                                            }))
+                                                        }
+                                                        className={cn(
+                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                                                            isActive
+                                                                ? 'border-[#36606F] bg-white text-[#36606F]'
+                                                                : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
+                                                        )}
+                                                    >
+                                                        <span className="line-clamp-3 min-w-0">
+                                                            {sub.title.trim() ||
+                                                                tPublicUi(lang).uncategorized}
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )
+                            ) : null}
+
+                            {openGroup._subList.length > 1 &&
+                            !selectedSubKeyByGroup[openGroup.key] ? null : (
+                                <div className="space-y-5">
+                                    {(openGroup._subList.length > 1
+                                        ? openGroup._subList.filter(
+                                              (s) => s.key === selectedSubKeyByGroup[openGroup.key]
+                                          )
+                                        : openGroup._subList
+                                    ).map((sub) => (
+                                        <section key={sub.key} className="space-y-3">
+                                            {editMode &&
+                                            onPersistProductOrder &&
+                                            !reorderScope &&
+                                            sub.rows.length > 0 ? (
+                                                <div className="mb-2 flex justify-end">
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
+                                                        onClick={() => {
+                                                            setReorderPick(null)
+                                                            setProductIdsDraft(sub.rows.map((r) => r.articulo_id))
+                                                            setReorderScope('products')
+                                                        }}
+                                                    >
+                                                        Reordenar platos
+                                                    </button>
+                                                </div>
+                                            ) : null}
+                                            {reorderScope === 'products' &&
+                                            sub.key === activeSubKeyForOpen ? (
+                                                <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                    {sub.rows.map((row) => {
+                                                        const picked =
+                                                            reorderPick === String(row.articulo_id)
+                                                        return (
+                                                            <div
+                                                                key={row.articulo_id}
+                                                                role="presentation"
+                                                                className={cn(
+                                                                    'h-full cursor-pointer rounded-2xl transition-shadow',
+                                                                    picked &&
+                                                                        'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                                                                )}
+                                                                onClick={(e) => {
+                                                                    if (
+                                                                        (e.target as HTMLElement).closest(
+                                                                            'button'
+                                                                        )
+                                                                    ) {
+                                                                        return
+                                                                    }
+                                                                    handleProductReorderTap(row.articulo_id)
+                                                                }}
+                                                            >
+                                                                <MenuCard
+                                                                    row={row}
+                                                                    lang={lang}
+                                                                    editMode={editMode}
+                                                                    productReorderMode={
+                                                                        reorderScope === 'products'
+                                                                    }
+                                                                    onEditProduct={onEditProduct}
+                                                                    onToggleProductActive={
+                                                                        onToggleProductActive
+                                                                    }
+                                                                    productToggleBusyId={
+                                                                        productToggleBusyId
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                    {sub.rows.map((row) => (
+                                                        <div key={row.articulo_id} className="h-full">
+                                                            <MenuCard
+                                                                row={row}
+                                                                lang={lang}
+                                                                editMode={editMode}
+                                                                onEditProduct={onEditProduct}
+                                                                onToggleProductActive={
+                                                                    onToggleProductActive
+                                                                }
+                                                                productToggleBusyId={
+                                                                    productToggleBusyId
+                                                                }
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </section>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     )
 }
