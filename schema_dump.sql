@@ -2659,7 +2659,8 @@ CREATE TABLE IF NOT EXISTS "public"."suppliers" (
     "reliability" "text",
     "phone" "text",
     "notes" "text",
-    "email_domains" "text"[]
+    "email_domains" "text"[],
+    "image_url" "text"
 );
 
 

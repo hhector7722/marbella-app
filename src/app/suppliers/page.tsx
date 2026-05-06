@@ -9,13 +9,18 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 interface Supplier {
-    id: string;
+    id: string; // bigint en BD; string en UI para soportar rows "initial-*"
+    created_at: string | null;
     name: string;
-    contact_person: string | null;
+    delivery_schedule: string | null;
+    lead_time: string | null;
+    reliability: string | null;
     phone: string | null;
-    email: string | null;
-    category: string | null;
+    notes: string | null;
+    email_domains: string[] | null;
     image_url: string | null;
+    // Derivado (no existe en BD): se guarda dentro de notes como "Categoría (app): ..."
+    category: string | null;
 }
 
 const SUPPLIER_LOGOS: Record<string, string> = {
@@ -68,17 +73,41 @@ export default function SuppliersPage() {
 
     useEffect(() => { fetchSuppliers(); }, []);
 
+    function extractCategoryFromNotes(notes: string | null): string | null {
+        if (!notes) return null;
+        const m = notes.match(/(?:^|\n)\s*Categoría\s*\(app\)\s*:\s*(.+)\s*$/i);
+        if (!m) return null;
+        const v = String(m[1] ?? '').trim();
+        return v ? v : null;
+    }
+
     async function fetchSuppliers() {
         try {
             setLoading(true);
-            const { data, error } = await supabase.from('suppliers').select('*').order('name');
+            const { data, error } = await supabase
+                .from('suppliers')
+                .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url')
+                .order('name');
             if (error) {
                 console.error('Supabase Error:', error);
                 toast.error(`Error de base de datos: ${error.message}`);
                 throw error;
             }
 
-            const dbSuppliers = data || [];
+            const dbSuppliers: Supplier[] = (data || []).map((r: any) => ({
+                id: String(r.id),
+                created_at: r.created_at ?? null,
+                name: String(r.name ?? ''),
+                delivery_schedule: r.delivery_schedule ?? null,
+                lead_time: r.lead_time ?? null,
+                reliability: r.reliability ?? null,
+                phone: r.phone ?? null,
+                notes: r.notes ?? null,
+                email_domains: Array.isArray(r.email_domains) ? r.email_domains : null,
+                image_url: r.image_url ?? null,
+                category: extractCategoryFromNotes(r.notes ?? null),
+            })).filter((s) => s.name);
+
             const combined = [...dbSuppliers];
 
             // Solo añadir iniciales si no hay una coincidencia clara en la DB
@@ -95,11 +124,15 @@ export default function SuppliersPage() {
                     combined.push({
                         id: `initial-${initial.name}`,
                         name: initial.name!,
-                        category: initial.category!,
-                        image_url: null,
-                        contact_person: null,
+                        created_at: null,
+                        delivery_schedule: null,
+                        lead_time: null,
+                        reliability: null,
                         phone: null,
-                        email: null
+                        notes: initial.category ? `Categoría (app): ${initial.category}` : null,
+                        email_domains: null,
+                        image_url: null,
+                        category: initial.category ?? null,
                     });
                 }
             });
@@ -113,10 +146,14 @@ export default function SuppliersPage() {
                     id: `fallback-${i}`,
                     name: s.name!,
                     category: s.category!,
+                    created_at: null,
+                    delivery_schedule: null,
+                    lead_time: null,
+                    reliability: null,
                     image_url: null,
-                    contact_person: null,
                     phone: null,
-                    email: null
+                    notes: s.category ? `Categoría (app): ${s.category}` : null,
+                    email_domains: null,
                 })));
             }
         } finally {
@@ -133,9 +170,7 @@ export default function SuppliersPage() {
         try {
             setIsCreating(true);
             const phone = newSupplier.phone?.trim() || null;
-            const notes = newSupplier.category
-                ? `Categoría (app): ${newSupplier.category}`
-                : null;
+            const notes = newSupplier.category ? `Categoría (app): ${newSupplier.category}` : null;
             const { error } = await supabase.from('suppliers').insert({
                 name,
                 phone,
@@ -158,7 +193,7 @@ export default function SuppliersPage() {
 
     const filteredSuppliers = suppliers.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (s.contact_person?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+            (s.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
         const matchesCategory = !selectedCategory || s.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
