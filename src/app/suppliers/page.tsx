@@ -62,6 +62,7 @@ export default function SuppliersPage() {
     const [supabase] = useState(() => createClient());
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [showCategoryPopup, setShowCategoryPopup] = useState(false);
@@ -202,6 +203,31 @@ export default function SuppliersPage() {
             }
         };
 
+        const loadRole = async () => {
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                if (!user) {
+                    setUserRole(null);
+                    return;
+                }
+
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError) throw profileError;
+                setUserRole((profile?.role ?? user.user_metadata?.role ?? null) as string | null);
+            } catch (e) {
+                console.error('Error loading user role in suppliers page:', e);
+                setUserRole(null);
+            }
+        };
+
+        void loadRole();
+
         const channel = supabase
             .channel('suppliers-page-live')
             .on(
@@ -258,8 +284,9 @@ export default function SuppliersPage() {
 
     const canEditOrDelete = useMemo(() => {
         if (!detailSupplier) return false;
-        return isDbSupplierId(detailSupplier.id);
-    }, [detailSupplier, isDbSupplierId]);
+        const isManager = userRole === 'manager';
+        return isManager && isDbSupplierId(detailSupplier.id);
+    }, [detailSupplier, isDbSupplierId, userRole]);
 
     function openEditModalFromDetail(s: Supplier) {
         const withoutCategory = stripCategoryFromNotes(s.notes ?? null) ?? '';
@@ -442,7 +469,7 @@ export default function SuppliersPage() {
                                 className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
                             >
                                 {/* IMAGEN PEQUEÑA SIN BORDE */}
-                                <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
+                                <div className="h-14 w-full flex items-center justify-center mb-1 overflow-hidden relative">
                                     {supplier.image_url || SUPPLIER_LOGOS[supplier.name] ? (
                                         <img src={supplier.image_url || SUPPLIER_LOGOS[supplier.name] || ''} alt="" className="w-full h-full object-contain" />
                                     ) : (
@@ -475,7 +502,7 @@ export default function SuppliersPage() {
 
             {/* MODAL DETALLE / CONTACTO PROVEEDOR */}
             {detailSupplier && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setDetailSupplier(null)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setDetailSupplier(null)}>
                     <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end -mt-4 -mr-4 mb-2">
                             <button onClick={() => setDetailSupplier(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -483,9 +510,9 @@ export default function SuppliersPage() {
                             </button>
                         </div>
 
-                        <div className="w-32 h-32 mx-auto bg-gray-50 rounded-3xl flex items-center justify-center mb-6 overflow-hidden border border-gray-100 shadow-inner">
+                        <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-6 overflow-hidden">
                             {detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] ? (
-                                <img src={detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] || ''} alt="" className="w-full h-full object-contain p-4" />
+                                <img src={detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] || ''} alt="" className="w-full h-full object-contain" />
                             ) : (
                                 <Truck className="w-12 h-12 text-gray-200" />
                             )}
@@ -495,36 +522,33 @@ export default function SuppliersPage() {
                             {detailSupplier.name}
                         </h2>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-4">
-                            {detailSupplier.category || 'Varios'}
+                            {detailSupplier.category || ' '}
                         </p>
 
-                        <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-                            <div className="flex items-center justify-center gap-2 text-gray-600 font-bold">
-                                <Phone size={14} className="text-[#36606F]" />
-                                <span>{detailSupplier.phone || 'Sin teléfono'}</span>
+                        {userRole === 'manager' && (
+                            <div className="grid grid-cols-2 gap-3 mb-6">
+                                <button
+                                    type="button"
+                                    disabled={!canEditOrDelete}
+                                    onClick={() => openEditModalFromDetail(detailSupplier)}
+                                    className="min-h-[48px] rounded-2xl bg-[#36606F] text-white font-black uppercase tracking-wider text-xs shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+                                    title={!canEditOrDelete ? 'Solo se pueden editar proveedores existentes en BD (no plantillas).' : undefined}
+                                >
+                                    <Pencil size={16} />
+                                    Editar
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!canEditOrDelete || isDeleting}
+                                    onClick={() => void handleDeleteSupplier(detailSupplier)}
+                                    className="min-h-[48px] rounded-2xl bg-rose-600 text-white font-black uppercase tracking-wider text-xs shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+                                    title={!canEditOrDelete ? 'Solo se pueden eliminar proveedores existentes en BD (no plantillas).' : undefined}
+                                >
+                                    <Trash2 size={16} />
+                                    {isDeleting ? 'Eliminando…' : 'Eliminar'}
+                                </button>
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                            <button
-                                type="button"
-                                onClick={() => openEditModalFromDetail(detailSupplier)}
-                                className="min-h-[48px] rounded-2xl bg-[#36606F] text-white font-black uppercase tracking-wider text-xs shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Pencil size={16} />
-                                Editar
-                            </button>
-                            <button
-                                type="button"
-                                disabled={!canEditOrDelete || isDeleting}
-                                onClick={() => void handleDeleteSupplier(detailSupplier)}
-                                className="min-h-[48px] rounded-2xl bg-rose-600 text-white font-black uppercase tracking-wider text-xs shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-                                title={!canEditOrDelete ? 'Solo se pueden eliminar proveedores existentes en BD (no plantillas).' : undefined}
-                            >
-                                <Trash2 size={16} />
-                                {isDeleting ? 'Eliminando…' : 'Eliminar'}
-                            </button>
-                        </div>
+                        )}
 
                         <div className="flex items-center justify-center gap-6 mt-2">
                             {detailSupplier.phone && (
@@ -554,7 +578,7 @@ export default function SuppliersPage() {
 
             {/* MODAL EDICIÓN PROVEEDOR */}
             {editSupplier && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4" onClick={() => setEditSupplier(null)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[230] p-4" onClick={() => setEditSupplier(null)}>
                     <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-5">
                             <div className="flex flex-col">
@@ -668,7 +692,7 @@ export default function SuppliersPage() {
 
             {/* MODAL CREACIÓN PROVEEDOR - ESTILO INGREDIENTES */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowCreateModal(false)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setShowCreateModal(false)}>
                     <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-[#3F51B5]">Nuevo Proveedor</h2>
