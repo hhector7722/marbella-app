@@ -72,11 +72,13 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             >
                 {/* Header Estilo Marbella */}
                 <div className={cn(
-                    "bg-[#36606F] flex justify-between items-center text-white shrink-0",
+                    "bg-[#36606F] flex justify-between items-center gap-3 text-white shrink-0",
                     variant === 'profile-list' ? 'px-6 py-4' : 'px-8 py-6'
                 )}>
-                    <div className="flex items-center gap-3 min-w-0">
-                        <h3 className="text-xl font-black uppercase tracking-wider leading-none truncate">{title}</h3>
+                    <h3 className="text-xl font-black uppercase tracking-wider leading-none whitespace-nowrap shrink-0">
+                        {title}
+                    </h3>
+                    <div className="flex items-center justify-end gap-1 min-w-0 flex-1">
                         {onOpenTips && (
                             <button
                                 type="button"
@@ -95,17 +97,16 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                 {headerTextAction.label}
                             </button>
                         )}
+                        {!hideHeaderClose && (
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90 shrink-0"
+                            >
+                                <X size={24} strokeWidth={3} />
+                            </button>
+                        )}
                     </div>
-                    {hideHeaderClose ? (
-                        <div className="w-12 h-12 min-h-[48px] shrink-0" aria-hidden />
-                    ) : (
-                        <button
-                            onClick={onClose}
-                            className="w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
-                        >
-                            <X size={24} strokeWidth={3} />
-                        </button>
-                    )}
                 </div>
 
                 <div className={cn(
