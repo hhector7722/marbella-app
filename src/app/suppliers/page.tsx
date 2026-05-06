@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, Trash2, X, ChevronDown, Phone, Mail, User, Package, Truck } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, Phone, Truck } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 interface Supplier {
@@ -60,8 +59,7 @@ const INITIAL_SUPPLIERS: Partial<Supplier>[] = [
 ];
 
 export default function SuppliersPage() {
-    const supabase = createClient();
-    const router = useRouter();
+    const [supabase] = useState(() => createClient());
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -71,8 +69,6 @@ export default function SuppliersPage() {
     const [newSupplier, setNewSupplier] = useState<Partial<Supplier>>({ name: '', category: 'Alimentos' });
     const [isCreating, setIsCreating] = useState(false);
 
-    useEffect(() => { fetchSuppliers(); }, []);
-
     function extractCategoryFromNotes(notes: string | null): string | null {
         if (!notes) return null;
         const m = notes.match(/(?:^|\n)\s*Categoría\s*\(app\)\s*:\s*(.+)\s*$/i);
@@ -81,20 +77,33 @@ export default function SuppliersPage() {
         return v ? v : null;
     }
 
-    async function fetchSuppliers() {
+    const fetchSuppliers = useCallback(async (showLoading = true, showErrorToast = true) => {
         try {
-            setLoading(true);
+            if (showLoading) setLoading(true);
             const { data, error } = await supabase
                 .from('suppliers')
                 .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url')
                 .order('name');
             if (error) {
                 console.error('Supabase Error:', error);
-                toast.error(`Error de base de datos: ${error.message}`);
+                if (showErrorToast) {
+                    toast.error(`Error de base de datos: ${error.message}`);
+                }
                 throw error;
             }
 
-            const dbSuppliers: Supplier[] = (data || []).map((r: any) => ({
+            const dbSuppliers: Supplier[] = (data || []).map((r: {
+                id: string | number;
+                created_at: string | null;
+                name: string | null;
+                delivery_schedule: string | null;
+                lead_time: string | null;
+                reliability: string | null;
+                phone: string | null;
+                notes: string | null;
+                email_domains: string[] | null;
+                image_url: string | null;
+            }) => ({
                 id: String(r.id),
                 created_at: r.created_at ?? null,
                 name: String(r.name ?? ''),
@@ -138,7 +147,7 @@ export default function SuppliersPage() {
             });
 
             setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error fetching suppliers:', error);
             // Fallback solo si la base de datos está inaccesible o vacía
             if (suppliers.length === 0) {
@@ -157,9 +166,37 @@ export default function SuppliersPage() {
                 })));
             }
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
-    }
+    }, [supabase, suppliers.length]);
+
+    useEffect(() => {
+        void fetchSuppliers();
+
+        const refreshFromForeground = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchSuppliers(false, false);
+            }
+        };
+
+        const channel = supabase
+            .channel('suppliers-page-live')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'suppliers' },
+                () => void fetchSuppliers(false, false)
+            )
+            .subscribe();
+
+        window.addEventListener('focus', refreshFromForeground);
+        document.addEventListener('visibilitychange', refreshFromForeground);
+
+        return () => {
+            window.removeEventListener('focus', refreshFromForeground);
+            document.removeEventListener('visibilitychange', refreshFromForeground);
+            void supabase.removeChannel(channel);
+        };
+    }, [fetchSuppliers, supabase]);
 
     async function handleCreateSupplier() {
         const name = newSupplier.name?.trim();

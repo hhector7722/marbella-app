@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { X, Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 interface Supplier {
     id: string;
@@ -42,46 +41,72 @@ interface Props {
 }
 
 export function SupplierSelectionModal({ isOpen, onClose }: Props) {
-    const supabase = createClient();
+    const [supabase] = useState(() => createClient());
     const router = useRouter();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const fetchSuppliers = useCallback(async (showLoading = true) => {
+        if (showLoading) setLoading(true);
+
+        const { data, error } = await supabase
+            .from('suppliers')
+            .select('id, name, image_url')
+            .order('name');
+
+        const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+
+        const dbSuppliers: Supplier[] = (!error && data) ? data : [];
+        const combined = [...dbSuppliers];
+
+        // Añadir los estáticos que no estén ya en la DB (misma lógica que /suppliers)
+        INITIAL_SUPPLIERS.forEach(name => {
+            const alreadyInDb = dbSuppliers.some(s => {
+                const dbName = normalize(s.name);
+                const initName = normalize(name);
+                return dbName === initName || dbName.includes(initName) || initName.includes(dbName);
+            });
+            if (!alreadyInDb) {
+                combined.push({ id: `static-${name}`, name, image_url: null });
+            }
+        });
+
+        setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
+        if (showLoading) setLoading(false);
+    }, [supabase]);
+
     useEffect(() => {
         if (!isOpen) return;
-        setSearchQuery('');
+        const initialFetchTimer = window.setTimeout(() => {
+            void fetchSuppliers();
+        }, 0);
 
-        const fetchSuppliers = async () => {
-            setLoading(true);
-            const { data, error } = await supabase
-                .from('suppliers')
-                .select('id, name, image_url')
-                .order('name');
-
-            const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-
-            const dbSuppliers: Supplier[] = (!error && data) ? data : [];
-            const combined = [...dbSuppliers];
-
-            // Añadir los estáticos que no estén ya en la DB (misma lógica que /suppliers)
-            INITIAL_SUPPLIERS.forEach(name => {
-                const alreadyInDb = dbSuppliers.some(s => {
-                    const dbName = normalize(s.name);
-                    const initName = normalize(name);
-                    return dbName === initName || dbName.includes(initName) || initName.includes(dbName);
-                });
-                if (!alreadyInDb) {
-                    combined.push({ id: `static-${name}`, name, image_url: null });
-                }
-            });
-
-            setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
-            setLoading(false);
+        const refreshFromForeground = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchSuppliers(false);
+            }
         };
 
-        fetchSuppliers();
-    }, [isOpen]);
+        const channel = supabase
+            .channel('supplier-selection-live')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'suppliers' },
+                () => void fetchSuppliers(false)
+            )
+            .subscribe();
+
+        window.addEventListener('focus', refreshFromForeground);
+        document.addEventListener('visibilitychange', refreshFromForeground);
+
+        return () => {
+            window.clearTimeout(initialFetchTimer);
+            window.removeEventListener('focus', refreshFromForeground);
+            document.removeEventListener('visibilitychange', refreshFromForeground);
+            void supabase.removeChannel(channel);
+        };
+    }, [fetchSuppliers, isOpen, supabase]);
 
     if (!isOpen) return null;
 
