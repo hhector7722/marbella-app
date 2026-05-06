@@ -6,15 +6,18 @@ import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import Link from 'next/link'
-import { ChevronLeft, Pencil, X } from 'lucide-react'
+import { ChevronLeft, Pencil, RefreshCw, X } from 'lucide-react'
 import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
 
 export function StaffCartaView({
   items,
   canEditMenu,
+  canOpenMapeo,
 }: {
   items: DigitalMenuRow[]
   canEditMenu: boolean
+  /** Manager/admin: acceso al mapeo TPV en dashboard */
+  canOpenMapeo?: boolean
 }) {
   const [lang, setLang] = useState<CartaLang>('es')
   const [editing, setEditing] = useState(false)
@@ -46,7 +49,17 @@ export function StaffCartaView({
               />
             </div>
 
-            <div className="flex min-h-[52px] items-center justify-end">
+            <div className="flex min-h-[52px] items-center justify-end gap-0.5">
+              {canOpenMapeo ? (
+                <Link
+                  href="/dashboard/recetas-tpv"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-white shadow-none outline-none ring-0 transition-opacity hover:opacity-85 active:opacity-70"
+                  aria-label="Ir a mapeo TPV"
+                  title="Mapeo TPV"
+                >
+                  <RefreshCw className="h-6 w-6 sm:h-7 sm:h-7" strokeWidth={2.25} />
+                </Link>
+              ) : null}
               {canEditMenu ? (
                 <button
                   type="button"

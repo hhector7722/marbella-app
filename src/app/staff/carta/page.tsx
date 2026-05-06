@@ -25,6 +25,7 @@ export default async function StaffCartaPage() {
 
     const role = (profile?.role ?? null) as string | null;
     const canEditMenu = role === 'manager' || role === 'admin' || role === 'supervisor';
+    const canOpenMapeo = role === 'manager' || role === 'admin';
 
     const { data, error } = await supabase
         .from('v_digital_menu_items')
@@ -53,6 +54,10 @@ export default async function StaffCartaPage() {
     }
 
     return (
-        <StaffCartaView items={(data ?? []) as DigitalMenuRow[]} canEditMenu={canEditMenu} />
+        <StaffCartaView
+            items={(data ?? []) as DigitalMenuRow[]}
+            canEditMenu={canEditMenu}
+            canOpenMapeo={canOpenMapeo}
+        />
     );
 }
