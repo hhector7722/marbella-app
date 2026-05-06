@@ -190,6 +190,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
+    const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
+    const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
     const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
     const [isRecalculating, setIsRecalculating] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
@@ -239,6 +241,22 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         };
         getUser();
     }, []);
+
+    const ensureAllEmployeesIncludingInactive = async () => {
+        if (allEmployeesIncludingInactive) return allEmployeesIncludingInactive;
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (error) {
+            console.error(error);
+            toast.error('Error al cargar plantilla completa');
+            return null;
+        }
+        const cleaned = (data || []).filter((p: any) => {
+            const name = (p.first_name || '').trim().toLowerCase();
+            return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+        });
+        setAllEmployeesIncludingInactive(cleaned);
+        return cleaned;
+    };
 
     const handleCreateWorker = async () => {
         if (!newWorkerData.first_name.trim()) { toast.error('El nombre es obligatorio'); return; }
@@ -1376,13 +1394,25 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             <StaffSelectionModal
                 isOpen={isStaffModalOpen}
                 onClose={() => setIsStaffModalOpen(false)}
-                employees={allEmployees}
+                employees={showAllEmployeesInPlantilla ? (allEmployeesIncludingInactive ?? allEmployees) : allEmployees}
                 onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
                 title="Plantilla"
                 variant="profile-list"
                 onOpenTips={() => {
                     setIsStaffModalOpen(false);
                     router.push('/dashboard/propinas');
+                }}
+                includeInactive={showAllEmployeesInPlantilla}
+                headerTextAction={{
+                    label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',
+                    onClick: async () => {
+                        if (!showAllEmployeesInPlantilla) {
+                            await ensureAllEmployeesIncludingInactive();
+                            setShowAllEmployeesInPlantilla(true);
+                            return;
+                        }
+                        setShowAllEmployeesInPlantilla(false);
+                    }
                 }}
             />
 

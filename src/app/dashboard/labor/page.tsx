@@ -253,6 +253,7 @@ export default function LaborHistoryPage() {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, first_name, last_name, avatar_url')
+                .is('end_date', null)
                 .order('first_name');
             if (cancelled || error) return;
             const list = (data || []).filter((e: ProfileOption) => {

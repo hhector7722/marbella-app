@@ -12,6 +12,7 @@ export async function updateProfile(
         phone?: string;
         email?: string;
         joining_date?: string | null;
+        end_date?: string | null;
         prefer_stock_hours?: boolean;
         codigo_empleado?: string;
     }

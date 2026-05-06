@@ -9,6 +9,7 @@ interface Employee {
     last_name: string;
     role?: string;
     avatar_url?: string | null;
+    end_date?: string | null;
 }
 
 interface StaffSelectionModalProps {
@@ -24,6 +25,10 @@ interface StaffSelectionModalProps {
     onOpenTips?: () => void;
     /** Si true, muestra opción "Plantilla" primero (id ''); para vista asistencia manager */
     allowPlantilla?: boolean;
+    /** Si true, incluye empleados con end_date (inactivos) */
+    includeInactive?: boolean;
+    /** Acción de texto en cabecera (sin marco ni relleno) */
+    headerTextAction?: { label: string; onClick: () => void };
 }
 
 const PLANTILLA_SENTINEL: Employee = { id: '', first_name: 'Plantilla', last_name: '' };
@@ -37,13 +42,17 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     variant = 'grid',
     children,
     onOpenTips,
-    allowPlantilla = false
+    allowPlantilla = false,
+    includeInactive = false,
+    headerTextAction
 }) => {
     if (!isOpen) return null;
 
     const filteredEmployees = employees.filter(emp => {
         const name = (emp.first_name || '').trim().toLowerCase();
-        return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+        if (name === 'ramon' || name === 'ramón' || name === 'empleado') return false;
+        if (!includeInactive && emp.end_date) return false;
+        return true;
     });
 
     return (
@@ -72,6 +81,15 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                 className="inline-flex items-center justify-center min-h-[48px] h-10 px-2 rounded-2xl bg-transparent border-0 text-[9px] font-black uppercase tracking-widest text-white/90 hover:text-white active:scale-95 transition-all shrink-0"
                             >
                                 Propinas
+                            </button>
+                        )}
+                        {headerTextAction && (
+                            <button
+                                type="button"
+                                onClick={headerTextAction.onClick}
+                                className="inline-flex items-center justify-center min-h-[48px] h-10 px-2 rounded-2xl bg-transparent border-0 text-[9px] font-black uppercase tracking-widest text-white/90 hover:text-white active:scale-95 transition-all shrink-0"
+                            >
+                                {headerTextAction.label}
                             </button>
                         )}
                     </div>

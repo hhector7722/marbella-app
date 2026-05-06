@@ -32,6 +32,7 @@ interface UserProfile {
     hours_balance?: number | null;
     prefer_stock_hours?: boolean | null;
     joining_date?: string | null;
+    end_date?: string | null;
     role: string;
     avatar_url: string | null;
 }
@@ -71,6 +72,8 @@ function ProfileContent() {
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [joiningDateYmd, setJoiningDateYmd] = useState<string>('');
     const [joiningDateSaving, setJoiningDateSaving] = useState(false);
+    const [endDateYmd, setEndDateYmd] = useState<string>('');
+    const [endDateSaving, setEndDateSaving] = useState(false);
 
     const fullName = profile
         ? `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase()
@@ -316,6 +319,7 @@ function ProfileContent() {
             const typedProfile = data as UserProfile;
             setProfile(typedProfile);
             setJoiningDateYmd(typedProfile.joining_date ?? '');
+            setEndDateYmd(typedProfile.end_date ?? '');
         } catch (error) {
             console.error('Error loading profile:', error);
             toast.error('Error al cargar el perfil');
@@ -350,6 +354,28 @@ function ProfileContent() {
             setJoiningDateSaving(false);
         }
     }, [profile, viewingOtherProfile, joiningDateYmd]);
+
+    const saveEndDate = useCallback(async () => {
+        if (!profile) return;
+        if (!viewingOtherProfile) return;
+        setEndDateSaving(true);
+        try {
+            const normalized = String(endDateYmd || '').trim();
+            const payload = normalized.length > 0 ? normalized : null;
+            const res = await updateProfile(profile.id, { end_date: payload });
+            if (!res?.success) {
+                toast.error(res?.error || 'No se pudo guardar la fecha de finalización');
+                return;
+            }
+            toast.success('Fecha de finalización guardada');
+            fetchInitialData();
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al guardar la fecha de finalización');
+        } finally {
+            setEndDateSaving(false);
+        }
+    }, [profile, viewingOtherProfile, endDateYmd]);
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -561,6 +587,38 @@ function ProfileContent() {
                                                     )}
                                                 >
                                                     {joiningDateSaving ? 'Guardando…' : 'Guardar'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Finalización trabajador</p>
+                                                <p className="text-[11px] font-bold text-zinc-700 truncate">
+                                                    {endDateYmd ? endDateYmd : 'Activo'}
+                                                </p>
+                                            </div>
+                                            <div className="shrink-0 flex items-center gap-2">
+                                                <input
+                                                    type="date"
+                                                    value={endDateYmd || ''}
+                                                    onChange={(e) => setEndDateYmd(e.target.value)}
+                                                    className={cn(
+                                                        'min-h-[48px] h-12 px-3 rounded-xl border border-zinc-200 bg-white',
+                                                        'text-[12px] font-bold text-zinc-800',
+                                                        'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30'
+                                                    )}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={saveEndDate}
+                                                    disabled={endDateSaving}
+                                                    className={cn(
+                                                        'min-h-[48px] h-12 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest',
+                                                        endDateSaving ? 'bg-zinc-200 text-zinc-500' : 'bg-emerald-600 text-white hover:bg-emerald-700',
+                                                        'active:scale-95 transition shrink-0'
+                                                    )}
+                                                >
+                                                    {endDateSaving ? 'Guardando…' : 'Guardar'}
                                                 </button>
                                             </div>
                                         </div>

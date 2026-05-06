@@ -137,6 +137,7 @@ export default function HistoryPage() {
             const { data: emps } = await supabase
                 .from('profiles')
                 .select('id, first_name, last_name, avatar_url')
+                .is('end_date', null)
                 .order('first_name');
 
             setEmployees((emps || []).filter((e: Employee) => {
@@ -280,7 +281,7 @@ export default function HistoryPage() {
                     .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
                     .gte('clock_in', rangeStart.toISOString())
                     .lte('clock_in', rangeEnd.toISOString()),
-                supabase.from('profiles').select('id, first_name, last_name').order('first_name'),
+                supabase.from('profiles').select('id, first_name, last_name').is('end_date', null).order('first_name'),
             ]);
 
             const logsRaw = logsRes.data || [];

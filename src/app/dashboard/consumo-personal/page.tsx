@@ -196,6 +196,7 @@ export default function ConsumoPersonalDashboardPage() {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
+        .is('end_date', null)
         .order('first_name');
       if (cancelledEmployees) return;
       if (error) {
