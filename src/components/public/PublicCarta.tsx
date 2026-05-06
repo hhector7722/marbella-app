@@ -128,10 +128,9 @@ export function PublicCarta({
   const openIndex = useMemo(() => grouped.findIndex((g) => g.key === openKey), [grouped, openKey])
   const insertAfterIndex = useMemo(() => {
     if (openIndex < 0) return -1
-    // grid de 2 columnas: insertar el panel tras terminar la fila del tile seleccionado
-    if (openIndex % 2 === 1) return openIndex
-    return Math.min(openIndex + 1, grouped.length - 1)
-  }, [openIndex, grouped.length])
+    // Una sección por fila: el panel va justo debajo del tile abierto
+    return openIndex
+  }, [openIndex])
 
   const openGroup = useMemo(
     () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
@@ -182,7 +181,7 @@ export function PublicCarta({
         </header>
 
         <section className="mt-6 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-8">
-          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 gap-2 sm:gap-4">
             {grouped.map((group, idx) => {
               const isOpen = openKey === group.key
               return (
@@ -238,7 +237,7 @@ export function PublicCarta({
                 </div>
 
                 {openGroup && insertAfterIndex === idx ? (
-                  <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
+                  <div className="col-span-1 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
                     <div className="px-3 pb-4 pt-3">
                       {openGroup._subList.length > 1 ? (
                         <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">

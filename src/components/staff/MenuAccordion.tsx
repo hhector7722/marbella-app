@@ -439,9 +439,8 @@ export function MenuAccordion({
     const openIndex = useMemo(() => displayGrouped.findIndex((g) => g.key === openKey), [displayGrouped, openKey])
     const insertAfterIndex = useMemo(() => {
         if (openIndex < 0) return -1
-        if (openIndex % 2 === 1) return openIndex
-        return Math.min(openIndex + 1, displayGrouped.length - 1)
-    }, [openIndex, displayGrouped.length])
+        return openIndex
+    }, [openIndex])
 
     const openGroup = useMemo(
         () => (openKey ? displayGrouped.find((g) => g.key === openKey) ?? null : null),
@@ -598,7 +597,7 @@ export function MenuAccordion({
     }
 
     const gridBlock = (
-        <div className={cn('grid grid-cols-2 gap-2 sm:gap-4', hideLangPicker && 'pt-0')}>
+        <div className={cn('grid grid-cols-1 gap-2 sm:gap-4', hideLangPicker && 'pt-0')}>
             {displayGrouped.map((group, idx) => {
                 const isOpen = openKey === group.key
                 const headerMain = (
@@ -739,7 +738,7 @@ export function MenuAccordion({
                         {reorderScope === 'parents' ? parentReorderCard : headerCard}
 
                         {openGroup && insertAfterIndex === idx ? (
-                            <div className="col-span-2 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
+                            <div className="col-span-1 overflow-hidden rounded-xl border-2 border-[#36606F] bg-white shadow-md ring-1 ring-[#36606F]/20">
                                 <div className="px-3 pb-3 pt-3">
                                     {editMode &&
                                     onPersistChildCategoryOrder &&
