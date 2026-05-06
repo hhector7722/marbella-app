@@ -510,7 +510,7 @@ export default function SuppliersPage() {
                             </button>
                         </div>
 
-                        <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-6 overflow-hidden">
+                        <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-3 overflow-hidden">
                             {detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] ? (
                                 <img src={detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] || ''} alt="" className="w-full h-full object-contain" />
                             ) : (
@@ -518,15 +518,15 @@ export default function SuppliersPage() {
                             )}
                         </div>
 
-                        <h2 className="text-xl font-black text-gray-800 uppercase tracking-wider mb-1">
+                        <h2 className="text-xl font-black text-gray-800 uppercase tracking-wider mb-0.5">
                             {detailSupplier.name}
                         </h2>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-4">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-6">
                             {detailSupplier.category || ' '}
                         </p>
 
                         {userRole === 'manager' && (
-                            <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="grid grid-cols-2 gap-3 mb-6 mt-4">
                                 <button
                                     type="button"
                                     disabled={!canEditOrDelete}
@@ -555,10 +555,10 @@ export default function SuppliersPage() {
                                 <>
                                     <a
                                         href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
-                                        className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"
+                                        className="h-12 w-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white grid place-items-center transition-colors active:scale-95 shadow-sm"
                                         title="Llamar"
                                     >
-                                        <Phone size={28} />
+                                        <Phone size={22} />
                                     </a>
                                     <a
                                         href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}
