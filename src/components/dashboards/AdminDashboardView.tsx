@@ -1197,107 +1197,117 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         </div>
     );
 
-    const cajasCambioColumn = (
-        <div className="flex flex-col gap-3 md:gap-3 min-h-0 h-full">
-            <div className="flex flex-col gap-3 md:gap-3 flex-1 min-h-0 w-full max-w-full md:max-w-none h-full self-stretch">
-                {(() => {
-                    // Orden explícito por nombre: Cambio 1 → idx 0, Cambio 2 → idx 1
-                    const changeBoxes = boxes
-                        .filter(b => b.type === 'change')
-                        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-                        .slice(0, 2);
-                    const formatEur = (v: number) =>
-                        v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ";
-                    return (
-                        <>
-                            {["Caja cambio 1", "Caja cambio 2"].map((title, idx) => {
-                                const box = changeBoxes[idx];
-                                if (!box) return null;
-                                const diff = box.current_balance - 300;
-                                const isOk = Math.abs(diff) < 0.01;
-                                return (
-                                    <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
-                                        <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-between text-white shrink-0">
-                                            <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
-                                        </div>
-                                        <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5 min-w-0">
-                                            <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1.5 sm:gap-x-2 md:gap-x-3 px-1 sm:px-1.5 md:px-2">
-                                                <div className="min-w-0 flex flex-col items-start justify-center text-left">
-                                                    <span className="max-w-full text-xs sm:text-sm md:text-base font-black tabular-nums leading-tight text-zinc-800 break-words">
-                                                        {formatEur(box.current_balance)}
-                                                    </span>
-                                                    {!isOk && Math.abs(diff) > 0.005 && (
-                                                        <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5 tabular-nums leading-tight", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
-                                                            {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex min-h-[48px] min-w-0 items-center justify-center">
-                                                    <button
-                                                        onClick={() => { setCashModalMode('swap'); }}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
-                                                    >
-                                                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
-                                                            <ArrowRightLeft size={9} strokeWidth={2.5} />
-                                                        </div>
-                                                        <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Cambiar</span>
-                                                    </button>
-                                                </div>
-                                                <div className="flex min-h-[48px] min-w-0 items-center justify-center">
-                                                    <button
-                                                        onClick={() => openTreasuryModal(box, 'audit')}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
-                                                    >
-                                                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
-                                                            <RefreshCw size={9} strokeWidth={2.5} />
-                                                        </div>
-                                                        <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Arqueo</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </>
-                    );
-                })()}
+    // Cajas cambio + accesos rápidos: rejilla unificada para que cada fila tenga la misma altura
+    // que los botones cuadrados (aspect-square); las tarjetas de cambio ocupan 2 columnas y se estiran.
+    const dashboardChangeBoxes = boxes
+        .filter(b => b.type === 'change')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+        .slice(0, 2);
+
+    const formatChangeBoxEur = (v: number) =>
+        v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ";
+
+    const renderDashboardChangeCard = (title: string, idx: number) => {
+        const box = dashboardChangeBoxes[idx];
+        if (!box) return null;
+        const diff = box.current_balance - 300;
+        const isOk = Math.abs(diff) < 0.01;
+        return (
+            <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden h-full min-h-0 w-full min-w-0 border border-zinc-100">
+                <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-between text-white shrink-0">
+                    <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
+                </div>
+                <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5 min-w-0">
+                    <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1.5 sm:gap-x-2 md:gap-x-3 px-1 sm:px-1.5 md:px-2">
+                        <div className="min-w-0 flex flex-col items-start justify-center text-left">
+                            <span className="max-w-full text-xs sm:text-sm md:text-base font-black tabular-nums leading-tight text-zinc-800 break-words">
+                                {formatChangeBoxEur(box.current_balance)}
+                            </span>
+                            {!isOk && Math.abs(diff) > 0.005 && (
+                                <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5 tabular-nums leading-tight", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
+                                    {diff > 0 ? `+${formatChangeBoxEur(diff)}` : `-${formatChangeBoxEur(Math.abs(diff))}`}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex min-h-[48px] min-w-0 items-center justify-center shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => { setCashModalMode('swap'); }}
+                                className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
+                            >
+                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
+                                    <ArrowRightLeft size={9} strokeWidth={2.5} />
+                                </div>
+                                <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Cambiar</span>
+                            </button>
+                        </div>
+                        <div className="flex min-h-[48px] min-w-0 items-center justify-center shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => openTreasuryModal(box, 'audit')}
+                                className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
+                            >
+                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
+                                    <RefreshCw size={9} strokeWidth={2.5} />
+                                </div>
+                                <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Arqueo</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
+        );
+    };
+
+    const quickActionCards = [
+        { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
+        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
+        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
+        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients' },
+    ] as const;
+
+    const renderQuickActionSquare = (card: (typeof quickActionCards)[number]) => (
+        <button
+            type="button"
+            onClick={() => {
+                if (card.title === 'Plantilla') setIsStaffModalOpen(true);
+                else if (card.title === 'Stock') setIsProductModalOpen(true);
+                else if (card.link) router.push(card.link);
+            }}
+            className={cn(
+                "bg-white rounded-2xl p-2 md:p-1.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-1 active:scale-95 transition-all group",
+                "w-full min-w-0 min-h-0 aspect-square touch-manipulation"
+            )}
+        >
+            <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-xl">
+                <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
+            </div>
+            <span className="text-[9px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">
+                {card.title}
+            </span>
+        </button>
+    );
+
+    const dashboardCambiosYAccesosMobile = (
+        <div className="grid grid-cols-4 gap-3 items-stretch md:hidden">
+            <div className="col-span-2 row-start-1 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
+            <div className="col-span-1 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
+            <div className="col-span-1 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
+            <div className="col-span-2 row-start-2 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 2', 1)}</div>
+            <div className="col-span-1 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
+            <div className="col-span-1 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[3])}</div>
         </div>
     );
 
-    const quickActionsColumn = (
-        // En iPad (>=md) este bloque se estaba estirando por `items-stretch` + `h-full`,
-        // haciendo que tarjetas como Asistencia/M obra quedasen gigantes y "empujasen" el layout.
-        // Queremos altura natural (contenido) y targets táctiles estables.
-        <div className="grid grid-cols-2 gap-3 md:gap-3 self-start shrink-0">
-            {[
-                { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
-                { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
-                { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
-                { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients' },
-            ].map((card, i) => (
-                <button
-                    key={i}
-                    onClick={() => {
-                        if (card.title === 'Plantilla') setIsStaffModalOpen(true);
-                        else if (card.title === 'Stock') setIsProductModalOpen(true);
-                        else if (card.link) router.push(card.link);
-                    }}
-                    className={cn(
-                        "bg-white rounded-2xl p-2 md:p-1.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-1 active:scale-95 transition-all group w-full",
-                        // Touch first (48px+) y altura natural: en md+ no forzamos estiramiento.
-                        "aspect-square md:aspect-square min-h-[96px] md:min-h-[96px]"
-                    )}
-                >
-                    <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-xl">
-                        <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
-                    </div>
-                    <span className="text-[9px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">
-                        {card.title}
-                    </span>
-                </button>
-            ))}
+    const dashboardCambiosYAccesosDesktop = (
+        <div className="hidden md:grid md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)_minmax(0,0.45fr)_minmax(0,0.45fr)] md:gap-x-4 md:gap-y-3 md:items-stretch">
+            <div className="col-start-1 row-start-1 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
+            <div className="col-start-1 row-start-2 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 2', 1)}</div>
+            <div className="col-start-2 row-start-1 row-span-2 min-h-0 min-w-0 flex flex-col">{horasExtrasSection}</div>
+            <div className="col-start-3 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
+            <div className="col-start-4 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
+            <div className="col-start-3 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
+            <div className="col-start-4 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[3])}</div>
         </div>
     );
 
@@ -1311,10 +1321,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     {cajaInicialSection}
                     {horasExtrasSection}
 
-                    <div className="grid grid-cols-2 gap-4 items-stretch">
-                        {cajasCambioColumn}
-                        {quickActionsColumn}
-                    </div>
+                    {dashboardCambiosYAccesosMobile}
                 </div>
 
                 {/* ===== LAYOUT ESCRITORIO ===== */}
@@ -1329,18 +1336,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         <div />
                     </div>
 
-                    {/* Fila inferior: Cajas cambio | Horas Extras | Iconos con misma altura */}
-                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-start">
-                        <div className="h-full flex flex-col min-h-0">
-                            {cajasCambioColumn}
-                        </div>
-                        <div className="h-full flex flex-col min-h-0">
-                            {horasExtrasSection}
-                        </div>
-                        <div className="h-full flex flex-col min-h-0">
-                            {quickActionsColumn}
-                        </div>
-                    </div>
+                    {/* Fila inferior: rejilla unificada — altura filas = tarjetas cuadradas */}
+                    {dashboardCambiosYAccesosDesktop}
                 </div>
 
             </div> {/* Close max-w-6xl */}
