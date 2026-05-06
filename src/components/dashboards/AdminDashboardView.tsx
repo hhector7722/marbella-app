@@ -1402,6 +1402,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     setIsStaffModalOpen(false);
                     router.push('/dashboard/propinas');
                 }}
+                hideHeaderClose
                 includeInactive={showAllEmployeesInPlantilla}
                 headerTextAction={{
                     label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',

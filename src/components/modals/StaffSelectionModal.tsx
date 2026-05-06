@@ -29,6 +29,8 @@ interface StaffSelectionModalProps {
     includeInactive?: boolean;
     /** Acción de texto en cabecera (sin marco ni relleno) */
     headerTextAction?: { label: string; onClick: () => void };
+    /** Si true, oculta la cruz (X) de cierre en cabecera */
+    hideHeaderClose?: boolean;
 }
 
 const PLANTILLA_SENTINEL: Employee = { id: '', first_name: 'Plantilla', last_name: '' };
@@ -44,7 +46,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     onOpenTips,
     allowPlantilla = false,
     includeInactive = false,
-    headerTextAction
+    headerTextAction,
+    hideHeaderClose = false
 }) => {
     if (!isOpen) return null;
 
@@ -93,12 +96,16 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                             </button>
                         )}
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
-                    >
-                        <X size={24} strokeWidth={3} />
-                    </button>
+                    {hideHeaderClose ? (
+                        <div className="w-12 h-12 min-h-[48px] shrink-0" aria-hidden />
+                    ) : (
+                        <button
+                            onClick={onClose}
+                            className="w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
+                        >
+                            <X size={24} strokeWidth={3} />
+                        </button>
+                    )}
                 </div>
 
                 <div className={cn(
