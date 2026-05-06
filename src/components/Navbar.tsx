@@ -53,6 +53,8 @@ export default function Navbar() {
 
     if (pathname === '/login') return null;
     if (pathname === '/carta') return null;
+    if (pathname === '/staff/carta') return null;
+    if (pathname === '/dashboard/carta') return null;
 
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';

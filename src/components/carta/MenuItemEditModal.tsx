@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { Camera, Trash2, Upload, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
@@ -34,6 +34,11 @@ export function MenuItemEditModal({
   const [nameEn, setNameEn] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [tpvName, setTpvName] = useState<string>('')
+  const [recipePhotoUrl, setRecipePhotoUrl] = useState<string | null>(null)
+  const [overridePhotoUrl, setOverridePhotoUrl] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
+  const [removeOverridePhoto, setRemoveOverridePhoto] = useState(false)
 
   const categoryOptions = useMemo(() => {
     const parents = categories
@@ -71,34 +76,63 @@ export function MenuItemEditModal({
     setLoading(true)
     ;(async () => {
       try {
-        const [mapRes, overrideRes] = await Promise.all([
+        const [mapRes, recipeRes, overrideRes] = await Promise.all([
           supabase
             .from('bdp_articulos')
             .select('id, nombre')
             .eq('id', articuloId)
             .maybeSingle(),
           supabase
+            .from('map_tpv_receta')
+            .select('articulo_id, recipes(photo_url)')
+            .eq('articulo_id', articuloId)
+            .maybeSingle(),
+          supabase
             .from('digital_menu_overrides')
-            .select('articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en')
+            .select(
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url'
+            )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
         ])
         if (mapRes.error) throw mapRes.error
+        if (recipeRes.error) throw recipeRes.error
         if (overrideRes.error) throw overrideRes.error
         setTpvName(mapRes.data?.nombre ?? `#${articuloId}`)
         setCategoryId(overrideRes.data?.category_id ?? '')
         setNameEs((overrideRes.data?.override_nombre_es ?? '').trim())
         setNameCa((overrideRes.data?.override_nombre_ca ?? '').trim())
         setNameEn((overrideRes.data?.override_nombre_en ?? '').trim())
+        const rec0 = (recipeRes.data as any)?.recipes
+        const rec = Array.isArray(rec0) ? rec0[0] : rec0
+        setRecipePhotoUrl((rec?.photo_url ?? null) as string | null)
+        const ov = (overrideRes.data as any)?.override_photo_url ?? null
+        setOverridePhotoUrl(typeof ov === 'string' && ov.trim() ? ov.trim() : null)
+        setSelectedFile(null)
+        setRemoveOverridePhoto(false)
+        if (previewBlobUrl) {
+          URL.revokeObjectURL(previewBlobUrl)
+          setPreviewBlobUrl(null)
+        }
       } catch (e: any) {
         toast.error(e?.message ?? 'No se pudo cargar el producto')
       } finally {
         setLoading(false)
       }
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, articuloId, supabase])
 
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
+    }
+  }, [previewBlobUrl])
+
   if (!open || articuloId == null) return null
+
+  const displayPhotoSrc =
+    previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
 
   return (
     <div
@@ -137,6 +171,73 @@ export function MenuItemEditModal({
             </div>
           ) : (
             <>
+              <div className="mt-3">
+                <p className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Imagen</p>
+                <div className="mt-1 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                  <div className="flex h-40 w-full items-center justify-center bg-white">
+                    {displayPhotoSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- URL externa Supabase / blob
+                      <img src={displayPhotoSrc} alt="" className="max-h-full max-w-full object-contain" />
+                    ) : (
+                      <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="menu-item-photo-upload"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null
+                        if (!f) return
+                        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
+                        const url = URL.createObjectURL(f)
+                        setSelectedFile(f)
+                        setPreviewBlobUrl(url)
+                        setRemoveOverridePhoto(false)
+                      }}
+                      disabled={isPending}
+                    />
+                    <label
+                      htmlFor="menu-item-photo-upload"
+                      className={cn(
+                        'inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 active:bg-zinc-50',
+                        isPending && 'cursor-not-allowed opacity-60'
+                      )}
+                    >
+                      <Upload className="h-4 w-4" strokeWidth={2.5} />
+                      Cambiar
+                    </label>
+                    <button
+                      type="button"
+                      className={cn(
+                        'inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 active:bg-zinc-50',
+                        isPending && 'opacity-60'
+                      )}
+                      onClick={() => {
+                        if (previewBlobUrl) {
+                          URL.revokeObjectURL(previewBlobUrl)
+                          setPreviewBlobUrl(null)
+                        }
+                        setSelectedFile(null)
+                        setRemoveOverridePhoto(true)
+                        setOverridePhotoUrl(null)
+                      }}
+                      disabled={isPending}
+                      aria-label="Usar foto de receta"
+                      title="Usar foto de receta"
+                    >
+                      <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+                      Receta
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] font-semibold text-zinc-500">
+                  Si no subes imagen, se usa la foto de la receta por defecto.
+                </p>
+              </div>
+
               <div className="mt-3 grid grid-cols-1 gap-2">
                 <label className="space-y-1">
                   <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre ES</span>
@@ -193,12 +294,41 @@ export function MenuItemEditModal({
                   disabled={isPending}
                   onClick={() => {
                     startTransition(async () => {
+                      let nextOverridePhotoUrl: string | null | undefined = undefined
+
+                      try {
+                        if (selectedFile) {
+                          const fileExt = selectedFile.name.split('.').pop()
+                          const cleanBase = selectedFile.name
+                            .toLowerCase()
+                            .replace(/\.[^/.]+$/, '')
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[^a-z0-9]/g, '_')
+                          const fileName = `${Date.now()}-${cleanBase || 'carta'}.${fileExt}`
+                          const filePath = `menu-items/${articuloId}/${fileName}`
+
+                          const up = await supabase.storage.from('carta_items').upload(filePath, selectedFile, { upsert: true })
+                          if (up.error) throw up.error
+                          const { data } = supabase.storage.from('carta_items').getPublicUrl(filePath)
+                          const pub = data?.publicUrl
+                          if (!pub) throw new Error('No se pudo obtener la URL pública de la imagen.')
+                          nextOverridePhotoUrl = pub
+                        } else if (removeOverridePhoto) {
+                          nextOverridePhotoUrl = null
+                        }
+                      } catch (e: any) {
+                        toast.error(e?.message ?? 'No se pudo subir la imagen')
+                        return
+                      }
+
                       const res = await upsertMenuOverride({
                         articulo_id: articuloId,
                         override_nombre_es: nameEs.trim() || null,
                         override_nombre_ca: nameCa.trim() || null,
                         override_nombre_en: nameEn.trim() || null,
                         category_id: categoryId.trim() ? categoryId.trim() : null,
+                        ...(nextOverridePhotoUrl !== undefined ? { override_photo_url: nextOverridePhotoUrl } : {}),
                       })
                       if (!res.success) {
                         toast.error(res.error ?? 'No se pudo guardar el producto')

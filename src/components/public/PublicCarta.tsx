@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Pencil } from 'lucide-react'
+import { ChevronLeft, Pencil } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
@@ -61,6 +61,7 @@ export function PublicCarta({
   items: PublicMenuRow[]
   cartaEditHref: string | null
 }) {
+  const homeHref = cartaEditHref?.startsWith('/dashboard') ? '/dashboard' : '/staff/dashboard'
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<CartaLang>('es')
@@ -138,10 +139,20 @@ export function PublicCarta({
   )
 
   return (
-    <main className="min-h-screen bg-[#5B8FB9]">
-      <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
+    <main className="h-[100dvh] bg-[#5B8FB9]">
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
         <header className="grid grid-cols-3 items-center gap-2 pb-2 pt-1">
           <div className="flex shrink-0 justify-start">
+            {cartaEditHref ? (
+              <Link
+                href={homeHref}
+                className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
+                aria-label="Volver a inicio"
+                title="Volver a inicio"
+              >
+                <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+              </Link>
+            ) : null}
             <Image
               src="/icons/logo-white.png"
               alt="Bar La Marbella"
@@ -170,11 +181,12 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-8 grid grid-cols-2 gap-2 sm:gap-4 md:mt-10">
-          {grouped.map((group, idx) => {
-            const isOpen = openKey === group.key
-            return (
-              <div key={group.key} className="contents">
+        <section className="mt-6 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-8">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+            {grouped.map((group, idx) => {
+              const isOpen = openKey === group.key
+              return (
+                <div key={group.key} className="contents">
                 <div
                   className={cn(
                     'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
@@ -334,9 +346,10 @@ export function PublicCarta({
                     </div>
                   </div>
                 ) : null}
-              </div>
-            )
-          })}
+                </div>
+              )
+            })}
+          </div>
         </section>
       </div>
 

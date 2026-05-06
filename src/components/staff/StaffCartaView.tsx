@@ -5,7 +5,8 @@ import Image from 'next/image'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
-import { Pencil, X } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronLeft, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
 
@@ -20,10 +21,18 @@ export function StaffCartaView({
   const [editing, setEditing] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9]">
-      <div className="mx-auto w-full max-w-2xl px-5 pb-12 pt-8 md:px-8 md:pb-14 md:pt-10">
+    <div className="h-[100dvh] bg-[#5B8FB9]">
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
         <header className="grid grid-cols-3 items-center gap-2 pb-6 pt-1">
           <div className="flex shrink-0 justify-start">
+            <Link
+              href="/staff/dashboard"
+              className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
+              aria-label="Volver a inicio"
+              title="Volver a inicio"
+            >
+              <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+            </Link>
             <Image
               src="/icons/logo-white.png"
               alt="Bar La Marbella"
@@ -56,11 +65,13 @@ export function StaffCartaView({
           </div>
         </header>
 
-        {editing && canEditMenu ? (
-          <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
-        ) : (
-          <MenuAccordion items={items} lang={lang} onLangChange={setLang} hideLangPicker />
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto pb-6">
+          {editing && canEditMenu ? (
+            <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
+          ) : (
+            <MenuAccordion items={items} lang={lang} onLangChange={setLang} hideLangPicker />
+          )}
+        </div>
       </div>
     </div>
   )
