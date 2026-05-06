@@ -1267,7 +1267,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const quickActionsColumn = (
-        <div className="grid grid-cols-2 gap-3 md:gap-3 min-h-0 self-start md:self-stretch h-full">
+        // En iPad (>=md) este bloque se estaba estirando por `items-stretch` + `h-full`,
+        // haciendo que tarjetas como Asistencia/M obra quedasen gigantes y "empujasen" el layout.
+        // Queremos altura natural (contenido) y targets táctiles estables.
+        <div className="grid grid-cols-2 gap-3 md:gap-3 self-start shrink-0">
             {[
                 { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
                 { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
@@ -1282,8 +1285,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         else if (card.link) router.push(card.link);
                     }}
                     className={cn(
-                        "bg-white rounded-2xl p-2 md:p-1.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-1 active:scale-95 transition-all group w-full h-full min-h-0",
-                        "aspect-square md:aspect-auto"
+                        "bg-white rounded-2xl p-2 md:p-1.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-1 active:scale-95 transition-all group w-full",
+                        // Touch first (48px+) y altura natural: en md+ no forzamos estiramiento.
+                        "aspect-square md:aspect-square min-h-[96px] md:min-h-[96px]"
                     )}
                 >
                     <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-xl">
@@ -1326,7 +1330,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* Fila inferior: Cajas cambio | Horas Extras | Iconos con misma altura */}
-                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-stretch">
+                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-start">
                         <div className="h-full flex flex-col min-h-0">
                             {cajasCambioColumn}
                         </div>

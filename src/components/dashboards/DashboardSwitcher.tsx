@@ -112,7 +112,10 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
         <div
             ref={containerRef}
             className={cn(
-                "w-full h-full overflow-hidden relative",
+                // iPad (>=md) entraba en layout "desktop" y el contenedor con `overflow-hidden`
+                // cortaba la parte inferior del dashboard. Mantenemos el swipe horizontal,
+                // pero permitimos scroll vertical.
+                "w-full min-h-full overflow-x-hidden overflow-y-auto relative",
                 isManager ? "touch-pan-y" : ""
             )}
             onTouchStart={handleTouchStart}
@@ -121,7 +124,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
         >
             <div
                 className={cn(
-                    "flex h-full",
+                    "flex min-h-full",
                     isManager ? "w-[200%] transition-[margin-left] duration-300 ease-out" : "w-full",
                     isDragging && isHorizontalDrag.current && "duration-0"
                 )}
@@ -129,15 +132,15 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
             >
                 {isManager ? (
                     <>
-                        <div className="w-1/2 h-full flex-shrink-0 -mt-0.5 md:mt-0">
+                        <div className="w-1/2 min-h-full flex-shrink-0 -mt-0.5 md:mt-0">
                             {(view === 'admin' || isDragging) && <AdminDashboardView initialData={initialData} />}
                         </div>
-                        <div className="w-1/2 h-full flex-shrink-0 mt-4 md:mt-0">
+                        <div className="w-1/2 min-h-full flex-shrink-0 mt-4 md:mt-0">
                             {(view === 'staff' || isDragging) && <StaffDashboardView />}
                         </div>
                     </>
                 ) : (
-                    <div className="w-full h-full flex-shrink-0 mt-4 md:mt-0">
+                    <div className="w-full min-h-full flex-shrink-0 mt-4 md:mt-0">
                         <StaffDashboardView />
                     </div>
                 )}
