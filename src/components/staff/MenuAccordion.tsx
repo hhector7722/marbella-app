@@ -811,7 +811,7 @@ export function MenuAccordion({
                         className="relative z-10 flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-w-xl animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
+                        <div className="flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
                             <h2
                                 id="staff-carta-section-modal-title"
                                 className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
@@ -834,7 +834,7 @@ export function MenuAccordion({
                             (onPersistProductOrder &&
                                 modalProductSub &&
                                 modalProductSub.rows.length > 0)) ? (
-                            <div className="flex shrink-0 flex-wrap items-stretch justify-end gap-2 border-b border-zinc-100 bg-white px-2.5 py-2 sm:px-3">
+                            <div className="flex shrink-0 flex-wrap items-stretch justify-end gap-2 bg-white px-2.5 py-2 sm:px-3">
                                 {onPersistChildCategoryOrder && openGroup._subList.length > 1 ? (
                                     <button
                                         type="button"
@@ -867,7 +867,7 @@ export function MenuAccordion({
                         ) : null}
 
                         {openGroup._subList.length > 1 ? (
-                            <div className="shrink-0 border-b border-zinc-100 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
+                            <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
                                 {reorderScope === 'subs' ? (
                                     <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
@@ -941,7 +941,7 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#fafafa] px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
                             {openGroup._subList.length > 1 &&
                             !selectedSubKeyByGroup[openGroup.key] ? null : (
                                 <div className="space-y-3 sm:space-y-4">
