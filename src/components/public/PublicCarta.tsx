@@ -184,7 +184,7 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-2 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-3">
+        <section className="mt-4 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-5">
           <div className="grid grid-cols-1 gap-2 sm:gap-4">
             {grouped.map((group) => (
               <div
@@ -229,7 +229,7 @@ export function PublicCarta({
 
       {openGroup ? (
         <div
-          className="fixed inset-0 z-[240] flex items-end justify-center px-3 pb-safe pt-2 sm:items-center sm:px-6 sm:pb-6 sm:pt-6"
+          className="fixed inset-0 z-[240] flex items-center justify-center p-4 pb-safe pt-4 animate-in fade-in duration-200"
           role="dialog"
           aria-modal="true"
           aria-labelledby="carta-section-modal-title"
@@ -240,7 +240,11 @@ export function PublicCarta({
             aria-label="Cerrar"
             onClick={() => setOpenKey(null)}
           />
-          <div className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.25rem] bg-white shadow-2xl sm:max-h-[88vh] sm:max-w-xl sm:rounded-2xl">
+          {/* Misma idea que modal recetas staff: altura tope fija, cabecera fija, solo el cuerpo hace scroll */}
+          <div
+            className="relative z-10 flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-w-xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
               <h2
                 id="carta-section-modal-title"
@@ -257,9 +261,10 @@ export function PublicCarta({
                 <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5">
-              {openGroup._subList.length > 1 ? (
-                <div className="mb-2 flex w-full min-w-0 gap-1 sm:gap-1.5">
+
+            {openGroup._subList.length > 1 ? (
+              <div className="shrink-0 border-b border-zinc-100 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
+                <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
                   {openGroup._subList.map((sub) => {
                     const sel = selectedSubKeyByGroup[openGroup.key]
                     const isActive = sel === sub.key
@@ -287,10 +292,14 @@ export function PublicCarta({
                     )
                   })}
                 </div>
-              ) : null}
+              </div>
+            ) : null}
 
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#fafafa] px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
               {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
-                <p className="py-4 text-center text-sm font-semibold text-zinc-500">{tPublicUi(lang).pickSubcategoryTitle}</p>
+                <p className="py-8 text-center text-sm font-semibold text-zinc-500">
+                  {tPublicUi(lang).pickSubcategoryTitle}
+                </p>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   {(openGroup._subList.length > 1

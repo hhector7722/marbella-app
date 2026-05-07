@@ -596,7 +596,13 @@ export function MenuAccordion({
     }
 
     const gridBlock = (
-        <div className={cn('grid grid-cols-1 gap-2 sm:gap-4', hideLangPicker && 'pt-0')}>
+        <div
+            className={cn(
+                'grid grid-cols-1 gap-2 sm:gap-4',
+                hideLangPicker && 'pt-0',
+                !hideLangPicker && 'mt-4 sm:mt-5'
+            )}
+        >
             {displayGrouped.map((group) => {
                 const isOpen = openKey === group.key
                 const headerMain = (
@@ -790,7 +796,7 @@ export function MenuAccordion({
 
             {openGroup ? (
                 <div
-                    className="fixed inset-0 z-[250] flex items-end justify-center px-3 pb-safe pt-2 sm:items-center sm:px-6 sm:pb-6 sm:pt-6"
+                    className="fixed inset-0 z-[250] flex items-center justify-center p-4 pb-safe pt-4 animate-in fade-in duration-200"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="staff-carta-section-modal-title"
@@ -801,7 +807,10 @@ export function MenuAccordion({
                         aria-label="Cerrar"
                         onClick={() => setOpenKey(null)}
                     />
-                    <div className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.25rem] bg-white shadow-2xl sm:max-h-[88vh] sm:max-w-xl sm:rounded-2xl">
+                    <div
+                        className="relative z-10 flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-w-xl animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
                             <h2
                                 id="staff-carta-section-modal-title"
@@ -818,47 +827,49 @@ export function MenuAccordion({
                                 <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
                             </button>
                         </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5">
-                            {editMode &&
-                            !reorderScope &&
-                            ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
-                                (onPersistProductOrder &&
-                                    modalProductSub &&
-                                    modalProductSub.rows.length > 0)) ? (
-                                <div className="mb-1.5 flex flex-wrap items-stretch justify-end gap-2">
-                                    {onPersistChildCategoryOrder && openGroup._subList.length > 1 ? (
-                                        <button
-                                            type="button"
-                                            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] shrink-0 active:bg-zinc-50 sm:min-h-[48px] sm:rounded-xl sm:px-3 sm:py-2"
-                                            onClick={() => {
-                                                setReorderPick(null)
-                                                setSubKeysDraft(openGroup._subList.map((s) => s.key))
-                                                setReorderScope('subs')
-                                            }}
-                                        >
-                                            Reordenar pestañas
-                                        </button>
-                                    ) : null}
-                                    {onPersistProductOrder &&
-                                    modalProductSub &&
-                                    modalProductSub.rows.length > 0 ? (
-                                        <button
-                                            type="button"
-                                            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] shrink-0 active:bg-zinc-50 sm:min-h-[48px] sm:rounded-xl sm:px-3 sm:py-2"
-                                            onClick={() => {
-                                                setReorderPick(null)
-                                                setProductIdsDraft(modalProductSub.rows.map((r) => r.articulo_id))
-                                                setReorderScope('products')
-                                            }}
-                                        >
-                                            Reordenar platos
-                                        </button>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                            {openGroup._subList.length > 1 ? (
-                                reorderScope === 'subs' ? (
-                                    <div className="mb-2 flex w-full min-w-0 gap-1 sm:gap-1.5">
+
+                        {editMode &&
+                        !reorderScope &&
+                        ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
+                            (onPersistProductOrder &&
+                                modalProductSub &&
+                                modalProductSub.rows.length > 0)) ? (
+                            <div className="flex shrink-0 flex-wrap items-stretch justify-end gap-2 border-b border-zinc-100 bg-white px-2.5 py-2 sm:px-3">
+                                {onPersistChildCategoryOrder && openGroup._subList.length > 1 ? (
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] shrink-0 active:bg-zinc-50 sm:min-h-[48px] sm:rounded-xl sm:px-3 sm:py-2"
+                                        onClick={() => {
+                                            setReorderPick(null)
+                                            setSubKeysDraft(openGroup._subList.map((s) => s.key))
+                                            setReorderScope('subs')
+                                        }}
+                                    >
+                                        Reordenar pestañas
+                                    </button>
+                                ) : null}
+                                {onPersistProductOrder &&
+                                modalProductSub &&
+                                modalProductSub.rows.length > 0 ? (
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] shrink-0 active:bg-zinc-50 sm:min-h-[48px] sm:rounded-xl sm:px-3 sm:py-2"
+                                        onClick={() => {
+                                            setReorderPick(null)
+                                            setProductIdsDraft(modalProductSub.rows.map((r) => r.articulo_id))
+                                            setReorderScope('products')
+                                        }}
+                                    >
+                                        Reordenar platos
+                                    </button>
+                                ) : null}
+                            </div>
+                        ) : null}
+
+                        {openGroup._subList.length > 1 ? (
+                            <div className="shrink-0 border-b border-zinc-100 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
+                                {reorderScope === 'subs' ? (
+                                    <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
@@ -896,7 +907,7 @@ export function MenuAccordion({
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="mb-2 flex w-full min-w-0 gap-1 sm:gap-1.5">
+                                    <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
@@ -926,9 +937,11 @@ export function MenuAccordion({
                                             )
                                         })}
                                     </div>
-                                )
-                            ) : null}
+                                )}
+                            </div>
+                        ) : null}
 
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#fafafa] px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
                             {openGroup._subList.length > 1 &&
                             !selectedSubKeyByGroup[openGroup.key] ? null : (
                                 <div className="space-y-3 sm:space-y-4">
