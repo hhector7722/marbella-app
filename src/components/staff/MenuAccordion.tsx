@@ -808,7 +808,7 @@ export function MenuAccordion({
                         onClick={() => setOpenKey(null)}
                     />
                     <div
-                        className="relative z-10 flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-w-xl animate-in zoom-in-95 duration-200"
+                        className="relative z-10 flex w-full max-w-lg max-h-[82vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-h-[78vh] sm:max-w-xl animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
@@ -889,10 +889,11 @@ export function MenuAccordion({
                                                             }))
                                                         }}
                                                         className={cn(
-                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
+                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
+                                                            'bg-transparent border-0 shadow-none',
                                                             isActive
-                                                                ? 'border-[#36606F] bg-white text-[#36606F]'
-                                                                : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50',
+                                                                ? 'text-[#36606F]'
+                                                                : 'text-[#36606F]/60 hover:text-[#36606F] active:opacity-80',
                                                             picked &&
                                                                 'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
                                                         )}
@@ -922,10 +923,11 @@ export function MenuAccordion({
                                                             }))
                                                         }
                                                         className={cn(
-                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
+                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
+                                                            'bg-transparent border-0 shadow-none',
                                                             isActive
-                                                                ? 'border-[#36606F] bg-white text-[#36606F]'
-                                                                : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
+                                                                ? 'text-[#36606F]'
+                                                                : 'text-[#36606F]/60 hover:text-[#36606F] active:opacity-80'
                                                         )}
                                                     >
                                                         <span className="line-clamp-3 min-w-0">
