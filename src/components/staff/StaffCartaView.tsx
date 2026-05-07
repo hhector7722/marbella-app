@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
-import type { CartaLang } from '@/lib/carta-menu-i18n'
+import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import Link from 'next/link'
 import { ChevronLeft, Pencil, RefreshCw, X } from 'lucide-react'
@@ -19,13 +19,13 @@ export function StaffCartaView({
   /** Manager/admin: acceso al mapeo TPV en dashboard */
   canOpenMapeo?: boolean
 }) {
-  const [lang, setLang] = useState<CartaLang>('es')
+  const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const [editing, setEditing] = useState(false)
 
   return (
     <div className="h-[100dvh] bg-[#5B8FB9]">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 pb-4 pt-1 sm:pb-5">
+        <header className="shrink-0 pb-2 pt-0 sm:pb-3">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
             <div className="flex min-h-[52px] items-center justify-start">
               <Link
@@ -78,7 +78,7 @@ export function StaffCartaView({
             </div>
           </div>
 
-          <div className="mt-3 w-full px-0 sm:mt-4">
+          <div className="mt-2 w-full px-0 sm:mt-2.5">
             <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" />
           </div>
         </header>

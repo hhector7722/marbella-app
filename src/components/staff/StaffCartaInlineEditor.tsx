@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
-import type { CartaLang } from '@/lib/carta-menu-i18n'
+import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { setMenuCategorySortOrders, upsertMenuOverride } from '@/app/dashboard/carta/actions'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import { MenuCategoryEditModal } from '@/components/carta/MenuCategoryEditModal'
@@ -66,7 +66,7 @@ function buildDescripcion(o: OverrideRow | null, r: MapRow['recipes']): string |
 
 export function StaffCartaInlineEditor({
   canEdit,
-  lang = 'es',
+  lang = DEFAULT_CARTA_LANG,
   onLangChange,
 }: {
   canEdit: boolean

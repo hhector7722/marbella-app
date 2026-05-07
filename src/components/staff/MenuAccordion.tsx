@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { CheckCircle2, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
     type CartaLang,
+    DEFAULT_CARTA_LANG,
     getCartaDisplayName,
     prettifyChildTitle,
     tPublicUi,
@@ -317,7 +318,7 @@ export function MenuAccordion({
     onPersistChildCategoryOrder?: (parentKey: string, orderedChildKeys: string[]) => boolean | Promise<boolean>
     onPersistProductOrder?: (parentKey: string, subKey: string, orderedArticuloIds: number[]) => boolean | Promise<boolean>
 }) {
-    const [internalLang, setInternalLang] = useState<CartaLang>('es')
+    const [internalLang, setInternalLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
     const controlled = controlledLang !== undefined && onLangChange !== undefined
     const lang = controlled ? controlledLang : internalLang
     const setLang = controlled ? onLangChange : setInternalLang
@@ -444,6 +445,16 @@ export function MenuAccordion({
         () => (openKey ? displayGrouped.find((g) => g.key === openKey) ?? null : null),
         [displayGrouped, openKey]
     )
+
+    /** Sub visible en el modal (para «Reordenar platos»): vacío si hay pestañas y ninguna elegida. */
+    const modalProductSub = useMemo(() => {
+        if (!openGroup) return null
+        const list =
+            openGroup._subList.length > 1
+                ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
+                : openGroup._subList
+        return list[0] ?? null
+    }, [openGroup, selectedSubKeyByGroup])
 
     useEffect(() => {
         if (reorderScope === 'parents') {
@@ -593,19 +604,19 @@ export function MenuAccordion({
                         <button
                             type="button"
                             onClick={() => headerToggle(group.key)}
-                            className="flex min-h-[52px] min-w-0 flex-1 items-center justify-start gap-2 px-2 py-2.5 text-left active:bg-zinc-50 sm:px-3"
+                            className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3"
                             aria-expanded={isOpen}
                         >
-                            <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
+                            <span className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2 sm:gap-3">
                                 {group.coverPhotoUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
                                     <img
                                         src={group.coverPhotoUrl}
                                         alt=""
-                                        className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
+                                        className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-center sm:h-10 sm:w-10"
                                     />
                                 ) : null}
-                                <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
+                                <span className="min-w-0 max-w-[85%] text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-sm">
                                     {group.title}
                                 </span>
                             </span>
@@ -680,20 +691,20 @@ export function MenuAccordion({
                                 disabled={!isUuidLike(group.key)}
                                 onClick={() => handleParentReorderTap(group.key)}
                                 className={cn(
-                                    'flex min-h-[52px] min-w-0 flex-1 items-center justify-start gap-2 px-2 py-2.5 text-left active:bg-zinc-50 sm:px-3',
+                                    'flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3',
                                     !isUuidLike(group.key) && 'cursor-not-allowed opacity-50'
                                 )}
                             >
-                                <span className="flex min-w-0 max-w-full flex-1 items-center justify-start gap-2 sm:gap-3">
+                                <span className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2 sm:gap-3">
                                     {group.coverPhotoUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
                                         <img
                                             src={group.coverPhotoUrl}
                                             alt=""
-                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-left sm:h-10 sm:w-10"
+                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-center sm:h-10 sm:w-10"
                                         />
                                     ) : null}
-                                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm">
+                                    <span className="min-w-0 max-w-[85%] text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-sm">
                                         {group.title}
                                     </span>
                                 </span>
@@ -779,7 +790,7 @@ export function MenuAccordion({
 
             {openGroup ? (
                 <div
-                    className="fixed inset-0 z-[250] flex items-end justify-center sm:items-center sm:p-4"
+                    className="fixed inset-0 z-[250] flex items-end justify-center px-3 pb-safe pt-2 sm:items-center sm:px-6 sm:pb-6 sm:pt-6"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="staff-carta-section-modal-title"
@@ -790,11 +801,11 @@ export function MenuAccordion({
                         aria-label="Cerrar"
                         onClick={() => setOpenKey(null)}
                     />
-                    <div className="relative z-10 flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.35rem] bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-2xl">
-                        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-white px-4 py-3">
+                    <div className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.25rem] bg-white shadow-2xl sm:max-h-[88vh] sm:max-w-xl sm:rounded-2xl">
+                        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
                             <h2
                                 id="staff-carta-section-modal-title"
-                                className="min-w-0 flex-1 text-left text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-base"
+                                className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
                             >
                                 {openGroup.title}
                             </h2>
@@ -804,31 +815,50 @@ export function MenuAccordion({
                                 aria-label="Cerrar"
                                 onClick={() => setOpenKey(null)}
                             >
-                                <X className="h-6 w-6" strokeWidth={2.5} />
+                                <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
                             </button>
                         </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 pt-3 sm:px-4">
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5">
                             {editMode &&
-                            onPersistChildCategoryOrder &&
                             !reorderScope &&
-                            openGroup._subList.length > 1 ? (
-                                <div className="mb-2 flex justify-end">
-                                    <button
-                                        type="button"
-                                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
-                                        onClick={() => {
-                                            setReorderPick(null)
-                                            setSubKeysDraft(openGroup._subList.map((s) => s.key))
-                                            setReorderScope('subs')
-                                        }}
-                                    >
-                                        Reordenar pestañas
-                                    </button>
+                            ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
+                                (onPersistProductOrder &&
+                                    modalProductSub &&
+                                    modalProductSub.rows.length > 0)) ? (
+                                <div className="mb-1.5 flex flex-wrap items-stretch justify-end gap-2">
+                                    {onPersistChildCategoryOrder && openGroup._subList.length > 1 ? (
+                                        <button
+                                            type="button"
+                                            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] shrink-0 active:bg-zinc-50 sm:min-h-[48px] sm:rounded-xl sm:px-3 sm:py-2"
+                                            onClick={() => {
+                                                setReorderPick(null)
+                                                setSubKeysDraft(openGroup._subList.map((s) => s.key))
+                                                setReorderScope('subs')
+                                            }}
+                                        >
+                                            Reordenar pestañas
+                                        </button>
+                                    ) : null}
+                                    {onPersistProductOrder &&
+                                    modalProductSub &&
+                                    modalProductSub.rows.length > 0 ? (
+                                        <button
+                                            type="button"
+                                            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] shrink-0 active:bg-zinc-50 sm:min-h-[48px] sm:rounded-xl sm:px-3 sm:py-2"
+                                            onClick={() => {
+                                                setReorderPick(null)
+                                                setProductIdsDraft(modalProductSub.rows.map((r) => r.articulo_id))
+                                                setReorderScope('products')
+                                            }}
+                                        >
+                                            Reordenar platos
+                                        </button>
+                                    ) : null}
                                 </div>
                             ) : null}
                             {openGroup._subList.length > 1 ? (
                                 reorderScope === 'subs' ? (
-                                    <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                                    <div className="mb-2 flex w-full min-w-0 gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
@@ -848,7 +878,7 @@ export function MenuAccordion({
                                                             }))
                                                         }}
                                                         className={cn(
-                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
                                                             isActive
                                                                 ? 'border-[#36606F] bg-white text-[#36606F]'
                                                                 : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50',
@@ -866,7 +896,7 @@ export function MenuAccordion({
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                                    <div className="mb-2 flex w-full min-w-0 gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
@@ -881,7 +911,7 @@ export function MenuAccordion({
                                                             }))
                                                         }
                                                         className={cn(
-                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
                                                             isActive
                                                                 ? 'border-[#36606F] bg-white text-[#36606F]'
                                                                 : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
@@ -901,7 +931,7 @@ export function MenuAccordion({
 
                             {openGroup._subList.length > 1 &&
                             !selectedSubKeyByGroup[openGroup.key] ? null : (
-                                <div className="space-y-5">
+                                <div className="space-y-3 sm:space-y-4">
                                     {(openGroup._subList.length > 1
                                         ? openGroup._subList.filter(
                                               (s) => s.key === selectedSubKeyByGroup[openGroup.key]
@@ -909,27 +939,9 @@ export function MenuAccordion({
                                         : openGroup._subList
                                     ).map((sub) => (
                                         <section key={sub.key} className="space-y-3">
-                                            {editMode &&
-                                            onPersistProductOrder &&
-                                            !reorderScope &&
-                                            sub.rows.length > 0 ? (
-                                                <div className="mb-2 flex justify-end">
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-[#36606F] shadow-sm min-h-[44px] active:bg-zinc-50 sm:min-h-[48px]"
-                                                        onClick={() => {
-                                                            setReorderPick(null)
-                                                            setProductIdsDraft(sub.rows.map((r) => r.articulo_id))
-                                                            setReorderScope('products')
-                                                        }}
-                                                    >
-                                                        Reordenar platos
-                                                    </button>
-                                                </div>
-                                            ) : null}
                                             {reorderScope === 'products' &&
                                             sub.key === activeSubKeyForOpen ? (
-                                                <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                <div className="grid grid-cols-3 items-stretch gap-2 md:gap-3">
                                                     {sub.rows.map((row) => {
                                                         const picked =
                                                             reorderPick === String(row.articulo_id)
@@ -973,7 +985,7 @@ export function MenuAccordion({
                                                     })}
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-3 items-stretch gap-3 md:gap-4">
+                                                <div className="grid grid-cols-3 items-stretch gap-2 md:gap-3">
                                                     {sub.rows.map((row) => (
                                                         <div key={row.articulo_id} className="h-full">
                                                             <MenuCard

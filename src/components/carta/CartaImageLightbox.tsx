@@ -1,7 +1,5 @@
 'use client'
 
-import { X } from 'lucide-react'
-
 export function CartaImageLightbox({
   src,
   alt,
@@ -25,27 +23,19 @@ export function CartaImageLightbox({
       role="dialog"
       aria-modal="true"
       aria-labelledby="carta-lightbox-title"
-      aria-label="Imagen ampliada"
+      aria-label="Imagen ampliada. Pulsa fuera para cerrar."
     >
       <div
         className="flex max-h-[min(92vh,920px)] w-full max-w-[calc((min(100vw,42rem)-5.5rem)/2)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-[calc((min(100vw,42rem)-6rem)/2)] md:max-w-[calc((min(100vw,42rem)-5rem)/2)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="relative flex min-h-[52px] shrink-0 items-center justify-center bg-[#36606F] px-12 py-3 text-white md:min-h-[56px] md:px-14">
+        <header className="flex shrink-0 items-center border-b border-zinc-100 bg-white px-3 py-2 sm:px-3.5 sm:py-2.5">
           <h2
             id="carta-lightbox-title"
-            className="line-clamp-2 text-center text-sm font-black leading-snug text-white md:text-base"
+            className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] line-clamp-2 sm:text-sm"
           >
             {title || alt}
           </h2>
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-xl text-white transition-colors hover:bg-white/15 active:bg-white/10 md:right-3"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            <X className="h-6 w-6" strokeWidth={2.5} />
-          </button>
         </header>
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-white">

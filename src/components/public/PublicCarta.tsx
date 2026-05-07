@@ -9,6 +9,7 @@ import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   type CartaLang,
+  DEFAULT_CARTA_LANG,
   getCartaDisplayName,
   prettifyChildTitle,
   tPublicUi,
@@ -68,7 +69,7 @@ export function PublicCarta({
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
-  const [lang, setLang] = useState<CartaLang>('es')
+  const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
 
   const grouped = useMemo(() => {
@@ -138,7 +139,7 @@ export function PublicCarta({
   return (
     <main className="h-[100dvh] bg-[#5B8FB9]">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 pb-3 pt-1">
+        <header className="shrink-0 pb-2 pt-0">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-1">
             <div className="flex min-h-[52px] items-center justify-start">
               {backHref ? (
@@ -178,12 +179,12 @@ export function PublicCarta({
             </div>
           </div>
 
-          <div className="mt-3 w-full px-0 sm:mt-4">
+          <div className="mt-2 w-full px-0 sm:mt-2.5">
             <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" />
           </div>
         </header>
 
-        <section className="mt-4 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-5">
+        <section className="mt-2 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-3">
           <div className="grid grid-cols-1 gap-2 sm:gap-4">
             {grouped.map((group) => (
               <div
@@ -200,10 +201,10 @@ export function PublicCarta({
                     })
                     setOpenKey((prev) => (prev === group.key ? null : group.key))
                   }}
-                  className="flex min-h-[52px] w-full shrink-0 items-center justify-start px-3 py-2.5 text-left active:bg-zinc-50 sm:px-4"
+                  className="flex min-h-[52px] w-full shrink-0 items-center justify-center px-3 py-2.5 active:bg-zinc-50 sm:px-4"
                   aria-expanded={openKey === group.key}
                 >
-                  <span className="flex min-w-0 max-w-full items-center justify-start gap-2 sm:gap-3">
+                  <span className="flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
                     {group.coverPhotoUrl ? (
                       <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white sm:h-11 sm:w-11">
                         <Image
@@ -211,11 +212,11 @@ export function PublicCarta({
                           alt=""
                           fill
                           sizes="40px"
-                          className="object-contain object-left"
+                          className="object-contain object-center"
                         />
                       </span>
                     ) : null}
-                    <span className="min-w-0 flex-1 text-left text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:text-sm">
+                    <span className="min-w-0 max-w-[85%] text-center text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:max-w-none sm:text-sm">
                       {group.title}
                     </span>
                   </span>
@@ -228,7 +229,7 @@ export function PublicCarta({
 
       {openGroup ? (
         <div
-          className="fixed inset-0 z-[240] flex items-end justify-center sm:items-center sm:p-4"
+          className="fixed inset-0 z-[240] flex items-end justify-center px-3 pb-safe pt-2 sm:items-center sm:px-6 sm:pb-6 sm:pt-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="carta-section-modal-title"
@@ -239,11 +240,11 @@ export function PublicCarta({
             aria-label="Cerrar"
             onClick={() => setOpenKey(null)}
           />
-          <div className="relative z-10 flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.35rem] bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-2xl">
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-white px-4 py-3">
+          <div className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.25rem] bg-white shadow-2xl sm:max-h-[88vh] sm:max-w-xl sm:rounded-2xl">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
               <h2
                 id="carta-section-modal-title"
-                className="min-w-0 flex-1 text-left text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-base"
+                className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
               >
                 {openGroup.title}
               </h2>
@@ -253,12 +254,12 @@ export function PublicCarta({
                 aria-label="Cerrar"
                 onClick={() => setOpenKey(null)}
               >
-                <X className="h-6 w-6" strokeWidth={2.5} />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 pt-3 sm:px-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5">
               {openGroup._subList.length > 1 ? (
-                <div className="mb-3 flex w-full min-w-0 gap-1.5 sm:gap-2">
+                <div className="mb-2 flex w-full min-w-0 gap-1 sm:gap-1.5">
                   {openGroup._subList.map((sub) => {
                     const sel = selectedSubKeyByGroup[openGroup.key]
                     const isActive = sel === sub.key
@@ -273,7 +274,7 @@ export function PublicCarta({
                           }))
                         }
                         className={cn(
-                          'flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:px-2 sm:text-[11px]',
+                          'flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
                           isActive
                             ? 'border-[#36606F] bg-white text-[#36606F]'
                             : 'border-zinc-200/80 bg-white text-[#36606F] shadow-sm active:bg-zinc-50'
@@ -289,27 +290,27 @@ export function PublicCarta({
               ) : null}
 
               {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
-                <p className="py-6 text-center text-sm font-semibold text-zinc-500">{tPublicUi(lang).pickSubcategoryTitle}</p>
+                <p className="py-4 text-center text-sm font-semibold text-zinc-500">{tPublicUi(lang).pickSubcategoryTitle}</p>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-3 sm:space-y-4">
                   {(openGroup._subList.length > 1
                     ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
                     : openGroup._subList
                   ).map((sub) => (
-                    <div key={sub.key} className="space-y-3">
-                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div key={sub.key} className="space-y-2">
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                         {sub.rows.map((row) => (
                           <div
                             key={row.articulo_id}
                             className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
                           >
-                            <div className="flex w-full flex-col items-center px-2 pb-2 pt-2">
+                            <div className="flex w-full flex-col items-center px-1 pb-1.5 pt-1.5 sm:px-1.5 sm:pb-2 sm:pt-2">
                               {row.category_parent_name &&
                               ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
                                 row.photo_url ? (
                                   <button
                                     type="button"
-                                    className="relative mx-auto h-12 w-full max-w-[min(100%,8rem)] shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-14"
+                                    className="relative mx-auto h-11 w-full max-w-[min(100%,7rem)] shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-12"
                                     aria-label="Ver foto ampliada"
                                     onClick={() =>
                                       setLightbox({
@@ -327,7 +328,7 @@ export function PublicCarta({
                                     />
                                   </button>
                                 ) : (
-                                  <div className="relative mx-auto h-12 w-full max-w-[min(100%,8rem)] shrink-0 bg-white sm:h-14">
+                                  <div className="relative mx-auto h-11 w-full max-w-[min(100%,7rem)] shrink-0 bg-white sm:h-12">
                                     <div className="h-full w-full bg-white" />
                                   </div>
                                 )
@@ -342,7 +343,7 @@ export function PublicCarta({
                                 )}
                               >
                                 <p
-                                  className="line-clamp-3 w-full max-w-full text-center text-[11px] font-bold leading-tight text-zinc-900"
+                                  className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
                                   title={getCartaDisplayName(row, lang)}
                                 >
                                   {getCartaDisplayName(row, lang)}

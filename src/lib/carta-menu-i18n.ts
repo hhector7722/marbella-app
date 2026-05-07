@@ -1,5 +1,8 @@
 export type CartaLang = 'es' | 'ca' | 'en'
 
+/** Idioma inicial (QR y staff) hasta que el usuario cambie el selector. */
+export const DEFAULT_CARTA_LANG: CartaLang = 'ca'
+
 export function tPublicUi(lang: CartaLang) {
   const dict = {
     es: {
