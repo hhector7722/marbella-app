@@ -318,7 +318,17 @@ export function MenuItemEditModal({
                           nextOverridePhotoUrl = null
                         }
                       } catch (e: any) {
-                        toast.error(e?.message ?? 'No se pudo subir la imagen')
+                        const msg = String(e?.message ?? '')
+                        if (
+                          msg.toLowerCase().includes('bucket') &&
+                          (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('does not exist'))
+                        ) {
+                          toast.error(
+                            "No existe el bucket 'carta_items' en Storage. Ejecuta las migraciones de Supabase o crea el bucket manualmente."
+                          )
+                        } else {
+                          toast.error(e?.message ?? 'No se pudo subir la imagen')
+                        }
                         return
                       }
 
