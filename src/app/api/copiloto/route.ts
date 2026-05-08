@@ -194,13 +194,16 @@ export async function POST(req: Request) {
           rpcPayload = { ...rpcPayload, p_user_id: user.id };
         }
 
+        console.log(`[Crack Tool] Executing ${actionName}`, rpcPayload);
         const { data: rpcResult, error: rpcErr } = await supabase.rpc(def.rpc as never, rpcPayload as never);
         let resultData: unknown;
         if (rpcErr) {
+          console.error(`[Crack Tool] DB Error in ${actionName}:`, rpcErr);
           resultData = {
             error: `Error en base de datos: ${rpcErr.message}`,
           };
         } else {
+          console.log(`[Crack Tool] ${actionName} Result:`, rpcResult);
           resultData = rpcResult;
         }
 
