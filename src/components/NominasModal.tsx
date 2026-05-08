@@ -143,7 +143,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         const m = row.mes ?? '';
         const y = row.year ?? '';
         if (m || y) return `${m} ${y}`.trim();
-        return row.filename || 'Nómina';
+        return row.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '') || 'Nómina';
     }
 
     if (!isOpen) return null;
