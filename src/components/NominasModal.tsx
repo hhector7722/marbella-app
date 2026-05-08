@@ -87,8 +87,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
         setUploading(true);
         try {
-            const uploadMonth = new Date().toLocaleString('es-ES', { month: 'long' }).toLowerCase();
-            const uploadYear = new Date().getFullYear();
             const fileName = file.name;
             const filePath = `${targetUserId}/nominas/${fileName}`;
 
@@ -102,9 +100,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             const result = await addEmployeeDocumentByTipo(targetUserId, {
                 tipo: 'nomina',
                 storage_path: filePath,
-                filename: file.name,
-                mes: uploadMonth,
-                year: uploadYear
+                filename: file.name
             });
 
             if (result.success) {
