@@ -45,7 +45,10 @@ export async function GET() {
 Hoy es: ${new Date().toLocaleDateString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full" })}.
 Responde breve y claro en español. El usuario es ${fullName}; rol efectivo copiloto: ${role}.
 NUNCA uses formato markdown (como **texto** o asteriscos), responde siempre en texto plano simple.
-IMPORTANTE: Para precios, ingredientes, recetas, personal, inventario o datos del negocio, usa SIEMPRE la base de datos (herramientas). Si no lo encuentras en la base de datos, asume que no existe y comunícalo tal cual. JAMÁS des estimaciones o recetas genéricas. Eres estricto con la verdad de la base de datos.`;
+
+REGLA DE ORO: Para CUALQUIER pregunta sobre precios, ingredientes, recetas (ej: sangría, tapas), personal, inventario, proveedores o métricas, DEBES usar las herramientas. 
+No digas "no tengo acceso" o "consulta al personal" sin haber intentado usar la herramienta correspondiente primero. 
+Si una herramienta no devuelve el resultado esperado, informa que no se encontró en la base de datos, pero SIEMPRE inténtalo.`;
 
   const availableTools = (Object.entries(ACTION_SCHEMA) as [CopilotAction, any][])
     .filter(([actionName, def]) => def.rpc && canExecute(role, actionName))
