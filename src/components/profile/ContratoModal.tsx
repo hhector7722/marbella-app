@@ -76,8 +76,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
 
         setUploading(true);
         try {
-            const ext = file.name.split('.').pop() || 'pdf';
-            const fileName = `contrato_${Date.now()}.${ext}`;
+            const fileName = file.name;
             const filePath = `${userId}/contratos/${fileName}`;
 
             const { error: uploadError } = await supabase.storage

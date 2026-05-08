@@ -87,10 +87,9 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
         setUploading(true);
         try {
-            const ext = file.name.split('.').pop() || 'pdf';
             const uploadMonth = new Date().toLocaleString('es-ES', { month: 'long' }).toLowerCase();
             const uploadYear = new Date().getFullYear();
-            const fileName = `nomina_${uploadMonth}_${uploadYear}_${Date.now()}.${ext}`;
+            const fileName = file.name;
             const filePath = `${targetUserId}/nominas/${fileName}`;
 
             const { error: uploadError } = await supabase.storage

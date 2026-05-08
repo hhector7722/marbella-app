@@ -80,9 +80,8 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
         setUploading(true);
         setUploadKind(kind);
         try {
-            const ext = file.name.split('.').pop() || 'pdf';
             const folder = kind === 'sancion' ? 'sanciones' : 'comunicados';
-            const fileName = `${kind}_${Date.now()}.${ext}`;
+            const fileName = file.name;
             const filePath = `${userId}/${folder}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
