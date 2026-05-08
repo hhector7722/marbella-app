@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.63",
+    "@ai-sdk/react": "^3.0.178",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -17,6 +19,7 @@
     "@n8n/chat": "^1.14.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.99.3",
+    "ai": "^6.0.176",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
@@ -38,6 +41,7 @@
     "tailwind-merge": "^3.4.0",
     "web-push": "^3.6.7",
     "xlsx": "^0.18.5",
+    "zod": "^4.4.3",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
