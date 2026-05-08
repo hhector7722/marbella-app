@@ -1,7 +1,7 @@
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { ScannerClient } from './ScannerClient'
 
-export const dynamic = 'force-static'
+export const dynamic = 'force-dynamic'
 
 export default function ScannerPage() {
   return (

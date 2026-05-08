@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { CopilotDashboardSection } from '@/components/copilot/CopilotDashboardSection';
 import AdminDashboardView from './AdminDashboardView';
 import StaffDashboardView from './StaffDashboardView';
 
@@ -145,6 +146,8 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
                     </div>
                 )}
             </div>
+
+            <CopilotDashboardSection />
 
             {/* Indicadores estilo iPhone */}
             {

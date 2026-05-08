@@ -196,6 +196,8 @@ Nota: este dominio puede no estar reflejado en `schema_dump.sql` si el dump est√
   - `WEBHOOK_SECRET`
 - **IA extracci√≥n documentos**:
   - `GEMINI_API_KEY`
+- **IA Copiloto (OpenAI)**:
+  - `OPENAI_API_KEY`
 - **Cron**:
   - `CRON_SECRET`
 
