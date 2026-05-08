@@ -57,8 +57,14 @@ BEGIN
 
       IF v_result IS NULL THEN
         RETURN jsonb_build_object('error', 'receta_no_encontrada', 'nombre_buscado', v_nombre,
-          'sugerencia', 'La receta no existe en la base de datos del bar.');
+          'sugerencia', 'La receta no existe en la base de datos del bar. Prueba a listar todas las recetas para ver los nombres exactos.');
       END IF;
+
+      -- Verificar si tiene ingredientes
+      IF (v_result->>'ingredientes') = '[]' THEN
+        RETURN v_result || jsonb_build_object('aviso', 'Esta receta existe pero no tiene ingredientes registrados actualmente.');
+      END IF;
+
       RETURN v_result;
 
     ELSE
