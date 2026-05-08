@@ -390,49 +390,53 @@ function VoiceCallView() {
 
   return (
     <div className="flex-1 flex flex-col bg-[#f8f9fb]">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {transcripts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-5">
-            <div className={cn("w-24 h-24 rounded-full flex items-center justify-center shadow-sm", isActive ? "bg-emerald-100 text-emerald-600 animate-pulse" : "bg-white text-zinc-300 border border-zinc-100")}>
-              <Mic size={40} />
-            </div>
-            <p className="text-sm text-center px-6 max-w-[250px] leading-relaxed">
-              {isActive ? 'Escuchando... Puedes hablar con naturalidad.' : 'Inicia la llamada para conversar por voz con tu copiloto.'}
-            </p>
-          </div>
-        ) : (
-          transcripts.map((t, i) => (
-            <div key={i} className={t.role === 'user' ? 'text-right' : 'text-left'}>
-              <span className={cn("inline-block px-4 py-3 rounded-2xl text-[13px] max-w-[85%] break-words shadow-sm text-left leading-relaxed", t.role === 'user' ? "bg-blue-50 text-blue-900 border border-blue-100 rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-800 rounded-tl-sm")}>
-                <span className="block text-[10px] uppercase tracking-wider opacity-50 mb-1.5 font-bold">
-                  {t.role === 'user' ? 'Tú' : 'Copiloto'}
-                </span>
-                {t.text}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="shrink-0 p-4 bg-white border-t border-zinc-100 flex justify-center">
-        {isActive ? (
-          <button
-            onClick={stopCall}
-            className="bg-red-50 text-red-600 border border-red-200 font-bold px-8 h-12 rounded-2xl hover:bg-red-100 transition-colors shadow-sm flex items-center gap-2 text-sm tracking-wide"
-          >
-            <Phone size={18} className="rotate-[135deg]" />
-            Finalizar Llamada
-          </button>
-        ) : (
+      {!isActive ? (
+        <div className="flex-1 flex items-center justify-center p-4">
           <button
             onClick={startCall}
-            className="bg-emerald-600 text-white font-bold px-8 h-12 rounded-2xl hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 text-sm tracking-wide"
+            className="bg-emerald-600 text-white font-bold px-8 h-14 rounded-2xl hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-3 text-base tracking-wide"
           >
-            <Phone size={18} />
+            <Phone size={20} />
             Iniciar Llamada
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {transcripts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-emerald-600 space-y-5">
+                <div className="w-24 h-24 rounded-full flex items-center justify-center shadow-sm bg-emerald-100 animate-pulse">
+                  <Mic size={40} />
+                </div>
+                <p className="text-sm text-center px-6 max-w-[250px] leading-relaxed font-medium">
+                  Escuchando... Puedes hablar con naturalidad.
+                </p>
+              </div>
+            ) : (
+              transcripts.map((t, i) => (
+                <div key={i} className={t.role === 'user' ? 'text-right' : 'text-left'}>
+                  <span className={cn("inline-block px-4 py-3 rounded-2xl text-[13px] max-w-[85%] break-words shadow-sm text-left leading-relaxed", t.role === 'user' ? "bg-blue-50 text-blue-900 border border-blue-100 rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-800 rounded-tl-sm")}>
+                    <span className="block text-[10px] uppercase tracking-wider opacity-50 mb-1.5 font-bold">
+                      {t.role === 'user' ? 'Tú' : 'Copiloto'}
+                    </span>
+                    {t.text}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="shrink-0 p-4 bg-white border-t border-zinc-100 flex justify-center">
+            <button
+              onClick={stopCall}
+              className="bg-red-50 text-red-600 border border-red-200 font-bold px-8 h-12 rounded-2xl hover:bg-red-100 transition-colors shadow-sm flex items-center gap-2 text-sm tracking-wide"
+            >
+              <Phone size={18} className="rotate-[135deg]" />
+              Finalizar Llamada
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
