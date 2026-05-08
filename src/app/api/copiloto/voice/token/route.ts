@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { normalizeCopilotRole, type RoleName } from "@/lib/copilot/permissions";
+import { normalizeCopilotRole, canExecute, type RoleName } from "@/lib/copilot/permissions";
+import { ACTION_SCHEMA, type CopilotAction } from "@/lib/copilot/actions";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 export async function GET() {
   const supabase = await createClient();
@@ -39,10 +41,20 @@ export async function GET() {
     );
   }
 
-  const systemPrompt = `Eres el asistente operativo de voz de Bar La Marbella (Barcelona).
+  const systemPrompt = `Eres Crack, el asistente operativo de voz de Bar La Marbella (Barcelona).
 Hoy es: ${new Date().toLocaleDateString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full" })}.
 Responde breve y claro en español. El usuario es ${fullName}; rol efectivo copiloto: ${role}.
-No inventes datos de negocio. Para operaciones que requieran herramientas/consultas a base de datos, indica que debe usar el copiloto de texto en pantalla.`;
+NUNCA uses formato markdown (como **texto** o asteriscos), responde siempre en texto plano simple.
+IMPORTANTE: Para precios, ingredientes, recetas, personal, inventario o datos del negocio, usa SIEMPRE la base de datos (herramientas). Si no lo encuentras en la base de datos, asume que no existe y comunícalo tal cual. JAMÁS des estimaciones o recetas genéricas. Eres estricto con la verdad de la base de datos.`;
+
+  const availableTools = (Object.entries(ACTION_SCHEMA) as [CopilotAction, any][])
+    .filter(([actionName, def]) => def.rpc && canExecute(role, actionName))
+    .map(([name, def]) => ({
+      type: "function",
+      name: name,
+      description: def.description,
+      parameters: zodToJsonSchema(def.schema),
+    }));
 
   try {
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
@@ -55,6 +67,8 @@ No inventes datos de negocio. Para operaciones que requieran herramientas/consul
         model: "gpt-4o-realtime-preview-2024-12-17",
         voice: "verse",
         instructions: systemPrompt,
+        tools: availableTools,
+        tool_choice: "auto",
       }),
     });
 

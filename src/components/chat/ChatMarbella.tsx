@@ -47,21 +47,23 @@ export default function ChatMarbella() {
               <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
             </div>
             
-            {/* Tabs */}
-            <div className="flex bg-black/20 rounded-xl p-1 gap-1 relative">
+            {/* Single Action Button */}
+            <div className="relative">
               <button
-                onClick={() => setActiveTab('text')}
-                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all", activeTab === 'text' ? "bg-white text-[#3F5E7A] shadow-sm" : "text-white/80 hover:bg-white/10")}
+                onClick={() => setActiveTab(activeTab === 'text' ? 'voice' : 'text')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-white/90 hover:bg-white/20 hover:text-white"
               >
-                <MessageSquareText size={14} />
-                <span>Escribir</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('voice')}
-                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all", activeTab === 'voice' ? "bg-white text-[#3F5E7A] shadow-sm" : "text-white/80 hover:bg-white/10")}
-              >
-                <Phone size={14} />
-                <span>Llamar</span>
+                {activeTab === 'text' ? (
+                  <>
+                    <Phone size={14} />
+                    <span>Llamar</span>
+                  </>
+                ) : (
+                  <>
+                    <MessageSquareText size={14} />
+                    <span>Escribir</span>
+                  </>
+                )}
               </button>
             </div>
 
@@ -76,7 +78,15 @@ export default function ChatMarbella() {
           </div>
         </div>
 
-        {activeTab === 'text' ? <TextChatView /> : <VoiceCallView />}
+        <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TextChatView />
+          
+          {activeTab === 'voice' && (
+            <div className="absolute inset-0 z-20 flex flex-col animate-in fade-in duration-200">
+              <VoiceCallView onClose={() => setActiveTab('text')} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -161,12 +171,18 @@ function TextChatView() {
       };
 
       recognition.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
-        toast.error('Error de micrófono: ' + event.error);
+        if (event.error !== 'no-speech') {
+          console.error('Speech recognition error', event.error);
+          toast.error('Error de micrófono: ' + event.error);
+        }
         setIsListening(false);
       };
 
       recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.onnomatch = () => {
         setIsListening(false);
       };
 
@@ -176,13 +192,14 @@ function TextChatView() {
 
   const toggleListen = () => {
     if (isListening) {
-      recognitionRef.current?.stop();
+      try { recognitionRef.current?.abort(); } catch {}
+      setIsListening(false);
     } else {
       try {
         recognitionRef.current?.start();
         setIsListening(true);
       } catch (e) {
-        // usually already started
+        setIsListening(false);
       }
     }
   };
@@ -275,7 +292,7 @@ function TextChatView() {
 
 type TranscriptEvent = { role: 'user' | 'assistant'; text: string };
 
-function VoiceCallView() {
+function VoiceCallView({ onClose }: { onClose: () => void }) {
   const [isActive, setIsActive] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptEvent[]>([]);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -327,7 +344,7 @@ function VoiceCallView() {
       const dc = pc.createDataChannel('oai-events');
       dcRef.current = dc;
 
-      dc.addEventListener('message', (e) => {
+      dc.addEventListener('message', async (e) => {
         try {
           const event = JSON.parse(e.data as string);
 
@@ -340,11 +357,40 @@ function VoiceCallView() {
             const tx = typeof event.transcript === 'string' ? event.transcript.trim() : '';
             if (tx) setTranscripts((prev) => [...prev, { role: 'user', text: tx }]);
           }
+
+          if (event.type === 'response.function_call_arguments.done') {
+            try {
+              const { call_id, name, arguments: argsString } = event;
+              const args = JSON.parse(argsString);
+              
+              const res = await fetch('/api/copiloto/tools', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ toolName: name, args })
+              });
+              
+              const data = await res.json();
+              
+              const outputEvent = {
+                type: 'conversation.item.create',
+                item: {
+                  type: 'function_call_output',
+                  call_id,
+                  output: JSON.stringify(data)
+                }
+              };
+              
+              dcRef.current?.send(JSON.stringify(outputEvent));
+              dcRef.current?.send(JSON.stringify({ type: 'response.create' }));
+            } catch (err) {
+              console.error("Error ejecutando herramienta en voz", err);
+            }
+          }
         } catch {}
       });
 
-      dc.addEventListener('error', () => {
-        toast.error('Error en el canal de datos de voz.');
+      dc.addEventListener('error', (e) => {
+        console.error('Data channel error:', e);
       });
 
       const offer = await pc.createOffer();
@@ -389,19 +435,22 @@ function VoiceCallView() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#f8f9fb]">
+    <div className="flex-1 flex flex-col w-full h-full">
       {!isActive ? (
-        <div className="flex-1 flex items-center justify-center p-4">
+        <div 
+          className="flex-1 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]"
+          onClick={onClose}
+        >
           <button
-            onClick={startCall}
-            className="bg-emerald-600 text-white font-bold px-8 h-14 rounded-2xl hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-3 text-base tracking-wide"
+            onClick={(e) => { e.stopPropagation(); startCall(); }}
+            className="bg-emerald-600 text-white font-bold px-8 h-14 rounded-2xl hover:bg-emerald-700 transition-transform hover:scale-105 shadow-2xl flex items-center gap-3 text-base tracking-wide"
           >
             <Phone size={20} />
             Iniciar Llamada
           </button>
         </div>
       ) : (
-        <>
+        <div className="flex-1 flex flex-col bg-[#f8f9fb]">
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             {transcripts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-emerald-600 space-y-5">
@@ -417,7 +466,7 @@ function VoiceCallView() {
                 <div key={i} className={t.role === 'user' ? 'text-right' : 'text-left'}>
                   <span className={cn("inline-block px-4 py-3 rounded-2xl text-[13px] max-w-[85%] break-words shadow-sm text-left leading-relaxed", t.role === 'user' ? "bg-blue-50 text-blue-900 border border-blue-100 rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-800 rounded-tl-sm")}>
                     <span className="block text-[10px] uppercase tracking-wider opacity-50 mb-1.5 font-bold">
-                      {t.role === 'user' ? 'Tú' : 'Copiloto'}
+                      {t.role === 'user' ? 'Tú' : 'Crack'}
                     </span>
                     {t.text}
                   </span>
@@ -426,7 +475,7 @@ function VoiceCallView() {
             )}
           </div>
 
-          <div className="shrink-0 p-4 bg-white border-t border-zinc-100 flex justify-center">
+          <div className="shrink-0 p-4 bg-white border-t border-zinc-100 flex justify-center shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.05)] relative z-10">
             <button
               onClick={stopCall}
               className="bg-red-50 text-red-600 border border-red-200 font-bold px-8 h-12 rounded-2xl hover:bg-red-100 transition-colors shadow-sm flex items-center gap-2 text-sm tracking-wide"
@@ -435,7 +484,7 @@ function VoiceCallView() {
               Finalizar Llamada
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
