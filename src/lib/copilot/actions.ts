@@ -135,7 +135,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   gestionar_recetas: {
     module: "inventario",
     rpc: "gestionar_recetas",
-    description: "Recetas (pendiente RPC).",
+    description: "Consulta recetas, ingredientes y costes de elaboración.",
     schema: z.object({
       p_accion: z.string(),
       p_datos: z.record(z.string(), z.unknown()).default({}),
@@ -144,7 +144,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   gestionar_ingredientes: {
     module: "inventario",
     rpc: "gestionar_ingredientes",
-    description: "Ingredientes catalog (pendiente RPC).",
+    description: "Consulta catálogo de ingredientes y precios de compra.",
     schema: z.object({
       p_accion: z.string(),
       p_datos: z.record(z.string(), z.unknown()).default({}),
@@ -153,7 +153,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   gestionar_consumo_personal: {
     module: "inventario",
     rpc: "gestionar_consumo_personal",
-    description: "Consumo staff (pendiente RPC).",
+    description: "Consulta y registro de consumo de personal.",
     schema: z.object({
       p_accion: z.string(),
       p_datos: z.record(z.string(), z.unknown()).default({}),
@@ -162,7 +162,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   gestionar_proveedores: {
     module: "inventario",
     rpc: "gestionar_proveedores",
-    description: "Proveedores (pendiente RPC).",
+    description: "Consulta información de contacto de proveedores.",
     schema: z.object({
       p_accion: z.string(),
       p_datos: z.record(z.string(), z.unknown()).default({}),
@@ -200,7 +200,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   gestionar_horarios: {
     module: "rrhh",
     rpc: "gestionar_horarios",
-    description: "Turnos shifts (pendiente RPC).",
+    description: "Consulta de turnos de trabajo y horarios del personal.",
     schema: z.object({
       p_accion: z.string(),
       p_datos: z.record(z.string(), z.unknown()).default({}),

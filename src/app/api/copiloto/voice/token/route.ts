@@ -22,7 +22,7 @@ export async function GET() {
     .single();
 
   if (profileErr) {
-    console.error("[copiloto voice] perfil:", profileErr);
+    console.error("[Crack Voice] perfil:", profileErr);
     return NextResponse.json(
       { error: "No se pudo leer perfil." },
       { status: 500 }
@@ -74,7 +74,7 @@ IMPORTANTE: Para precios, ingredientes, recetas, personal, inventario o datos de
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.error("[copiloto voice] OpenAI Realtime:", errBody);
+      console.error("[Crack Voice] OpenAI Realtime:", errBody);
       return NextResponse.json(
         { error: "Fallo al preparar sesión de voz" },
         { status: 502 }
@@ -86,7 +86,7 @@ IMPORTANTE: Para precios, ingredientes, recetas, personal, inventario o datos de
     };
     const secret = data.client_secret?.value;
     if (!secret) {
-      console.error("[copiloto voice] respuesta sin client_secret");
+      console.error("[Crack Voice] respuesta sin client_secret");
       return NextResponse.json(
         { error: "Respuesta OpenAI incompleta" },
         { status: 502 }
@@ -95,7 +95,7 @@ IMPORTANTE: Para precios, ingredientes, recetas, personal, inventario o datos de
 
     return NextResponse.json({ client_secret: secret, role });
   } catch (e) {
-    console.error("[copiloto voice]:", e);
+    console.error("[Crack Voice]:", e);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

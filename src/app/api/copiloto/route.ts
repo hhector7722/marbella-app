@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     .single();
 
   if (profileErr) {
-    console.error("[copiloto] perfil:", profileErr);
+    console.error("[Crack] perfil:", profileErr);
     return Response.json(
       {
         error: "No se pudo leer el perfil.",
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
     if (selErr) {
-      console.error("[copiloto] session lookup:", selErr);
+      console.error("[Crack] session lookup:", selErr);
       return Response.json(
         { error: "No se pudo validar sesión IA", detail: selErr.message },
         { status: 500 }
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (insErr || !session?.id) {
-      console.error("[copiloto] crear sesión:", insErr);
+      console.error("[Crack] crear sesión:", insErr);
       return Response.json(
         {
           error: "No se pudo crear sesión IA",
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
     text_content: userTextLogged,
   });
   if (msgUserErr) {
-    console.error("[copiloto] insert usuario:", msgUserErr);
+    console.error("[Crack] insert usuario:", msgUserErr);
     return Response.json(
       { error: "No se pudo guardar el mensaje", detail: msgUserErr.message },
       { status: 500 }
@@ -218,7 +218,7 @@ export async function POST(req: Request) {
           duration_seconds: 0,
         });
         if (logErr) {
-          console.error("[copiloto] ai_call_logs:", logErr);
+          console.error("[Crack] ai_call_logs:", logErr);
         }
 
         return resultData;
