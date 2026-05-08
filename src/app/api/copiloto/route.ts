@@ -229,6 +229,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openai("gpt-4o-mini"),
     system: `Eres el asistente operativo de Bar La Marbella (Barcelona).
+Hoy es: ${new Date().toLocaleDateString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full" })}.
 Responde de forma profesional, directa y sin rodeos. Idioma: español.
 El rol efectivo es: ${role}.
 Usa las herramientas para consultas y mutaciones de datos antes de afirmaciones operativas.

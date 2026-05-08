@@ -54,14 +54,14 @@ export default function ChatMarbella() {
                 className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all", activeTab === 'text' ? "bg-white text-[#3F5E7A] shadow-sm" : "text-white/80 hover:bg-white/10")}
               >
                 <MessageSquareText size={14} />
-                <span>Texto</span>
+                <span>Escribir</span>
               </button>
               <button
                 onClick={() => setActiveTab('voice')}
                 className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all", activeTab === 'voice' ? "bg-white text-[#3F5E7A] shadow-sm" : "text-white/80 hover:bg-white/10")}
               >
                 <Phone size={14} />
-                <span>Voz</span>
+                <span>Llamar</span>
               </button>
             </div>
 
@@ -205,21 +205,12 @@ function TextChatView() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Mini header option to reset */}
-      <div className="shrink-0 flex justify-end px-4 py-2 border-b border-zinc-100 bg-zinc-50/50">
-        <button
-           onClick={resetChat}
-           className="text-[11px] uppercase tracking-wider font-bold text-zinc-400 hover:text-[#36606F] transition-colors"
-        >
-          Borrar historial
-        </button>
-      </div>
+
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-[#f8f9fb]">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-3">
-            <MessageSquareText size={36} className="opacity-20" />
-            <p className="text-sm">¿En qué puedo ayudarte?</p>
+            <p className="text-sm">¿En que puedo ayudarte crack?</p>
           </div>
         )}
 

@@ -40,6 +40,7 @@ export async function GET() {
   }
 
   const systemPrompt = `Eres el asistente operativo de voz de Bar La Marbella (Barcelona).
+Hoy es: ${new Date().toLocaleDateString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full" })}.
 Responde breve y claro en español. El usuario es ${fullName}; rol efectivo copiloto: ${role}.
 No inventes datos de negocio. Para operaciones que requieran herramientas/consultas a base de datos, indica que debe usar el copiloto de texto en pantalla.`;
 
