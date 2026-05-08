@@ -129,9 +129,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     };
 
     const labelForRow = (row: DocRow) => {
-        const base = row.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '') || (row.tipo === 'sancion' ? 'Sanción' : 'Comunicado');
-        if (row.tipo === 'sancion') return `${base} · Sanción`;
-        return base;
+        return row.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '') || (row.tipo === 'sancion' ? 'Sanción' : 'Comunicado');
     };
 
     if (!isOpen) return null;
