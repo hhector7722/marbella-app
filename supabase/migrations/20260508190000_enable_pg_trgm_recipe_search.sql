@@ -6,44 +6,38 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_nombre   text := lower(trim(COALESCE(p_datos->>'nombre', p_datos->>'name', '')));
-  v_result   jsonb;
+  v_nombre text := lower(trim(COALESCE(p_datos->>'nombre', p_datos->>'name', '')));
+  v_receta_id uuid;
+  v_count_ri int;
+  v_count_all int;
+  v_recipe_name text;
 BEGIN
-  IF p_accion IN ('buscar', 'listar', 'consultar', 'search', 'list', 'get') THEN
+  -- 1. Buscar la receta por nombre
+  SELECT id, name INTO v_receta_id, v_recipe_name 
+  FROM public.recipes 
+  WHERE lower(name) ILIKE '%' || v_nombre || '%' 
+  ORDER BY similarity(lower(name), v_nombre) DESC
+  LIMIT 1;
+  
+  -- 2. Contar cuántos ingredientes hay en la tabla de unión para esa receta
+  SELECT count(*) INTO v_count_ri FROM public.recipe_ingredients WHERE recipe_id = v_receta_id;
+  
+  -- 3. Contar cuántas recetas hay en total
+  SELECT count(*) INTO v_count_all FROM public.recipes;
 
-    IF v_nombre <> '' THEN
-      -- Buscamos la receta que COINCIDA con el nombre y que TENGA ingredientes si es posible
-      SELECT jsonb_build_object(
-        'receta',     row_to_json(r)::jsonb,
-        'ingredientes', COALESCE((
-          SELECT jsonb_agg(jsonb_build_object(
-            'nombre',           i.name,
-            'cantidad',         ri.quantity_gross,
-            'unidad',           ri.unit
-          ))
-          FROM public.recipe_ingredients ri
-          JOIN public.ingredients i ON i.id = ri.ingredient_id
-          WHERE ri.recipe_id = r.id
-        ), '[]'::jsonb)
-      )
-      INTO v_result
-      FROM public.recipes r
-      WHERE lower(r.name) ILIKE '%' || v_nombre || '%'
-      ORDER BY 
-        (CASE WHEN lower(r.name) = v_nombre THEN 0 ELSE 1 END), -- Coincidencia exacta primero
-        (SELECT count(*) FROM public.recipe_ingredients WHERE recipe_id = r.id) DESC -- La que tenga más ingredientes primero
-      LIMIT 1;
-
-      IF v_result IS NULL THEN
-        RETURN jsonb_build_object('error', 'receta_no_encontrada');
-      END IF;
-
-      RETURN v_result;
-    ELSE
-      -- Listado
-      RETURN COALESCE((SELECT jsonb_agg(row_to_json(r)) FROM public.recipes r), '[]'::jsonb);
-    END IF;
-  END IF;
-  RETURN jsonb_build_object('error', 'accion_no_soportada');
+  RETURN jsonb_build_object(
+    'debug', jsonb_build_object(
+      'id_encontrado', v_receta_id,
+      'nombre_encontrado', v_recipe_name,
+      'num_ingredientes', v_count_ri,
+      'total_recetas_en_tabla', v_count_all
+    ),
+    'ingredientes', COALESCE((
+       SELECT jsonb_agg(jsonb_build_object('n', i.name, 'q', ri.quantity_gross, 'u', ri.unit))
+       FROM public.recipe_ingredients ri
+       JOIN public.ingredients i ON i.id = ri.ingredient_id
+       WHERE ri.recipe_id = v_receta_id
+    ), '[]'::jsonb)
+  );
 END;
 $$;
