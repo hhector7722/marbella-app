@@ -59,7 +59,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className="light">
-      <body className={`${inter.className} bg-white touch-manipulation`}>
+      <body className={`${inter.className} bg-[#5B8FB9] touch-manipulation`}>
         <SileoProvider />
         <ServiceWorkerRegistration />
         <Navbar />
