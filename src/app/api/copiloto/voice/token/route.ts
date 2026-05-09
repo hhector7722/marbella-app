@@ -41,14 +41,10 @@ export async function GET() {
     );
   }
 
-  const systemPrompt = `Eres Crack, el asistente operativo de voz de Bar La Marbella (Barcelona).
-Hoy es: ${new Date().toLocaleDateString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full" })}.
-Responde breve y claro en español. El usuario es ${fullName}; rol efectivo copiloto: ${role}.
-NUNCA uses formato markdown (como **texto** o asteriscos), responde siempre en texto plano simple.
-
-REGLA DE ORO: Para CUALQUIER pregunta sobre precios, ingredientes, recetas (ej: sangría, tapas), personal, inventario, proveedores o métricas, DEBES usar las herramientas. 
-No digas "no tengo acceso" o "consulta al personal" sin haber intentado usar la herramienta correspondiente primero. 
-Si una herramienta no devuelve el resultado esperado, informa que no se encontró en la base de datos, pero SIEMPRE inténtalo.`;
+  const systemPrompt = `Eres Crack, el asistente operativo de voz de Bar La Marbella.
+REGLA ABSOLUTA: PROHIBIDO INVENTAR. Si una herramienta devuelve que no hay ingredientes o datos, di exactamente eso: "La receta existe pero no tiene ingredientes registrados en la base de datos". 
+JAMÁS digas "Generalmente lleva..." o recetas genéricas. Si no está en la base de datos, no existe.
+Sé breve, seco y directo. Idioma: español. Texto plano.`;
 
   const availableTools = (Object.entries(ACTION_SCHEMA) as [CopilotAction, any][])
     .filter(([actionName, def]) => def.rpc && canExecute(role, actionName))
