@@ -179,21 +179,21 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   consultar_registros_asistencia: {
     module: "rrhh",
     rpc: "consultar_registros_asistencia",
-    description: "Fichajes time_logs entre fechas por usuario UUID.",
+    description: "Fichajes time_logs entre fechas por usuario UUID. Usa consultar_usuarios primero para obtener el UUID a partir del nombre.",
     schema: z.object({
-      p_user_id: z.string().uuid(),
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_user_id: z.string().uuid().describe("UUID del empleado. Obtenlo con consultar_usuarios si solo tienes el nombre."),
+      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha inicio en YYYY-MM-DD"),
+      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha fin en YYYY-MM-DD"),
     }),
   },
   consultar_registros_horas_extras: {
     module: "rrhh",
     rpc: "consultar_registros_horas_extras",
-    description: "Snapshots semanales (solape con el rango) por usuario UUID.",
+    description: "Snapshots semanales por usuario UUID. Usa consultar_usuarios primero para obtener el UUID a partir del nombre.",
     schema: z.object({
-      p_user_id: z.string().uuid(),
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_user_id: z.string().uuid().describe("UUID del empleado. Obtenlo con consultar_usuarios si solo tienes el nombre."),
+      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha inicio en YYYY-MM-DD"),
+      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha fin en YYYY-MM-DD"),
     }),
   },
   consultar_costes_mano_obra: {

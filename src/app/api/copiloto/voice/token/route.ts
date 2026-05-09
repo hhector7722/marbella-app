@@ -75,7 +75,7 @@ Sé breve, seco y directo. Idioma: español. Texto plano.`;
       const errBody = await response.text();
       console.error("[Crack Voice] OpenAI Realtime:", errBody);
       return NextResponse.json(
-        { error: "Fallo al preparar sesión de voz" },
+        { error: `Error OpenAI: ${errBody}` },
         { status: 502 }
       );
     }

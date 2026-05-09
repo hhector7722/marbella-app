@@ -193,6 +193,7 @@ export default function MovementsPage() {
     // 1. CARGA ATEMPORAL (Global)
     useEffect(() => {
         fetchCurrentBoxStatus();
+        fetchLatestLedgerSaldo();
     }, []);
 
     async function fetchCurrentBoxStatus() {
@@ -215,9 +216,6 @@ export default function MovementsPage() {
                     difference: Number(status.difference ?? 0),
                     loading: false
                 });
-                
-                // Carga el saldo del libro una vez tenemos la caja
-                fetchLatestLedgerSaldo(status.box_id);
             } else {
                 toast.error("BLOQUEO: No se ha detectado ninguna 'Caja Operativa' en la base de datos.");
                 setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
@@ -229,16 +227,12 @@ export default function MovementsPage() {
         }
     }
 
-    async function fetchLatestLedgerSaldo(boxId?: string) {
-        const id = boxId || boxData?.id;
-        if (!id) return;
-        
+    async function fetchLatestLedgerSaldo() {
         setLatestLedgerLoading(true);
         try {
             const { data: ledgerRows, error: ledgerError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
-                .eq('box_id', id)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: false })
@@ -331,16 +325,21 @@ export default function MovementsPage() {
             const from = pageIndex * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
 
-            const q = supabase
+            // Ocultar visualmente los movimientos de otras cajas (como la de Cambio),
+            // pero manteniendo el running_balance global intacto.
+            let q = supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
-                .eq('box_id', boxData.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
+
+            if (boxData?.id) {
+                q = q.eq('box_id', boxData.id);
+            }
 
             const { data: pageMoves, error: fetchError } = await q;
 
@@ -531,16 +530,21 @@ export default function MovementsPage() {
         for (let offset = 0; offset < 100_000; offset += pageSize) {
             const from = offset;
             const to = offset + pageSize - 1;
-            const { data, error } = await supabase
+            let q = supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
-                .eq('box_id', boxData.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
+
+            if (boxData?.id) {
+                q = q.eq('box_id', boxData.id);
+            }
+
+            const { data, error } = await q;
 
             if (error) throw error;
             const rows = data ?? [];

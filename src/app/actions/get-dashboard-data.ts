@@ -137,7 +137,6 @@ export async function getDashboardData() {
             const { data: ledgerRows, error: ledgerError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
-                .eq('box_id', opStatus.box_id)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: false })
