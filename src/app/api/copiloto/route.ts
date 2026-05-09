@@ -238,7 +238,7 @@ Si no encuentras ingredientes, di que no los hay pero muestra el contenido del c
 Rol: ${role}.`,
     messages: await convertToModelMessages(messages),
     tools: toolsObj as any,
-    maxSteps: 10,
+    stopWhen: stepCountIs(10),
   });
 
   const response = result.toUIMessageStreamResponse();
