@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { X, Mic, Send, Phone, Plus, FileText, Image as ImageIcon } from 'lucide-react';
+import { X, Mic, Phone, Plus, FileText, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useAIStore } from '@/store/aiStore';
 import { useChat } from '@ai-sdk/react';
@@ -47,7 +47,6 @@ export default function ChatMarbella() {
           <div className="relative w-8 h-8 shrink-0">
             <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
           </div>
-          <span className="text-sm font-semibold tracking-wide opacity-90">Crack</span>
           <button
             type="button"
             onClick={closeChat}
@@ -193,7 +192,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-2">
-            <p className="text-sm">¿En qué puedo ayudarte?</p>
+            <p className="text-sm">¿Qué necesitas crack?</p>
           </div>
         )}
 
@@ -235,7 +234,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             <button
               type="button"
               onClick={() => setShowAttachMenu((v) => !v)}
-              className="h-11 w-11 flex items-center justify-center rounded-2xl bg-zinc-100 text-zinc-600 hover:bg-zinc-200 active:scale-95 transition-all"
+              className="h-11 w-11 flex items-center justify-center rounded-2xl text-zinc-400 hover:text-zinc-600 active:scale-95 transition-all"
               title="Adjuntar archivo"
             >
               <Plus size={20} />
@@ -277,7 +276,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             }}
             placeholder="Escribe tu mensaje..."
             rows={1}
-            className="flex-1 min-h-[44px] max-h-24 resize-none rounded-2xl border border-zinc-200 px-3 py-[10px] text-[13px] outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-zinc-50"
+            className="flex-1 min-h-[44px] max-h-24 resize-none rounded-2xl border border-zinc-200 px-3 py-[10px] text-[13px] outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-white"
             disabled={busy}
           />
 
@@ -290,8 +289,8 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             className={cn(
               "h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 transition-all duration-200 select-none",
               isRecording
-                ? "bg-red-500 text-white scale-110 shadow-lg shadow-red-200"
-                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 active:scale-95"
+                ? "text-red-500 scale-110"
+                : "text-zinc-400 hover:text-zinc-600 active:scale-95"
             )}
             title="Mantén pulsado para grabar"
           >
@@ -302,20 +301,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           <button
             type="button"
             onClick={onCallOpen}
-            className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 active:scale-95 transition-all"
+            className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
             title="Llamada de voz"
           >
-            <Phone size={18} />
-          </button>
-
-          {/* Send button */}
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!canSend}
-            className="h-11 w-11 rounded-2xl bg-[#3F5E7A] hover:bg-[#2e4d62] text-white flex items-center justify-center shrink-0 disabled:opacity-40 transition-all active:scale-95 shadow-sm"
-          >
-            <Send size={16} className="ml-0.5" />
+            <Phone size={18} className="text-white" />
           </button>
         </div>
       </div>
