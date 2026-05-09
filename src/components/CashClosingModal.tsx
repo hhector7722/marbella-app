@@ -72,6 +72,14 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    // Fetch user on mount
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setUserId(user?.id || null);
+        });
+    }, []);
 
     // 1. STATE: TPVs
     const [tpvData, setTpvData] = useState({
@@ -92,41 +100,67 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     // 4. STATE: DATE/TIME (HIDDEN EDIT)
     const [selectedDateTime, setSelectedDateTime] = useState(() => formatDateTimeLocalInput(new Date()));
     const datePickerRef = useRef<HTMLInputElement>(null);
+    const isInitialized = useRef(false);
+    const lastDate = useRef<string | null>(null);
 
     useEffect(() => {
-        if (isOpen) {
-            // Priority: If opening for Today, use dashboard live data
-            const now = new Date();
-            const selectedDateStr = format(parseDateTimeLocal(selectedDateTime), 'yyyy-MM-dd');
-            const todayStr = format(now, 'yyyy-MM-dd');
+        if (!isOpen) {
+            isInitialized.current = false;
+            lastDate.current = null;
+            return;
+        }
 
-            if (selectedDateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
-                setTpvData(prev => ({
-                    ...prev,
-                    totalSales: initialTotalSales,
-                    ticketsCount: initialTicketsCount
-                }));
-            } else {
+        if (userId) {
+            const dateObj = parseDateTimeLocal(selectedDateTime);
+            const dateStr = format(dateObj, 'yyyy-MM-dd');
+
+            if (!isInitialized.current) {
+                // 1. INITIAL LOAD (Only once per open)
+                isInitialized.current = true;
+                lastDate.current = dateStr;
+
+                // Priority: Try to load draft from localStorage
+                try {
+                    const draft = localStorage.getItem(`cash_closing_draft_${userId}`);
+                    if (draft) {
+                        const parsed = JSON.parse(draft);
+                        if (parsed.tpvData) setTpvData(parsed.tpvData);
+                        if (parsed.counts) setCounts(parsed.counts);
+                        return; // Successfully loaded draft
+                    }
+                } catch (e) {
+                    console.error("Error reading draft from localStorage", e);
+                }
+
+                // If no draft, decide between props or fetch
+                const now = new Date();
+                const todayStr = format(now, 'yyyy-MM-dd');
+                if (dateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
+                    setTpvData(prev => ({
+                        ...prev,
+                        totalSales: initialTotalSales,
+                        ticketsCount: initialTicketsCount
+                    }));
+                } else {
+                    fetchTodayVentas();
+                }
+            } else if (dateStr !== lastDate.current) {
+                // 2. DATE CHANGED MANUALLY (Subsequent triggers)
+                lastDate.current = dateStr;
                 fetchTodayVentas();
             }
-        } else {
-            // Reset state on close
-            setStep('tpv_data');
-            const now = formatDateTimeLocalInput(new Date());
-            setSelectedDateTime(now);
-            setTpvData({
-                totalSales: 0, cardSales: 0, pendingSales: 0,
-                debtRecovered: 0, ticketsCount: 0, weather: 'Soleado'
-            });
-            setCounts({});
         }
-    }, [isOpen]);
+    }, [isOpen, userId, selectedDateTime]);
 
+    // AUTO-SAVE DRAFT
     useEffect(() => {
-        if (isOpen) {
-            fetchTodayVentas();
+        if (isInitialized.current && userId && (Object.keys(counts).length > 0 || tpvData.cardSales > 0 || tpvData.pendingSales > 0 || tpvData.debtRecovered > 0)) {
+            const draftKey = `cash_closing_draft_${userId}`;
+            localStorage.setItem(draftKey, JSON.stringify({ tpvData, counts }));
         }
-    }, [selectedDateTime]);
+    }, [tpvData, counts, userId]);
+
+    // Consolidado en el efecto de inicialización
 
 
     async function fetchTodayVentas() {
@@ -261,6 +295,18 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             }).catch(err => console.error("Error sending closing notify:", err));
 
             if (onSuccess) await onSuccess();
+            
+            // Clear draft and reset local state only on success
+            if (userId) {
+                localStorage.removeItem(`cash_closing_draft_${userId}`);
+            }
+            setTpvData({
+                totalSales: 0, cardSales: 0, pendingSales: 0,
+                debtRecovered: 0, ticketsCount: 0, weather: 'Soleado'
+            });
+            setCounts({});
+            setStep('tpv_data');
+
             onClose();
         } catch (error: any) {
             console.error("FinalizeClose error:", error);

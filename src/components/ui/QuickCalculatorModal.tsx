@@ -47,7 +47,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [lastCaptureCopied, setLastCaptureCopied] = useState(false);
     const overlayRef = useRef<HTMLDivElement | null>(null);
     const modalRef = useRef<HTMLDivElement | null>(null);
-    const breakdownCaptureRef = useRef<HTMLDivElement | null>(null);
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {
@@ -405,7 +404,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                     onValueChange={(v) => setBreakdownCounts((prev) => ({ ...prev, [zoomDenom]: v }))}
                                 />
                             )}
-                            <div ref={breakdownCaptureRef}>
+                            <div>
                                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-5 gap-x-3 p-3">
                                     {DENOMINATIONS.map((denom) => {
                                         const qty = breakdownCounts[denom] || 0;
@@ -460,8 +459,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                             </div>
                                         );
                                     })}
-                                </div>
-
                                 {/* Floating Total Indicator */}
                                 <div className="sticky bottom-0 left-0 right-0 p-3 pointer-events-none">
                                     <div className="bg-[#36606F]/95 backdrop-blur-md px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-2xl border border-white/10 animate-in slide-in-from-bottom-2">
@@ -471,28 +468,33 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                         </span>
                                     </div>
                                 </div>
-
-                                <div className="p-4 mt-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleBreakdownSend}
-                                        disabled={isSending || showConfirmEnviar}
-                                        className={cn(
-                                            "mx-auto w-[85%] min-h-[44px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-lg shadow-purple-900/20 transition-all",
-                                            isSending && "opacity-60 cursor-not-allowed"
-                                        )}
-                                    >
-                                        <img
-                                            src="/icons/whatsapp.png"
-                                            alt=""
-                                            className="w-[18px] h-[18px] object-contain shrink-0"
-                                            draggable={false}
-                                        />
-                                        {isSending ? 'Generando…' : 'Enviar'}
-                                    </button>
-                                </div>
                             </div>
-                        </>
+                        </div>
+                    </>
+                )}
+            </div>
+
+                    {/* Fixed Footer for Breakdown tab */}
+                    {tab === 'breakdown' && (
+                        <div className="p-4 bg-gray-50/80 backdrop-blur-sm border-t border-zinc-100 shrink-0">
+                            <button
+                                type="button"
+                                onClick={handleBreakdownSend}
+                                disabled={isSending || showConfirmEnviar}
+                                className={cn(
+                                    "mx-auto w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-lg shadow-purple-900/20 transition-all",
+                                    isSending && "opacity-60 cursor-not-allowed"
+                                )}
+                            >
+                                <img
+                                    src="/icons/whatsapp.png"
+                                    alt=""
+                                    className="w-[20px] h-[20px] object-contain shrink-0"
+                                    draggable={false}
+                                />
+                                {isSending ? 'Generando…' : 'Enviar'}
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -522,7 +524,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                         </div>
                     </div>
                 )}
-            </div>
         </div>
     );
 }

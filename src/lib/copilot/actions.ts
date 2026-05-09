@@ -137,8 +137,10 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "gestionar_recetas",
     description: "Consulta recetas, ingredientes y costes de elaboración.",
     schema: z.object({
-      p_accion: z.string(),
-      p_datos: z.record(z.string(), z.unknown()).default({}),
+      p_accion: z.enum(["buscar", "listar", "consultar"]).describe("Usa 'buscar' para una receta específica o 'listar' para ver todas."),
+      p_datos: z.object({
+        nombre: z.string().optional().describe("Nombre de la receta (ej: 'sangria', 'cafe')")
+      }).default({}),
     }),
   },
   gestionar_ingredientes: {
@@ -146,8 +148,10 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "gestionar_ingredientes",
     description: "Consulta catálogo de ingredientes y precios de compra.",
     schema: z.object({
-      p_accion: z.string(),
-      p_datos: z.record(z.string(), z.unknown()).default({}),
+      p_accion: z.enum(["buscar", "listar", "consultar"]).describe("Usa 'buscar' para un ingrediente o 'listar' para inventario."),
+      p_datos: z.object({
+        nombre: z.string().optional().describe("Nombre del ingrediente")
+      }).default({}),
     }),
   },
   gestionar_consumo_personal: {
@@ -155,8 +159,10 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "gestionar_consumo_personal",
     description: "Consulta y registro de consumo de personal.",
     schema: z.object({
-      p_accion: z.string(),
-      p_datos: z.record(z.string(), z.unknown()).default({}),
+      p_accion: z.enum(["buscar", "listar", "consultar"]).describe("Usa 'buscar' para un empleado o 'listar' para consumos."),
+      p_datos: z.object({
+        nombre: z.string().optional().describe("Nombre del empleado")
+      }).default({}),
     }),
   },
   gestionar_proveedores: {
@@ -164,8 +170,10 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "gestionar_proveedores",
     description: "Consulta información de contacto de proveedores.",
     schema: z.object({
-      p_accion: z.string(),
-      p_datos: z.record(z.string(), z.unknown()).default({}),
+      p_accion: z.enum(["buscar", "listar", "consultar"]).describe("Usa 'buscar' para un proveedor o 'listar' para contactos."),
+      p_datos: z.object({
+        nombre: z.string().optional().describe("Nombre del proveedor")
+      }).default({}),
     }),
   },
   consultar_registros_asistencia: {
