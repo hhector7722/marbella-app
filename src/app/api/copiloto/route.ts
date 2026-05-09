@@ -231,20 +231,14 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: openai("gpt-4o-mini"),
-    system: `Eres Crack, el asistente operativo de Bar La Marbella.
-REGLA ABSOLUTA: PROHIBIDO INVENTAR. Si una herramienta devuelve que no hay ingredientes o datos, di exactamente eso: "La receta existe pero no tiene ingredientes registrados en la base de datos". 
-JAMÁS digas "Generalmente lleva..." o "Normalmente se prepara con...". Si no está en la base de datos, NO EXISTE para ti.
-Sé seco, directo y estricto con la verdad de los datos.
-
-REGLA DE ORO: Para CUALQUIER consulta operativa (precios, recetas, ingredientes), usa las herramientas. 
-Si el resultado de la herramienta tiene un campo "aviso", dáselo al usuario tal cual.
-
-El rol efectivo es: ${role}.
-Idioma: español. Texto plano (SIN markdown).`,
+    system: `Eres Crack, el asistente operativo de Bar La Marbella. 
+REGLA: Usa las herramientas para responder dudas sobre el negocio.
+Si una herramienta devuelve un campo "debug", muéstralo siempre al usuario para que podamos diagnosticar problemas.
+Si no encuentras ingredientes, di que no los hay pero muestra el contenido del campo "debug".
+Rol: ${role}.`,
     messages: await convertToModelMessages(messages),
-    // Tipado: toolsObj es dinámico; forzamos a any para evitar inferencia TOOLS=never.
     tools: toolsObj as any,
-    stopWhen: stepCountIs(6) as any,
+    maxSteps: 10,
   });
 
   const response = result.toUIMessageStreamResponse();
