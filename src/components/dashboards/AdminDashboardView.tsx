@@ -1300,10 +1300,21 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const dashboardCambiosYAccesosDesktop = (
-        <div className="hidden md:grid md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] md:gap-x-4 md:gap-y-3 md:items-stretch">
+        <div className="hidden md:grid md:grid-cols-4 md:gap-4 md:items-stretch">
+            {/* Columna 1: Cajas de cambio */}
             <div className="col-start-1 row-start-1 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
             <div className="col-start-1 row-start-2 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 2', 1)}</div>
+
+            {/* Columna 2: Horas extras (ocupa 2 filas) */}
             <div className="col-start-2 row-start-1 row-span-2 min-h-0 min-w-0 flex flex-col">{horasExtrasSection}</div>
+
+            {/* Columna 3: Asistencia y Plantilla */}
+            <div className="col-start-3 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
+            <div className="col-start-3 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
+
+            {/* Columna 4: M obra y Stock */}
+            <div className="col-start-4 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
+            <div className="col-start-4 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[3])}</div>
         </div>
     );
 
@@ -1322,32 +1333,17 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* ===== LAYOUT ESCRITORIO ===== */}
                 <div className="hidden md:flex md:flex-col md:gap-4">
-                    {/* Fila superior: Ventas centrada */}
-                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-start">
-                        <div />
-                        <div>{ventasSection}</div>
-                        <div />
+                    {/* Fila 1: Tarjeta ventas */}
+                    <div className="w-full">
+                        {ventasSection}
                     </div>
 
-                    {/* Fila de Caja Inicial + Accesos Rápidos con misma altura */}
-                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-stretch">
-                        <div />
-                        <div className="flex gap-3 items-stretch">
-                            <div className="flex-1">
-                                {cajaInicialSection}
-                            </div>
-                            <div className="flex gap-3 items-stretch">
-                                {quickActionCards.map(card => (
-                                    <div key={card.title} className="h-full aspect-square">
-                                        {renderQuickActionSquare(card)}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div />
+                    {/* Fila 2: Tarjeta caja inicial */}
+                    <div className="w-full">
+                        {cajaInicialSection}
                     </div>
 
-                    {/* Fila inferior: cajas cambio + horas extras */}
+                    {/* Filas 3 y 4: Cajas cambio, Horas extras y Accesos rápidos */}
                     {dashboardCambiosYAccesosDesktop}
                 </div>
 
