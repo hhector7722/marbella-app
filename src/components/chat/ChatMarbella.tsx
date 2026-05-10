@@ -83,9 +83,11 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isRecordingRef = useRef(false);
 
   const { status: voiceStatus, startRecording, stopRecording } = useVoiceRecorder();
   const isRecording = voiceStatus === 'recording';
+  isRecordingRef.current = isRecording;
 
   const onSessionHeader = useCallback((res: Response) => {
     const sid = res.headers.get('X-Session-Id');
@@ -136,8 +138,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, status]);
 
-  // Push-to-talk: mantener pulsado para grabar, soltar para transcribir
-  const handleMicPointerDown = useCallback(async () => {
+  // Push-to-talk — WhatsApp style: hold to record, release to transcribe
+  const handleMicStart = useCallback(async (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault(); // prevent context menu on long press
+    if (isRecordingRef.current) return;
     try {
       await startRecording();
     } catch (err: any) {
@@ -145,10 +149,11 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     }
   }, [startRecording]);
 
-  const handleMicPointerUp = useCallback(async () => {
-    if (!isRecording) return;
+  const handleMicRelease = useCallback(async (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    if (!isRecordingRef.current) return;
     const audioBlob = await stopRecording();
-    if (!audioBlob || audioBlob.size < 1000) return; // ignore very short recordings
+    if (!audioBlob || audioBlob.size < 500) return;
 
     const toastId = toast.loading('Transcribiendo...');
     try {
@@ -166,7 +171,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     } catch (err: any) {
       toast.error('Error: ' + err.message, { id: toastId });
     }
-  }, [isRecording, stopRecording]);
+  }, [stopRecording]);
 
   const busy = status !== 'ready' && status !== 'error';
   const canSend = input.trim().length > 0 && !busy;
@@ -280,21 +285,23 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             disabled={busy}
           />
 
-          {/* Mic button — push to talk */}
+          {/* Mic button — push to talk WhatsApp style */}
           <button
             type="button"
-            onPointerDown={handleMicPointerDown}
-            onPointerUp={handleMicPointerUp}
-            onPointerLeave={handleMicPointerUp}
+            onTouchStart={handleMicStart}
+            onTouchEnd={handleMicRelease}
+            onMouseDown={handleMicStart}
+            onMouseUp={handleMicRelease}
+            onContextMenu={(e) => e.preventDefault()}
             className={cn(
-              "h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 transition-all duration-200 select-none",
+              "h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 transition-all duration-150 select-none touch-none",
               isRecording
-                ? "text-red-500 scale-110"
-                : "text-zinc-400 hover:text-zinc-600 active:scale-95"
+                ? "text-red-500 scale-125"
+                : "text-zinc-400 active:scale-110 active:text-red-400"
             )}
             title="Mantén pulsado para grabar"
           >
-            <Mic size={18} className={isRecording ? "animate-pulse" : ""} />
+            <Mic size={isRecording ? 22 : 18} className={isRecording ? "animate-pulse" : ""} />
           </button>
 
           {/* Phone button */}

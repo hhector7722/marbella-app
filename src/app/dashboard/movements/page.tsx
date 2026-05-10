@@ -911,16 +911,9 @@ export default function MovementsPage() {
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {physicalBalanceCents !== 0 ? formatCentsToEur(physicalBalanceCents) : "0,00€"}
-                                </span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">ARQUEO (FÍSICO)</span>
-                            </div>
-
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-zinc-500 line-clamp-1 tabular-nums">
                                     {!latestLedgerLoading ? formatCentsToEur(latestLedgerSaldoCents) : " "}
                                 </span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO DE LIBRO</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
