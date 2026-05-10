@@ -139,8 +139,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   }, [messages, status]);
 
   // Push-to-talk — WhatsApp style: hold to record, release to transcribe
-  const handleMicStart = useCallback(async (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault(); // prevent context menu on long press
+  const handleMicStart = useCallback(async (e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
+    
     if (isRecordingRef.current) return;
     try {
       await startRecording();
@@ -149,9 +151,9 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     }
   }, [startRecording]);
 
-  const handleMicRelease = useCallback(async (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
+  const handleMicRelease = useCallback(async (e: React.PointerEvent) => {
     if (!isRecordingRef.current) return;
+    
     const audioBlob = await stopRecording();
     if (!audioBlob || audioBlob.size < 500) return;
 
@@ -288,10 +290,8 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           {/* Mic button — push to talk WhatsApp style */}
           <button
             type="button"
-            onTouchStart={handleMicStart}
-            onTouchEnd={handleMicRelease}
-            onMouseDown={handleMicStart}
-            onMouseUp={handleMicRelease}
+            onPointerDown={handleMicStart}
+            onPointerUp={handleMicRelease}
             onContextMenu={(e) => e.preventDefault()}
             className={cn(
               "h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 transition-all duration-150 select-none touch-none",

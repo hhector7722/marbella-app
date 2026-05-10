@@ -48,71 +48,88 @@ Sé breve, seco y directo. Idioma: español. Texto plano.`;
 
 // OpenAI Realtime requires strict JSON Schema objects. zodToJsonSchema v4 emits
 // broken output for some schemas, so we build them manually.
-function buildJsonSchema(zodShape: Record<string, any>): Record<string, any> {
-  const properties: Record<string, any> = {};
-  const required: string[] = [];
+// OpenAI Realtime requires strict JSON Schema objects.
+function buildJsonSchema(zodType: any): Record<string, any> {
+  const def = zodType?._def;
+  if (!def) return { type: "string" };
+  const typeName = def.typeName;
 
-  for (const [key, field] of Object.entries(zodShape)) {
-    const def = field?._def;
-    const typeName = def?.typeName;
-    let prop: Record<string, any> = { type: "string" };
+  if (typeName === "ZodObject") {
+    const shape = def.shape();
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
 
-    if (typeName === "ZodString") {
-      prop = { type: "string" };
-      if (def.description) prop.description = def.description;
-    } else if (typeName === "ZodNumber") {
-      prop = { type: "number" };
-    } else if (typeName === "ZodEnum" || typeName === "ZodNativeEnum") {
-      prop = { type: "string", enum: def.values ?? Object.values(def.entries ?? {}) };
-      if (def.description) prop.description = def.description;
-    } else if (typeName === "ZodArray") {
-      prop = { type: "array", items: {} };
-    } else if (typeName === "ZodObject") {
-      prop = buildJsonSchema(def.shape?.() ?? {});
-    } else if (typeName === "ZodRecord") {
-      prop = { type: "object", additionalProperties: true };
-    } else if (typeName === "ZodOptional" || typeName === "ZodDefault") {
-      // Unwrap and recurse — treat inner type, mark not required
-      const inner = def.innerType?._def;
-      if (inner?.typeName === "ZodString") {
-        prop = { type: "string" };
-        if (inner.description) prop.description = inner.description;
-      } else if (inner?.typeName === "ZodEnum") {
-        prop = { type: "string", enum: inner.values };
-      } else if (inner?.typeName === "ZodObject") {
-        prop = buildJsonSchema(inner.shape?.() ?? {});
-      } else {
-        prop = { type: "string" };
+    for (const [key, value] of Object.entries(shape)) {
+      const propSchema = buildJsonSchema(value);
+      properties[key] = propSchema;
+      
+      // If not optional or default, it's required
+      const innerDef = (value as any)?._def;
+      if (innerDef?.typeName !== "ZodOptional" && innerDef?.typeName !== "ZodDefault") {
+        required.push(key);
       }
-      // don't add to required
-      if (def.description) prop.description = def.description;
-      properties[key] = prop;
-      continue;
-    } else if (typeName === "ZodBoolean") {
-      prop = { type: "boolean" };
-    } else if (typeName === "ZodUnknown" || typeName === "ZodAny") {
-      prop = {};
     }
 
-    if (def?.description) prop.description = def.description;
-    properties[key] = prop;
-    required.push(key);
+    const res: Record<string, any> = { type: "object", properties };
+    if (required.length > 0) res.required = required;
+    if (def.description) res.description = def.description;
+    return res;
   }
 
-  const schema: Record<string, any> = { type: "object", properties };
-  if (required.length > 0) schema.required = required;
-  return schema;
+  if (typeName === "ZodString") {
+    const res: Record<string, any> = { type: "string" };
+    if (def.description) res.description = def.description;
+    return res;
+  }
+
+  if (typeName === "ZodNumber") {
+    const res: Record<string, any> = { type: "number" };
+    if (def.description) res.description = def.description;
+    return res;
+  }
+
+  if (typeName === "ZodBoolean") {
+    const res: Record<string, any> = { type: "boolean" };
+    if (def.description) res.description = def.description;
+    return res;
+  }
+
+  if (typeName === "ZodEnum" || typeName === "ZodNativeEnum") {
+    const values = def.values ?? Object.values(def.entries ?? {});
+    const res: Record<string, any> = { type: "string", enum: values };
+    if (def.description) res.description = def.description;
+    return res;
+  }
+
+  if (typeName === "ZodArray") {
+    const res: Record<string, any> = { 
+      type: "array", 
+      items: buildJsonSchema(def.type) 
+    };
+    if (def.description) res.description = def.description;
+    return res;
+  }
+
+  if (typeName === "ZodOptional" || typeName === "ZodDefault") {
+    return buildJsonSchema(def.innerType);
+  }
+
+  if (typeName === "ZodRecord") {
+    return { type: "object", additionalProperties: true };
+  }
+
+  // Fallback
+  return { type: "string" };
 }
 
   const availableTools = (Object.entries(ACTION_SCHEMA) as [CopilotAction, any][])
     .filter(([actionName, def]) => def.rpc && canExecute(role, actionName))
     .map(([name, def]) => {
-      const shape = def.schema?._def?.shape?.() ?? {};
       return {
         type: "function",
         name,
         description: def.description,
-        parameters: buildJsonSchema(shape),
+        parameters: buildJsonSchema(def.schema),
       };
     });
 
