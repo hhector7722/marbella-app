@@ -76,8 +76,8 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "consultar_flujos_caja_efectivo",
     description: "Movimientos de tesorería en un rango (YYYY-MM-DD).",
     schema: z.object({
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_fecha_inicio: z.string(),
+      p_fecha_fin: z.string(),
     }),
   },
   gestionar_flujos_caja_efectivo: {
@@ -95,8 +95,8 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "consultar_cambios_entre_cajas",
     description: "Consulta transferencias SWAP entre cajas en rango.",
     schema: z.object({
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_fecha_inicio: z.string(),
+      p_fecha_fin: z.string(),
     }),
   },
   gestionar_cambios_entre_cajas: {
@@ -182,8 +182,8 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     description: "Fichajes time_logs entre fechas por usuario UUID. Usa consultar_usuarios primero para obtener el UUID a partir del nombre.",
     schema: z.object({
       p_user_id: z.string().uuid().describe("UUID del empleado. Obtenlo con consultar_usuarios si solo tienes el nombre."),
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha inicio en YYYY-MM-DD"),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha fin en YYYY-MM-DD"),
+      p_fecha_inicio: z.string().describe("Fecha inicio (YYYY-MM-DD)"),
+      p_fecha_fin: z.string().describe("Fecha fin (YYYY-MM-DD)"),
     }),
   },
   consultar_registros_horas_extras: {
@@ -192,8 +192,8 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     description: "Snapshots semanales por usuario UUID. Usa consultar_usuarios primero para obtener el UUID a partir del nombre.",
     schema: z.object({
       p_user_id: z.string().uuid().describe("UUID del empleado. Obtenlo con consultar_usuarios si solo tienes el nombre."),
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha inicio en YYYY-MM-DD"),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha fin en YYYY-MM-DD"),
+      p_fecha_inicio: z.string().describe("Fecha inicio (YYYY-MM-DD)"),
+      p_fecha_fin: z.string().describe("Fecha fin (YYYY-MM-DD)"),
     }),
   },
   consultar_costes_mano_obra: {
@@ -201,8 +201,8 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "consultar_costes_mano_obra",
     description: "Coste laboral estimado entre fechas (gerencia/cocina/supervisor).",
     schema: z.object({
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_fecha_inicio: z.string(),
+      p_fecha_fin: z.string(),
     }),
   },
   gestionar_horarios: {
@@ -219,7 +219,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "consultar_reservas",
     description: "Reservas (sin tabla dedicada actualmente — respuesta declarada vacía).",
     schema: z.object({
-      p_fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_fecha: z.string(),
     }),
   },
   gestionar_reservas: {
@@ -242,7 +242,7 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "generar_informe_diario",
     description: "get_daily_sales_stats para una fecha concreta (YYYY-MM-DD).",
     schema: z.object({
-      p_fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_fecha: z.string(),
     }),
   },
   generar_informe_semanal: {
@@ -250,8 +250,8 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
     rpc: "generar_informe_semanal",
     description: "Agrega ventas diarias por rango y resumen cash_closings.",
     schema: z.object({
-      p_fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      p_fecha_fin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      p_fecha_inicio: z.string(),
+      p_fecha_fin: z.string(),
     }),
   },
   generar_informe_personalizado: {
