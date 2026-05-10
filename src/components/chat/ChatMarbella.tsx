@@ -259,7 +259,12 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Auto-expand
+              e.target.style.height = 'auto';
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -268,7 +273,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             }}
             placeholder="Escribe tu mensaje..."
             rows={1}
-            className="flex-1 min-h-[44px] max-h-24 resize-none rounded-2xl border border-zinc-200 px-3 py-[10px] text-[13px] outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-white"
+            className="flex-1 min-h-[44px] max-h-48 resize-none rounded-2xl border border-zinc-200 px-3 py-[10px] text-[13px] outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-white overflow-hidden"
             disabled={busy}
           />
 
@@ -320,21 +325,17 @@ function BigMicOverlay({
   const isRecordingRef = useRef(isRecording);
   isRecordingRef.current = isRecording;
 
-  const handleStart = async (e: React.PointerEvent) => {
-    e.preventDefault();
-    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
-    if (isRecordingRef.current) return;
-    try {
-      await startRecording();
-    } catch (err: any) {
-      toast.error('Error de micrófono: ' + err.message);
+  const toggleRecording = async () => {
+    if (isRecordingRef.current) {
+      const blob = await stopRecording();
+      if (blob) onFinish(blob);
+    } else {
+      try {
+        await startRecording();
+      } catch (err: any) {
+        toast.error('Error de micrófono: ' + err.message);
+      }
     }
-  };
-
-  const handleEnd = async (e: React.PointerEvent) => {
-    if (!isRecordingRef.current) return;
-    const blob = await stopRecording();
-    if (blob) onFinish(blob);
   };
 
   return (
@@ -349,7 +350,9 @@ function BigMicOverlay({
       <div className="flex flex-col items-center gap-8">
         <div className="text-center space-y-2">
           <h3 className="text-lg font-semibold text-[#3F5E7A]">Mensaje de voz</h3>
-          <p className="text-sm text-zinc-400">Mantén pulsado para grabar</p>
+          <p className="text-sm text-zinc-400">
+            {isRecording ? 'pulsa para detener' : 'pulsa para grabar'}
+          </p>
         </div>
 
         <div className="relative flex items-center justify-center w-64 h-64">
@@ -362,11 +365,9 @@ function BigMicOverlay({
           )}
 
           <button
-            onPointerDown={handleStart}
-            onPointerUp={handleEnd}
-            onContextMenu={(e) => e.preventDefault()}
+            onClick={toggleRecording}
             className={cn(
-              "relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-150 select-none touch-none shadow-xl",
+              "relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-150 select-none shadow-xl",
               isRecording 
                 ? "bg-red-500 scale-110 text-white shadow-red-200" 
                 : "bg-[#3F5E7A] text-white active:scale-95 shadow-zinc-200"
@@ -499,16 +500,12 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
       </div>
 
       {!isActive ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-          <div className="w-20 h-20 rounded-full bg-[#3F5E7A]/10 flex items-center justify-center">
-            <Phone size={32} className="text-[#3F5E7A]" />
-          </div>
-          <p className="text-sm text-zinc-500 text-center">Habla directamente con Crack</p>
+        <div className="flex-1 flex items-center justify-center p-8">
           <button
             onClick={startCall}
-            className="bg-[#3F5E7A] text-white font-semibold px-10 h-13 py-3 rounded-2xl hover:bg-[#2e4d62] transition-all shadow-lg shadow-[#3F5E7A]/20 flex items-center gap-3 text-sm"
+            className="bg-emerald-500 text-white font-bold px-10 h-14 py-3 rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 flex items-center gap-3 text-sm uppercase tracking-wide"
           >
-            <Phone size={18} />
+            <Phone size={20} fill="currentColor" />
             Iniciar Llamada
           </button>
         </div>
