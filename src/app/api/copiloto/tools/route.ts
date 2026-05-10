@@ -68,11 +68,28 @@ export async function POST(req: Request) {
 
     const { data: rpcResult, error: rpcErr } = await supabase.rpc(def.rpc as never, rpcPayload as never);
     
+    let resultData: any;
     if (rpcErr) {
-      return NextResponse.json({ error: "Error en la base de datos", detail: rpcErr });
+      console.error(`[Copiloto Tools] DB Error in ${actionName}:`, rpcErr);
+      resultData = { error: `Error en base de datos: ${rpcErr.message}` };
+    } else {
+      resultData = { result: rpcResult ?? null };
     }
 
-    return NextResponse.json({ result: rpcResult ?? null });
+    // Log the call
+    await supabase.from("ai_call_logs").insert({
+      user_id: user.id,
+      summary: JSON.stringify({
+        copilot_tool: actionName,
+        rpc: def.rpc,
+        params: rpcPayload,
+        result: resultData,
+        mode: "voice"
+      }),
+      duration_seconds: 0,
+    });
+
+    return NextResponse.json(resultData);
   } catch (error: any) {
     console.error("[Copiloto Tools] Error:", error);
     return NextResponse.json({ error: "Error interno", detail: error.message }, { status: 500 });
