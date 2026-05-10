@@ -127,7 +127,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     [onSessionHeader]
   );
 
-  const { messages, sendMessage, status, error, setMessages } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport,
     onError: (err: Error) => {
       toast.error(`Error: ${err.message}`);
@@ -155,14 +155,13 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       } else {
         throw new Error(data.error || 'Sin texto');
       }
-    } catch (err: any) {
-      toast.error('Error: ' + err.message, { id: toastId });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('Error: ' + msg, { id: toastId });
     }
   };
 
   const busy = status !== 'ready' && status !== 'error';
-  const canSend = input.trim().length > 0 && !busy;
-
   const handleSend = useCallback(() => {
     const val = input.trim();
     if (!val || busy) return;
@@ -170,7 +169,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     setInput('');
   }, [input, busy, sendMessage]);
 
-  const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>, type: 'pdf' | 'image') => {
+  const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     toast.info(`Adjunto "${file.name}" recibido (próximamente compatible)`);
@@ -252,8 +251,8 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           </div>
 
           {/* Hidden file inputs */}
-          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileAttach(e, 'image')} />
-          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => handleFileAttach(e, 'pdf')} />
+          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileAttach} />
+          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileAttach} />
 
           {/* Textarea */}
           <textarea
@@ -323,7 +322,10 @@ function BigMicOverlay({
   stopRecording: () => Promise<Blob | null>
 }) {
   const isRecordingRef = useRef(isRecording);
-  isRecordingRef.current = isRecording;
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
 
   const toggleRecording = async () => {
     if (isRecordingRef.current) {
@@ -332,8 +334,9 @@ function BigMicOverlay({
     } else {
       try {
         await startRecording();
-      } catch (err: any) {
-        toast.error('Error de micrófono: ' + err.message);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error('Error de microfono: ' + msg);
       }
     }
   };
@@ -396,6 +399,7 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
   const [transcripts, setTranscripts] = useState<TranscriptEvent[]>([]);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -406,7 +410,6 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     return () => stopCall();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function startCall() {
@@ -420,7 +423,8 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
         throw new Error(msg);
       }
 
-      const { client_secret: clientSecret } = await tokenReq.json();
+      const { client_secret: clientSecret, session_id: sessionId } = await tokenReq.json();
+      sessionIdRef.current = typeof sessionId === 'string' ? sessionId : null;
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
 
@@ -453,13 +457,34 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
               const args = JSON.parse(argsString);
               const res = await fetch('/api/copiloto/tools', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ toolName: name, args }),
+                body: JSON.stringify({ toolName: name, args, sessionId: sessionIdRef.current }),
               });
-              const data = await res.json();
-              dcRef.current?.send(JSON.stringify({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: JSON.stringify(data) } }));
+              let data: unknown;
+              try {
+                data = await res.json();
+              } catch {
+                data = { error: res.statusText || 'Respuesta de herramienta invalida' };
+              }
+              const output = res.ok ? data : { error: 'tool_execution_failed', status: res.status, detail: data };
+              dcRef.current?.send(JSON.stringify({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: JSON.stringify(output) } }));
               dcRef.current?.send(JSON.stringify({ type: 'response.create' }));
-            } catch (err) { console.error('Error tool voz', err); }
+            } catch (err) {
+              console.error('Error tool voz', err);
+              const callId = typeof event.call_id === 'string' ? event.call_id : '';
+              if (callId) {
+                dcRef.current?.send(JSON.stringify({
+                  type: 'conversation.item.create',
+                  item: {
+                    type: 'function_call_output',
+                    call_id: callId,
+                    output: JSON.stringify({ error: 'tool_execution_failed', detail: err instanceof Error ? err.message : String(err) }),
+                  },
+                }));
+                dcRef.current?.send(JSON.stringify({ type: 'response.create' }));
+              }
+            }
           }
         } catch {}
       });
@@ -486,6 +511,7 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
     pcRef.current?.close();
     localStreamRef.current?.getTracks().forEach((track) => track.stop());
     if (audioElRef.current) audioElRef.current.srcObject = null;
+    sessionIdRef.current = null;
     dcRef.current = null; pcRef.current = null; localStreamRef.current = null; audioElRef.current = null;
   }
 

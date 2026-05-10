@@ -2,17 +2,15 @@ import {
   convertToModelMessages,
   streamText,
   stepCountIs,
+  type ToolSet,
   type UIMessage,
-} from 'ai';
-import { openai } from '@ai-sdk/openai';
+} from "ai";
+import { openai } from "@ai-sdk/openai";
 import { after } from "next/server";
 import type { CopilotAction } from "@/lib/copilot/actions";
 import { ACTION_SCHEMA } from "@/lib/copilot/actions";
-import {
-  canExecute,
-  normalizeCopilotRole,
-  type RoleName,
-} from "@/lib/copilot/permissions";
+import { normalizeCopilotRole, type RoleName } from "@/lib/copilot/permissions";
+import { executeCopilotTool, type CopilotSupabaseClient } from "@/lib/copilot/tool-runtime";
 import { createClient } from "@/utils/supabase/server";
 
 export const maxDuration = 60;
@@ -20,6 +18,7 @@ export const maxDuration = 60;
 function lastUserUiText(messages: UIMessage[]): string | null {
   const last = [...messages].reverse().find((m) => m.role === "user");
   if (!last?.parts?.length) return null;
+
   let out = "";
   for (const part of last.parts) {
     if (
@@ -32,8 +31,9 @@ function lastUserUiText(messages: UIMessage[]): string | null {
       out += (part as { text: string }).text;
     }
   }
-  const t = out.trim();
-  return t || null;
+
+  const text = out.trim();
+  return text || null;
 }
 
 export async function POST(req: Request) {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   try {
     bodyJson = (await req.json()) as Record<string, unknown>;
   } catch {
-    return Response.json({ error: "Cuerpo JSON inválido" }, { status: 400 });
+    return Response.json({ error: "Cuerpo JSON invalido" }, { status: 400 });
   }
 
   const messages = bodyJson.messages as UIMessage[] | undefined;
@@ -59,11 +59,11 @@ export async function POST(req: Request) {
   }
 
   const supabase = await createClient();
-
   const {
     data: { user },
     error: userErr,
   } = await supabase.auth.getUser();
+
   if (userErr || !user) {
     return new Response("No autorizado", { status: 401 });
   }
@@ -77,16 +77,12 @@ export async function POST(req: Request) {
   if (profileErr) {
     console.error("[Crack] perfil:", profileErr);
     return Response.json(
-      {
-        error: "No se pudo leer el perfil.",
-        detail: profileErr.message,
-      },
+      { error: "No se pudo leer el perfil.", detail: profileErr.message },
       { status: 500 }
     );
   }
 
   const role = (normalizeCopilotRole(profileRow?.role) ?? "staff") as RoleName;
-
   let activeSessionId: string | null = sessionId ?? null;
 
   if (activeSessionId) {
@@ -96,15 +92,17 @@ export async function POST(req: Request) {
       .eq("id", activeSessionId)
       .eq("user_id", user.id)
       .maybeSingle();
+
     if (selErr) {
       console.error("[Crack] session lookup:", selErr);
       return Response.json(
-        { error: "No se pudo validar sesión IA", detail: selErr.message },
+        { error: "No se pudo validar sesion IA", detail: selErr.message },
         { status: 500 }
       );
     }
+
     if (!existing?.id) {
-      return Response.json({ error: "Sesión no encontrada" }, { status: 404 });
+      return Response.json({ error: "Sesion no encontrada" }, { status: 404 });
     }
   } else {
     const { data: session, error: insErr } = await supabase
@@ -112,24 +110,21 @@ export async function POST(req: Request) {
       .insert({ user_id: user.id, status: "active" })
       .select("id")
       .single();
+
     if (insErr || !session?.id) {
-      console.error("[Crack] crear sesión:", insErr);
+      console.error("[Crack] crear sesion:", insErr);
       return Response.json(
-        {
-          error: "No se pudo crear sesión IA",
-          detail: insErr?.message ?? "",
-        },
+        { error: "No se pudo crear sesion IA", detail: insErr?.message ?? "" },
         { status: 500 }
       );
     }
+
     activeSessionId = session.id;
   }
 
   const userTextLogged = lastUserUiText(messages);
   if (!userTextLogged) {
-    return Response.json({ error: "Último mensaje de usuario vacío" }, {
-      status: 400,
-    });
+    return Response.json({ error: "Ultimo mensaje de usuario vacio" }, { status: 400 });
   }
 
   const { error: msgUserErr } = await supabase.from("ai_chat_messages").insert({
@@ -139,6 +134,7 @@ export async function POST(req: Request) {
     content_type: "text",
     text_content: userTextLogged,
   });
+
   if (msgUserErr) {
     console.error("[Crack] insert usuario:", msgUserErr);
     return Response.json(
@@ -147,109 +143,59 @@ export async function POST(req: Request) {
     );
   }
 
-  const toolsObj: Record<
-    string,
-    {
-      description: string;
-      inputSchema: typeof ACTION_SCHEMA[CopilotAction]["schema"];
-      execute: (input: unknown) => Promise<unknown>;
-    }
-  > = {};
+  const toolsObj: ToolSet = {};
 
-  for (const [name, definition] of Object.entries(ACTION_SCHEMA) as Array<
+  for (const [actionName, def] of Object.entries(ACTION_SCHEMA) as Array<
     [CopilotAction, (typeof ACTION_SCHEMA)[CopilotAction]]
   >) {
-    const actionName = name;
-    const def = definition;
     if (!def.rpc) continue;
 
     toolsObj[actionName] = {
       description: def.description,
       inputSchema: def.schema,
       execute: async (inputUnknown: unknown) => {
-        if (!canExecute(role, actionName)) {
-          return {
-            error: `Permiso denegado (${role}). No puedes usar "${actionName}".`,
-          };
-        }
-
-        const parsed = def.schema.safeParse(inputUnknown);
-        if (!parsed.success) {
-          const msg = parsed.error.issues.map((i) => i.message).join("; ");
-          return { error: "Parámetros inválidos", detail: msg };
-        }
-
-        const rawParams = parsed.data as Record<string, unknown>;
-        let rpcPayload: Record<string, unknown> = { ...rawParams };
-
-        if (actionName === "consultar_usuarios" && rpcPayload.p_filtros === undefined) {
-          rpcPayload = { ...rpcPayload, p_filtros: {} };
-        }
-
-        if (
-          role === "staff" &&
-          (actionName === "consultar_registros_asistencia" ||
-            actionName === "consultar_registros_horas_extras")
-        ) {
-          rpcPayload = { ...rpcPayload, p_user_id: user.id };
-        }
-
-        console.log(`[Crack Tool] Executing ${actionName}`, rpcPayload);
-        const { data: rpcResult, error: rpcErr } = await supabase.rpc(def.rpc as never, rpcPayload as never);
-        let resultData: unknown;
-        if (rpcErr) {
-          console.error(`[Crack Tool] DB Error in ${actionName}:`, rpcErr);
-          resultData = {
-            error: `Error en base de datos: ${rpcErr.message}`,
-          };
-        } else {
-          console.log(`[Crack Tool] ${actionName} Result:`, rpcResult);
-          resultData = rpcResult;
-        }
-
-        const summarySer = JSON.stringify({
-          copilot_tool: actionName,
-          rpc: def.rpc,
-          params: rpcPayload,
-          result: resultData,
+        const result = await executeCopilotTool({
+          supabase: supabase as unknown as CopilotSupabaseClient,
+          role,
+          userId: user.id,
+          toolName: actionName,
+          args: inputUnknown,
+          sessionId: activeSessionId,
+          mode: "chat",
         });
 
-        const { error: logErr } = await supabase.from("ai_call_logs").insert({
-          user_id: user.id,
-          session_id: activeSessionId,
-          summary: summarySer,
-          duration_seconds: 0,
-        });
-        if (logErr) {
-          console.error("[Crack] ai_call_logs:", logErr);
+        if (!result.ok) {
+          return { error: result.error, detail: result.detail, sent: result.sent };
         }
 
-        return resultData;
+        return result.data;
       },
     };
   }
 
+  const todayLabel = new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const todayIso = new Date().toISOString().split("T")[0];
+
   const result = streamText({
     model: openai("gpt-4o-mini"),
-    system: `Eres Crack, el asistente operativo de Bar La Marbella. Hoy es ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
-REGLA ABSOLUTA DE FORMATO: NUNCA uses símbolos Markdown. CERO asteriscos (*), CERO almohadillas (#), CERO guiones bajos (_). Texto plano siempre.
-- Para secciones usa MAYÚSCULAS seguidas de dos puntos.
-- Para listas usa el símbolo "·" o numeración simple.
-- Sé directo y esquemático. Sin introducciones largas.
-REGLA FECHAS: La fecha actual es ${new Date().toISOString().split('T')[0]}. Usa esta fecha para calcular rangos. La semana actual va de lunes a domingo del calendario real. NUNCA uses fechas de 2023.
-REGLA EMPLEADOS: NUNCA pidas un ID de usuario. Cuando el usuario mencione un nombre de empleado (ej: "Pere", "María"), usa la herramienta consultar_usuarios primero para buscar por nombre y obtener el UUID, luego usa ese UUID en las consultas de horas/asistencia.
-REGLA RECETAS:
-· Confirma el nombre de la receta encontrada (ej: RECETA: SANGRÍA DE CAVA).
-· Presenta ingredientes en formato "Cantidad Unidad · Ingrediente".
-· NUNCA inventes ingredientes.
+    system: `Eres Crack, el asistente operativo de Bar La Marbella. Hoy es ${todayLabel}.
+REGLA ABSOLUTA DE FORMATO: NUNCA uses simbolos Markdown. CERO asteriscos (*), CERO almohadillas (#), CERO guiones bajos (_). Texto plano siempre.
+Para secciones usa MAYUSCULAS seguidas de dos puntos. Para listas usa numeracion simple.
+REGLA FECHAS: La fecha actual es ${todayIso}. Usa esta fecha para calcular rangos. La semana actual va de lunes a domingo del calendario real. NUNCA uses fechas de 2023.
+REGLA EMPLEADOS: NUNCA pidas un ID de usuario. Cuando el usuario mencione un nombre de empleado, usa consultar_usuarios({p_filtros: {search: "nombre"}}) primero para obtener el UUID, luego usa ese UUID en consultas de horas/asistencia.
+REGLA RECETAS: Confirma el nombre de la receta encontrada, presenta ingredientes en formato "Cantidad Unidad - Ingrediente" y nunca inventes ingredientes.
 Rol: ${role}.`,
     messages: await convertToModelMessages(messages),
-    tools: toolsObj as any,
+    tools: toolsObj,
     stopWhen: stepCountIs(10),
   });
 
   const response = result.toUIMessageStreamResponse();
-
   if (activeSessionId) {
     response.headers.set("X-Session-Id", activeSessionId);
   }
@@ -261,6 +207,7 @@ Rol: ${role}.`,
     try {
       const txt = await result.text;
       if (!sessionForAfter || !txt.trim()) return;
+
       const sb = await createClient();
       const { error } = await sb.from("ai_chat_messages").insert({
         session_id: sessionForAfter,
@@ -269,6 +216,7 @@ Rol: ${role}.`,
         content_type: "text",
         text_content: txt.trim(),
       });
+
       if (error) {
         console.error("[copiloto] persist assistant message:", error);
       }
