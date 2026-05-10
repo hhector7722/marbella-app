@@ -823,32 +823,6 @@ export default function MovementsPage() {
 
                             {/* FILTRO + COMPARTIR (alineados a la derecha) */}
                             <div className="flex items-center justify-end gap-1 md:gap-1.5 shrink-0 text-white min-w-0" data-movements-share-root="true">
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    showLabel={false}
-                                    icon={Filter}
-                                    buttonClassName={cn(
-                                        "min-h-10 min-w-10 px-0 py-0",
-                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                                        "text-white/90 hover:text-white"
-                                    )}
-                                    hasActiveFilter={(() => {
-                                        const d = new Date();
-                                        const defS = format(startOfMonth(d), 'yyyy-MM-dd');
-                                        const defE = format(endOfMonth(d), 'yyyy-MM-dd');
-                                        const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
-                                        return !isDefault;
-                                    })()}
-                                    onClear={() => {
-                                        const d = new Date();
-                                        const s = startOfMonth(d);
-                                        const e = endOfMonth(d);
-                                        setFilterMode('range');
-                                        setRangeStart(format(s, 'yyyy-MM-dd'));
-                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                    }}
-                                />
-
                                 <div className="relative shrink-0" data-movements-share-root="true">
                                     <button
                                         type="button"
@@ -887,6 +861,32 @@ export default function MovementsPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                <TimeFilterButton
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    showLabel={false}
+                                    icon={Filter}
+                                    buttonClassName={cn(
+                                        "min-h-10 min-w-10 px-0 py-0",
+                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
+                                        "text-white/90 hover:text-white"
+                                    )}
+                                    hasActiveFilter={(() => {
+                                        const d = new Date();
+                                        const defS = format(startOfMonth(d), 'yyyy-MM-dd');
+                                        const defE = format(endOfMonth(d), 'yyyy-MM-dd');
+                                        const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
+                                        return !isDefault;
+                                    })()}
+                                    onClear={() => {
+                                        const d = new Date();
+                                        const s = startOfMonth(d);
+                                        const e = endOfMonth(d);
+                                        setFilterMode('range');
+                                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>

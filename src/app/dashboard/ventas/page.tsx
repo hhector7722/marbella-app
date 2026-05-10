@@ -598,6 +598,24 @@ export default function VentasPage() {
                             </div>
 
                             <div className="flex items-center gap-1 shrink-0 text-white">
+                                {isHector ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/dashboard/finanzas')}
+                                        aria-label="Abrir finanzas"
+                                        title="Finanzas"
+                                        className={cn(
+                                            'min-h-12 min-w-12 shrink-0',
+                                            'bg-transparent border-0 outline-none',
+                                            'text-white/90 hover:text-white',
+                                            'inline-flex items-center justify-center',
+                                            'active:scale-95 transition-transform',
+                                        )}
+                                    >
+                                        <Landmark className="w-[18px] h-[18px]" strokeWidth={2.75} />
+                                    </button>
+                                ) : null}
+
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     showLabel={false}
@@ -620,24 +638,6 @@ export default function VentasPage() {
                                     }}
                                     className="text-white"
                                 />
-
-                                {isHector ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push('/dashboard/finanzas')}
-                                        aria-label="Abrir finanzas"
-                                        title="Finanzas"
-                                        className={cn(
-                                            'min-h-12 min-w-12 shrink-0',
-                                            'bg-transparent border-0 outline-none',
-                                            'text-white/90 hover:text-white',
-                                            'inline-flex items-center justify-center',
-                                            'active:scale-95 transition-transform',
-                                        )}
-                                    >
-                                        <Landmark className="w-[18px] h-[18px]" strokeWidth={2.75} />
-                                    </button>
-                                ) : null}
                             </div>
                         </div>
                     </div>
