@@ -50,7 +50,11 @@ Sé breve, seco y directo. Idioma: español. Texto plano.`;
 // broken output for some schemas, so we build them manually.
 // OpenAI Realtime requires strict JSON Schema objects.
 function buildJsonSchema(zodType: any): Record<string, any> {
-  if (zodType instanceof z.ZodObject) {
+  const def = zodType?._def;
+  const typeName = def?.typeName;
+  if (!typeName) return { type: "string" };
+
+  if (typeName === "ZodObject") {
     const shape = zodType.shape;
     const properties: Record<string, any> = {};
     const required: string[] = [];
@@ -59,8 +63,8 @@ function buildJsonSchema(zodType: any): Record<string, any> {
       const propSchema = buildJsonSchema(value);
       properties[key] = propSchema;
       
-      const isOptional = value instanceof z.ZodOptional || (value as any)._def?.typeName === "ZodOptional";
-      const isDefault = value instanceof z.ZodDefault || (value as any)._def?.typeName === "ZodDefault";
+      const isOptional = (value as any)._def?.typeName === "ZodOptional";
+      const isDefault = (value as any)._def?.typeName === "ZodDefault";
       
       if (!isOptional && !isDefault) {
         required.push(key);
@@ -73,51 +77,50 @@ function buildJsonSchema(zodType: any): Record<string, any> {
     return res;
   }
 
-  if (zodType instanceof z.ZodString) {
+  if (typeName === "ZodString") {
     const res: Record<string, any> = { type: "string" };
     if (zodType.description) res.description = zodType.description;
     return res;
   }
 
-  if (zodType instanceof z.ZodNumber) {
+  if (typeName === "ZodNumber") {
     const res: Record<string, any> = { type: "number" };
     if (zodType.description) res.description = zodType.description;
     return res;
   }
 
-  if (zodType instanceof z.ZodBoolean) {
+  if (typeName === "ZodBoolean") {
     const res: Record<string, any> = { type: "boolean" };
     if (zodType.description) res.description = zodType.description;
     return res;
   }
 
-  if (zodType instanceof z.ZodEnum || zodType instanceof z.ZodNativeEnum) {
-    const def = (zodType as any)._def;
+  if (typeName === "ZodEnum" || typeName === "ZodNativeEnum") {
     const values = def.values ?? Object.values(def.entries ?? {});
     const res: Record<string, any> = { type: "string", enum: values };
     if (zodType.description) res.description = zodType.description;
     return res;
   }
 
-  if (zodType instanceof z.ZodArray) {
+  if (typeName === "ZodArray") {
     const res: Record<string, any> = { 
       type: "array", 
-      items: buildJsonSchema((zodType as any)._def.type) 
+      items: buildJsonSchema(def.type) 
     };
     if (zodType.description) res.description = zodType.description;
     return res;
   }
 
-  if (zodType instanceof z.ZodOptional || zodType instanceof z.ZodDefault) {
-    return buildJsonSchema((zodType as any)._def.innerType);
+  if (typeName === "ZodOptional" || typeName === "ZodDefault") {
+    return buildJsonSchema(def.innerType);
   }
 
-  if (zodType instanceof z.ZodRecord) {
+  if (typeName === "ZodRecord") {
     return { type: "object", additionalProperties: true };
   }
 
   // Handle unknown/any as generic object or string to avoid OpenAI errors
-  if (zodType instanceof z.ZodUnknown || zodType instanceof z.ZodAny) {
+  if (typeName === "ZodUnknown" || typeName === "ZodAny") {
     return { type: "string", description: "Cualquier dato (serializado como string)" };
   }
 
