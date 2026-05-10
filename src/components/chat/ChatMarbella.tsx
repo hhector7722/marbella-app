@@ -80,6 +80,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
 
   const [input, setInput] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showBigMic, setShowBigMic] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -138,25 +139,8 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, status]);
 
-  // Push-to-talk — WhatsApp style: hold to record, release to transcribe
-  const handleMicStart = useCallback(async (e: React.PointerEvent) => {
-    e.preventDefault();
-    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
-    
-    if (isRecordingRef.current) return;
-    try {
-      await startRecording();
-    } catch (err: any) {
-      toast.error('Error de micrófono: ' + err.message);
-    }
-  }, [startRecording]);
-
-  const handleMicRelease = useCallback(async (e: React.PointerEvent) => {
-    if (!isRecordingRef.current) return;
-    
-    const audioBlob = await stopRecording();
+  const handleTranscription = async (audioBlob: Blob) => {
     if (!audioBlob || audioBlob.size < 500) return;
-
     const toastId = toast.loading('Transcribiendo...');
     try {
       const formData = new FormData();
@@ -166,14 +150,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       if (data.text) {
         setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
         toast.success('Listo', { id: toastId });
-        textareaRef.current?.focus();
+        setShowBigMic(false);
+        setTimeout(() => textareaRef.current?.focus(), 100);
       } else {
         throw new Error(data.error || 'Sin texto');
       }
     } catch (err: any) {
       toast.error('Error: ' + err.message, { id: toastId });
     }
-  }, [stopRecording]);
+  };
 
   const busy = status !== 'ready' && status !== 'error';
   const canSend = input.trim().length > 0 && !busy;
@@ -287,21 +272,14 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             disabled={busy}
           />
 
-          {/* Mic button — push to talk WhatsApp style */}
+          {/* Mic button — Opens big mic overlay */}
           <button
             type="button"
-            onPointerDown={handleMicStart}
-            onPointerUp={handleMicRelease}
-            onContextMenu={(e) => e.preventDefault()}
-            className={cn(
-              "h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 transition-all duration-150 select-none touch-none",
-              isRecording
-                ? "text-red-500 scale-125"
-                : "text-zinc-400 active:scale-110 active:text-red-400"
-            )}
-            title="Mantén pulsado para grabar"
+            onClick={() => setShowBigMic(true)}
+            className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 text-zinc-400 hover:text-zinc-600 active:scale-95 transition-all"
+            title="Grabar mensaje de voz"
           >
-            <Mic size={isRecording ? 22 : 18} className={isRecording ? "animate-pulse" : ""} />
+            <Mic size={18} />
           </button>
 
           {/* Phone button */}
@@ -313,6 +291,97 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           >
             <Phone size={18} className="text-white" />
           </button>
+        </div>
+      </div>
+
+      {/* Big Mic Overlay */}
+      {showBigMic && (
+        <BigMicOverlay 
+          onClose={() => setShowBigMic(false)}
+          onFinish={handleTranscription}
+          isRecording={isRecording}
+          startRecording={startRecording}
+          stopRecording={stopRecording}
+        />
+      )}
+    </div>
+  );
+}
+
+function BigMicOverlay({ 
+  onClose, onFinish, isRecording, startRecording, stopRecording 
+}: { 
+  onClose: () => void, 
+  onFinish: (blob: Blob) => void,
+  isRecording: boolean,
+  startRecording: () => Promise<void>,
+  stopRecording: () => Promise<Blob | null>
+}) {
+  const isRecordingRef = useRef(isRecording);
+  isRecordingRef.current = isRecording;
+
+  const handleStart = async (e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
+    if (isRecordingRef.current) return;
+    try {
+      await startRecording();
+    } catch (err: any) {
+      toast.error('Error de micrófono: ' + err.message);
+    }
+  };
+
+  const handleEnd = async (e: React.PointerEvent) => {
+    if (!isRecordingRef.current) return;
+    const blob = await stopRecording();
+    if (blob) onFinish(blob);
+  };
+
+  return (
+    <div className="absolute inset-0 z-30 bg-white flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-200">
+      <button 
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+      >
+        <X size={20} />
+      </button>
+
+      <div className="flex flex-col items-center gap-8">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-semibold text-[#3F5E7A]">Mensaje de voz</h3>
+          <p className="text-sm text-zinc-400">Mantén pulsado para grabar</p>
+        </div>
+
+        <div className="relative flex items-center justify-center w-64 h-64">
+          {/* Animated rings when recording */}
+          {isRecording && (
+            <>
+              <div className="absolute inset-0 bg-red-500/10 rounded-full animate-ping" />
+              <div className="absolute inset-4 bg-red-500/20 rounded-full animate-pulse" />
+            </>
+          )}
+
+          <button
+            onPointerDown={handleStart}
+            onPointerUp={handleEnd}
+            onContextMenu={(e) => e.preventDefault()}
+            className={cn(
+              "relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-150 select-none touch-none shadow-xl",
+              isRecording 
+                ? "bg-red-500 scale-110 text-white shadow-red-200" 
+                : "bg-[#3F5E7A] text-white active:scale-95 shadow-zinc-200"
+            )}
+          >
+            <Mic size={48} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <div className={cn(
+          "h-6 flex items-center gap-2 transition-opacity",
+          isRecording ? "opacity-100" : "opacity-0"
+        )}>
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-red-500 text-sm font-medium">Grabando...</span>
         </div>
       </div>
     </div>
