@@ -45,10 +45,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const parsed = def.schema.safeParse(args);
+    // Sanitize args: OpenAI Realtime sometimes sends null for optional fields, 
+    // which Zod might reject if they are expected to be undefined or string.
+    const sanitizedArgs = args ? JSON.parse(JSON.stringify(args, (k, v) => (v === null ? undefined : v))) : {};
+
+    const parsed = def.schema.safeParse(sanitizedArgs);
     if (!parsed.success) {
       const msg = parsed.error.issues.map((i) => i.message).join("; ");
-      return NextResponse.json({ error: "Parámetros inválidos", detail: msg }, { status: 400 });
+      console.error(`[Copiloto Tools] Validation Error in ${actionName}:`, msg, sanitizedArgs);
+      return NextResponse.json({ error: "Parámetros inválidos", detail: msg, sent: sanitizedArgs }, { status: 400 });
     }
 
     const rawParams = parsed.data as Record<string, unknown>;

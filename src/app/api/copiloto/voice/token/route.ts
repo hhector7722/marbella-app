@@ -161,10 +161,16 @@ function buildJsonSchema(zodType: any): Record<string, any> {
       },
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2024-12-17",
-        voice: "verse",
+        voice: "shimmer",
         instructions: systemPrompt,
         tools: availableTools,
         tool_choice: "auto",
+        turn_detection: {
+          type: "server_vad",
+          threshold: 0.8, // More robust against interruptions
+          prefix_padding_ms: 300,
+          silence_duration_ms: 800
+        }
       }),
     });
 
