@@ -825,9 +825,10 @@ export default function MovementsPage() {
                             <div className="flex items-center justify-end gap-1 md:gap-1.5 shrink-0 text-white min-w-0" data-movements-share-root="true">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    showLabel
+                                    showLabel={false}
+                                    icon={Filter}
                                     buttonClassName={cn(
-                                        "min-h-12 px-2 md:px-3 py-1.5",
+                                        "min-h-10 min-w-10 px-0 py-0",
                                         "rounded-xl border-0 bg-transparent hover:bg-white/10",
                                         "text-white/90 hover:text-white"
                                     )}

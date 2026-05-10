@@ -1,15 +1,16 @@
 "use client";
 
-import { Calendar, X } from "lucide-react";
+import { Calendar, X, Filter, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TimeFilterButton({
   onClick,
   className,
   buttonClassName,
-  showLabel,
+  showLabel = true,
   hasActiveFilter,
   onClear,
+  icon: Icon = Calendar,
 }: {
   onClick: () => void;
   className?: string;
@@ -17,8 +18,8 @@ export function TimeFilterButton({
   showLabel?: boolean;
   hasActiveFilter?: boolean;
   onClear?: () => void;
+  icon?: LucideIcon;
 }) {
-  const shouldShowLabel = showLabel ?? true;
   return (
     <div className={cn("relative inline-flex shrink-0", className)}>
       <button
@@ -34,8 +35,8 @@ export function TimeFilterButton({
         )}
         aria-label="Filtrar"
       >
-        <Calendar className="w-4 h-4 md:w-[18px] md:h-[18px]" />
-        {shouldShowLabel && <span>Filtrar</span>}
+        <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+        {showLabel && <span>Filtrar</span>}
       </button>
 
       {hasActiveFilter && onClear && (

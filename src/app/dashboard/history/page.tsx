@@ -19,6 +19,7 @@ import {
     Printer,
     Share,
     Download,
+    Filter,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -655,9 +656,11 @@ export default function HistoryPage() {
                             <div className="flex items-center gap-1 shrink-0 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
+                                    showLabel={false}
+                                    icon={Filter}
                                     buttonClassName={cn(
-                                        "min-h-12 min-w-12 px-0 py-0",
-                                        "rounded-xl border-0 bg-transparent hover:bg-transparent",
+                                        "min-h-10 min-w-10 px-0 py-0",
+                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
                                         "text-white/90 hover:text-white"
                                     )}
                                     hasActiveFilter={(() => {
