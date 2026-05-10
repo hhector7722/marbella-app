@@ -131,11 +131,25 @@ export async function getDashboardData() {
         const physicalCents = parseNumericToCents(opStatus.physical_balance ?? 0);
         actualBalance = physicalCents / 100;
 
-        // El usuario reportó que la diferencia mostraba un descuadre (-44) porque el saldo global 
-        // de la DB no coincide con el saldo de la caja operativa si hubieron compras/cambios de otras cajas.
-        // La diferencia debe compararse SIEMPRE con el theoretical_balance de la propia caja.
-        const opTheoreticalCents = parseNumericToCents(opStatus.theoretical_balance ?? 0);
-        differenceCents = physicalCents - opTheoreticalCents;
+        // SALDO del libro: running_balance más reciente (atemporal), excluyendo ADJUSTMENT/SWAP
+        let latestLedgerSaldoCents = 0;
+        try {
+            const { data: ledgerRows, error: ledgerError } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('running_balance')
+                .neq('type', 'ADJUSTMENT')
+                .neq('type', 'SWAP')
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false })
+                .limit(1);
+            if (ledgerError) throw ledgerError;
+            const raw = ledgerRows?.[0]?.running_balance;
+            latestLedgerSaldoCents = parseNumericToCents(raw ?? 0);
+        } catch (e) {
+            console.error('Error calculando latestLedgerSaldo en getDashboardData:', e);
+        }
+
+        differenceCents = physicalCents - latestLedgerSaldoCents;
         difference = differenceCents / 100;
     }
 
