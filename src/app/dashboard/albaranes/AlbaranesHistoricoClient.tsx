@@ -7,6 +7,7 @@ import { CheckCircle2, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon,
 import { cn } from '@/lib/utils'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
+import { ScannerClient } from '../scanner/ScannerClient'
 import {
   applyInvoiceLineStockAction,
   confirmInvoiceLineMappingAction,
@@ -520,6 +521,7 @@ export default function AlbaranesHistoricoClient({
 
   return (
     <div className="flex flex-col gap-4">
+      <ScannerClient onSuccess={refresh} />
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
           <Search className="h-5 w-5 text-zinc-400 shrink-0" />
             <input

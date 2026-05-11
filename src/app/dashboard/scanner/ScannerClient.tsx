@@ -6,7 +6,7 @@ import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { processScannerImage } from './actions'
 import { cn } from '@/lib/utils'
 
-export function ScannerClient() {
+export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -68,6 +68,7 @@ export function ScannerClient() {
       setMessageTone('success')
       setMessage('OK. Albarán recibido.')
       setPreview(null)
+      onSuccess?.()
     } catch (error: any) {
       setMessageTone('error')
       setMessage(error?.message || 'No se pudo procesar. Repite la foto.')

@@ -230,6 +230,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 
     revalidatePath('/dashboard/albaranes-precios')
     revalidatePath('/dashboard/scanner')
+    revalidatePath('/dashboard/albaranes')
     return { success: true }
   } catch (err) {
     console.error('processScannerImage unexpected error:', err)
