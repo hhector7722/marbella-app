@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { Check, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon, Sparkles, Trash2, Truck, X } from 'lucide-react'
+import { Check, Eye, FileText, Filter, Loader2, RefreshCw, Search, Sparkles, Trash2, Truck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
 import { ScannerClient } from '../scanner/ScannerClient'
@@ -596,39 +596,42 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  // Acciones de la cabecera "Albaranes" (rightSlot del layout): solo manager.
+  // Sin contorno ni relleno; sobre fondo petróleo → iconos blancos.
+  const headerActions = isManager ? (
+    <>
+      <button
+        type="button"
+        onClick={() => void runAutoMap()}
+        disabled={autoMapLoading}
+        aria-label="Auto-mapear aprendidos"
+        title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
+        className={cn(
+          'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
+          autoMapLoading && 'opacity-60 pointer-events-none'
+        )}
+      >
+        {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+      </button>
+      <button
+        type="button"
+        onClick={refresh}
+        disabled={isPending}
+        aria-label="Recargar"
+        className={cn(
+          'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
+          isPending && 'opacity-60 pointer-events-none'
+        )}
+      >
+        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+      </button>
+    </>
+  ) : null
+
   return (
+    <DashboardDetailLayout title="Albaranes" backHref="/dashboard" maxWidthClass="max-w-5xl" showBackButton={false} rightSlot={headerActions}>
     <div className="flex flex-col gap-4">
       <ScannerClient onSuccess={refresh} />
-      {/* Cabecera de acciones (solo manager): iconos a la derecha, sin contorno ni relleno */}
-      {isManager ? (
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => void runAutoMap()}
-            disabled={autoMapLoading}
-            aria-label="Auto-mapear aprendidos"
-            title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
-            className={cn(
-              'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-70 active:scale-[0.99] transition shrink-0',
-              autoMapLoading && 'opacity-60 pointer-events-none'
-            )}
-          >
-            {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-          </button>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={isPending}
-            aria-label="Recargar"
-            className={cn(
-              'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-70 active:scale-[0.99] transition shrink-0',
-              isPending && 'opacity-60 pointer-events-none'
-            )}
-          >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-          </button>
-        </div>
-      ) : null}
 
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
         <Search className="h-5 w-5 text-zinc-400 shrink-0" />
@@ -711,18 +714,18 @@ export default function AlbaranesHistoricoClient({
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex items-center gap-3">
-                          {/* Avatar proveedor: foto si existe, fallback al icono Truck. Sin marco ni relleno. */}
+                          {/* Avatar proveedor: usamos <img> nativo para evitar problemas de next/image
+                              con dominios externos no incluidos en remotePatterns. Sin marco ni relleno. */}
                           <div className="shrink-0 h-10 w-10 flex items-center justify-center">
                             {it.supplier_image_url ? (
-                              <Image
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
                                 src={it.supplier_image_url}
                                 alt={supplier}
-                                width={40}
-                                height={40}
                                 className="h-10 w-10 object-contain"
                               />
                             ) : (
-                              <Truck className="h-6 w-6 text-zinc-300" />
+                              <Truck className="h-6 w-6 text-zinc-400" />
                             )}
                           </div>
                           <div className="min-w-0">
@@ -798,14 +801,14 @@ export default function AlbaranesHistoricoClient({
                         type="button"
                         onClick={() => void runAutoMap(detail.id)}
                         disabled={autoMapLoading}
+                        aria-label="Auto-mapear aprendidos"
                         title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
                         className={cn(
-                          'inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-2 rounded-xl hover:opacity-80 transition',
+                          'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]',
                           autoMapLoading && 'opacity-60 pointer-events-none'
                         )}
                       >
-                        {autoMapLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                        Auto-mapear
+                        {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                       </button>
                     ) : null}
                     {detail?.signed_url ? (
@@ -813,10 +816,11 @@ export default function AlbaranesHistoricoClient({
                         href={detail.signed_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-2 rounded-xl hover:opacity-80 transition"
+                        aria-label="Ver imagen"
+                        title="Ver imagen del albarán"
+                        className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
                       >
-                        <SearchIcon className="h-4 w-4" />
-                        Ver imagen
+                        <Eye className="h-5 w-5" />
                       </a>
                     ) : null}
                     {isManager && detail?.id ? (
@@ -1432,6 +1436,7 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
     </div>
+    </DashboardDetailLayout>
   )
 }
 

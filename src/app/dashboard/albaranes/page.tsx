@@ -1,4 +1,3 @@
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { listPurchaseInvoicesDefaultWeekAction } from './actions'
@@ -19,19 +18,15 @@ export default async function AlbaranesHistoricoPage() {
 
   const res = await listPurchaseInvoicesDefaultWeekAction()
 
+  // El layout (cabecera "Albaranes" + slot derecho) se monta dentro del cliente
+  // para poder pasar como rightSlot los botones Sparkles/Refresh que dependen
+  // de su estado interno (autoMapLoading, isPending, runAutoMap, refresh).
   return (
-    <DashboardDetailLayout
-      title="Albaranes"
-      backHref="/dashboard"
-      maxWidthClass="max-w-5xl"
-      showBackButton={false}
-    >
-      <AlbaranesHistoricoClient
-        initialItems={res.success ? res.items : []}
-        initialError={res.success ? null : res.message}
-        isManager={isManager}
-      />
-    </DashboardDetailLayout>
+    <AlbaranesHistoricoClient
+      initialItems={res.success ? res.items : []}
+      initialError={res.success ? null : res.message}
+      isManager={isManager}
+    />
   )
 }
 
