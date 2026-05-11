@@ -141,34 +141,25 @@ export default function SuppliersPage() {
                 category: extractCategoryFromNotes(r.notes ?? null),
             })).filter((s) => s.name);
 
-            const combined = [...dbSuppliers];
-
-            // Solo añadir iniciales si no hay una coincidencia clara en la DB
-            INITIAL_SUPPLIERS.forEach((initial: Partial<Supplier>) => {
-                const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-
-                const alreadyInDb = dbSuppliers.some(s => {
-                    const dbName = normalize(s.name);
-                    const initName = normalize(initial.name || '');
-                    return dbName === initName || dbName.includes(initName) || initName.includes(dbName);
-                });
-
-                if (!alreadyInDb) {
-                    combined.push({
-                        id: `initial-${initial.name}`,
-                        name: initial.name!,
-                        created_at: null,
-                        delivery_schedule: null,
-                        lead_time: null,
-                        reliability: null,
-                        phone: null,
-                        notes: initial.category ? `Categoría (app): ${initial.category}` : null,
-                        email_domains: null,
-                        image_url: null,
-                        category: initial.category ?? null,
-                    });
-                }
-            });
+            // Las plantillas (INITIAL_SUPPLIERS) son únicamente "semilla" para una BD vacía.
+            // Si la BD ya tiene proveedores, la fuente de la verdad es la BD: NO se inyectan
+            // plantillas, así un proveedor borrado en Supabase desaparece de la UI.
+            const combined =
+                dbSuppliers.length === 0
+                    ? INITIAL_SUPPLIERS.map((initial) => ({
+                          id: `initial-${initial.name}`,
+                          name: initial.name!,
+                          created_at: null,
+                          delivery_schedule: null,
+                          lead_time: null,
+                          reliability: null,
+                          phone: null,
+                          notes: initial.category ? `Categoría (app): ${initial.category}` : null,
+                          email_domains: null,
+                          image_url: null,
+                          category: initial.category ?? null,
+                      }))
+                    : dbSuppliers;
 
             setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
         } catch (error: unknown) {
