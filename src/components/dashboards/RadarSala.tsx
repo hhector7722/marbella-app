@@ -42,17 +42,26 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
       <div className="mt-2 pt-2 bg-white -mx-2 md:-mx-3 -mb-2 md:-mb-3 px-2 md:px-3 pb-2 md:pb-3 rounded-b-xl shadow-[inner_0_1px_4px_rgba(0,0,0,0.06)]">
         <ul className="space-y-1.5 text-[10px] md:text-xs font-medium text-slate-600">
           {productosValidos.length > 0 ? (
-            productosValidos.map((p: any, i: number) => (
-              <li key={i} className="flex justify-between items-start leading-tight">
-                <span className="flex-1 pr-2 flex items-start">
-                  <span className="font-bold text-slate-900 mr-1.5 shrink-0">{p.unidades}x</span>
-                  <span className="break-words flex-1">{p.nombre}</span>
-                </span>
-                <span className="tabular-nums font-semibold shrink-0 pt-0.5 text-slate-700">
-                  {(parseFloat(p.unidades) * parseFloat(p.precio || 0)).toFixed(2)} €
-                </span>
-              </li>
-            ))
+            productosValidos.map((p: any, i: number) => {
+              const isSubItem = p.nombre?.startsWith('↳') || p.nombre?.startsWith('?');
+              const cleanNombre = isSubItem ? p.nombre.substring(1).trim() : p.nombre;
+              const hasPrice = parseFloat(p.precio || 0) > 0;
+
+              return (
+                <li key={i} className={cn(
+                  "flex justify-between items-start leading-tight",
+                  isSubItem && "pl-4"
+                )}>
+                  <span className="flex-1 pr-2 flex items-start">
+                    <span className="font-bold text-slate-900 mr-1.5 shrink-0">{p.unidades}x</span>
+                    <span className="break-words flex-1">{cleanNombre}</span>
+                  </span>
+                  <span className="tabular-nums font-semibold shrink-0 pt-0.5 text-slate-700">
+                    {hasPrice ? `${(parseFloat(p.unidades) * parseFloat(p.precio || 0)).toFixed(2)} €` : ''}
+                  </span>
+                </li>
+              );
+            })
           ) : (
             <li className="text-slate-400 italic">Mesa vacía...</li>
           )}

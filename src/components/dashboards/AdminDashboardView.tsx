@@ -961,14 +961,25 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                                     </tr>
                                                                                 </thead>
                                                                                 <tbody className="text-[9px] md:text-[10px] font-bold text-zinc-500">
-                                                                                    {ticketLines.map((line, lIdx) => (
-                                                                                        <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
-                                                                                            <td className="py-1.5 px-1 text-center tabular-nums text-zinc-400">{line.unidades !== 0 ? line.unidades : ' '}</td>
-                                                                                            <td className="py-1.5 px-1 md:px-2 text-zinc-700 min-w-0 truncate">{line.articulo_nombre}</td>
-                                                                                            <td className="py-1.5 px-1 text-right tabular-nums">{line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}</td>
-                                                                                            <td className="py-1.5 px-1 text-right font-black tabular-nums text-emerald-600/70">{line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}</td>
-                                                                                        </tr>
-                                                                                    ))}
+                                                                                    {ticketLines.map((line, lIdx) => {
+                                                                                        const isSubItem = line.articulo_nombre?.startsWith('↳') || line.articulo_nombre?.startsWith('?');
+                                                                                        const showUnits = !isSubItem || line.unidades !== 1;
+                                                                                        return (
+                                                                                            <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
+                                                                                                <td className="py-1.5 px-1 text-center tabular-nums text-zinc-400">
+                                                                                                    {showUnits && line.unidades !== 0 ? line.unidades : ' '}
+                                                                                                </td>
+                                                                                                <td className={cn(
+                                                                                                    "py-1.5 px-1 md:px-2 text-zinc-700 min-w-0 truncate",
+                                                                                                    isSubItem && "pl-4 text-zinc-500 font-medium"
+                                                                                                )}>
+                                                                                                    {line.articulo_nombre}
+                                                                                                </td>
+                                                                                                <td className="py-1.5 px-1 text-right tabular-nums">{line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}</td>
+                                                                                                <td className="py-1.5 px-1 text-right font-black tabular-nums text-emerald-600/70">{line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}</td>
+                                                                                            </tr>
+                                                                                        );
+                                                                                    })}
                                                                                 </tbody>
                                                                             </table>
                                                                         )}

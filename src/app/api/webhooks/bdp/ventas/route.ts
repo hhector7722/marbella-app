@@ -41,6 +41,7 @@ export async function POST(req: Request) {
           numero_documento: v.numero_documento,
           linea: index + 1,
           articulo_id: l.articulo_id,
+          nombre: l.nombre,
           unidades: l.unidades,
           precio_unidad: l.precio,
           importe_total: l.unidades * l.precio,

@@ -33,6 +33,8 @@ async function start() {
                             .query("SELECT PLU, Descripcion, Unidades, Precio, Hora FROM Documentos_Lineas WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
                         const mRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
                             .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Menus WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
+                        const pRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
+                            .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Packs WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
 
                         const payloadVenta = {
                             numero_documento: t.Numero_Documento,
@@ -48,8 +50,14 @@ async function start() {
                                 })),
                                 ...mRes.recordset.map(m => ({
                                     articulo_id: m.PLU,
-                                    nombre: m.Descripcion?.trim() || "Sin Nombre",
+                                    nombre: '↳ ' + (m.Descripcion?.trim() || "Sin Nombre"),
                                     unidades: parseFloat(m.Unidades) || 0,
+                                    precio: 0
+                                })),
+                                ...pRes.recordset.map(p => ({
+                                    articulo_id: p.PLU,
+                                    nombre: '↳ ' + (p.Descripcion?.trim() || "Sin Nombre"),
+                                    unidades: parseFloat(p.Unidades) || 0,
                                     precio: 0
                                 }))
                             ]
@@ -108,6 +116,7 @@ async function start() {
 
                     UNION ALL
 
+                    -- 3. MENÚS (COMPONENTES)
                     SELECT 
                         CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
                         ISNULL(C.Mesa, 0) AS Mesa, 
@@ -139,6 +148,44 @@ async function start() {
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Menus M WITH (NOLOCK) ON D.Serie = M.Serie AND D.Numero = M.Numero
                     WHERE M.Unidades <> 0 
+                    AND CAST(D.Fecha AS DATE) = CAST(GETDATE() AS DATE)
+                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
+                    AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
+
+                    UNION ALL
+
+                    -- 4. PACKS (COMPONENTES)
+                    SELECT 
+                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
+                        ISNULL(C.Mesa, 0) AS Mesa, 
+                        C.Nota_Cabecera1, 
+                        LTRIM(RTRIM(ISNULL(C.Nombre_Cliente, ''))) AS Nombre_Cliente,
+                        P.PLU as articulo_id, 
+                        '↳ ' + LTRIM(RTRIM(P.Descripcion)) as nombre, 
+                        P.Unidades as unidades, 
+                        0 as precio, 
+                        NULL as Hora,
+                        '' as notas
+                    FROM Comandas_Cabecera C WITH (NOLOCK)
+                    INNER JOIN Comandas_Packs P WITH (NOLOCK) ON C.Numero_Referencia = P.Numero_Referencia AND C.Terminal = P.Terminal
+                    WHERE P.Unidades <> 0
+
+                    UNION ALL
+
+                    SELECT 
+                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia, 
+                        ISNULL(D.Mesa, 0) AS Mesa, 
+                        D.Nota_Cabecera1, 
+                        LTRIM(RTRIM(ISNULL(D.Nombre_Cliente, ''))) AS Nombre_Cliente,
+                        P.PLU as articulo_id, 
+                        '↳ ' + LTRIM(RTRIM(P.Descripcion)) as nombre, 
+                        P.Unidades as unidades, 
+                        0 as precio, 
+                        NULL as Hora,
+                        '' as notas
+                    FROM Documentos_Cabecera D WITH (NOLOCK)
+                    INNER JOIN Documentos_Packs P WITH (NOLOCK) ON D.Serie = P.Serie AND D.Numero = P.Numero
+                    WHERE P.Unidades <> 0 
                     AND CAST(D.Fecha AS DATE) = CAST(GETDATE() AS DATE)
                     AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
