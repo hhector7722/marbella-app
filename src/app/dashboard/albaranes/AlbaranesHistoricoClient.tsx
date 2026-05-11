@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon, Sparkles, X } from 'lucide-react'
+import { Check, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon, Sparkles, Trash2, Truck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
-  applyInvoiceLineStockAction,
   autoMapKnownLinesAction,
   confirmInvoiceLineMappingAction,
+  deletePurchaseInvoiceAction,
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
   listPurchaseInvoicesAction,
@@ -119,6 +119,8 @@ export default function AlbaranesHistoricoClient({
   const [autoMapLoading, setAutoMapLoading] = useState(false)
   const [autoMapReport, setAutoMapReport] = useState<AutoMapReport | null>(null)
   const [autoMapError, setAutoMapError] = useState<string | null>(null)
+  const [deletingInvoice, setDeletingInvoice] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
@@ -524,27 +526,6 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  async function applyStock(lineId: string) {
-    if (!detail) return
-    setMappingError(null)
-    setMappingLoading(true)
-    try {
-      const res = await applyInvoiceLineStockAction({ invoiceId: detail.id, lineId })
-      if (!res.success) {
-        setMappingError(res.message)
-        return
-      }
-      const st = await getInvoiceStockStatusesAction({ lineIds: detail.lines.map((l) => l.id) })
-      if (st.success) {
-        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
-        for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
-        setStockStatusByLineId(map)
-      }
-    } finally {
-      setMappingLoading(false)
-    }
-  }
-
   // Auto-mapeo masivo de líneas ya aprendidas (matches exactos en supplier_item_mappings).
   // - Sin invoiceId  : limpieza global del backlog.
   // - Con invoiceId  : solo ese albarán (botón dentro del modal).
@@ -581,49 +562,58 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  // Elimina el albarán y revierte sus efectos en stock.
+  // Confirmación explícita: es una operación destructiva (DELETE en
+  // stock_movements + Storage). Se permite solo a manager/admin.
+  async function deleteInvoice(invoiceId: string) {
+    if (!isManager) return
+    if (deletingInvoice) return
+    const ok = typeof window === 'undefined'
+      ? false
+      : window.confirm(
+          'Vas a eliminar este albarán y revertir todo el stock que aplicó (también las rectificaciones). Esta acción no se puede deshacer. ¿Continuar?'
+        )
+    if (!ok) return
+    setDeleteError(null)
+    setDeletingInvoice(true)
+    try {
+      const res = await deletePurchaseInvoiceAction({ invoiceId })
+      if (!res.success) {
+        setDeleteError(res.message)
+        return
+      }
+      // Limpiamos modal y recargamos lista.
+      setSelectedId(null)
+      setDetail(null)
+      setDraftLines({})
+      setStockStatusByLineId({})
+      setExpandedLineIds({})
+      setMappingOpenLineId(null)
+      const lRes = await listPurchaseInvoicesAction({ limit: 60 })
+      if (lRes.success) setItems(lRes.items)
+    } finally {
+      setDeletingInvoice(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <ScannerClient onSuccess={refresh} />
-      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
-          <Search className="h-5 w-5 text-zinc-400 shrink-0" />
-            <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[40px]"
-          />
-          {isManager ? (
-            <button
-              type="button"
-              onClick={() => void runAutoMap()}
-              disabled={autoMapLoading}
-              aria-label="Auto-mapear aprendidos"
-              title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
-              className={cn(
-                'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0',
-                autoMapLoading && 'opacity-60 pointer-events-none'
-              )}
-            >
-              {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-            </button>
-          ) : null}
+      {/* Cabecera de acciones (solo manager): iconos a la derecha, sin contorno ni relleno */}
+      {isManager ? (
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={async () => {
-              setFilterOpen(true)
-              if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
-                setFilterSuppliersLoading(true)
-                try {
-                  const res = await listSuppliersForFilterAction()
-                  if (res.success) setFilterSuppliers(res.suppliers)
-                } finally {
-                  setFilterSuppliersLoading(false)
-                }
-              }
-            }}
-            aria-label="Filtrar"
-            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
+            onClick={() => void runAutoMap()}
+            disabled={autoMapLoading}
+            aria-label="Auto-mapear aprendidos"
+            title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
+            className={cn(
+              'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-70 active:scale-[0.99] transition shrink-0',
+              autoMapLoading && 'opacity-60 pointer-events-none'
+            )}
           >
-            <Filter className="h-5 w-5" />
+            {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
           </button>
           <button
             type="button"
@@ -631,12 +621,41 @@ export default function AlbaranesHistoricoClient({
             disabled={isPending}
             aria-label="Recargar"
             className={cn(
-              'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0',
+              'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-70 active:scale-[0.99] transition shrink-0',
               isPending && 'opacity-60 pointer-events-none'
             )}
           >
             {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
           </button>
+        </div>
+      ) : null}
+
+      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
+        <Search className="h-5 w-5 text-zinc-400 shrink-0" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[40px]"
+        />
+        <button
+          type="button"
+          onClick={async () => {
+            setFilterOpen(true)
+            if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
+              setFilterSuppliersLoading(true)
+              try {
+                const res = await listSuppliersForFilterAction()
+                if (res.success) setFilterSuppliers(res.suppliers)
+              } finally {
+                setFilterSuppliersLoading(false)
+              }
+            }
+          }}
+          aria-label="Filtrar"
+          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
+        >
+          <Filter className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Banner de resultado del auto-mapeo (global o por albarán). */}
@@ -683,7 +702,6 @@ export default function AlbaranesHistoricoClient({
               <div className="flex flex-col gap-2">
                 {filtered.map((it) => {
                   const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
-                  const title = `${supplier} · ${formatDateTitle(it.invoice_date)}`
                   return (
                     <button
                       key={it.id}
@@ -691,15 +709,40 @@ export default function AlbaranesHistoricoClient({
                       onClick={() => openDetail(it.id)}
                       className="w-full text-left rounded-xl p-3 transition min-h-[72px] active:scale-[0.995] hover:bg-zinc-50"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex items-start gap-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex items-center gap-3">
+                          {/* Avatar proveedor: foto si existe, fallback al icono Truck. Sin marco ni relleno. */}
+                          <div className="shrink-0 h-10 w-10 flex items-center justify-center">
+                            {it.supplier_image_url ? (
+                              <Image
+                                src={it.supplier_image_url}
+                                alt={supplier}
+                                width={40}
+                                height={40}
+                                className="h-10 w-10 object-contain"
+                              />
+                            ) : (
+                              <Truck className="h-6 w-6 text-zinc-300" />
+                            )}
+                          </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-black text-zinc-900 truncate">{title}</p>
+                            <p className="text-sm font-black text-zinc-900 truncate">{supplier}</p>
+                            <p className="text-[11px] font-medium text-zinc-500 truncate">
+                              {formatDateTitle(it.invoice_date)}
+                            </p>
                           </div>
                         </div>
                         <div className="shrink-0 text-right flex items-center gap-2">
-                          {it.is_fully_processed ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
                           <p className="text-sm font-black text-zinc-900">{formatMaybeMoney(it.total_amount)}</p>
+                          {it.is_fully_processed ? (
+                            <span
+                              className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-emerald-600 text-white"
+                              aria-label="Albarán procesado"
+                              title="Albarán procesado"
+                            >
+                              <Check className="h-4 w-4" strokeWidth={3} />
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </button>
@@ -722,9 +765,8 @@ export default function AlbaranesHistoricoClient({
                 <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
                   <div className="min-w-0 flex items-center gap-3">
                     <div className="min-w-0">
-                      {detail?.supplier_name ? (
-                        <p className="text-sm font-black uppercase tracking-wider truncate">{detail.supplier_name}</p>
-                      ) : isManager && detail && !detail.supplier_id ? (
+                      {/* Nombre del proveedor SIEMPRE clicable para managers: añadir o cambiar a posteriori. */}
+                      {isManager && detail ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -733,14 +775,17 @@ export default function AlbaranesHistoricoClient({
                             setSupplierResults([])
                             setSupplierError(null)
                           }}
-                          className="text-sm font-black uppercase tracking-wider underline underline-offset-4 hover:opacity-80"
+                          className="text-sm font-black uppercase tracking-wider truncate underline underline-offset-4 hover:opacity-80 text-left"
+                          title="Cambiar proveedor"
                         >
-                          Añadir proveedor
+                          {detail.supplier_name ?? 'Añadir proveedor'}
                         </button>
                       ) : (
-                        <p className="text-sm font-black uppercase tracking-wider truncate">Proveedor pendiente</p>
+                        <p className="text-sm font-black uppercase tracking-wider truncate">
+                          {detail?.supplier_name ?? 'Proveedor pendiente'}
+                        </p>
                       )}
-                      <p className="text-[11px] font-bold text-white/70 truncate mt-1">
+                      <p className="text-[11px] font-medium text-white/70 truncate mt-1">
                         {formatDateTitle(detail?.invoice_date ?? activeItem?.invoice_date)}
                         {detail?.invoice_number ? ` · ${detail.invoice_number}` : activeItem?.invoice_number ? ` · ${activeItem.invoice_number}` : ''}
                       </p>
@@ -774,6 +819,21 @@ export default function AlbaranesHistoricoClient({
                         Ver imagen
                       </a>
                     ) : null}
+                    {isManager && detail?.id ? (
+                      <button
+                        type="button"
+                        onClick={() => void deleteInvoice(detail.id)}
+                        disabled={deletingInvoice}
+                        aria-label="Eliminar albarán"
+                        title="Eliminar albarán y revertir su stock"
+                        className={cn(
+                          'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:bg-rose-500/30 transition active:scale-[0.99] text-white',
+                          deletingInvoice && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        {deletingInvoice ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={closeModal}
@@ -786,6 +846,11 @@ export default function AlbaranesHistoricoClient({
                 </div>
 
                 <div className="p-4 overflow-auto flex-1 min-h-0">
+                  {deleteError ? (
+                    <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">
+                      Eliminar: {deleteError}
+                    </div>
+                  ) : null}
                   {saveError ? (
                     <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{saveError}</div>
                   ) : null}
@@ -838,27 +903,15 @@ export default function AlbaranesHistoricoClient({
                                           Sin match
                                         </button>
                                       )}
+                                      {/* Stock: badge informativo. Se aplica automáticamente al validar el match
+                                          (trigger handle_invoice_line_mapped_stock). Solo mostramos el badge cuando
+                                          ya está aplicado; si la línea aún no tiene ingrediente, el flujo apropiado
+                                          es validar el match arriba. */}
                                       {stockApplied ? (
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700">
                                           Stock aplicado
                                         </span>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            if (!l.ingredient_id || !detail.supplier_id) return
-                                            void applyStock(l.id)
-                                          }}
-                                          className={cn(
-                                            'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider underline underline-offset-4',
-                                            l.ingredient_id && detail.supplier_id ? 'text-zinc-700' : 'text-zinc-400'
-                                          )}
-                                          title={!l.ingredient_id ? 'Asigna ingrediente primero' : !detail.supplier_id ? 'Asigna proveedor primero' : 'Aplicar a stock'}
-                                        >
-                                          Stock pendiente
-                                        </button>
-                                      )}
+                                      ) : null}
                                       {rectified ? (
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800">
                                           Rectificado (REV{stock?.rectifiedCount})

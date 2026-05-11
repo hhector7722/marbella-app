@@ -161,12 +161,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
         className="hidden"
       />
 
-      <div
-        className={cn(
-          'rounded-2xl border border-zinc-100 bg-white shadow-sm',
-          'p-4 md:p-6 flex flex-col gap-4'
-        )}
-      >
+      <div className="flex flex-col gap-4">
         <button
           type="button"
           onClick={() => {

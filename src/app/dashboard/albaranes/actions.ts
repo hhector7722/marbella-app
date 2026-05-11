@@ -1148,6 +1148,89 @@ export async function applyInvoiceLineStockAction(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Eliminar albarán completo (con reversión de stock)
+//
+// Política: cuando se borra un albarán, deben desaparecer también sus efectos
+// en stock. Para mantener la auditoría limpia, optamos por DELETE puro de los
+// movimientos asociados (PURCHASE base + cualquier ADJUSTMENT con prefijo
+// `ALB-LINE-<lineId>%`, incluyendo REV) en lugar de generar ajustes inversos
+// que dejarían "rastros" sin albarán al que asociar.
+//
+// La eliminación de la cabecera + líneas + storage también se hace en cascada.
+// La constraint FK en `purchase_invoice_lines.invoice_id` tiene ON DELETE
+// CASCADE, así que basta con borrar la cabecera tras retirar los movimientos.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function deletePurchaseInvoiceAction(params: {
+  invoiceId: string
+}): Promise<
+  | { success: true; deletedMovements: number; deletedLines: number }
+  | { success: false; message: string }
+> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
+
+  // 1) Leer cabecera (file_path) y todas las líneas asociadas (para sus IDs).
+  const { data: inv, error: invErr } = await gate.supabase
+    .from('purchase_invoices')
+    .select('id, file_path')
+    .eq('id', invoiceId)
+    .maybeSingle()
+  if (invErr) return { success: false, message: invErr.message }
+  if (!inv) return { success: false, message: 'Albarán no encontrado o sin permiso' }
+
+  const filePath = (inv as any).file_path as string | null
+
+  const { data: linesData, error: linesErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id')
+    .eq('invoice_id', invoiceId)
+    .limit(20000)
+  if (linesErr) return { success: false, message: linesErr.message }
+  const lineIds = ((linesData ?? []) as any[]).map((r) => String(r.id))
+
+  // 2) Borrar movimientos de stock asociados (PURCHASE + REV).
+  //    En lugar de un solo IN, paginamos por línea con `ilike` para coger
+  //    `ALB-LINE-<id>` y `ALB-LINE-<id>-REV…-UNDO/APPLY` de una vez.
+  let deletedMovements = 0
+  for (const lineId of lineIds) {
+    const ref = `ALB-LINE-${lineId}`
+    const { data: deletedRows, error: delMovErr } = await gate.supabase
+      .from('stock_movements')
+      .delete()
+      .or(`reference_doc.eq.${ref},reference_doc.ilike.${ref}-REV%`)
+      .select('id')
+    if (delMovErr) return { success: false, message: `Error borrando stock: ${delMovErr.message}` }
+    deletedMovements += (deletedRows as any[])?.length ?? 0
+  }
+
+  // 3) Borrar el fichero del Storage (si existe). Si falla, lo registramos y
+  //    seguimos: no queremos bloquear el delete por un archivo ya inexistente.
+  if (filePath) {
+    const { error: storageErr } = await gate.supabase.storage.from('albaranes').remove([filePath])
+    if (storageErr) {
+      console.warn('deletePurchaseInvoiceAction: storage remove warning', storageErr.message)
+    }
+  }
+
+  // 4) Borrar cabecera. Las líneas caen por ON DELETE CASCADE.
+  const { error: delInvErr } = await gate.supabase.from('purchase_invoices').delete().eq('id', invoiceId)
+  if (delInvErr) return { success: false, message: `Error borrando albarán: ${delInvErr.message}` }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true, deletedMovements, deletedLines: lineIds.length }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Auto-mapeo masivo de líneas "aprendidas"
 //
 // Recorre las líneas todavía pendientes y, si existe una fila exacta en
