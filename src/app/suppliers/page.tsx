@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Save } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Save, Upload, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -281,6 +281,47 @@ export default function SuppliersPage() {
     const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [removeImage, setRemoveImage] = useState<boolean>(false);
+    const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+
+    function slugifyName(value: string): string {
+        return value
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+            .slice(0, 60) || 'proveedor';
+    }
+
+    function extractSupplierStoragePath(url: string | null | undefined): string | null {
+        if (!url) return null;
+        const m = url.match(/\/storage\/v1\/object\/public\/suppliers\/(.+)$/);
+        if (!m) return null;
+        try {
+            return decodeURIComponent(m[1]!);
+        } catch {
+            return m[1] ?? null;
+        }
+    }
+
+    function resetImageEditState() {
+        if (previewImageUrl) {
+            URL.revokeObjectURL(previewImageUrl);
+        }
+        setSelectedImageFile(null);
+        setPreviewImageUrl(null);
+        setRemoveImage(false);
+        setIsUploadingImage(false);
+    }
+
+    useEffect(() => {
+        return () => {
+            if (previewImageUrl) URL.revokeObjectURL(previewImageUrl);
+        };
+    }, [previewImageUrl]);
 
     const canEditOrDelete = useMemo(() => {
         if (!detailSupplier) return false;
@@ -290,9 +331,46 @@ export default function SuppliersPage() {
 
     function openEditModalFromDetail(s: Supplier) {
         const withoutCategory = stripCategoryFromNotes(s.notes ?? null) ?? '';
+        resetImageEditState();
         setEditSupplier(s);
         setEditNotes(withoutCategory);
         setEditEmailDomainsText(Array.isArray(s.email_domains) ? s.email_domains.join(', ') : '');
+    }
+
+    function closeEditModal() {
+        resetImageEditState();
+        setEditSupplier(null);
+    }
+
+    function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0] ?? null;
+        e.target.value = '';
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error('El archivo debe ser una imagen (JPG, PNG, WebP o SVG).');
+            return;
+        }
+        const maxBytes = 5 * 1024 * 1024;
+        if (file.size > maxBytes) {
+            toast.error('La imagen supera los 5 MB.');
+            return;
+        }
+
+        if (previewImageUrl) URL.revokeObjectURL(previewImageUrl);
+        const url = URL.createObjectURL(file);
+        setSelectedImageFile(file);
+        setPreviewImageUrl(url);
+        setRemoveImage(false);
+    }
+
+    function handleRemoveImageClick() {
+        if (previewImageUrl) {
+            URL.revokeObjectURL(previewImageUrl);
+            setPreviewImageUrl(null);
+        }
+        setSelectedImageFile(null);
+        setRemoveImage(true);
     }
 
     async function handleSaveEdit() {
@@ -304,7 +382,8 @@ export default function SuppliersPage() {
         }
 
         const phone = editSupplier.phone?.trim() || null;
-        const imageUrl = editSupplier.image_url?.trim() || null;
+        const previousImageUrl = editSupplier.image_url?.trim() || null;
+        const previousStoragePath = extractSupplierStoragePath(previousImageUrl);
         const notes = buildNotesWithCategory(editSupplier.category ?? null, editNotes);
 
         const emailDomains = editEmailDomainsText
@@ -312,8 +391,52 @@ export default function SuppliersPage() {
             .map((s) => s.trim().toLowerCase())
             .filter(Boolean);
 
+        let nextImageUrl: string | null = previousImageUrl;
+
         try {
             setIsSavingEdit(true);
+
+            if (selectedImageFile) {
+                setIsUploadingImage(true);
+                const ext = (selectedImageFile.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+                const folder = isDbSupplierId(editSupplier.id) ? editSupplier.id : slugifyName(name);
+                const path = `${folder}/${Date.now()}-${slugifyName(name)}.${ext}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('suppliers')
+                    .upload(path, selectedImageFile, {
+                        upsert: true,
+                        cacheControl: '3600',
+                        contentType: selectedImageFile.type || undefined,
+                    });
+                if (uploadError) throw uploadError;
+
+                const { data: pub } = supabase.storage.from('suppliers').getPublicUrl(path);
+                if (!pub?.publicUrl) {
+                    throw new Error('No se pudo obtener la URL pública de la imagen.');
+                }
+                nextImageUrl = pub.publicUrl;
+                setIsUploadingImage(false);
+
+                if (previousStoragePath && previousStoragePath !== path) {
+                    const { error: removePrevError } = await supabase.storage
+                        .from('suppliers')
+                        .remove([previousStoragePath]);
+                    if (removePrevError) {
+                        console.warn('No se pudo borrar la imagen anterior:', removePrevError);
+                    }
+                }
+            } else if (removeImage) {
+                nextImageUrl = null;
+                if (previousStoragePath) {
+                    const { error: removeError } = await supabase.storage
+                        .from('suppliers')
+                        .remove([previousStoragePath]);
+                    if (removeError) {
+                        console.warn('No se pudo borrar la imagen del bucket:', removeError);
+                    }
+                }
+            }
 
             if (isDbSupplierId(editSupplier.id)) {
                 const { error } = await supabase
@@ -322,7 +445,7 @@ export default function SuppliersPage() {
                         name,
                         phone,
                         notes,
-                        image_url: imageUrl,
+                        image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
                     })
                     .eq('id', Number(editSupplier.id));
@@ -337,20 +460,27 @@ export default function SuppliersPage() {
                         name,
                         phone,
                         notes,
-                        image_url: imageUrl,
+                        image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
                     });
                 if (error) throw error;
                 toast.success('Proveedor creado en la base de datos');
             }
 
+            resetImageEditState();
             setEditSupplier(null);
             await fetchSuppliers(false, true);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
-            toast.error(`Error de base de datos: ${message}`);
+            const lower = message.toLowerCase();
+            if (lower.includes('bucket') && (lower.includes('not found') || lower.includes('does not exist'))) {
+                toast.error("No existe el bucket 'suppliers' en Storage. Aplica la migración 20260511230000_suppliers_storage_bucket.sql.");
+            } else {
+                toast.error(`Error de base de datos: ${message}`);
+            }
         } finally {
             setIsSavingEdit(false);
+            setIsUploadingImage(false);
         }
     }
 
@@ -578,8 +708,8 @@ export default function SuppliersPage() {
 
             {/* MODAL EDICIÓN PROVEEDOR */}
             {editSupplier && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[230] p-4" onClick={() => setEditSupplier(null)}>
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[230] p-4" onClick={closeEditModal}>
+                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-5">
                             <div className="flex flex-col">
                                 <h2 className="text-lg font-black text-zinc-900 uppercase tracking-wider leading-none">
@@ -593,7 +723,7 @@ export default function SuppliersPage() {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setEditSupplier(null)}
+                                onClick={closeEditModal}
                                 className="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-zinc-100 transition-colors shrink-0"
                             >
                                 <X className="text-zinc-400" size={18} />
@@ -638,13 +768,63 @@ export default function SuppliersPage() {
                             </div>
 
                             <div>
-                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Logo (URL)</label>
-                                <input
-                                    value={editSupplier.image_url ?? ''}
-                                    onChange={(e) => setEditSupplier({ ...editSupplier, image_url: e.target.value })}
-                                    className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
-                                    placeholder="https://..."
-                                />
+                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Logo</label>
+                                {(() => {
+                                    const displaySrc = previewImageUrl
+                                        ?? (removeImage
+                                            ? null
+                                            : (editSupplier.image_url?.trim()
+                                                || SUPPLIER_LOGOS[editSupplier.name]
+                                                || null));
+                                    const hasAnyImage = Boolean(displaySrc);
+                                    return (
+                                        <div className="rounded-2xl border border-zinc-100 bg-zinc-50 overflow-hidden">
+                                            <div className="h-32 w-full flex items-center justify-center bg-white">
+                                                {hasAnyImage && displaySrc ? (
+                                                    <img
+                                                        src={displaySrc}
+                                                        alt=""
+                                                        className="max-h-full max-w-full object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-1 text-zinc-300">
+                                                        <ImageIcon size={32} />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">Sin logo</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
+                                                <input
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                                    className="hidden"
+                                                    id="supplier-logo-upload"
+                                                    onChange={handleImageFileChange}
+                                                    disabled={isSavingEdit || isUploadingImage}
+                                                />
+                                                <label
+                                                    htmlFor="supplier-logo-upload"
+                                                    className={`inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 transition-colors hover:bg-zinc-100 active:bg-zinc-50 ${(isSavingEdit || isUploadingImage) ? 'pointer-events-none opacity-60' : ''}`}
+                                                >
+                                                    <Upload size={16} strokeWidth={2.5} />
+                                                    {selectedImageFile ? 'Cambiar' : 'Subir'}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveImageClick}
+                                                    disabled={!hasAnyImage || isSavingEdit || isUploadingImage}
+                                                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-rose-600 transition-colors hover:bg-rose-50 active:bg-rose-100 disabled:opacity-50 disabled:pointer-events-none"
+                                                >
+                                                    <Trash2 size={16} strokeWidth={2.5} />
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold text-zinc-400">
+                                                PNG, JPG, WebP o SVG · máx. 5 MB
+                                            </p>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             <div>
