@@ -1,17 +1,60 @@
-'use client'
-
-import { useRef, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Loader2, Search, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { processScannerImage } from './actions'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/utils/supabase/client'
+
+interface Supplier {
+  id: number
+  name: string
+  image_url?: string | null
+}
+
+const SUPPLIER_LOGOS: Record<string, string> = {
+  'Ametller': '/icons/prov/Ametller.png',
+  'Panabad': '/icons/prov/panabad.png',
+  'Videla': '/icons/prov/videla.png',
+  'Zander': '/icons/prov/Zander.png',
+  'Abril': '/icons/prov/Abril.png',
+  'Carnicas Pijuan': '/icons/prov/Pijuan.png',
+  'Santa Teresa': '/icons/prov/Sta-Teresa.png',
+  'Shers': '/icons/prov/Shers.png',
+  'Sanilec': '/icons/prov/Sanilec.png',
+  'Nestle': '/icons/prov/Nestle.png',
+  'Sant Aniol': '/icons/prov/Sant-Aniol.png',
+  'Fritz Ravich': '/icons/prov/Fritz-Ravich.png',
+  'Hielo Fenix': '/icons/prov/hielo-fenix.png',
+  'Vins i Pons': '/icons/prov/Pons.png'
+}
 
 export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [messageTone, setMessageTone] = useState<'error' | 'success' | 'info'>('info')
+  const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false)
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (showSupplierModal) {
+      const fetchSuppliers = async () => {
+        setLoadingSuppliers(true)
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('id, name, image_url')
+          .order('name')
+        if (!error && data) setSuppliers(data)
+        setLoadingSuppliers(false)
+      }
+      fetchSuppliers()
+    }
+  }, [showSupplierModal, supabase])
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -57,7 +100,11 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       setMessageTone('info')
       setMessage('Foto correcta. Enviando…')
 
-      const res = await processScannerImage(dataUri, file.name.replace(/\.[^/.]+$/, '') + '.jpg')
+      const res = await processScannerImage(
+        dataUri, 
+        file.name.replace(/\.[^/.]+$/, '') + '.jpg',
+        selectedSupplierId ?? undefined
+      )
       if (!res?.success) {
         setMessageTone('error')
         setMessage(res?.message || 'No se pudo procesar. Repite la foto.')
@@ -68,6 +115,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       setMessageTone('success')
       setMessage('OK. Albarán recibido.')
       setPreview(null)
+      setSelectedSupplierId(null)
       onSuccess?.()
     } catch (error: any) {
       setMessageTone('error')
@@ -77,6 +125,20 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       setIsProcessing(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
+  }
+
+  const filteredSuppliers = suppliers.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const handleSelectSupplier = (id: number) => {
+    setSelectedSupplierId(id)
+    setShowSupplierModal(false)
+    setSearchQuery('')
+    // Pequeño delay para que el modal se cierre antes de abrir la cámara
+    setTimeout(() => {
+      fileInputRef.current?.click()
+    }, 300)
   }
 
   return (
@@ -100,7 +162,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
           type="button"
           onClick={() => {
             setMessage(null)
-            fileInputRef.current?.click()
+            setShowSupplierModal(true)
           }}
           disabled={isProcessing}
           className={cn(
@@ -137,7 +199,82 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
           </div>
         ) : null}
       </div>
+
+      {showSupplierModal && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowSupplierModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
+              <div className="flex flex-col">
+                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Proveedor</h3>
+                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
+                  <Truck size={12} /> Selecciona proveedor para el albarán
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSupplierModal(false)}
+                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+              >
+                <X size={20} strokeWidth={3} />
+              </button>
+            </div>
+
+            <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
+              <div className="relative mb-4 shrink-0">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar proveedor..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
+                />
+              </div>
+
+              <div className="overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
+                {loadingSuppliers ? (
+                  <div className="col-span-full py-10 flex justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
+                  </div>
+                ) : filteredSuppliers.length === 0 ? (
+                  <div className="col-span-full py-10 text-center">
+                    <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
+                  </div>
+                ) : (
+                  filteredSuppliers.map(s => {
+                    const logo = s.image_url || SUPPLIER_LOGOS[s.name]
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => handleSelectSupplier(s.id)}
+                        className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 hover:bg-zinc-50 rounded-xl"
+                      >
+                        <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
+                          {logo ? (
+                            <img src={logo} alt={s.name} className="w-full h-full object-contain" />
+                          ) : (
+                            <Truck className="w-6 h-6 text-gray-300" />
+                          )}
+                        </div>
+                        <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
+                          {s.name}
+                        </span>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
 

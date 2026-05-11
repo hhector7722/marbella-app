@@ -47,7 +47,7 @@ export type ProcessScannerImageResult =
       message: string
     }
 
-export async function processScannerImage(base64DataUri: string, filename: string): Promise<ProcessScannerImageResult> {
+export async function processScannerImage(base64DataUri: string, filename: string, supplierId?: number): Promise<ProcessScannerImageResult> {
   try {
     const gate = await gateAuthenticated()
     if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
@@ -118,8 +118,8 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     const invoiceNumRaw = String(aiData?.numero_factura ?? '').trim()
     const invoiceNum = invoiceNumRaw || 'DESCONOCIDO'
 
-    let matchedSupplierId: number | null = null
-    if (aiData?.proveedor) {
+    let matchedSupplierId: number | null = supplierId ?? null
+    if (!matchedSupplierId && aiData?.proveedor) {
       const input = String(aiData.proveedor ?? '').trim()
       const inputNorm = normalizeSupplierName(input)
       const tokens = inputNorm.split(' ').filter((t) => t.length >= 3).slice(0, 4)

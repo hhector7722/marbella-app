@@ -133,7 +133,9 @@ export function ConsumptionModal({
       }));
       const res = await submitPersonalConsumption(payload);
       if (!res?.success) {
-        toast.error(res?.message || 'Error al registrar consumo');
+        const errorMsg = res?.message || 'Error al registrar consumo';
+        console.error('[ConsumptionModal] Submit failed:', res);
+        toast.error(errorMsg, { duration: 5000 });
         setIsSubmitting(false);
         return;
       }

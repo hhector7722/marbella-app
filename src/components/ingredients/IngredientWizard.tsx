@@ -760,46 +760,58 @@ export function IngredientWizard({
             (draft.howCharged === 'pack' || draft.howCharged === 'unidad') &&
             draft.containsLiquid == null && (
               <div className="rounded-2xl border border-zinc-100 bg-white p-4 space-y-3">
-                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Contiene líquido?</div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">
+                  ¿Cómo lo mides en cocina?
+                </div>
+                <div className="grid grid-cols-1 gap-2">
                   <button
                     type="button"
                     disabled={saving}
                     onClick={() => {
-                      const perPack = true
-                      // Si es "unidad" y contiene líquido, tratamos como pack de 1 (botella/lata)
-                      const baseUnit: WizardBaseUnit = 'l'
-                      void finalizeHowChargedAndAdvance({
-                        howCharged: draft.howCharged as any,
-                        pricingMode: perPack ? 'per_pack' : 'per_purchase_unit',
-                        baseUnit,
-                        containsLiquid: true,
-                      })
-                    }}
-                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-                  >
-                    Sí
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => {
-                      // No líquido: pack/unidad se maneja como ud (sin pedir contenido por unidad)
-                      const baseUnit: WizardBaseUnit = 'ud'
                       void finalizeHowChargedAndAdvance({
                         howCharged: draft.howCharged as any,
                         pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
-                        baseUnit,
+                        baseUnit: 'kg',
                         containsLiquid: false,
                       })
                     }}
-                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black flex items-center justify-between"
                   >
-                    No
+                    <span>Peso (kg, g)</span>
+                    <span className="text-[10px] text-zinc-400">Ej. Sacos, botes, cubos</span>
                   </button>
-                </div>
-                <div className="text-xs text-zinc-500">
-                  Solo se pide “contenido por unidad” si es líquido (botella/lata/caja).
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      void finalizeHowChargedAndAdvance({
+                        howCharged: draft.howCharged as any,
+                        pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
+                        baseUnit: 'l',
+                        containsLiquid: true,
+                      })
+                    }}
+                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black flex items-center justify-between"
+                  >
+                    <span>Volumen (l, ml, cl)</span>
+                    <span className="text-[10px] text-zinc-400">Ej. Botellas, garrafas</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      void finalizeHowChargedAndAdvance({
+                        howCharged: draft.howCharged as any,
+                        pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
+                        baseUnit: 'ud',
+                        containsLiquid: false,
+                      })
+                    }}
+                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black flex items-center justify-between"
+                  >
+                    <span>Unidades (ud)</span>
+                    <span className="text-[10px] text-zinc-400">Ej. Panes, huevos, cajas</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -871,7 +883,7 @@ export function IngredientWizard({
                 </div>
               </label>
 
-              {draft.containsLiquid === true ? (
+              {draft.baseUnit !== 'ud' ? (
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block space-y-1">
                     <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
@@ -890,9 +902,18 @@ export function IngredientWizard({
                       onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitUnit: e.target.value as any }))}
                       className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
                     >
-                      <option value="ml">ml</option>
-                      <option value="cl">cl</option>
-                      <option value="l">L</option>
+                      {draft.baseUnit === 'l' ? (
+                        <>
+                          <option value="ml">ml</option>
+                          <option value="cl">cl</option>
+                          <option value="l">L</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                        </>
+                      )}
                     </select>
                   </label>
                 </div>
@@ -903,11 +924,11 @@ export function IngredientWizard({
                 </div>
               )}
 
-              {draft.containsLiquid === true && (
+              {draft.baseUnit !== 'ud' && (
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
                   <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Atajos</div>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {VOLUME_PRESETS.slice(0, 6).map((p) => (
+                    {(draft.baseUnit === 'l' ? VOLUME_PRESETS.slice(0, 6) : MASS_PRESETS).map((p) => (
                       <button
                         key={`${p.qty}-${p.unit}`}
                         type="button"
