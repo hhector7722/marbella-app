@@ -1276,7 +1276,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             }}
             className={cn(
                 "bg-white rounded-2xl p-2 md:p-1.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-1 active:scale-95 transition-all group",
-                "w-full min-w-0 min-h-0 aspect-square md:aspect-auto md:h-full touch-manipulation"
+                "w-full min-w-0 min-h-0 aspect-square touch-manipulation"
             )}
         >
             <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-xl">
@@ -1300,20 +1300,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const dashboardCambiosYAccesosDesktop = (
-        <div className="hidden md:grid md:grid-cols-4 md:gap-4 md:items-stretch">
-            {/* Columna 1: Cajas de cambio */}
+        <div className="hidden md:grid md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)_minmax(0,0.45fr)_minmax(0,0.45fr)] md:gap-x-4 md:gap-y-3 md:items-stretch">
             <div className="col-start-1 row-start-1 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
             <div className="col-start-1 row-start-2 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 2', 1)}</div>
-
-            {/* Columna 2: Horas extras (ocupa 2 filas) */}
             <div className="col-start-2 row-start-1 row-span-2 min-h-0 min-w-0 flex flex-col">{horasExtrasSection}</div>
-
-            {/* Columna 3: Asistencia y Plantilla */}
             <div className="col-start-3 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
-            <div className="col-start-3 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
-
-            {/* Columna 4: M obra y Stock */}
             <div className="col-start-4 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
+            <div className="col-start-3 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
             <div className="col-start-4 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[3])}</div>
         </div>
     );
@@ -1333,17 +1326,17 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* ===== LAYOUT ESCRITORIO ===== */}
                 <div className="hidden md:flex md:flex-col md:gap-4">
-                    {/* Fila 1: Tarjeta ventas */}
-                    <div className="w-full">
-                        {ventasSection}
+                    {/* Fila superior: Ventas + Caja Inicial centrados al ancho del centro */}
+                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-start">
+                        <div />
+                        <div className="flex flex-col gap-4">
+                            {ventasSection}
+                            {cajaInicialSection}
+                        </div>
+                        <div />
                     </div>
 
-                    {/* Fila 2: Tarjeta caja inicial */}
-                    <div className="w-full">
-                        {cajaInicialSection}
-                    </div>
-
-                    {/* Filas 3 y 4: Cajas cambio, Horas extras y Accesos rápidos */}
+                    {/* Fila inferior: rejilla unificada — altura filas = tarjetas cuadradas */}
                     {dashboardCambiosYAccesosDesktop}
                 </div>
 
