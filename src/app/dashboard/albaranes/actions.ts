@@ -615,6 +615,212 @@ export type IngredientCandidate = {
   purchase_unit: string
 }
 
+// Fuente del match propuesto en la línea, de mayor a menor confianza.
+//   - 'dictionary_exact' : ya existe fila en supplier_item_mappings con
+//                          (supplier_id, supplier_item_name=original_name).
+//                          Llevamos también factor + ingrediente conocidos.
+//   - 'alias_fuzzy'      : no hay exacto, pero hay alias guardados para este
+//                          proveedor cuyo texto se parece al original_name.
+//                          Sugerimos el ingrediente del alias top y su factor.
+//   - 'ingredient_fuzzy' : fallback contra el catálogo de ingredientes.
+//   - 'none'             : sin sugerencia clara, mapeo manual.
+export type MappingSource = 'dictionary_exact' | 'alias_fuzzy' | 'ingredient_fuzzy' | 'none'
+
+export type ResolvedLineMapping = {
+  source: MappingSource
+  suggestedIngredientId: string | null
+  suggestedFactor: number | null
+  /** Candidatos para mostrar en el desplegable de "Sugerencias". */
+  candidates: IngredientCandidate[]
+  /** Alias ya guardados para el ingrediente sugerido (variantes de nombre). */
+  knownAliases: string[]
+}
+
+/**
+ * Resuelve qué ingrediente y factor preseleccionar para una línea concreta de
+ * un albarán. Cascada explícita:
+ *
+ * 1. supplier_item_mappings exacto (supplier_id, supplier_item_name).
+ * 2. supplier_item_mappings del mismo proveedor con texto similar (alias).
+ * 3. matchIngredientCandidates contra el catálogo de ingredientes.
+ *
+ * Se llama desde la UI al abrir el modal de mapeo o al cargar el detalle del
+ * albarán, para que el operario VALIDE en lugar de seleccionar desde cero.
+ */
+export async function resolveLineMappingAction(params: {
+  invoiceId: string
+  lineId: string
+}): Promise<{ success: true; result: ResolvedLineMapping } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!invoiceId || !lineId) return { success: false, message: 'Datos incompletos' }
+
+  const { data: lineRow, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('original_name')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  const originalName = String((lineRow as any)?.original_name ?? '').trim()
+  if (!originalName) {
+    return { success: true, result: { source: 'none', suggestedIngredientId: null, suggestedFactor: null, candidates: [], knownAliases: [] } }
+  }
+
+  const { data: invRow, error: invErr } = await gate.supabase
+    .from('purchase_invoices')
+    .select('supplier_id')
+    .eq('id', invoiceId)
+    .maybeSingle()
+  if (invErr) return { success: false, message: invErr.message }
+  const supplierId = (invRow as any)?.supplier_id as number | null
+
+  const { matchIngredientCandidates, pickSuggestedCandidate } = await import('@/lib/albaran-price-match')
+
+  // Catálogo de ingredientes (lo necesitamos en cualquier rama para enriquecer
+  // los candidatos con precio/unidad y para el fuzzy final).
+  const { data: ingRows, error: ingErr } = await gate.supabase
+    .from('ingredients')
+    .select('id, name, current_price, purchase_unit')
+    .order('name')
+    .limit(4000)
+  if (ingErr) return { success: false, message: ingErr.message }
+  const ingredients = (ingRows ?? []).map((r: any) => ({
+    id: String(r.id),
+    name: String(r.name ?? ''),
+    current_price: Number(r.current_price) || 0,
+    purchase_unit: r.purchase_unit ?? 'kg',
+  }))
+  const ingredientById = new Map(ingredients.map((i) => [i.id, i]))
+
+  const enrichCandidates = (cands: { id: string; name: string; score: number }[]): IngredientCandidate[] =>
+    cands.map((c) => {
+      const row = ingredientById.get(c.id)
+      return {
+        id: c.id,
+        name: row?.name ?? c.name,
+        score: c.score,
+        current_price: row?.current_price ?? 0,
+        purchase_unit: row?.purchase_unit ?? 'kg',
+      }
+    })
+
+  const aliasesOf = async (ingredientId: string | null): Promise<string[]> => {
+    if (!ingredientId || supplierId == null) return []
+    const { data, error } = await gate.supabase
+      .from('supplier_item_mappings')
+      .select('supplier_item_name')
+      .eq('supplier_id', supplierId)
+      .eq('ingredient_id', ingredientId)
+      .limit(50)
+    if (error) return []
+    return (data ?? []).map((r: any) => String(r.supplier_item_name ?? '')).filter(Boolean)
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 1) Diccionario exacto (solo si hay proveedor).
+  if (supplierId != null) {
+    const { data: exact, error: exErr } = await gate.supabase
+      .from('supplier_item_mappings')
+      .select('ingredient_id, conversion_factor')
+      .eq('supplier_id', supplierId)
+      .eq('supplier_item_name', originalName)
+      .maybeSingle()
+    if (exErr) return { success: false, message: exErr.message }
+
+    if (exact && (exact as any).ingredient_id) {
+      const ingredientId = String((exact as any).ingredient_id)
+      const factor = Number((exact as any).conversion_factor) || 1
+      const row = ingredientById.get(ingredientId)
+      const aliases = await aliasesOf(ingredientId)
+      const candidates: IngredientCandidate[] = row
+        ? [{ id: row.id, name: row.name, score: 100, current_price: row.current_price, purchase_unit: row.purchase_unit }]
+        : []
+      return {
+        success: true,
+        result: {
+          source: 'dictionary_exact',
+          suggestedIngredientId: ingredientId,
+          suggestedFactor: factor,
+          candidates,
+          knownAliases: aliases,
+        },
+      }
+    }
+
+    // 2) Alias del mismo proveedor por similitud con el original_name.
+    //    Buscamos mapeos del proveedor y reusamos el scorer del fuzzy.
+    const { data: supplierMaps, error: smErr } = await gate.supabase
+      .from('supplier_item_mappings')
+      .select('supplier_item_name, ingredient_id, conversion_factor')
+      .eq('supplier_id', supplierId)
+      .limit(2000)
+    if (smErr) return { success: false, message: smErr.message }
+
+    const aliasRows = (supplierMaps ?? [])
+      .map((r: any) => ({
+        ingredient_id: r.ingredient_id ? String(r.ingredient_id) : null,
+        factor: Number(r.conversion_factor) || 1,
+        alias: String(r.supplier_item_name ?? ''),
+      }))
+      .filter((r: { ingredient_id: string | null; alias: string }) => r.ingredient_id && r.alias)
+
+    if (aliasRows.length > 0) {
+      // Scoreamos cada alias como "ingrediente sintético" (id = ingredient_id)
+      // y nos quedamos con el mejor; si supera el umbral del picker, sugerimos.
+      const aliasMatches = matchIngredientCandidates(
+        originalName,
+        aliasRows.map((a) => ({ id: a.ingredient_id!, name: a.alias, current_price: 0, purchase_unit: 'kg' })),
+        8
+      )
+      const bestAliasId = pickSuggestedCandidate(aliasMatches)
+      if (bestAliasId) {
+        const winner = aliasRows.find((a) => a.ingredient_id === bestAliasId) ?? null
+        const aliases = await aliasesOf(bestAliasId)
+        const row = ingredientById.get(bestAliasId)
+        const candidates: IngredientCandidate[] = row
+          ? [{ id: row.id, name: row.name, score: aliasMatches[0]?.score ?? 80, current_price: row.current_price, purchase_unit: row.purchase_unit }]
+          : []
+        return {
+          success: true,
+          result: {
+            source: 'alias_fuzzy',
+            suggestedIngredientId: bestAliasId,
+            suggestedFactor: winner?.factor ?? 1,
+            candidates,
+            knownAliases: aliases,
+          },
+        }
+      }
+    }
+  }
+
+  // 3) Fallback: similitud contra el catálogo de ingredientes.
+  const fuzzy = matchIngredientCandidates(originalName, ingredients, 8)
+  const suggested = pickSuggestedCandidate(fuzzy)
+  const candidates = enrichCandidates(fuzzy)
+  const aliases = await aliasesOf(suggested)
+  return {
+    success: true,
+    result: {
+      source: suggested ? 'ingredient_fuzzy' : 'none',
+      suggestedIngredientId: suggested,
+      suggestedFactor: suggested ? 1 : null,
+      candidates,
+      knownAliases: aliases,
+    },
+  }
+}
+
+/**
+ * Compatibilidad: la UI antigua usa esta acción. Sigue funcionando, pero la
+ * pantalla de albaranes ya llama directamente a `resolveLineMappingAction`.
+ */
 export async function suggestIngredientsForLineAction(params: {
   extractedName: string
 }): Promise<
@@ -630,7 +836,6 @@ export async function suggestIngredientsForLineAction(params: {
   const extractedName = String(params?.extractedName ?? '').trim()
   if (!extractedName) return { success: true, suggestedIngredientId: null, candidates: [] }
 
-  // Lazy import to keep this file lightweight.
   const { matchIngredientCandidates, pickSuggestedCandidate } = await import('@/lib/albaran-price-match')
 
   const { data: ingRows, error } = await gate.supabase
@@ -940,5 +1145,149 @@ export async function applyInvoiceLineStockAction(params: {
   } catch {}
 
   return { success: true, appliedQty: Math.round(appliedQty * 1000) / 1000 }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auto-mapeo masivo de líneas "aprendidas"
+//
+// Recorre las líneas todavía pendientes y, si existe una fila exacta en
+// `supplier_item_mappings` para (supplier_id de la cabecera, original_name de
+// la línea), las marca como `mapped` con el `ingredient_id` aprendido.
+// El trigger de BD `handle_invoice_line_mapped_stock` se ocupa después del
+// movimiento PURCHASE en `stock_movements` (con su propio idempotencia).
+//
+// No se auto-confirman matches por alias/similitud: esos siguen requiriendo
+// validación humana desde el modal de mapeo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type AutoMapReport = {
+  invoicesScanned: number
+  linesScanned: number
+  autoMapped: number
+  skippedNoSupplier: number
+  skippedNoMatch: number
+  errors: number
+}
+
+export async function autoMapKnownLinesAction(params?: {
+  invoiceId?: string | null
+}): Promise<{ success: true; report: AutoMapReport } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const onlyInvoiceId = String(params?.invoiceId ?? '').trim() || null
+
+  // 1) Cabeceras candidatas: tienen `supplier_id` y al menos una línea pendiente.
+  //    Si recibimos un invoiceId concreto, restringimos a ese.
+  let invoicesQ = gate.supabase
+    .from('purchase_invoices')
+    .select('id, supplier_id')
+    .not('supplier_id', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(2000)
+  if (onlyInvoiceId) invoicesQ = invoicesQ.eq('id', onlyInvoiceId)
+
+  const { data: invoices, error: invErr } = await invoicesQ
+  if (invErr) return { success: false, message: invErr.message }
+
+  const invoiceList = (invoices ?? []) as Array<{ id: string; supplier_id: number | null }>
+  const invoiceIds = invoiceList.map((r) => r.id)
+  if (invoiceIds.length === 0) {
+    return {
+      success: true,
+      report: { invoicesScanned: 0, linesScanned: 0, autoMapped: 0, skippedNoSupplier: 0, skippedNoMatch: 0, errors: 0 },
+    }
+  }
+
+  const supplierByInvoice = new Map<string, number>()
+  for (const r of invoiceList) {
+    if (r.supplier_id != null) supplierByInvoice.set(r.id, Number(r.supplier_id))
+  }
+
+  // 2) Líneas pendientes de esos albaranes.
+  const { data: pendingLines, error: linesErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, original_name, status, mapped_ingredient_id')
+    .in('invoice_id', invoiceIds)
+    .is('mapped_ingredient_id', null)
+    .limit(20000)
+  if (linesErr) return { success: false, message: linesErr.message }
+
+  const lines = (pendingLines ?? []) as Array<{
+    id: string
+    invoice_id: string
+    original_name: string | null
+    status: string | null
+    mapped_ingredient_id: string | null
+  }>
+
+  const report: AutoMapReport = {
+    invoicesScanned: invoiceList.length,
+    linesScanned: lines.length,
+    autoMapped: 0,
+    skippedNoSupplier: 0,
+    skippedNoMatch: 0,
+    errors: 0,
+  }
+  if (lines.length === 0) return { success: true, report }
+
+  // 3) Pre-cargar diccionario en un solo round-trip: todas las filas de los
+  //    proveedores implicados. Cabe en memoria para 2k albaranes; si crece,
+  //    paginar por proveedor.
+  const supplierIds = Array.from(new Set(Array.from(supplierByInvoice.values())))
+  const { data: mapRows, error: mapErr } = await gate.supabase
+    .from('supplier_item_mappings')
+    .select('supplier_id, supplier_item_name, ingredient_id, conversion_factor')
+    .in('supplier_id', supplierIds)
+    .limit(20000)
+  if (mapErr) return { success: false, message: mapErr.message }
+
+  // Índice (supplier_id|supplier_item_name) -> { ingredient_id, factor }
+  const dict = new Map<string, { ingredient_id: string; factor: number }>()
+  for (const r of (mapRows ?? []) as any[]) {
+    const sid = Number(r.supplier_id)
+    const name = String(r.supplier_item_name ?? '').trim()
+    const ing = r.ingredient_id ? String(r.ingredient_id) : null
+    const factor = Number(r.conversion_factor)
+    if (!Number.isFinite(sid) || !name || !ing || !Number.isFinite(factor) || factor <= 0) continue
+    dict.set(`${sid}|${name}`, { ingredient_id: ing, factor })
+  }
+
+  // 4) Recorrer líneas y aplicar `update` sólo a las que encajen exactas.
+  for (const line of lines) {
+    const supplierId = supplierByInvoice.get(line.invoice_id)
+    if (supplierId == null) {
+      report.skippedNoSupplier++
+      continue
+    }
+    const name = String(line.original_name ?? '').trim()
+    if (!name) {
+      report.skippedNoMatch++
+      continue
+    }
+    const hit = dict.get(`${supplierId}|${name}`)
+    if (!hit) {
+      report.skippedNoMatch++
+      continue
+    }
+    const { error: upErr } = await gate.supabase
+      .from('purchase_invoice_lines')
+      .update({ mapped_ingredient_id: hit.ingredient_id, status: 'mapped' })
+      .eq('id', line.id)
+    if (upErr) {
+      report.errors++
+      continue
+    }
+    report.autoMapped++
+  }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true, report }
 }
 

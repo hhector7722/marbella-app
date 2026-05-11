@@ -4,32 +4,6 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-function normalizeSupplierName(v: string) {
-  return String(v ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ')
-}
-
-function scoreSupplierMatch(inputNorm: string, candidateNorm: string) {
-  if (!inputNorm || !candidateNorm) return 0
-  if (inputNorm === candidateNorm) return 1000
-
-  const a = new Set(inputNorm.split(' ').filter((t) => t.length >= 3))
-  const bTokens = candidateNorm.split(' ').filter((t) => t.length >= 3)
-  let common = 0
-  for (const t of bTokens) if (a.has(t)) common++
-
-  let score = common * 25
-  if (candidateNorm.includes(inputNorm) || inputNorm.includes(candidateNorm)) score += 40
-  const lenDelta = Math.abs(candidateNorm.length - inputNorm.length)
-  score -= Math.min(lenDelta, 30)
-  return score
-}
-
 async function gateAuthenticated() {
   const supabase = await createClient()
   const {
@@ -47,14 +21,24 @@ export type ProcessScannerImageResult =
       message: string
     }
 
-export async function processScannerImage(base64DataUri: string, filename: string, supplierId?: number): Promise<ProcessScannerImageResult> {
+// El proveedor SIEMPRE viene del cliente (lo selecciona el usuario antes de
+// abrir la cámara). Si llega vacío, fallamos rápido: cero matching probabilístico
+// para evitar mezclar stock entre proveedores.
+export async function processScannerImage(
+  base64DataUri: string,
+  filename: string,
+  supplierId: number
+): Promise<ProcessScannerImageResult> {
   try {
     const gate = await gateAuthenticated()
     if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
     const supabase = gate.supabase
     const userId = gate.userId
 
-    // Separar el mime_type y los datos raw
+    if (!Number.isFinite(supplierId) || supplierId <= 0) {
+      return { success: false, message: 'Falta el proveedor. Selecciónalo antes de escanear.' }
+    }
+
     const matches = base64DataUri.match(/^data:([A-Za-z0-9.+-\/]+);base64,(.+)$/)
     if (!matches || matches.length !== 3) return { success: false, message: 'Formato de imagen inválido' }
 
@@ -66,14 +50,15 @@ export async function processScannerImage(base64DataUri: string, filename: strin
     const geminiKey = process.env.GEMINI_API_KEY
     if (!geminiKey) return { success: false, message: 'GEMINI_API_KEY no configurada' }
 
-    // 1. Llamada a Gemini 2.5 Flash
+    // 1. Llamada a Gemini 2.5 Flash. Ya no pedimos "proveedor" porque viene
+    //    del usuario; reducimos el prompt a lo que importa: número, fecha,
+    //    total y líneas. Menos espacio para alucinar.
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`
     const geminiPrompt = `
-Eres un auditor contable de hostelería. Analiza esta imagen de un albarán o factura y extrae los datos.
+Eres un auditor contable de hostelería. Analiza esta imagen de un albarán y extrae los datos.
 Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 {
-    "proveedor": "Nombre del proveedor",
-    "numero_factura": "Identificador",
+    "numero_factura": "Identificador del albarán",
     "fecha": "YYYY-MM-DD",
     "total": 0.00,
     "lineas": [
@@ -118,40 +103,11 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     const invoiceNumRaw = String(aiData?.numero_factura ?? '').trim()
     const invoiceNum = invoiceNumRaw || 'DESCONOCIDO'
 
-    let matchedSupplierId: number | null = supplierId ?? null
-    if (!matchedSupplierId && aiData?.proveedor) {
-      const input = String(aiData.proveedor ?? '').trim()
-      const inputNorm = normalizeSupplierName(input)
-      const tokens = inputNorm.split(' ').filter((t) => t.length >= 3).slice(0, 4)
-
-      let candidates: Array<{ id: number; name: string }> = []
-      if (tokens.length > 0) {
-        const or = tokens.map((t) => `name.ilike.%${t}%`).join(',')
-        const { data, error } = await supabase.from('suppliers').select('id,name').or(or).limit(30)
-        if (error) console.error('Scanner supplierMatch error:', error)
-        candidates = (data as any[])?.map((r) => ({ id: r.id, name: r.name })) ?? []
-      }
-
-      if (candidates.length === 0 && inputNorm.length >= 3) {
-        const searchTerm = inputNorm.slice(0, Math.min(18, inputNorm.length))
-        const { data, error } = await supabase.from('suppliers').select('id,name').ilike('name', `%${searchTerm}%`).limit(30)
-        if (error) console.error('Scanner supplierMatch fallback error:', error)
-        candidates = (data as any[])?.map((r) => ({ id: r.id, name: r.name })) ?? []
-      }
-
-      let best: { id: number; score: number } | null = null
-      for (const c of candidates) {
-        const s = scoreSupplierMatch(inputNorm, normalizeSupplierName(c.name))
-        if (!best || s > best.score) best = { id: c.id, score: s }
-      }
-      if (best && best.score >= 45) matchedSupplierId = best.id
-    }
-
     // 2b) Duplicados (hash + semántico) con función SECURITY DEFINER (no requiere SELECT global)
     try {
       const { data: dupData, error: dupFnError } = await supabase.rpc('check_purchase_invoice_duplicate', {
         p_content_sha256: contentSha256,
-        p_supplier_id: matchedSupplierId,
+        p_supplier_id: supplierId,
         p_invoice_number: invoiceNum !== 'DESCONOCIDO' ? invoiceNum : null,
         p_invoice_date: invoiceNum !== 'DESCONOCIDO' ? invoiceDateStr : null,
       })
@@ -190,7 +146,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
       .from('purchase_invoices')
       .insert({
         created_by: userId,
-        supplier_id: matchedSupplierId,
+        supplier_id: supplierId,
         invoice_number: invoiceNum,
         invoice_date: invoiceDateStr,
         total_amount: aiData?.total || 0,
@@ -237,4 +193,3 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     return { success: false, message: 'Error inesperado procesando el albarán. Reintenta.' }
   }
 }
-

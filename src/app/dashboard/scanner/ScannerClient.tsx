@@ -86,6 +86,13 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (!selectedSupplierId) {
+      setMessageTone('error')
+      setMessage('Selecciona primero el proveedor antes de hacer la foto.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     setIsProcessing(true)
     setMessage(null)
     try {
@@ -103,9 +110,9 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       setMessage('Foto correcta. Enviando…')
 
       const res = await processScannerImage(
-        dataUri, 
+        dataUri,
         file.name.replace(/\.[^/.]+$/, '') + '.jpg',
-        selectedSupplierId ?? undefined
+        selectedSupplierId
       )
       if (!res?.success) {
         setMessageTone('error')

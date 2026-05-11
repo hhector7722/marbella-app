@@ -3,25 +3,27 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon, X } from 'lucide-react'
+import { CheckCircle2, FileText, Filter, Loader2, RefreshCw, Search, SearchIcon, Sparkles, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
   applyInvoiceLineStockAction,
+  autoMapKnownLinesAction,
   confirmInvoiceLineMappingAction,
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
   listPurchaseInvoicesAction,
   listSuppliersForFilterAction,
   rectifyInvoiceLineStockAction,
+  resolveLineMappingAction,
   searchSuppliersForInvoiceAction,
   searchIngredientsForMappingAction,
   setPurchaseInvoiceSupplierAction,
-  suggestIngredientsForLineAction,
   updatePurchaseInvoiceLineAction,
 } from './actions'
+import type { AutoMapReport, MappingSource } from './actions'
 
 function formatDateTitle(v: string | null | undefined) {
   const t = String(v ?? '').trim()
@@ -87,7 +89,17 @@ export default function AlbaranesHistoricoClient({
   const [mappingOpenLineId, setMappingOpenLineId] = useState<string | null>(null)
   const [mappingError, setMappingError] = useState<string | null>(null)
   const [mappingLoading, setMappingLoading] = useState(false)
-  const [suggestedByLineId, setSuggestedByLineId] = useState<Record<string, { suggestedIngredientId: string | null; candidates: any[] }>>({})
+  const [suggestedByLineId, setSuggestedByLineId] = useState<
+    Record<
+      string,
+      {
+        suggestedIngredientId: string | null
+        candidates: any[]
+        source: MappingSource
+        knownAliases: string[]
+      }
+    >
+  >({})
   const [ingredientSearchQuery, setIngredientSearchQuery] = useState('')
   const [ingredientSearchResults, setIngredientSearchResults] = useState<Array<{ id: string; name: string; purchase_unit: string; current_price: number }>>([])
   const [ingredientSearchLoading, setIngredientSearchLoading] = useState(false)
@@ -104,6 +116,9 @@ export default function AlbaranesHistoricoClient({
   const [filterSupplierId, setFilterSupplierId] = useState<string>('') // '' = todos
   const [filterSuppliers, setFilterSuppliers] = useState<Array<{ id: number; name: string }>>([])
   const [filterSuppliersLoading, setFilterSuppliersLoading] = useState(false)
+  const [autoMapLoading, setAutoMapLoading] = useState(false)
+  const [autoMapReport, setAutoMapReport] = useState<AutoMapReport | null>(null)
+  const [autoMapError, setAutoMapError] = useState<string | null>(null)
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
@@ -397,16 +412,27 @@ export default function AlbaranesHistoricoClient({
     setMappingOpenLineId(lineId)
     setMappingLoading(true)
     try {
-      const line = detail.lines.find((x) => x.id === lineId)
-      const extractedName = line?.original_name ?? ''
-      const sug = await suggestIngredientsForLineAction({ extractedName })
-      if (!sug.success) {
-        setMappingError(sug.message)
+      // Resolver con cascada (diccionario exacto -> alias del proveedor -> fuzzy ingrediente)
+      const res = await resolveLineMappingAction({ invoiceId: detail.id, lineId })
+      if (!res.success) {
+        setMappingError(res.message)
         return
       }
-      setSuggestedByLineId((p) => ({ ...p, [lineId]: { suggestedIngredientId: sug.suggestedIngredientId, candidates: sug.candidates } }))
-      setSelectedIngredientByLineId((p) => ({ ...p, [lineId]: sug.suggestedIngredientId ?? null }))
-      setFactorByLineId((p) => ({ ...p, [lineId]: p[lineId] ?? '1' }))
+      const { source, suggestedIngredientId, suggestedFactor, candidates, knownAliases } = res.result
+      setSuggestedByLineId((p) => ({
+        ...p,
+        [lineId]: { suggestedIngredientId, candidates, source, knownAliases },
+      }))
+      // Preselección: el operario solo valida (puede cambiar libremente).
+      setSelectedIngredientByLineId((p) => ({ ...p, [lineId]: suggestedIngredientId ?? null }))
+      // Factor: si el diccionario o el alias trae uno, lo respetamos; si no, 1.
+      setFactorByLineId((p) => ({
+        ...p,
+        [lineId]:
+          suggestedFactor != null && Number.isFinite(suggestedFactor) && suggestedFactor > 0
+            ? String(suggestedFactor)
+            : p[lineId] ?? '1',
+      }))
       setIngredientSearchQuery('')
       setIngredientSearchResults([])
     } finally {
@@ -519,6 +545,42 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  // Auto-mapeo masivo de líneas ya aprendidas (matches exactos en supplier_item_mappings).
+  // - Sin invoiceId  : limpieza global del backlog.
+  // - Con invoiceId  : solo ese albarán (botón dentro del modal).
+  async function runAutoMap(invoiceId?: string) {
+    setAutoMapError(null)
+    setAutoMapReport(null)
+    setAutoMapLoading(true)
+    try {
+      const res = await autoMapKnownLinesAction(invoiceId ? { invoiceId } : undefined)
+      if (!res.success) {
+        setAutoMapError(res.message)
+        return
+      }
+      setAutoMapReport(res.report)
+
+      // Refrescar la lista y, si hay un detalle abierto, también su contenido + estado de stock.
+      const lRes = await listPurchaseInvoicesAction({ limit: 60 })
+      if (lRes.success) setItems(lRes.items)
+      if (detail) {
+        const dRes = await getPurchaseInvoiceDetailAction(detail.id)
+        if (dRes.success) {
+          setDetail(dRes.detail)
+          const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
+          if (st.success) {
+            const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+            for (const s of st.statuses)
+              map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
+            setStockStatusByLineId(map)
+          }
+        }
+      }
+    } finally {
+      setAutoMapLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <ScannerClient onSuccess={refresh} />
@@ -529,6 +591,21 @@ export default function AlbaranesHistoricoClient({
             onChange={(e) => setQuery(e.target.value)}
             className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[40px]"
           />
+          {isManager ? (
+            <button
+              type="button"
+              onClick={() => void runAutoMap()}
+              disabled={autoMapLoading}
+              aria-label="Auto-mapear aprendidos"
+              title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
+              className={cn(
+                'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0',
+                autoMapLoading && 'opacity-60 pointer-events-none'
+              )}
+            >
+              {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={async () => {
@@ -561,6 +638,36 @@ export default function AlbaranesHistoricoClient({
             {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
           </button>
       </div>
+
+      {/* Banner de resultado del auto-mapeo (global o por albarán). */}
+      {autoMapError ? (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700">
+          Auto-mapeo: {autoMapError}
+        </div>
+      ) : null}
+      {autoMapReport ? (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs font-black text-emerald-800 flex items-start gap-2">
+          <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="leading-tight">
+              {autoMapReport.autoMapped} línea{autoMapReport.autoMapped === 1 ? '' : 's'} auto-mapeada{autoMapReport.autoMapped === 1 ? '' : 's'}
+              {' '}de {autoMapReport.linesScanned} pendiente{autoMapReport.linesScanned === 1 ? '' : 's'} en {autoMapReport.invoicesScanned} albarán{autoMapReport.invoicesScanned === 1 ? '' : 'es'}.
+            </p>
+            <p className="mt-1 text-[11px] font-bold text-emerald-700">
+              Sin match en diccionario: {autoMapReport.skippedNoMatch} · sin proveedor: {autoMapReport.skippedNoSupplier}
+              {autoMapReport.errors ? ` · errores: ${autoMapReport.errors}` : ''}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAutoMapReport(null)}
+            aria-label="Cerrar resumen"
+            className="ml-auto min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg hover:bg-emerald-100 transition shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">
@@ -641,6 +748,21 @@ export default function AlbaranesHistoricoClient({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    {isManager && detail?.id && detail?.supplier_id ? (
+                      <button
+                        type="button"
+                        onClick={() => void runAutoMap(detail.id)}
+                        disabled={autoMapLoading}
+                        title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
+                        className={cn(
+                          'inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white min-h-[48px] px-2 rounded-xl hover:opacity-80 transition',
+                          autoMapLoading && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        {autoMapLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        Auto-mapear
+                      </button>
+                    ) : null}
                     {detail?.signed_url ? (
                       <a
                         href={detail.signed_url}
@@ -825,6 +947,62 @@ export default function AlbaranesHistoricoClient({
                                               Cerrar
                                             </button>
                                           </div>
+
+                                          {/* Badge con la fuente de la preselección: aprendido, alias, similitud o sin sugerencia */}
+                                          {(() => {
+                                            const src = suggestedByLineId[l.id]?.source
+                                            if (!src) return null
+                                            const map: Record<MappingSource, { label: string; cls: string; hint: string }> = {
+                                              dictionary_exact: {
+                                                label: 'Aprendido',
+                                                cls: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                                                hint: 'Este texto ya estaba mapeado para este proveedor. Solo valida.',
+                                              },
+                                              alias_fuzzy: {
+                                                label: 'Alias conocido',
+                                                cls: 'bg-sky-50 border-sky-200 text-sky-800',
+                                                hint: 'Variación de un nombre que ya usaste con este proveedor.',
+                                              },
+                                              ingredient_fuzzy: {
+                                                label: 'Similitud',
+                                                cls: 'bg-amber-50 border-amber-200 text-amber-800',
+                                                hint: 'Sugerencia por parecido con el catálogo. Revisa antes de confirmar.',
+                                              },
+                                              none: {
+                                                label: 'Sin sugerencia',
+                                                cls: 'bg-zinc-100 border-zinc-200 text-zinc-700',
+                                                hint: 'No hay coincidencia clara. Busca el ingrediente manualmente.',
+                                              },
+                                            }
+                                            const info = map[src]
+                                            return (
+                                              <div className={cn('rounded-xl border p-2 flex items-start gap-2', info.cls)}>
+                                                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-white/60 shrink-0">
+                                                  {info.label}
+                                                </span>
+                                                <span className="text-[11px] font-bold leading-snug">{info.hint}</span>
+                                              </div>
+                                            )
+                                          })()}
+
+                                          {/* Alias ya guardados para el ingrediente sugerido (varios nombres = mismo producto) */}
+                                          {suggestedByLineId[l.id]?.knownAliases?.length ? (
+                                            <div className="rounded-xl border border-zinc-200 bg-white p-2">
+                                              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                                                Otros nombres ya guardados ({suggestedByLineId[l.id]!.knownAliases.length})
+                                              </p>
+                                              <div className="mt-1 flex flex-wrap gap-1">
+                                                {suggestedByLineId[l.id]!.knownAliases.slice(0, 8).map((alias) => (
+                                                  <span
+                                                    key={alias}
+                                                    className="text-[10px] font-black text-zinc-700 bg-zinc-100 border border-zinc-200 rounded-lg px-2 py-1"
+                                                  >
+                                                    {alias}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          ) : null}
 
                                           {mappingError ? (
                                             <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700">{mappingError}</div>
