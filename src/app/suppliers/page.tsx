@@ -589,36 +589,36 @@ export default function SuppliersPage() {
                 </div>
             </div>
 
-            {/* GRID DE TARJETAS CUADRADAS (1:1 en cualquier viewport) */}
+            {/* GRID (mismo patrón que /recipes y /ingredients) */}
             {!loading && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-3 sm:gap-4 md:gap-5 pb-24">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredSuppliers.map((supplier) => (
-                        <button
-                            key={supplier.id}
-                            type="button"
-                            onClick={() => setDetailSupplier(supplier)}
-                            className="aspect-square w-full bg-white rounded-2xl p-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all cursor-pointer flex flex-col items-stretch text-left overflow-hidden border border-zinc-100"
-                        >
-                            <div className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
-                                {supplier.image_url || SUPPLIER_LOGOS[supplier.name] ? (
-                                    <img
-                                        src={supplier.image_url || SUPPLIER_LOGOS[supplier.name] || ''}
-                                        alt=""
-                                        className="max-w-full max-h-full object-contain"
-                                    />
-                                ) : (
-                                    <Truck className="w-8 h-8 text-gray-200" />
-                                )}
+                        <div key={supplier.id} className="relative group">
+                            <div
+                                onClick={() => setDetailSupplier(supplier)}
+                                className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
+                            >
+                                <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
+                                    {supplier.image_url || SUPPLIER_LOGOS[supplier.name] ? (
+                                        <img
+                                            src={supplier.image_url || SUPPLIER_LOGOS[supplier.name] || ''}
+                                            alt=""
+                                            className="w-full h-full object-contain"
+                                        />
+                                    ) : (
+                                        <Truck className="w-6 h-6 text-gray-200" />
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
+                                    <span
+                                        className="font-bold text-gray-700 text-[10px] leading-tight truncate"
+                                        title={supplier.name}
+                                    >
+                                        {supplier.name}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="shrink-0 mt-1.5 px-0.5">
-                                <span
-                                    className="block w-full font-bold text-gray-700 text-[10px] leading-tight truncate text-center"
-                                    title={supplier.name}
-                                >
-                                    {supplier.name}
-                                </span>
-                            </div>
-                        </button>
+                        </div>
                     ))}
                     {filteredSuppliers.length === 0 && !loading && (
                         <div className="col-span-full py-20 bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-4">
