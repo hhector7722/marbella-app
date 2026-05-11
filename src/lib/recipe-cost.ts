@@ -4,6 +4,8 @@
  * expresado por purchase_unit (€/kg, €/L, €/ud).
  * En la receta cada línea tiene quantity_gross + unit; se convierte a purchase_unit
  * y se multiplica por current_price.
+ *
+ * SSOT precios vs albaranes: `context/INGREDIENTS_PRECIOS_Y_ALBARANES.md`
  */
 
 export type MassVolumeUnit = 'g' | 'kg' | 'ml' | 'l' | 'ud';

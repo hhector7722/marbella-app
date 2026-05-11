@@ -1,5 +1,8 @@
+// SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy'
+import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 
@@ -28,6 +31,8 @@ export type WizardDraft = {
   recommendedStock: number | null
   supplier: string | null
   supplier2: string | null
+  /** Si true, los albaranes no actualizan `current_price` en catálogo. */
+  priceLocked: boolean
 }
 
 export type WizardResult = {
@@ -160,6 +165,7 @@ export function IngredientWizard({
     recommendedStock: null,
     supplier: null,
     supplier2: null,
+    priceLocked: false,
   }))
 
   const unitCost = useMemo(() => computeUnitCost(draft), [draft])
@@ -199,7 +205,7 @@ export function IngredientWizard({
           supabase
             .from('ingredients')
             .select(
-              'id,name,category,supplier_pricing_mode,purchase_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2'
+              'id,name,category,supplier_pricing_mode,purchase_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2,price_locked'
             )
             .eq('id', id)
             .maybeSingle(),
@@ -265,6 +271,7 @@ export function IngredientWizard({
           recommendedStock: (data as any).recommended_stock == null ? null : Number((data as any).recommended_stock),
           supplier: (data as any).supplier ?? null,
           supplier2: (data as any).supplier_2 ?? null,
+          priceLocked: (data as any).price_locked === true,
         }))
 
         const rawS1 = (data as any).supplier
@@ -316,6 +323,7 @@ export function IngredientWizard({
           waste_percentage: 0,
           supplier_pricing_mode: 'per_purchase_unit',
           order_unit: 'ud',
+          price_locked: false,
         })
         .select('id')
         .single()
@@ -594,6 +602,7 @@ export function IngredientWizard({
         recommended_stock: rs,
         supplier,
         supplier_2,
+        price_locked: draft.priceLocked === true,
       })
       // Notificar al padre el ID final para enlazarlo (ej. mapeo desde albaranes)
       if (ingredientId) onSaved?.(ingredientId)
@@ -612,12 +621,13 @@ export function IngredientWizard({
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4">
       {step === 1 ? (
         <div className="space-y-3">
+          <PricingStepHeader title={pricingAssistantCopy.name.title} hint={pricingAssistantCopy.name.hint} />
           <label className="block space-y-2">
-            <span className="text-xs font-black text-zinc-700 uppercase tracking-widest">Nombre</span>
+            <span className="sr-only">Nombre</span>
             <input
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-              placeholder=""
+              placeholder="Ej. Tomate pera, Aceite 0,4…"
               className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
               autoFocus
             />
@@ -628,7 +638,7 @@ export function IngredientWizard({
             onClick={handleConfirmName}
             className="w-full min-h-12 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
           >
-            Continuar
+            {pricingAssistantCopy.name.continue}
           </button>
         </div>
       ) : (
@@ -639,48 +649,38 @@ export function IngredientWizard({
 
       {step === 2 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Qué es?</div>
+          <PricingStepHeader title={pricingAssistantCopy.category.title} hint={pricingAssistantCopy.category.hint} />
           <div className="grid grid-cols-1 gap-2">
-            <button
-              type="button"
+            <PricingChoiceButton
               disabled={saving}
+              title={pricingAssistantCopy.category.drinks}
+              subtitle={pricingAssistantCopy.category.drinksSub}
               onClick={() => handlePickCategory('Bebida')}
-              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-            >
-              Bebida
-            </button>
-            <button
-              type="button"
+            />
+            <PricingChoiceButton
               disabled={saving}
+              title={pricingAssistantCopy.category.food}
+              subtitle={pricingAssistantCopy.category.foodSub}
               onClick={() => handlePickCategory('Comida')}
-              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-            >
-              Comida
-            </button>
-            <button
-              type="button"
+            />
+            <PricingChoiceButton
               disabled={saving}
+              title={pricingAssistantCopy.category.packaging}
+              subtitle={pricingAssistantCopy.category.packagingSub}
               onClick={() => handlePickCategory('Packaging')}
-              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-            >
-              Packaging
-            </button>
-            <button
-              type="button"
+            />
+            <PricingChoiceButton
               disabled={saving}
+              title={pricingAssistantCopy.category.cleaning}
+              subtitle={pricingAssistantCopy.category.cleaningSub}
               onClick={() => handlePickCategory('Limpieza')}
-              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-            >
-              Limpieza
-            </button>
-            <button
-              type="button"
+            />
+            <PricingChoiceButton
               disabled={saving}
+              title={pricingAssistantCopy.category.other}
+              subtitle={pricingAssistantCopy.category.otherSub}
               onClick={() => handlePickCategory('Otros')}
-              className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-            >
-              Otros
-            </button>
+            />
           </div>
           <div className="flex gap-2">
             <button
@@ -704,7 +704,7 @@ export function IngredientWizard({
               }}
               className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
-              Añadir más tarde
+              {pricingAssistantCopy.category.skipLater}
             </button>
           </div>
         </div>
@@ -712,47 +712,39 @@ export function IngredientWizard({
 
       {step === 3 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo lo cobra el proveedor?</div>
-          <div className="grid grid-cols-2 gap-2">
+          <PricingStepHeader title={pricingAssistantCopy.invoiceStyle.title} hint={pricingAssistantCopy.invoiceStyle.hint} />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {allowedHowChargedOptionsForCategory(draft.category).includes('kilo') && (
-              <button
-                type="button"
+              <PricingChoiceButton
                 disabled={saving}
+                title={pricingAssistantCopy.invoiceStyle.perKg}
+                subtitle={pricingAssistantCopy.invoiceStyle.perKgSub}
                 onClick={() => handlePickHowCharged('kilo')}
-                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-              >
-                Por kilo
-              </button>
+              />
             )}
             {allowedHowChargedOptionsForCategory(draft.category).includes('litro') && (
-              <button
-                type="button"
+              <PricingChoiceButton
                 disabled={saving}
+                title={pricingAssistantCopy.invoiceStyle.perL}
+                subtitle={pricingAssistantCopy.invoiceStyle.perLSub}
                 onClick={() => handlePickHowCharged('litro')}
-                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-              >
-                Por litro
-              </button>
+              />
             )}
             {allowedHowChargedOptionsForCategory(draft.category).includes('pack') && (
-              <button
-                type="button"
+              <PricingChoiceButton
                 disabled={saving}
+                title={pricingAssistantCopy.invoiceStyle.perPack}
+                subtitle={pricingAssistantCopy.invoiceStyle.perPackSub}
                 onClick={() => handlePickHowCharged('pack')}
-                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-              >
-                Por pack
-              </button>
+              />
             )}
             {allowedHowChargedOptionsForCategory(draft.category).includes('unidad') && (
-              <button
-                type="button"
+              <PricingChoiceButton
                 disabled={saving}
+                title={pricingAssistantCopy.invoiceStyle.perUnit}
+                subtitle={pricingAssistantCopy.invoiceStyle.perUnitSub}
                 onClick={() => handlePickHowCharged('unidad')}
-                className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
-              >
-                Por unidad
-              </button>
+              />
             )}
           </div>
 
@@ -760,13 +752,12 @@ export function IngredientWizard({
             (draft.howCharged === 'pack' || draft.howCharged === 'unidad') &&
             draft.containsLiquid == null && (
               <div className="rounded-2xl border border-zinc-100 bg-white p-4 space-y-3">
-                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">
-                  ¿Cómo lo mides en cocina?
-                </div>
+                <PricingStepHeader title={pricingAssistantCopy.baseMeasure.title} hint={pricingAssistantCopy.baseMeasure.hint} />
                 <div className="grid grid-cols-1 gap-2">
-                  <button
-                    type="button"
+                  <PricingChoiceButton
                     disabled={saving}
+                    title={pricingAssistantCopy.baseMeasure.weight}
+                    subtitle={pricingAssistantCopy.baseMeasure.weightSub}
                     onClick={() => {
                       void finalizeHowChargedAndAdvance({
                         howCharged: draft.howCharged as any,
@@ -775,14 +766,11 @@ export function IngredientWizard({
                         containsLiquid: false,
                       })
                     }}
-                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black flex items-center justify-between"
-                  >
-                    <span>Peso (kg, g)</span>
-                    <span className="text-[10px] text-zinc-400">Ej. Sacos, botes, cubos</span>
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <PricingChoiceButton
                     disabled={saving}
+                    title={pricingAssistantCopy.baseMeasure.volume}
+                    subtitle={pricingAssistantCopy.baseMeasure.volumeSub}
                     onClick={() => {
                       void finalizeHowChargedAndAdvance({
                         howCharged: draft.howCharged as any,
@@ -791,14 +779,11 @@ export function IngredientWizard({
                         containsLiquid: true,
                       })
                     }}
-                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black flex items-center justify-between"
-                  >
-                    <span>Volumen (l, ml, cl)</span>
-                    <span className="text-[10px] text-zinc-400">Ej. Botellas, garrafas</span>
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <PricingChoiceButton
                     disabled={saving}
+                    title={pricingAssistantCopy.baseMeasure.count}
+                    subtitle={pricingAssistantCopy.baseMeasure.countSub}
                     onClick={() => {
                       void finalizeHowChargedAndAdvance({
                         howCharged: draft.howCharged as any,
@@ -807,11 +792,7 @@ export function IngredientWizard({
                         containsLiquid: false,
                       })
                     }}
-                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black flex items-center justify-between"
-                  >
-                    <span>Unidades (ud)</span>
-                    <span className="text-[10px] text-zinc-400">Ej. Panes, huevos, cajas</span>
-                  </button>
+                  />
                 </div>
               </div>
             )}
@@ -833,7 +814,7 @@ export function IngredientWizard({
               }}
               className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
-              Añadir más tarde
+              {pricingAssistantCopy.invoiceStyle.skipLater}
             </button>
           </div>
         </div>
@@ -841,9 +822,13 @@ export function IngredientWizard({
 
       {step === 4 && (
         <div className="space-y-3">
-          <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Precio</div>
+          <PricingStepHeader title={pricingAssistantCopy.amounts.title} hint={pricingAssistantCopy.amounts.hint} />
           <label className="block space-y-1">
-            <span className="text-[10px] font-bold uppercase text-zinc-400">Precio (€)</span>
+            <span className="text-xs font-bold text-zinc-700">
+              {draft.pricingMode === 'per_pack'
+                ? pricingAssistantCopy.amounts.packFullPrice
+                : pricingAssistantCopy.amounts.priceEur}
+            </span>
             <input
               type="number"
               step="0.01"
@@ -855,38 +840,43 @@ export function IngredientWizard({
 
           {draft.pricingMode === 'per_pack' && (
             <div className="space-y-3">
-              <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Contenido del pack</div>
-              <label className="block space-y-1">
-                <span className="text-[10px] font-bold uppercase text-zinc-400">Unidades dentro</span>
-                <div className="grid grid-cols-3 gap-2">
-                  {PACK_UNITS_PRESETS.map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setDraft((d) => ({ ...d, unitsInside: n }))}
-                      className={cn(
-                        'min-h-12 rounded-xl border px-2 text-sm font-black',
-                        draft.unitsInside === n ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]' : 'border-zinc-200 bg-white'
-                      )}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                  <input
-                    type="number"
-                    step="1"
-                    placeholder="Otro"
-                    value={draft.unitsInside ?? ''}
-                    onChange={(e) => setDraft((d) => ({ ...d, unitsInside: e.target.value === '' ? null : toNumber(e.target.value) }))}
-                    className="min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
-                  />
-                </div>
-              </label>
+              <div className="space-y-1">
+                <div className="text-sm font-black text-zinc-900">{pricingAssistantCopy.amounts.howManyInPack}</div>
+                <p className="text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.howManyInPackHint}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {PACK_UNITS_PRESETS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setDraft((d) => ({ ...d, unitsInside: n }))}
+                    className={cn(
+                      'min-h-12 rounded-xl border px-2 text-sm font-black',
+                      draft.unitsInside === n ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]' : 'border-zinc-200 bg-white'
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <input
+                  type="number"
+                  step="1"
+                  placeholder="Otro"
+                  value={draft.unitsInside ?? ''}
+                  onChange={(e) => setDraft((d) => ({ ...d, unitsInside: e.target.value === '' ? null : toNumber(e.target.value) }))}
+                  className="min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
+                />
+              </div>
 
               {draft.baseUnit !== 'ud' ? (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <div>
+                    <div className="text-sm font-bold text-zinc-800">{pricingAssistantCopy.amounts.eachPiece}</div>
+                    <p className="mt-0.5 text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.eachPieceHint}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                   <label className="block space-y-1">
-                    <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
+                    <span className="text-[10px] font-bold uppercase text-zinc-400">Cantidad</span>
                     <input
                       type="number"
                       step="0.001"
@@ -896,7 +886,7 @@ export function IngredientWizard({
                     />
                   </label>
                   <label className="block space-y-1">
-                    <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad contenido</span>
+                    <span className="text-[10px] font-bold uppercase text-zinc-400">Medida</span>
                     <select
                       value={draft.contentPerUnitUnit}
                       onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitUnit: e.target.value as any }))}
@@ -916,17 +906,20 @@ export function IngredientWizard({
                       )}
                     </select>
                   </label>
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Contenido por unidad</div>
-                  <div className="mt-1 font-black text-zinc-800">No aplica (se calcula por unidades “ud”).</div>
+                  <div className="text-xs font-bold text-zinc-800">{pricingAssistantCopy.amounts.eachPiece}</div>
+                  <div className="mt-1 text-sm text-zinc-600">{pricingAssistantCopy.amounts.noPerPiece}</div>
                 </div>
               )}
 
               {draft.baseUnit !== 'ud' && (
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Atajos</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    {pricingAssistantCopy.amounts.shortcuts}
+                  </div>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {(draft.baseUnit === 'l' ? VOLUME_PRESETS.slice(0, 6) : MASS_PRESETS).map((p) => (
                       <button
@@ -965,7 +958,7 @@ export function IngredientWizard({
               onClick={skipPricing}
               className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
-              Añadir más tarde
+              {pricingAssistantCopy.amounts.skipLater}
             </button>
             <button
               type="button"
@@ -973,7 +966,7 @@ export function IngredientWizard({
               onClick={handleSavePricingAndAdvance}
               className="min-h-12 flex-1 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
             >
-              Guardar
+              {pricingAssistantCopy.amounts.save}
             </button>
           </div>
         </div>
@@ -1148,8 +1141,21 @@ export function IngredientWizard({
               )}
             </label>
           </div>
+          <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2">
+            <input
+              type="checkbox"
+              checked={draft.priceLocked}
+              onChange={(e) => setDraft((d) => ({ ...d, priceLocked: e.target.checked }))}
+              className="h-5 w-5 shrink-0 rounded border-zinc-300"
+            />
+            <span className="text-xs font-bold leading-snug text-zinc-800">
+              Precio fijo: no actualizar desde albaranes
+            </span>
+          </label>
           <div className="rounded-2xl border border-zinc-100 bg-white p-4">
-            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Coste unitario (auto)</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+              {pricingAssistantCopy.amounts.costPreview}
+            </div>
             <div className="text-2xl font-black text-[#36606F] mt-1">
               {unitCost == null ? '—' : `${unitCost.toFixed(4)}€ / ${draft.baseUnit}`}
             </div>

@@ -23,7 +23,7 @@ export async function confirmarMapeoAction(formData: FormData) {
   // 1. Obtener todos los datos necesarios en paralelo para la línea y el ingrediente
   const [lineRes, ingRes] = await Promise.all([
     supabase.from('purchase_invoice_lines').select('unit_price, quantity').eq('id', lineId).single(),
-    supabase.from('ingredients').select('current_price, unit').eq('id', ingredientId).single()
+    supabase.from('ingredients').select('current_price, unit, price_locked').eq('id', ingredientId).single(),
   ])
 
   if (lineRes.error || !lineRes.data) throw new Error('Error obteniendo la línea del albarán')
@@ -36,6 +36,7 @@ export async function confirmarMapeoAction(formData: FormData) {
 
   const factor = conversionFactor && !Number.isNaN(conversionFactor) ? conversionFactor : 1
   const newPrice = unitPrice / factor
+  const priceLocked = (ingRes.data as { price_locked?: boolean }).price_locked === true
 
   // 2. Crear/actualizar mapeo permanente
   const { error: mapError } = await supabase
@@ -48,18 +49,21 @@ export async function confirmarMapeoAction(formData: FormData) {
     }, { onConflict: 'supplier_id,supplier_item_name' })
   if (mapError) throw new Error(`Error en mapeo: ${mapError.message}`)
 
-  // 3. Historial de Precios y Actualización de Ingrediente
-  await supabase.from('ingredient_price_history').insert({
-    ingredient_id: ingredientId,
-    old_price: oldPrice,
-    new_price: newPrice
-  })
+  // 3. Historial y precio del ingrediente (omitido si precio fijo)
+  if (!priceLocked) {
+    const { error: histError } = await supabase.from('ingredient_price_history').insert({
+      ingredient_id: ingredientId,
+      old_price: oldPrice,
+      new_price: newPrice,
+    })
+    if (histError) throw new Error(`Error en historial de precios: ${histError.message}`)
 
-  const { error: updIngError } = await supabase
-    .from('ingredients')
-    .update({ current_price: newPrice, updated_at: new Date().toISOString() })
-    .eq('id', ingredientId)
-  if (updIngError) throw new Error(`Error actualizando precio base: ${updIngError.message}`)
+    const { error: updIngError } = await supabase
+      .from('ingredients')
+      .update({ current_price: newPrice, updated_at: new Date().toISOString() })
+      .eq('id', ingredientId)
+    if (updIngError) throw new Error(`Error actualizando precio base: ${updIngError.message}`)
+  }
 
   if (supplierIdParsed != null) {
     await supabase

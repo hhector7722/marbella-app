@@ -1,5 +1,6 @@
 'use server'
 
+// SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
@@ -508,9 +509,27 @@ export async function updatePurchaseInvoiceLineAction(params: {
     return { success: true, warning: 'El precio calculado es inválido; no se actualiza ingrediente.' }
   }
 
-  // Leer old_price ANTES de update
-  const { data: ing, error: ingErr } = await gate.supabase.from('ingredients').select('current_price').eq('id', ingredientId).maybeSingle()
+  const { data: ing, error: ingErr } = await gate.supabase
+    .from('ingredients')
+    .select('current_price, price_locked')
+    .eq('id', ingredientId)
+    .maybeSingle()
   if (ingErr) return { success: false, message: ingErr.message }
+
+  if ((ing as any)?.price_locked === true) {
+    const { error: mapOnlyErr } = await gate.supabase
+      .from('supplier_item_mappings')
+      .update({ last_known_price: unitPrice })
+      .eq('supplier_id', supplierId)
+      .eq('supplier_item_name', originalName)
+      .eq('ingredient_id', ingredientId)
+    if (mapOnlyErr) return { success: false, message: `Error actualizando mapeo: ${mapOnlyErr.message}` }
+    return {
+      success: true,
+      warning: 'Este ingrediente tiene precio fijo: no se ha cambiado el precio del catálogo (solo referencia del proveedor).',
+    }
+  }
+
   const oldPrice = ((ing as any)?.current_price as number | null) ?? 0
 
   const { error: histErr } = await gate.supabase.from('ingredient_price_history').insert({

@@ -46,6 +46,8 @@ export interface Ingredient {
     unit_type: string;
     purchase_unit: string;
     allergens: string[]; // Array de textos
+    /** Si true, los albaranes no actualizan `current_price` automáticamente. */
+    price_locked?: boolean;
 }
 
 export interface RecipeIngredient {

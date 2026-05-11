@@ -1,4 +1,5 @@
 'use client';
+// SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 
 import { useState, useEffect, useMemo } from 'react';
 import { createClient } from "@/utils/supabase/client";
@@ -7,6 +8,8 @@ import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronL
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
+import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls';
+import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy';
 
 interface Ingredient {
     id: string;
@@ -27,6 +30,8 @@ interface Ingredient {
     allergens: string[];
     order_unit?: string | null;
     recommended_stock?: number | null;
+    /** Si true, los albaranes no actualizan `current_price` automáticamente. */
+    price_locked?: boolean;
 }
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
@@ -190,6 +195,7 @@ export default function IngredientsPage() {
                 order_unit: editForm.order_unit || 'unidad',
                 recommended_stock: editForm.recommended_stock || null,
                 supplier_pricing_mode: mode,
+                price_locked: !!editForm.price_locked,
             };
 
             if (mode === 'per_pack') {
@@ -229,6 +235,7 @@ export default function IngredientsPage() {
                 order_unit: newIngredient.order_unit || 'unidad',
                 recommended_stock: newIngredient.recommended_stock || null,
                 supplier_pricing_mode: mode,
+                price_locked: !!newIngredient.price_locked,
             };
 
             if (mode === 'per_pack') {
@@ -249,7 +256,7 @@ export default function IngredientsPage() {
             if (error) throw error;
             toast.success('Creado');
             setShowCreateModal(false);
-            setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
+            setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit', price_locked: false });
             setIsCustomSupplier(false);
             setIsCustomSupplier2(false);
             setCustomSupplierName('');
@@ -418,7 +425,14 @@ export default function IngredientsPage() {
                                 {/* TEXTO */}
                                 <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
                                     <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={ing.name}>{ing.name}</span>
-                                    <span className="font-black text-[#5E35B1] text-[10px] shrink-0">{ing.current_price?.toFixed(2)}€</span>
+                                    <span className="font-black text-[#5E35B1] text-[10px] shrink-0 flex items-center gap-0.5">
+                                        {ing.current_price?.toFixed(2)}€
+                                        {ing.price_locked ? (
+                                            <span className="rounded bg-zinc-200 px-1 text-[8px] font-black uppercase text-zinc-600" title="Precio fijo">
+                                                Fijo
+                                            </span>
+                                        ) : null}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -489,13 +503,30 @@ export default function IngredientsPage() {
                                     </button>
                                 </div>
 
+                                <label className="mt-3 flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!editForm.price_locked}
+                                        onChange={(e) => setEditForm({ ...editForm, price_locked: e.target.checked })}
+                                        className="h-5 w-5 shrink-0 rounded border-zinc-300"
+                                    />
+                                    <span className="text-xs font-bold leading-snug text-zinc-800">
+                                        Precio fijo: no actualizar desde albaranes
+                                    </span>
+                                </label>
+
                                 {editPricingOpen && (
                                     <div className="mt-4 rounded-2xl bg-[#36606F] p-4 shadow-sm space-y-3">
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="min-w-0">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-white/70">Asistente de precio</div>
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                                                    {pricingAssistantCopy.modal.header}
+                                                </div>
                                                 <div className="text-sm font-black text-white truncate">
-                                                    Paso {editPricingStep === 1 ? '1/2' : '2/2'}
+                                                    {pricingAssistantCopy.modal.step(
+                                                        editPricingStep === 1 ? 1 : 2,
+                                                        2,
+                                                    )}
                                                 </div>
                                             </div>
                                             <button
@@ -513,11 +544,14 @@ export default function IngredientsPage() {
                                         <div className="rounded-2xl bg-white p-4 space-y-3">
                                         {editPricingStep === 1 && (
                                             <>
-                                                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">¿Cómo lo cobra el proveedor?</div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <button
-                                                        type="button"
-                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                <PricingStepHeader
+                                                    title={pricingAssistantCopy.invoiceStyle.title}
+                                                    hint={pricingAssistantCopy.invoiceStyle.hint}
+                                                />
+                                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.invoiceStyle.perKg}
+                                                        subtitle={pricingAssistantCopy.invoiceStyle.perKgSub}
                                                         onClick={() => {
                                                             setEditForm((p) => ({
                                                                 ...p,
@@ -531,12 +565,10 @@ export default function IngredientsPage() {
                                                             }));
                                                             setEditPricingStep(2);
                                                         }}
-                                                    >
-                                                        Por kilo
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                    />
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.invoiceStyle.perL}
+                                                        subtitle={pricingAssistantCopy.invoiceStyle.perLSub}
                                                         onClick={() => {
                                                             setEditForm((p) => ({
                                                                 ...p,
@@ -550,12 +582,10 @@ export default function IngredientsPage() {
                                                             }));
                                                             setEditPricingStep(2);
                                                         }}
-                                                    >
-                                                        Por litro
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                    />
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.invoiceStyle.perPack}
+                                                        subtitle={pricingAssistantCopy.invoiceStyle.perPackSub}
                                                         onClick={() => {
                                                             const base = (
                                                                 editForm.category === 'Bebidas'
@@ -570,19 +600,15 @@ export default function IngredientsPage() {
                                                                 purchase_unit: base,
                                                                 unit_type: base,
                                                                 pack_units: p.pack_units ?? 12,
-                                                                // IMPORTANTE: por defecto NO rellenamos el número (evita "330" automático).
                                                                 pack_unit_size_qty: p.pack_unit_size_qty ?? null,
-                                                                // Sí dejamos una unidad razonable para que el selector no quede raro.
                                                                 pack_unit_size_unit: p.pack_unit_size_unit ?? (base === 'l' ? 'ml' : 'ud'),
                                                             }));
                                                             setEditPricingStep(2);
                                                         }}
-                                                    >
-                                                        Por pack
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                                                    />
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.invoiceStyle.perUnit}
+                                                        subtitle={pricingAssistantCopy.invoiceStyle.perUnitSub}
                                                         onClick={() => {
                                                             setEditForm((p) => ({
                                                                 ...p,
@@ -596,9 +622,7 @@ export default function IngredientsPage() {
                                                             }));
                                                             setEditPricingStep(2);
                                                         }}
-                                                    >
-                                                        Por unidad
-                                                    </button>
+                                                    />
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button
@@ -614,11 +638,14 @@ export default function IngredientsPage() {
 
                                         {editPricingStep === 2 && (
                                             <>
-                                                <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Precio</div>
+                                                <PricingStepHeader
+                                                    title={pricingAssistantCopy.amounts.title}
+                                                    hint={pricingAssistantCopy.amounts.hint}
+                                                />
                                                 {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
                                                     <div className="space-y-3">
                                                         <label className="block space-y-1">
-                                                            <span className="text-[10px] font-bold uppercase text-zinc-400">Precio del pack (€)</span>
+                                                            <span className="text-xs font-bold text-zinc-800">{pricingAssistantCopy.amounts.packFullPrice}</span>
                                                             <input
                                                                 type="number"
                                                                 step="0.01"
@@ -627,7 +654,10 @@ export default function IngredientsPage() {
                                                                 className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 font-mono font-bold"
                                                             />
                                                         </label>
-                                                        <div className="text-xs font-black text-zinc-700 uppercase tracking-widest">Contenido del pack</div>
+                                                        <div className="space-y-1">
+                                                            <div className="text-sm font-black text-zinc-900">{pricingAssistantCopy.amounts.howManyInPack}</div>
+                                                            <p className="text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.howManyInPackHint}</p>
+                                                        </div>
                                                         <div className="grid grid-cols-3 gap-2">
                                                             {PACK_UNITS_PRESETS_EDIT.map((n) => (
                                                                 <button
@@ -651,9 +681,14 @@ export default function IngredientsPage() {
                                                                 className="min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
                                                             />
                                                         </div>
-                                                        <div className="grid grid-cols-2 gap-2">
+                                                        <div className="space-y-2">
+                                                            <div>
+                                                                <div className="text-sm font-bold text-zinc-800">{pricingAssistantCopy.amounts.eachPiece}</div>
+                                                                <p className="mt-0.5 text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.eachPieceHint}</p>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
                                                             <label className="block space-y-1">
-                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">Contenido por unidad</span>
+                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">Cantidad</span>
                                                                 <input
                                                                     type="number"
                                                                     step="0.001"
@@ -663,7 +698,7 @@ export default function IngredientsPage() {
                                                                 />
                                                             </label>
                                                             <label className="block space-y-1">
-                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">Unidad contenido</span>
+                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">Medida</span>
                                                                 <select
                                                                     value={editForm.pack_unit_size_unit || 'ud'}
                                                                     onChange={(e) => setEditForm({ ...editForm, pack_unit_size_unit: e.target.value })}
@@ -677,9 +712,12 @@ export default function IngredientsPage() {
                                                                     <option value="kg">kg</option>
                                                                 </select>
                                                             </label>
+                                                            </div>
                                                         </div>
                                                         <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-                                                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Coste unitario (auto)</div>
+                                                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                                                {pricingAssistantCopy.amounts.costPreview}
+                                                            </div>
                                                             <div className="mt-1 font-black text-[#5E35B1]">
                                                                 {(() => {
                                                                     const effective = computeEffectivePriceFromPack({
@@ -698,7 +736,8 @@ export default function IngredientsPage() {
                                                     </div>
                                                 ) : (
                                                     <label className="block space-y-1">
-                                                        <span className="text-[10px] font-bold uppercase text-zinc-400">Precio (€ / unidad base)</span>
+                                                        <span className="text-xs font-bold text-zinc-800">{pricingAssistantCopy.amounts.priceEur}</span>
+                                                        <span className="mb-1 block text-xs text-zinc-600">{pricingAssistantCopy.amounts.priceSimpleHint}</span>
                                                         <input
                                                             type="number"
                                                             step="0.01"
@@ -721,7 +760,7 @@ export default function IngredientsPage() {
                                                         onClick={() => { setEditPricingOpen(false); setEditPricingStep(1); toast.success('Precio actualizado (pendiente de Guardar)'); }}
                                                         className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300"
                                                     >
-                                                        Listo
+                                                        {pricingAssistantCopy.modal.done}
                                                     </button>
                                                 </div>
                                             </>
@@ -903,7 +942,7 @@ export default function IngredientsPage() {
                                 <IngredientWizard
                                     onClose={() => {
                                         setShowCreateModal(false);
-                                        setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
+                                        setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit', price_locked: false });
                                         fetchIngredients();
                                     }}
                                 />
@@ -1065,6 +1104,17 @@ export default function IngredientsPage() {
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
                                 <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
                             </div>
+                            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 px-3 py-2">
+                                <input
+                                    type="checkbox"
+                                    checked={!!newIngredient.price_locked}
+                                    onChange={(e) => setNewIngredient({ ...newIngredient, price_locked: e.target.checked })}
+                                    className="h-5 w-5 shrink-0 rounded border-zinc-300"
+                                />
+                                <span className="text-xs font-bold leading-snug text-zinc-800">
+                                    Precio fijo: no actualizar desde albaranes
+                                </span>
+                            </label>
                             <div className="flex gap-2">
                                 <div className="w-1/3">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
