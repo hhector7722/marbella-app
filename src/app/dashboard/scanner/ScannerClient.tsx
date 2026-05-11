@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef, useState } from 'react'
 import { Loader2, Search, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
