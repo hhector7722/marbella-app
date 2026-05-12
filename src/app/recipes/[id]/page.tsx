@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
@@ -12,6 +12,7 @@ import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
+import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
@@ -71,6 +72,7 @@ function RecipeDetailContent() {
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     const [simulatorExpanded, setSimulatorExpanded] = useState(false);
     const [recipeMetaModalOpen, setRecipeMetaModalOpen] = useState(false);
+    const [recipeIngredientEditTarget, setRecipeIngredientEditTarget] = useState<Ingredient | null>(null);
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -647,6 +649,11 @@ function RecipeDetailContent() {
 
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+    const recipeIngredientNavigationList = useMemo(
+        () => ingredients.map((ri: any) => ri.ingredients).filter(Boolean) as Ingredient[],
+        [ingredients]
+    );
+
     const QuantityInput = ({ initialValue, onSave }: { initialValue: number; onSave: (val: number) => void }) => {
         const [localValue, setLocalValue] = useState<string>(initialValue ? initialValue.toString() : '');
         useEffect(() => { setLocalValue(initialValue ? initialValue.toString() : ''); }, [initialValue]);
@@ -1068,7 +1075,23 @@ function RecipeDetailContent() {
                                         const qty = getIngredientQuantity(ing);
                                         return (
                                             <tr key={ing.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="py-2 px-3 text-gray-800 font-bold truncate max-w-[120px]">{ing.ingredients?.name}</td>
+                                                <td className="max-w-[120px] truncate px-3 py-2">
+                                                    {!isRestricted && ing.ingredients ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setRecipeIngredientEditTarget(ing.ingredients as Ingredient)}
+                                                            className={cn(
+                                                                'min-h-12 w-full truncate text-left text-[10px] font-bold text-[#36606F] underline-offset-2 hover:underline',
+                                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/30 focus-visible:ring-offset-2 rounded-md',
+                                                            )}
+                                                            title="Ver / editar ingrediente"
+                                                        >
+                                                            {ing.ingredients?.name}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="truncate text-[10px] font-bold text-gray-800">{ing.ingredients?.name}</span>
+                                                    )}
+                                                </td>
                                                 <td className="text-center py-2">
                                                     {isRestricted ? (
                                                         <span className="text-gray-700 font-bold">{qty}</span>
@@ -1395,6 +1418,20 @@ function RecipeDetailContent() {
                         <div className="grid grid-cols-2 gap-2">{CATEGORY_OPTIONS.map(cat => (<button key={cat} onClick={() => { handleCategoryUpdate(cat); }} className={`py-2 rounded-lg font-bold text-xs ${recipe.category === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>{cat}</button>))}</div>
                     </div>
                 </div>
+            )}
+
+            {recipeIngredientEditTarget && (
+                <IngredientEditModal
+                    key={recipeIngredientEditTarget.id}
+                    ingredient={recipeIngredientEditTarget}
+                    onClose={() => setRecipeIngredientEditTarget(null)}
+                    onSaved={() => {
+                        void fetchRecipe();
+                        void fetchAvailableIngredients();
+                        fetchBackendCost();
+                    }}
+                    navigationIngredients={recipeIngredientNavigationList}
+                />
             )}
 
             <RecipeNamePhotoEditModal

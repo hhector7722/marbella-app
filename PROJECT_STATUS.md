@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-12 (Albaranes UX: cabecera modal compacta + lápiz «Ajustar match» visible)
+**Última actualización:** 2026-05-12 (Recetas: acceso directo al modal de edición de ingrediente desde la ficha)
+
+- [x] **Recetas `/recipes/[id]`: nombre de ingrediente abre el mismo modal que `/ingredients` (2026-05-12)**: En la tabla de ingredientes, el nombre es un botón táctil (`min-h-12`) que abre `IngredientEditModal` (mismo flujo que edición en `/ingredients`). Navegación anterior/siguiente entre ingredientes **de la receta**. Tras guardar o eliminar se refrescan `fetchRecipe`, `fetchAvailableIngredients` y `fetchBackendCost`. En vista staff / restringida el nombre sigue en solo lectura (sin modal). El modal de edición se extrajo a [`src/components/ingredients/IngredientEditModal.tsx`](src/components/ingredients/IngredientEditModal.tsx) y `/ingredients` lo reutiliza.
 
 - [x] **Albaranes: cabecera del modal compacta + lápiz «Ajustar match» visible (2026-05-12)**: Tres ajustes finos en el modal de detalle. (1) **Cabecera horizontal**: el nombre del proveedor deja de tener subrayado (`underline underline-offset-4` eliminado) y la **fecha · nº albarán** se mueve de la línea inferior a la misma línea del nombre como metadato (`text-[11px] text-white/70 shrink-0`); el nombre usa `truncate min-w-0` para ceder si no cabe sobre `flex items-baseline gap-3`. (2) **Lápiz visible**: el botón «Ajustar match» ahora se renderiza con fondo `bg-zinc-50 + border border-zinc-200` y `strokeWidth={2.5}`, así no se confunde con un punto de color sobre el blanco del row. (3) **Condición relajada**: pasa de `Boolean(ingredient_id) && status==='mapped'` a solo `Boolean(ingredient_id)`. Defensa por si una línea quedó con ingrediente pero status intermedio (no debería pasar hoy, BD: 224 mapped/has_ing vs 132 pending/no_ing, pero evita silenciar un caso edge en el futuro).
 
