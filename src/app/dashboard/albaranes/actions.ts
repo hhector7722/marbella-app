@@ -1167,6 +1167,95 @@ export async function applyInvoiceLineStockAction(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Deshacer match de una línea (con reversión de stock)
+//
+// Caso de uso: el operario detecta que el match fue erróneo. Necesitamos:
+//   1. Eliminar los movimientos `stock_movements` generados por esa línea
+//      (PURCHASE base + cualquier ADJUSTMENT `…-REV%`).
+//   2. Volver la línea a `status='pending'`, `mapped_ingredient_id=null`.
+//   3. Opcionalmente borrar el aprendizaje en `supplier_item_mappings` para
+//      que el sistema no vuelva a auto-aplicar el mismo error en el futuro.
+//
+// La UI usa esto en dos botones:
+//   - "Editar match"   → unmap (sin borrar dict) y reabre el modal de mapping.
+//   - "Eliminar match" → unmap + removeFromDictionary=true.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function unmapInvoiceLineAction(params: {
+  lineId: string
+  removeFromDictionary?: boolean
+}): Promise<{ success: true; deletedMovements: number } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!lineId) return { success: false, message: 'ID de línea inválido' }
+
+  // Leer la línea (necesitamos original_name + invoice_id para opcional dict).
+  const { data: line, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, original_name, mapped_ingredient_id')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  if (!line) return { success: false, message: 'Línea no encontrada' }
+
+  const invoiceId = String((line as any).invoice_id ?? '').trim()
+  const originalName = String((line as any).original_name ?? '').trim()
+
+  // 1) Eliminar los movimientos de stock asociados (PURCHASE base + REV%).
+  const ref = `ALB-LINE-${lineId}`
+  const { data: deletedRows, error: delMovErr } = await gate.supabase
+    .from('stock_movements')
+    .delete()
+    .or(`reference_doc.eq.${ref},reference_doc.ilike.${ref}-REV%`)
+    .select('id')
+  if (delMovErr) return { success: false, message: `Error borrando stock: ${delMovErr.message}` }
+  const deletedMovements = (deletedRows as any[])?.length ?? 0
+
+  // 2) Volver la línea a pending. NOTA: el trigger BD que dispara stock solo
+  //    actúa cuando una línea PASA a `status='mapped'` con mapped_ingredient_id,
+  //    así que poner ambos a null/pending no regenera movimientos.
+  const { error: updErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .update({ mapped_ingredient_id: null, status: 'pending' })
+    .eq('id', lineId)
+  if (updErr) return { success: false, message: `Error actualizando línea: ${updErr.message}` }
+
+  // 3) Borrado opcional del aprendizaje en supplier_item_mappings.
+  if (params?.removeFromDictionary && invoiceId && originalName) {
+    const { data: invRow, error: invErr } = await gate.supabase
+      .from('purchase_invoices')
+      .select('supplier_id')
+      .eq('id', invoiceId)
+      .maybeSingle()
+    if (!invErr) {
+      const supplierId = (invRow as any)?.supplier_id as number | null
+      if (supplierId != null) {
+        const { error: dictErr } = await gate.supabase
+          .from('supplier_item_mappings')
+          .delete()
+          .eq('supplier_id', supplierId)
+          .eq('supplier_item_name', originalName)
+        if (dictErr) {
+          // No bloqueamos: el unmap principal ya funcionó. Avisamos por log.
+          console.warn('unmapInvoiceLineAction: dict delete warning', dictErr.message)
+        }
+      }
+    }
+  }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true, deletedMovements }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Eliminar albarán completo (con reversión de stock)
 //
 // Política: cuando se borra un albarán, deben desaparecer también sus efectos
