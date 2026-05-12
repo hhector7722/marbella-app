@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Eye, FileText, Filter, Loader2, RefreshCw, Search, Sparkles, Trash2, Truck, X } from 'lucide-react'
+import { Check, Eye, FileText, Filter, Loader2, Pencil, RefreshCw, Search, Sparkles, Trash2, Truck, X, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
@@ -22,6 +22,7 @@ import {
   searchSuppliersForInvoiceAction,
   searchIngredientsForMappingAction,
   setPurchaseInvoiceSupplierAction,
+  unmapInvoiceLineAction,
   updatePurchaseInvoiceLineAction,
 } from './actions'
 import type { AutoMapReport, MappingSource } from './actions'
@@ -522,6 +523,66 @@ export default function AlbaranesHistoricoClient({
         for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
         setStockStatusByLineId(map)
       }
+    } finally {
+      setMappingLoading(false)
+    }
+  }
+
+  // Refresca detalle + estado de stock de un albarán. Se usa tras
+  // operaciones que pueden cambiar mapped_ingredient_id / status / stock.
+  async function refreshDetailAndStock() {
+    if (!detail) return
+    const dRes = await getPurchaseInvoiceDetailAction(detail.id)
+    if (!dRes.success) return
+    setDetail(dRes.detail)
+    const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
+    if (st.success) {
+      const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+      for (const s of st.statuses)
+        map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
+      setStockStatusByLineId(map)
+    }
+  }
+
+  // "Editar match": deshace el mapeo actual (revierte stock) y abre el modal
+  // para volver a mapear. Mantiene el aprendizaje en el diccionario porque el
+  // usuario va a re-mapear (si lo cambia, el upsert lo sobrescribe).
+  async function editMapping(lineId: string) {
+    if (!isManager) return
+    setMappingError(null)
+    setMappingLoading(true)
+    try {
+      const res = await unmapInvoiceLineAction({ lineId })
+      if (!res.success) {
+        setMappingError(res.message)
+        return
+      }
+      await refreshDetailAndStock()
+      await openMapping(lineId)
+    } finally {
+      setMappingLoading(false)
+    }
+  }
+
+  // "Eliminar match": deshace el mapeo y borra también la entrada del
+  // diccionario para que el sistema no vuelva a aplicar el mismo error.
+  async function removeMapping(lineId: string) {
+    if (!isManager) return
+    const ok = typeof window === 'undefined'
+      ? false
+      : window.confirm(
+          'Vas a eliminar este match: se revertirá el stock aplicado de esta línea y se borrará el aprendizaje. ¿Continuar?'
+        )
+    if (!ok) return
+    setMappingError(null)
+    setMappingLoading(true)
+    try {
+      const res = await unmapInvoiceLineAction({ lineId, removeFromDictionary: true })
+      if (!res.success) {
+        setMappingError(res.message)
+        return
+      }
+      await refreshDetailAndStock()
     } finally {
       setMappingLoading(false)
     }
@@ -1217,6 +1278,40 @@ export default function AlbaranesHistoricoClient({
                                           >
                                             Rectificar stock
                                           </button>
+                                        ) : null}
+
+                                        {/* Gestión del match para líneas ya mapeadas: corregir o eliminar.
+                                            Editar revierte stock y reabre el modal; Eliminar revierte stock
+                                            y borra el aprendizaje en supplier_item_mappings. */}
+                                        {l.ingredient_id ? (
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                              type="button"
+                                              onClick={() => void editMapping(l.id)}
+                                              disabled={mappingLoading}
+                                              className={cn(
+                                                'min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700 active:scale-[0.99] transition',
+                                                mappingLoading && 'opacity-60 pointer-events-none'
+                                              )}
+                                              title="Corregir match (revierte stock y reabre mapeo)"
+                                            >
+                                              <Pencil className="h-4 w-4" />
+                                              Editar
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => void removeMapping(l.id)}
+                                              disabled={mappingLoading}
+                                              className={cn(
+                                                'min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-xs font-black uppercase tracking-wider text-rose-700 active:scale-[0.99] transition',
+                                                mappingLoading && 'opacity-60 pointer-events-none'
+                                              )}
+                                              title="Eliminar match (revierte stock y borra aprendizaje)"
+                                            >
+                                              <XCircle className="h-4 w-4" />
+                                              Eliminar
+                                            </button>
+                                          </div>
                                         ) : null}
                                       </div>
                                     ) : null}
