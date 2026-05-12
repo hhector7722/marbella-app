@@ -950,33 +950,42 @@ export default function AlbaranesHistoricoClient({
             >
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
                 <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
-                  <div className="min-w-0 flex items-center gap-3">
-                    <div className="min-w-0">
-                      {/* Nombre del proveedor SIEMPRE clicable para managers: añadir o cambiar a posteriori. */}
-                      {isManager && detail ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSupplierPickerOpen(true)
-                            setSupplierQuery('')
-                            setSupplierResults([])
-                            setSupplierError(null)
-                          }}
-                          className="text-sm font-black uppercase tracking-wider truncate underline underline-offset-4 hover:opacity-80 text-left"
-                          title="Cambiar proveedor"
-                        >
-                          {detail.supplier_name ?? 'Añadir proveedor'}
-                        </button>
-                      ) : (
-                        <p className="text-sm font-black uppercase tracking-wider truncate">
-                          {detail?.supplier_name ?? 'Proveedor pendiente'}
-                        </p>
-                      )}
-                      <p className="text-[11px] font-medium text-white/70 truncate mt-1">
-                        {formatDateTitle(detail?.invoice_date ?? activeItem?.invoice_date)}
-                        {detail?.invoice_number ? ` · ${detail.invoice_number}` : activeItem?.invoice_number ? ` · ${activeItem.invoice_number}` : ''}
+                  {/* Cabecera: nombre del proveedor (clicable manager, sin subrayado)
+                      a la izquierda y, en la misma línea, la fecha · nº de albarán
+                      como metadato secundario justo a su derecha. */}
+                  <div className="min-w-0 flex-1 flex items-baseline gap-3">
+                    {isManager && detail ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSupplierPickerOpen(true)
+                          setSupplierQuery('')
+                          setSupplierResults([])
+                          setSupplierError(null)
+                        }}
+                        className="text-sm font-black uppercase tracking-wider truncate hover:opacity-80 text-left min-w-0"
+                        title="Cambiar proveedor"
+                      >
+                        {detail.supplier_name ?? 'Añadir proveedor'}
+                      </button>
+                    ) : (
+                      <p className="text-sm font-black uppercase tracking-wider truncate min-w-0">
+                        {detail?.supplier_name ?? 'Proveedor pendiente'}
                       </p>
-                    </div>
+                    )}
+                    {(() => {
+                      const dateStr = formatDateTitle(detail?.invoice_date ?? activeItem?.invoice_date)
+                      const invNum = detail?.invoice_number ?? activeItem?.invoice_number ?? ''
+                      const hasDate = dateStr && dateStr !== '—'
+                      if (!hasDate && !invNum) return null
+                      return (
+                        <p className="text-[11px] font-medium text-white/70 truncate shrink-0">
+                          {hasDate ? dateStr : ''}
+                          {hasDate && invNum ? ' · ' : ''}
+                          {invNum ? invNum : ''}
+                        </p>
+                      )
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -1094,7 +1103,11 @@ export default function AlbaranesHistoricoClient({
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
                               const noMatch = !l.ingredient_name
-                              const isMapped = Boolean(l.ingredient_id) && String(l.status ?? '') === 'mapped'
+                              // Para mostrar el lápiz nos basta con que la línea tenga
+                              // ingrediente vinculado: ajustar match (cambiar ingrediente
+                              // o factor) debe estar disponible aunque el status haya
+                              // quedado en un estado intermedio.
+                              const isMapped = Boolean(l.ingredient_id)
                               return (
                                 <div key={l.id} className="p-3">
                                   {/* Cabecera de la fila: nombre + iconos de estado a su derecha
@@ -1176,7 +1189,10 @@ export default function AlbaranesHistoricoClient({
                                       </div>
                                     </button>
 
-                                    {/* Lápiz «Ajustar match»: a la derecha de la fila, solo en líneas mapeadas */}
+                                    {/* Lápiz «Ajustar match»: a la derecha de la fila, en cualquier
+                                        línea con ingrediente vinculado. Lo damos con fondo zinc-50
+                                        + borde zinc-200 para que destaque sobre el blanco del row y
+                                        no se confunda con un punto de color. */}
                                     {isManager && isMapped ? (
                                       <button
                                         type="button"
@@ -1185,11 +1201,11 @@ export default function AlbaranesHistoricoClient({
                                           setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
                                           void openMapping(l.id)
                                         }}
-                                        className="shrink-0 min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
+                                        className="shrink-0 min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
                                         aria-label="Ajustar match"
                                         title="Ajustar match (cambiar factor o ingrediente)"
                                       >
-                                        <Pencil className="h-4 w-4" />
+                                        <Pencil className="h-4 w-4" strokeWidth={2.5} />
                                       </button>
                                     ) : null}
                                   </div>
