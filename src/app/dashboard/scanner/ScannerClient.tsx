@@ -5,29 +5,13 @@ import { Loader2, Search, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { processScannerImage } from './actions'
 import { cn } from '@/lib/utils'
+import { getSupplierLogo } from '@/lib/supplier-logos'
 import { createClient } from '@/utils/supabase/client'
 
 interface Supplier {
   id: number
   name: string
   image_url?: string | null
-}
-
-const SUPPLIER_LOGOS: Record<string, string> = {
-  'Ametller': '/icons/prov/Ametller.png',
-  'Panabad': '/icons/prov/panabad.png',
-  'Videla': '/icons/prov/videla.png',
-  'Zander': '/icons/prov/Zander.png',
-  'Abril': '/icons/prov/Abril.png',
-  'Carnicas Pijuan': '/icons/prov/Pijuan.png',
-  'Santa Teresa': '/icons/prov/Sta-Teresa.png',
-  'Shers': '/icons/prov/Shers.png',
-  'Sanilec': '/icons/prov/Sanilec.png',
-  'Nestle': '/icons/prov/Nestle.png',
-  'Sant Aniol': '/icons/prov/Sant-Aniol.png',
-  'Fritz Ravich': '/icons/prov/Fritz-Ravich.png',
-  'Hielo Fenix': '/icons/prov/hielo-fenix.png',
-  'Vins i Pons': '/icons/prov/Pons.png'
 }
 
 export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
@@ -251,7 +235,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                   </div>
                 ) : (
                   filteredSuppliers.map(s => {
-                    const logo = s.image_url || SUPPLIER_LOGOS[s.name]
+                    const logo = getSupplierLogo(s.image_url, s.name)
                     return (
                       <button
                         key={s.id}

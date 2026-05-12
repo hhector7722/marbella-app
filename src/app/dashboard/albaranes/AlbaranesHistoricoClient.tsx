@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Eye, FileText, Filter, Loader2, RefreshCw, Search, Sparkles, Trash2, Truck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
@@ -705,6 +706,8 @@ export default function AlbaranesHistoricoClient({
               <div className="flex flex-col gap-2">
                 {filtered.map((it) => {
                   const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
+                  // Prioridad: image_url de BD > logo local en /public/icons/prov > icono genérico.
+                  const logo = getSupplierLogo(it.supplier_image_url, it.supplier_name)
                   return (
                     <button
                       key={it.id}
@@ -714,16 +717,11 @@ export default function AlbaranesHistoricoClient({
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex items-center gap-3">
-                          {/* Avatar proveedor: usamos <img> nativo para evitar problemas de next/image
-                              con dominios externos no incluidos en remotePatterns. Sin marco ni relleno. */}
+                          {/* Avatar proveedor: <img> nativo para no chocar con remotePatterns. Sin marco. */}
                           <div className="shrink-0 h-10 w-10 flex items-center justify-center">
-                            {it.supplier_image_url ? (
+                            {logo ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={it.supplier_image_url}
-                                alt={supplier}
-                                className="h-10 w-10 object-contain"
-                              />
+                              <img src={logo} alt={supplier} className="h-10 w-10 object-contain" />
                             ) : (
                               <Truck className="h-6 w-6 text-zinc-400" />
                             )}
