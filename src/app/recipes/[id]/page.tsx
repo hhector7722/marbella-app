@@ -8,7 +8,7 @@ import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, Ch
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
-import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
+import { recipeLineCost, RECIPE_UNIT_OPTIONS, formatRecipeIngredientLineCostEur } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
@@ -1110,7 +1110,7 @@ function RecipeDetailContent() {
                                                         </select>
                                                     )}
                                                 </td>
-                                                {!isRestricted && <td className="px-2 py-1 text-right align-middle font-black text-gray-700">{cost.toFixed(2)}€</td>}
+                                                {!isRestricted && <td className="px-2 py-1 text-right align-middle font-black text-gray-700">{formatRecipeIngredientLineCostEur(cost)}€</td>}
                                                 <td className="py-1 text-center align-middle">
                                                     {!isRestricted && (
                                                         <button type="button" onClick={() => handleDeleteIngredient(ing.id)} className="rounded p-0.5 text-gray-300 transition-colors hover:bg-rose-50 hover:text-rose-500">

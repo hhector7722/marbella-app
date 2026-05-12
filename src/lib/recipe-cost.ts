@@ -77,6 +77,28 @@ export function recipeLineCost(
   return converted * currentPrice;
 }
 
+/**
+ * Coste de línea en la tabla de ingredientes de receta (solo lectura).
+ * Si con 2 decimales aparecería como 0,00 pero el importe es positivo,
+ * muestra decimales hasta el primer dígito distinto de cero (p. ej. 0.0045 → 0.004).
+ * En caso contrario, dos decimales habituales.
+ */
+export function formatRecipeIngredientLineCostEur(cost: number): string {
+  if (!Number.isFinite(cost)) return '0.00';
+  if (cost <= 0) return cost.toFixed(2);
+  const roundedToCent = parseFloat(cost.toFixed(2));
+  if (roundedToCent > 0) return cost.toFixed(2);
+
+  const raw = cost.toFixed(12);
+  const parts = raw.split('.');
+  const dec = parts[1] ?? '';
+  let i = 0;
+  while (i < dec.length && dec[i] === '0') i++;
+  if (i >= dec.length) return cost.toFixed(2);
+  const frac = dec.slice(0, i + 1);
+  return `${parts[0]}.${frac}`;
+}
+
 /** Unidades disponibles para selector en recetas (masa, volumen, unidades). */
 export const RECIPE_UNIT_OPTIONS: { value: MassVolumeUnit; label: string }[] = [
   { value: 'g', label: 'g' },
