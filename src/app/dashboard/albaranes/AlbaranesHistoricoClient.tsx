@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Eye, FileText, Filter, Loader2, Pencil, RefreshCw, Search, Sparkles, Trash2, Truck, X, XCircle } from 'lucide-react'
+import { AlertCircle, Check, Eye, FileText, Filter, Loader2, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Trash2, Truck, X, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
@@ -183,6 +183,27 @@ export default function AlbaranesHistoricoClient({
       const st = stockStatusByLineId[l.id]
       return !st?.stockApplied
     }).length
+  }, [detail, stockStatusByLineId])
+
+  // Mantiene el tick verde de la fila del albarán (lista) sincronizado con el
+  // estado real del detalle: necesita todas las líneas mapeadas Y con stock
+  // aplicado. Si solo refrescábamos `detail`/`stockStatusByLineId`, la lista
+  // se quedaba con `is_fully_processed=false` hasta el siguiente refresh global.
+  useEffect(() => {
+    if (!detail) return
+    const lines = detail.lines
+    if (lines.length === 0) return
+    const allMapped = lines.every((l) => Boolean(l.ingredient_id) && String(l.status ?? '') === 'mapped')
+    const allApplied = lines.every((l) => stockStatusByLineId[l.id]?.stockApplied === true)
+    const fully = allMapped && allApplied
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.id === detail.id)
+      if (idx < 0) return prev
+      if (prev[idx]!.is_fully_processed === fully) return prev
+      const next = prev.slice()
+      next[idx] = { ...prev[idx]!, is_fully_processed: fully }
+      return next
+    })
   }, [detail, stockStatusByLineId])
 
   function lineNeedsStockRepair(l: PurchaseInvoiceDetail['lines'][number]) {
@@ -1072,82 +1093,106 @@ export default function AlbaranesHistoricoClient({
                               const stock = stockStatusByLineId[l.id]
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
+                              const noMatch = !l.ingredient_name
+                              const isMapped = Boolean(l.ingredient_id) && String(l.status ?? '') === 'mapped'
                               return (
                                 <div key={l.id} className="p-3">
-                                  <button
-                                    type="button"
-                                    onClick={() => setExpandedLineIds((p) => ({ ...p, [l.id]: !Boolean(p[l.id]) }))}
-                                    className="w-full text-left"
-                                  >
-                                    <p className="text-sm font-black text-zinc-900 truncate">
-                                      {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
-                                    </p>
-                                    <div className="mt-2 flex flex-wrap gap-x-2 gap-y-2 text-xs font-bold text-zinc-600">
-                                      {l.ingredient_name ? null : (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            void openMapping(l.id)
-                                          }}
-                                          className="text-rose-700 underline underline-offset-4"
-                                        >
-                                          Sin match
-                                        </button>
-                                      )}
-                                      {isManager && lineNeedsStockRepair(l) ? (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            void repairStockForLine(l.id)
-                                          }}
-                                          disabled={repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading}
-                                          title="Aplicar el movimiento de stock que faltaba (un clic)"
-                                          className={cn(
-                                            'min-h-[48px] inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 text-[10px] font-black uppercase tracking-wider text-amber-900 active:scale-[0.99] transition',
-                                            (repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading) &&
-                                              'opacity-60 pointer-events-none'
-                                          )}
-                                        >
-                                          {repairingStockLineId === l.id ? (
-                                            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                                          ) : null}
-                                          Sin stock — pulsar
-                                        </button>
-                                      ) : null}
-                                      {/* Stock: badge informativo. Se aplica automáticamente al validar el match
-                                          (trigger handle_invoice_line_mapped_stock). Solo mostramos el badge cuando
-                                          ya está aplicado; si la línea aún no tiene ingrediente, el flujo apropiado
-                                          es validar el match arriba. */}
-                                      {stockApplied ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700">
-                                          Stock aplicado
-                                        </span>
-                                      ) : null}
-                                      {isManager &&
-                                      l.ingredient_id &&
-                                      String(l.status ?? '') === 'mapped' ? (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
-                                            void openMapping(l.id)
-                                          }}
-                                          className="text-[#36606F] underline underline-offset-4 font-black"
-                                          title="Cambiar factor o revisar ingrediente sin deshacer el match"
-                                        >
-                                          Ajustar match
-                                        </button>
-                                      ) : null}
-                                      {rectified ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800">
-                                          Rectificado (REV{stock?.rectifiedCount})
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </button>
+                                  {/* Cabecera de la fila: nombre + iconos de estado a su derecha
+                                      (rojo: sin match, verde: stock aplicado) y lápiz «Ajustar match»
+                                      justificado al extremo derecho. Mantenemos «Sin stock — pulsar»
+                                      y «Rectificado» como badges secundarios debajo. */}
+                                  <div className="flex items-start gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedLineIds((p) => ({ ...p, [l.id]: !Boolean(p[l.id]) }))}
+                                      className="flex-1 min-w-0 text-left"
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <p className="text-sm font-black text-zinc-900 truncate">
+                                          {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
+                                        </p>
+                                        {/* Iconos de estado inline a la derecha del nombre.
+                                            Reglas mutuas: si no hay match (rojo), no hay stock.
+                                            Si hay match: sin stock (ámbar clickeable) ó con stock (verde).
+                                            Rectificado (ámbar ↺) puede acompañar al verde. */}
+                                        {noMatch ? (
+                                          <span
+                                            className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-rose-600 text-white shrink-0"
+                                            aria-label="Sin match"
+                                            title="Sin match — expande la fila para mapear"
+                                          >
+                                            <X className="h-3 w-3" strokeWidth={3.5} />
+                                          </span>
+                                        ) : null}
+                                        {isManager && lineNeedsStockRepair(l) ? (
+                                          <span
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              void repairStockForLine(l.id)
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                void repairStockForLine(l.id)
+                                              }
+                                            }}
+                                            aria-disabled={repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading}
+                                            aria-label="Sin stock aplicado — pulsar para aplicar"
+                                            title="Sin stock aplicado — pulsar para aplicar"
+                                            className={cn(
+                                              'inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0 cursor-pointer active:scale-[0.99] transition',
+                                              (repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading) &&
+                                                'opacity-60 pointer-events-none'
+                                            )}
+                                          >
+                                            {repairingStockLineId === l.id ? (
+                                              <Loader2 className="h-3 w-3 animate-spin" />
+                                            ) : (
+                                              <AlertCircle className="h-3.5 w-3.5" strokeWidth={3} />
+                                            )}
+                                          </span>
+                                        ) : null}
+                                        {stockApplied ? (
+                                          <span
+                                            className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white shrink-0"
+                                            aria-label="Stock aplicado"
+                                            title="Stock aplicado"
+                                          >
+                                            <Check className="h-3 w-3" strokeWidth={3.5} />
+                                          </span>
+                                        ) : null}
+                                        {rectified ? (
+                                          <span
+                                            className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0"
+                                            aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                            title={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                          >
+                                            <RotateCcw className="h-3 w-3" strokeWidth={3} />
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                    </button>
+
+                                    {/* Lápiz «Ajustar match»: a la derecha de la fila, solo en líneas mapeadas */}
+                                    {isManager && isMapped ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
+                                          void openMapping(l.id)
+                                        }}
+                                        className="shrink-0 min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
+                                        aria-label="Ajustar match"
+                                        title="Ajustar match (cambiar factor o ingrediente)"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </button>
+                                    ) : null}
+                                  </div>
 
                                   {isExpanded ? (
                                     <div className="mt-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
