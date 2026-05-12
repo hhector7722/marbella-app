@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Eye, FileText, Filter, Loader2, Pencil, RefreshCw, Search, Sparkles, Trash2, Truck, X, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
@@ -18,6 +19,8 @@ import {
   listPurchaseInvoicesAction,
   listSuppliersForFilterAction,
   rectifyInvoiceLineStockAction,
+  repairOrphanLineStockAction,
+  repairOrphanLinesInInvoiceAction,
   resolveLineMappingAction,
   searchSuppliersForInvoiceAction,
   searchIngredientsForMappingAction,
@@ -112,6 +115,8 @@ export default function AlbaranesHistoricoClient({
   const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
   const [wizardTargetLineId, setWizardTargetLineId] = useState<string | null>(null)
   const [expandedLineIds, setExpandedLineIds] = useState<Record<string, boolean>>({})
+  const [repairingStockLineId, setRepairingStockLineId] = useState<string | null>(null)
+  const [repairingInvoiceStockBatch, setRepairingInvoiceStockBatch] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
@@ -169,6 +174,21 @@ export default function AlbaranesHistoricoClient({
       return true
     })
   }, [items, query, filterSupplierId, filterFrom, filterTo])
+
+  const mappedLinesWithoutStockCount = useMemo(() => {
+    if (!detail) return 0
+    return detail.lines.filter((l) => {
+      if (!l.ingredient_id || String(l.status ?? '') !== 'mapped') return false
+      const st = stockStatusByLineId[l.id]
+      return !st?.stockApplied
+    }).length
+  }, [detail, stockStatusByLineId])
+
+  function lineNeedsStockRepair(l: PurchaseInvoiceDetail['lines'][number]) {
+    if (!l.ingredient_id || String(l.status ?? '') !== 'mapped') return false
+    const st = stockStatusByLineId[l.id]
+    return !st?.stockApplied
+  }
 
   function isLineDirty(l: PurchaseInvoiceDetail['lines'][number]) {
     const d = draftLines[l.id]
@@ -541,6 +561,56 @@ export default function AlbaranesHistoricoClient({
       for (const s of st.statuses)
         map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
       setStockStatusByLineId(map)
+    }
+  }
+
+  async function repairStockForLine(lineId: string) {
+    if (!isManager) {
+      toast.error('Solo gestor o admin pueden reparar stock desde aquí.')
+      return
+    }
+    setRepairingStockLineId(lineId)
+    try {
+      const res = await repairOrphanLineStockAction({ lineId })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      if (res.alreadyApplied) {
+        toast.success('Ya estaba registrado en stock.')
+      } else {
+        let msg = `Stock aplicado: ${res.appliedQty}`
+        if (res.createdDictionaryEntry) {
+          msg += '. Se guardó factor 1 en el diccionario; revísalo si hace falta.'
+        }
+        toast.success(msg)
+      }
+      if (res.priceWarning) toast.info(res.priceWarning)
+      await refreshDetailAndStock()
+    } finally {
+      setRepairingStockLineId(null)
+    }
+  }
+
+  async function repairAllMappedLinesWithoutStock() {
+    if (!detail || !isManager) return
+    setRepairingInvoiceStockBatch(true)
+    try {
+      const res = await repairOrphanLinesInInvoiceAction({ invoiceId: detail.id })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      const { repaired, alreadyOk, failed, firstErrors } = res.report
+      if (failed === 0) {
+        toast.success(`Stock: ${repaired} aplicada(s), ${alreadyOk} ya estaban OK.`)
+      } else {
+        if (repaired > 0) toast.success(`${repaired} línea(s) reparada(s).`)
+        toast.error(`Fallaron ${failed}. ${firstErrors.join(' · ')}`)
+      }
+      if (repaired > 0 || alreadyOk > 0) await refreshDetailAndStock()
+    } finally {
+      setRepairingInvoiceStockBatch(false)
     }
   }
 
@@ -923,6 +993,31 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   ) : null}
 
+                  {isManager && mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                      <p className="text-xs font-black text-amber-900 leading-snug min-w-0 flex-1">
+                        {mappedLinesWithoutStockCount} línea{mappedLinesWithoutStockCount === 1 ? '' : 's'} mapeada
+                        {mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento de stock. Pulsa el aviso en cada
+                        línea o repáralas todas aquí.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void repairAllMappedLinesWithoutStock()}
+                        disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || mappingLoading}
+                        className={cn(
+                          'shrink-0 min-h-[48px] px-4 rounded-xl bg-amber-700 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2',
+                          (repairingInvoiceStockBatch || repairingStockLineId !== null || mappingLoading) &&
+                            'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        {repairingInvoiceStockBatch ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : null}
+                        Reparar todas
+                      </button>
+                    </div>
+                  ) : null}
+
                   {isLoadingDetail ? (
                     <div className="flex items-center gap-3 text-sm font-bold text-zinc-600">
                       <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
@@ -966,6 +1061,27 @@ export default function AlbaranesHistoricoClient({
                                           Sin match
                                         </button>
                                       )}
+                                      {isManager && lineNeedsStockRepair(l) ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            void repairStockForLine(l.id)
+                                          }}
+                                          disabled={repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading}
+                                          title="Aplicar el movimiento de stock que faltaba (un clic)"
+                                          className={cn(
+                                            'min-h-[48px] inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 text-[10px] font-black uppercase tracking-wider text-amber-900 active:scale-[0.99] transition',
+                                            (repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading) &&
+                                              'opacity-60 pointer-events-none'
+                                          )}
+                                        >
+                                          {repairingStockLineId === l.id ? (
+                                            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                                          ) : null}
+                                          Sin stock — pulsar
+                                        </button>
+                                      ) : null}
                                       {/* Stock: badge informativo. Se aplica automáticamente al validar el match
                                           (trigger handle_invoice_line_mapped_stock). Solo mostramos el badge cuando
                                           ya está aplicado; si la línea aún no tiene ingrediente, el flujo apropiado

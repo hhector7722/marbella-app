@@ -1333,6 +1333,211 @@ export async function applyInvoiceLineStockAction(params: {
   return { success: true, appliedQty: Math.round(appliedQty * 1000) / 1000 }
 }
 
+type RepairOrphanInnerResult =
+  | { ok: true; appliedQty: number; alreadyApplied?: boolean; createdDictionaryEntry?: boolean; priceWarning?: string }
+  | { ok: false; message: string }
+
+/**
+ * Inserta el PURCHASE faltante para una línea ya `mapped` con ingrediente pero
+ * sin movimiento `ALB-LINE-<id>` (p. ej. trigger saltado, proveedor asignado
+ * tarde, o histórico previo al trigger). Idempotente.
+ *
+ * Si no hay fila en `supplier_item_mappings` compatible, crea una con
+ * `conversion_factor = 1` (el caller puede avisar en toast para revisión).
+ */
+async function repairOrphanLineStockInner(
+  supabase: SupabaseServerClient,
+  lineId: string
+): Promise<RepairOrphanInnerResult> {
+  const { data: line, error: lineErr } = await supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, original_name, quantity, mapped_ingredient_id, status, unit_price')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { ok: false, message: lineErr.message }
+  if (!line) return { ok: false, message: 'Línea no encontrada' }
+
+  const invoiceId = String((line as any).invoice_id ?? '').trim()
+  const status = String((line as any).status ?? '')
+  const ingredientId = String((line as any).mapped_ingredient_id ?? '').trim()
+  if (status !== 'mapped' || !ingredientId) {
+    return { ok: false, message: 'Solo se repara stock en líneas ya mapeadas y confirmadas.' }
+  }
+
+  const { data: inv, error: invErr } = await supabase.from('purchase_invoices').select('supplier_id').eq('id', invoiceId).maybeSingle()
+  if (invErr) return { ok: false, message: invErr.message }
+  const supplierId = (inv as any)?.supplier_id as number | null
+  if (supplierId == null) {
+    return { ok: false, message: 'Asigna un proveedor al albarán (cabecera) y vuelve a pulsar.' }
+  }
+
+  const originalName = String((line as any)?.original_name ?? '').trim()
+  if (!originalName) return { ok: false, message: 'La línea no tiene nombre de producto.' }
+
+  const lineQty = Number((line as any)?.quantity)
+  if (!Number.isFinite(lineQty) || lineQty <= 0) {
+    return { ok: false, message: 'Indica una cantidad válida en la línea antes de aplicar stock.' }
+  }
+
+  const ref = `ALB-LINE-${lineId}`
+  const { data: existing, error: exErr } = await supabase
+    .from('stock_movements')
+    .select('quantity')
+    .eq('movement_type', 'PURCHASE')
+    .eq('ingredient_id', ingredientId)
+    .eq('reference_doc', ref)
+    .maybeSingle()
+  if (exErr) return { ok: false, message: exErr.message }
+  const existingQty = Number((existing as any)?.quantity)
+  if (Number.isFinite(existingQty) && existingQty > 0) {
+    return { ok: true, appliedQty: Math.round(existingQty * 1000) / 1000, alreadyApplied: true }
+  }
+
+  let createdDictionaryEntry = false
+  const { data: mapRow, error: mapErr } = await supabase
+    .from('supplier_item_mappings')
+    .select('conversion_factor')
+    .eq('supplier_id', supplierId)
+    .eq('supplier_item_name', originalName)
+    .eq('ingredient_id', ingredientId)
+    .maybeSingle()
+  if (mapErr) return { ok: false, message: mapErr.message }
+
+  let factor = Number((mapRow as any)?.conversion_factor)
+  if (!Number.isFinite(factor) || factor <= 0) {
+    const unitPrice = (line as any).unit_price as number | null
+    const { error: upErr } = await supabase.from('supplier_item_mappings').upsert(
+      {
+        supplier_id: supplierId,
+        supplier_item_name: originalName,
+        ingredient_id: ingredientId,
+        conversion_factor: 1,
+        last_known_price: unitPrice != null && Number.isFinite(unitPrice) && unitPrice > 0 ? unitPrice : null,
+      },
+      { onConflict: 'supplier_id,supplier_item_name' }
+    )
+    if (upErr) return { ok: false, message: `No hay factor guardado y no se pudo crear el diccionario: ${upErr.message}` }
+    createdDictionaryEntry = true
+    factor = 1
+  }
+
+  const appliedQty = lineQty * factor
+  if (!Number.isFinite(appliedQty) || appliedQty <= 0) {
+    return { ok: false, message: 'La cantidad aplicada sería 0; revisa cantidad o factor de conversión.' }
+  }
+
+  const { data: ing, error: ingErr } = await supabase.from('ingredients').select('unit').eq('id', ingredientId).maybeSingle()
+  if (ingErr) return { ok: false, message: ingErr.message }
+  const unit = String((ing as any)?.unit ?? 'ud') || 'ud'
+
+  const { error: insErr } = await supabase.from('stock_movements').insert({
+    movement_type: 'PURCHASE',
+    ingredient_id: ingredientId,
+    quantity: appliedQty,
+    unit,
+    movement_date: new Date().toISOString(),
+    reference_doc: ref,
+    original_description: `Recepción (reparación): ${originalName}`,
+    processed_by: 'Albaranes-Reparar',
+  })
+  if (insErr) return { ok: false, message: insErr.message }
+
+  const priceRes = await resyncIngredientPriceForMappedLine(supabase, {
+    supplierId,
+    originalName,
+    ingredientId,
+    unitPrice: (line as any).unit_price as number | null,
+  })
+  if (!priceRes.ok) return { ok: false, message: priceRes.message }
+
+  return {
+    ok: true,
+    appliedQty: Math.round(appliedQty * 1000) / 1000,
+    createdDictionaryEntry,
+    priceWarning: priceRes.warning,
+  }
+}
+
+export async function repairOrphanLineStockAction(params: {
+  lineId: string
+}): Promise<
+  | { success: true; appliedQty: number; alreadyApplied?: boolean; createdDictionaryEntry?: boolean; priceWarning?: string }
+  | { success: false; message: string }
+> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!lineId) return { success: false, message: 'ID de línea inválido' }
+
+  const inner = await repairOrphanLineStockInner(gate.supabase, lineId)
+  if (!inner.ok) return { success: false, message: inner.message }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return {
+    success: true,
+    appliedQty: inner.appliedQty,
+    alreadyApplied: inner.alreadyApplied,
+    createdDictionaryEntry: inner.createdDictionaryEntry,
+    priceWarning: inner.priceWarning,
+  }
+}
+
+export type RepairOrphanInvoiceReport = {
+  repaired: number
+  alreadyOk: number
+  failed: number
+  firstErrors: string[]
+}
+
+/** Repara todas las líneas `mapped` del albarán que aún no tienen PURCHASE `ALB-LINE-*`. */
+export async function repairOrphanLinesInInvoiceAction(params: {
+  invoiceId: string
+}): Promise<{ success: true; report: RepairOrphanInvoiceReport } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
+
+  const { data: rows, error: listErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id')
+    .eq('invoice_id', invoiceId)
+    .eq('status', 'mapped')
+    .not('mapped_ingredient_id', 'is', null)
+  if (listErr) return { success: false, message: listErr.message }
+
+  const report: RepairOrphanInvoiceReport = { repaired: 0, alreadyOk: 0, failed: 0, firstErrors: [] }
+  for (const r of rows ?? []) {
+    const lid = String((r as any).id ?? '').trim()
+    if (!lid) continue
+    const inner = await repairOrphanLineStockInner(gate.supabase, lid)
+    if (!inner.ok) {
+      report.failed += 1
+      if (report.firstErrors.length < 5) report.firstErrors.push(`${lid.slice(0, 8)}…: ${inner.message}`)
+      continue
+    }
+    if (inner.alreadyApplied) report.alreadyOk += 1
+    else report.repaired += 1
+  }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true, report }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Deshacer match de una línea (con reversión de stock)
 //
