@@ -1062,56 +1062,56 @@ function RecipeDetailContent() {
                             <table className="w-full text-[10px] border-collapse">
                                 <thead className="sticky top-0 z-10 bg-white shadow-sm">
                                     <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
-                                        <th className="text-left py-2 px-3">Ingrediente</th>
-                                        <th className="text-center">Cant</th>
-                                        <th className="text-center">Ud</th>
-                                        {!isRestricted && <th className="text-right">Coste</th>}
-                                        <th className="w-8"></th>
+                                        <th className="text-left px-3 py-1.5">Ingrediente</th>
+                                        <th className="text-center px-0.5 py-1.5">Cant</th>
+                                        <th className="text-center px-0.5 py-1.5">Ud</th>
+                                        {!isRestricted && <th className="text-right px-2 py-1.5">Coste</th>}
+                                        <th className="w-7 py-1.5"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody>
                                     {ingredients.map((ing) => {
                                         const cost = calculateIngredientCost(ing);
                                         const qty = getIngredientQuantity(ing);
                                         return (
-                                            <tr key={ing.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="max-w-[120px] truncate px-3 py-2">
+                                            <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
+                                                <td className="max-w-[120px] truncate px-3 py-1">
                                                     {!isRestricted && ing.ingredients ? (
                                                         <button
                                                             type="button"
                                                             onClick={() => setRecipeIngredientEditTarget(ing.ingredients as Ingredient)}
                                                             className={cn(
-                                                                'min-h-12 w-full truncate text-left text-[10px] font-bold text-[#36606F] underline-offset-2 hover:underline',
-                                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/30 focus-visible:ring-offset-2 rounded-md',
+                                                                'w-full truncate py-0.5 text-left text-[10px] font-bold leading-tight text-[#36606F] underline-offset-2 hover:underline',
+                                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25 focus-visible:ring-offset-1',
                                                             )}
                                                             title="Ver / editar ingrediente"
                                                         >
                                                             {ing.ingredients?.name}
                                                         </button>
                                                     ) : (
-                                                        <span className="truncate text-[10px] font-bold text-gray-800">{ing.ingredients?.name}</span>
+                                                        <span className="truncate text-[10px] font-bold leading-tight text-gray-800">{ing.ingredients?.name}</span>
                                                     )}
                                                 </td>
-                                                <td className="text-center py-2">
+                                                <td className="px-0.5 py-1 text-center align-middle">
                                                     {isRestricted ? (
-                                                        <span className="text-gray-700 font-bold">{qty}</span>
+                                                        <span className="font-bold text-gray-700">{qty}</span>
                                                     ) : (
                                                         <QuantityInput initialValue={qty} onSave={(val) => handleQuantityChange(ing.id, val)} />
                                                     )}
                                                 </td>
-                                                <td className="text-center py-2">
+                                                <td className="px-0.5 py-1 text-center align-middle">
                                                     {isRestricted ? (
-                                                        <span className="text-gray-400 font-bold">{ing.unit}</span>
+                                                        <span className="font-bold text-gray-400">{ing.unit}</span>
                                                     ) : (
-                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); fetchBackendCost(); }); }} className="text-[10px] font-bold border border-gray-100 rounded px-1 py-0.5 bg-white focus:border-[#36606F] outline-none">
+                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); fetchBackendCost(); }); }} className="rounded border border-gray-100 bg-white px-1 py-0.5 text-[10px] font-bold outline-none focus:border-[#36606F]">
                                                             {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </select>
                                                     )}
                                                 </td>
-                                                {!isRestricted && <td className="text-right font-black text-gray-700 py-2">{cost.toFixed(2)}€</td>}
-                                                <td className="text-center py-2">
+                                                {!isRestricted && <td className="px-2 py-1 text-right align-middle font-black text-gray-700">{cost.toFixed(2)}€</td>}
+                                                <td className="py-1 text-center align-middle">
                                                     {!isRestricted && (
-                                                        <button onClick={() => handleDeleteIngredient(ing.id)} className="p-1 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                                                        <button type="button" onClick={() => handleDeleteIngredient(ing.id)} className="rounded p-0.5 text-gray-300 transition-colors hover:bg-rose-50 hover:text-rose-500">
                                                             <Trash2 size={12} strokeWidth={3} />
                                                         </button>
                                                     )}
@@ -1120,9 +1120,9 @@ function RecipeDetailContent() {
                                         );
                                     })}
                                     {!isRestricted && (
-                                        <tr className="bg-[#5B8FB9]/5 font-black text-[10px] sticky bottom-0">
-                                            <td className="py-2 px-3 text-gray-800" colSpan={3}>COSTO TOTAL</td>
-                                            <td className="py-2 text-right text-[#5B8FB9] pr-1">{totalCost.toFixed(2)}€</td>
+                                        <tr className="sticky bottom-0 border-t border-gray-100 bg-[#5B8FB9]/5 font-black text-[10px]">
+                                            <td className="px-3 py-1.5 text-gray-800" colSpan={3}>COSTO TOTAL</td>
+                                            <td className="px-2 py-1.5 text-right text-[#5B8FB9]">{totalCost.toFixed(2)}€</td>
                                             <td></td>
                                         </tr>
                                     )}
