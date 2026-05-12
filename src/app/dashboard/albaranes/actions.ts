@@ -22,6 +22,85 @@ async function gateAuthenticated(): Promise<GateResult> {
   return { ok: true, supabase, userId: user.id, role: profile?.role ?? null }
 }
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+
+/**
+ * Tras cambiar factor o precio unitario en una línea mapeada, recalcula
+ * `ingredients.current_price` desde `unit_price / conversion_factor` (salvo `price_locked`).
+ */
+async function resyncIngredientPriceForMappedLine(
+  supabase: SupabaseServerClient,
+  ctx: { supplierId: number; originalName: string; ingredientId: string; unitPrice: number | null }
+): Promise<{ ok: true; warning?: string } | { ok: false; message: string }> {
+  const { supplierId, originalName, ingredientId, unitPrice } = ctx
+  if (!ingredientId || !originalName) return { ok: true }
+  if (unitPrice == null || !Number.isFinite(unitPrice) || unitPrice <= 0) return { ok: true }
+
+  const { data: mapping, error: mapErr } = await supabase
+    .from('supplier_item_mappings')
+    .select('conversion_factor')
+    .eq('supplier_id', supplierId)
+    .eq('supplier_item_name', originalName)
+    .eq('ingredient_id', ingredientId)
+    .maybeSingle()
+  if (mapErr) return { ok: false, message: mapErr.message }
+
+  const factorRaw = (mapping as any)?.conversion_factor as number | null
+  const factor = factorRaw && Number.isFinite(Number(factorRaw)) && Number(factorRaw) !== 0 ? Number(factorRaw) : null
+  if (!factor) return { ok: true, warning: 'No hay factor de conversión; no se actualiza precio automático.' }
+
+  const newPrice = unitPrice / factor
+  if (!Number.isFinite(newPrice) || newPrice <= 0) {
+    return { ok: true, warning: 'El precio calculado es inválido; no se actualiza ingrediente.' }
+  }
+
+  const { data: ing, error: ingErr } = await supabase
+    .from('ingredients')
+    .select('current_price, price_locked')
+    .eq('id', ingredientId)
+    .maybeSingle()
+  if (ingErr) return { ok: false, message: ingErr.message }
+
+  if ((ing as any)?.price_locked === true) {
+    const { error: mapOnlyErr } = await supabase
+      .from('supplier_item_mappings')
+      .update({ last_known_price: unitPrice })
+      .eq('supplier_id', supplierId)
+      .eq('supplier_item_name', originalName)
+      .eq('ingredient_id', ingredientId)
+    if (mapOnlyErr) return { ok: false, message: `Error actualizando mapeo: ${mapOnlyErr.message}` }
+    return {
+      ok: true,
+      warning: 'Este ingrediente tiene precio fijo: no se ha cambiado el precio del catálogo (solo referencia del proveedor).',
+    }
+  }
+
+  const oldPrice = ((ing as any)?.current_price as number | null) ?? 0
+
+  const { error: histErr } = await supabase.from('ingredient_price_history').insert({
+    ingredient_id: ingredientId,
+    old_price: oldPrice,
+    new_price: newPrice,
+  })
+  if (histErr) return { ok: false, message: `Error guardando historial: ${histErr.message}` }
+
+  const { error: ingUpdErr } = await supabase
+    .from('ingredients')
+    .update({ current_price: newPrice, updated_at: new Date().toISOString() })
+    .eq('id', ingredientId)
+  if (ingUpdErr) return { ok: false, message: `Error actualizando ingrediente: ${ingUpdErr.message}` }
+
+  const { error: mapUpdErr } = await supabase
+    .from('supplier_item_mappings')
+    .update({ last_known_price: unitPrice })
+    .eq('supplier_id', supplierId)
+    .eq('supplier_item_name', originalName)
+    .eq('ingredient_id', ingredientId)
+  if (mapUpdErr) return { ok: false, message: `Error actualizando mapeo: ${mapUpdErr.message}` }
+
+  return { ok: true }
+}
+
 export type PurchaseInvoiceListItem = {
   id: string
   created_at: string
@@ -257,6 +336,8 @@ export type PurchaseInvoiceLine = {
   status: string | null
   ingredient_id: string | null
   ingredient_name: string | null
+  /** Factor en `supplier_item_mappings` para esta línea mapeada (mismo proveedor + nombre + ingrediente). */
+  conversion_factor: number | null
 }
 
 export type PurchaseInvoiceDetail = {
@@ -344,7 +425,38 @@ export async function getPurchaseInvoiceDetailAction(
     status: l.status ?? null,
     ingredient_id: l.mapped_ingredient_id ?? null,
     ingredient_name: l.ingredients?.name ?? null,
+    conversion_factor: null as number | null,
   })) as PurchaseInvoiceLine[]
+
+  const supplierIdForMaps = (data as any).supplier_id as number | null
+  if (supplierIdForMaps != null && lines.length > 0) {
+    const mappedPairs = lines
+      .filter((ln) => ln.ingredient_id)
+      .map((ln) => ({ name: String(ln.original_name ?? '').trim(), ing: ln.ingredient_id as string }))
+      .filter((p) => p.name && p.ing)
+    const uniqueNames = [...new Set(mappedPairs.map((p) => p.name))]
+    if (uniqueNames.length > 0) {
+      const { data: mapRows, error: mapErr } = await gate.supabase
+        .from('supplier_item_mappings')
+        .select('supplier_item_name, ingredient_id, conversion_factor')
+        .eq('supplier_id', supplierIdForMaps)
+        .in('supplier_item_name', uniqueNames)
+      if (mapErr) return { success: false, message: mapErr.message }
+      const facMap = new Map<string, number>()
+      for (const r of mapRows ?? []) {
+        const nm = String((r as any).supplier_item_name ?? '').trim()
+        const ing = String((r as any).ingredient_id ?? '')
+        const cf = Number((r as any).conversion_factor)
+        if (!nm || !ing || !Number.isFinite(cf) || cf <= 0) continue
+        facMap.set(`${nm}::${ing}`, cf)
+      }
+      for (const ln of lines) {
+        if (!ln.ingredient_id) continue
+        const key = `${String(ln.original_name ?? '').trim()}::${ln.ingredient_id}`
+        ln.conversion_factor = facMap.get(key) ?? null
+      }
+    }
+  }
 
   const detail: PurchaseInvoiceDetail = {
     id: (data as any).id,
@@ -491,67 +603,14 @@ export async function updatePurchaseInvoiceLineAction(params: {
   const supplierId = (invoiceRow as any)?.supplier_id as number | null
   if (supplierId == null) return { success: true, warning: 'La línea está mapeada, pero el albarán no tiene proveedor; no se actualiza precio.' }
 
-  const { data: mapping, error: mapErr } = await gate.supabase
-    .from('supplier_item_mappings')
-    .select('conversion_factor')
-    .eq('supplier_id', supplierId)
-    .eq('supplier_item_name', originalName)
-    .eq('ingredient_id', ingredientId)
-    .maybeSingle()
-  if (mapErr) return { success: false, message: mapErr.message }
-
-  const factorRaw = (mapping as any)?.conversion_factor as number | null
-  const factor = factorRaw && Number.isFinite(Number(factorRaw)) && Number(factorRaw) !== 0 ? Number(factorRaw) : null
-  if (!factor) return { success: true, warning: 'No hay factor de conversión; no se actualiza precio automático.' }
-
-  const newPrice = unitPrice / factor
-  if (!Number.isFinite(newPrice) || newPrice <= 0) {
-    return { success: true, warning: 'El precio calculado es inválido; no se actualiza ingrediente.' }
-  }
-
-  const { data: ing, error: ingErr } = await gate.supabase
-    .from('ingredients')
-    .select('current_price, price_locked')
-    .eq('id', ingredientId)
-    .maybeSingle()
-  if (ingErr) return { success: false, message: ingErr.message }
-
-  if ((ing as any)?.price_locked === true) {
-    const { error: mapOnlyErr } = await gate.supabase
-      .from('supplier_item_mappings')
-      .update({ last_known_price: unitPrice })
-      .eq('supplier_id', supplierId)
-      .eq('supplier_item_name', originalName)
-      .eq('ingredient_id', ingredientId)
-    if (mapOnlyErr) return { success: false, message: `Error actualizando mapeo: ${mapOnlyErr.message}` }
-    return {
-      success: true,
-      warning: 'Este ingrediente tiene precio fijo: no se ha cambiado el precio del catálogo (solo referencia del proveedor).',
-    }
-  }
-
-  const oldPrice = ((ing as any)?.current_price as number | null) ?? 0
-
-  const { error: histErr } = await gate.supabase.from('ingredient_price_history').insert({
-    ingredient_id: ingredientId,
-    old_price: oldPrice,
-    new_price: newPrice,
+  const priceRes = await resyncIngredientPriceForMappedLine(gate.supabase, {
+    supplierId,
+    originalName,
+    ingredientId,
+    unitPrice,
   })
-  if (histErr) return { success: false, message: `Error guardando historial: ${histErr.message}` }
-
-  const { error: ingUpdErr } = await gate.supabase
-    .from('ingredients')
-    .update({ current_price: newPrice, updated_at: new Date().toISOString() })
-    .eq('id', ingredientId)
-  if (ingUpdErr) return { success: false, message: `Error actualizando ingrediente: ${ingUpdErr.message}` }
-
-  const { error: mapUpdErr } = await gate.supabase
-    .from('supplier_item_mappings')
-    .update({ last_known_price: unitPrice })
-    .eq('supplier_id', supplierId)
-    .eq('supplier_item_name', originalName)
-    .eq('ingredient_id', ingredientId)
-  if (mapUpdErr) return { success: false, message: `Error actualizando mapeo: ${mapUpdErr.message}` }
+  if (!priceRes.ok) return { success: false, message: priceRes.message }
+  if (priceRes.warning) return { success: true, warning: priceRes.warning }
 
   return { success: true }
 }
@@ -984,6 +1043,114 @@ export async function confirmInvoiceLineMappingAction(params: {
   } catch {}
 
   return { success: true }
+}
+
+/**
+ * Corrige el factor de conversión aprendido para una línea **ya mapeada**,
+ * re-sincroniza precio del ingrediente (salvo `price_locked`) y, si ya hubo
+ * entrada `PURCHASE` `ALB-LINE-<lineId>`, rectifica la cantidad aplicada.
+ */
+export async function updateMappedLineConversionFactorAction(params: {
+  invoiceId: string
+  lineId: string
+  conversionFactor: number
+}): Promise<
+  { success: true; warning?: string; stockRectified: boolean } | { success: false; message: string }
+> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const isManager = gate.role === 'manager' || gate.role === 'admin'
+  if (!isManager) return { success: false, message: 'Sin permiso' }
+
+  const invoiceId = String(params?.invoiceId ?? '').trim()
+  const lineId = String(params?.lineId ?? '').trim()
+  const factor = Number(params?.conversionFactor)
+
+  if (!invoiceId || !lineId) return { success: false, message: 'Datos incompletos' }
+  if (!Number.isFinite(factor) || factor <= 0) return { success: false, message: 'Factor inválido' }
+
+  const { data: lineRow, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, original_name, quantity, unit_price, mapped_ingredient_id, status')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  if (!lineRow) return { success: false, message: 'Línea no encontrada' }
+
+  const rowInv = String((lineRow as any).invoice_id ?? '').trim()
+  if (rowInv !== invoiceId) return { success: false, message: 'La línea no pertenece a este albarán' }
+
+  const status = String((lineRow as any).status ?? '')
+  const ingredientId = String((lineRow as any).mapped_ingredient_id ?? '').trim()
+  if (status !== 'mapped' || !ingredientId) {
+    return { success: false, message: 'Solo se puede corregir el factor en líneas ya mapeadas.' }
+  }
+
+  const originalName = String((lineRow as any).original_name ?? '').trim()
+  if (!originalName) return { success: false, message: 'La línea no tiene nombre' }
+
+  const { data: inv, error: invErr } = await gate.supabase.from('purchase_invoices').select('supplier_id').eq('id', invoiceId).maybeSingle()
+  if (invErr) return { success: false, message: invErr.message }
+  const supplierId = (inv as any)?.supplier_id as number | null
+  if (supplierId == null) return { success: false, message: 'Este albarán no tiene proveedor asignado.' }
+
+  const unitPrice = (lineRow as any).unit_price as number | null
+
+  const { error: mapErr } = await gate.supabase.from('supplier_item_mappings').upsert(
+    {
+      supplier_id: supplierId,
+      supplier_item_name: originalName,
+      ingredient_id: ingredientId,
+      conversion_factor: factor,
+      last_known_price: unitPrice ?? null,
+    },
+    { onConflict: 'supplier_id,supplier_item_name' }
+  )
+  if (mapErr) return { success: false, message: `Error guardando factor: ${mapErr.message}` }
+
+  const priceRes = await resyncIngredientPriceForMappedLine(gate.supabase, {
+    supplierId,
+    originalName,
+    ingredientId,
+    unitPrice,
+  })
+  if (!priceRes.ok) return { success: false, message: priceRes.message }
+
+  let stockRectified = false
+  const baseRef = `ALB-LINE-${lineId}`
+  const { data: applied, error: appErr } = await gate.supabase
+    .from('stock_movements')
+    .select('quantity')
+    .eq('movement_type', 'PURCHASE')
+    .eq('ingredient_id', ingredientId)
+    .eq('reference_doc', baseRef)
+    .maybeSingle()
+  if (appErr) return { success: false, message: appErr.message }
+
+  const oldApplied = Number((applied as any)?.quantity)
+  if (Number.isFinite(oldApplied) && oldApplied > 0) {
+    const lineQty = Number((lineRow as any).quantity)
+    if (!Number.isFinite(lineQty) || lineQty <= 0) {
+      return {
+        success: false,
+        message:
+          'Hay stock aplicado y la línea no tiene cantidad válida: corrige la cantidad en la línea o usa «Rectificar stock».',
+      }
+    }
+    const newQty = lineQty * factor
+    if (Math.abs(newQty - oldApplied) > 1e-6) {
+      const rect = await rectifyInvoiceLineStockAction({ lineId, ingredientId, newQtyApplied: newQty })
+      if (!rect.success) return { success: false, message: rect.message }
+      stockRectified = true
+    }
+  }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true, warning: priceRes.warning, stockRectified }
 }
 
 export async function rectifyInvoiceLineStockAction(params: {
