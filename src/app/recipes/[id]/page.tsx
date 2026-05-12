@@ -701,24 +701,26 @@ function RecipeDetailContent() {
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
             <div className="max-w-6xl mx-auto w-full flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden">
                 {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
-                <div className="relative bg-[#36606F] px-3 md:px-5 py-2 flex flex-col items-center justify-center shrink-0">
-                    {/* Fila superior: atrás | título | editar + importar (misma altura y alineación vertical) */}
-                    <div className="grid w-full grid-cols-[minmax(2.5rem,auto)_1fr_auto] items-center gap-2 min-h-[48px]">
-                        <Link
-                            href="/recipes"
-                            aria-label="Volver a recetas"
-                            className={cn(
-                                'flex h-12 w-12 shrink-0 items-center justify-center',
-                                'text-white/70 hover:text-white active:scale-95 transition',
-                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                            )}
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Link>
-                        <div className="min-w-0 flex justify-center px-1">
-                            <div className="max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
-                                <span className="inline-block max-w-full truncate">{recipe.name}</span>
-                            </div>
+                <div className="relative flex shrink-0 flex-col items-stretch justify-center bg-[#36606F] px-3 py-2 md:px-5">
+                    {/* Fila superior: tres columnas iguales → título centrado en todo el ancho de la cabecera */}
+                    <div className="grid min-h-[48px] w-full grid-cols-3 items-center gap-1">
+                        <div className="flex shrink-0 justify-start">
+                            <Link
+                                href="/recipes"
+                                aria-label="Volver a recetas"
+                                className={cn(
+                                    'flex h-12 w-12 shrink-0 items-center justify-center',
+                                    'text-white/70 transition hover:text-white active:scale-95',
+                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                )}
+                            >
+                                <ArrowLeft className="h-6 w-6" />
+                            </Link>
+                        </div>
+                        <div className="flex min-w-0 justify-center px-1">
+                            <h1 className="max-w-full text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
+                                <span className="line-clamp-2 break-words">{recipe.name}</span>
+                            </h1>
                         </div>
                         <div className="flex shrink-0 items-center justify-end gap-2">
                             {!isRestricted && (
@@ -743,7 +745,7 @@ function RecipeDetailContent() {
                                     title="Importar (sobrescribe esta receta)"
                                     className={cn(
                                         'flex h-10 w-10 shrink-0 items-center justify-center text-white/60 transition hover:text-white active:scale-95',
-                                        importingRecipe ? 'opacity-40 pointer-events-none' : '',
+                                        importingRecipe ? 'pointer-events-none opacity-40' : '',
                                     )}
                                 >
                                     <Import className="h-5 w-5" />
@@ -762,44 +764,44 @@ function RecipeDetailContent() {
                         />
                     )}
 
-                    {/* Foto + navegación centrada debajo */}
-                    <div className="relative mt-1 flex items-center justify-center w-fit shrink-0">
+                    {/* Foto centrada en todo el ancho de la cabecera; flechas ancladas a los lados del bloque */}
+                    <div className="relative mt-1 flex w-full shrink-0 items-center justify-center py-0.5">
                         <button
+                            type="button"
                             onClick={handlePreviousRecipe}
                             disabled={currentRecipeIndex <= 0}
-                            className="absolute -left-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                            className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white/50 transition hover:text-white disabled:pointer-events-none disabled:opacity-0 md:left-1"
                         >
-                            <ChevronLeft className="w-8 h-8" />
+                            <ChevronLeft className="h-8 w-8" />
                         </button>
 
                         <div className="bg-white rounded-xl p-0.5 shadow-sm">
-                            <div className="relative group w-24 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-100/50">
+                            <div className="group relative flex h-14 w-24 items-center justify-center overflow-hidden rounded-lg border border-gray-100/50 bg-white">
                                 {recipe.photo_url ? (
                                     <button
                                         type="button"
                                         onClick={() => setIsPhotoLightboxOpen(true)}
                                         className={cn(
-                                            'absolute inset-0',
-                                            'w-full h-full',
-                                            'cursor-zoom-in',
+                                            'absolute inset-0 h-full w-full cursor-zoom-in',
                                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
                                         )}
                                         aria-label="Ver foto ampliada"
                                     >
-                                        <img src={recipe.photo_url} alt={recipe.name} className="w-full h-full object-contain" />
+                                        <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
                                     </button>
                                 ) : (
-                                    <Camera className="w-5 h-5 text-gray-300" />
+                                    <Camera className="h-5 w-5 text-gray-300" />
                                 )}
                             </div>
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleNextRecipe}
                             disabled={currentRecipeIndex >= allRecipes.length - 1}
-                            className="absolute -right-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                            className="absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white/50 transition hover:text-white disabled:pointer-events-none disabled:opacity-0 md:right-1"
                         >
-                            <ChevronRight className="w-8 h-8" />
+                            <ChevronRight className="h-8 w-8" />
                         </button>
                     </div>
 
