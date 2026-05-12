@@ -1103,111 +1103,103 @@ export default function AlbaranesHistoricoClient({
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
                               const noMatch = !l.ingredient_name
-                              // Para mostrar el lápiz nos basta con que la línea tenga
-                              // ingrediente vinculado: ajustar match (cambiar ingrediente
-                              // o factor) debe estar disponible aunque el status haya
-                              // quedado en un estado intermedio.
-                              const isMapped = Boolean(l.ingredient_id)
+                              // Líneas con ingrediente vinculado → el lápiz reabre el mapping
+                              // para ajustar factor/ingrediente. Las que no tienen match → el
+                              // lápiz lanza el mismo modal en modo «mapeo manual». Por eso
+                              // mostramos SIEMPRE el lápiz al manager, sin condicionarlo a
+                              // `ingredient_id`: garantiza el affordance de edición en todos
+                              // los casos (incluido el edge en que la línea perdió el match).
+                              const needsRepair = isManager && lineNeedsStockRepair(l)
+                              const stockBusy = repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading
                               return (
                                 <div key={l.id} className="p-3">
-                                  {/* Cabecera de la fila: nombre + iconos de estado a su derecha
-                                      (rojo: sin match, verde: stock aplicado) y lápiz «Ajustar match»
-                                      justificado al extremo derecho. Mantenemos «Sin stock — pulsar»
-                                      y «Rectificado» como badges secundarios debajo. */}
-                                  <div className="flex items-start gap-3">
+                                  {/* Cabecera de la fila: a la izquierda, área expandible
+                                      (botón único) con el nombre + iconos de estado puramente
+                                      decorativos (X rojo / Check verde / RotateCcw ámbar). A la
+                                      derecha, BLOQUE DE ACCIONES como hermano del botón anterior
+                                      (no anidado) con AlertCircle clickeable (reparar stock) y
+                                      Pencil (ajustar match). Esto evita HTML inválido (botones
+                                      anidados vía role="button") que en algunos navegadores
+                                      colapsa la zona de acciones y deja el lápiz invisible. */}
+                                  <div className="flex items-center gap-2">
                                     <button
                                       type="button"
                                       onClick={() => setExpandedLineIds((p) => ({ ...p, [l.id]: !Boolean(p[l.id]) }))}
-                                      className="flex-1 min-w-0 text-left"
+                                      className="flex-1 min-w-0 text-left flex items-center gap-2"
                                     >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <p className="text-sm font-black text-zinc-900 truncate">
-                                          {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
-                                        </p>
-                                        {/* Iconos de estado inline a la derecha del nombre.
-                                            Reglas mutuas: si no hay match (rojo), no hay stock.
-                                            Si hay match: sin stock (ámbar clickeable) ó con stock (verde).
-                                            Rectificado (ámbar ↺) puede acompañar al verde. */}
-                                        {noMatch ? (
-                                          <span
-                                            className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-rose-600 text-white shrink-0"
-                                            aria-label="Sin match"
-                                            title="Sin match — expande la fila para mapear"
-                                          >
-                                            <X className="h-3 w-3" strokeWidth={3.5} />
-                                          </span>
-                                        ) : null}
-                                        {isManager && lineNeedsStockRepair(l) ? (
-                                          <span
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              void repairStockForLine(l.id)
-                                            }}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                                void repairStockForLine(l.id)
-                                              }
-                                            }}
-                                            aria-disabled={repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading}
-                                            aria-label="Sin stock aplicado — pulsar para aplicar"
-                                            title="Sin stock aplicado — pulsar para aplicar"
-                                            className={cn(
-                                              'inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0 cursor-pointer active:scale-[0.99] transition',
-                                              (repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading) &&
-                                                'opacity-60 pointer-events-none'
-                                            )}
-                                          >
-                                            {repairingStockLineId === l.id ? (
-                                              <Loader2 className="h-3 w-3 animate-spin" />
-                                            ) : (
-                                              <AlertCircle className="h-3.5 w-3.5" strokeWidth={3} />
-                                            )}
-                                          </span>
-                                        ) : null}
-                                        {stockApplied ? (
-                                          <span
-                                            className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white shrink-0"
-                                            aria-label="Stock aplicado"
-                                            title="Stock aplicado"
-                                          >
-                                            <Check className="h-3 w-3" strokeWidth={3.5} />
-                                          </span>
-                                        ) : null}
-                                        {rectified ? (
-                                          <span
-                                            className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0"
-                                            aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                            title={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                          >
-                                            <RotateCcw className="h-3 w-3" strokeWidth={3} />
-                                          </span>
-                                        ) : null}
-                                      </div>
+                                      <span className="text-sm font-black text-zinc-900 truncate">
+                                        {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
+                                      </span>
+                                      {noMatch ? (
+                                        <span
+                                          className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-rose-600 text-white shrink-0"
+                                          aria-label="Sin match"
+                                          title="Sin match — pulsa el lápiz para mapear"
+                                        >
+                                          <X className="h-3 w-3" strokeWidth={3.5} />
+                                        </span>
+                                      ) : null}
+                                      {stockApplied ? (
+                                        <span
+                                          className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white shrink-0"
+                                          aria-label="Stock aplicado"
+                                          title="Stock aplicado"
+                                        >
+                                          <Check className="h-3 w-3" strokeWidth={3.5} />
+                                        </span>
+                                      ) : null}
+                                      {rectified ? (
+                                        <span
+                                          className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0"
+                                          aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                          title={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                        >
+                                          <RotateCcw className="h-3 w-3" strokeWidth={3} />
+                                        </span>
+                                      ) : null}
                                     </button>
 
-                                    {/* Lápiz «Ajustar match»: a la derecha de la fila, en cualquier
-                                        línea con ingrediente vinculado. Lo damos con fondo zinc-50
-                                        + borde zinc-200 para que destaque sobre el blanco del row y
-                                        no se confunda con un punto de color. */}
-                                    {isManager && isMapped ? (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
-                                          void openMapping(l.id)
-                                        }}
-                                        className="shrink-0 min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
-                                        aria-label="Ajustar match"
-                                        title="Ajustar match (cambiar factor o ingrediente)"
-                                      >
-                                        <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                      </button>
-                                    ) : null}
+                                    {/* Acciones al extremo derecho (hermanas del botón expandir).
+                                        shrink-0 para que NUNCA colapsen en pantallas estrechas. */}
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {needsRepair ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            void repairStockForLine(l.id)
+                                          }}
+                                          disabled={stockBusy}
+                                          aria-label="Sin stock aplicado — pulsar para aplicar"
+                                          title="Sin stock aplicado — pulsar para aplicar"
+                                          className={cn(
+                                            'min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-amber-500 text-white active:scale-[0.99] transition',
+                                            stockBusy && 'opacity-60 pointer-events-none'
+                                          )}
+                                        >
+                                          {repairingStockLineId === l.id ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <AlertCircle className="h-4 w-4" strokeWidth={2.5} />
+                                          )}
+                                        </button>
+                                      ) : null}
+                                      {isManager ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
+                                            void openMapping(l.id)
+                                          }}
+                                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
+                                          aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
+                                          title={l.ingredient_id ? 'Ajustar match (cambiar factor o ingrediente)' : 'Mapear línea'}
+                                        >
+                                          <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                                        </button>
+                                      ) : null}
+                                    </div>
                                   </div>
 
                                   {isExpanded ? (
