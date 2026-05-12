@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-12 (Albaranes: reparar stock huérfano desde UI, un clic + toast)
+**Última actualización:** 2026-05-12 (Sala LIVE: hora apertura mesa + telemetría alias timestamp)
+
+- [x] **Sala `/dashboard/sala`: hora de apertura de mesa (2026-05-12)**: `RadarSala` solo leía `timestamp_tpv`/`fecha_apertura`; el POST de telemetría a veces manda `Hora`, `Fecha_Apertura`, etc., o datetime SQL con espacio en vez de `T`, y la tarjeta quedaba en `--:--`. Cliente: helper `resolveMesaAperturaRaw` + `mesaAperturaToDate`; `parseTPVDate` acepta separador `T` o espacio y `HH:mm` sin segundos. Webhook `telemetria`: rellena `timestamp_tpv` desde alias y números (epoch) formateados en **Europe/Madrid** para no romper la semántica local del radar.
+
+- [x] **Consumo personal al fichar salida: unidades incompatibles (receta u → compra kg) (2026-05-12)**: La RPC `process_staff_consumption` usaba solo `convert_pricing_qty` (g↔kg, ml↔L, ud↔ud), por lo que líneas de receta en **unidades** sobre ingredientes comprados por **kg/L** fallaban al guardar. Migración `20260512200000_staff_consumption_unit_bridge_and_errors.sql`: puente cuando `supplier_pricing_mode = per_pack` y hay `pack_unit_size_*` (tamaño por unidad consumible → `purchase_unit`); si sigue sin conversión, `RAISE` con **nombre de producto e ingrediente** y guía de corrección. Desplegar SQL en Supabase.
 
 - [x] **Albaranes: reparar líneas mapeadas sin movimiento de stock (UI + server, 2026-05-12)**: Líneas `status='mapped'` con `mapped_ingredient_id` pero sin `PURCHASE` con `reference_doc='ALB-LINE-<lineId>'` (trigger saltado, proveedor asignado tarde, histórico sin trigger, etc.). Nueva `repairOrphanLineStockAction({ lineId })` (manager/admin): idempotente; si falta fila en `supplier_item_mappings` hace `upsert` con `conversion_factor=1` y avisa; inserta `PURCHASE` con `processed_by='Albaranes-Reparar'` y llama a `resyncIngredientPriceForMappedLine`. `repairOrphanLinesInInvoiceAction({ invoiceId })` recorre todas las líneas mapeadas del albarán. UI: badge táctil **«Sin stock — pulsar»** (ámbar) por línea + banner con **«Reparar todas»**; feedback con **sonner** (un clic, sin modal previo).
 

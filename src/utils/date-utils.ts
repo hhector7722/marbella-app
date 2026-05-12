@@ -22,15 +22,20 @@ export function parseDBDate(dateStr: string | null | undefined): Date {
 export function parseTPVDate(dateStr: string | null | undefined): Date {
   if (!dateStr) return new Date();
   
-  if (typeof dateStr === 'string' && dateStr.includes('T')) {
+  if (typeof dateStr === 'string' && /(\d{4})-(\d{2})-(\d{2})[T ]\d{2}:\d{2}/.test(dateStr)) {
     try {
-      // Formato: 2026-04-07T15:55:54.000Z
-      // Extraemos solo los números ignorando TZ y milisegundos
-      const matches = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
-      
-      if (matches) {
+      // Formato: 2026-04-07T15:55:54.000Z o SQL 2026-04-07 15:55:54.000
+      // Extraemos solo los números ignorando TZ y milisegundos (hora local TPV, Z errónea)
+      let matches = dateStr.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+      if (!matches) {
+        matches = dateStr.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?![0-9])/);
+        if (matches) {
+          const [, y, m, d, h, min] = matches.map(Number);
+          const fechaLocal = new Date(y, m - 1, d, h, min, 0);
+          if (!isNaN(fechaLocal.getTime())) return fechaLocal;
+        }
+      } else {
         const [, y, m, d, h, min, s] = matches.map(Number);
-        // Creamos la fecha local con esos valores numéricos exactos
         const fechaLocal = new Date(y, m - 1, d, h, min, s);
         if (!isNaN(fechaLocal.getTime())) return fechaLocal;
       }

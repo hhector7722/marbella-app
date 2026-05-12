@@ -10,6 +10,43 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+/** El bridge BDP / extractores antiguos no siempre rellenan `timestamp_tpv`; probamos alias habituales. */
+function resolveMesaAperturaRaw(m: Record<string, unknown> | null | undefined): string | number | undefined {
+  if (!m || typeof m !== 'object') return undefined;
+  const keys = [
+    'timestamp_tpv',
+    'fecha_apertura',
+    'Fecha_Apertura',
+    'hora_apertura',
+    'Hora_Apertura',
+    'Hora',
+    'timestamp',
+    'fecha_hora',
+    'FechaHora',
+  ] as const;
+  for (const k of keys) {
+    const v = m[k];
+    if (v == null || v === '') continue;
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string') {
+      const t = v.trim();
+      if (t !== '') return t;
+    }
+  }
+  return undefined;
+}
+
+function mesaAperturaToDate(raw: string | number | undefined): Date | null {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number') {
+    const ms = raw > 0 && raw < 1e12 ? raw * 1000 : raw;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = parseTPVDate(raw.trim());
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   const productosValidos = m.productos?.filter((p: any) => parseFloat(p.unidades) > 0) || [];
 
@@ -98,9 +135,11 @@ export default function RadarSala() {
 
       const finalMesas: any[] = [];
       byMesa.forEach((group) => {
-        const sorted = [...group].sort(
-          (a, b) => parseTPVDate(b.timestamp_tpv).getTime() - parseTPVDate(a.timestamp_tpv).getTime()
-        );
+        const sorted = [...group].sort((a, b) => {
+          const tb = mesaAperturaToDate(resolveMesaAperturaRaw(b))?.getTime() ?? 0;
+          const ta = mesaAperturaToDate(resolveMesaAperturaRaw(a))?.getTime() ?? 0;
+          return tb - ta;
+        });
         const winner = sorted[0];
         let nombre =
           (winner.nombre_cliente && String(winner.nombre_cliente).trim()) || '';
@@ -157,13 +196,13 @@ export default function RadarSala() {
     return () => { supabase.removeChannel(canal); };
   }, []);
 
-  const calcularEstado = (fechaString: string) => {
-    if (!fechaString) return { color: 'bg-[#407080]', texto: 'text-white', min: 0, hora: "--:--:--" };
+  const calcularEstado = (apertura: Date | null) => {
+    if (!apertura || Number.isNaN(apertura.getTime())) {
+      return { color: 'bg-[#407080]', texto: 'text-white', min: 0, hora: '--:--' };
+    }
 
-    // Usamos el parseador seguro que limpia el falso UTC (Z) del TPV
-    const fecha = parseTPVDate(fechaString);
-    const minutos = Math.floor((new Date().getTime() - fecha.getTime()) / 60000);
-    const horaFormatted = formatLocalTime(fecha);
+    const minutos = Math.floor((Date.now() - apertura.getTime()) / 60000);
+    const horaFormatted = formatLocalTime(apertura);
 
     if (minutos > 45) return { color: 'bg-[#D64D5D]', texto: 'text-white', min: minutos, hora: horaFormatted };
     if (minutos > 30) return { color: 'bg-amber-500', texto: 'text-white', min: minutos, hora: horaFormatted };
@@ -171,8 +210,8 @@ export default function RadarSala() {
   };
 
   const mesasOrdenadas = [...mesas].sort((a, b) => {
-    const timeA = parseTPVDate(a.timestamp_tpv || a.fecha_apertura || 0).getTime();
-    const timeB = parseTPVDate(b.timestamp_tpv || b.fecha_apertura || 0).getTime();
+    const timeA = mesaAperturaToDate(resolveMesaAperturaRaw(a))?.getTime() ?? 0;
+    const timeB = mesaAperturaToDate(resolveMesaAperturaRaw(b))?.getTime() ?? 0;
     return timeA - timeB;
   });
 
@@ -191,7 +230,11 @@ export default function RadarSala() {
 
       <div className="p-3 md:p-6 lg:p-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 xl:gap-10">
         {mesasOrdenadas.map((m) => (
-          <TarjetaMesa key={m.id_ticket} m={m} estado={calcularEstado(m.timestamp_tpv || m.fecha_apertura)} />
+          <TarjetaMesa
+            key={m.id_ticket}
+            m={m}
+            estado={calcularEstado(mesaAperturaToDate(resolveMesaAperturaRaw(m)))}
+          />
         ))}
         {mesas.length === 0 && (
           <div className="col-span-full text-center py-10 text-gray-400 italic">

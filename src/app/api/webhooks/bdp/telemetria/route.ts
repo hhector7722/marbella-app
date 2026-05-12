@@ -1,6 +1,50 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+function trimStr(v: unknown): string {
+  return typeof v === 'string' ? v.trim() : ''
+}
+
+/** Convierte instante UTC (ms) a componentes calendario-reloj en Europe/Madrid (misma semántica que parseTPVDate en cliente). */
+function formatMarbellaMysqlStyleFromMs(ms: number): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(ms))
+  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? '00'
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`
+}
+
+/** Si el extractor no envía `timestamp_tpv`, unificamos desde alias típicos (SQL / legacy). */
+function resolveTimestampTpv(mesa: Record<string, unknown>): string {
+  const canonical = trimStr(mesa.timestamp_tpv)
+  if (canonical) return canonical
+
+  const candidates: unknown[] = [
+    mesa.fecha_apertura,
+    mesa.Fecha_Apertura,
+    mesa.Hora,
+    mesa.timestamp,
+    mesa.fecha_hora,
+    mesa.FechaHora,
+  ]
+  for (const c of candidates) {
+    if (typeof c === 'number' && Number.isFinite(c) && c > 0) {
+      const ms = c < 1e12 ? c * 1000 : c
+      return formatMarbellaMysqlStyleFromMs(ms)
+    }
+    const s = trimStr(c)
+    if (s) return s
+  }
+  return ''
+}
+
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get('authorization')
@@ -17,8 +61,10 @@ export async function POST(req: Request) {
     if (!sala) return NextResponse.json({ success: true })
 
     const salaDisfrazada = sala.map((mesa: any) => {
+      const ts = resolveTimestampTpv(mesa as Record<string, unknown>)
       const mesaNorm = {
         ...mesa,
+        ...(ts ? { timestamp_tpv: ts } : {}),
         // Fuente de verdad del ticket en nuestros triggers KDS v2
         id_ticket: mesa.numero_documento,
         // Notas generales de la comanda (cabecera). Acepta alias por robustez ante cambios del extractor.
