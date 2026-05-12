@@ -22,6 +22,7 @@ import {
   repairOrphanLineStockAction,
   repairOrphanLinesInInvoiceAction,
   resolveLineMappingAction,
+  updateMappedLineConversionFactorAction,
   searchSuppliersForInvoiceAction,
   searchIngredientsForMappingAction,
   setPurchaseInvoiceSupplierAction,
@@ -443,20 +444,30 @@ export default function AlbaranesHistoricoClient({
         return
       }
       const { source, suggestedIngredientId, suggestedFactor, candidates, knownAliases } = res.result
+      const lineRow = detail.lines.find((x) => x.id === lineId)
+      const mappedIngredientId = lineRow?.ingredient_id ? String(lineRow.ingredient_id) : null
+      const storedFactor = lineRow?.conversion_factor
       setSuggestedByLineId((p) => ({
         ...p,
         [lineId]: { suggestedIngredientId, candidates, source, knownAliases },
       }))
-      // Preselección: el operario solo valida (puede cambiar libremente).
-      setSelectedIngredientByLineId((p) => ({ ...p, [lineId]: suggestedIngredientId ?? null }))
-      // Factor: si el diccionario o el alias trae uno, lo respetamos; si no, 1.
-      setFactorByLineId((p) => ({
+      // Preselección: sugerencia del resolver; si la línea ya estaba mapeada, mantenemos su ingrediente.
+      setSelectedIngredientByLineId((p) => ({
         ...p,
-        [lineId]:
-          suggestedFactor != null && Number.isFinite(suggestedFactor) && suggestedFactor > 0
-            ? String(suggestedFactor)
-            : p[lineId] ?? '1',
+        [lineId]: suggestedIngredientId ?? mappedIngredientId ?? p[lineId] ?? null,
       }))
+      // Factor: resolver (diccionario/alias) > factor ya guardado en esta línea > estado previo > 1.
+      setFactorByLineId((p) => {
+        let next = '1'
+        if (suggestedFactor != null && Number.isFinite(suggestedFactor) && suggestedFactor > 0) {
+          next = String(suggestedFactor)
+        } else if (storedFactor != null && Number.isFinite(Number(storedFactor)) && Number(storedFactor) > 0) {
+          next = String(storedFactor)
+        } else if (p[lineId] != null && String(p[lineId]).trim() !== '') {
+          next = String(p[lineId])
+        }
+        return { ...p, [lineId]: next }
+      })
       setIngredientSearchQuery('')
       setIngredientSearchResults([])
     } finally {
@@ -494,13 +505,36 @@ export default function AlbaranesHistoricoClient({
     if (!ingredientId) return setMappingError('Selecciona un ingrediente.')
     if (!Number.isFinite(factor) || factor <= 0) return setMappingError('Factor inválido.')
 
+    const lineRow = detail.lines.find((x) => x.id === lineId)
+    const alreadyMapped =
+      String(lineRow?.status ?? '') === 'mapped' &&
+      Boolean(lineRow?.ingredient_id) &&
+      String(lineRow?.ingredient_id) === String(ingredientId)
+
     setMappingLoading(true)
     try {
-      const res = await confirmInvoiceLineMappingAction({ lineId, invoiceId: detail.id, ingredientId, conversionFactor: factor })
+      const res = alreadyMapped
+        ? await updateMappedLineConversionFactorAction({
+            invoiceId: detail.id,
+            lineId,
+            conversionFactor: factor,
+          })
+        : await confirmInvoiceLineMappingAction({ lineId, invoiceId: detail.id, ingredientId, conversionFactor: factor })
+
       if (!res.success) {
         setMappingError(res.message)
         return
       }
+      if (alreadyMapped && 'stockRectified' in res && res.stockRectified) {
+        toast.success('Factor guardado y stock rectificado.')
+      } else if (alreadyMapped) {
+        toast.success('Factor guardado en el diccionario.')
+      }
+      if (alreadyMapped && 'warning' in res) {
+        const w = res.warning
+        if (typeof w === 'string' && w.trim()) toast.info(w)
+      }
+
       const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
       if (!refreshed.success) {
         setMappingError(`Mapeo OK, pero no se pudo recargar: ${refreshed.message}`)
@@ -1091,6 +1125,22 @@ export default function AlbaranesHistoricoClient({
                                           Stock aplicado
                                         </span>
                                       ) : null}
+                                      {isManager &&
+                                      l.ingredient_id &&
+                                      String(l.status ?? '') === 'mapped' ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
+                                            void openMapping(l.id)
+                                          }}
+                                          className="text-[#36606F] underline underline-offset-4 font-black"
+                                          title="Cambiar factor o revisar ingrediente sin deshacer el match"
+                                        >
+                                          Ajustar match
+                                        </button>
+                                      ) : null}
                                       {rectified ? (
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800">
                                           Rectificado (REV{stock?.rectifiedCount})
@@ -1168,7 +1218,9 @@ export default function AlbaranesHistoricoClient({
                                             <div className="min-w-0">
                                               <p className="text-xs font-black uppercase tracking-wider text-zinc-600">Match</p>
                                               <p className="text-[11px] font-bold text-zinc-500 mt-1">
-                                                Confirma ingrediente + factor. Se guardará para el futuro.
+                                                {String(l.status ?? '') === 'mapped' && l.ingredient_id
+                                                  ? 'Puedes editar el factor (y el ingrediente si lo cambias). Con stock ya aplicado, al guardar se rectifica la cantidad en almacén.'
+                                                  : 'Confirma ingrediente + factor. Se guardará para el futuro.'}
                                               </p>
                                             </div>
                                             <button
@@ -1348,17 +1400,25 @@ export default function AlbaranesHistoricoClient({
                                                 >
                                                   Crear ingrediente
                                                 </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => void confirmMapping(l.id)}
-                                                  disabled={mappingLoading || !detail.supplier_id}
-                                                  className={cn(
-                                                    'min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider flex-1',
-                                                    (mappingLoading || !detail.supplier_id) && 'opacity-60 pointer-events-none'
-                                                  )}
-                                                >
-                                                  Confirmar match
-                                                </button>
+                                                {(() => {
+                                                  const mappedSameIngredient =
+                                                    Boolean(l.ingredient_id) &&
+                                                    String(l.status ?? '') === 'mapped' &&
+                                                    String(selectedIngredientByLineId[l.id] ?? '') === String(l.ingredient_id)
+                                                  return (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => void confirmMapping(l.id)}
+                                                      disabled={mappingLoading || !detail.supplier_id}
+                                                      className={cn(
+                                                        'min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider flex-1',
+                                                        (mappingLoading || !detail.supplier_id) && 'opacity-60 pointer-events-none'
+                                                      )}
+                                                    >
+                                                      {mappedSameIngredient ? 'Guardar factor' : 'Confirmar match'}
+                                                    </button>
+                                                  )
+                                                })()}
                                               </div>
                                             </>
                                           )}
