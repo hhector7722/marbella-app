@@ -37,24 +37,68 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Aplica un timeout a una promesa de SSR para que un hang en GoTrue
+ * o PostgREST NUNCA congele el render de TODA la app. Sin esto, una
+ * sola llamada lenta a `auth.getUser()` en este layout deja la página
+ * en "cargando" infinito para usuarios cuya cookie de sesión necesita
+ * refresco. Anti-silent-failures: si timeout, devolvemos `fallback`
+ * y la app se renderiza igualmente (las páginas internas tendrán
+ * que volver a verificar sesión por su cuenta).
+ */
+async function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      p,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallback), ms);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  // `auth.getUser()` con timeout corto (4s). Si Supabase Auth no responde,
+  // seguimos renderizando con `user=null` — las páginas individuales harán
+  // el `redirect('/login')` con su propio timeout si es necesario.
+  const userPromise = (async () => {
+    try {
+      const r = await supabase.auth.getUser();
+      return r.data.user;
+    } catch {
+      return null;
+    }
+  })();
+  const user = await withTimeout(userPromise, 4000, null);
 
   let needsOnboarding = false;
 
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('needs_onboarding')
-      .eq('id', user.id)
-      .single();
-
-    needsOnboarding = profile?.needs_onboarding || false;
+    // `profiles.needs_onboarding` también acotado a 4s para no bloquear
+    // el render si PostgREST está lento. Usamos `maybeSingle()` para no
+    // fallar si el perfil aún no existe (señal de onboarding).
+    const profilePromise = (async () => {
+      try {
+        const r = await supabase
+          .from('profiles')
+          .select('needs_onboarding')
+          .eq('id', user.id)
+          .maybeSingle();
+        return (r.data as { needs_onboarding?: boolean } | null)?.needs_onboarding ?? false;
+      } catch {
+        return false;
+      }
+    })();
+    needsOnboarding = await withTimeout<boolean>(profilePromise, 4000, false);
   }
 
   return (
