@@ -28,9 +28,20 @@ async function ssrWithTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promis
 
 export default async function AlbaranesHistoricoPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Timeout también sobre `auth.getUser()`. Es la llamada que más
+  // frecuentemente se queda colgada: hace round-trip a GoTrue para
+  // verificar/refrescar el token. Sin esta protección, todo el SSR
+  // se queda esperando indefinidamente antes incluso de llegar a los
+  // siguientes timeouts del profile/lista. Si timeout: redirect a login.
+  const userPromise: Promise<{ id: string } | null> = (async () => {
+    try {
+      const r = await supabase.auth.getUser()
+      return r.data.user ? { id: r.data.user.id } : null
+    } catch {
+      return null
+    }
+  })()
+  const user = await ssrWithTimeout<{ id: string } | null>(userPromise, 5000, null)
   if (!user) redirect('/login')
 
   // Defensa contra hangs: si profile/lista tardan >8s nos rendimos y
