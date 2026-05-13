@@ -56,9 +56,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // `getUser()` hace round-trip a GoTrue y puede COLGAR el middleware
+  // (el navegador queda en "cargando" infinito). Para el guard de rutas
+  // basta la sesión del JWT en cookies — PostgREST/RLS siguen validando.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   if (!user && !path.startsWith("/login") && !path.startsWith("/auth") && !isRecoveryProfileRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -69,15 +73,23 @@ export async function proxy(request: NextRequest) {
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     const role = profile?.role;
+
+    // Staff/supervisor solo pueden un subconjunto de `/dashboard/*`.
+    // IMPORTANTE: incluir albaranes + scanner (subida) — antes quedaban
+    // fuera y el proxy redirigía a `/staff/dashboard` o colgaba en getUser.
+    const staffDashboardAllowed =
+      path.startsWith("/dashboard/propinas") ||
+      path.startsWith("/dashboard/kds") ||
+      path.startsWith("/dashboard/albaranes") ||
+      path.startsWith("/dashboard/scanner");
 
     if (
       (role === "staff" || role === "supervisor") &&
       path.startsWith("/dashboard") &&
-      !path.startsWith("/dashboard/propinas") &&
-      !path.startsWith("/dashboard/kds")
+      !staffDashboardAllowed
     ) {
       return NextResponse.redirect(new URL("/staff/dashboard", request.url));
     }

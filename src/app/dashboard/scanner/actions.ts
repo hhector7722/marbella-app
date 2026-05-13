@@ -7,8 +7,9 @@ import { revalidatePath } from 'next/cache'
 async function gateAuthenticated() {
   const supabase = await createClient()
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) return { ok: false as const, message: 'No autenticado', supabase: null }
 
   return { ok: true as const, supabase, userId: user.id }

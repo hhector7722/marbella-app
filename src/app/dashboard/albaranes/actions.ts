@@ -11,9 +11,15 @@ type GateResult =
 
 async function gateAuthenticated(): Promise<GateResult> {
   const supabase = await createClient()
+  // `getSession()` lee el JWT de las cookies sin round-trip a GoTrue.
+  // Evita cuelgues en Server Actions idénticos a los del middleware con
+  // `getUser()`. RLS en PostgREST sigue aplicando políticas con ese JWT.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+    error: sessionErr,
+  } = await supabase.auth.getSession()
+  if (sessionErr) return { ok: false, message: sessionErr.message }
+  const user = session?.user
   if (!user) return { ok: false, message: 'No autenticado' }
 
   const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()

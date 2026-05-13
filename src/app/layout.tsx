@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 /**
  * Aplica un timeout a una promesa de SSR para que un hang en GoTrue
  * o PostgREST NUNCA congele el render de TODA la app. Sin esto, una
- * sola llamada lenta a `auth.getUser()` en este layout deja la página
+ * sola llamada lenta a `auth.getSession()` en este layout deja la página
  * en "cargando" infinito para usuarios cuya cookie de sesión necesita
  * refresco. Anti-silent-failures: si timeout, devolvemos `fallback`
  * y la app se renderiza igualmente (las páginas internas tendrán
@@ -67,13 +67,12 @@ export default async function RootLayout({
 }>) {
   const supabase = await createClient();
 
-  // `auth.getUser()` con timeout corto (4s). Si Supabase Auth no responde,
-  // seguimos renderizando con `user=null` — las páginas individuales harán
-  // el `redirect('/login')` con su propio timeout si es necesario.
+  // `auth.getSession()` con timeout corto (4s). Lee cookies locales; no
+  // bloquea en round-trip a GoTrue como `getUser()`.
   const userPromise = (async () => {
     try {
-      const r = await supabase.auth.getUser();
-      return r.data.user;
+      const r = await supabase.auth.getSession();
+      return r.data.session?.user ?? null;
     } catch {
       return null;
     }
