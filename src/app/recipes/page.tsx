@@ -9,7 +9,7 @@ import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
-import { recipeLineCost } from '@/lib/recipe-cost';
+import { recipeLineCost, type IngredientPackBridgeContext } from '@/lib/recipe-cost';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
 interface Recipe {
@@ -22,7 +22,7 @@ interface Recipe {
     recipe_ingredients?: {
         quantity_gross: number;
         unit: string | null;
-        ingredients: { current_price: number; purchase_unit?: string } | { current_price: number; purchase_unit?: string }[] | null;
+        ingredients: { current_price: number; purchase_unit?: string; supplier_pricing_mode?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null } | { current_price: number; purchase_unit?: string; supplier_pricing_mode?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null }[] | null;
     }[];
 }
 
@@ -162,7 +162,7 @@ function RecipesContent() {
     async function fetchRecipes() {
         try {
             setLoading(true);
-            const { data, error } = await supabase.from('recipes').select(`id, name, category, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit))`).order('name');
+            const { data, error } = await supabase.from('recipes').select(`id, name, category, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))`).order('name');
             if (error) throw error;
             setRecipes(data || []);
         } catch (error) { console.error('Error fetching recipes:', error); } finally { setLoading(false); }
@@ -195,7 +195,14 @@ function RecipesContent() {
             const price = ingredient?.current_price ?? 0;
             const purchaseUnit = ingredient?.purchase_unit ?? 'kg';
             const recipeUnit = item.unit ?? 'kg';
-            return sum + recipeLineCost(item.quantity_gross, recipeUnit, purchaseUnit, price);
+            const pack: IngredientPackBridgeContext | undefined = ingredient
+                ? {
+                      supplier_pricing_mode: (ingredient as any).supplier_pricing_mode,
+                      pack_unit_size_qty: (ingredient as any).pack_unit_size_qty,
+                      pack_unit_size_unit: (ingredient as any).pack_unit_size_unit,
+                  }
+                : undefined;
+            return sum + recipeLineCost(item.quantity_gross, recipeUnit, purchaseUnit, price, pack);
         }, 0);
         const basePrice = recipe.sale_price / 1.10;
         const foodCost = basePrice > 0 ? (totalCost / basePrice) * 100 : 0;

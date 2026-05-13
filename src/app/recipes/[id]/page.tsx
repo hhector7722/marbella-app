@@ -4,11 +4,18 @@ import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
-import { recipeLineCost, RECIPE_UNIT_OPTIONS, formatRecipeIngredientLineCostEur } from '@/lib/recipe-cost';
+import {
+    recipeLineCost,
+    RECIPE_UNIT_OPTIONS,
+    formatRecipeIngredientLineCostEur,
+    getRecipeIngredientLineCostAnalysis,
+    recipeLineCostStatusHint,
+    type IngredientPackBridgeContext,
+} from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
@@ -431,16 +438,44 @@ function RecipeDetailContent() {
         return view.size === 'full' ? (ing.quantity_gross || 0) : (ing.quantity_half || 0);
     };
 
+    const ingredientPackBridge = (ing: any): IngredientPackBridgeContext | undefined => {
+        const i = ing?.ingredients;
+        if (!i) return undefined;
+        return {
+            supplier_pricing_mode: i.supplier_pricing_mode,
+            pack_unit_size_qty: i.pack_unit_size_qty,
+            pack_unit_size_unit: i.pack_unit_size_unit,
+        };
+    };
+
     const calculateIngredientCost = (ing: any) => {
         const qty = getIngredientQuantity(ing);
         const price = ing.ingredients?.current_price ?? 0;
         const purchaseUnit = ing.ingredients?.purchase_unit ?? 'kg';
         const recipeUnit = ing.unit ?? 'kg';
-        return recipeLineCost(qty, recipeUnit, purchaseUnit, price);
+        return recipeLineCost(qty, recipeUnit, purchaseUnit, price, ingredientPackBridge(ing));
     };
 
     const totalCostClient = ingredients.reduce((sum, ing) => sum + calculateIngredientCost(ing), 0);
     const totalCost = backendCost != null ? backendCost.total_cost : totalCostClient;
+
+    const recipeIngredientCostIssueCount = useMemo(() => {
+        if (isRestricted) return 0;
+        let n = 0;
+        for (const ing of ingredients) {
+            const qty = view.size === 'full' ? ing.quantity_gross || 0 : ing.quantity_half || 0;
+            if (!Number.isFinite(qty) || qty <= 0) continue;
+            const st = getRecipeIngredientLineCostAnalysis(
+                qty,
+                ing.unit ?? 'kg',
+                ing.ingredients?.purchase_unit ?? 'kg',
+                ing.ingredients?.current_price,
+                ingredientPackBridge(ing)
+            ).status;
+            if (st !== 'ok') n += 1;
+        }
+        return n;
+    }, [ingredients, isRestricted, view.size]);
     const VAT_RATE = 1.10;
     const currentPrice = getCurrentPrice() || 0;
     const basePrice = currentPrice > 0 ? currentPrice / VAT_RATE : 0;
@@ -1061,6 +1096,19 @@ function RecipeDetailContent() {
                             )}
                         </div>
                         <div className="custom-scrollbar relative">
+                            {!isRestricted && recipeIngredientCostIssueCount > 0 && (
+                                <div
+                                    className="flex items-start gap-1.5 border-b border-amber-100 bg-amber-50 px-3 py-1.5 text-[9px] font-bold leading-snug text-amber-900"
+                                    role="status"
+                                >
+                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden />
+                                    <span>
+                                        {recipeIngredientCostIssueCount === 1
+                                            ? '1 ingrediente sin coste calculado: pasa el ratón por «—» en Coste o revisa precio y unidades.'
+                                            : `${recipeIngredientCostIssueCount} ingredientes sin coste calculado: revisa precio en el artículo y que la unidad de la línea sea compatible (masa / volumen / ud).`}
+                                    </span>
+                                </div>
+                            )}
                             <table className="w-full text-[10px] border-collapse">
                                 <thead className="sticky top-0 z-10 bg-white shadow-sm">
                                     <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
@@ -1073,8 +1121,15 @@ function RecipeDetailContent() {
                                 </thead>
                                 <tbody>
                                     {ingredients.map((ing) => {
-                                        const cost = calculateIngredientCost(ing);
                                         const qty = getIngredientQuantity(ing);
+                                        const costAnalysis = getRecipeIngredientLineCostAnalysis(
+                                            qty,
+                                            ing.unit ?? 'kg',
+                                            ing.ingredients?.purchase_unit ?? 'kg',
+                                            ing.ingredients?.current_price,
+                                            ingredientPackBridge(ing)
+                                        );
+                                        const costDisplayOk = costAnalysis.status === 'ok';
                                         return (
                                             <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
                                                 <td className="max-w-[120px] truncate px-3 py-1">
@@ -1110,7 +1165,25 @@ function RecipeDetailContent() {
                                                         </select>
                                                     )}
                                                 </td>
-                                                {!isRestricted && <td className="px-2 py-1 text-right align-middle font-black text-gray-700">{formatRecipeIngredientLineCostEur(cost)}€</td>}
+                                                {!isRestricted && (
+                                                    <td className="px-2 py-1 text-right align-middle">
+                                                        {costDisplayOk ? (
+                                                            <span className="font-black text-gray-700">
+                                                                {formatRecipeIngredientLineCostEur(costAnalysis.eur)}€
+                                                            </span>
+                                                        ) : qty > 0 ? (
+                                                            <span
+                                                                className="inline-flex items-center justify-end gap-0.5 font-black text-amber-700"
+                                                                title={recipeLineCostStatusHint(costAnalysis.status)}
+                                                            >
+                                                                <AlertCircle className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+                                                                —
+                                                            </span>
+                                                        ) : (
+                                                            <span className="font-black text-gray-400">{formatRecipeIngredientLineCostEur(0)}€</span>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <td className="py-1 text-center align-middle">
                                                     {!isRestricted && (
                                                         <button type="button" onClick={() => handleDeleteIngredient(ing.id)} className="rounded p-0.5 text-gray-300 transition-colors hover:bg-rose-50 hover:text-rose-500">

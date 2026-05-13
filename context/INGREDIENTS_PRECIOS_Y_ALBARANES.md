@@ -8,7 +8,7 @@ El valor que usan **recetas, mermas, consumo personal y costes** es siempre:
 
 - **`ingredients.current_price`**: euros por **`ingredients.purchase_unit`** (típicamente €/kg, €/L o €/ud).
 
-La conversión desde la cantidad en la receta hasta esa unidad de compra está descrita en código en `src/lib/recipe-cost.ts`.
+La conversión desde la cantidad en la receta hasta esa unidad de compra está descrita en código en `src/lib/recipe-cost.ts` (`convertToPurchaseUnitQuantity`, `convertToPurchaseUnitQuantityWithPackBridge` cuando el ingrediente es `per_pack` con tamaño por ud).
 
 ### Dos modos de llegar a ese €/unidad de compra
 
@@ -108,6 +108,23 @@ Los cambios de `current_price` pueden quedar reflejados en `ingredient_price_his
 - **Albarán**: el precio de línea **no sustituye** al ingrediente hasta que exista **mapeo + factor**; la fórmula es **precio unitario de línea ÷ factor** → €/`purchase_unit`.
 - **Historial**: ver sección 4.
 
-## 6. Reservado
+## 6. Matriz: tipo de línea en albarán → qué guardar en el ingrediente y en la línea
+
+Referencias reales en `context/ejemplos_albaranes` (facturas SERHS, Santa Teresa, Ametller, ABRIL, Videla, PANABAD, Froneri, etc.) y escandallos en `context/ejemplos_escandallos`.
+
+| Patrón en el papel del proveedor | Ejemplo típico | Campo **Cantidad** en la línea del albarán (app) | `unit_price` (PU) | Ingrediente en catálogo | `conversion_factor` (mapeo) |
+|----------------------------------|----------------|---------------------------------------------------|---------------------|---------------------------|-------------------------------|
+| Precio por **caja** con uds y volumen en descripción | Leche `1,5L C/6`, caja ×4 | Cajas = **4** (o unidades totales si así lo interpretáis el OCR) | € **por caja** (neto) | `per_pack`: `pack_price`, `pack_units` = uds/caja, `pack_unit_size_*` = ml/L por brick | Típico **1** si la cantidad de línea ya está en la misma “unidad de facturación” que el pack del catálogo; si no, factor = unidades de línea por unidad de catálogo |
+| Precio por **ud** con tamaño en texto (lata, brick) | Coca 33 cl, Sriracha 740 ml | **uds** entregadas | €/**ud** | `per_pack` con `purchase_unit` homogéneo **l** o **kg** + `pack_unit_size_*` (resolver: `ingredient-pack-pricing.ts`) | **1** si 1 línea = 1 ud de catálogo |
+| Precio por **kg** (solo peso en línea) | Patata, cebolla | **kg** | €/**kg** | `per_purchase_unit`, `purchase_unit = kg` | **1** |
+| **Catch-weight**: piezas + **kg** facturados, PU €/kg | ABRIL: 2 uds, 7,60 kg, 5,65 €/kg | **kg totales** (**7,6**), no solo “2” | €/**kg** | `purchase_unit = kg` | **1** (el precio ya es por kg; la cantidad de stock suele ir en kg vía factor 1) |
+| Catch-weight Videla: **bultos + kg**, PU €/kg | 3 BU, 16,05 kg | **kg** de la línea (**16,05**) | €/**kg** | `kg` | **1** |
+| Caja helados **20×70 ml**, precio por caja | Froneri | Cajas | €/caja | `per_pack`, `pack_units=20`, tamaño **70 ml**/ud | Ajustar factor si la “ud” de stock no es la misma que la del OCR |
+
+**Regla práctica:** `nuevo_precio_catálogo = unit_price / conversion_factor` debe dar **€ por `purchase_unit` del ingrediente**. Si el proveedor factura en **kg** y el ingrediente es **kg**, dejad **Cantidad = kg** de la línea y factor **1** salvo que una unidad de línea represente varios kg del catálogo (entonces factor &gt; 1).
+
+**Escandallo (receta):** la línea de receta usa `g`, `kg`, `ml`, `cl`, `L` o `ud`. El coste convierte a `purchase_unit` en cliente (`recipe-cost.ts`) y en backend (`get_recipe_cost` + `recipe_qty_to_purchase_unit_for_cost`). Si el ingrediente es **`per_pack`** con tamaño por ud, el sistema puede enlazar **receta en ud** con **compra en kg/L** y viceversa (misma lógica que consumo personal).
+
+## 7. Reservado
 
 Extensiones futuras (p. ej. historial de intentos de precio albarán cuando `price_locked` está activo) no están cubiertas aquí.

@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-12 (Ingredientes per_pack: ud + ml en wizard, modal y creación experta)
+**Última actualización:** 2026-05-13 (Recetas: pack bridge + cl + matriz albarán)
+
+- [x] **Recetas: coste escandallo + BD + UI albarán (2026-05-13)**: [recipe-cost.ts](src/lib/recipe-cost.ts) — `cl`, `getRecipeIngredientLineCostAnalysis` (— si incompatible/sin precio), `convertToPurchaseUnitQuantityWithPackBridge` (receta **ud**↔compra masa/volumen con `per_pack` + `pack_unit_size_*`). RPC `get_recipe_cost` / `convert_pricing_qty` en [`20260513121500_recipe_cost_cl_and_pack_bridge.sql`](supabase/migrations/20260513121500_recipe_cost_cl_and_pack_bridge.sql). Matriz albarán→ingrediente y catch-weight en [context/INGREDIENTS_PRECIOS_Y_ALBARANES.md](context/INGREDIENTS_PRECIOS_Y_ALBARANES.md). `AlbaranesHistoricoClient`: ayuda en **Cantidad** (kg si PU €/kg) y **Factor**.
 
 - [x] **Ingredientes: per_pack con base `ud` y contenido volumen/masa (2026-05-12)**: Caso típico **7,61 €/ud y 740 ml por ud** (caja de botellas). El wizard ocultaba cantidad/medida por pieza y la conversión **ml → ud** fallaba. **Wizard** [`IngredientWizard.tsx`](src/components/ingredients/IngredientWizard.tsx): paso pack muestra siempre cantidad + medida (select ampliado si base es `ud`), atajos volumen + masa, preview €/unidad homogénea vía `resolveDeclaredPurchaseUnitWithPackContent`. **Modal** [`IngredientEditModal.tsx`](src/components/ingredients/IngredientEditModal.tsx) y **experto** [`ingredients/page.tsx`](src/app/ingredients/page.tsx): `computeEffectivePriceFromPack` y guardado usan el mismo resolver para `purchase_unit`/`unit_type` (p. ej. `l` cuando contenido es ml y la base declarada es `ud`). Helper compartido en [`src/lib/ingredient-pack-pricing.ts`](src/lib/ingredient-pack-pricing.ts).
 

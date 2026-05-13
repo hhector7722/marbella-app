@@ -1217,6 +1217,9 @@ export default function AlbaranesHistoricoClient({
                                         <div className="mt-2 grid grid-cols-3 gap-2">
                                           <div className="min-w-0">
                                             <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
+                                            <p className="text-[10px] font-bold text-zinc-500 leading-snug mb-1">
+                                              Si el PU es €/kg, pon aquí los <span className="text-zinc-800">kg totales</span> de la línea (p. ej. pesada), no solo el nº de piezas.
+                                            </p>
                                             {canEdit ? (
                                               <input
                                                 inputMode="decimal"
@@ -1398,8 +1401,11 @@ export default function AlbaranesHistoricoClient({
                                                     className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-black text-zinc-900 outline-none"
                                                     placeholder="1"
                                                   />
-                                                  <p className="mt-2 text-[11px] font-bold text-zinc-500">
-                                                    Ej: si el albarán dice 1 caja y son 12 uds, pon 12.
+                                                  <p className="mt-2 text-[11px] font-bold text-zinc-500 leading-snug">
+                                                    <span className="block">Ej.: 1 caja = 12 uds → factor 12.</span>
+                                                    <span className="block mt-1">
+                                                      Si el albarán trae <span className="text-zinc-800">piezas + kg</span> y el precio es por kg, suele bastar <span className="text-zinc-800">cantidad = kg</span> y factor <span className="text-zinc-800">1</span> (ver guía en context/INGREDIENTS_PRECIOS_Y_ALBARANES.md).
+                                                    </span>
                                                   </p>
                                                 </div>
                                               </div>

@@ -85,7 +85,7 @@ export function parseQuantityAndUnit(
     return { qty: qty * 10, unit: 'ml' }
   }
   const u = normalizeRecipeImportUnit(raw)
-  const allowed: MassVolumeUnit[] = ['g', 'kg', 'ml', 'l', 'ud']
+  const allowed: MassVolumeUnit[] = ['g', 'kg', 'ml', 'l', 'cl', 'ud']
   if (!allowed.includes(u)) {
     return { qty, unit: 'kg' }
   }
