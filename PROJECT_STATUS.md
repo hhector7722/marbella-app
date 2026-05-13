@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-13 (Recetas: pack bridge + cl + matriz albarán)
+**Última actualización:** 2026-05-13 (Sala LIVE: hora cabecera mesa v2 — líneas producto + DD/MM)
+
+- [x] **Sala `/dashboard/sala`: hora en cabecera sigue en `--:--` (2026-05-13)**: Causas típicas: (1) `timestamp_tpv` vacío en la fila ganadora pero presente en otra fila del mismo `mesa`; (2) solo `Hora` en cada línea de `productos`; (3) fecha `DD/MM/YYYY HH:mm`. `RadarSala`: fusionar apertura desde todo el grupo; `aperturaDesdeLineasProducto` (mínima hora parseable); lista de claves camelCase + escaneo superficial; `parseEuropeanDateTimeLocal` + integración en `parseTPVDate`. Webhook telemetría: más alias en `resolveTimestampTpv`.
 
 - [x] **Recetas: coste escandallo + BD + UI albarán (2026-05-13)**: [recipe-cost.ts](src/lib/recipe-cost.ts) — `cl`, `getRecipeIngredientLineCostAnalysis` (— si incompatible/sin precio), `convertToPurchaseUnitQuantityWithPackBridge` (receta **ud**↔compra masa/volumen con `per_pack` + `pack_unit_size_*`). RPC `get_recipe_cost` / `convert_pricing_qty` en [`20260513121500_recipe_cost_cl_and_pack_bridge.sql`](supabase/migrations/20260513121500_recipe_cost_cl_and_pack_bridge.sql). Matriz albarán→ingrediente y catch-weight en [context/INGREDIENTS_PRECIOS_Y_ALBARANES.md](context/INGREDIENTS_PRECIOS_Y_ALBARANES.md). `AlbaranesHistoricoClient`: ayuda en **Cantidad** (kg si PU €/kg) y **Factor**.
 

@@ -14,6 +14,26 @@ export function parseDBDate(dateStr: string | null | undefined): Date {
 }
 
 /**
+ * Fecha/hora local tipo TPV o export SQL español: `12/05/2026 11:30` o `12/05/2026 11:30:00`.
+ * Construye con `new Date(y, m-1, d, …)` (regla anti-shift del proyecto).
+ */
+export function parseEuropeanDateTimeLocal(s: string | null | undefined): Date | null {
+  if (!s) return null;
+  const t = s.trim();
+  const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  const hour = m[4] != null ? Number(m[4]) : 0;
+  const minute = m[5] != null ? Number(m[5]) : 0;
+  const second = m[6] != null ? Number(m[6]) : 0;
+  if (!year || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day, hour, minute, second);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Parsea una fecha proveniente del TPV (Jsonb radiografia_completa).
  * El TPV manda la hora local (Madrid) pero con una 'Z' (UTC) erronea.
  * Ejemplo: '2026-04-07T03:09:28.000Z' (cuando en Madrid son las 03:09 AM).
@@ -44,6 +64,9 @@ export function parseTPVDate(dateStr: string | null | undefined): Date {
     }
   }
   
+  const eu = parseEuropeanDateTimeLocal(dateStr);
+  if (eu) return eu;
+
   return parseDBDate(dateStr);
 }
 

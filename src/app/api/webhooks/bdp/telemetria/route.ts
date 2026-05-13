@@ -29,6 +29,10 @@ function resolveTimestampTpv(mesa: Record<string, unknown>): string {
   const candidates: unknown[] = [
     mesa.fecha_apertura,
     mesa.Fecha_Apertura,
+    mesa.timestampTpv,
+    mesa.fechaApertura,
+    mesa.horaApertura,
+    mesa.Hora_Apertura,
     mesa.Hora,
     mesa.timestamp,
     mesa.fecha_hora,

@@ -10,31 +10,39 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-/** El bridge BDP / extractores antiguos no siempre rellenan `timestamp_tpv`; probamos alias habituales. */
-function resolveMesaAperturaRaw(m: Record<string, unknown> | null | undefined): string | number | undefined {
-  if (!m || typeof m !== 'object') return undefined;
-  const keys = [
-    'timestamp_tpv',
-    'fecha_apertura',
-    'Fecha_Apertura',
-    'hora_apertura',
-    'Hora_Apertura',
-    'Hora',
-    'timestamp',
-    'fecha_hora',
-    'FechaHora',
-  ] as const;
-  for (const k of keys) {
-    const v = m[k];
-    if (v == null || v === '') continue;
-    if (typeof v === 'number' && Number.isFinite(v)) return v;
-    if (typeof v === 'string') {
-      const t = v.trim();
-      if (t !== '') return t;
-    }
+function isEmptyish(v: unknown): boolean {
+  if (v == null) return true;
+  if (typeof v === 'string') {
+    const t = v.trim().toLowerCase();
+    return t === '' || t === 'null' || t === 'undefined';
   }
-  return undefined;
+  return false;
 }
+
+/** Claves habituales + camelCase que envían bridges BDP / extractores. */
+const APERTURA_KEYS = [
+  'timestamp_tpv',
+  'fecha_apertura',
+  'Fecha_Apertura',
+  'hora_apertura',
+  'Hora_Apertura',
+  'Hora',
+  'timestamp',
+  'fecha_hora',
+  'FechaHora',
+  'timestampTpv',
+  'fechaApertura',
+  'horaApertura',
+  'fechaTpv',
+  'dt_apertura',
+  'DtApertura',
+  'fecha_documento',
+  'FechaDocumento',
+  'fecha_operacion',
+  'FechaOperacion',
+] as const;
+
+const KEY_DATE_HINT = /(fecha|hora|time|timestamp|apertura|dt|tpv)/i;
 
 function mesaAperturaToDate(raw: string | number | undefined): Date | null {
   if (raw == null || raw === '') return null;
@@ -43,8 +51,70 @@ function mesaAperturaToDate(raw: string | number | undefined): Date | null {
     const d = new Date(ms);
     return Number.isNaN(d.getTime()) ? null : d;
   }
-  const d = parseTPVDate(raw.trim());
+  const s = raw.trim();
+  if (!s) return null;
+  if (/^\d{10,13}$/.test(s)) {
+    const n = Number(s);
+    const d = new Date(n < 1e12 ? n * 1000 : n);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = parseTPVDate(s);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Si la cabecera no trae hora, muchos extractores mandan `Hora` solo en cada línea de producto. */
+function aperturaDesdeLineasProducto(m: Record<string, unknown>): number | undefined {
+  const arr = m.productos;
+  if (!Array.isArray(arr)) return undefined;
+  let minMs: number | undefined;
+  for (const p of arr) {
+    if (!p || typeof p !== 'object') continue;
+    const po = p as Record<string, unknown>;
+    const raw = [
+      'Hora',
+      'hora',
+      'timestamp',
+      'fecha',
+      'fecha_linea',
+      'Fecha',
+      'hora_linea',
+      'timestamp_tpv',
+    ]
+      .map((key) => po[key])
+      .find((x) => !isEmptyish(x));
+    if (raw == null) continue;
+    const d = mesaAperturaToDate(typeof raw === 'number' ? raw : String(raw));
+    if (!d || Number.isNaN(d.getTime())) continue;
+    const t = d.getTime();
+    if (minMs == null || t < minMs) minMs = t;
+  }
+  return minMs;
+}
+
+/** Cualquier valor en propiedad “parecida” a fecha/hora (p. ej. nombres raros del TPV). */
+function shallowScanAperturaValue(m: Record<string, unknown>): string | number | undefined {
+  for (const [k, v] of Object.entries(m)) {
+    if (k === 'productos' || k === 'mesaKey') continue;
+    if (typeof v === 'number' && Number.isFinite(v) && v > 1e11 && v < 1e14) return v;
+    if (typeof v === 'string' && !isEmptyish(v) && KEY_DATE_HINT.test(k)) {
+      const t = v.trim();
+      if (/\d{4}-\d{2}-\d{2}/.test(t) || /\d{1,2}\/\d{1,2}\/\d{4}/.test(t)) return t;
+    }
+  }
+  return undefined;
+}
+
+function resolveMesaAperturaRaw(m: Record<string, unknown> | null | undefined): string | number | undefined {
+  if (!m || typeof m !== 'object') return undefined;
+  for (const k of APERTURA_KEYS) {
+    const v = m[k];
+    if (isEmptyish(v)) continue;
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string') return v.trim();
+  }
+  const scanned = shallowScanAperturaValue(m);
+  if (scanned != null) return scanned;
+  return aperturaDesdeLineasProducto(m);
 }
 
 function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
@@ -160,9 +230,26 @@ export default function RadarSala() {
           nombre = lastNombreByTicketRef.current[ticketKey];
         }
 
+        let aperturaRaw = resolveMesaAperturaRaw(winner as Record<string, unknown>);
+        if (aperturaRaw == null) {
+          for (const row of sorted) {
+            const r = resolveMesaAperturaRaw(row as Record<string, unknown>);
+            if (r != null) {
+              aperturaRaw = r;
+              break;
+            }
+          }
+        }
+
         finalMesas.push({
           ...winner,
           nombre_cliente: nombre,
+          ...(aperturaRaw != null
+            ? {
+                timestamp_tpv:
+                  typeof aperturaRaw === 'number' ? aperturaRaw : String(aperturaRaw),
+              }
+            : {}),
         });
       });
 
