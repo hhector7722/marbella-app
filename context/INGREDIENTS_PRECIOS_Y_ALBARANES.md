@@ -93,6 +93,8 @@ Si no está bloqueado: **gana el último proceso que escriba** `ingredients.curr
 
 ### Modo `per_pack` en el catálogo
 
+Si el usuario elige cobro por **unidad** (`ud`) pero el **contenido por pieza** es volumen (ml, cl, l) o masa (g, kg), la app guarda `purchase_unit`/`unit_type` como **`l`** o **`kg`** (coste homogéneo para el trigger y recetas). Caso típico: precio por botella + 740 ml → €/L. Resolver: `src/lib/ingredient-pack-pricing.ts` → `resolveDeclaredPurchaseUnitWithPackContent`.
+
 Los updates desde albarán suelen hacer solo `SET current_price = …` sin tocar `supplier_pricing_mode` ni `pack_*`. Si después se guarda de nuevo un ingrediente en modo pack con todos los `pack_*`, el trigger de pack **puede recalcular** `current_price` desde el pack.
 
 ## 4. Historial

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy'
+import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing'
 import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
@@ -54,6 +55,7 @@ const VOLUME_PRESETS = [
   { qty: 330, unit: 'ml' as const },
   { qty: 500, unit: 'ml' as const },
   { qty: 700, unit: 'ml' as const },
+  { qty: 740, unit: 'ml' as const },
   { qty: 750, unit: 'ml' as const },
   { qty: 1, unit: 'l' as const },
   { qty: 1.5, unit: 'l' as const },
@@ -72,6 +74,12 @@ const ORDER_UNIT_OPTIONS = ['unidad', 'ud', 'pack', 'caja', 'pieza', 'kg', 'l', 
 function toNumber(x: unknown): number {
   const n = typeof x === 'number' ? x : Number(String(x ?? '').replace(',', '.'))
   return Number.isFinite(n) ? n : 0
+}
+
+function toWizardPurchaseBase(resolved: string): WizardBaseUnit {
+  if (resolved === 'kg') return 'kg'
+  if (resolved === 'l') return 'l'
+  return 'ud'
 }
 
 function convertQty(qty: number, from: string, to: WizardBaseUnit): number | null {
@@ -100,7 +108,11 @@ function computeUnitCost(d: WizardDraft): number | null {
   const units = d.unitsInside ?? 0
   if (!Number.isFinite(units) || units <= 0) return null
   const perUnitQty = d.contentPerUnitQty ?? 1
-  const converted = convertQty(perUnitQty, d.contentPerUnitUnit, d.baseUnit)
+  const contentUnit = d.contentPerUnitUnit ?? 'ud'
+  const storeBase = toWizardPurchaseBase(
+    resolveDeclaredPurchaseUnitWithPackContent(d.baseUnit, contentUnit)
+  )
+  const converted = convertQty(perUnitQty, contentUnit, storeBase)
   if (converted == null || converted <= 0) return null
   return d.supplierPrice / (units * converted)
 }
@@ -518,18 +530,20 @@ export function IngredientWizard({
       // per_pack
       if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
       if (!draft.unitsInside || draft.unitsInside <= 0) return toast.error('Unidades dentro inválido')
-      if (draft.containsLiquid === true) {
-        if (!Number.isFinite(draft.contentPerUnitQty ?? NaN) || Number(draft.contentPerUnitQty) <= 0) {
-          return toast.error('Falta el contenido por unidad (ej. 330 ml)')
-        }
-      }
       const qty = draft.contentPerUnitQty ?? 1
       const unit = draft.contentPerUnitUnit ?? 'ud'
 
-      // Blindaje: evitar estados imposibles (ej. ud -> l).
-      const converted = convertQty(qty, unit, draft.baseUnit)
+      const storePurchase = toWizardPurchaseBase(
+        resolveDeclaredPurchaseUnitWithPackContent(draft.baseUnit, unit)
+      )
+      if (storePurchase !== 'ud') {
+        if (!Number.isFinite(qty) || qty <= 0) {
+          return toast.error('Indica cantidad y medida por unidad (ej. 740 ml)')
+        }
+      }
+      const converted = convertQty(qty, unit, storePurchase)
       if (converted == null) {
-        return toast.error(`Conversión no soportada: ${unit} -> ${draft.baseUnit}`)
+        return toast.error(`Conversión no soportada: ${unit} -> ${storePurchase}`)
       }
 
       await savePatch({
@@ -538,8 +552,8 @@ export function IngredientWizard({
         pack_units: draft.unitsInside,
         pack_unit_size_qty: qty,
         pack_unit_size_unit: unit,
-        purchase_unit: draft.baseUnit,
-        unit_type: draft.baseUnit,
+        purchase_unit: storePurchase,
+        unit_type: storePurchase,
       })
       advance()
     } catch (e: any) {
@@ -868,20 +882,21 @@ export function IngredientWizard({
                 />
               </div>
 
-              {draft.baseUnit !== 'ud' ? (
-                <div className="space-y-2">
-                  <div>
-                    <div className="text-sm font-bold text-zinc-800">{pricingAssistantCopy.amounts.eachPiece}</div>
-                    <p className="mt-0.5 text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.eachPieceHint}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <div>
+                  <div className="text-sm font-bold text-zinc-800">{pricingAssistantCopy.amounts.eachPiece}</div>
+                  <p className="mt-0.5 text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.eachPieceHint}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <label className="block space-y-1">
                     <span className="text-[10px] font-bold uppercase text-zinc-400">Cantidad</span>
                     <input
                       type="number"
                       step="0.001"
                       value={draft.contentPerUnitQty ?? ''}
-                      onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitQty: e.target.value === '' ? null : toNumber(e.target.value) }))}
+                      onChange={(e) =>
+                        setDraft((d) => ({ ...d, contentPerUnitQty: e.target.value === '' ? null : toNumber(e.target.value) }))
+                      }
                       className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-mono"
                     />
                   </label>
@@ -898,30 +913,33 @@ export function IngredientWizard({
                           <option value="cl">cl</option>
                           <option value="l">L</option>
                         </>
-                      ) : (
+                      ) : draft.baseUnit === 'kg' ? (
                         <>
                           <option value="g">g</option>
                           <option value="kg">kg</option>
                         </>
+                      ) : (
+                        <>
+                          <option value="ml">ml</option>
+                          <option value="cl">cl</option>
+                          <option value="l">L</option>
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ud">ud</option>
+                        </>
                       )}
                     </select>
                   </label>
-                  </div>
                 </div>
-              ) : (
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
-                  <div className="text-xs font-bold text-zinc-800">{pricingAssistantCopy.amounts.eachPiece}</div>
-                  <div className="mt-1 text-sm text-zinc-600">{pricingAssistantCopy.amounts.noPerPiece}</div>
-                </div>
-              )}
+              </div>
 
-              {draft.baseUnit !== 'ud' && (
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    {pricingAssistantCopy.amounts.shortcuts}
-                  </div>
+              <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
+                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  {pricingAssistantCopy.amounts.shortcuts}
+                </div>
+                {draft.baseUnit === 'l' && (
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {(draft.baseUnit === 'l' ? VOLUME_PRESETS.slice(0, 6) : MASS_PRESETS).map((p) => (
+                    {VOLUME_PRESETS.slice(0, 6).map((p) => (
                       <button
                         key={`${p.qty}-${p.unit}`}
                         type="button"
@@ -939,8 +957,77 @@ export function IngredientWizard({
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+                {draft.baseUnit === 'kg' && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {MASS_PRESETS.map((p) => (
+                      <button
+                        key={`${p.qty}-${p.unit}`}
+                        type="button"
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            contentPerUnitQty: p.qty,
+                            contentPerUnitUnit: p.unit as any,
+                          }))
+                        }
+                        className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                      >
+                        {p.qty}
+                        {p.unit}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {draft.baseUnit === 'ud' && (
+                  <div className="mt-2 space-y-3">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase text-zinc-500 mb-1.5">Volumen</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {VOLUME_PRESETS.map((p) => (
+                          <button
+                            key={`${p.qty}-${p.unit}`}
+                            type="button"
+                            onClick={() =>
+                              setDraft((d) => ({
+                                ...d,
+                                contentPerUnitQty: p.qty,
+                                contentPerUnitUnit: p.unit as any,
+                              }))
+                            }
+                            className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                          >
+                            {p.qty}
+                            {p.unit}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold uppercase text-zinc-500 mb-1.5">Masa</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {MASS_PRESETS.map((p) => (
+                          <button
+                            key={`m-${p.qty}-${p.unit}`}
+                            type="button"
+                            onClick={() =>
+                              setDraft((d) => ({
+                                ...d,
+                                contentPerUnitQty: p.qty,
+                                contentPerUnitUnit: p.unit as any,
+                              }))
+                            }
+                            className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                          >
+                            {p.qty}
+                            {p.unit}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1157,7 +1244,15 @@ export function IngredientWizard({
               {pricingAssistantCopy.amounts.costPreview}
             </div>
             <div className="text-2xl font-black text-[#36606F] mt-1">
-              {unitCost == null ? '—' : `${unitCost.toFixed(4)}€ / ${draft.baseUnit}`}
+              {unitCost == null
+                ? '—'
+                : `${unitCost.toFixed(4)}€ / ${
+                    draft.pricingMode === 'per_pack'
+                      ? toWizardPurchaseBase(
+                          resolveDeclaredPurchaseUnitWithPackContent(draft.baseUnit, draft.contentPerUnitUnit ?? 'ud')
+                        )
+                      : draft.baseUnit
+                  }`}
             </div>
           </div>
           <button

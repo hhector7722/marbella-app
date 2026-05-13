@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
+import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -72,8 +73,9 @@ function computeEffectivePriceFromPack(args: {
     const sizeQty = args.unitSizeQty == null ? 1 : Number(args.unitSizeQty);
     if (!Number.isFinite(sizeQty) || sizeQty <= 0) return null;
     const sizeUnit = args.unitSizeUnit ?? 'ud';
-    const purchaseUnit = args.purchaseUnit ?? 'ud';
-    const converted = convertQty(sizeQty, sizeUnit, purchaseUnit);
+    const declaredPurchase = args.purchaseUnit ?? 'ud';
+    const storePurchaseUnit = resolveDeclaredPurchaseUnitWithPackContent(declaredPurchase, sizeUnit);
+    const converted = convertQty(sizeQty, sizeUnit, storePurchaseUnit);
     if (converted == null || converted <= 0) return null;
     const denom = packUnits * converted;
     if (!Number.isFinite(denom) || denom <= 0) return null;
@@ -135,9 +137,15 @@ export default function IngredientsPage() {
     async function handleCreate() {
         if (!newIngredient.name) return toast.error('El nombre es obligatorio');
         setIsCreating(true);
-        const unit = newIngredient.purchase_unit || 'kg';
+        const mode = (newIngredient.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
+        const unit =
+            mode === 'per_pack'
+                ? resolveDeclaredPurchaseUnitWithPackContent(
+                      String(newIngredient.purchase_unit ?? 'ud'),
+                      newIngredient.pack_unit_size_unit ?? null
+                  )
+                : newIngredient.purchase_unit || 'kg';
         try {
-            const mode = (newIngredient.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
             const payload: any = {
                 ...newIngredient,
                 supplier: newIngredient.supplier || null,
@@ -527,7 +535,12 @@ export default function IngredientsPage() {
                                                         purchaseUnit: newIngredient.purchase_unit ?? null,
                                                     });
                                                     if (effective == null) return '—';
-                                                    const u = normalizeUnit(newIngredient.purchase_unit);
+                                                    const u = normalizeUnit(
+                                                        resolveDeclaredPurchaseUnitWithPackContent(
+                                                            newIngredient.purchase_unit ?? 'ud',
+                                                            newIngredient.pack_unit_size_unit ?? null
+                                                        )
+                                                    );
                                                     return `${effective.toFixed(4)}€/${u}`;
                                                 })()}
                                             </div>

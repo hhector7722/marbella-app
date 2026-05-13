@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls';
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy';
+import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 
 export interface Ingredient {
     id: string;
@@ -87,8 +88,9 @@ function computeEffectivePriceFromPack(args: {
     const sizeQty = args.unitSizeQty == null ? 1 : Number(args.unitSizeQty);
     if (!Number.isFinite(sizeQty) || sizeQty <= 0) return null;
     const sizeUnit = args.unitSizeUnit ?? 'ud';
-    const purchaseUnit = args.purchaseUnit ?? 'ud';
-    const converted = convertQty(sizeQty, sizeUnit, purchaseUnit);
+    const declaredPurchase = args.purchaseUnit ?? 'ud';
+    const storePurchaseUnit = resolveDeclaredPurchaseUnitWithPackContent(declaredPurchase, sizeUnit);
+    const converted = convertQty(sizeQty, sizeUnit, storePurchaseUnit);
     if (converted == null || converted <= 0) return null;
     const denom = packUnits * converted;
     if (!Number.isFinite(denom) || denom <= 0) return null;
@@ -226,12 +228,19 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
         setSaving(true);
         try {
             const mode = (editForm.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
+            const purchaseUnitStored =
+                mode === 'per_pack'
+                    ? resolveDeclaredPurchaseUnitWithPackContent(
+                          String(editForm.purchase_unit ?? 'ud'),
+                          editForm.pack_unit_size_unit ?? null
+                      )
+                    : editForm.purchase_unit ?? 'kg';
             const payload: Record<string, unknown> = {
                 name: editForm.name,
                 supplier: editForm.supplier || null,
                 supplier_2: editForm.supplier_2 || null,
-                purchase_unit: editForm.purchase_unit,
-                unit_type: editForm.purchase_unit,
+                purchase_unit: purchaseUnitStored,
+                unit_type: purchaseUnitStored,
                 category: editForm.category,
                 waste_percentage: editForm.waste_percentage || 0,
                 image_url: editForm.image_url,
@@ -628,7 +637,12 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                         purchaseUnit: editForm.purchase_unit ?? null,
                                                                     });
                                                                     if (effective == null) return '—';
-                                                                    const u = normalizeUnit(editForm.purchase_unit);
+                                                                    const u = normalizeUnit(
+                                                                        resolveDeclaredPurchaseUnitWithPackContent(
+                                                                            editForm.purchase_unit ?? 'ud',
+                                                                            editForm.pack_unit_size_unit ?? null
+                                                                        )
+                                                                    );
                                                                     return `${effective.toFixed(4)}€/${u}`;
                                                                 })()}
                                                             </div>
