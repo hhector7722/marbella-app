@@ -620,10 +620,6 @@ export default function AlbaranesHistoricoClient({
   }
 
   async function repairStockForLine(lineId: string) {
-    if (!isManager) {
-      toast.error('Solo gestor o admin pueden reparar stock desde aquí.')
-      return
-    }
     setRepairingStockLineId(lineId)
     try {
       const res = await repairOrphanLineStockAction({ lineId })
@@ -648,7 +644,7 @@ export default function AlbaranesHistoricoClient({
   }
 
   async function repairAllMappedLinesWithoutStock() {
-    if (!detail || !isManager) return
+    if (!detail) return
     setRepairingInvoiceStockBatch(true)
     try {
       const res = await repairOrphanLinesInInvoiceAction({ invoiceId: detail.id })
@@ -673,7 +669,6 @@ export default function AlbaranesHistoricoClient({
   // para volver a mapear. Mantiene el aprendizaje en el diccionario porque el
   // usuario va a re-mapear (si lo cambia, el upsert lo sobrescribe).
   async function editMapping(lineId: string) {
-    if (!isManager) return
     setMappingError(null)
     setMappingLoading(true)
     try {
@@ -692,7 +687,6 @@ export default function AlbaranesHistoricoClient({
   // "Eliminar match": deshace el mapeo y borra también la entrada del
   // diccionario para que el sistema no vuelva a aplicar el mismo error.
   async function removeMapping(lineId: string) {
-    if (!isManager) return
     const ok = typeof window === 'undefined'
       ? false
       : window.confirm(
@@ -783,9 +777,10 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  // Acciones de la cabecera "Albaranes" (rightSlot del layout): solo manager.
-  // Sin contorno ni relleno; sobre fondo petróleo → iconos blancos.
-  const headerActions = isManager ? (
+  // Acciones de la cabecera "Albaranes" (rightSlot del layout): visibles a
+  // TODOS los authenticated. Sin contorno ni relleno; sobre fondo petróleo
+  // → iconos blancos.
+  const headerActions = (
     <>
       <button
         type="button"
@@ -813,7 +808,7 @@ export default function AlbaranesHistoricoClient({
         {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
       </button>
     </>
-  ) : null
+  )
 
   return (
     <DashboardDetailLayout title="Albaranes" backHref="/dashboard" maxWidthClass="max-w-5xl" showBackButton={false} rightSlot={headerActions}>
@@ -879,8 +874,31 @@ export default function AlbaranesHistoricoClient({
       ) : null}
 
       {error ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">
-          {error}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700 flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="flex-1 min-w-0">{error}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={isPending}
+              className={cn(
+                'min-h-[40px] px-3 rounded-xl bg-white border border-red-200 text-red-700 text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2',
+                isPending && 'opacity-60 pointer-events-none'
+              )}
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Reintentar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') window.location.reload()
+              }}
+              className="min-h-[40px] px-3 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition"
+            >
+              Recargar página
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -954,7 +972,7 @@ export default function AlbaranesHistoricoClient({
                       a la izquierda y, en la misma línea, la fecha · nº de albarán
                       como metadato secundario justo a su derecha. */}
                   <div className="min-w-0 flex-1 flex items-baseline gap-3">
-                    {isManager && detail ? (
+                    {detail ? (
                       <button
                         type="button"
                         onClick={() => {
@@ -970,7 +988,7 @@ export default function AlbaranesHistoricoClient({
                       </button>
                     ) : (
                       <p className="text-sm font-black uppercase tracking-wider truncate min-w-0">
-                        {detail?.supplier_name ?? 'Proveedor pendiente'}
+                        Proveedor pendiente
                       </p>
                     )}
                     {(() => {
@@ -989,7 +1007,7 @@ export default function AlbaranesHistoricoClient({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {isManager && detail?.id && detail?.supplier_id ? (
+                    {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
                         onClick={() => void runAutoMap(detail.id)}
@@ -1057,7 +1075,7 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   ) : null}
 
-                  {isManager && mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
+                  {mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
                       <p className="text-xs font-black text-amber-900 leading-snug min-w-0 flex-1">
                         {mappedLinesWithoutStockCount} línea{mappedLinesWithoutStockCount === 1 ? '' : 's'} mapeada
@@ -1097,7 +1115,7 @@ export default function AlbaranesHistoricoClient({
                           ) : (
                             detail.lines.map((l) => {
                               const d = draftLines[l.id]
-                              const canEdit = isManager
+                              const canEdit = true
                               const isExpanded = Boolean(expandedLineIds[l.id])
                               const stock = stockStatusByLineId[l.id]
                               const stockApplied = Boolean(stock?.stockApplied)
@@ -1109,7 +1127,7 @@ export default function AlbaranesHistoricoClient({
                               // mostramos SIEMPRE el lápiz al manager, sin condicionarlo a
                               // `ingredient_id`: garantiza el affordance de edición en todos
                               // los casos (incluido el edge en que la línea perdió el match).
-                              const needsRepair = isManager && lineNeedsStockRepair(l)
+                              const needsRepair = lineNeedsStockRepair(l)
                               const stockBusy = repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading
                               return (
                                 <div key={l.id} className="p-3">
@@ -1184,21 +1202,19 @@ export default function AlbaranesHistoricoClient({
                                           )}
                                         </button>
                                       ) : null}
-                                      {isManager ? (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
-                                            void openMapping(l.id)
-                                          }}
-                                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
-                                          aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
-                                          title={l.ingredient_id ? 'Ajustar match (cambiar factor o ingrediente)' : 'Mapear línea'}
-                                        >
-                                          <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                        </button>
-                                      ) : null}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
+                                          void openMapping(l.id)
+                                        }}
+                                        className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
+                                        aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
+                                        title={l.ingredient_id ? 'Ajustar match (cambiar factor o ingrediente)' : 'Mapear línea'}
+                                      >
+                                        <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                                      </button>
                                     </div>
                                   </div>
 

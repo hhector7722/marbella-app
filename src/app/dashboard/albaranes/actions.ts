@@ -124,9 +124,15 @@ export async function listPurchaseInvoicesAction(params?: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const limit = Math.min(Math.max(Number(params?.limit ?? 50) || 50, 1), 200)
-  const canViewAll = gate.role === 'manager' || gate.role === 'admin'
+  // Lectura del histórico abierta a TODO authenticated (staff, supervisor,
+  // manager, admin). Está alineado con la RLS real de Supabase (SELECT con
+  // qual=true). Las acciones de modificación (UPDATE/DELETE/mapeo/reparar
+  // stock/cambio de proveedor) siguen restringidas a manager/admin más
+  // abajo. `canViewAll` se mantiene en el payload por compatibilidad
+  // (algunos consumidores aún lo leen) pero ya no filtra la query.
+  const canViewAll = gate.role === 'manager' || gate.role === 'admin' || gate.role === 'supervisor'
 
-  let q = gate.supabase
+  const q = gate.supabase
     .from('purchase_invoices')
     .select(
       `
@@ -146,8 +152,6 @@ export async function listPurchaseInvoicesAction(params?: {
     .order('invoice_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit)
-
-  if (!canViewAll) q = q.eq('created_by', gate.userId)
 
   const { data, error } = await q
   if (error) return { success: false, message: error.message }
@@ -199,8 +203,11 @@ function addDays(ymd: string, days: number): string {
 }
 
 async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true }>, startYmd: string, endYmd: string, limit = 200) {
-  const canViewAll = gate.role === 'manager' || gate.role === 'admin'
-  let q = gate.supabase
+  // Lectura abierta a TODO authenticated (alineado con RLS de Supabase).
+  // Ver nota en `listPurchaseInvoicesAction`. `canViewAll` se mantiene
+  // por compatibilidad del payload.
+  const canViewAll = gate.role === 'manager' || gate.role === 'admin' || gate.role === 'supervisor'
+  const q = gate.supabase
     .from('purchase_invoices')
     .select(
       `
@@ -222,7 +229,6 @@ async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true 
     .order('invoice_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit)
-  if (!canViewAll) q = q.eq('created_by', gate.userId)
   const { data, error } = await q
   if (error) throw error
   const baseItems = (data ?? []).map((r: any) => ({
@@ -372,9 +378,11 @@ export async function getPurchaseInvoiceDetailAction(
   const id = String(invoiceId ?? '').trim()
   if (!id) return { success: false, message: 'ID inválido' }
 
-  const canViewAll = gate.role === 'manager' || gate.role === 'admin'
-
-  let q = gate.supabase
+  // Detalle abierto a TODO authenticated (alineado con RLS). La UI ya
+  // oculta los controles de manager (mapeo, reparar, eliminar, etc.)
+  // cuando el rol no es elevado, así que staff y supervisor verán el
+  // albarán en modo solo-lectura.
+  const q = gate.supabase
     .from('purchase_invoices')
     .select(
       `
@@ -403,7 +411,6 @@ export async function getPurchaseInvoiceDetailAction(
     )
     .eq('id', id)
 
-  if (!canViewAll) q = q.eq('created_by', gate.userId)
   const { data, error } = await q.maybeSingle()
   if (error) return { success: false, message: error.message }
   if (!data) return { success: false, message: 'No encontrado o sin permiso' }
@@ -516,8 +523,6 @@ export async function setPurchaseInvoiceSupplierAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const invoiceId = String(params?.invoiceId ?? '').trim()
   if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
 
@@ -554,8 +559,6 @@ export async function updatePurchaseInvoiceLineAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const lineId = String(params?.lineId ?? '').trim()
   if (!lineId) return { success: false, message: 'ID de línea inválido' }
 
@@ -629,8 +632,6 @@ export async function getInvoiceStockStatusesAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const lineIds = Array.from(new Set((params?.lineIds ?? []).map((x) => String(x ?? '').trim()).filter(Boolean)))
   if (lineIds.length === 0) return { success: true, statuses: [] }
 
@@ -733,8 +734,6 @@ export async function resolveLineMappingAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const invoiceId = String(params?.invoiceId ?? '').trim()
   const lineId = String(params?.lineId ?? '').trim()
   if (!invoiceId || !lineId) return { success: false, message: 'Datos incompletos' }
@@ -909,8 +908,6 @@ export async function suggestIngredientsForLineAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const extractedName = String(params?.extractedName ?? '').trim()
   if (!extractedName) return { success: true, suggestedIngredientId: null, candidates: [] }
 
@@ -955,8 +952,6 @@ export async function searchIngredientsForMappingAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const q = String(params?.query ?? '').trim()
   if (q.length < 2) return { success: true, items: [] }
   const limit = Math.min(Math.max(Number(params?.limit ?? 30) || 30, 1), 200)
@@ -989,8 +984,6 @@ export async function confirmInvoiceLineMappingAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const lineId = String(params?.lineId ?? '').trim()
   const invoiceId = String(params?.invoiceId ?? '').trim()
   const ingredientId = String(params?.ingredientId ?? '').trim()
@@ -1061,8 +1054,6 @@ export async function updateMappedLineConversionFactorAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const invoiceId = String(params?.invoiceId ?? '').trim()
   const lineId = String(params?.lineId ?? '').trim()
   const factor = Number(params?.conversionFactor)
@@ -1162,8 +1153,6 @@ export async function rectifyInvoiceLineStockAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const lineId = String(params?.lineId ?? '').trim()
   const ingredientId = String(params?.ingredientId ?? '').trim()
   const newQty = Number(params?.newQtyApplied)
@@ -1249,8 +1238,6 @@ export async function applyInvoiceLineStockAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const invoiceId = String(params?.invoiceId ?? '').trim()
   const lineId = String(params?.lineId ?? '').trim()
   if (!invoiceId || !lineId) return { success: false, message: 'Datos incompletos' }
@@ -1468,8 +1455,6 @@ export async function repairOrphanLineStockAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const lineId = String(params?.lineId ?? '').trim()
   if (!lineId) return { success: false, message: 'ID de línea inválido' }
 
@@ -1504,8 +1489,6 @@ export async function repairOrphanLinesInInvoiceAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const invoiceId = String(params?.invoiceId ?? '').trim()
   if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
 
@@ -1561,8 +1544,6 @@ export async function unmapInvoiceLineAction(params: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const lineId = String(params?.lineId ?? '').trim()
   if (!lineId) return { success: false, message: 'ID de línea inválido' }
 
@@ -1650,8 +1631,10 @@ export async function deletePurchaseInvoiceAction(params: {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
+  // Acción destructiva: SOLO manager/admin pueden eliminar un albarán
+  // completo (revierte stock y borra líneas + cabecera + archivo).
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
+  if (!isManager) return { success: false, message: 'Solo manager puede eliminar un albarán' }
 
   const invoiceId = String(params?.invoiceId ?? '').trim()
   if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
@@ -1739,8 +1722,6 @@ export async function autoMapKnownLinesAction(params?: {
   if (!gate.ok) return { success: false, message: gate.message }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Sin permiso' }
-
   const onlyInvoiceId = String(params?.invoiceId ?? '').trim() || null
 
   // 1) Cabeceras candidatas: tienen `supplier_id` y al menos una línea pendiente.
