@@ -356,7 +356,7 @@ export default function MappingClient({
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 items-center justify-center px-0.5 py-1">
+                  <div className="flex min-w-0 items-start justify-center px-0.5 py-1">
                     <RecipeCombobox
                       compact
                       micro
@@ -367,7 +367,7 @@ export default function MappingClient({
                     />
                   </div>
 
-                  <div className="flex min-w-0 items-center justify-center px-0.5 py-1">
+                  <div className="flex min-w-0 items-start justify-start px-0.5 py-1">
                     <button
                       type="button"
                       onClick={() => {
@@ -383,7 +383,7 @@ export default function MappingClient({
                         })
                       }}
                       className={cn(
-                        'w-full rounded border border-transparent px-0.5 py-1 text-center transition-colors',
+                        'w-full rounded border border-transparent px-0.5 py-1 text-left transition-colors',
                         rid ? 'hover:border-zinc-200 hover:bg-zinc-50/80 active:bg-zinc-100' : 'opacity-60'
                       )}
                       aria-label="Abrir detalle de ingredientes y albarán"
@@ -457,23 +457,23 @@ function IngredientEscandalloBlock({
   hasRecipe: boolean
 }) {
   if (!hasRecipe) {
-    return <span className="block text-center text-[10px] leading-none text-zinc-300">—</span>
+    return <span className="block text-left text-[10px] leading-none text-zinc-300">—</span>
   }
   if (rows.length === 0) {
-    return <span className="block text-center text-[9px] leading-tight text-zinc-400">Sin líneas</span>
+    return <span className="block text-left text-[9px] leading-tight text-zinc-400">Sin líneas</span>
   }
   return (
-    <div className="space-y-0.5 text-center">
+    <div className="space-y-0.5 text-left">
       {rows.map((line) => (
-        <div key={line.ingredient_id} className="text-center">
-          <span className="line-clamp-2 text-[8px] font-bold leading-tight text-[#36606F]">{line.ingredient_name}</span>
+        <div key={line.ingredient_id} className="text-left">
+          <span className="block text-[8px] font-bold leading-snug text-[#36606F]">{line.ingredient_name}</span>
           {line.albaran.length === 0 ? (
             <div className="text-[8px] leading-tight text-zinc-400">→ —</div>
           ) : (
             line.albaran.map((a, i) => (
               <div
                 key={`${line.ingredient_id}-alb-${i}`}
-                className="truncate text-[8px] leading-tight text-zinc-600"
+                className="text-[8px] leading-tight text-zinc-600"
                 title={a.supplier_name ? `${a.supplier_item_name} · ${a.supplier_name}` : a.supplier_item_name}
               >
                 → {a.supplier_item_name}
@@ -928,45 +928,30 @@ function RecipeCombobox({
 
   return (
     <div className="relative min-w-0 w-full" ref={wrapperRef}>
-      {micro && selectedId ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onClear()
-            setIsOpen(false)
-            setSearch('')
-          }}
-          className="absolute right-0 top-0 z-20 flex h-4 w-4 items-center justify-center rounded text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
-          title="Quitar receta"
-          aria-label="Quitar receta"
-        >
-          <X className="h-2.5 w-2.5 stroke-[3]" />
-        </button>
-      ) : null}
-
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         className={cn(
-          'min-w-0 w-full truncate',
+          'min-w-0 w-full',
           micro
-            ? 'flex items-center justify-center border-0 bg-transparent text-center shadow-none outline-none ring-0'
-            : 'flex items-center justify-between gap-0.5 rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
-          h,
-          btnPad
+            ? 'flex items-start justify-center border-0 bg-transparent py-1 text-center shadow-none outline-none ring-0'
+            : 'flex min-w-0 w-full items-center justify-between gap-0.5 truncate rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
+          !micro && h,
+          micro ? 'px-1 text-[10px]' : btnPad
         )}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
         <span
           className={cn(
-            'min-w-0 truncate font-semibold',
-            micro && 'text-center',
+            'min-w-0 font-semibold',
+            micro
+              ? 'whitespace-normal break-words text-center leading-snug [overflow-wrap:anywhere]'
+              : 'truncate',
             selectedRecipe ? 'text-zinc-900' : 'text-zinc-400'
           )}
         >
-          {selectedRecipe ? selectedRecipe.name : '…'}
+          {selectedRecipe ? selectedRecipe.name : micro ? '\u00A0' : '…'}
         </span>
         {!micro ? (
           <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
@@ -1007,11 +992,29 @@ function RecipeCombobox({
             />
           </div>
           <div className="max-h-[220px] overflow-y-auto">
-            {filteredRecipes.length === 0 ? (
-              <div className="p-3 text-center text-xs text-zinc-500">Sin resultados.</div>
-            ) : (
-              <ul className="py-0.5" role="listbox">
-                {filteredRecipes.map((r) => (
+            <ul className="py-0.5" role="listbox">
+              <li role="none">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selectedId == null}
+                  onClick={() => {
+                    onClear()
+                    setIsOpen(false)
+                    setSearch('')
+                  }}
+                  className={cn(
+                    'w-full px-2 py-2 text-left text-xs font-semibold transition-colors hover:bg-zinc-100',
+                    selectedId == null ? 'bg-zinc-50 text-zinc-400' : 'text-zinc-500'
+                  )}
+                >
+                  {'\u00A0'}
+                </button>
+              </li>
+              {filteredRecipes.length === 0 ? (
+                <li className="px-3 py-2 text-center text-xs text-zinc-500">Sin resultados.</li>
+              ) : (
+                filteredRecipes.map((r) => (
                   <li key={r.id} role="none">
                     <button
                       type="button"
@@ -1030,9 +1033,9 @@ function RecipeCombobox({
                       {r.name}
                     </button>
                   </li>
-                ))}
-              </ul>
-            )}
+                ))
+              )}
+            </ul>
           </div>
         </div>
       ) : null}
