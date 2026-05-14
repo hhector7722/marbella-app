@@ -319,35 +319,33 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 onScroll={onCarouselScroll}
                 className={cn(
                   'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-lg bg-zinc-50',
-                  /* Reserva ~21rem: cabecera del layout + «Añadir hoja» + puntos + «Guardar» + paddings (móvil sin scroll) */
-                  'h-[calc(100svh-21rem)] min-h-[12rem] md:h-[min(62vh,calc(100vh-15rem))]',
+                  /* Altura del visor: reserva espacio para CTAs debajo (móvil sin scroll a Guardar) */
+                  'min-h-[12rem] h-[calc(100svh-21rem)] md:h-[min(62vh,calc(100vh-15rem))]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
               >
                 {pendingBatch.items.map((it) => (
                   <div
                     key={it.id}
-                    className="relative flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always flex-col items-stretch justify-center px-1 py-1"
+                    className="relative box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-1 py-2"
                   >
-                    <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={it.dataUri}
-                        alt=""
-                        className="mx-auto h-auto max-h-full w-full max-w-full object-contain"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          removePendingItemById(it.id)
-                        }}
-                        className="absolute right-1 top-1 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
-                        aria-label="Quitar esta foto del borrador"
-                      >
-                        <X className="h-4 w-4" strokeWidth={3} />
-                      </button>
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={it.dataUri}
+                      alt=""
+                      className="mx-auto block h-auto w-full max-w-full object-contain max-h-[min(68dvh,calc(100svh-23rem))] md:max-h-[min(58vh,calc(100vh-16rem))]"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removePendingItemById(it.id)
+                      }}
+                      className="absolute right-1 top-1 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
+                      aria-label="Quitar esta foto del borrador"
+                    >
+                      <X className="h-4 w-4" strokeWidth={3} />
+                    </button>
                   </div>
                 ))}
               </div>
