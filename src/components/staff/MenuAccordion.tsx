@@ -655,9 +655,16 @@ export function MenuAccordion({
         <div
             className={cn(
                 'grid grid-cols-1 gap-3 sm:gap-4',
-                hideLangPicker && 'pt-0',
+                hideLangPicker && 'min-h-0 flex-1 pt-0',
                 !hideLangPicker && 'mt-4 sm:mt-5'
             )}
+            style={
+                hideLangPicker && displayGrouped.length > 0
+                    ? {
+                          gridTemplateRows: `repeat(${displayGrouped.length}, minmax(4.5rem, 1fr))`,
+                      }
+                    : undefined
+            }
         >
             {displayGrouped.map((group) => {
                 const isOpen = openKey === group.key
@@ -666,7 +673,10 @@ export function MenuAccordion({
                         <button
                             type="button"
                             onClick={() => headerToggle(group.key)}
-                            className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3"
+                            className={cn(
+                                'flex min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3',
+                                hideLangPicker ? 'min-h-0 h-full' : 'min-h-[52px]'
+                            )}
                             aria-expanded={isOpen}
                         >
                             <span className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2 sm:gap-3">
@@ -675,10 +685,10 @@ export function MenuAccordion({
                                     <img
                                         src={group.coverPhotoUrl}
                                         alt=""
-                                        className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-center sm:h-10 sm:w-10"
+                                        className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain object-center sm:h-14 sm:w-14"
                                     />
                                 ) : null}
-                                <span className="min-w-0 max-w-[85%] text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-sm">
+                                <span className="min-w-0 max-w-[85%] text-center text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-base md:text-lg">
                                     {group.title}
                                 </span>
                             </span>
@@ -708,14 +718,23 @@ export function MenuAccordion({
                     <div
                         className={cn(
                             'overflow-hidden rounded-2xl bg-white transition-colors duration-200',
-                            isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70'
+                            isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70',
+                            hideLangPicker && 'flex min-h-0 flex-1 flex-col'
                         )}
                     >
-                        <div className="flex min-h-[52px] w-full items-stretch">
+                        <div
+                            className={cn(
+                                'flex w-full items-stretch',
+                                hideLangPicker ? 'min-h-0 flex-1' : 'min-h-[52px]'
+                            )}
+                        >
                             {editMode && onPersistParentCategoryOrder && !reorderScope ? (
                                 <button
                                     type="button"
-                                    className="flex min-h-[52px] w-11 shrink-0 touch-manipulation items-center justify-center bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12"
+                                    className={cn(
+                                        'flex w-11 shrink-0 touch-manipulation items-center justify-center bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12',
+                                        hideLangPicker ? 'min-h-0 self-stretch' : 'min-h-[52px]'
+                                    )}
                                     aria-label="Cambiar posición de secciones"
                                     title="Cambiar posición de secciones"
                                     onClick={(e) => {
@@ -740,16 +759,23 @@ export function MenuAccordion({
                         className={cn(
                             'overflow-hidden rounded-2xl bg-white transition-colors duration-200',
                             isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70',
-                            reorderPick === group.key && isUuidLike(group.key) && 'bg-amber-50/80'
+                            reorderPick === group.key && isUuidLike(group.key) && 'bg-amber-50/80',
+                            hideLangPicker && 'flex min-h-0 flex-1 flex-col'
                         )}
                     >
-                        <div className="flex min-h-[52px] w-full items-stretch">
+                        <div
+                            className={cn(
+                                'flex w-full items-stretch',
+                                hideLangPicker ? 'min-h-0 flex-1' : 'min-h-[52px]'
+                            )}
+                        >
                             <button
                                 type="button"
                                 disabled={!isUuidLike(group.key)}
                                 onClick={() => handleParentReorderTap(group.key)}
                                 className={cn(
-                                    'flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3',
+                                    'flex min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3',
+                                    hideLangPicker ? 'min-h-0 h-full' : 'min-h-[52px]',
                                     !isUuidLike(group.key) && 'cursor-not-allowed opacity-50'
                                 )}
                             >
@@ -759,10 +785,10 @@ export function MenuAccordion({
                                         <img
                                             src={group.coverPhotoUrl}
                                             alt=""
-                                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain object-center sm:h-10 sm:w-10"
+                                            className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain object-center sm:h-14 sm:w-14"
                                         />
                                     ) : null}
-                                    <span className="min-w-0 max-w-[85%] text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-sm">
+                                    <span className="min-w-0 max-w-[85%] text-center text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-base md:text-lg">
                                         {group.title}
                                     </span>
                                 </span>
@@ -792,7 +818,9 @@ export function MenuAccordion({
 
                 return (
                     <Fragment key={group.key}>
-                        {reorderScope === 'parents' ? parentReorderCard : headerCard}
+                        <div className={cn(hideLangPicker && 'flex h-full min-h-0 flex-col')}>
+                            {reorderScope === 'parents' ? parentReorderCard : headerCard}
+                        </div>
                     </Fragment>
                 )
             })}
@@ -800,7 +828,7 @@ export function MenuAccordion({
     )
 
     return (
-        <div className={hideLangPicker ? undefined : 'space-y-6'}>
+        <div className={hideLangPicker ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'}>
             {!hideLangPicker ? (
                 <div className="w-full pt-1">
                     <CartaLangPicker lang={lang} onChange={setLang} />

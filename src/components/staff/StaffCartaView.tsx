@@ -39,16 +39,14 @@ export function StaffCartaView({
             </div>
 
             <div className="flex justify-center px-1">
-              <div className="flex shrink-0 items-center justify-center rounded-2xl bg-[#36606F] px-3 py-2 sm:px-4 sm:py-2.5">
-                <Image
-                  src="/icons/logo-white.png"
-                  alt="Bar La Marbella"
-                  width={260}
-                  height={70}
-                  className="h-11 w-auto max-w-[200px] sm:h-14 sm:max-w-[260px] md:h-[4rem] md:max-w-[300px]"
-                  priority
-                />
-              </div>
+              <Image
+                src="/icons/logo-white.png"
+                alt="Bar La Marbella"
+                width={320}
+                height={86}
+                className="h-12 w-auto max-w-[240px] brightness-0 sm:h-16 sm:max-w-[300px] md:h-[4.5rem] md:max-w-[360px]"
+                priority
+              />
             </div>
 
             <div className="flex min-h-[52px] items-center justify-end gap-0.5">
@@ -85,11 +83,13 @@ export function StaffCartaView({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-white pb-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white pb-6">
           {editing && canEditMenu ? (
             <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
           ) : (
-            <MenuAccordion items={items} lang={lang} onLangChange={setLang} hideLangPicker />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <MenuAccordion items={items} lang={lang} onLangChange={setLang} hideLangPicker />
+            </div>
           )}
         </div>
       </div>

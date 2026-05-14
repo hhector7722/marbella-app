@@ -174,16 +174,14 @@ export function PublicCarta({
             </div>
 
             <div className="flex flex-col items-center justify-center gap-1.5 px-1">
-              <div className="flex shrink-0 items-center justify-center rounded-2xl bg-[#36606F] px-3 py-2 sm:px-4 sm:py-2.5">
-                <Image
-                  src="/icons/logo-white.png"
-                  alt="Bar La Marbella"
-                  width={260}
-                  height={70}
-                  className="h-11 w-auto max-w-[200px] sm:h-14 sm:max-w-[260px] md:h-[4rem] md:max-w-[300px]"
-                  priority
-                />
-              </div>
+              <Image
+                src="/icons/logo-white.png"
+                alt="Bar La Marbella"
+                width={320}
+                height={86}
+                className="h-12 w-auto max-w-[240px] brightness-0 sm:h-16 sm:max-w-[300px] md:h-[4.5rem] md:max-w-[360px]"
+                priority
+              />
               <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400 sm:text-[11px]">
                 {tPublicUi(lang).subtitle}
               </p>
@@ -208,12 +206,19 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-4 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-5">
-          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+        <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto pb-6 sm:mt-5">
+          <div
+            className="grid min-h-0 flex-1 grid-cols-1 gap-3 sm:gap-4"
+            style={
+              grouped.length > 0
+                ? { gridTemplateRows: `repeat(${grouped.length}, minmax(4.5rem, 1fr))` }
+                : undefined
+            }
+          >
             {grouped.map((group) => (
               <div
                 key={group.key}
-                className="overflow-hidden rounded-2xl bg-white"
+                className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white"
               >
                 <button
                   type="button"
@@ -225,22 +230,22 @@ export function PublicCarta({
                     })
                     setOpenKey((prev) => (prev === group.key ? null : group.key))
                   }}
-                  className="flex min-h-[52px] w-full shrink-0 items-center justify-center px-3 py-2.5 active:bg-zinc-50 sm:px-4"
+                  className="flex h-full min-h-0 w-full shrink-0 flex-1 items-center justify-center px-3 py-2.5 active:bg-zinc-50 sm:px-4"
                   aria-expanded={openKey === group.key}
                 >
                   <span className="flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
                     {group.coverPhotoUrl ? (
-                      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white sm:h-11 sm:w-11">
+                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white sm:h-14 sm:w-14">
                         <Image
                           src={group.coverPhotoUrl}
                           alt=""
                           fill
-                          sizes="40px"
+                          sizes="56px"
                           className="object-contain object-center"
                         />
                       </span>
                     ) : null}
-                    <span className="min-w-0 max-w-[85%] text-center text-[11px] font-black uppercase leading-tight tracking-widest text-[#36606F] sm:max-w-none sm:text-sm">
+                    <span className="min-w-0 max-w-[85%] text-center text-sm font-black uppercase leading-tight tracking-widest text-[#36606F] sm:max-w-none sm:text-base md:text-lg">
                       {group.title}
                     </span>
                   </span>

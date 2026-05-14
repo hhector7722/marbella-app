@@ -407,20 +407,22 @@ export function StaffCartaInlineEditor({
 
   return (
     <>
-      <MenuAccordion
-        items={digitalRows}
-        {...(onLangChange ? { lang, onLangChange } : {})}
-        hideLangPicker
-        editMode
-        onEditParentCategory={(id) => setCategoryModalId(id)}
-        onEditChildCategory={(id) => setCategoryModalId(id)}
-        onEditProduct={(id) => setItemModalArticuloId(id)}
-        onToggleProductActive={onToggleVisible}
-        productToggleBusyId={savingArticuloId}
-        onPersistParentCategoryOrder={persistParentCategoryOrder}
-        onPersistChildCategoryOrder={persistChildCategoryOrder}
-        onPersistProductOrder={persistProductOrder}
-      />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <MenuAccordion
+          items={digitalRows}
+          {...(onLangChange ? { lang, onLangChange } : {})}
+          hideLangPicker
+          editMode
+          onEditParentCategory={(id) => setCategoryModalId(id)}
+          onEditChildCategory={(id) => setCategoryModalId(id)}
+          onEditProduct={(id) => setItemModalArticuloId(id)}
+          onToggleProductActive={onToggleVisible}
+          productToggleBusyId={savingArticuloId}
+          onPersistParentCategoryOrder={persistParentCategoryOrder}
+          onPersistChildCategoryOrder={persistChildCategoryOrder}
+          onPersistProductOrder={persistProductOrder}
+        />
+      </div>
 
       <MenuCategoryEditModal
         open={categoryForModal != null}
