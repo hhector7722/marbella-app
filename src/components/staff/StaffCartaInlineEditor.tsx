@@ -35,6 +35,7 @@ type OverrideRow = {
 type MapRow = {
   articulo_id: number
   recipe_id: string
+  factor_porcion?: number | string | null
   recipes: {
     id: string
     name: string
@@ -103,18 +104,20 @@ export function StaffCartaInlineEditor({
     }
   }, [categoryModalId, categoryById])
 
-  async function load() {
-    setLoading(true)
+  async function load(opts?: { silent?: boolean }) {
+    const silent = opts?.silent ?? false
+    if (!silent) setLoading(true)
     try {
-      const [mapRes, overridesRes, deptRes] = await Promise.all([
+      const [mapRes, overridesRes, deptRes, mcoRes] = await Promise.all([
         supabase
           .from('map_tpv_receta')
           .select(
-            'articulo_id, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration), bdp_articulos(id,nombre,precio_base,departamento_id)'
+            'articulo_id, factor_porcion, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration), bdp_articulos(id,nombre,precio_base,departamento_id)'
           )
           .limit(5000),
         supabase.from('digital_menu_overrides').select('*').limit(5000),
         supabase.from('bdp_departamentos').select('id, nombre').limit(5000),
+        supabase.from('menu_category_overrides').select('category_id, override_name_es, override_name_ca, override_name_en').limit(5000),
       ])
 
       let categoriesRes = await supabase
@@ -138,6 +141,19 @@ export function StaffCartaInlineEditor({
       if (mapRes.error) throw mapRes.error
       if (overridesRes.error) throw overridesRes.error
       if (deptRes.error) throw deptRes.error
+      if (mcoRes.error) throw mcoRes.error
+
+      const mcoById = new Map<
+        string,
+        { override_name_es: string | null; override_name_ca: string | null; override_name_en: string | null }
+      >()
+      for (const r of (mcoRes.data ?? []) as any[]) {
+        mcoById.set(r.category_id, {
+          override_name_es: r.override_name_es ?? null,
+          override_name_ca: r.override_name_ca ?? null,
+          override_name_en: r.override_name_en ?? null,
+        })
+      }
 
       const deptNombreById = new Map<number, string>()
       for (const d of (deptRes.data ?? []) as { id: number; nombre: string }[]) {
@@ -216,9 +232,19 @@ export function StaffCartaInlineEditor({
 
         const category_parent_id = c ? (c.parent_id ? cp?.id ?? null : c.id) : null
         const category_parent_name = c ? (c.parent_id ? cp?.name ?? null : c.name) : null
+        const pOvr = category_parent_id ? mcoById.get(category_parent_id) : undefined
+        const pBase = category_parent_name?.trim() || 'Sin categoría'
+        const category_parent_name_es = ntrim(pOvr?.override_name_es) || pBase
+        const category_parent_name_ca = ntrim(pOvr?.override_name_ca) || pBase
+        const category_parent_name_en = ntrim(pOvr?.override_name_en) || pBase
         const category_parent_sort_order = c ? (c.parent_id ? cp?.sort_order ?? null : c.sort_order) : null
         const category_child_id = c?.parent_id ? c.id : null
         const category_child_name = c?.parent_id ? c.name : null
+        const chOvr = category_child_id ? mcoById.get(category_child_id) : undefined
+        const chBase = category_child_name?.trim() || ''
+        const category_child_name_es = chBase ? ntrim(chOvr?.override_name_es) || chBase : null
+        const category_child_name_ca = chBase ? ntrim(chOvr?.override_name_ca) || chBase : null
+        const category_child_name_en = chBase ? ntrim(chOvr?.override_name_en) || chBase : null
         const category_child_sort_order = c?.parent_id ? c.sort_order : null
 
         const parentForCover = category_parent_id
@@ -231,6 +257,9 @@ export function StaffCartaInlineEditor({
             : a.precio_base != null && String(a.precio_base).trim() !== ''
               ? a.precio_base
               : r.sale_price
+
+        const fp = Number(m.factor_porcion ?? 1)
+        const tpv_factor_porcion = Number.isFinite(fp) ? fp : 1
 
         const photo_url = ntrim(o?.override_photo_url) ?? ntrim(r.photo_url)
 
@@ -251,10 +280,16 @@ export function StaffCartaInlineEditor({
           category_id: catId,
           category_parent_id,
           category_parent_name,
+          category_parent_name_es,
+          category_parent_name_ca,
+          category_parent_name_en,
           category_parent_sort_order,
           category_parent_cover_photo_url,
           category_child_id,
           category_child_name,
+          category_child_name_es,
+          category_child_name_ca,
+          category_child_name_en,
           category_child_sort_order,
           recipe_id: r.id,
           recipe_name: r.name,
@@ -262,6 +297,7 @@ export function StaffCartaInlineEditor({
           precio: precioRaw != null ? Number(precioRaw) : null,
           photo_url,
           sort_order: o?.sort_order ?? null,
+          tpv_factor_porcion,
         })
       }
 
@@ -269,7 +305,7 @@ export function StaffCartaInlineEditor({
     } catch (e: any) {
       toast.error(e?.message ?? 'No se pudo cargar el editor de carta')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -289,7 +325,7 @@ export function StaffCartaInlineEditor({
       return false
     }
     toast.success('Orden de secciones guardado')
-    await load()
+    await load({ silent: true })
     return true
   }
 
@@ -304,7 +340,7 @@ export function StaffCartaInlineEditor({
       return false
     }
     toast.success('Orden de subcategorías guardado')
-    await load()
+    await load({ silent: true })
     return true
   }
 
@@ -323,7 +359,7 @@ export function StaffCartaInlineEditor({
         }
       }
       toast.success('Orden de productos guardado')
-      await load()
+      await load({ silent: true })
       return true
     } catch (e: any) {
       toast.error(e?.message ?? 'No se pudo guardar el orden de productos')
@@ -334,15 +370,19 @@ export function StaffCartaInlineEditor({
   const onToggleVisible = (articulo_id: number) => {
     const row = digitalRows.find((x) => x.articulo_id === articulo_id)
     const nextHidden = !(row?.editor_is_hidden ?? false)
+    setDigitalRows((rows) =>
+      rows.map((r) => (r.articulo_id === articulo_id ? { ...r, editor_is_hidden: nextHidden } : r))
+    )
     startTransition(async () => {
       setSavingArticuloId(articulo_id)
       try {
         const res = await upsertMenuOverride({ articulo_id, is_hidden: nextHidden })
         if (!res.success) {
           toast.error(res.error ?? 'No se pudo guardar')
+          await load({ silent: true })
           return
         }
-        await load()
+        await load({ silent: true })
       } finally {
         setSavingArticuloId(null)
       }
@@ -373,6 +413,7 @@ export function StaffCartaInlineEditor({
         hideLangPicker
         editMode
         onEditParentCategory={(id) => setCategoryModalId(id)}
+        onEditChildCategory={(id) => setCategoryModalId(id)}
         onEditProduct={(id) => setItemModalArticuloId(id)}
         onToggleProductActive={onToggleVisible}
         productToggleBusyId={savingArticuloId}
@@ -385,7 +426,7 @@ export function StaffCartaInlineEditor({
         open={categoryForModal != null}
         onClose={() => {
           setCategoryModalId(null)
-          void load()
+          void load({ silent: true })
         }}
         category={categoryForModal}
         itemsForCover={itemsForCover}
@@ -395,7 +436,7 @@ export function StaffCartaInlineEditor({
         open={itemModalArticuloId != null}
         onClose={() => {
           setItemModalArticuloId(null)
-          void load()
+          void load({ silent: true })
         }}
         articuloId={itemModalArticuloId}
         categories={categories.map((c) => ({

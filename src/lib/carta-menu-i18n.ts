@@ -69,6 +69,43 @@ export function translateChildCategoryTitle(lang: CartaLang, childTitle: string)
   return hit[lang]
 }
 
+/** Fila con nombres de categoría (vista BD o cliente); los *_es|ca|en vienen de `menu_category_overrides` + fallback. */
+export type CartaCategoryNamesRow = {
+  category_parent_name: string | null
+  category_parent_name_es?: string | null
+  category_parent_name_ca?: string | null
+  category_parent_name_en?: string | null
+  category_child_name: string | null
+  category_child_name_es?: string | null
+  category_child_name_ca?: string | null
+  category_child_name_en?: string | null
+}
+
+const UNCATEGORIZED_FALLBACK = 'Sin categoría'
+
+/** Título de sección padre según idioma (overrides BD > mapa fijo > nombre base). */
+export function getCartaParentCategoryLabel(lang: CartaLang, row: CartaCategoryNamesRow, uncategorizedLabel?: string) {
+  const raw = (row.category_parent_name?.trim() || uncategorizedLabel?.trim() || UNCATEGORIZED_FALLBACK).trim()
+  const es = row.category_parent_name_es?.trim()
+  const ca = row.category_parent_name_ca?.trim()
+  const en = row.category_parent_name_en?.trim()
+  if (lang === 'es') return es || translateParentCategoryTitle('es', raw)
+  if (lang === 'ca') return ca || es || translateParentCategoryTitle('ca', raw)
+  return en || es || translateParentCategoryTitle('en', raw)
+}
+
+/** Título de subcategoría según idioma (overrides BD > mapa fijo > nombre base). */
+export function getCartaChildCategoryLabel(lang: CartaLang, row: CartaCategoryNamesRow, parentTitleRaw: string, childTitleRaw: string) {
+  const short = prettifyChildTitle(parentTitleRaw, childTitleRaw)
+  if (!short) return ''
+  const es = row.category_child_name_es?.trim()
+  const ca = row.category_child_name_ca?.trim()
+  const en = row.category_child_name_en?.trim()
+  if (lang === 'es') return es || translateChildCategoryTitle('es', short)
+  if (lang === 'ca') return ca || es || translateChildCategoryTitle('ca', short)
+  return en || es || translateChildCategoryTitle('en', short)
+}
+
 export function prettifyChildTitle(parentTitle: string, rawChildTitle: string) {
   if (!rawChildTitle) return ''
   const prefix = `${parentTitle.trim()} - `

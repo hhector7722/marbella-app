@@ -10,12 +10,12 @@ import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   type CartaLang,
   DEFAULT_CARTA_LANG,
+  getCartaChildCategoryLabel,
   getCartaDisplayName,
-  prettifyChildTitle,
+  getCartaParentCategoryLabel,
   tPublicUi,
-  translateChildCategoryTitle,
-  translateParentCategoryTitle,
 } from '@/lib/carta-menu-i18n'
+import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -24,15 +24,25 @@ export type PublicMenuRow = {
   carta_nombre_ca: string | null
   carta_nombre_en: string | null
   precio: number | string | null
+  /** Par entero/medio fusionado (solo presentación). */
+  precio_medio_display?: number | string | null
   photo_url: string | null
   sort_order: number | null
   category_parent_id: string | null
   category_parent_name: string | null
+  category_parent_name_es?: string | null
+  category_parent_name_ca?: string | null
+  category_parent_name_en?: string | null
   category_parent_sort_order: number | null
   category_parent_cover_photo_url: string | null
   category_child_id: string | null
   category_child_name: string | null
+  category_child_name_es?: string | null
+  category_child_name_ca?: string | null
+  category_child_name_en?: string | null
   category_child_sort_order: number | null
+  recipe_id?: string | null
+  tpv_factor_porcion?: number | null
 }
 
 type Group = {
@@ -50,11 +60,6 @@ function formatPrice(precio: PublicMenuRow['precio']) {
   const n = typeof precio === 'string' ? Number(precio) : precio
   if (!Number.isFinite(n) || n === 0) return ' '
   return `${n.toFixed(2)}€`
-}
-
-function subHeading(lang: CartaLang, parentTitleRaw: string, childTitleRaw: string) {
-  const childShort = prettifyChildTitle(parentTitleRaw, childTitleRaw)
-  return translateChildCategoryTitle(lang, childShort)
 }
 
 export function PublicCarta({
@@ -76,10 +81,10 @@ export function PublicCarta({
     const groups = new Map<string, Group>()
 
     for (const row of items) {
-      const parentTitleRaw = (row.category_parent_name?.trim() || tPublicUi(lang).uncategorized).trim()
-      const parentTitle = translateParentCategoryTitle(lang, parentTitleRaw)
+      const parentTitleRaw = (row.category_parent_name?.trim() || 'Sin categoría').trim()
+      const parentTitle = getCartaParentCategoryLabel(lang, row, tPublicUi(lang).uncategorized)
       const parentSort = row.category_parent_sort_order ?? 9999
-      const parentKey = row.category_parent_id ?? `__no_parent__:${parentTitle}`
+      const parentKey = row.category_parent_id ?? `__no_parent__:${parentTitleRaw}`
 
       const childTitle = (row.category_child_name?.trim() || '').trim()
       const childSort = row.category_child_sort_order ?? 9999
@@ -99,7 +104,7 @@ export function PublicCarta({
       const sg =
         g.subs.get(childKey) ?? {
           key: childKey,
-          title: subHeading(lang, parentTitleRaw, childTitle),
+          title: getCartaChildCategoryLabel(lang, row, parentTitleRaw, childTitle),
           sortOrder: childSort,
           rows: [] as PublicMenuRow[],
         }
@@ -262,7 +267,7 @@ export function PublicCarta({
               </button>
             </div>
 
-            {openGroup._subList.length > 1 ? (
+            {openGroup._subList.length > 1 && selectedSubKeyByGroup[openGroup.key] ? (
               <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
                 <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
                   {openGroup._subList.map((sub) => {
@@ -296,9 +301,30 @@ export function PublicCarta({
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
               {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
-                <p className="py-8 text-center text-sm font-semibold text-zinc-500">
-                  {tPublicUi(lang).pickSubcategoryTitle}
-                </p>
+                <div className="space-y-3 px-1 py-2 sm:px-2">
+                  <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600">
+                    {tPublicUi(lang).pickSubcategoryTitle}
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                    {openGroup._subList.map((sub) => (
+                      <button
+                        key={sub.key}
+                        type="button"
+                        onClick={() =>
+                          setSelectedSubKeyByGroup((p) => ({
+                            ...p,
+                            [openGroup.key]: sub.key,
+                          }))
+                        }
+                        className="flex min-h-[52px] w-full flex-col items-center justify-center rounded-xl bg-[#36606F] px-3 py-3 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-white shadow-sm active:bg-[#2d4f5c] sm:min-h-[56px] sm:text-xs"
+                      >
+                        <span className="line-clamp-4">
+                          {sub.title.trim() || tPublicUi(lang).uncategorized}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   {(openGroup._subList.length > 1
@@ -307,7 +333,10 @@ export function PublicCarta({
                   ).map((sub) => (
                     <div key={sub.key} className="space-y-2">
                       <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                        {sub.rows.map((row) => (
+                        {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => {
+                          const medioStr = formatPrice(row.precio_medio_display ?? null)
+                          const showMedio = medioStr.trim() !== ''
+                          return (
                           <div
                             key={row.articulo_id}
                             className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
@@ -356,15 +385,21 @@ export function PublicCarta({
                                 >
                                   {getCartaDisplayName(row, lang)}
                                 </p>
-                                <div className="flex min-h-[44px] w-full shrink-0 items-center justify-center py-0.5">
-                                  <span className="text-center text-xs font-black tabular-nums text-[#36606F]">
+                                <div className="flex min-h-[44px] w-full shrink-0 flex-col items-center justify-center gap-0.5 py-0.5">
+                                  <span className="text-center text-xs font-black tabular-nums text-[#36606F] leading-none">
                                     {formatPrice(row.precio)}
                                   </span>
+                                  {showMedio ? (
+                                    <span className="text-center text-[11px] font-black tabular-nums text-[#36606F]/90 leading-none">
+                                      {medioStr}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                             </div>
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   ))}
