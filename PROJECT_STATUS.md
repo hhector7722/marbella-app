@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-14 (Albaranes multipágina: adjuntos + escáner «Añadir hoja»)
+**Última actualización:** 2026-05-14 (Recetas categorías carta + Mapeo TPV / albarán)
+
+- [x] **Mapeo TPV `/dashboard/recetas-tpv` (2026-05-14)**: Además del artículo TPV ↔ receta y factor, la UI lista los **nombres de producto aprendidos en albaranes** (`supplier_item_mappings`) para los ingredientes de la receta elegida (varias variantes/proveedores). Búsqueda incluye esos textos; guía + contadores; columnas TPV / Receta+factor / Albarán / Acciones en desktop. SSR: `recipe_ingredients` + mappings con `suppliers(name)` por chunks en paralelo ([`page.tsx`](src/app/dashboard/recetas-tpv/page.tsx), [`MappingClient.tsx`](src/app/dashboard/recetas-tpv/MappingClient.tsx)).
+
+- [x] **Recetas `/recipes`: categorías = menú BD (2026-05-14)**: Columna `recipes.menu_category_id` → `public.categories` (`scope=menu`); `recipes.category` sigue como texto denormalizado. UI lista/ficha/import usan el mismo catálogo que la carta (`menu_category_overrides` ES en etiquetas). Migración `20260514180000_recipes_menu_category_id.sql` + sección `menus-packs` + backfill.
 
 - [x] **Albaranes multipágina (2026-05-14)**: Segunda y siguientes hojas del **mismo** albarán ya no chocan con la deduplicación semántica (`supplier_id` + `invoice_number` + `invoice_date`). **BD**: tabla `purchase_invoice_attachments` (`invoice_id`, `file_path`, `content_sha256`, `page_order`, `created_by`) con RLS alineada a `authenticated` + índice único `(invoice_id, content_sha256)`. **Escáner** [`ScannerClient.tsx`](src/app/dashboard/scanner/ScannerClient.tsx): casilla *Añadir hoja…* → elegir proveedor → lista de albaranes recientes → foto; [`appendScannerPageToInvoiceAction`](src/app/dashboard/scanner/actions.ts) sube imagen, inserta adjunto + líneas, sin nueva cabecera; [`listRecentInvoicesForSupplierAction`](src/app/dashboard/scanner/actions.ts) alimenta el selector. **Detalle** [`getPurchaseInvoiceDetailAction`](src/app/dashboard/albaranes/actions.ts): `extra_document_sheets` con URLs firmadas; modal [`AlbaranesHistoricoClient.tsx`](src/app/dashboard/albaranes/AlbaranesHistoricoClient.tsx): un icono ojo por hoja (1 = principal, 2+ = adjuntos). La misma foto binaria sigue bloqueada por hash dentro del mismo albarán.
 

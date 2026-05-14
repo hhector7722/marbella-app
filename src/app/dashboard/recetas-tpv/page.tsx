@@ -125,11 +125,12 @@ export default async function RecetasTpvPage() {
       120
     )
     const riRows: { recipe_id: string; ingredient_id: string }[] = []
-    for (const ids of recipeIdChunks) {
-      const { data: ri, error: riErr } = await supabase
-        .from('recipe_ingredients')
-        .select('recipe_id, ingredient_id')
-        .in('recipe_id', ids)
+    const riResults = await Promise.all(
+      recipeIdChunks.map((ids) =>
+        supabase.from('recipe_ingredients').select('recipe_id, ingredient_id').in('recipe_id', ids)
+      )
+    )
+    for (const { data: ri, error: riErr } of riResults) {
       if (riErr) console.error('Error fetching recipe_ingredients (recetas-tpv):', riErr)
       for (const row of (ri ?? []) as { recipe_id: string; ingredient_id: string }[]) {
         if (row.recipe_id && row.ingredient_id) riRows.push(row)
@@ -143,12 +144,18 @@ export default async function RecetasTpvPage() {
       suppliers: { name: string } | null
     }
     const simRows: SimRow[] = []
-    for (const ids of chunkIds(ingredientIds, 120)) {
-      if (ids.length === 0) continue
-      const { data: sim, error: simErr } = await supabase
-        .from('supplier_item_mappings')
-        .select('supplier_item_name, ingredient_id, suppliers(name)')
-        .in('ingredient_id', ids)
+    const simChunks = chunkIds(ingredientIds, 120)
+    const simResults = await Promise.all(
+      simChunks.map((ids) =>
+        ids.length === 0
+          ? Promise.resolve({ data: [] as unknown[], error: null as null })
+          : supabase
+              .from('supplier_item_mappings')
+              .select('supplier_item_name, ingredient_id, suppliers(name)')
+              .in('ingredient_id', ids)
+      )
+    )
+    for (const { data: sim, error: simErr } of simResults) {
       if (simErr) console.error('Error fetching supplier_item_mappings (recetas-tpv):', simErr)
       for (const raw of sim ?? []) {
         const row = raw as {
