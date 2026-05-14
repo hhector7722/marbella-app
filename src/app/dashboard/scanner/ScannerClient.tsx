@@ -210,26 +210,39 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             Escanear albarán
           </button>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm space-y-3">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {pendingBatch.items.map((it, idx) => (
+          <div className="rounded-xl bg-white p-3 space-y-3">
+            {pendingBatch.items.length > 1 ? (
+              <div className="flex gap-2 overflow-x-auto pb-1 shrink-0">
+                {pendingBatch.items.slice(0, -1).map((it, idx) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={`${idx}-${it.filename}`}
+                    src={it.dataUri}
+                    alt=""
+                    className="h-14 w-auto max-w-[88px] shrink-0 rounded-md border border-zinc-100 object-cover"
+                  />
+                ))}
+              </div>
+            ) : null}
+            {(() => {
+              const last = pendingBatch.items[pendingBatch.items.length - 1]
+              if (!last) return null
+              return (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  key={`${idx}-${it.filename}`}
-                  src={it.dataUri}
+                  src={last.dataUri}
                   alt=""
-                  className="h-20 w-auto max-w-[120px] shrink-0 rounded-lg border border-zinc-100 object-cover"
+                  className="w-full max-h-[55vh] rounded-lg bg-zinc-50 object-contain"
                 />
-              ))}
-            </div>
+              )
+            })()}
             <div className="flex flex-col gap-2 shrink-0">
               <button
                 type="button"
                 onClick={triggerAnotherCapture}
                 disabled={isProcessing}
                 className={cn(
-                  'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-wider text-sm',
-                  'border-2 border-[#36606F] text-[#36606F] bg-white hover:bg-zinc-50 active:scale-[0.99] transition',
+                  'w-full min-h-11 rounded-lg px-3 text-xs font-medium uppercase tracking-wide text-[#36606F] bg-transparent hover:bg-zinc-50 active:scale-[0.99] transition',
                   isProcessing && 'opacity-60 pointer-events-none'
                 )}
               >

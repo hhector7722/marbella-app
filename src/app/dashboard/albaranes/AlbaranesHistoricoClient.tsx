@@ -8,7 +8,6 @@ import {
   Eye,
   FileText,
   Filter,
-  ImagePlus,
   Loader2,
   Pencil,
   RefreshCw,
@@ -1188,19 +1187,15 @@ export default function AlbaranesHistoricoClient({
                         type="button"
                         onClick={() => appendSheetInputRef.current?.click()}
                         disabled={appendSheetBusy}
-                        aria-label="Añadir hoja al albarán"
-                        title="Añadir hoja al albarán (otra página del mismo documento)"
+                        aria-label="Añadir hoja"
+                        title="Añadir otra página del mismo albarán (fotografía)"
                         className={cn(
-                          'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-zinc-50 px-4 text-sm font-black uppercase tracking-wide text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                          'w-full min-h-12 inline-flex items-center justify-center rounded-xl px-4 text-sm font-medium uppercase tracking-wide text-[#36606F] hover:bg-zinc-50 active:scale-[0.99] transition border-0 bg-transparent shadow-none',
                           appendSheetBusy && 'opacity-60 pointer-events-none'
                         )}
                       >
-                        {appendSheetBusy ? (
-                          <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
-                        ) : (
-                          <ImagePlus className="h-5 w-5 shrink-0" strokeWidth={2.25} />
-                        )}
-                        Añadir hoja al albarán
+                        {appendSheetBusy ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> : null}
+                        {appendSheetBusy ? 'Subiendo…' : 'Añadir hoja'}
                       </button>
                     </div>
                   ) : null}
