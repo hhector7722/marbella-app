@@ -1,10 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Check, Loader2, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { AlbaranLearnedName, MappingRow, Recipe, TpvArticle } from './page'
+import type { MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
 import { deleteMapping, upsertMapping } from './actions'
 
 type StatusFilter = 'all' | 'mapped' | 'unmapped'
@@ -12,7 +13,6 @@ type StatusFilter = 'all' | 'mapped' | 'unmapped'
 type UiRow = {
   articulo_id: number
   nombre: string
-  familia: string | null
   departamento: string | null
   mapped: boolean
   recipe_id: string | null
@@ -20,20 +20,20 @@ type UiRow = {
   factor_porcion: number
 }
 
-/** Misma rejilla en todas las anchuras; en pantallas estrechas se desplaza horizontalmente. */
+/** TPV | Receta | F | ingredientes BD ↔ albarán | acciones */
 const TABLE_GRID =
-  'grid grid-cols-[minmax(11rem,1.15fr)_minmax(12rem,1.35fr)_minmax(3.25rem,0.45fr)_minmax(9.5rem,1fr)_minmax(5.5rem,0.55fr)] divide-x divide-zinc-200'
+  'grid w-full grid-cols-[minmax(0,0.82fr)_minmax(0,0.68fr)_1.35rem_minmax(0,1.1fr)_1.75rem] divide-x divide-zinc-200'
 
 export default function MappingClient({
   mappings,
   articles,
   recipes,
-  albaranLearnedByRecipeId,
+  recipeIngredientMatchByRecipeId,
 }: {
   mappings: MappingRow[]
   articles: TpvArticle[]
   recipes: Recipe[]
-  albaranLearnedByRecipeId: Record<string, AlbaranLearnedName[]>
+  recipeIngredientMatchByRecipeId: Record<string, RecipeIngredientMatchRow[]>
 }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<StatusFilter>('all')
@@ -61,7 +61,6 @@ export default function MappingClient({
       rows.push({
         articulo_id: a.id,
         nombre: a.nombre,
-        familia: a.bdp_familias?.nombre ?? (a.familia_id != null ? `Familia ${a.familia_id}` : null),
         departamento:
           a.bdp_departamentos?.nombre ?? (a.departamento_id != null ? `Dept ${a.departamento_id}` : null),
         mapped: mapping != null,
@@ -79,10 +78,15 @@ export default function MappingClient({
     return row.recipe_id
   }
 
-  const albaranSearchBlob = (recipeId: string | null) => {
+  const matchSearchBlob = (recipeId: string | null) => {
     if (!recipeId) return ''
-    const list = albaranLearnedByRecipeId[recipeId] ?? []
-    return list.map((x) => `${x.supplier_item_name} ${x.supplier_name ?? ''}`).join(' ')
+    const rows = recipeIngredientMatchByRecipeId[recipeId] ?? []
+    return rows
+      .map(
+        (row) =>
+          `${row.ingredient_name} ${row.albaran.map((a) => `${a.supplier_item_name} ${a.supplier_name ?? ''}`).join(' ')}`
+      )
+      .join(' ')
   }
 
   const filtered = useMemo(() => {
@@ -92,23 +96,23 @@ export default function MappingClient({
       if (status === 'unmapped' && r.mapped) return false
       if (!q) return true
       const rid = effectiveRecipeId(r)
-      const blob = `${r.nombre} ${String(r.articulo_id)} ${r.recipe_name ?? ''} ${albaranSearchBlob(rid)}`.toLowerCase()
+      const blob = `${r.nombre} ${String(r.articulo_id)} ${r.departamento ?? ''} ${r.recipe_name ?? ''} ${matchSearchBlob(rid)}`.toLowerCase()
       return blob.includes(q)
     })
-  }, [uiRows, query, status, drafts, albaranLearnedByRecipeId])
+  }, [uiRows, query, status, drafts, recipeIngredientMatchByRecipeId])
 
   const grouped = useMemo(() => {
     const groups = new Map<string, UiRow[]>()
-    const fallback = 'Sin familia'
+    const fallback = 'Sin departamento'
     for (const r of filtered) {
-      const key = r.familia ?? fallback
+      const key = r.departamento ?? fallback
       const list = groups.get(key) ?? []
       list.push(r)
       groups.set(key, list)
     }
     return Array.from(groups.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([family, rows]) => ({ family, rows }))
+      .map(([department, rows]) => ({ department, rows }))
   }, [filtered])
 
   const getDraft = (row: UiRow) => {
@@ -168,20 +172,20 @@ export default function MappingClient({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+    <div className="space-y-2">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
         <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
           <input
-            className="h-10 w-full rounded-lg border border-zinc-200 bg-white pl-10 pr-3 text-sm text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-            placeholder="Buscar artículo, ID, receta o texto albarán…"
+            className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-8 pr-2 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
+            placeholder="Buscar…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Buscar en mapeos TPV"
           />
         </div>
 
-        <div className="flex shrink-0 rounded-lg bg-zinc-100 p-1">
+        <div className="flex shrink-0 rounded-md bg-zinc-100 p-0.5">
           <FilterButton active={status === 'all'} onClick={() => setStatus('all')}>
             Todos
           </FilterButton>
@@ -194,29 +198,28 @@ export default function MappingClient({
         </div>
       </div>
 
-      <div className="space-y-3">
-        {grouped.map(({ family, rows }) => (
-          <section key={family} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <header className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-3 py-2">
-              <span className="truncate text-xs font-bold uppercase tracking-wide text-zinc-700">{family}</span>
-              <span className="shrink-0 rounded-md bg-zinc-200/80 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-800">
+      <div className="space-y-2">
+        {grouped.map(({ department, rows }) => (
+          <section key={department} className="rounded-lg border border-zinc-200 bg-white shadow-sm">
+            <header className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-2 py-1">
+              <span className="truncate text-[10px] font-bold uppercase tracking-wide text-zinc-700">{department}</span>
+              <span className="shrink-0 rounded bg-zinc-200/80 px-1.5 py-0 text-[10px] font-semibold tabular-nums text-zinc-800">
                 {rows.length}
               </span>
             </header>
 
-            <div className="overflow-x-auto">
-              <div className="min-w-[36rem]">
+            <div className="w-full min-w-0">
                 <div
                   className={cn(
                     TABLE_GRID,
-                    'border-b-2 border-zinc-300 bg-zinc-100 text-[10px] font-bold uppercase tracking-wide text-zinc-600'
+                    'border-b border-zinc-300 bg-zinc-100 text-[9px] font-bold uppercase leading-none tracking-wide text-zinc-600'
                   )}
                 >
-                  <div className="px-2 py-2">TPV</div>
-                  <div className="px-2 py-2">Receta</div>
-                  <div className="px-1 py-2 text-center">F.</div>
-                  <div className="px-2 py-2">Albarán</div>
-                  <div className="px-1 py-2 text-center">Act.</div>
+                  <div className="px-1 py-1.5">TPV</div>
+                  <div className="px-1 py-1.5">Rec.</div>
+                  <div className="px-0 py-1.5 text-center">F</div>
+                  <div className="px-1 py-1.5">Ing.</div>
+                  <div className="px-0 py-1.5 text-center"> </div>
                 </div>
 
                 <div className="divide-y divide-zinc-200">
@@ -226,7 +229,7 @@ export default function MappingClient({
                     const hasChanges =
                       draft.recipe_id !== row.recipe_id || Number(draft.factor) !== Number(row.factor_porcion ?? 1)
                     const rid = effectiveRecipeId(row)
-                    const albaranList = rid ? (albaranLearnedByRecipeId[rid] ?? []) : []
+                    const matchRows = rid ? (recipeIngredientMatchByRecipeId[rid] ?? []) : []
 
                     return (
                       <div
@@ -238,29 +241,30 @@ export default function MappingClient({
                           isBusy && 'pointer-events-none opacity-50'
                         )}
                       >
-                        <div className="min-w-0 px-2 py-2">
-                          <p className="line-clamp-2 text-xs font-semibold leading-snug text-zinc-900">{row.nombre}</p>
-                          <div className="mt-1 flex flex-wrap items-center gap-1">
-                            <span className="font-mono text-[10px] text-zinc-500">{row.articulo_id}</span>
+                        <div className="min-w-0 px-1 py-1">
+                          <p className="line-clamp-2 text-[10px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-0.5">
+                            <span className="font-mono text-[9px] leading-none text-zinc-500">{row.articulo_id}</span>
                             {row.departamento ? (
-                              <span className="max-w-[6rem] truncate rounded bg-zinc-100 px-1 py-0 text-[10px] text-zinc-600">
+                              <span className="max-w-[4.5rem] truncate rounded bg-zinc-100 px-0.5 py-0 text-[8px] leading-tight text-zinc-600">
                                 {row.departamento}
                               </span>
                             ) : null}
                             <span
                               className={cn(
-                                'rounded px-1 py-0 text-[10px] font-bold',
+                                'rounded px-0.5 py-0 text-[8px] font-bold leading-none',
                                 row.mapped ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                               )}
                             >
-                              {row.mapped ? 'OK' : '—'}
+                              {row.mapped ? '·' : '—'}
                             </span>
                           </div>
                         </div>
 
-                        <div className="min-w-0 px-2 py-1.5">
+                        <div className="min-w-0 px-0.5 py-0.5">
                           <RecipeCombobox
                             compact
+                            micro
                             recipes={recipes}
                             selectedId={draft.recipe_id}
                             onSelect={(id) => setDraft(row.articulo_id, { recipe_id: id })}
@@ -268,9 +272,9 @@ export default function MappingClient({
                           />
                         </div>
 
-                        <div className="flex items-center justify-center px-1 py-1.5">
+                        <div className="flex items-center justify-center px-0 py-0.5">
                           <input
-                            className="h-9 w-full max-w-[3.25rem] rounded-md border border-zinc-200 bg-white px-1 text-center text-xs font-semibold text-zinc-900 tabular-nums shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
+                            className="h-8 w-full min-w-0 rounded border border-zinc-200 bg-white px-0.5 text-center text-[10px] font-semibold tabular-nums text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
                             type="number"
                             step="0.01"
                             min="0.01"
@@ -281,31 +285,31 @@ export default function MappingClient({
                           />
                         </div>
 
-                        <div className="min-w-0 px-2 py-1.5">
-                          <AlbaranNamesCompact list={albaranList} hasRecipe={Boolean(rid)} />
+                        <div className="min-w-0 px-0.5 py-0.5">
+                          <IngredientEscandalloBlock rows={matchRows} hasRecipe={Boolean(rid)} />
                         </div>
 
-                        <div className="flex shrink-0 flex-col items-stretch justify-center gap-1 px-1.5 py-1.5">
+                        <div className="flex shrink-0 flex-col items-stretch justify-center gap-0.5 px-0 py-0.5">
                           <button
                             type="button"
                             onClick={() => onSave(row)}
                             disabled={!hasChanges || !draft.recipe_id}
                             className={cn(
-                              'flex h-9 min-h-9 shrink-0 items-center justify-center gap-1 rounded-md text-xs font-bold transition-colors',
+                              'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-[10px] font-bold transition-colors',
                               !hasChanges || !draft.recipe_id
                                 ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
-                                : 'bg-[#36606F] text-white hover:bg-[#2A4B57]'
+                                : 'border-[#2A4B57] bg-[#36606F] text-white hover:bg-[#2A4B57]'
                             )}
                             title="Guardar"
                           >
-                            {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                           </button>
                           <button
                             type="button"
                             onClick={() => onDelete(row)}
                             disabled={!row.mapped}
                             className={cn(
-                              'flex h-9 min-h-9 shrink-0 items-center justify-center rounded-md border text-rose-600 transition-colors',
+                              'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-rose-600 transition-colors',
                               row.mapped
                                 ? 'border-rose-200 bg-rose-50 hover:bg-rose-100'
                                 : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-300'
@@ -313,7 +317,7 @@ export default function MappingClient({
                             title="Eliminar mapeo"
                             aria-label="Eliminar"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
@@ -322,15 +326,14 @@ export default function MappingClient({
                 </div>
 
                 {rows.length === 0 ? (
-                  <div className="px-3 py-8 text-center text-xs text-zinc-500">Sin resultados.</div>
+                  <div className="px-2 py-6 text-center text-[10px] text-zinc-500">Sin resultados.</div>
                 ) : null}
-              </div>
             </div>
           </section>
         ))}
 
         {grouped.length === 0 ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 text-center text-xs text-zinc-500 shadow-sm">
             No hay artículos que coincidan.
           </div>
         ) : null}
@@ -339,25 +342,47 @@ export default function MappingClient({
   )
 }
 
-function AlbaranNamesCompact({ list, hasRecipe }: { list: AlbaranLearnedName[]; hasRecipe: boolean }) {
-  if (!hasRecipe || list.length === 0) {
-    return <span className="block text-center text-sm text-zinc-300">—</span>
+function IngredientEscandalloBlock({
+  rows,
+  hasRecipe,
+}: {
+  rows: RecipeIngredientMatchRow[]
+  hasRecipe: boolean
+}) {
+  if (!hasRecipe) {
+    return <span className="block text-center text-[10px] leading-none text-zinc-300">—</span>
+  }
+  if (rows.length === 0) {
+    return <span className="block text-center text-[9px] leading-tight text-zinc-400">Sin líneas</span>
   }
   return (
-    <ul className="max-h-[5.5rem] space-y-0.5 overflow-y-auto text-[11px] leading-tight text-zinc-800">
-      {list.map((item) => (
-        <li
-          key={`${item.ingredient_id}-${item.supplier_name ?? ''}-${item.supplier_item_name}`}
-          className="truncate border-l-2 border-sky-200 pl-1.5"
-          title={item.supplier_name ? `${item.supplier_item_name} (${item.supplier_name})` : item.supplier_item_name}
-        >
-          <span className="font-medium text-zinc-900">{item.supplier_item_name}</span>
-          {item.supplier_name ? (
-            <span className="text-zinc-500"> · {item.supplier_name}</span>
-          ) : null}
-        </li>
+    <div className="max-h-[5rem] space-y-1 overflow-y-auto text-left">
+      {rows.map((line) => (
+        <div key={line.ingredient_id} className="border-l border-emerald-300/80 pl-1">
+          <Link
+            href="/ingredients"
+            className="line-clamp-2 text-[8px] font-bold leading-tight text-[#36606F] hover:underline"
+            title={`Ingrediente en catálogo: ${line.ingredient_name}`}
+          >
+            {line.ingredient_name}
+          </Link>
+          {line.albaran.length === 0 ? (
+            <div className="pl-0.5 text-[8px] leading-tight text-zinc-400">→ —</div>
+          ) : (
+            line.albaran.map((a, i) => (
+              <div
+                key={`${line.ingredient_id}-alb-${i}`}
+                className="truncate pl-0.5 text-[8px] leading-tight text-zinc-600"
+                title={a.supplier_name ? `${a.supplier_item_name} · ${a.supplier_name}` : a.supplier_item_name}
+              >
+                → {a.supplier_item_name}
+                {a.supplier_name ? <span className="text-zinc-500"> ({a.supplier_name})</span> : null}
+              </div>
+            ))
+          )}
+        </div>
       ))}
-    </ul>
+    </div>
   )
 }
 
@@ -375,7 +400,7 @@ function FilterButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'h-9 min-h-9 shrink-0 rounded-md px-3 text-xs font-semibold transition-colors',
+        'h-8 min-h-8 shrink-0 rounded px-2 text-[10px] font-semibold transition-colors',
         active ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-800'
       )}
     >
@@ -390,12 +415,14 @@ function RecipeCombobox({
   onSelect,
   onClear,
   compact = false,
+  micro = false,
 }: {
   recipes: Recipe[]
   selectedId: string | null
   onSelect: (id: string) => void
   onClear: () => void
   compact?: boolean
+  micro?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -418,18 +445,21 @@ function RecipeCombobox({
     return recipes.filter((r) => r.name.toLowerCase().includes(q)).slice(0, 60)
   }, [recipes, search])
 
-  const h = compact ? 'h-9 min-h-9' : 'h-12 min-h-12'
-  const btnPad = compact ? 'px-2 text-xs' : 'px-4 text-sm'
-  const clearW = compact ? 'w-9 min-w-9' : 'w-12 min-w-12'
+  const h = micro ? 'h-8 min-h-8' : compact ? 'h-9 min-h-9' : 'h-12 min-h-12'
+  const btnPad = micro ? 'px-1 text-[10px]' : compact ? 'px-2 text-xs' : 'px-4 text-sm'
+  const clearW = micro ? 'w-6 min-w-6' : compact ? 'w-9 min-w-9' : 'w-12 min-w-12'
+  const chev = micro ? 'h-3 w-3' : 'h-4 w-4'
+  const iconClear = micro ? 'h-3 w-3' : 'h-4 w-4'
 
   return (
-    <div className="relative" ref={wrapperRef}>
-      <div className="flex gap-1">
+    <div className="relative min-w-0 w-full" ref={wrapperRef}>
+      <div className="flex min-w-0 gap-px">
         <button
           type="button"
           onClick={() => setIsOpen((v) => !v)}
           className={cn(
-            'flex w-full items-center justify-between gap-2 rounded-md border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
+            'min-w-0 flex-1 truncate',
+            'flex items-center justify-between gap-0.5 rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
             h,
             btnPad
           )}
@@ -437,9 +467,9 @@ function RecipeCombobox({
           aria-haspopup="listbox"
         >
           <span className={cn('min-w-0 truncate font-semibold', selectedRecipe ? 'text-zinc-900' : 'text-zinc-400')}>
-            {selectedRecipe ? selectedRecipe.name : 'Receta…'}
+            {selectedRecipe ? selectedRecipe.name : '…'}
           </span>
-          <ChevronDown className={cn('h-4 w-4 shrink-0 text-zinc-400 transition-transform', isOpen && 'rotate-180')} />
+          <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
         </button>
 
         <button
@@ -450,7 +480,7 @@ function RecipeCombobox({
             setSearch('')
           }}
           className={cn(
-            'flex shrink-0 items-center justify-center rounded-md border transition-colors',
+            'flex shrink-0 items-center justify-center rounded border transition-colors',
             h,
             clearW,
             selectedId
@@ -461,7 +491,7 @@ function RecipeCombobox({
           title="Quitar"
           aria-label="Quitar receta"
         >
-          <X className="h-4 w-4" />
+          <X className={iconClear} />
         </button>
       </div>
 

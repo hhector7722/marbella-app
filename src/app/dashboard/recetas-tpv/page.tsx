@@ -11,8 +11,6 @@ export type TpvArticle = {
   id: number
   nombre: string
   departamento_id: number | null
-  familia_id: number | null
-  bdp_familias?: { nombre: string } | null
   bdp_departamentos?: { nombre: string } | null
 }
 
@@ -31,11 +29,17 @@ export type AlbaranLearnedName = {
   ingredient_id: string
 }
 
+/** Una fila de escandallo: ingrediente en BD + textos de albarán enlazados a ese `ingredient_id`. */
+export type RecipeIngredientMatchRow = {
+  ingredient_id: string
+  ingredient_name: string
+  albaran: AlbaranLearnedName[]
+}
+
 type ArticleRow = {
   id: number
   nombre: string
   departamento_id: number | null
-  familia_id: number | null
 }
 
 type MappingDbRow = {
@@ -53,25 +57,22 @@ function chunkIds<T>(ids: T[], size: number): T[][] {
 export default async function RecetasTpvPage() {
   const supabase = await createClient()
 
-  /** Sin embeds PostgREST: `bdp_familias(nombre)` y `bdp_articulos` desde `map_tpv_receta` fallan si falta FK explícita → lista vacía en el cliente. */
-  const [mappingsRes, articlesRes, recipesRes, deptRes, familiasRes] = await Promise.all([
+  /** Sin embeds PostgREST: resolución manual de `bdp_departamentos` desde `bdp_articulos` (misma idea que otros listados TPV). */
+  const [mappingsRes, articlesRes, recipesRes, deptRes] = await Promise.all([
     supabase.from('map_tpv_receta').select('articulo_id, recipe_id, factor_porcion').limit(5000),
     supabase
       .from('bdp_articulos')
-      .select('id, nombre, departamento_id, familia_id')
+      .select('id, nombre, departamento_id')
       .order('nombre', { ascending: true })
       .limit(5000),
     supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
     supabase.from('bdp_departamentos').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
-    supabase.from('bdp_familias').select('id, nombre').limit(5000),
   ])
 
   if (mappingsRes.error) console.error('Error fetching map_tpv_receta:', mappingsRes.error)
   if (articlesRes.error) console.error('Error fetching bdp_articulos:', articlesRes.error)
   if (recipesRes.error) console.error('Error fetching recipes:', recipesRes.error)
   if (deptRes.error) console.error('Error fetching bdp_departamentos:', deptRes.error)
-  if (familiasRes.error) console.error('Error fetching bdp_familias:', familiasRes.error)
-
   if (articlesRes.error) {
     return (
       <DashboardDetailLayout
@@ -95,30 +96,23 @@ export default async function RecetasTpvPage() {
     deptNombreById.set(d.id, d.nombre)
   }
 
-  const familiaNombreById = new Map<number, string>()
-  for (const f of (familiasRes.data ?? []) as { id: number; nombre: string }[]) {
-    familiaNombreById.set(f.id, f.nombre)
-  }
-
   const articlesRaw = (articlesRes.data ?? []) as ArticleRow[]
   const articuloNombreById = new Map(articlesRaw.map((a) => [a.id, a.nombre]))
 
   const articles: TpvArticle[] = articlesRaw.map((a) => {
     const did = a.departamento_id
-    const fid = a.familia_id
     return {
       ...a,
       bdp_departamentos:
         did != null && deptNombreById.has(did) ? { nombre: deptNombreById.get(did) ?? '' } : null,
-      bdp_familias: fid != null && familiaNombreById.has(fid) ? { nombre: familiaNombreById.get(fid) ?? '' } : null,
     }
   })
 
   const recipes = (recipesRes.data ?? []) as unknown as Recipe[]
   const recipeNameById = new Map(recipes.map((r) => [r.id, r.name]))
 
-  /** Receta → ingredientes; luego ingrediente → nombres de albarán aprendidos (`supplier_item_mappings`). */
-  let albaranLearnedByRecipeId: Record<string, AlbaranLearnedName[]> = {}
+  /** Por receta: líneas de escandallo (ingrediente BD) + textos de albarán (`supplier_item_mappings`). */
+  let recipeIngredientMatchByRecipeId: Record<string, RecipeIngredientMatchRow[]> = {}
   if (recipes.length > 0) {
     const recipeIdChunks = chunkIds(
       recipes.map((r) => r.id),
@@ -184,36 +178,46 @@ export default async function RecetasTpvPage() {
       byIngredient.set(iid, list)
     }
 
-    const recipeToIngredients = new Map<string, Set<string>>()
+    const ingredientNameById = new Map<string, string>()
+    for (const ids of chunkIds(ingredientIds, 120)) {
+      if (ids.length === 0) continue
+      const { data: ingRows, error: ingErr } = await supabase.from('ingredients').select('id, name').in('id', ids)
+      if (ingErr) console.error('Error fetching ingredients (recetas-tpv):', ingErr)
+      for (const row of (ingRows ?? []) as { id: string; name: string | null }[]) {
+        const id = String(row.id ?? '')
+        if (!id) continue
+        ingredientNameById.set(id, String(row.name ?? '').trim() || id)
+      }
+    }
+
+    const recipeIngredientOrder = new Map<string, string[]>()
     for (const r of riRows) {
-      const set = recipeToIngredients.get(r.recipe_id) ?? new Set()
-      set.add(r.ingredient_id)
-      recipeToIngredients.set(r.recipe_id, set)
+      const arr = recipeIngredientOrder.get(r.recipe_id) ?? []
+      if (!arr.includes(r.ingredient_id)) arr.push(r.ingredient_id)
+      recipeIngredientOrder.set(r.recipe_id, arr)
     }
 
-    const dedupeKey = (a: AlbaranLearnedName) =>
-      `${a.ingredient_id}::${a.supplier_name ?? ''}::${a.supplier_item_name}`
-
-    albaranLearnedByRecipeId = {}
+    const recipeIngredientMatchBuilt: Record<string, RecipeIngredientMatchRow[]> = {}
     for (const recipe of recipes) {
-      const ings = recipeToIngredients.get(recipe.id)
-      if (!ings || ings.size === 0) {
-        albaranLearnedByRecipeId[recipe.id] = []
-        continue
-      }
-      const seen = new Set<string>()
-      const acc: AlbaranLearnedName[] = []
-      for (const ingId of ings) {
-        for (const al of byIngredient.get(ingId) ?? []) {
-          const k = dedupeKey(al)
-          if (seen.has(k)) continue
-          seen.add(k)
-          acc.push(al)
+      const order = recipeIngredientOrder.get(recipe.id) ?? []
+      recipeIngredientMatchBuilt[recipe.id] = order.map((iid) => {
+        const raw = byIngredient.get(iid) ?? []
+        const dedupe = new Map<string, AlbaranLearnedName>()
+        for (const a of raw) {
+          const k = `${a.supplier_name ?? ''}::${a.supplier_item_name}`
+          if (!dedupe.has(k)) dedupe.set(k, a)
         }
-      }
-      acc.sort((a, b) => a.supplier_item_name.localeCompare(b.supplier_item_name, 'es'))
-      albaranLearnedByRecipeId[recipe.id] = acc
+        const albaran = [...dedupe.values()].sort((a, b) =>
+          a.supplier_item_name.localeCompare(b.supplier_item_name, 'es')
+        )
+        return {
+          ingredient_id: iid,
+          ingredient_name: ingredientNameById.get(iid) ?? iid,
+          albaran,
+        }
+      })
     }
+    recipeIngredientMatchByRecipeId = recipeIngredientMatchBuilt
   }
 
   const mappings: MappingRow[] = ((mappingsRes.data ?? []) as MappingDbRow[]).map((m) => ({
@@ -227,7 +231,7 @@ export default async function RecetasTpvPage() {
   return (
     <DashboardDetailLayout
       title="Mapeo TPV"
-      subtitle="Artículos TPV ↔ recetas y nombres de producto aprendidos desde albaranes (por ingredientes de la receta)"
+      subtitle="TPV ↔ receta: escandallo (ingredientes BD) y textos de albarán enlazados por ingrediente"
       maxWidthClass="max-w-7xl"
     >
       {mappingsRes.error ? (
@@ -244,7 +248,7 @@ export default async function RecetasTpvPage() {
         mappings={mappings}
         articles={articles}
         recipes={recipes}
-        albaranLearnedByRecipeId={albaranLearnedByRecipeId}
+        recipeIngredientMatchByRecipeId={recipeIngredientMatchByRecipeId}
       />
     </DashboardDetailLayout>
   )
