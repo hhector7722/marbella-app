@@ -1,12 +1,20 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Check, Loader2, Search, Trash2, ChevronDown, X } from 'lucide-react'
+import { Check, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
-import { deleteMapping, upsertMapping } from './actions'
+import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
+import {
+  deleteMapping,
+  deleteRecipeIngredientLineAction,
+  deleteSupplierMappingByIdAction,
+  deleteSupplierMappingCompositeAction,
+  upsertMapping,
+  upsertSupplierMappingForIngredientAction,
+} from './actions'
 
 type StatusFilter = 'all' | 'mapped' | 'unmapped'
 
@@ -20,27 +28,38 @@ type UiRow = {
   factor_porcion: number
 }
 
-/** TPV | Receta | F | ingredientes BD ↔ albarán | acciones */
+type IngredientModalState = {
+  articulo_id: number
+  articulo_nombre: string
+  recipe_id: string
+  recipe_name: string
+}
+
+/** TPV | Receta | Factor | Ingredientes | acciones — filas sin zebra (fondo tarjeta). */
 const TABLE_GRID =
-  'grid w-full grid-cols-[minmax(0,0.82fr)_minmax(0,0.68fr)_1.35rem_minmax(0,1.1fr)_1.75rem] divide-x divide-zinc-200'
+  'grid w-full grid-cols-[minmax(0,0.72fr)_minmax(0,0.68fr)_minmax(2.25rem,2.75rem)_minmax(0,1.12fr)_1.75rem] divide-x divide-zinc-200'
 
 export default function MappingClient({
   mappings,
   articles,
   recipes,
+  suppliersMini,
   recipeIngredientMatchByRecipeId,
 }: {
   mappings: MappingRow[]
   articles: TpvArticle[]
   recipes: Recipe[]
+  suppliersMini: { id: number; name: string }[]
   recipeIngredientMatchByRecipeId: Record<string, RecipeIngredientMatchRow[]>
 }) {
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<StatusFilter>('all')
   const [isPending, startTransition] = useTransition()
 
   const [drafts, setDrafts] = useState<Record<number, { recipe_id: string | null; factor: string }>>({})
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [ingModal, setIngModal] = useState<IngredientModalState | null>(null)
 
   const mappingByArticulo = useMemo(() => {
     const m = new Map<number, { recipe_id: string; factor_porcion: number; recipe_name?: string | null }>()
@@ -101,19 +120,18 @@ export default function MappingClient({
     })
   }, [uiRows, query, status, drafts, recipeIngredientMatchByRecipeId])
 
-  const grouped = useMemo(() => {
-    const groups = new Map<string, UiRow[]>()
-    const fallback = 'Sin departamento'
-    for (const r of filtered) {
-      const key = r.departamento ?? fallback
-      const list = groups.get(key) ?? []
-      list.push(r)
-      groups.set(key, list)
-    }
-    return Array.from(groups.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([department, rows]) => ({ department, rows }))
+  /** Sin agrupación por departamento en la UI: solo orden estable (dept + nombre). */
+  const sortedRows = useMemo(() => {
+    const copy = [...filtered]
+    copy.sort((a, b) => {
+      const da = (a.departamento ?? '').localeCompare(b.departamento ?? '', 'es')
+      if (da !== 0) return da
+      return a.nombre.localeCompare(b.nombre, 'es')
+    })
+    return copy
   }, [filtered])
+
+  const modalMatchRows = ingModal ? (recipeIngredientMatchByRecipeId[ingModal.recipe_id] ?? []) : []
 
   const getDraft = (row: UiRow) => {
     const existing = drafts[row.articulo_id]
@@ -153,6 +171,7 @@ export default function MappingClient({
         return
       }
       toast.success('Mapeo guardado.')
+      router.refresh()
     })
   }
 
@@ -168,6 +187,7 @@ export default function MappingClient({
         return
       }
       toast.success('Mapeo eliminado.')
+      router.refresh()
     })
   }
 
@@ -198,146 +218,155 @@ export default function MappingClient({
         </div>
       </div>
 
-      <div className="space-y-2">
-        {grouped.map(({ department, rows }) => (
-          <section key={department} className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-            <header className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-2 py-1">
-              <span className="truncate text-[10px] font-bold uppercase tracking-wide text-zinc-700">{department}</span>
-              <span className="shrink-0 rounded bg-zinc-200/80 px-1.5 py-0 text-[10px] font-semibold tabular-nums text-zinc-800">
-                {rows.length}
-              </span>
-            </header>
+      <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
+        <div className="w-full min-w-0">
+          <div
+            className={cn(
+              TABLE_GRID,
+              'border-b border-[#2A4B57] bg-[#36606F] text-[10px] font-semibold normal-case leading-tight tracking-normal text-white sm:text-[11px]'
+            )}
+          >
+            <div className="px-1 py-2">TPV</div>
+            <div className="px-1 py-2">Receta</div>
+            <div className="px-0 py-2 text-center">Factor</div>
+            <div className="px-1 py-2">Ingredientes</div>
+            <div className="px-0 py-2 text-center"> </div>
+          </div>
 
-            <div className="w-full min-w-0">
+          <div>
+            {sortedRows.map((row, idx) => {
+              const draft = getDraft(row)
+              const isBusy = busyId === row.articulo_id || (isPending && busyId === row.articulo_id)
+              const hasChanges =
+                draft.recipe_id !== row.recipe_id || Number(draft.factor) !== Number(row.factor_porcion ?? 1)
+              const rid = effectiveRecipeId(row)
+              const matchRows = rid ? (recipeIngredientMatchByRecipeId[rid] ?? []) : []
+              const recipeLabel = recipes.find((x) => x.id === rid)?.name ?? row.recipe_name ?? '—'
+
+              return (
                 <div
+                  key={row.articulo_id}
                   className={cn(
                     TABLE_GRID,
-                    'border-b border-zinc-300 bg-zinc-100 text-[9px] font-bold uppercase leading-none tracking-wide text-zinc-600'
+                    'items-stretch border-b border-zinc-100 bg-white',
+                    idx === sortedRows.length - 1 && 'border-b-0',
+                    isBusy && 'pointer-events-none opacity-50'
                   )}
                 >
-                  <div className="px-1 py-1.5">TPV</div>
-                  <div className="px-1 py-1.5">Rec.</div>
-                  <div className="px-0 py-1.5 text-center">F</div>
-                  <div className="px-1 py-1.5">Ing.</div>
-                  <div className="px-0 py-1.5 text-center"> </div>
-                </div>
-
-                <div className="divide-y divide-zinc-200">
-                  {rows.map((row, idx) => {
-                    const draft = getDraft(row)
-                    const isBusy = busyId === row.articulo_id || (isPending && busyId === row.articulo_id)
-                    const hasChanges =
-                      draft.recipe_id !== row.recipe_id || Number(draft.factor) !== Number(row.factor_porcion ?? 1)
-                    const rid = effectiveRecipeId(row)
-                    const matchRows = rid ? (recipeIngredientMatchByRecipeId[rid] ?? []) : []
-
-                    return (
-                      <div
-                        key={row.articulo_id}
+                  <div className="min-w-0 px-1 py-0.5">
+                    <p className="line-clamp-1 text-[9px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
+                    <div className="mt-px flex items-center gap-0.5">
+                      <span className="font-mono text-[8px] leading-none text-zinc-500">{row.articulo_id}</span>
+                      <span
                         className={cn(
-                          TABLE_GRID,
-                          'items-stretch',
-                          idx % 2 === 1 ? 'bg-zinc-50/70' : 'bg-white',
-                          isBusy && 'pointer-events-none opacity-50'
+                          'rounded px-0.5 py-0 text-[7px] font-bold leading-none',
+                          row.mapped ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                         )}
                       >
-                        <div className="min-w-0 px-1 py-1">
-                          <p className="line-clamp-2 text-[10px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-0.5">
-                            <span className="font-mono text-[9px] leading-none text-zinc-500">{row.articulo_id}</span>
-                            {row.departamento ? (
-                              <span className="max-w-[4.5rem] truncate rounded bg-zinc-100 px-0.5 py-0 text-[8px] leading-tight text-zinc-600">
-                                {row.departamento}
-                              </span>
-                            ) : null}
-                            <span
-                              className={cn(
-                                'rounded px-0.5 py-0 text-[8px] font-bold leading-none',
-                                row.mapped ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                              )}
-                            >
-                              {row.mapped ? '·' : '—'}
-                            </span>
-                          </div>
-                        </div>
+                        {row.mapped ? '·' : '—'}
+                      </span>
+                    </div>
+                  </div>
 
-                        <div className="min-w-0 px-0.5 py-0.5">
-                          <RecipeCombobox
-                            compact
-                            micro
-                            recipes={recipes}
-                            selectedId={draft.recipe_id}
-                            onSelect={(id) => setDraft(row.articulo_id, { recipe_id: id })}
-                            onClear={() => setDraft(row.articulo_id, { recipe_id: null })}
-                          />
-                        </div>
+                  <div className="min-w-0 px-0.5 py-0.5">
+                    <RecipeCombobox
+                      compact
+                      micro
+                      recipes={recipes}
+                      selectedId={draft.recipe_id}
+                      onSelect={(id) => setDraft(row.articulo_id, { recipe_id: id })}
+                      onClear={() => setDraft(row.articulo_id, { recipe_id: null })}
+                    />
+                  </div>
 
-                        <div className="flex items-center justify-center px-0 py-0.5">
-                          <input
-                            className="h-8 w-full min-w-0 rounded border border-zinc-200 bg-white px-0.5 text-center text-[10px] font-semibold tabular-nums text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            inputMode="decimal"
-                            value={draft.factor}
-                            onChange={(e) => setDraft(row.articulo_id, { factor: e.target.value })}
-                            aria-label={`Factor ${row.nombre}`}
-                          />
-                        </div>
+                  <div className="flex items-center justify-center px-0 py-0.5">
+                    <input
+                      className="h-8 w-full min-w-0 rounded border border-zinc-200 bg-white px-0.5 text-center text-[10px] font-semibold tabular-nums text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      inputMode="decimal"
+                      value={draft.factor}
+                      onChange={(e) => setDraft(row.articulo_id, { factor: e.target.value })}
+                      aria-label={`Factor ${row.nombre}`}
+                    />
+                  </div>
 
-                        <div className="min-w-0 px-0.5 py-0.5">
-                          <IngredientEscandalloBlock rows={matchRows} hasRecipe={Boolean(rid)} />
-                        </div>
+                  <div className="min-w-0 px-0.5 py-0.5">
+                    <button
+                      type="button"
+                      disabled={!rid}
+                      onClick={() => {
+                        if (!rid) return
+                        setIngModal({
+                          articulo_id: row.articulo_id,
+                          articulo_nombre: row.nombre,
+                          recipe_id: rid,
+                          recipe_name: recipeLabel,
+                        })
+                      }}
+                      className={cn(
+                        'min-h-11 w-full rounded border border-transparent px-0.5 py-0.5 text-left transition-colors',
+                        rid ? 'hover:border-zinc-200 hover:bg-zinc-50/80 active:bg-zinc-100' : 'cursor-not-allowed opacity-50'
+                      )}
+                      aria-label="Abrir detalle de ingredientes y albarán"
+                    >
+                      <IngredientEscandalloBlock rows={matchRows} hasRecipe={Boolean(rid)} />
+                    </button>
+                  </div>
 
-                        <div className="flex shrink-0 flex-col items-stretch justify-center gap-0.5 px-0 py-0.5">
-                          <button
-                            type="button"
-                            onClick={() => onSave(row)}
-                            disabled={!hasChanges || !draft.recipe_id}
-                            className={cn(
-                              'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-[10px] font-bold transition-colors',
-                              !hasChanges || !draft.recipe_id
-                                ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
-                                : 'border-[#2A4B57] bg-[#36606F] text-white hover:bg-[#2A4B57]'
-                            )}
-                            title="Guardar"
-                          >
-                            {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDelete(row)}
-                            disabled={!row.mapped}
-                            className={cn(
-                              'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-rose-600 transition-colors',
-                              row.mapped
-                                ? 'border-rose-200 bg-rose-50 hover:bg-rose-100'
-                                : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-300'
-                            )}
-                            title="Eliminar mapeo"
-                            aria-label="Eliminar"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  <div className="flex shrink-0 flex-col items-stretch justify-center gap-0.5 px-0 py-0.5">
+                    <button
+                      type="button"
+                      onClick={() => onSave(row)}
+                      disabled={!hasChanges || !draft.recipe_id}
+                      className={cn(
+                        'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-[10px] font-bold transition-colors',
+                        !hasChanges || !draft.recipe_id
+                          ? 'cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400'
+                          : 'border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700'
+                      )}
+                      title="Guardar"
+                    >
+                      {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(row)}
+                      disabled={!row.mapped}
+                      className={cn(
+                        'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-rose-600 transition-colors',
+                        row.mapped
+                          ? 'border-rose-200 bg-rose-50 hover:bg-rose-100'
+                          : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-300'
+                      )}
+                      title="Eliminar mapeo"
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
+              )
+            })}
 
-                {rows.length === 0 ? (
-                  <div className="px-2 py-6 text-center text-[10px] text-zinc-500">Sin resultados.</div>
-                ) : null}
-            </div>
-          </section>
-        ))}
-
-        {grouped.length === 0 ? (
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 text-center text-xs text-zinc-500 shadow-sm">
-            No hay artículos que coincidan.
+            {sortedRows.length === 0 ? (
+              <div className="px-2 py-8 text-center text-[10px] text-zinc-500">Sin resultados.</div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+        </div>
+      </section>
+
+      <IngredientEscandalloModal
+        open={ingModal != null}
+        onClose={() => setIngModal(null)}
+        articuloNombre={ingModal?.articulo_nombre ?? ''}
+        recipeId={ingModal?.recipe_id ?? ''}
+        recipeName={ingModal?.recipe_name ?? ''}
+        matchRows={modalMatchRows}
+        suppliersMini={suppliersMini}
+        onDone={() => router.refresh()}
+      />
     </div>
   )
 }
@@ -356,16 +385,10 @@ function IngredientEscandalloBlock({
     return <span className="block text-center text-[9px] leading-tight text-zinc-400">Sin líneas</span>
   }
   return (
-    <div className="max-h-[5rem] space-y-1 overflow-y-auto text-left">
+    <div className="max-h-[4.5rem] space-y-0.5 overflow-y-auto text-left">
       {rows.map((line) => (
         <div key={line.ingredient_id} className="border-l border-emerald-300/80 pl-1">
-          <Link
-            href="/ingredients"
-            className="line-clamp-2 text-[8px] font-bold leading-tight text-[#36606F] hover:underline"
-            title={`Ingrediente en catálogo: ${line.ingredient_name}`}
-          >
-            {line.ingredient_name}
-          </Link>
+          <span className="line-clamp-1 text-[8px] font-bold leading-tight text-[#36606F]">{line.ingredient_name}</span>
           {line.albaran.length === 0 ? (
             <div className="pl-0.5 text-[8px] leading-tight text-zinc-400">→ —</div>
           ) : (
@@ -382,6 +405,262 @@ function IngredientEscandalloBlock({
           )}
         </div>
       ))}
+    </div>
+  )
+}
+
+function IngredientEscandalloModal({
+  open,
+  onClose,
+  articuloNombre,
+  recipeId,
+  recipeName,
+  matchRows,
+  suppliersMini,
+  onDone,
+}: {
+  open: boolean
+  onClose: () => void
+  articuloNombre: string
+  recipeId: string
+  recipeName: string
+  matchRows: RecipeIngredientMatchRow[]
+  suppliersMini: { id: number; name: string }[]
+  onDone: () => void
+}) {
+  const [pending, startTransition] = useTransition()
+  const [addByIng, setAddByIng] = useState<Record<string, { supplierId: string; text: string; factor: string }>>({})
+
+  useEffect(() => {
+    if (!open) return
+    const init: Record<string, { supplierId: string; text: string; factor: string }> = {}
+    const firstSid = suppliersMini[0]?.id != null ? String(suppliersMini[0].id) : ''
+    for (const r of matchRows) {
+      init[r.ingredient_id] = { supplierId: firstSid, text: '', factor: '1' }
+    }
+    setAddByIng(init)
+  }, [open, matchRows, suppliersMini])
+
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const setAdd = (ingredientId: string, patch: Partial<{ supplierId: string; text: string; factor: string }>) => {
+    setAddByIng((prev) => {
+      const cur = prev[ingredientId] ?? { supplierId: '', text: '', factor: '1' }
+      return { ...prev, [ingredientId]: { ...cur, ...patch } }
+    })
+  }
+
+  const runAsync = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
+    startTransition(async () => {
+      const res = await fn()
+      if (!res.success) {
+        toast.error(res.error ?? 'Error')
+        return
+      }
+      toast.success('Guardado en base de datos.')
+      onDone()
+    })
+  }
+
+  const removeAlbaranRow = (a: AlbaranLearnedName) => {
+    if (a.id) {
+      void runAsync(() => deleteSupplierMappingByIdAction(a.id))
+      return
+    }
+    if (a.supplier_id != null) {
+      const supplierId = a.supplier_id
+      void runAsync(() =>
+        deleteSupplierMappingCompositeAction({
+          supplier_id: supplierId,
+          supplier_item_name: a.supplier_item_name,
+          ingredient_id: a.ingredient_id,
+        })
+      )
+      return
+    }
+    toast.error('No se puede eliminar: falta id de mapeo o proveedor.')
+  }
+
+  const addAlbaranRow = (ingredientId: string) => {
+    const st = addByIng[ingredientId] ?? { supplierId: '', text: '', factor: '1' }
+    const sid = Number(st.supplierId)
+    const txt = st.text.trim()
+    const fc = Number(st.factor)
+    if (!Number.isFinite(sid) || sid <= 0) {
+      toast.error('Elige proveedor.')
+      return
+    }
+    if (!txt) {
+      toast.error('Escribe el texto del albarán.')
+      return
+    }
+    if (!Number.isFinite(fc) || fc <= 0) {
+      toast.error('Factor inválido.')
+      return
+    }
+    void runAsync(() =>
+      upsertSupplierMappingForIngredientAction({
+        supplier_id: sid,
+        supplier_item_name: txt,
+        ingredient_id: ingredientId,
+        conversion_factor: fc,
+      })
+    )
+  }
+
+  const removeIngredientFromRecipe = (ingredientId: string) => {
+    if (!window.confirm('¿Quitar este ingrediente de la receta en la base de datos?')) return
+    void runAsync(() => deleteRecipeIngredientLineAction({ recipe_id: recipeId, ingredient_id: ingredientId }))
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 sm:items-center"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ing-modal-title"
+        className="max-h-[88vh] w-full max-w-lg overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-zinc-100 bg-[#36606F] px-4 py-3 text-white">
+          <div className="min-w-0">
+            <h2 id="ing-modal-title" className="text-sm font-bold leading-tight">
+              Ingredientes y albarán
+            </h2>
+            <p className="mt-1 text-[11px] leading-snug text-white/85">
+              <span className="font-semibold">{articuloNombre}</span>
+              <span className="text-white/60"> · </span>
+              <span>{recipeName}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 min-h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
+            aria-label="Cerrar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(88vh-5rem)] overflow-y-auto px-3 py-3">
+          {matchRows.length === 0 ? (
+            <p className="text-sm text-zinc-600">Esta receta no tiene líneas en el escandallo.</p>
+          ) : (
+            <ul className="space-y-4">
+              {matchRows.map((line) => {
+                const st = addByIng[line.ingredient_id] ?? { supplierId: '', text: '', factor: '1' }
+                return (
+                  <li key={line.ingredient_id} className="rounded-lg border border-zinc-100 p-3 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <Link
+                          href="/ingredients"
+                          className="text-sm font-bold text-[#36606F] hover:underline"
+                          onClick={onClose}
+                        >
+                          {line.ingredient_name}
+                        </Link>
+                        <p className="mt-0.5 font-mono text-[10px] text-zinc-500">{line.ingredient_id}</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => removeIngredientFromRecipe(line.ingredient_id)}
+                        className="shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                      >
+                        Quitar de la receta
+                      </button>
+                    </div>
+
+                    <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                      Textos en albarán (mapeo)
+                    </p>
+                    <ul className="space-y-1.5">
+                      {line.albaran.map((a, i) => (
+                        <li
+                          key={a.id || `${line.ingredient_id}-a-${i}`}
+                          className="flex items-start justify-between gap-2 rounded-md bg-zinc-50 px-2 py-1.5 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-zinc-900">{a.supplier_item_name}</p>
+                            {a.supplier_name ? <p className="text-xs text-zinc-500">{a.supplier_name}</p> : null}
+                          </div>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => removeAlbaranRow(a)}
+                            className="shrink-0 rounded-md p-2 text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                            aria-label="Eliminar mapeo de albarán"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-3 space-y-2 rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 p-2">
+                      <p className="text-[10px] font-bold uppercase text-zinc-600">Añadir texto de albarán</p>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                        <select
+                          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm sm:min-w-[10rem]"
+                          value={st.supplierId}
+                          onChange={(e) => setAdd(line.ingredient_id, { supplierId: e.target.value })}
+                          aria-label="Proveedor"
+                        >
+                          <option value="">Proveedor…</option>
+                          {suppliersMini.map((s) => (
+                            <option key={s.id} value={String(s.id)}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          className="h-11 min-h-11 min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2 text-sm"
+                          placeholder="Texto como en albarán"
+                          value={st.text}
+                          onChange={(e) => setAdd(line.ingredient_id, { text: e.target.value })}
+                        />
+                        <input
+                          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-center text-sm sm:w-20"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={st.factor}
+                          onChange={(e) => setAdd(line.ingredient_id, { factor: e.target.value })}
+                          aria-label="Factor conversión"
+                        />
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => addAlbaranRow(line.ingredient_id)}
+                          className="flex h-11 min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-[#36606F] px-3 text-sm font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Guardar
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -446,54 +725,67 @@ function RecipeCombobox({
   }, [recipes, search])
 
   const h = micro ? 'h-8 min-h-8' : compact ? 'h-9 min-h-9' : 'h-12 min-h-12'
-  const btnPad = micro ? 'px-1 text-[10px]' : compact ? 'px-2 text-xs' : 'px-4 text-sm'
-  const clearW = micro ? 'w-6 min-w-6' : compact ? 'w-9 min-w-9' : 'w-12 min-w-12'
+  const btnPad = micro ? 'pl-1 pr-5 text-[10px]' : compact ? 'px-2 text-xs' : 'px-4 text-sm'
   const chev = micro ? 'h-3 w-3' : 'h-4 w-4'
-  const iconClear = micro ? 'h-3 w-3' : 'h-4 w-4'
 
   return (
     <div className="relative min-w-0 w-full" ref={wrapperRef}>
-      <div className="flex min-w-0 gap-px">
+      {micro && selectedId ? (
         <button
           type="button"
-          onClick={() => setIsOpen((v) => !v)}
-          className={cn(
-            'min-w-0 flex-1 truncate',
-            'flex items-center justify-between gap-0.5 rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
-            h,
-            btnPad
-          )}
-          aria-expanded={isOpen}
-          aria-haspopup="listbox"
-        >
-          <span className={cn('min-w-0 truncate font-semibold', selectedRecipe ? 'text-zinc-900' : 'text-zinc-400')}>
-            {selectedRecipe ? selectedRecipe.name : '…'}
-          </span>
-          <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             onClear()
             setIsOpen(false)
             setSearch('')
           }}
-          className={cn(
-            'flex shrink-0 items-center justify-center rounded border transition-colors',
-            h,
-            clearW,
-            selectedId
-              ? 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
-              : 'cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-300'
-          )}
-          disabled={!selectedId}
-          title="Quitar"
+          className="absolute right-0.5 top-0.5 z-20 flex h-4 w-4 items-center justify-center rounded text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+          title="Quitar receta"
           aria-label="Quitar receta"
         >
-          <X className={iconClear} />
+          <X className="h-2.5 w-2.5 stroke-[3]" />
         </button>
-      </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className={cn(
+          'min-w-0 w-full truncate',
+          'flex items-center justify-between gap-0.5 rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
+          h,
+          btnPad
+        )}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+      >
+        <span className={cn('min-w-0 truncate font-semibold', selectedRecipe ? 'text-zinc-900' : 'text-zinc-400')}>
+          {selectedRecipe ? selectedRecipe.name : '…'}
+        </span>
+        <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
+      </button>
+
+      {!micro ? (
+        <div className="mt-px flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              onClear()
+              setIsOpen(false)
+              setSearch('')
+            }}
+            className={cn(
+              'flex items-center justify-center rounded border px-2 py-1 text-[10px] font-semibold transition-colors',
+              selectedId
+                ? 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                : 'cursor-not-allowed border-zinc-100 text-zinc-300'
+            )}
+            disabled={!selectedId}
+          >
+            Quitar receta
+          </button>
+        </div>
+      ) : null}
 
       {isOpen ? (
         <div className="absolute left-0 right-0 z-50 mt-1 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl">

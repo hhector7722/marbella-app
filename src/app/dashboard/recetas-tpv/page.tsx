@@ -22,8 +22,10 @@ export type MappingRow = {
   recipes?: { name: string | null } | null
 }
 
-/** Texto tal como figura en líneas de albarán, aprendido en `supplier_item_mappings` (puede haber varios por ingrediente/proveedor). */
+/** Fila de `supplier_item_mappings` (texto albarán ↔ ingrediente). */
 export type AlbaranLearnedName = {
+  id: string
+  supplier_id: number | null
   supplier_item_name: string
   supplier_name: string | null
   ingredient_id: string
@@ -58,7 +60,7 @@ export default async function RecetasTpvPage() {
   const supabase = await createClient()
 
   /** Sin embeds PostgREST: resolución manual de `bdp_departamentos` desde `bdp_articulos` (misma idea que otros listados TPV). */
-  const [mappingsRes, articlesRes, recipesRes, deptRes] = await Promise.all([
+  const [mappingsRes, articlesRes, recipesRes, deptRes, suppliersRes] = await Promise.all([
     supabase.from('map_tpv_receta').select('articulo_id, recipe_id, factor_porcion').limit(5000),
     supabase
       .from('bdp_articulos')
@@ -67,12 +69,14 @@ export default async function RecetasTpvPage() {
       .limit(5000),
     supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
     supabase.from('bdp_departamentos').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
+    supabase.from('suppliers').select('id, name').order('name').limit(2000),
   ])
 
   if (mappingsRes.error) console.error('Error fetching map_tpv_receta:', mappingsRes.error)
   if (articlesRes.error) console.error('Error fetching bdp_articulos:', articlesRes.error)
   if (recipesRes.error) console.error('Error fetching recipes:', recipesRes.error)
   if (deptRes.error) console.error('Error fetching bdp_departamentos:', deptRes.error)
+  if (suppliersRes.error) console.error('Error fetching suppliers (recetas-tpv):', suppliersRes.error)
   if (articlesRes.error) {
     return (
       <DashboardDetailLayout
@@ -98,6 +102,11 @@ export default async function RecetasTpvPage() {
 
   const articlesRaw = (articlesRes.data ?? []) as ArticleRow[]
   const articuloNombreById = new Map(articlesRaw.map((a) => [a.id, a.nombre]))
+
+  const suppliersMini = ((suppliersRes.data ?? []) as { id: number; name: string }[]).map((s) => ({
+    id: s.id,
+    name: String(s.name ?? ''),
+  }))
 
   const articles: TpvArticle[] = articlesRaw.map((a) => {
     const did = a.departamento_id
@@ -133,6 +142,8 @@ export default async function RecetasTpvPage() {
 
     const ingredientIds = [...new Set(riRows.map((r) => r.ingredient_id))]
     type SimRow = {
+      id: string
+      supplier_id: number | null
       supplier_item_name: string
       ingredient_id: string
       suppliers: { name: string } | null
@@ -145,7 +156,7 @@ export default async function RecetasTpvPage() {
           ? Promise.resolve({ data: [] as unknown[], error: null as null })
           : supabase
               .from('supplier_item_mappings')
-              .select('supplier_item_name, ingredient_id, suppliers(name)')
+              .select('id, supplier_id, supplier_item_name, ingredient_id, suppliers(name)')
               .in('ingredient_id', ids)
       )
     )
@@ -153,13 +164,18 @@ export default async function RecetasTpvPage() {
       if (simErr) console.error('Error fetching supplier_item_mappings (recetas-tpv):', simErr)
       for (const raw of sim ?? []) {
         const row = raw as {
+          id: string | null
+          supplier_id: number | null
           supplier_item_name: string | null
           ingredient_id: string | null
           suppliers: { name: string } | { name: string }[] | null
         }
         const emb = row.suppliers
         const holder = Array.isArray(emb) ? emb[0] ?? null : emb
+        const sid = row.supplier_id != null && Number.isFinite(Number(row.supplier_id)) ? Number(row.supplier_id) : null
         simRows.push({
+          id: String(row.id ?? ''),
+          supplier_id: sid,
           supplier_item_name: String(row.supplier_item_name ?? ''),
           ingredient_id: String(row.ingredient_id ?? ''),
           suppliers: holder?.name ? { name: String(holder.name) } : null,
@@ -174,7 +190,13 @@ export default async function RecetasTpvPage() {
       if (!name || !iid) continue
       const sn = s.suppliers?.name != null ? String(s.suppliers.name).trim() : null
       const list = byIngredient.get(iid) ?? []
-      list.push({ supplier_item_name: name, supplier_name: sn || null, ingredient_id: iid })
+      list.push({
+        id: s.id,
+        supplier_id: s.supplier_id,
+        supplier_item_name: name,
+        supplier_name: sn || null,
+        ingredient_id: iid,
+      })
       byIngredient.set(iid, list)
     }
 
@@ -204,7 +226,7 @@ export default async function RecetasTpvPage() {
         const raw = byIngredient.get(iid) ?? []
         const dedupe = new Map<string, AlbaranLearnedName>()
         for (const a of raw) {
-          const k = `${a.supplier_name ?? ''}::${a.supplier_item_name}`
+          const k = a.id ? a.id : `${a.supplier_id ?? ''}::${a.supplier_item_name}`
           if (!dedupe.has(k)) dedupe.set(k, a)
         }
         const albaran = [...dedupe.values()].sort((a, b) =>
@@ -248,6 +270,7 @@ export default async function RecetasTpvPage() {
         mappings={mappings}
         articles={articles}
         recipes={recipes}
+        suppliersMini={suppliersMini}
         recipeIngredientMatchByRecipeId={recipeIngredientMatchByRecipeId}
       />
     </DashboardDetailLayout>
