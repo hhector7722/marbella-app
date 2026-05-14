@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, Search, Truck, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Search, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { appendScannerPageToInvoiceAction, processScannerImage } from './actions'
@@ -285,23 +285,52 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             Escanear albarán
           </button>
         ) : (
-          <div className="rounded-xl bg-white p-3 space-y-3">
-            <div className="relative w-full overflow-hidden rounded-lg bg-zinc-50">
+          <div className="flex max-h-[min(92dvh,calc(100svh-8.5rem))] flex-col gap-1.5 rounded-xl bg-white p-3 md:max-h-[min(88dvh,calc(100vh-9rem))]">
+            <div className="relative min-h-0 shrink">
+              {pendingBatch.items.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    className={cn(
+                      'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                      carouselIndex <= 0 && 'pointer-events-none opacity-35'
+                    )}
+                    aria-label="Foto anterior"
+                    onClick={() => scrollCarouselToIndex(carouselIndex - 1)}
+                  >
+                    <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                      carouselIndex >= pendingBatch.items.length - 1 && 'pointer-events-none opacity-35'
+                    )}
+                    aria-label="Foto siguiente"
+                    onClick={() => scrollCarouselToIndex(carouselIndex + 1)}
+                  >
+                    <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
+                  </button>
+                </>
+              ) : null}
               <div
                 ref={carouselRef}
                 onScroll={onCarouselScroll}
                 className={cn(
-                  'flex overflow-x-auto snap-x snap-mandatory',
+                  'flex max-h-[calc(100svh-13.5rem)] overflow-x-auto overflow-y-visible rounded-lg bg-zinc-50 snap-x snap-mandatory md:max-h-[calc(100vh-15.5rem)]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
               >
                 {pendingBatch.items.map((it) => (
-                  <div key={it.id} className="relative min-w-full shrink-0 snap-center snap-always">
+                  <div
+                    key={it.id}
+                    className="relative flex min-h-[140px] min-w-full shrink-0 snap-center snap-always items-center justify-center px-1 pb-1 pt-3"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={it.dataUri}
                       alt=""
-                      className="mx-auto block h-auto max-h-[55vh] w-full object-contain"
+                      className="mx-auto block max-h-[calc(100svh-14.25rem)] w-full max-w-full object-contain md:max-h-[calc(100vh-16.25rem)]"
                     />
                     <button
                       type="button"
@@ -309,7 +338,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                         e.stopPropagation()
                         removePendingItemById(it.id)
                       }}
-                      className="absolute right-2 top-2 z-10 flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-rose-600 text-white shadow-md active:scale-95"
+                      className="absolute right-0 top-0 z-10 flex h-9 w-9 translate-x-[18%] -translate-y-[18%] items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
                       aria-label="Quitar esta foto del borrador"
                     >
                       <X className="h-4 w-4" strokeWidth={3} />
@@ -320,7 +349,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             </div>
 
             {pendingBatch.items.length > 1 ? (
-              <div className="flex justify-center gap-2 pt-1">
+              <div className="flex justify-center gap-px pt-0.5">
                 {pendingBatch.items.map((_, i) => (
                   <button
                     key={i}
@@ -329,13 +358,13 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                     aria-label={`Ir a la foto ${i + 1}`}
                     aria-current={i === carouselIndex ? 'true' : undefined}
                     className={cn(
-                      'min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full p-2 active:scale-95',
+                      'inline-flex min-h-9 min-w-9 items-center justify-center rounded-full p-0.5 active:scale-95',
                       i === carouselIndex ? 'text-[#36606F]' : 'text-zinc-300'
                     )}
                   >
                     <span
                       className={cn(
-                        'block h-2 w-2 rounded-full transition-colors',
+                        'block h-1.5 w-1.5 rounded-full transition-colors',
                         i === carouselIndex ? 'bg-[#36606F]' : 'bg-current'
                       )}
                     />
@@ -344,7 +373,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-2 shrink-0">
+            <div className="flex shrink-0 flex-col gap-2">
               <button
                 type="button"
                 onClick={triggerAnotherCapture}

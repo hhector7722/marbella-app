@@ -150,17 +150,60 @@ export default function AlbaranesHistoricoClient({
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const appendSheetInputRef = useRef<HTMLInputElement>(null)
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
+  const [invoiceImageMenuOpen, setInvoiceImageMenuOpen] = useState(false)
+  const invoiceImageMenuRef = useRef<HTMLDivElement>(null)
+  const invoiceImageMenuOpenRef = useRef(false)
+
+  useEffect(() => {
+    invoiceImageMenuOpenRef.current = invoiceImageMenuOpen
+  }, [invoiceImageMenuOpen])
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
   }, [])
 
   useEffect(() => {
+    setInvoiceImageMenuOpen(false)
+  }, [detail?.id])
+
+  useEffect(() => {
+    if (!invoiceImageMenuOpen) return
+    const onDown = (e: MouseEvent) => {
+      const el = invoiceImageMenuRef.current
+      if (el && !el.contains(e.target as Node)) setInvoiceImageMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [invoiceImageMenuOpen])
+
+  const invoiceImageSheetOptions = useMemo(() => {
+    if (!detail) return [] as { key: string; label: string; url: string }[]
+    const out: { key: string; label: string; url: string }[] = []
+    if (detail.signed_url) {
+      out.push({ key: 'main', label: 'Hoja 1 (principal)', url: detail.signed_url })
+    }
+    for (const s of detail.extra_document_sheets ?? []) {
+      out.push({
+        key: `p-${s.page_order}-${s.signed_url.slice(0, 24)}`,
+        label: `Hoja ${s.page_order}`,
+        url: s.signed_url,
+      })
+    }
+    return out
+  }, [detail])
+
+  useEffect(() => {
     if (!selectedId) return
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeModal()
+      if (e.key !== 'Escape') return
+      if (invoiceImageMenuOpenRef.current) {
+        e.preventDefault()
+        setInvoiceImageMenuOpen(false)
+        return
+      }
+      closeModal()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => {
@@ -404,6 +447,7 @@ export default function AlbaranesHistoricoClient({
     setExpandedLineIds({})
     setAppendSheetBusy(false)
     if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
+    setInvoiceImageMenuOpen(false)
   }
 
   function setDraft(lineId: string, patch: Partial<{ original_name: string; quantity: string; unit_price: string; total_price: string }>) {
@@ -1121,33 +1165,54 @@ export default function AlbaranesHistoricoClient({
                         )}
                       </button>
                     ) : null}
-                    {detail?.signed_url || (detail?.extra_document_sheets?.length ?? 0) > 0 ? (
-                      <div className="flex items-center gap-px shrink-0 md:gap-1">
-                        {detail?.signed_url ? (
-                          <a
-                            href={detail.signed_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="Ver hoja 1 (principal)"
-                            title="Hoja 1 — imagen principal del albarán"
-                            className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
+                    {invoiceImageSheetOptions.length === 1 ? (
+                      <a
+                        href={invoiceImageSheetOptions[0]!.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="Ver imagen del albarán"
+                        title={invoiceImageSheetOptions[0]!.label}
+                        className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99] shrink-0"
+                      >
+                        <Eye className="h-4 w-4 md:h-5 md:w-5" />
+                      </a>
+                    ) : invoiceImageSheetOptions.length > 1 ? (
+                      <div className="relative shrink-0" ref={invoiceImageMenuRef}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setInvoiceImageMenuOpen((o) => !o)
+                          }}
+                          aria-label="Elegir imagen del albarán"
+                          title="Elegir qué hoja abrir"
+                          aria-expanded={invoiceImageMenuOpen}
+                          aria-haspopup="menu"
+                          className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
+                        >
+                          <Eye className="h-4 w-4 md:h-5 md:w-5" />
+                        </button>
+                        {invoiceImageMenuOpen ? (
+                          <div
+                            role="menu"
+                            className="absolute right-0 top-full z-[20060] mt-2 min-w-[13rem] rounded-xl border border-white/20 bg-[#2d4f5c] py-1 shadow-xl ring-1 ring-black/20"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <Eye className="h-4 w-4 md:h-5 md:w-5" />
-                          </a>
+                            {invoiceImageSheetOptions.map((opt) => (
+                              <a
+                                key={opt.key}
+                                role="menuitem"
+                                href={opt.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block px-4 py-3 text-left text-sm font-bold text-white hover:bg-white/10 active:bg-white/15"
+                                onClick={() => setInvoiceImageMenuOpen(false)}
+                              >
+                                {opt.label}
+                              </a>
+                            ))}
+                          </div>
                         ) : null}
-                        {(detail?.extra_document_sheets ?? []).map((sheet) => (
-                          <a
-                            key={`${sheet.page_order}-${sheet.signed_url}`}
-                            href={sheet.signed_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`Ver hoja ${sheet.page_order}`}
-                            title={`Hoja ${sheet.page_order}`}
-                            className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
-                          >
-                            <Eye className="h-4 w-4 md:h-5 md:w-5" />
-                          </a>
-                        ))}
                       </div>
                     ) : null}
                     {isManager && detail?.id ? (
