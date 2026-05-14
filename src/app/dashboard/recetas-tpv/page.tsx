@@ -24,6 +24,13 @@ export type MappingRow = {
   recipes?: { name: string | null } | null
 }
 
+/** Texto tal como figura en líneas de albarán, aprendido en `supplier_item_mappings` (puede haber varios por ingrediente/proveedor). */
+export type AlbaranLearnedName = {
+  supplier_item_name: string
+  supplier_name: string | null
+  ingredient_id: string
+}
+
 type ArticleRow = {
   id: number
   nombre: string
@@ -35,6 +42,12 @@ type MappingDbRow = {
   articulo_id: number
   recipe_id: string
   factor_porcion: number | null
+}
+
+function chunkIds<T>(ids: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < ids.length; i += size) out.push(ids.slice(i, i + size))
+  return out
 }
 
 export default async function RecetasTpvPage() {

@@ -24,8 +24,14 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
 import { translateCaToEsTextAction } from '@/app/actions/translate-ca-es';
-
-const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails', 'Menús'];
+import {
+    type MenuCategoryRow,
+    denormalizedRecipeCategoryName,
+    isMenusPackCategory,
+    labelMenuCategoryForRecipesEs,
+    menuCategoryFromUrlParam,
+    sortMenuCategoriesForRecipes,
+} from '@/lib/recipe-menu-categories';
 
 interface ViewState {
     location: 'pvp' | 'pavello';
@@ -80,10 +86,52 @@ function RecipeDetailContent() {
     const [simulatorExpanded, setSimulatorExpanded] = useState(false);
     const [recipeMetaModalOpen, setRecipeMetaModalOpen] = useState(false);
     const [recipeIngredientEditTarget, setRecipeIngredientEditTarget] = useState<Ingredient | null>(null);
+    const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
+    const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
     const catFilter = searchParams.get('cat');
+
+    useEffect(() => {
+        void (async () => {
+            const [catRes, mcoRes] = await Promise.all([
+                supabase
+                    .from('categories')
+                    .select('id, name, slug, parent_id, sort_order')
+                    .eq('scope', 'menu')
+                    .order('sort_order', { ascending: true })
+                    .limit(5000),
+                supabase.from('menu_category_overrides').select('category_id, override_name_es').limit(5000),
+            ]);
+            if (!catRes.error && catRes.data) setMenuCategoryRows(catRes.data as MenuCategoryRow[]);
+            const m = new Map<string, string | null>();
+            for (const row of (mcoRes.data ?? []) as { category_id: string; override_name_es: string | null }[]) {
+                m.set(row.category_id, row.override_name_es ?? null);
+            }
+            setMcoEsByCategoryId(m);
+        })();
+    }, [supabase]);
+
+    const sortedMenuCategoryRows = useMemo(() => sortMenuCategoriesForRecipes(menuCategoryRows), [menuCategoryRows]);
+
+    const menusPackCategoryId = useMemo(
+        () => menuCategoryRows.find((r) => r.slug === 'menus-packs')?.id ?? null,
+        [menuCategoryRows],
+    );
+
+    const recipeCategoryLabel = useMemo(() => {
+        if (!recipe) return '';
+        if (!recipe.menu_category_id) return String(recipe.category ?? '').trim();
+        const row = menuCategoryRows.find((x: MenuCategoryRow) => x.id === recipe.menu_category_id);
+        if (!row) return String(recipe.category ?? '').trim();
+        return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
+    }, [recipe, menuCategoryRows, sortedMenuCategoryRows, mcoEsByCategoryId]);
+
+    const isMenuRecipe = useMemo(
+        () => isMenusPackCategory(recipe ?? {}, menusPackCategoryId),
+        [recipe, menusPackCategoryId],
+    );
 
     const currentQueryString = searchParams.toString();
     const buildDetailHref = (id: string) => (currentQueryString ? `/recipes/${id}?${currentQueryString}` : `/recipes/${id}`);
@@ -130,8 +178,14 @@ function RecipeDetailContent() {
     };
 
     const fetchAllRecipes = async () => {
-        let q = supabase.from('recipes').select('id, name, category').order('name');
-        if (catFilter) q = q.eq('category', catFilter);
+        let q = supabase.from('recipes').select('id, name, category, menu_category_id').order('name');
+        if (catFilter && catFilter !== '__none__') {
+            const row = menuCategoryRows.length ? menuCategoryFromUrlParam(catFilter, menuCategoryRows) : null;
+            if (row) q = q.eq('menu_category_id', row.id);
+            else q = q.eq('category', catFilter);
+        } else if (catFilter === '__none__') {
+            q = q.is('menu_category_id', null);
+        }
         const { data } = await q;
         if (data) {
             setAllRecipes(data);
@@ -152,7 +206,7 @@ function RecipeDetailContent() {
             }
         };
         checkRole();
-    }, [recipeId, catFilter]);
+    }, [recipeId, catFilter, menuCategoryRows]);
 
     useEffect(() => {
         setSimulatorExpanded(false);
@@ -585,9 +639,19 @@ function RecipeDetailContent() {
         fetchBackendCost();
     };
 
-    const handleCategoryUpdate = async (cat: string) => {
-        await updateRecipeField('category', cat);
+    const handleCategoryUpdate = async (menuCat: MenuCategoryRow) => {
+        const categoryDb = denormalizedRecipeCategoryName(menuCat);
+        const { error } = await supabase
+            .from('recipes')
+            .update({ menu_category_id: menuCat.id, category: categoryDb })
+            .eq('id', recipeId);
+        if (error) {
+            toast.error(`No se pudo guardar categoría: ${error.message}`);
+            throw error;
+        }
+        setRecipe({ ...recipe, menu_category_id: menuCat.id, category: categoryDb });
         setShowCategoryModal(false);
+        toast.success('Guardado');
     };
 
     const applySimulatedPrice = async () => {

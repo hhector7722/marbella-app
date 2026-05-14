@@ -82,7 +82,6 @@ function RecipesContent() {
     };
 
     useEffect(() => {
-    useEffect(() => {
         void (async () => {
             const [catRes, mcoRes] = await Promise.all([
                 supabase
