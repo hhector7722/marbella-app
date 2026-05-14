@@ -222,72 +222,76 @@ export default function MappingClient({
 
   return (
     <div className="space-y-2">
-      <div className="relative min-w-0">
-        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
-        <input
-          className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-8 pr-2 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
-          placeholder="Buscar…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Buscar en mapeos TPV"
-        />
+      <div className="flex w-full min-w-0 items-center gap-2">
+        <div className="relative min-h-9 min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+          <input
+            className="h-9 w-full min-w-0 rounded-md border border-zinc-200 bg-white pl-8 pr-2 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
+            placeholder="Buscar…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Buscar en mapeos TPV"
+          />
+        </div>
+        <div ref={deptMenuRef} className="relative flex shrink-0 items-center gap-1.5">
+          {deptFilter != null ? (
+            <span
+              className="inline-flex max-w-[min(52vw,13rem)] items-center gap-1 truncate rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-semibold leading-tight text-zinc-800"
+              title={deptFilter}
+            >
+              <span className="min-w-0 truncate">{deptFilter}</span>
+              <button
+                type="button"
+                onClick={() => setDeptFilter(null)}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-600 text-white shadow-sm"
+                aria-label="Quitar filtro de departamento"
+              >
+                <X className="h-2.5 w-2.5 stroke-[3]" />
+              </button>
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setDeptMenuOpen((v) => !v)}
+            className="flex h-9 min-h-9 w-9 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-zinc-600 outline-none ring-0 hover:text-zinc-900"
+            aria-expanded={deptMenuOpen}
+            aria-haspopup="listbox"
+            aria-label="Filtrar por departamento"
+            title="Departamento"
+          >
+            <Filter className="h-5 w-5" strokeWidth={2} />
+          </button>
+          {deptMenuOpen ? (
+            <div
+              className="absolute right-0 top-full z-[60] mt-1 max-h-56 min-w-[12rem] overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-xl"
+              role="listbox"
+            >
+              {departmentOptions.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  role="option"
+                  aria-selected={deptFilter === label}
+                  className={cn(
+                    'flex w-full px-3 py-2 text-left text-xs font-semibold hover:bg-zinc-50',
+                    deptFilter === label && 'bg-emerald-50 text-emerald-800'
+                  )}
+                  onClick={() => {
+                    setDeptFilter(label)
+                    setDeptMenuOpen(false)
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
         <div className="grid w-full shrink-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center rounded-t-lg border-b border-zinc-200 bg-white py-0">
-          <div ref={deptMenuRef} className="relative flex justify-start pl-1">
-            <div className="relative inline-flex">
-              <button
-                type="button"
-                onClick={() => setDeptMenuOpen((v) => !v)}
-                className="flex h-11 min-h-11 w-11 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-zinc-600 outline-none ring-0 hover:text-zinc-900"
-                aria-expanded={deptMenuOpen}
-                aria-haspopup="listbox"
-                aria-label="Filtrar por departamento"
-                title="Departamento"
-              >
-                <Filter className="h-5 w-5" strokeWidth={2} />
-              </button>
-              {deptFilter != null ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDeptFilter(null)
-                  }}
-                  className="absolute -right-0.5 -top-0.5 z-[1] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-1 ring-white"
-                  aria-label="Quitar filtro de departamento"
-                >
-                  <X className="h-2 w-2 stroke-[3]" aria-hidden />
-                </button>
-              ) : null}
-            </div>
-            {deptMenuOpen ? (
-              <div
-                className="absolute left-0 top-full z-[60] mt-1 max-h-56 min-w-[12rem] overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-xl"
-                role="listbox"
-              >
-                {departmentOptions.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    role="option"
-                    aria-selected={deptFilter === label}
-                    className={cn(
-                      'flex w-full px-3 py-2 text-left text-xs font-semibold hover:bg-zinc-50',
-                      deptFilter === label && 'bg-emerald-50 text-emerald-800'
-                    )}
-                    onClick={() => {
-                      setDeptFilter(label)
-                      setDeptMenuOpen(false)
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <div aria-hidden className="shrink-0" />
           <div className="flex min-w-0 justify-center">
             <div className="inline-flex items-stretch">
               <FilterButton active={status === 'all'} onClick={() => setStatus('all')}>
@@ -308,15 +312,14 @@ export default function MappingClient({
           <div
             className={cn(
               TABLE_GRID_COLS,
-              'divide-x divide-[#2A4B57]',
               'border-b border-[#2A4B57] bg-[#36606F] text-[10px] font-semibold normal-case leading-tight tracking-normal text-white sm:text-[11px]'
             )}
           >
-              <div className="px-1 py-2">TPV</div>
-              <div className="px-1 py-2">Receta</div>
-              <div className="px-1 py-2">Ingredientes</div>
-              <div className="px-0 py-2 text-center"> </div>
-            </div>
+            <div className="px-1 py-2 text-center">TPV</div>
+            <div className="px-1 py-2 text-center">Receta</div>
+            <div className="px-1 py-2 text-center">Ingredientes</div>
+            <div className="px-0 py-2 text-center"> </div>
+          </div>
 
           <div>
             {sortedRows.map((row, idx) => {
@@ -333,15 +336,14 @@ export default function MappingClient({
                   key={row.articulo_id}
                   className={cn(
                     TABLE_GRID_COLS,
-                    'divide-x divide-zinc-200',
-                    'items-stretch border-b border-zinc-100 bg-white',
+                    'items-start border-b border-zinc-100 bg-white',
                     idx === sortedRows.length - 1 && 'border-b-0',
                     isBusy && 'pointer-events-none opacity-50'
                   )}
                 >
-                  <div className="min-w-0 px-1 py-0.5">
-                    <p className="line-clamp-1 text-[9px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
-                    <div className="mt-px flex items-center gap-0.5">
+                  <div className="flex min-w-0 flex-col items-center justify-center px-1 py-1 text-center">
+                    <p className="line-clamp-2 text-[9px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
                       <span className="font-mono text-[8px] leading-none text-zinc-500">{row.articulo_id}</span>
                       <span
                         className={cn(
@@ -354,7 +356,7 @@ export default function MappingClient({
                     </div>
                   </div>
 
-                  <div className="min-w-0 px-0.5 py-0.5">
+                  <div className="flex min-w-0 items-center justify-center px-0.5 py-1">
                     <RecipeCombobox
                       compact
                       micro
@@ -365,12 +367,14 @@ export default function MappingClient({
                     />
                   </div>
 
-                  <div className="min-w-0 px-0.5 py-0.5">
+                  <div className="flex min-w-0 items-center justify-center px-0.5 py-1">
                     <button
                       type="button"
-                      disabled={!rid}
                       onClick={() => {
-                        if (!rid) return
+                        if (!rid) {
+                          toast.error('Selecciona una receta en la columna Receta.')
+                          return
+                        }
                         setIngModal({
                           articulo_id: row.articulo_id,
                           articulo_nombre: row.nombre,
@@ -379,8 +383,8 @@ export default function MappingClient({
                         })
                       }}
                       className={cn(
-                        'min-h-11 w-full rounded border border-transparent px-0.5 py-0.5 text-left transition-colors',
-                        rid ? 'hover:border-zinc-200 hover:bg-zinc-50/80 active:bg-zinc-100' : 'cursor-not-allowed opacity-50'
+                        'w-full rounded border border-transparent px-0.5 py-1 text-center transition-colors',
+                        rid ? 'hover:border-zinc-200 hover:bg-zinc-50/80 active:bg-zinc-100' : 'opacity-60'
                       )}
                       aria-label="Abrir detalle de ingredientes y albarán"
                     >
@@ -388,13 +392,13 @@ export default function MappingClient({
                     </button>
                   </div>
 
-                  <div className="flex shrink-0 flex-col items-stretch justify-center gap-1 px-0 py-0.5">
+                  <div className="flex shrink-0 flex-col items-center justify-center gap-0 px-0 py-1">
                     <button
                       type="button"
                       onClick={() => onSave(row)}
                       disabled={!hasChanges || !draft.recipe_id}
                       className={cn(
-                        'flex h-11 min-h-11 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none outline-none ring-0',
+                        'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
                         'text-[10px] font-bold transition-colors',
                         !hasChanges || !draft.recipe_id
                           ? 'cursor-not-allowed text-zinc-300'
@@ -409,7 +413,7 @@ export default function MappingClient({
                       onClick={() => onDelete(row)}
                       disabled={!row.mapped}
                       className={cn(
-                        'flex h-11 min-h-11 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none outline-none ring-0',
+                        'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
                         'transition-colors',
                         row.mapped ? 'text-rose-600 hover:text-rose-800' : 'cursor-not-allowed text-zinc-300'
                       )}
@@ -459,17 +463,17 @@ function IngredientEscandalloBlock({
     return <span className="block text-center text-[9px] leading-tight text-zinc-400">Sin líneas</span>
   }
   return (
-    <div className="max-h-[4.5rem] space-y-0.5 overflow-y-auto text-left">
+    <div className="space-y-0.5 text-center">
       {rows.map((line) => (
-        <div key={line.ingredient_id} className="border-l border-emerald-300/80 pl-1">
-          <span className="line-clamp-1 text-[8px] font-bold leading-tight text-[#36606F]">{line.ingredient_name}</span>
+        <div key={line.ingredient_id} className="text-center">
+          <span className="line-clamp-2 text-[8px] font-bold leading-tight text-[#36606F]">{line.ingredient_name}</span>
           {line.albaran.length === 0 ? (
-            <div className="pl-0.5 text-[8px] leading-tight text-zinc-400">→ —</div>
+            <div className="text-[8px] leading-tight text-zinc-400">→ —</div>
           ) : (
             line.albaran.map((a, i) => (
               <div
                 key={`${line.ingredient_id}-alb-${i}`}
-                className="truncate pl-0.5 text-[8px] leading-tight text-zinc-600"
+                className="truncate text-[8px] leading-tight text-zinc-600"
                 title={a.supplier_name ? `${a.supplier_item_name} · ${a.supplier_name}` : a.supplier_item_name}
               >
                 → {a.supplier_item_name}
@@ -506,6 +510,8 @@ function IngredientEscandalloModal({
 }) {
   const [pending, startTransition] = useTransition()
   const [addByIng, setAddByIng] = useState<Record<string, { supplierId: string; text: string; factor: string }>>({})
+  const [linkIngredientId, setLinkIngredientId] = useState('')
+  const [linkUnit, setLinkUnit] = useState('kg')
 
   useEffect(() => {
     if (!open) return
@@ -526,7 +532,17 @@ function IngredientEscandalloModal({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  if (!open) return null
+  useEffect(() => {
+    if (!open) return
+    setLinkIngredientId('')
+    setLinkUnit('kg')
+  }, [open, recipeId, matchRows])
+
+  const excludeIngredientIds = useMemo(() => new Set(matchRows.map((r) => r.ingredient_id)), [matchRows])
+  const linkableIngredients = useMemo(
+    () => ingredientsMini.filter((i) => i.id && !excludeIngredientIds.has(i.id)),
+    [ingredientsMini, excludeIngredientIds]
+  )
 
   const setAdd = (ingredientId: string, patch: Partial<{ supplierId: string; text: string; factor: string }>) => {
     setAddByIng((prev) => {
@@ -598,6 +614,18 @@ function IngredientEscandalloModal({
     void runAsync(() => deleteRecipeIngredientLineAction({ recipe_id: recipeId, ingredient_id: ingredientId }))
   }
 
+  const submitLinkIngredient = () => {
+    if (!linkIngredientId) {
+      toast.error('Elige un ingrediente.')
+      return
+    }
+    void runAsync(() =>
+      addRecipeIngredientLineAction({ recipe_id: recipeId, ingredient_id: linkIngredientId, unit: linkUnit })
+    )
+  }
+
+  if (!open) return null
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 sm:items-center"
@@ -634,13 +662,29 @@ function IngredientEscandalloModal({
 
         <div className="max-h-[calc(88vh-5rem)] overflow-y-auto px-3 py-3">
           {matchRows.length === 0 ? (
-            <p className="text-sm text-zinc-600">Esta receta no tiene líneas en el escandallo.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-600">
+                Esta receta aún no tiene líneas en el escandallo. Vincula ingredientes existentes del catálogo; se
+                guardan en la misma receta que en <span className="font-semibold">/recipes</span>.
+              </p>
+              <RecipeLinkIngredientBlock
+                title="Vincular ingrediente"
+                pending={pending}
+                linkableIngredients={linkableIngredients}
+                linkIngredientId={linkIngredientId}
+                linkUnit={linkUnit}
+                onChangeIngredient={setLinkIngredientId}
+                onChangeUnit={setLinkUnit}
+                onSubmit={submitLinkIngredient}
+              />
+            </div>
           ) : (
-            <ul className="space-y-4">
-              {matchRows.map((line) => {
-                const st = addByIng[line.ingredient_id] ?? { supplierId: '', text: '', factor: '1' }
-                return (
-                  <li key={line.ingredient_id} className="rounded-lg border border-zinc-100 p-3 shadow-sm">
+            <>
+              <ul className="space-y-4">
+                {matchRows.map((line) => {
+                  const st = addByIng[line.ingredient_id] ?? { supplierId: '', text: '', factor: '1' }
+                  return (
+                    <li key={line.ingredient_id} className="rounded-lg border border-zinc-100 p-3 shadow-sm">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
                         <Link
@@ -734,9 +778,87 @@ function IngredientEscandalloModal({
                 )
               })}
             </ul>
+              <div className="mt-4 border-t border-zinc-100 pt-4">
+                <RecipeLinkIngredientBlock
+                  title="Añadir otro ingrediente a la receta"
+                  pending={pending}
+                  linkableIngredients={linkableIngredients}
+                  linkIngredientId={linkIngredientId}
+                  linkUnit={linkUnit}
+                  onChangeIngredient={setLinkIngredientId}
+                  onChangeUnit={setLinkUnit}
+                  onSubmit={submitLinkIngredient}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function RecipeLinkIngredientBlock({
+  title,
+  pending,
+  linkableIngredients,
+  linkIngredientId,
+  linkUnit,
+  onChangeIngredient,
+  onChangeUnit,
+  onSubmit,
+}: {
+  title: string
+  pending: boolean
+  linkableIngredients: { id: string; name: string }[]
+  linkIngredientId: string
+  linkUnit: string
+  onChangeIngredient: (v: string) => void
+  onChangeUnit: (v: string) => void
+  onSubmit: () => void
+}) {
+  return (
+    <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/60 p-3">
+      <p className="text-[10px] font-bold uppercase text-zinc-600">{title}</p>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <select
+          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm sm:min-w-[12rem]"
+          value={linkIngredientId}
+          onChange={(e) => onChangeIngredient(e.target.value)}
+          aria-label="Ingrediente"
+        >
+          <option value="">Ingrediente…</option>
+          {linkableIngredients.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm sm:w-28"
+          value={linkUnit}
+          onChange={(e) => onChangeUnit(e.target.value)}
+          aria-label="Unidad"
+        >
+          <option value="kg">kg</option>
+          <option value="g">g</option>
+          <option value="l">l</option>
+          <option value="ml">ml</option>
+          <option value="ud">ud</option>
+        </select>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={onSubmit}
+          className="flex h-11 min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-[#36606F] px-4 text-sm font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" />
+          Añadir a la receta
+        </button>
+      </div>
+      {linkableIngredients.length === 0 ? (
+        <p className="mt-2 text-xs text-amber-800">No quedan ingredientes en la lista cargada.</p>
+      ) : null}
     </div>
   )
 }
@@ -800,8 +922,8 @@ function RecipeCombobox({
     return recipes.filter((r) => r.name.toLowerCase().includes(q)).slice(0, 60)
   }, [recipes, search])
 
-  const h = micro ? 'h-8 min-h-8' : compact ? 'h-9 min-h-9' : 'h-12 min-h-12'
-  const btnPad = micro ? 'pl-1 pr-5 text-[10px]' : compact ? 'px-2 text-xs' : 'px-4 text-sm'
+  const h = micro ? 'min-h-0 h-auto py-1' : compact ? 'h-9 min-h-9' : 'h-12 min-h-12'
+  const btnPad = micro ? 'px-1 text-[10px]' : compact ? 'px-2 text-xs' : 'px-4 text-sm'
   const chev = micro ? 'h-3 w-3' : 'h-4 w-4'
 
   return (
@@ -815,7 +937,7 @@ function RecipeCombobox({
             setIsOpen(false)
             setSearch('')
           }}
-          className="absolute right-0.5 top-0.5 z-20 flex h-4 w-4 items-center justify-center rounded text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+          className="absolute right-0 top-0 z-20 flex h-4 w-4 items-center justify-center rounded text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
           title="Quitar receta"
           aria-label="Quitar receta"
         >
@@ -828,17 +950,27 @@ function RecipeCombobox({
         onClick={() => setIsOpen((v) => !v)}
         className={cn(
           'min-w-0 w-full truncate',
-          'flex items-center justify-between gap-0.5 rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
+          micro
+            ? 'flex items-center justify-center border-0 bg-transparent text-center shadow-none outline-none ring-0'
+            : 'flex items-center justify-between gap-0.5 rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
           h,
           btnPad
         )}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <span className={cn('min-w-0 truncate font-semibold', selectedRecipe ? 'text-zinc-900' : 'text-zinc-400')}>
+        <span
+          className={cn(
+            'min-w-0 truncate font-semibold',
+            micro && 'text-center',
+            selectedRecipe ? 'text-zinc-900' : 'text-zinc-400'
+          )}
+        >
           {selectedRecipe ? selectedRecipe.name : '…'}
         </span>
-        <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
+        {!micro ? (
+          <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
+        ) : null}
       </button>
 
       {!micro ? (
