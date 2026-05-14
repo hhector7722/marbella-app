@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-16 (Albaranes: RPC `ensure_stock_movements_reference_doc_column` + auto-reparación en actions)
+**Última actualización:** 2026-05-17 (Albaranes: DELETE stock vía RPC, sin PostgREST/RLS en cliente)
+
+- [x] **Albaranes: borrar stock al eliminar albarán / deshacer match (2026-05-17)**: Aunque `reference_doc` exista en Postgres, PostgREST puede seguir fallando (caché de esquema) y el **DELETE** desde supabase-js puede chocar con **RLS** en `stock_movements`. **BD**: [`20260517140000_delete_albaran_stock_movements_rpc.sql`](supabase/migrations/20260517140000_delete_albaran_stock_movements_rpc.sql) — `delete_stock_movements_for_purchase_invoice(uuid)` y `delete_stock_movements_for_albaran_line(uuid)` (`SECURITY DEFINER`, solo `profiles.role` manager/admin). **App**: [`deletePurchaseInvoiceAction`](src/app/dashboard/albaranes/actions.ts) y [`unmapInvoiceLineAction`](src/app/dashboard/albaranes/actions.ts) llaman a esas RPC en lugar de `.from('stock_movements').delete()`.
 
 - [x] **Albaranes: borrado / stock sin columna `reference_doc` en BD antigua (2026-05-16)**: Si la migración `20260515120000_stock_movements_add_reference_doc.sql` no estaba aplicada, PostgREST fallaba al filtrar o borrar por `reference_doc`. **BD**: migración [`20260516130000_ensure_stock_movements_reference_doc_rpc.sql`](supabase/migrations/20260516130000_ensure_stock_movements_reference_doc_rpc.sql) — función `SECURITY DEFINER` idempotente + `GRANT EXECUTE` a `authenticated`. **App**: [`albaranes/actions.ts`](src/app/dashboard/albaranes/actions.ts) invoca la RPC antes de deletes/lecturas críticas y enriquecido de lista reintenta si el error menciona la columna ausente.
 

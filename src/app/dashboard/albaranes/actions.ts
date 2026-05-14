@@ -1648,18 +1648,21 @@ export async function unmapInvoiceLineAction(params: {
   const invoiceId = String((line as any).invoice_id ?? '').trim()
   const originalName = String((line as any).original_name ?? '').trim()
 
-  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
-  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
-
-  // 1) Eliminar los movimientos de stock asociados (PURCHASE base + REV%).
-  const ref = `ALB-LINE-${lineId}`
-  const { data: deletedRows, error: delMovErr } = await gate.supabase
-    .from('stock_movements')
-    .delete()
-    .or(`reference_doc.eq.${ref},reference_doc.ilike.${ref}-REV%`)
-    .select('id')
-  if (delMovErr) return { success: false, message: `Error borrando stock: ${delMovErr.message}` }
-  const deletedMovements = (deletedRows as any[])?.length ?? 0
+  // 1) Stock: mismo criterio que al borrar albarán completo (RPC, no PostgREST .delete).
+  const { data: rpcDel, error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_albaran_line', {
+    p_line_id: lineId,
+  })
+  if (rpcErr) {
+    const msg = String(rpcErr.message ?? '')
+    if (/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
+      return {
+        success: false,
+        message: `Error borrando stock: falta la función en BD. Ejecuta supabase/migrations/20260517140000_delete_albaran_stock_movements_rpc.sql o supabase db push. (${msg})`,
+      }
+    }
+    return { success: false, message: `Error borrando stock: ${msg}` }
+  }
+  const deletedMovements = Number(rpcDel ?? 0) || 0
 
   // 2) Volver la línea a pending. NOTA: el trigger BD que dispara stock solo
   //    actúa cuando una línea PASA a `status='mapped'` con mapped_ingredient_id,
@@ -1750,23 +1753,22 @@ export async function deletePurchaseInvoiceAction(params: {
   if (linesErr) return { success: false, message: linesErr.message }
   const lineIds = ((linesData ?? []) as any[]).map((r) => String(r.id))
 
-  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
-  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
-
-  // 2) Borrar movimientos de stock asociados (PURCHASE + REV).
-  //    En lugar de un solo IN, paginamos por línea con `ilike` para coger
-  //    `ALB-LINE-<id>` y `ALB-LINE-<id>-REV…-UNDO/APPLY` de una vez.
-  let deletedMovements = 0
-  for (const lineId of lineIds) {
-    const ref = `ALB-LINE-${lineId}`
-    const { data: deletedRows, error: delMovErr } = await gate.supabase
-      .from('stock_movements')
-      .delete()
-      .or(`reference_doc.eq.${ref},reference_doc.ilike.${ref}-REV%`)
-      .select('id')
-    if (delMovErr) return { success: false, message: `Error borrando stock: ${delMovErr.message}` }
-    deletedMovements += (deletedRows as any[])?.length ?? 0
+  // 2) Stock: DELETE vía RPC SECURITY DEFINER (evita PostgREST con caché de esquema
+  //    desfasada tras ADD COLUMN, y RLS DELETE restrictivo en stock_movements).
+  const { data: rpcDel, error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_purchase_invoice', {
+    p_invoice_id: invoiceId,
+  })
+  if (rpcErr) {
+    const msg = String(rpcErr.message ?? '')
+    if (/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
+      return {
+        success: false,
+        message: `Error borrando stock: falta la función en BD. Ejecuta supabase/migrations/20260517140000_delete_albaran_stock_movements_rpc.sql o supabase db push. (${msg})`,
+      }
+    }
+    return { success: false, message: `Error borrando stock: ${msg}` }
   }
+  const deletedMovements = Number(rpcDel ?? 0) || 0
 
   // 3) Borrar el fichero del Storage (si existe). Si falla, lo registramos y
   //    seguimos: no queremos bloquear el delete por un archivo ya inexistente.
