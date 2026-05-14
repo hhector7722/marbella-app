@@ -798,6 +798,14 @@ export function IngredientWizard({
 
       {step === 3 && (
         <div className="space-y-3">
+          {(mode === 'editPricing' || mode === 'editFull') && draft.howCharged ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-bold leading-snug text-emerald-950">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-emerald-800/90">
+                Configuración actual en catálogo
+              </span>
+              {formatWizardPricingSummary(draft)}
+            </div>
+          ) : null}
           <PricingStepHeader title={pricingAssistantCopy.invoiceStyle.title} hint={pricingAssistantCopy.invoiceStyle.hint} />
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {allowedHowChargedOptionsForCategory(draft.category).includes('kilo') && (
@@ -912,6 +920,14 @@ export function IngredientWizard({
 
       {step === 4 && (
         <div className="space-y-3">
+          {(mode === 'editPricing' || mode === 'editFull') && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-bold leading-snug text-emerald-950">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-emerald-800/90">
+                Configuración actual en catálogo
+              </span>
+              {formatWizardPricingSummary(draft)}
+            </div>
+          )}
           <PricingStepHeader title={pricingAssistantCopy.amounts.title} hint={pricingAssistantCopy.amounts.hint} />
           <label className="block space-y-1">
             <span className="text-xs font-bold text-zinc-700">

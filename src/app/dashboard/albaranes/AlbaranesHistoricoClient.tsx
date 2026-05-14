@@ -1715,10 +1715,10 @@ export default function AlbaranesHistoricoClient({
                                                   <button
                                                     type="button"
                                                     onClick={() => {
-                                                      setWizardOpen(true)
                                                       setWizardIngredientId(null)
                                                       setWizardInitialName(l.original_name || '')
                                                       setWizardTargetLineId(l.id)
+                                                      setWizardOpen(true)
                                                     }}
                                                     className="min-h-12 rounded-xl border border-zinc-200 bg-white px-4 text-xs font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
                                                   >
@@ -1727,10 +1727,10 @@ export default function AlbaranesHistoricoClient({
                                                   <button
                                                     type="button"
                                                     onClick={() => {
-                                                      setWizardOpen(true)
                                                       setWizardIngredientId(selectedIngredientByLineId[l.id] ?? null)
                                                       setWizardInitialName(null)
                                                       setWizardTargetLineId(l.id)
+                                                      setWizardOpen(true)
                                                     }}
                                                     disabled={!selectedIngredientByLineId[l.id]}
                                                     className={cn(
@@ -1943,6 +1943,7 @@ export default function AlbaranesHistoricoClient({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <IngredientWizard
+                        key={wizardIngredientId ?? 'create'}
                         ingredientId={wizardIngredientId}
                         initialName={wizardInitialName ?? undefined}
                         mode={wizardIngredientId ? 'editPricing' : 'create'}
