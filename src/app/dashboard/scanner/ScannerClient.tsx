@@ -285,8 +285,9 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             Escanear albarán
           </button>
         ) : (
-          <div className="flex max-h-[min(92dvh,calc(100svh-8.5rem))] flex-col gap-1.5 rounded-xl bg-white p-3 md:max-h-[min(88dvh,calc(100vh-9rem))]">
-            <div className="relative min-h-0 shrink">
+          <div className="flex flex-col gap-2 rounded-xl bg-white p-2 md:gap-3 md:p-3">
+            {/* Altura fija del carrusel en móvil: deja hueco para «Añadir hoja» + puntos + «Guardar» sin scroll de página */}
+            <div className="relative shrink-0 md:min-h-0 md:flex-1">
               {pendingBatch.items.length > 1 ? (
                 <>
                   <button
@@ -317,39 +318,55 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 ref={carouselRef}
                 onScroll={onCarouselScroll}
                 className={cn(
-                  'flex max-h-[calc(100svh-13.5rem)] overflow-x-auto overflow-y-visible rounded-lg bg-zinc-50 snap-x snap-mandatory md:max-h-[calc(100vh-15.5rem)]',
+                  'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-lg bg-zinc-50',
+                  /* Reserva ~21rem: cabecera del layout + «Añadir hoja» + puntos + «Guardar» + paddings (móvil sin scroll) */
+                  'h-[calc(100svh-21rem)] min-h-[12rem] md:h-[min(62vh,calc(100vh-15rem))]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
               >
                 {pendingBatch.items.map((it) => (
                   <div
                     key={it.id}
-                    className="relative flex min-h-[140px] min-w-full shrink-0 snap-center snap-always items-center justify-center px-1 pb-1 pt-3"
+                    className="relative flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always flex-col items-stretch justify-center px-1 py-1"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={it.dataUri}
-                      alt=""
-                      className="mx-auto block max-h-[calc(100svh-14.25rem)] w-full max-w-full object-contain md:max-h-[calc(100vh-16.25rem)]"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removePendingItemById(it.id)
-                      }}
-                      className="absolute right-0 top-0 z-10 flex h-9 w-9 translate-x-[18%] -translate-y-[18%] items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
-                      aria-label="Quitar esta foto del borrador"
-                    >
-                      <X className="h-4 w-4" strokeWidth={3} />
-                    </button>
+                    <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={it.dataUri}
+                        alt=""
+                        className="mx-auto h-auto max-h-full w-full max-w-full object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removePendingItemById(it.id)
+                        }}
+                        className="absolute right-1 top-1 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
+                        aria-label="Quitar esta foto del borrador"
+                      >
+                        <X className="h-4 w-4" strokeWidth={3} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
+            <button
+              type="button"
+              onClick={triggerAnotherCapture}
+              disabled={isProcessing}
+              className={cn(
+                'min-h-12 w-full shrink-0 border-0 bg-transparent p-0 text-center text-sm font-semibold uppercase tracking-wide text-[#36606F] shadow-none outline-none ring-0 hover:underline hover:underline-offset-4 active:opacity-80',
+                isProcessing && 'pointer-events-none opacity-50'
+              )}
+            >
+              Añadir hoja
+            </button>
+
             {pendingBatch.items.length > 1 ? (
-              <div className="flex justify-center gap-px pt-0.5">
+              <div className="flex shrink-0 justify-center gap-px py-0.5">
                 {pendingBatch.items.map((_, i) => (
                   <button
                     key={i}
@@ -373,31 +390,18 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
               </div>
             ) : null}
 
-            <div className="flex shrink-0 flex-col gap-2">
-              <button
-                type="button"
-                onClick={triggerAnotherCapture}
-                disabled={isProcessing}
-                className={cn(
-                  'w-full min-h-11 rounded-lg px-3 text-xs font-medium uppercase tracking-wide text-[#36606F] bg-transparent hover:bg-zinc-50 active:scale-[0.99] transition',
-                  isProcessing && 'opacity-60 pointer-events-none'
-                )}
-              >
-                Añadir hoja
-              </button>
-              <button
-                type="button"
-                onClick={() => void commitPendingBatch()}
-                disabled={isProcessing}
-                className={cn(
-                  'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-widest text-sm',
-                  'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition',
-                  isProcessing && 'opacity-60 pointer-events-none'
-                )}
-              >
-                {isProcessing ? 'Guardando…' : 'Guardar'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => void commitPendingBatch()}
+              disabled={isProcessing}
+              className={cn(
+                'min-h-12 w-full shrink-0 rounded-xl px-4 font-black uppercase tracking-widest text-sm',
+                'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition',
+                isProcessing && 'opacity-60 pointer-events-none'
+              )}
+            >
+              {isProcessing ? 'Guardando…' : 'Guardar'}
+            </button>
           </div>
         )}
 
