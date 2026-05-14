@@ -352,6 +352,11 @@ export type PurchaseInvoiceLine = {
   conversion_factor: number | null
 }
 
+export type PurchaseInvoiceExtraSheet = {
+  page_order: number
+  signed_url: string
+}
+
 export type PurchaseInvoiceDetail = {
   id: string
   created_at: string
@@ -366,6 +371,8 @@ export type PurchaseInvoiceDetail = {
   total_amount: number | null
   file_path: string | null
   signed_url: string | null
+  /** Hojas 2+ firmadas (Storage); la hoja 1 es `signed_url` de `file_path`. */
+  extra_document_sheets: PurchaseInvoiceExtraSheet[]
   lines: PurchaseInvoiceLine[]
 }
 
@@ -429,6 +436,31 @@ export async function getPurchaseInvoiceDetailAction(
     signedUrl = signed?.signedUrl ?? null
   }
 
+  const extra_document_sheets: PurchaseInvoiceExtraSheet[] = []
+  const { data: attRows, error: attErr } = await gate.supabase
+    .from('purchase_invoice_attachments')
+    .select('file_path, page_order')
+    .eq('invoice_id', id)
+    .order('page_order', { ascending: true })
+
+  if (attErr) {
+    console.error('purchase_invoice_attachments select:', attErr.message)
+  } else {
+    for (const row of attRows ?? []) {
+      const fp = String((row as any).file_path ?? '').trim()
+      const po = Number((row as any).page_order)
+      if (!fp) continue
+      const { data: signedAtt, error: attSignedErr } = await gate.supabase.storage
+        .from('albaranes')
+        .createSignedUrl(fp, 60 * 10)
+      if (attSignedErr || !signedAtt?.signedUrl) continue
+      extra_document_sheets.push({
+        page_order: Number.isFinite(po) ? po : extra_document_sheets.length + 2,
+        signed_url: signedAtt.signedUrl,
+      })
+    }
+  }
+
   const lines = ((data as any).purchase_invoice_lines ?? []).map((l: any) => ({
     id: l.id,
     original_name: l.original_name ?? 'Sin nombre',
@@ -485,6 +517,7 @@ export async function getPurchaseInvoiceDetailAction(
     total_amount: (data as any).total_amount ?? null,
     file_path: filePath,
     signed_url: signedUrl,
+    extra_document_sheets: extra_document_sheets,
     lines,
   }
 

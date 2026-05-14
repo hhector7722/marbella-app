@@ -1022,17 +1022,34 @@ export default function AlbaranesHistoricoClient({
                         {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                       </button>
                     ) : null}
-                    {detail?.signed_url ? (
-                      <a
-                        href={detail.signed_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label="Ver imagen"
-                        title="Ver imagen del albarán"
-                        className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
-                      >
-                        <Eye className="h-5 w-5" />
-                      </a>
+                    {detail?.signed_url || (detail?.extra_document_sheets?.length ?? 0) > 0 ? (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {detail?.signed_url ? (
+                          <a
+                            href={detail.signed_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Ver hoja 1 (principal)"
+                            title="Hoja 1 — imagen principal del albarán"
+                            className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
+                          >
+                            <Eye className="h-5 w-5" />
+                          </a>
+                        ) : null}
+                        {(detail?.extra_document_sheets ?? []).map((sheet) => (
+                          <a
+                            key={`${sheet.page_order}-${sheet.signed_url}`}
+                            href={sheet.signed_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Ver hoja ${sheet.page_order}`}
+                            title={`Hoja ${sheet.page_order}`}
+                            className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
+                          >
+                            <Eye className="h-5 w-5" />
+                          </a>
+                        ))}
+                      </div>
                     ) : null}
                     {isManager && detail?.id ? (
                       <button
