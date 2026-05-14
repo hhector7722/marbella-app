@@ -314,6 +314,19 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const fActivity2 = first.draft_activity_2 || first.activity_2 || '';
                 const fNotes = first.draft_notes || first.notes || '{}';
 
+                /** Hora de evento del día: columnas event_* (todas las filas del día deben coincidir). */
+                const pickDayEventField = (pick: (s: any) => string | null | undefined) => {
+                    for (const s of uniqueShifts) {
+                        const v = String(pick(s) ?? '').trim();
+                        if (v) return v;
+                    }
+                    return '';
+                };
+                const evStart = pickDayEventField((s) => s.event_start_time);
+                const evEnd = pickDayEventField((s) => s.event_end_time);
+                const evStart2 = pickDayEventField((s) => s.event_start_time_2);
+                const evEnd2 = pickDayEventField((s) => s.event_end_time_2);
+
                 setActivity(fActivity);
 
                 const fCategoria = first.draft_categoria || first.categoria || '';
@@ -321,20 +334,20 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 setCategoria(fCategoria);
                 setCategoria2(fCategoria2);
 
-                let pStart = '';
-                let pEnd = '';
+                let pStart = evStart;
+                let pEnd = evEnd;
                 let pPart = '';
-                let pStart2 = '';
-                let pEnd2 = '';
+                let pStart2 = evStart2;
+                let pEnd2 = evEnd2;
                 let pPart2 = '';
 
                 try {
                     const parsed = JSON.parse(fNotes);
-                    pStart = parsed.defaultStart || '';
-                    pEnd = parsed.defaultEnd || '';
+                    if (!pStart) pStart = parsed.defaultStart || '';
+                    if (!pEnd) pEnd = parsed.defaultEnd || '';
                     pPart = parsed.participantsCount || '';
-                    pStart2 = parsed.defaultStart2 || '';
-                    pEnd2 = parsed.defaultEnd2 || '';
+                    if (!pStart2) pStart2 = parsed.defaultStart2 || '';
+                    if (!pEnd2) pEnd2 = parsed.defaultEnd2 || '';
                     pPart2 = parsed.participantsCount2 || '';
                 } catch (e) { }
 
@@ -350,7 +363,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                 setActivity2(fActivity2);
 
-                // Slot 2: apoyamos en notes (nuevo) y fallback en columnas event_*_2 (legacy)
+                // Slot 2: columnas event_*_2, luego notes, luego primera fila (legacy)
                 const fStart2 = first.event_start_time_2 || '';
                 const fEnd2 = first.event_end_time_2 || '';
                 if (!pStart2 && fStart2) pStart2 = fStart2;
@@ -473,14 +486,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             const dbShiftMap = new Map(dbShifts?.map(s => [s.user_id, s]) || []);
 
             // Paso 2: Preparar los nuevos registros
-            // Cabecera del día (editingIndex === null) vs fila seleccionada: la UI escribe en estado de día
-            // o en shifts[i]; si priorizamos shift.* cuando la cabecera es la fuente, se guardan valores viejos.
-            const useDayHeader = editingIndex === null;
-
             const shiftsToInsert = activeShifts.map(shift => {
                 const existing = dbShiftMap.get(shift.employeeId);
                 // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
-                // Los valores por defecto de la cabecera (defaultStart, activity, etc.) ya actúan como inicializadores 
+                // Los valores por defecto de la cabecera (defaultStart, activity, etc.) ya actúan como inicializadores
                 // en handleAddEmployee, pero una vez creados, el turno del trabajador es independiente.
                 const resolvedStart = (shift.start || defaultStart || '09:00').trim();
                 const resolvedEnd = (shift.end || defaultEnd || '17:00').trim();
@@ -494,15 +503,19 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const shiftActivity2 = (shift.activity2 || activity2 || null);
                 const shiftCategory2 = (shift.categoria2 || categoria2 || null);
 
-                const slot2Start = (shift.start2 || defaultStart2 || '');
-                const slot2End = (shift.end2 || defaultEnd2 || '');
                 const slot2Participants = (shift.participantsCount2 || participantsCount2 || '');
+                // Las horas de cabecera del EVENTO (slot 1 y 2) deben ser las del día, no las del turno del trabajador;
+                // si no, al recargar la UI tomaba defaultStart de una fila cualquiera y parecía que "el evento copiaba" un empleado.
+                const dayEventStart = (defaultStart || '').trim();
+                const dayEventEnd = (defaultEnd || '').trim();
+                const dayEventStart2 = (defaultStart2 || '').trim();
+                const dayEventEnd2 = (defaultEnd2 || '').trim();
                 const shiftNotes = JSON.stringify({
-                    defaultStart: resolvedStart,
-                    defaultEnd: resolvedEnd,
+                    defaultStart: dayEventStart,
+                    defaultEnd: dayEventEnd,
                     participantsCount: (shift.participantsCount || participantsCount || ''),
-                    defaultStart2: (shift.start2 || defaultStart2 || ''),
-                    defaultEnd2: (shift.end2 || defaultEnd2 || ''),
+                    defaultStart2: dayEventStart2,
+                    defaultEnd2: dayEventEnd2,
                     participantsCount2: (shift.participantsCount2 || participantsCount2 || ''),
                 });
 
@@ -518,8 +531,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     event_start_time: defaultStart || null,
                     event_end_time: defaultEnd || null,
                     event_participants: participantsCount ? parseInt(participantsCount, 10) : null,
-                    event_start_time_2: slot2Start || null,
-                    event_end_time_2: slot2End || null,
+                    event_start_time_2: dayEventStart2 || null,
+                    event_end_time_2: dayEventEnd2 || null,
                     event_participants_2: slot2Participants ? parseInt(slot2Participants, 10) : null,
                     is_published: publish ? true : (existing?.is_published || false),
                     // Mantenemos start_time como ancla para el rango del día
