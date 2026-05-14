@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-14 (Recetas categorías carta + Mapeo TPV / albarán)
+**Última actualización:** 2026-05-16 (Albaranes: RPC `ensure_stock_movements_reference_doc_column` + auto-reparación en actions)
+
+- [x] **Albaranes: borrado / stock sin columna `reference_doc` en BD antigua (2026-05-16)**: Si la migración `20260515120000_stock_movements_add_reference_doc.sql` no estaba aplicada, PostgREST fallaba al filtrar o borrar por `reference_doc`. **BD**: migración [`20260516130000_ensure_stock_movements_reference_doc_rpc.sql`](supabase/migrations/20260516130000_ensure_stock_movements_reference_doc_rpc.sql) — función `SECURITY DEFINER` idempotente + `GRANT EXECUTE` a `authenticated`. **App**: [`albaranes/actions.ts`](src/app/dashboard/albaranes/actions.ts) invoca la RPC antes de deletes/lecturas críticas y enriquecido de lista reintenta si el error menciona la columna ausente.
 
 - [x] **Mapeo TPV `/dashboard/recetas-tpv` (2026-05-14)**: Además del artículo TPV ↔ receta y factor, la UI lista los **nombres de producto aprendidos en albaranes** (`supplier_item_mappings`) para los ingredientes de la receta elegida (varias variantes/proveedores). Búsqueda incluye esos textos; lista **plana** (orden estable por departamento + nombre, sin cabeceras de sección); cabecera petróleo con textos **TPV / Receta / Factor / Ingredientes**; filas **sin zebra** (fondo blanco de tarjeta); columna TPV compacta; tick **Guardar** en verde cuando hay cambios; cruz **X** pequeña arriba-derecha del desplegable de receta; clic en **Ingredientes** abre modal (añadir/borrar mapeos albarán, quitar línea de `recipe_ingredients`) vía server actions. SSR: `recipe_ingredients` + mappings con `suppliers(name)` por chunks en paralelo ([`page.tsx`](src/app/dashboard/recetas-tpv/page.tsx), [`MappingClient.tsx`](src/app/dashboard/recetas-tpv/MappingClient.tsx), [`actions.ts`](src/app/dashboard/recetas-tpv/actions.ts)).
 

@@ -31,6 +31,33 @@ async function gateAuthenticated(): Promise<GateResult> {
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
 /**
+ * Entornos sin migración aplicada: PostgREST falla en filtros/DELETE por `reference_doc`.
+ * La RPC `SECURITY DEFINER` ejecuta ADD COLUMN si falta. Idempotente.
+ */
+async function ensureStockMovementsReferenceDocColumn(
+  supabase: SupabaseServerClient
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { error } = await supabase.rpc('ensure_stock_movements_reference_doc_column')
+  if (error) {
+    const m = String(error.message ?? '')
+    if (/could not find the function|PGRST202|function .* does not exist|schema cache/i.test(m)) {
+      return {
+        ok: false,
+        message:
+          'Falta la reparación de esquema en la base de datos. En Supabase → SQL Editor ejecuta supabase/migrations/20260516130000_ensure_stock_movements_reference_doc_rpc.sql o `supabase db push`.',
+      }
+    }
+    return { ok: false, message: m }
+  }
+  return { ok: true }
+}
+
+function isMissingReferenceDocColumnError(message: string | undefined): boolean {
+  const m = String(message ?? '')
+  return m.includes('reference_doc') && m.includes('does not exist')
+}
+
+/**
  * Tras cambiar factor o precio unitario en una línea mapeada, recalcula
  * `ingredients.current_price` desde `unit_price / conversion_factor` (salvo `price_locked`).
  */
@@ -289,12 +316,20 @@ async function enrichInvoicesWithProcessingState(
   const refs = allLineIds.map((id) => `ALB-LINE-${id}`)
   let appliedSet = new Set<string>()
   if (refs.length) {
-    const { data: moves, error: mvErr } = await supabase
-      .from('stock_movements')
-      .select('reference_doc')
-      .eq('movement_type', 'PURCHASE')
-      .in('reference_doc', refs)
-      .limit(5000)
+    const fetchApplied = () =>
+      supabase
+        .from('stock_movements')
+        .select('reference_doc')
+        .eq('movement_type', 'PURCHASE')
+        .in('reference_doc', refs)
+        .limit(5000)
+    let { data: moves, error: mvErr } = await fetchApplied()
+    if (mvErr && isMissingReferenceDocColumnError(mvErr.message)) {
+      const fix = await ensureStockMovementsReferenceDocColumn(supabase)
+      if (fix.ok) {
+        ;({ data: moves, error: mvErr } = await fetchApplied())
+      }
+    }
     if (!mvErr) {
       appliedSet = new Set(((moves as any[]) ?? []).map((m) => String(m.reference_doc ?? '')).filter(Boolean))
     }
@@ -673,6 +708,9 @@ export async function getInvoiceStockStatusesAction(params: {
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const lineIds = Array.from(new Set((params?.lineIds ?? []).map((x) => String(x ?? '').trim()).filter(Boolean)))
   if (lineIds.length === 0) return { success: true, statuses: [] }
+
+  const ensure = await ensureStockMovementsReferenceDocColumn(gate.supabase)
+  if (!ensure.ok) return { success: false, message: ensure.message }
 
   // 1) Movimientos aplicados (referencia exacta ALB-LINE-<id>)
   const appliedRefs = lineIds.map((id) => `ALB-LINE-${id}`)
@@ -1147,6 +1185,9 @@ export async function updateMappedLineConversionFactorAction(params: {
   })
   if (!priceRes.ok) return { success: false, message: priceRes.message }
 
+  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
+  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
+
   let stockRectified = false
   const baseRef = `ALB-LINE-${lineId}`
   const { data: applied, error: appErr } = await gate.supabase
@@ -1197,6 +1238,9 @@ export async function rectifyInvoiceLineStockAction(params: {
   const newQty = Number(params?.newQtyApplied)
   if (!lineId || !ingredientId) return { success: false, message: 'Datos incompletos' }
   if (!Number.isFinite(newQty) || newQty <= 0) return { success: false, message: 'Cantidad nueva inválida' }
+
+  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
+  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
 
   // 1) Leer cantidad aplicada original (si no existe, no rectificar aquí)
   const baseRef = `ALB-LINE-${lineId}`
@@ -1316,6 +1360,9 @@ export async function applyInvoiceLineStockAction(params: {
   const appliedQty = qty * factor
   if (!Number.isFinite(appliedQty) || appliedQty <= 0) return { success: false, message: 'Cantidad aplicada inválida.' }
 
+  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
+  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
+
   // Unidad del ingrediente (unit)
   const { data: ing, error: ingErr } = await gate.supabase.from('ingredients').select('unit').eq('id', ingredientId).maybeSingle()
   if (ingErr) return { success: false, message: ingErr.message }
@@ -1375,6 +1422,9 @@ async function repairOrphanLineStockInner(
   supabase: SupabaseServerClient,
   lineId: string
 ): Promise<RepairOrphanInnerResult> {
+  const ensureCol = await ensureStockMovementsReferenceDocColumn(supabase)
+  if (!ensureCol.ok) return { ok: false, message: ensureCol.message }
+
   const { data: line, error: lineErr } = await supabase
     .from('purchase_invoice_lines')
     .select('id, invoice_id, original_name, quantity, mapped_ingredient_id, status, unit_price')
@@ -1598,6 +1648,9 @@ export async function unmapInvoiceLineAction(params: {
   const invoiceId = String((line as any).invoice_id ?? '').trim()
   const originalName = String((line as any).original_name ?? '').trim()
 
+  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
+  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
+
   // 1) Eliminar los movimientos de stock asociados (PURCHASE base + REV%).
   const ref = `ALB-LINE-${lineId}`
   const { data: deletedRows, error: delMovErr } = await gate.supabase
@@ -1696,6 +1749,9 @@ export async function deletePurchaseInvoiceAction(params: {
     .limit(20000)
   if (linesErr) return { success: false, message: linesErr.message }
   const lineIds = ((linesData ?? []) as any[]).map((r) => String(r.id))
+
+  const ensureCol = await ensureStockMovementsReferenceDocColumn(gate.supabase)
+  if (!ensureCol.ok) return { success: false, message: ensureCol.message }
 
   // 2) Borrar movimientos de stock asociados (PURCHASE + REV).
   //    En lugar de un solo IN, paginamos por línea con `ilike` para coger
