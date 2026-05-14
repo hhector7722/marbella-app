@@ -52,7 +52,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const openModal = () => {
     if (pendingBatch) {
       setMessageTone('error')
-      setMessage('Primero guarda o cancela el borrador de imágenes.')
+      setMessage('Primero guarda el albarán en curso con «Guardar».')
       return
     }
     setMessage(null)
@@ -62,13 +62,6 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const closeModal = () => {
     setShowSupplierModal(false)
     setSearchQuery('')
-  }
-
-  const discardPendingBatch = () => {
-    setPendingBatch(null)
-    setPreview(null)
-    setSelectedSupplierId(null)
-    setMessage(null)
   }
 
   const commitPendingBatch = async () => {
@@ -157,9 +150,6 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       const fname = file.name.replace(/\.[^/.]+$/, '') + '.jpg'
       const nextItem: PendingItem = { dataUri, filename: fname }
 
-      const prevLen = pendingBatch?.items.length ?? 0
-      const newLen = prevLen + 1
-
       setPendingBatch((prev) => {
         if (prev) {
           return { supplierId: prev.supplierId, items: [...prev.items, nextItem] }
@@ -167,12 +157,6 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
         return { supplierId, items: [nextItem] }
       })
 
-      setMessageTone('info')
-      setMessage(
-        newLen > 1
-          ? `Foto ${newLen} añadida al borrador. Pulsa «Guardar» cuando termines.`
-          : 'Imagen validada. Puedes añadir otra hoja al mismo albarán o guardar.'
-      )
       setPreview(null)
     } catch (error: unknown) {
       setMessageTone('error')
@@ -227,9 +211,6 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
           </button>
         ) : (
           <div className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm space-y-3">
-            <p className="text-xs font-black uppercase tracking-wider text-[#36606F]">
-              Borrador · {pendingBatch.items.length} imagen{pendingBatch.items.length === 1 ? '' : 'es'}
-            </p>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {pendingBatch.items.map((it, idx) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -252,7 +233,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                   isProcessing && 'opacity-60 pointer-events-none'
                 )}
               >
-                Añadir otra imagen al mismo albarán
+                Añadir hoja
               </button>
               <button
                 type="button"
@@ -265,14 +246,6 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 )}
               >
                 {isProcessing ? 'Guardando…' : 'Guardar'}
-              </button>
-              <button
-                type="button"
-                onClick={discardPendingBatch}
-                disabled={isProcessing}
-                className="min-h-10 text-sm font-bold text-zinc-500 hover:text-zinc-800"
-              >
-                Cancelar borrador
               </button>
             </div>
           </div>

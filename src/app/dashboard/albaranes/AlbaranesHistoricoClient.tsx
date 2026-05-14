@@ -1103,28 +1103,6 @@ export default function AlbaranesHistoricoClient({
                   </div>
 
                   <div className="flex items-center gap-0.5 shrink-0 md:gap-2">
-                    {detail?.id && detail.supplier_id != null && !isLoadingDetail ? (
-                      <button
-                        type="button"
-                        onClick={() => appendSheetInputRef.current?.click()}
-                        disabled={appendSheetBusy}
-                        aria-label="Añadir hoja al albarán"
-                        title="Añadir hoja al albarán (otra página del mismo documento)"
-                        className={cn(
-                          'min-h-9 shrink-0 px-1.5 md:px-2 md:min-h-[48px] inline-flex items-center justify-center gap-1 rounded-lg md:rounded-xl border border-white/35 bg-white/10 text-white hover:bg-white/15 transition active:scale-[0.99]',
-                          appendSheetBusy && 'opacity-60 pointer-events-none'
-                        )}
-                      >
-                        {appendSheetBusy ? (
-                          <Loader2 className="h-4 w-4 shrink-0 animate-spin md:h-5 md:w-5" />
-                        ) : (
-                          <ImagePlus className="h-4 w-4 shrink-0 md:h-5 md:w-5" />
-                        )}
-                        <span className="max-w-[4.25rem] sm:max-w-[6.5rem] truncate text-[9px] font-black uppercase leading-tight md:text-[10px]">
-                          Añadir hoja
-                        </span>
-                      </button>
-                    ) : null}
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1204,6 +1182,28 @@ export default function AlbaranesHistoricoClient({
                 </div>
 
                 <div className="p-4 overflow-auto flex-1 min-h-0">
+                  {detail?.id && detail.supplier_id != null && !isLoadingDetail ? (
+                    <div className="mb-3 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => appendSheetInputRef.current?.click()}
+                        disabled={appendSheetBusy}
+                        aria-label="Añadir hoja al albarán"
+                        title="Añadir hoja al albarán (otra página del mismo documento)"
+                        className={cn(
+                          'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-zinc-50 px-4 text-sm font-black uppercase tracking-wide text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                          appendSheetBusy && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        {appendSheetBusy ? (
+                          <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                        ) : (
+                          <ImagePlus className="h-5 w-5 shrink-0" strokeWidth={2.25} />
+                        )}
+                        Añadir hoja al albarán
+                      </button>
+                    </div>
+                  ) : null}
                   {deleteError ? (
                     <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">
                       Eliminar: {deleteError}
