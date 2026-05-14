@@ -8,7 +8,8 @@ interface CreateModalProps {
     newRecipe: any;
     setNewRecipe: (val: any) => void;
     isCreating: boolean;
-    categories: string[];
+    /** Opciones desde `categories` (menú): value = id UUID */
+    menuCategoryOptions: { id: string; label: string }[];
     allIngredients: any[];
     handleCreateRecipe: () => void;
     addIngredientToRecipe: () => void;
@@ -22,7 +23,7 @@ export default function CreateModal({
     newRecipe,
     setNewRecipe,
     isCreating,
-    categories,
+    menuCategoryOptions,
     allIngredients,
     handleCreateRecipe,
     addIngredientToRecipe,
@@ -58,11 +59,24 @@ export default function CreateModal({
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
                             <select
-                                value={newRecipe.category || 'Tapas'}
-                                onChange={e => setNewRecipe({ ...newRecipe, category: e.target.value })}
+                                value={newRecipe.menu_category_id || ''}
+                                onChange={(e) => {
+                                    const id = e.target.value;
+                                    const opt = menuCategoryOptions.find((o) => o.id === id);
+                                    setNewRecipe({
+                                        ...newRecipe,
+                                        menu_category_id: id,
+                                        category: opt?.label ?? newRecipe.category,
+                                    });
+                                }}
                                 className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
                             >
-                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                <option value="">Seleccionar categoría…</option>
+                                {menuCategoryOptions.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div>

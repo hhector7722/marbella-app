@@ -27,6 +27,8 @@ export interface Recipe {
     id: string; // uuid
     name: string;
     category: string;
+    /** Categoría menú (carta); `category` se mantiene como etiqueta legible. */
+    menu_category_id?: string | null;
     sale_price: number; // Precio Barra (Entera)
     sales_price_pavello: number; // Precio Pavelló (Entera)
     has_half_ration: boolean; // ¿Tiene media ración?

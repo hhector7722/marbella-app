@@ -9,6 +9,13 @@ import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
+import {
+    type MenuCategoryRow,
+    labelMenuCategoryForRecipesEs,
+    menuCategoryFromUrlParam,
+    menuCategoryToUrlParam,
+    sortMenuCategoriesForRecipes,
+} from '@/lib/recipe-menu-categories';
 import { recipeLineCost, type IngredientPackBridgeContext } from '@/lib/recipe-cost';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
@@ -16,6 +23,7 @@ interface Recipe {
     id: string;
     name: string;
     category: string;
+    menu_category_id?: string | null;
     sale_price: number;
     photo_url: string | null;
     servings?: number;
@@ -31,10 +39,9 @@ function RecipesContent() {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [showCategoryPopup, setShowCategoryPopup] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newRecipe, setNewRecipe] = useState<any>({ name: '', category: 'Tapas', sale_price: 0, ingredients: [] });
+    const [newRecipe, setNewRecipe] = useState<any>({ name: '', menu_category_id: '', category: '', sale_price: 0, ingredients: [] });
     const [isCreating, setIsCreating] = useState(false);
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -44,6 +51,8 @@ function RecipesContent() {
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     /** Lista para flechas anterior/siguiente (misma regla que `/recipes/[id]`: orden nombre, opcional filtro categoría URL). */
     const [staffNavRecipes, setStaffNavRecipes] = useState<Array<{ id: string }>>([]);
+    const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
+    const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
     const router = useRouter();
 
     const searchParams = useSearchParams();
@@ -63,25 +72,86 @@ function RecipesContent() {
         return s ? `/recipes/${id}?${s}` : `/recipes/${id}`;
     };
 
-    useEffect(() => {
-        // Mantener el filtro al navegar/back/refresh
-        if (categoryFromUrl && categoryFromUrl !== selectedCategory) {
-            setSelectedCategory(categoryFromUrl);
-        }
-        if (!categoryFromUrl && selectedCategory !== null) {
-            setSelectedCategory(null);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryFromUrl]);
-
     const setCategoryAndUrl = (cat: string | null) => {
-        setSelectedCategory(cat);
         const qs = new URLSearchParams(searchParams.toString());
         if (cat) qs.set('cat', cat);
         else qs.delete('cat');
         const next = qs.toString();
         router.replace(next ? `/recipes?${next}` : '/recipes');
     };
+
+    useEffect(() => {
+        void (async () => {
+            const [catRes, mcoRes] = await Promise.all([
+                supabase
+                    .from('categories')
+                    .select('id, name, slug, parent_id, sort_order')
+                    .eq('scope', 'menu')
+                    .order('sort_order', { ascending: true })
+                    .limit(5000),
+                supabase.from('menu_category_overrides').select('category_id, override_name_es').limit(5000),
+            ]);
+            if (!catRes.error && catRes.data) setMenuCategoryRows(catRes.data as MenuCategoryRow[]);
+            const m = new Map<string, string | null>();
+            for (const row of (mcoRes.data ?? []) as { category_id: string; override_name_es: string | null }[]) {
+                m.set(row.category_id, row.override_name_es ?? null);
+            }
+            setMcoEsByCategoryId(m);
+        })();
+    }, [supabase]);
+
+    useEffect(() => {
+        if (menuCategoryRows.length === 0 || !categoryFromUrl) return;
+        const resolved = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
+        if (!resolved) return;
+        const canonical = menuCategoryToUrlParam(resolved);
+        if (canonical !== categoryFromUrl) {
+            const qs = new URLSearchParams(searchParams.toString());
+            qs.set('cat', canonical);
+            const next = qs.toString();
+            router.replace(next ? `/recipes?${next}` : '/recipes');
+        }
+    }, [menuCategoryRows, categoryFromUrl, router, searchParams, supabase]);
+
+    const sortedMenuCategoryRows = useMemo(() => sortMenuCategoriesForRecipes(menuCategoryRows), [menuCategoryRows]);
+
+    const menuCategoryOptions = useMemo(
+        () =>
+            sortedMenuCategoryRows.map((r) => ({
+                id: r.id,
+                label: labelMenuCategoryForRecipesEs(r, sortedMenuCategoryRows, mcoEsByCategoryId),
+            })),
+        [sortedMenuCategoryRows, mcoEsByCategoryId],
+    );
+
+    const showUncategorizedMenuFilter = useMemo(
+        () => recipes.some((r) => !r.menu_category_id),
+        [recipes],
+    );
+
+    const selectedCategoryFilterLabel = useMemo(() => {
+        if (!categoryFromUrl) return '';
+        if (categoryFromUrl === '__none__') return 'Sin categoría menú';
+        const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
+        if (row) return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
+        return categoryFromUrl;
+    }, [categoryFromUrl, menuCategoryRows, sortedMenuCategoryRows, mcoEsByCategoryId]);
+
+    const recipeMenuLabel = (recipe: Recipe) => {
+        if (!recipe.menu_category_id) return (recipe.category || '').trim() || ' ';
+        const row = menuCategoryRows.find((x) => x.id === recipe.menu_category_id);
+        if (!row) return (recipe.category || '').trim() || ' ';
+        return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
+    };
+
+    const filteredRecipes = recipes.filter((recipe) => {
+        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
+        if (!categoryFromUrl) return matchesSearch;
+        if (categoryFromUrl === '__none__') return matchesSearch && !recipe.menu_category_id;
+        const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
+        if (row) return matchesSearch && recipe.menu_category_id === row.id;
+        return matchesSearch && (recipe.category || '') === categoryFromUrl;
+    });
 
     useEffect(() => {
         fetchRecipes();
@@ -106,14 +176,21 @@ function RecipesContent() {
 
     useEffect(() => {
         if (!isStaffView || !selectedRecipeId) return;
-        let q = supabase.from('recipes').select('id').order('name');
-        const cat = categoryFromUrl ?? selectedCategory;
-        if (cat) q = q.eq('category', cat);
-        void q.then(({ data, error }) => {
+        void (async () => {
+            let q = supabase.from('recipes').select('id').order('name');
+            const cat = categoryFromUrl;
+            if (cat && cat !== '__none__') {
+                const row = menuCategoryRows.length ? menuCategoryFromUrlParam(cat, menuCategoryRows) : null;
+                if (row) q = q.eq('menu_category_id', row.id);
+                else q = q.eq('category', cat);
+            } else if (cat === '__none__') {
+                q = q.is('menu_category_id', null);
+            }
+            const { data, error } = await q;
             if (!error && data) setStaffNavRecipes(data);
             else setStaffNavRecipes([]);
-        });
-    }, [isStaffView, selectedRecipeId, categoryFromUrl, selectedCategory]);
+        })();
+    }, [isStaffView, selectedRecipeId, categoryFromUrl, menuCategoryRows, supabase]);
 
     const staffNavIndex = staffNavRecipes.findIndex((r) => r.id === selectedRecipeId);
 
@@ -162,7 +239,12 @@ function RecipesContent() {
     async function fetchRecipes() {
         try {
             setLoading(true);
-            const { data, error } = await supabase.from('recipes').select(`id, name, category, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))`).order('name');
+            const { data, error } = await supabase
+                .from('recipes')
+                .select(
+                    `id, name, category, menu_category_id, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))`,
+                )
+                .order('name');
             if (error) throw error;
             setRecipes(data || []);
         } catch (error) { console.error('Error fetching recipes:', error); } finally { setLoading(false); }
@@ -174,17 +256,47 @@ function RecipesContent() {
     }
 
     async function handleCreateRecipe() {
-        if (!newRecipe.name || !newRecipe.category) { toast.error('Nombre y categoría son obligatorios'); return; }
+        if (!newRecipe.name?.trim() || !newRecipe.menu_category_id) {
+            toast.error('Nombre y categoría de menú son obligatorios')
+            return
+        }
+        const opt = menuCategoryOptions.find((o) => o.id === newRecipe.menu_category_id);
+        const row = menuCategoryRows.find((r) => r.id === newRecipe.menu_category_id);
+        const categoryLabel = (opt?.label ?? newRecipe.category ?? '').trim();
+        if (!categoryLabel) {
+            toast.error('Categoría no válida');
+            return;
+        }
+        const categoryDb = row ? denormalizedRecipeCategoryName(row) : categoryLabel.slice(0, 100);
         try {
             setIsCreating(true);
-            const { data: recipe, error: recipeError } = await supabase.from('recipes').insert({ name: newRecipe.name, category: newRecipe.category, sale_price: newRecipe.sale_price || null, servings: newRecipe.servings || 1 }).select().single();
+            const { data: recipe, error: recipeError } = await supabase
+                .from('recipes')
+                .insert({
+                    name: newRecipe.name.trim(),
+                    category: categoryDb,
+                    menu_category_id: newRecipe.menu_category_id,
+                    sale_price: newRecipe.sale_price || null,
+                    servings: newRecipe.servings || 1,
+                })
+                .select()
+                .single();
             if (recipeError) throw recipeError;
             if (newRecipe.ingredients && newRecipe.ingredients.length > 0) {
                 const ingredientsToInsert = newRecipe.ingredients.map((ing: any) => ({ recipe_id: recipe.id, ingredient_id: ing.ingredient_id, quantity_gross: ing.quantity || 0, unit: ing.unit || 'kg' }));
                 await supabase.from('recipe_ingredients').insert(ingredientsToInsert);
             }
             toast.success('Receta creada');
-            await fetchRecipes(); setShowCreateModal(false); setNewRecipe({ ingredients: [] });
+            await fetchRecipes();
+            setShowCreateModal(false);
+            const tap = menuCategoryRows.find((r) => r.slug === 'tapas');
+            setNewRecipe({
+                name: '',
+                menu_category_id: tap?.id ?? '',
+                category: tap ? denormalizedRecipeCategoryName(tap) : '',
+                sale_price: 0,
+                ingredients: [],
+            });
         } catch (error: any) { toast.error('Error: ' + error.message); } finally { setIsCreating(false); }
     }
 
@@ -211,14 +323,6 @@ function RecipesContent() {
         return 'text-red-600';
     };
 
-    const uniqueDbCategories = Array.from(new Set(recipes.map(r => r.category).filter(Boolean))) as string[];
-
-    const filteredRecipes = recipes.filter(recipe => {
-        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = !selectedCategory || recipe.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
-
     return (
         <div className="p-4 md:p-6 w-full bg-[#5B8FB9] min-h-screen pb-24">
             <Toaster position="top-right" />
@@ -244,32 +348,59 @@ function RecipesContent() {
                         />
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
-                            {!selectedCategory ? (
+                            {!categoryFromUrl ? (
                                 <div className="relative">
                                     <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-2.5 md:px-5 py-2 md:py-2.5 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50"><span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" /></button>
                                     {showCategoryPopup && (
                                         <>
                                             <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
-                                            <div className="absolute top-full right-0 mt-2 w-40 md:w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="absolute top-full right-0 z-40 mt-2 max-h-[min(70vh,28rem)] w-[min(92vw,20rem)] overflow-y-auto rounded-2xl border border-gray-100 bg-white py-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
                                                 <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
-                                                <button onClick={() => { setCategoryAndUrl(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
-                                                {uniqueDbCategories.map(cat => (
-                                                    <button key={cat} onClick={() => { setCategoryAndUrl(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
+                                                <button type="button" onClick={() => { setCategoryAndUrl(null); setShowCategoryPopup(false); }} className="w-full px-4 py-2.5 text-left text-xs font-bold tracking-wider text-gray-700 uppercase transition-colors hover:bg-zinc-50">Todas</button>
+                                                {showUncategorizedMenuFilter && (
+                                                    <button type="button" key="__none__" onClick={() => { setCategoryAndUrl('__none__'); setShowCategoryPopup(false); }} className="w-full px-4 py-2.5 text-left text-xs font-bold tracking-wider text-amber-800 uppercase transition-colors hover:bg-zinc-50">Sin categoría menú</button>
+                                                )}
+                                                {menuCategoryOptions.map((opt) => (
+                                                    <button
+                                                        type="button"
+                                                        key={opt.id}
+                                                        onClick={() => {
+                                                            const row = menuCategoryRows.find((r) => r.id === opt.id);
+                                                            const param = row ? menuCategoryToUrlParam(row) : opt.id;
+                                                            setCategoryAndUrl(param);
+                                                            setShowCategoryPopup(false);
+                                                        }}
+                                                        className="w-full px-4 py-2.5 text-left text-xs font-bold text-gray-700 transition-colors hover:bg-zinc-50"
+                                                    >
+                                                        {opt.label}
+                                                    </button>
                                                 ))}
                                             </div>
                                         </>
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-1 bg-white rounded-xl md:rounded-2xl pl-2.5 md:pl-4 pr-1 md:pr-1.5 py-1 md:py-1.5 shadow-md border border-white max-w-[100px] md:max-w-none">
-                                    <span className="text-zinc-800 font-black text-[9px] md:text-[10px] uppercase tracking-widest truncate">{selectedCategory}</span>
-                                    <button onClick={() => setCategoryAndUrl(null)} className="p-1 md:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors shrink-0"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
+                                <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-md md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
+                                    <span className="truncate text-[9px] font-black uppercase tracking-widest text-zinc-800 md:text-[10px]" title={selectedCategoryFilterLabel}>
+                                        {selectedCategoryFilterLabel}
+                                    </span>
+                                    <button type="button" onClick={() => setCategoryAndUrl(null)} className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
                                 </div>
                             )}
                         {!isRestricted && (
                             <button
                                 type="button"
-                                onClick={() => setShowCreateModal(true)}
+                                onClick={() => {
+                                    const tap = menuCategoryRows.find((r) => r.slug === 'tapas');
+                                    setNewRecipe({
+                                        name: '',
+                                        menu_category_id: tap?.id ?? '',
+                                        category: tap ? denormalizedRecipeCategoryName(tap) : '',
+                                        sale_price: 0,
+                                        ingredients: [],
+                                    });
+                                    setShowCreateModal(true);
+                                }}
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95 md:h-12 md:w-12 md:rounded-2xl"
                             >
                                 <Plus className="h-5 w-5 md:h-6 md:w-6" />
@@ -419,7 +550,7 @@ function RecipesContent() {
 
                             <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
                                 <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">
-                                    {fullRecipeData?.category || ' '}
+                                    {fullRecipeData ? recipeMenuLabel(fullRecipeData as Recipe) : ' '}
                                 </span>
                                 <div className="flex items-center gap-1.5 text-[9px] font-bold">
                                     <Users className="w-3.5 h-3.5" />
@@ -528,7 +659,32 @@ function RecipesContent() {
                     </div>
                 </div>
             )}
-            <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={uniqueDbCategories} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
+            <CreateModal
+                showCreateModal={showCreateModal}
+                setShowCreateModal={setShowCreateModal}
+                newRecipe={newRecipe}
+                setNewRecipe={setNewRecipe}
+                isCreating={isCreating}
+                menuCategoryOptions={menuCategoryOptions}
+                allIngredients={allIngredients}
+                handleCreateRecipe={handleCreateRecipe}
+                addIngredientToRecipe={() =>
+                    setNewRecipe({
+                        ...newRecipe,
+                        ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }],
+                    })
+                }
+                removeIngredientFromRecipe={(idx: number) => {
+                    const updated = [...newRecipe.ingredients]
+                    updated.splice(idx, 1)
+                    setNewRecipe({ ...newRecipe, ingredients: updated })
+                }}
+                updateRecipeIngredient={(idx: number, field: string, val: any) => {
+                    const updated = [...newRecipe.ingredients]
+                    updated[idx] = { ...updated[idx], [field]: val }
+                    setNewRecipe({ ...newRecipe, ingredients: updated })
+                }}
+            />
         </div>
     );
 }
