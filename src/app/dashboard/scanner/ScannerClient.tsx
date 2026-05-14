@@ -41,9 +41,10 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const supabase = createClient()
 
   const effectiveSupplierId = pendingBatch?.supplierId ?? selectedSupplierId
+  const pendingSupplierId = pendingBatch?.supplierId ?? null
 
   useEffect(() => {
-    if (!showSupplierModal && !pendingBatch) return
+    if (!showSupplierModal && pendingSupplierId == null) return
     const fetchSuppliers = async () => {
       setLoadingSuppliers(true)
       const { data, error } = await supabase
@@ -54,7 +55,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       setLoadingSuppliers(false)
     }
     void fetchSuppliers()
-  }, [showSupplierModal, pendingBatch, supabase])
+  }, [showSupplierModal, pendingSupplierId, supabase])
 
   const pendingSupplierName = useMemo(() => {
     if (!pendingBatch) return null
