@@ -15,7 +15,12 @@ interface Supplier {
   image_url?: string | null
 }
 
-type PendingItem = { dataUri: string; filename: string }
+type PendingItem = { id: string; dataUri: string; filename: string }
+
+function newPendingId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
 
 export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false)
@@ -29,7 +34,10 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null)
   /** Borrador: fotos validadas listas para guardar en un solo albarán (1ª = cabecera, resto = adjuntos). */
   const [pendingBatch, setPendingBatch] = useState<{ supplierId: number; items: PendingItem[] } | null>(null)
+  const [carouselIndex, setCarouselIndex] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const prevBatchLenRef = useRef(0)
   const supabase = createClient()
 
   const effectiveSupplierId = pendingBatch?.supplierId ?? selectedSupplierId
@@ -48,6 +56,73 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       void fetchSuppliers()
     }
   }, [showSupplierModal, supabase])
+
+  const removePendingItemById = (itemId: string) => {
+    setPendingBatch((prev) => {
+      if (!prev) return null
+      const next = prev.items.filter((x) => x.id !== itemId)
+      if (next.length === 0) {
+        setSelectedSupplierId(null)
+        setCarouselIndex(0)
+        prevBatchLenRef.current = 0
+        return null
+      }
+      return { supplierId: prev.supplierId, items: next }
+    })
+  }
+
+  const scrollCarouselToIndex = (index: number, behavior: ScrollBehavior = 'smooth') => {
+    const el = carouselRef.current
+    if (!el) return
+    const w = el.clientWidth
+    if (w <= 0) return
+    const n = pendingBatch?.items.length ?? 0
+    const i = Math.min(Math.max(0, index), Math.max(0, n - 1))
+    el.scrollTo({ left: i * w, behavior })
+    setCarouselIndex(i)
+  }
+
+  const onCarouselScroll = () => {
+    const el = carouselRef.current
+    if (!el) return
+    const w = el.clientWidth
+    if (w <= 0) return
+    const n = pendingBatch?.items.length ?? 0
+    if (n === 0) return
+    const i = Math.min(Math.max(0, Math.round(el.scrollLeft / w)), n - 1)
+    setCarouselIndex(i)
+  }
+
+  useEffect(() => {
+    if (!pendingBatch) {
+      prevBatchLenRef.current = 0
+      setCarouselIndex(0)
+      return
+    }
+    const n = pendingBatch.items.length
+    const prevLen = prevBatchLenRef.current
+    prevBatchLenRef.current = n
+    const el = carouselRef.current
+    if (!el || n === 0) return
+
+    requestAnimationFrame(() => {
+      const node = carouselRef.current
+      if (!node) return
+      const w = node.clientWidth
+      if (w <= 0) return
+      if (prevLen < n) {
+        node.scrollTo({ left: (n - 1) * w, behavior: 'smooth' })
+        setCarouselIndex(n - 1)
+      } else if (prevLen > n) {
+        const idx = Math.min(Math.max(0, Math.round(node.scrollLeft / w)), n - 1)
+        node.scrollTo({ left: idx * w, behavior: 'auto' })
+        setCarouselIndex(idx)
+      } else if (prevLen === 0 && n === 1) {
+        node.scrollTo({ left: 0, behavior: 'auto' })
+        setCarouselIndex(0)
+      }
+    })
+  }, [pendingBatch])
 
   const openModal = () => {
     if (pendingBatch) {
@@ -148,7 +223,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       }
 
       const fname = file.name.replace(/\.[^/.]+$/, '') + '.jpg'
-      const nextItem: PendingItem = { dataUri, filename: fname }
+      const nextItem: PendingItem = { id: newPendingId(), dataUri, filename: fname }
 
       setPendingBatch((prev) => {
         if (prev) {
@@ -211,31 +286,64 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
           </button>
         ) : (
           <div className="rounded-xl bg-white p-3 space-y-3">
+            <div className="relative w-full overflow-hidden rounded-lg bg-zinc-50">
+              <div
+                ref={carouselRef}
+                onScroll={onCarouselScroll}
+                className={cn(
+                  'flex overflow-x-auto snap-x snap-mandatory',
+                  '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+                )}
+              >
+                {pendingBatch.items.map((it) => (
+                  <div key={it.id} className="relative min-w-full shrink-0 snap-center snap-always">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={it.dataUri}
+                      alt=""
+                      className="mx-auto block h-auto max-h-[55vh] w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removePendingItemById(it.id)
+                      }}
+                      className="absolute right-2 top-2 z-10 flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-rose-600 text-white shadow-md active:scale-95"
+                      aria-label="Quitar esta foto del borrador"
+                    >
+                      <X className="h-4 w-4" strokeWidth={3} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {pendingBatch.items.length > 1 ? (
-              <div className="flex gap-2 overflow-x-auto pb-1 shrink-0">
-                {pendingBatch.items.slice(0, -1).map((it, idx) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={`${idx}-${it.filename}`}
-                    src={it.dataUri}
-                    alt=""
-                    className="h-14 w-auto max-w-[88px] shrink-0 rounded-md border border-zinc-100 object-cover"
-                  />
+              <div className="flex justify-center gap-2 pt-1">
+                {pendingBatch.items.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => scrollCarouselToIndex(i)}
+                    aria-label={`Ir a la foto ${i + 1}`}
+                    aria-current={i === carouselIndex ? 'true' : undefined}
+                    className={cn(
+                      'min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full p-2 active:scale-95',
+                      i === carouselIndex ? 'text-[#36606F]' : 'text-zinc-300'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'block h-2 w-2 rounded-full transition-colors',
+                        i === carouselIndex ? 'bg-[#36606F]' : 'bg-current'
+                      )}
+                    />
+                  </button>
                 ))}
               </div>
             ) : null}
-            {(() => {
-              const last = pendingBatch.items[pendingBatch.items.length - 1]
-              if (!last) return null
-              return (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={last.dataUri}
-                  alt=""
-                  className="w-full max-h-[55vh] rounded-lg bg-zinc-50 object-contain"
-                />
-              )
-            })()}
+
             <div className="flex flex-col gap-2 shrink-0">
               <button
                 type="button"
