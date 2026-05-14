@@ -173,15 +173,17 @@ export function PublicCarta({
               ) : null}
             </div>
 
-            <div className="flex flex-col items-center justify-center gap-1 px-1">
-              <Image
-                src="/icons/logo-white.png"
-                alt="Bar La Marbella"
-                width={260}
-                height={70}
-                className="h-11 w-auto max-w-[220px] brightness-0 sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
-                priority
-              />
+            <div className="flex flex-col items-center justify-center gap-1.5 px-1">
+              <div className="flex shrink-0 items-center justify-center rounded-2xl bg-[#36606F] px-3 py-2 sm:px-4 sm:py-2.5">
+                <Image
+                  src="/icons/logo-white.png"
+                  alt="Bar La Marbella"
+                  width={260}
+                  height={70}
+                  className="h-11 w-auto max-w-[200px] sm:h-14 sm:max-w-[260px] md:h-[4rem] md:max-w-[300px]"
+                  priority
+                />
+              </div>
               <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400 sm:text-[11px]">
                 {tPublicUi(lang).subtitle}
               </p>
@@ -211,7 +213,7 @@ export function PublicCarta({
             {grouped.map((group) => (
               <div
                 key={group.key}
-                className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-zinc-200/90 hover:shadow-md"
+                className="overflow-hidden rounded-2xl bg-white"
               >
                 <button
                   type="button"
@@ -264,10 +266,10 @@ export function PublicCarta({
           />
           {/* Misma idea que modal recetas staff: altura tope fija, cabecera fija, solo el cuerpo hace scroll */}
           <div
-            className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] border border-zinc-100/80 bg-white shadow-[0_24px_80px_-12px_rgba(15,23,42,0.18)] animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
+            className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
+            <div className="flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
               <h2
                 id="carta-section-modal-title"
                 className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
@@ -285,7 +287,7 @@ export function PublicCarta({
             </div>
 
             {openGroup._subList.length > 1 && selectedSubKeyByGroup[openGroup.key] ? (
-              <div className="shrink-0 border-b border-zinc-100 bg-zinc-50/60 px-2.5 pb-2.5 pt-2 sm:px-3">
+              <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
                 <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto pb-0.5 sm:gap-1.5">
                   {openGroup._subList.map((sub) => {
                     const sel = selectedSubKeyByGroup[openGroup.key]
@@ -316,12 +318,9 @@ export function PublicCarta({
               </div>
             ) : null}
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50/40 px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
               {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
-                <div className="space-y-3 px-1 py-2 sm:px-2">
-                  <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600">
-                    {tPublicUi(lang).pickSubcategoryTitle}
-                  </p>
+                <div className="px-1 py-2 sm:px-2">
                   <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                     {openGroup._subList.map((sub) => (
                       <button
@@ -333,7 +332,7 @@ export function PublicCarta({
                             [openGroup.key]: sub.key,
                           }))
                         }
-                        className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
+                        className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
                       >
                         <span className="line-clamp-3 min-w-0">
                           {subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
@@ -356,7 +355,7 @@ export function PublicCarta({
                           return (
                           <div
                             key={row.articulo_id}
-                            className="flex flex-col items-center overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm"
+                            className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
                           >
                             <div className="flex w-full flex-col items-center px-1 pb-1.5 pt-1.5 sm:px-1.5 sm:pb-2 sm:pt-2">
                               {row.category_parent_name &&

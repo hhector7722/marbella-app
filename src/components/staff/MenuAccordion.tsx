@@ -210,7 +210,7 @@ function MenuCard({
     return (
         <div
             className={cn(
-                'flex h-full flex-col items-center overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm',
+                'flex h-full flex-col items-center overflow-hidden rounded-2xl bg-white',
                 editMode && !isActive && 'opacity-75'
             )}
         >
@@ -636,7 +636,7 @@ export function MenuAccordion({
 
     if (items.length === 0) {
         return (
-            <div className="rounded-xl border border-zinc-100 bg-white p-6 text-center shadow-sm">
+            <div className="rounded-xl bg-white p-6 text-center">
                 <p className="text-sm font-medium text-zinc-500">No hay platos en carta con mapeo TPV todavía.</p>
             </div>
         )
@@ -707,17 +707,15 @@ export function MenuAccordion({
                 const headerCard = (
                     <div
                         className={cn(
-                            'overflow-hidden rounded-2xl border bg-white shadow-sm transition-[border-color,box-shadow] duration-200',
-                            isOpen
-                                ? 'border-[#36606F]/35 shadow-md ring-1 ring-[#36606F]/10'
-                                : 'border-zinc-100 hover:border-zinc-200/90 hover:shadow-md'
+                            'overflow-hidden rounded-2xl bg-white transition-colors duration-200',
+                            isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70'
                         )}
                     >
                         <div className="flex min-h-[52px] w-full items-stretch">
                             {editMode && onPersistParentCategoryOrder && !reorderScope ? (
                                 <button
                                     type="button"
-                                    className="flex min-h-[52px] w-11 shrink-0 touch-manipulation items-center justify-center border-r border-zinc-100 bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12"
+                                    className="flex min-h-[52px] w-11 shrink-0 touch-manipulation items-center justify-center bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12"
                                     aria-label="Cambiar posición de secciones"
                                     title="Cambiar posición de secciones"
                                     onClick={(e) => {
@@ -740,11 +738,9 @@ export function MenuAccordion({
                 const parentReorderCard = (
                     <div
                         className={cn(
-                            'overflow-hidden rounded-2xl border bg-white shadow-sm transition-[border-color,box-shadow] duration-200',
-                            isOpen
-                                ? 'border-[#36606F]/35 shadow-md ring-1 ring-[#36606F]/10'
-                                : 'border-zinc-100 hover:border-zinc-200/90 hover:shadow-md',
-                            reorderPick === group.key && isUuidLike(group.key) && 'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                            'overflow-hidden rounded-2xl bg-white transition-colors duration-200',
+                            isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70',
+                            reorderPick === group.key && isUuidLike(group.key) && 'bg-amber-50/80'
                         )}
                     >
                         <div className="flex min-h-[52px] w-full items-stretch">
@@ -812,7 +808,7 @@ export function MenuAccordion({
             ) : null}
 
             {reorderScope ? (
-                <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <div className="flex shrink-0 flex-col gap-2 rounded-xl bg-amber-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <span className="flex min-w-0 items-start gap-2 text-[11px] font-black uppercase leading-snug tracking-wide text-amber-950 sm:items-center">
                         <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 sm:mt-0" aria-hidden />
                         <span className="min-w-0">
@@ -827,7 +823,7 @@ export function MenuAccordion({
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                         <button
                             type="button"
-                            className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 min-h-[48px] active:bg-zinc-100"
+                            className="min-h-[48px] rounded-xl bg-zinc-100 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 active:bg-zinc-200/80"
                             onClick={cancelReorder}
                             disabled={committingReorder}
                         >
@@ -835,7 +831,7 @@ export function MenuAccordion({
                         </button>
                         <button
                             type="button"
-                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl border border-[#36606F] bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
+                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
                             onClick={() => void commitReorder()}
                             disabled={committingReorder}
                         >
@@ -864,10 +860,10 @@ export function MenuAccordion({
                         onClick={() => setOpenKey(null)}
                     />
                     <div
-                        className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] border border-zinc-100/80 bg-white shadow-[0_24px_80px_-12px_rgba(15,23,42,0.18)] animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
+                        className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex shrink-0 items-center gap-1.5 border-b border-zinc-100 bg-white px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
+                        <div className="flex shrink-0 items-center gap-1.5 bg-white px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
                             <h2
                                 id="staff-carta-section-modal-title"
                                 className="min-w-0 flex-1 truncate text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
@@ -922,7 +918,7 @@ export function MenuAccordion({
                         </div>
 
                         {reorderScope === 'subs' || reorderScope === 'products' ? (
-                            <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-2 py-2 sm:px-3 sm:py-2.5">
+                            <div className="shrink-0 bg-amber-50 px-2 py-2 sm:px-3 sm:py-2.5">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <span className="flex min-w-0 items-start gap-2 text-[11px] font-black uppercase leading-snug tracking-wide text-amber-950 sm:items-center">
                                         <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 sm:mt-0" aria-hidden />
@@ -935,7 +931,7 @@ export function MenuAccordion({
                                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                                         <button
                                             type="button"
-                                            className="min-h-[48px] rounded-xl border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 active:bg-zinc-100"
+                                            className="min-h-[48px] rounded-xl bg-zinc-100 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 active:bg-zinc-200/80"
                                             onClick={cancelReorder}
                                             disabled={committingReorder}
                                         >
@@ -943,7 +939,7 @@ export function MenuAccordion({
                                         </button>
                                         <button
                                             type="button"
-                                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl border border-[#36606F] bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
+                                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
                                             onClick={() => void commitReorder()}
                                             disabled={committingReorder}
                                         >
@@ -962,7 +958,7 @@ export function MenuAccordion({
                         openGroup._subList.length === 1 &&
                         onEditChildCategory &&
                         isUuidLike(openGroup._subList[0]!.key) ? (
-                            <div className="flex shrink-0 items-center justify-center gap-1 border-b border-zinc-100 bg-white px-2 py-2 sm:px-3">
+                            <div className="flex shrink-0 items-center justify-center gap-1 bg-white px-2 py-2 sm:px-3">
                                 <span className="min-w-0 max-w-[75%] truncate text-center text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-[11px]">
                                     {subPickerButtonLabel(
                                         openGroup._subList[0]!,
@@ -985,7 +981,7 @@ export function MenuAccordion({
 
                         {openGroup._subList.length > 1 &&
                         (selectedSubKeyByGroup[openGroup.key] || reorderScope === 'subs') ? (
-                            <div className="shrink-0 border-b border-zinc-100 bg-zinc-50/60 px-2.5 pb-2.5 pt-2 sm:px-3">
+                            <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
                                 {reorderScope === 'subs' ? (
                                     <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
@@ -1012,8 +1008,7 @@ export function MenuAccordion({
                                                             isActive
                                                                 ? 'text-[#36606F]'
                                                                 : 'text-[#36606F]/60 hover:text-[#36606F] active:opacity-80',
-                                                            picked &&
-                                                                'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                                                            picked && 'bg-amber-100/90'
                                                         )}
                                                     >
                                                         <span className="line-clamp-3 min-w-0">
@@ -1092,14 +1087,11 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50/40 px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
                             {openGroup._subList.length > 1 &&
                             !selectedSubKeyByGroup[openGroup.key] &&
                             reorderScope !== 'subs' ? (
-                                <div className="space-y-3 px-1 py-2 sm:px-2">
-                                    <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600">
-                                        {tPublicUi(lang).pickSubcategoryTitle}
-                                    </p>
+                                <div className="px-1 py-2 sm:px-2">
                                     <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                                         {openGroup._subList.map((sub) => (
                                             <button
@@ -1111,7 +1103,7 @@ export function MenuAccordion({
                                                         [openGroup.key]: sub.key,
                                                     }))
                                                 }
-                                                className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
+                                                className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
                                             >
                                                 <span className="line-clamp-3 min-w-0">
                                                     {subPickerButtonLabel(
@@ -1145,9 +1137,8 @@ export function MenuAccordion({
                                                                 key={row.articulo_id}
                                                                 role="presentation"
                                                                 className={cn(
-                                                                    'h-full cursor-pointer rounded-2xl transition-shadow',
-                                                                    picked &&
-                                                                        'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
+                                                                    'h-full cursor-pointer rounded-2xl transition-colors',
+                                                                    picked && 'bg-amber-100/90'
                                                                 )}
                                                                 onClick={(e) => {
                                                                     if (

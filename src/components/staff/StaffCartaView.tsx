@@ -39,14 +39,16 @@ export function StaffCartaView({
             </div>
 
             <div className="flex justify-center px-1">
-              <Image
-                src="/icons/logo-white.png"
-                alt="Bar La Marbella"
-                width={260}
-                height={70}
-                className="h-11 w-auto max-w-[220px] brightness-0 sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
-                priority
-              />
+              <div className="flex shrink-0 items-center justify-center rounded-2xl bg-[#36606F] px-3 py-2 sm:px-4 sm:py-2.5">
+                <Image
+                  src="/icons/logo-white.png"
+                  alt="Bar La Marbella"
+                  width={260}
+                  height={70}
+                  className="h-11 w-auto max-w-[200px] sm:h-14 sm:max-w-[260px] md:h-[4rem] md:max-w-[300px]"
+                  priority
+                />
+              </div>
             </div>
 
             <div className="flex min-h-[52px] items-center justify-end gap-0.5">
