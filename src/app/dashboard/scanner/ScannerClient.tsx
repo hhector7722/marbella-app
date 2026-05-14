@@ -285,9 +285,14 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             Escanear albarán
           </button>
         ) : (
-          <div className="flex flex-col gap-2 rounded-xl bg-white p-2 md:gap-3 md:p-3">
-            {/* Carrusel: altura acotada en móvil para dejar «puntos + Añadir hoja + Guardar» visibles sin scroll vertical */}
-            <div className="relative shrink-0 md:min-h-0 md:flex-1">
+          <div
+            className={cn(
+              'flex flex-col rounded-xl bg-white p-2 md:p-3',
+              pendingBatch.items.length > 1 ? 'gap-1' : 'gap-2 md:gap-3'
+            )}
+          >
+            {/* Carrusel: altura acotada en móvil; overflow-y visible para que la cruz que sobresale no se corte */}
+            <div className="relative shrink-0 overflow-visible md:min-h-0 md:flex-1">
               {pendingBatch.items.length > 1 ? (
                 <>
                   <button
@@ -318,7 +323,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 ref={carouselRef}
                 onScroll={onCarouselScroll}
                 className={cn(
-                  'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-xl bg-zinc-50',
+                  'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-visible bg-transparent',
                   'min-h-[10rem] h-[calc(100svh-26rem)] md:h-[min(56vh,calc(100vh-16rem))]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
@@ -326,11 +331,11 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 {pendingBatch.items.map((it) => (
                   <div
                     key={it.id}
-                    className="box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-2 py-1"
+                    className="box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-2 pb-1 pl-2 pr-6 pt-5"
                   >
                     <div className="relative inline-flex max-h-full max-w-full">
-                      {/* Marco redondeado + recorte; el botón se ancla a la esquina de la imagen */}
-                      <div className="relative inline-block max-h-full max-w-full overflow-hidden rounded-xl bg-zinc-100/40">
+                      {/* Sin overflow-hidden: la cruz puede salir sobre la tarjeta blanca sin recortarse */}
+                      <div className="relative inline-block max-h-full max-w-full">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={it.dataUri}
@@ -359,7 +364,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             </div>
 
             {pendingBatch.items.length > 1 ? (
-              <div className="flex shrink-0 justify-center gap-0 py-1">
+              <div className="flex shrink-0 justify-center gap-0 pb-0 pt-0">
                 {pendingBatch.items.map((_, i) => (
                   <button
                     key={i}
@@ -368,7 +373,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                     aria-label={`Ir a la foto ${i + 1}`}
                     aria-current={i === carouselIndex ? 'true' : undefined}
                     className={cn(
-                      'inline-flex min-h-10 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
+                      'inline-flex min-h-9 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
                       i === carouselIndex ? 'text-[#36606F]' : 'text-zinc-300'
                     )}
                   >
