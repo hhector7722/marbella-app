@@ -16,7 +16,7 @@ async function gateAuthenticated() {
 }
 
 export type ProcessScannerImageResult =
-  | { success: true }
+  | { success: true; invoiceId?: string }
   | {
       success: false
       message: string
@@ -302,7 +302,7 @@ export async function processScannerImage(
           return {
             success: false,
             message:
-              'Ya consta un albarán con el mismo proveedor, número y fecha. Si es otra hoja del mismo albarán, activa «Añadir hoja» y elige ese albarán.',
+              'Ya consta un albarán con el mismo proveedor, número y fecha. Si es otra hoja del mismo albarán, ábrelo en Albaranes y usa «Añadir hoja al albarán».',
           }
         }
       }
@@ -361,7 +361,7 @@ export async function processScannerImage(
     revalidatePath('/dashboard/albaranes-precios')
     revalidatePath('/dashboard/scanner')
     revalidatePath('/dashboard/albaranes')
-    return { success: true }
+    return { success: true, invoiceId: String((invoice as { id: string }).id) }
   } catch (err) {
     console.error('processScannerImage unexpected error:', err)
     return { success: false, message: 'Error inesperado procesando el albarán. Reintenta.' }

@@ -1,6 +1,7 @@
 /**
- * Heurística rápida en cliente (sin IA) para rechazar fotos demasiado borrosas o vacías.
- * Usa energía media del gradiente en escala de grises (proxy de nitidez).
+ * Heurística rápida en cliente (sin IA) antes de subir: nitidez (gradiente medio),
+ * variación de luminancia (rechaza superficies uniformes) y densidad de bordes fuertes
+ * (proxy de texto/tablas en el albarán).
  */
 
 function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
@@ -51,13 +52,54 @@ export async function assessScannerImageReadability(dataUrl: string): Promise<{
   }
   const meanGradient = count > 0 ? sumG / count : 0
 
-  // Umbral empírico: < ~4 suele ser casi uniforme/borroso; documentos legibles suelen > 8–15.
-  const MIN_GRADIENT = 5.5
-  if (meanGradient < MIN_GRADIENT) {
+  let sumL = 0
+  for (let p = 0; p < gray.length; p++) sumL += gray[p]!
+  const meanL = gray.length > 0 ? sumL / gray.length : 0
+  let varSum = 0
+  for (let p = 0; p < gray.length; p++) {
+    const d = gray[p]! - meanL
+    varSum += d * d
+  }
+  const lumaStd = gray.length > 0 ? Math.sqrt(varSum / gray.length) : 0
+
+  let strongEdges = 0
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x
+      const gx = Math.abs(gray[idx + 1]! - gray[idx - 1]!)
+      const gy = Math.abs(gray[idx + w]! - gray[idx - w]!)
+      if (gx + gy > 14) strongEdges++
+    }
+  }
+  const strongEdgeFrac = count > 0 ? strongEdges / count : 0
+
+  // Documentos con texto: gradiente medio alto, varianza de luminancia notable,
+  // y bastantes bordes fuertes. Fotos de pared/mesa/mano vacía suelen fallar aquí.
+  const MIN_MEAN_GRADIENT = 9.0
+  const MIN_LUMA_STD = 16.0
+  const MIN_STRONG_EDGE_FRAC = 0.022
+
+  if (meanGradient < MIN_MEAN_GRADIENT) {
     return {
       ok: false,
       message:
         'La imagen se ve muy borrosa o sin contraste. Acerca el albarán, más luz y enfoca antes de repetir la foto.',
+    }
+  }
+
+  if (lumaStd < MIN_LUMA_STD) {
+    return {
+      ok: false,
+      message:
+        'La imagen es demasiado uniforme (casi sin detalle). Asegúrate de encuadrar el papel del albarán con texto legible.',
+    }
+  }
+
+  if (strongEdgeFrac < MIN_STRONG_EDGE_FRAC) {
+    return {
+      ok: false,
+      message:
+        'No se detecta suficiente texto o líneas de albarán. Repite la foto encuadrando el documento completo.',
     }
   }
 

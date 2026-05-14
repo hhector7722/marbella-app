@@ -2,13 +2,33 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertCircle, Check, Eye, FileText, Filter, Loader2, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Trash2, Truck, X, XCircle } from 'lucide-react'
+import {
+  AlertCircle,
+  Check,
+  Eye,
+  FileText,
+  Filter,
+  ImagePlus,
+  Loader2,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Sparkles,
+  Trash2,
+  Truck,
+  X,
+  XCircle,
+} from 'lucide-react'
 import { toast } from 'sonner'
+import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
+import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
+import { appendScannerPageToInvoiceAction } from '../scanner/actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
   autoMapKnownLinesAction,
@@ -129,6 +149,8 @@ export default function AlbaranesHistoricoClient({
   const [autoMapError, setAutoMapError] = useState<string | null>(null)
   const [deletingInvoice, setDeletingInvoice] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const appendSheetInputRef = useRef<HTMLInputElement>(null)
+  const [appendSheetBusy, setAppendSheetBusy] = useState(false)
 
   useEffect(() => {
     setModalContainer(typeof document !== 'undefined' ? document.body : null)
@@ -286,6 +308,71 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  async function handleAppendSheetFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
+    if (!file || !detail?.id || detail.supplier_id == null) return
+
+    setAppendSheetBusy(true)
+    try {
+      const dataUri = await compressImageFileToDataUri(file)
+      const q = await assessScannerImageReadability(dataUri)
+      if (!q.ok) {
+        toast.error(q.message)
+        return
+      }
+      const fname = file.name.replace(/\.[^/.]+$/, '') + '.jpg'
+      const res = await appendScannerPageToInvoiceAction({
+        base64DataUri: dataUri,
+        filename: fname,
+        supplierId: Number(detail.supplier_id),
+        invoiceId: detail.id,
+      })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      toast.success('Hoja añadida al albarán.')
+      const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
+      if (!refreshed.success) {
+        toast.error(`Hoja guardada pero no se pudo recargar: ${refreshed.message}`)
+        return
+      }
+      setDetail(refreshed.detail)
+      const nextDraft: Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }> = {}
+      for (const l of refreshed.detail.lines) {
+        nextDraft[l.id] = {
+          original_name: l.original_name ?? '',
+          quantity: l.quantity == null ? '' : String(l.quantity),
+          unit_price: l.unit_price == null ? '' : String(l.unit_price),
+          total_price: l.total_price == null ? '' : String(l.total_price),
+        }
+      }
+      setDraftLines(nextDraft)
+      const lineIds = refreshed.detail.lines.map((l) => l.id)
+      const st = await getInvoiceStockStatusesAction({ lineIds })
+      if (st.success) {
+        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+        for (const s of st.statuses) {
+          map[s.lineId] = {
+            stockApplied: s.stockApplied,
+            stockAppliedQty: s.stockAppliedQty,
+            rectifiedCount: s.rectifiedCount,
+          }
+        }
+        setStockStatusByLineId(map)
+      }
+      startTransition(async () => {
+        const listRes = await listPurchaseInvoicesAction({ limit: 60 })
+        if (listRes.success) setItems(listRes.items)
+      })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al subir la hoja')
+    } finally {
+      setAppendSheetBusy(false)
+    }
+  }
+
   function closeModal() {
     detailReqRef.current++
     setSelectedId(null)
@@ -316,6 +403,8 @@ export default function AlbaranesHistoricoClient({
     setWizardInitialName(null)
     setWizardTargetLineId(null)
     setExpandedLineIds({})
+    setAppendSheetBusy(false)
+    if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
   }
 
   function setDraft(lineId: string, patch: Partial<{ original_name: string; quantity: string; unit_price: string; total_price: string }>) {
@@ -967,10 +1056,18 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
-                <div className="bg-[#36606F] px-3 py-2.5 sm:px-5 sm:py-4 flex items-center justify-between gap-2 sm:gap-3 text-white shrink-0">
-                  {/* Cabecera: en móvil nombre en línea propia + metadato debajo (más ancho para truncate);
-                      en sm+ nombre y fecha·nº en una fila. Iconos compactos solo en pantallas estrechas. */}
-                  <div className="min-w-0 flex-1 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
+                <input
+                  ref={appendSheetInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleAppendSheetFileChange}
+                />
+                <div className="bg-[#36606F] px-3 py-2.5 md:px-5 md:py-4 flex items-center justify-between gap-2 md:gap-3 text-white shrink-0">
+                  {/* Cabecera: por debajo de md, nombre en línea propia + metadato debajo; iconos compactos.
+                      Desde md, fila única + targets 48px como antes. */}
+                  <div className="min-w-0 flex-1 flex flex-col gap-0.5 md:flex-row md:items-baseline md:gap-3">
                     {detail ? (
                       <button
                         type="button"
@@ -980,13 +1077,13 @@ export default function AlbaranesHistoricoClient({
                           setSupplierResults([])
                           setSupplierError(null)
                         }}
-                        className="text-left w-full min-w-0 text-xs font-black uppercase tracking-wide sm:text-sm sm:tracking-wider truncate hover:opacity-80"
+                        className="text-left w-full min-w-0 text-xs font-black uppercase tracking-wide md:text-sm md:tracking-wider truncate hover:opacity-80"
                         title="Cambiar proveedor"
                       >
                         {detail.supplier_name ?? 'Añadir proveedor'}
                       </button>
                     ) : (
-                      <p className="text-xs font-black uppercase tracking-wide truncate min-w-0 sm:text-sm sm:tracking-wider">
+                      <p className="text-xs font-black uppercase tracking-wide truncate min-w-0 md:text-sm md:tracking-wider">
                         Proveedor pendiente
                       </p>
                     )}
@@ -996,7 +1093,7 @@ export default function AlbaranesHistoricoClient({
                       const hasDate = dateStr && dateStr !== '—'
                       if (!hasDate && !invNum) return null
                       return (
-                        <p className="text-[10px] font-medium text-white/70 truncate min-w-0 sm:text-[11px] sm:shrink-0">
+                        <p className="text-[10px] font-medium text-white/70 truncate min-w-0 md:text-[11px] md:shrink-0">
                           {hasDate ? dateStr : ''}
                           {hasDate && invNum ? ' · ' : ''}
                           {invNum ? invNum : ''}
@@ -1005,7 +1102,29 @@ export default function AlbaranesHistoricoClient({
                     })()}
                   </div>
 
-                  <div className="flex items-center gap-0.5 shrink-0 sm:gap-2">
+                  <div className="flex items-center gap-0.5 shrink-0 md:gap-2">
+                    {detail?.id && detail.supplier_id != null && !isLoadingDetail ? (
+                      <button
+                        type="button"
+                        onClick={() => appendSheetInputRef.current?.click()}
+                        disabled={appendSheetBusy}
+                        aria-label="Añadir hoja al albarán"
+                        title="Añadir hoja al albarán (otra página del mismo documento)"
+                        className={cn(
+                          'min-h-9 shrink-0 px-1.5 md:px-2 md:min-h-[48px] inline-flex items-center justify-center gap-1 rounded-lg md:rounded-xl border border-white/35 bg-white/10 text-white hover:bg-white/15 transition active:scale-[0.99]',
+                          appendSheetBusy && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        {appendSheetBusy ? (
+                          <Loader2 className="h-4 w-4 shrink-0 animate-spin md:h-5 md:w-5" />
+                        ) : (
+                          <ImagePlus className="h-4 w-4 shrink-0 md:h-5 md:w-5" />
+                        )}
+                        <span className="max-w-[4.25rem] sm:max-w-[6.5rem] truncate text-[9px] font-black uppercase leading-tight md:text-[10px]">
+                          Añadir hoja
+                        </span>
+                      </button>
+                    ) : null}
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1026,7 +1145,7 @@ export default function AlbaranesHistoricoClient({
                       </button>
                     ) : null}
                     {detail?.signed_url || (detail?.extra_document_sheets?.length ?? 0) > 0 ? (
-                      <div className="flex items-center gap-px shrink-0 sm:gap-1">
+                      <div className="flex items-center gap-px shrink-0 md:gap-1">
                         {detail?.signed_url ? (
                           <a
                             href={detail.signed_url}
@@ -1156,9 +1275,9 @@ export default function AlbaranesHistoricoClient({
                               return (
                                 <div key={l.id} className="p-3">
                                   {/* Cabecera de la fila: a la izquierda, área expandible
-                                      (botón único) con el nombre + iconos de estado puramente
-                                      decorativos (X rojo / Check verde / RotateCcw ámbar). A la
-                                      derecha, BLOQUE DE ACCIONES como hermano del botón anterior
+                                      (botón único) con el nombre + iconos de estado (X rojo /
+                                      Check verde / RotateCcw ámbar) — solo visibles para manager.
+                                      A la derecha, BLOQUE DE ACCIONES como hermano del botón anterior
                                       (no anidado) con AlertCircle clickeable (reparar stock) y
                                       Pencil (ajustar match). Esto evita HTML inválido (botones
                                       anidados vía role="button") que en algunos navegadores
@@ -1172,32 +1291,36 @@ export default function AlbaranesHistoricoClient({
                                       <span className="text-sm font-black text-zinc-900 truncate">
                                         {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
                                       </span>
-                                      {noMatch ? (
-                                        <span
-                                          className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-rose-600 text-white shrink-0"
-                                          aria-label="Sin match"
-                                          title="Sin match — pulsa el lápiz para mapear"
-                                        >
-                                          <X className="h-3 w-3" strokeWidth={3.5} />
-                                        </span>
-                                      ) : null}
-                                      {stockApplied ? (
-                                        <span
-                                          className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white shrink-0"
-                                          aria-label="Stock aplicado"
-                                          title="Stock aplicado"
-                                        >
-                                          <Check className="h-3 w-3" strokeWidth={3.5} />
-                                        </span>
-                                      ) : null}
-                                      {rectified ? (
-                                        <span
-                                          className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0"
-                                          aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                          title={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                        >
-                                          <RotateCcw className="h-3 w-3" strokeWidth={3} />
-                                        </span>
+                                      {isManager ? (
+                                        <>
+                                          {noMatch ? (
+                                            <span
+                                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-rose-600 text-white shrink-0"
+                                              aria-label="Sin match"
+                                              title="Sin match — pulsa el lápiz para mapear"
+                                            >
+                                              <X className="h-3 w-3" strokeWidth={3.5} />
+                                            </span>
+                                          ) : null}
+                                          {stockApplied ? (
+                                            <span
+                                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white shrink-0"
+                                              aria-label="Stock aplicado"
+                                              title="Stock aplicado"
+                                            >
+                                              <Check className="h-3 w-3" strokeWidth={3.5} />
+                                            </span>
+                                          ) : null}
+                                          {rectified ? (
+                                            <span
+                                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0"
+                                              aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                              title={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                            >
+                                              <RotateCcw className="h-3 w-3" strokeWidth={3} />
+                                            </span>
+                                          ) : null}
+                                        </>
                                       ) : null}
                                     </button>
 
