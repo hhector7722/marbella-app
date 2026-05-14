@@ -652,6 +652,7 @@ function RecipeDetailContent() {
         setRecipe({ ...recipe, menu_category_id: menuCat.id, category: categoryDb });
         setShowCategoryModal(false);
         toast.success('Guardado');
+        void fetchAllRecipes();
     };
 
     const applySimulatedPrice = async () => {
@@ -740,7 +741,6 @@ function RecipeDetailContent() {
 
     const healthIndicator = getHealthIndicator(foodCost);
     const simulatedHealthIndicator = getHealthIndicator(simulatedFoodCost);
-    const isMenuRecipe = recipe?.category === 'Menús';
 
     const themeColors = view.location === 'pvp'
         ? { toggle: 'bg-blue-600 text-white', toggleInactive: 'bg-gray-100 text-gray-600', border: 'border-blue-500' }
@@ -906,9 +906,9 @@ function RecipeDetailContent() {
 
                     <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
                         {isRestricted ? (
-                            <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">{recipe.category}</span>
+                            <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">{recipeCategoryLabel}</span>
                         ) : (
-                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-full font-medium uppercase tracking-wider text-[9px] transition-colors">{recipe.category}</button>
+                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-full font-medium uppercase tracking-wider text-[9px] transition-colors">{recipeCategoryLabel}</button>
                         )}
                         <div className="flex items-center gap-1.5 text-[9px] font-bold">
                             <Users className="w-3.5 h-3.5" />
@@ -1554,7 +1554,20 @@ function RecipeDetailContent() {
             {showCategoryModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
                     <div className="bg-white rounded-xl p-4 max-w-xs w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="grid grid-cols-2 gap-2">{CATEGORY_OPTIONS.map(cat => (<button key={cat} onClick={() => { handleCategoryUpdate(cat); }} className={`py-2 rounded-lg font-bold text-xs ${recipe.category === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>{cat}</button>))}</div>
+                        <div className="grid max-h-[min(60vh,24rem)] grid-cols-2 gap-2 overflow-y-auto">
+                            {sortedMenuCategoryRows.map((row) => (
+                                <button
+                                    key={row.id}
+                                    type="button"
+                                    onClick={() => void handleCategoryUpdate(row)}
+                                    className={`rounded-lg py-2 text-xs font-bold ${
+                                        recipe.menu_category_id === row.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                                    }`}
+                                >
+                                    {labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId)}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

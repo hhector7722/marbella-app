@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Check, Loader2, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { MappingRow, Recipe, TpvArticle } from './page'
+import type { MappingRow, Recipe, TpvArticle, AlbaranLearnedName } from './page'
 import { deleteMapping, upsertMapping } from './actions'
 
 type StatusFilter = 'all' | 'mapped' | 'unmapped'
@@ -24,11 +24,15 @@ export default function MappingClient({
   mappings,
   articles,
   recipes,
+  albaranLearnedByRecipeId: _albaranLearnedByRecipeId = {},
 }: {
   mappings: MappingRow[]
   articles: TpvArticle[]
   recipes: Recipe[]
+  /** Nombres de línea de albarán aprendidos por receta (por ingredientes); reservado para ayuda contextual en UI. */
+  albaranLearnedByRecipeId?: Record<string, AlbaranLearnedName[]>
 }) {
+  void _albaranLearnedByRecipeId
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<StatusFilter>('all')
   const [isPending, startTransition] = useTransition()

@@ -3,6 +3,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { catalanSignalHits, isProbablyCatalan, parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
+import type { MenuCategoryRow } from '@/lib/recipe-menu-categories'
+import { denormalizedRecipeCategoryName, resolveMenuCategoryIdFromLegacyLabel } from '@/lib/recipe-menu-categories'
 
 export type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
 
@@ -405,6 +407,13 @@ export async function importRecipes(
         ingredientMap.set(key, ing.id)
     }
 
+    const { data: menuCatRows } = await supabase
+        .from('categories')
+        .select('id, name, slug, parent_id, sort_order')
+        .eq('scope', 'menu')
+        .limit(5000)
+    const menuRowsForRecipe = (menuCatRows ?? []) as MenuCategoryRow[]
+
     type GroupRow = Record<string, unknown>
     const groups = new Map<string, { displayName: string; rows: GroupRow[] }>()
 
@@ -465,6 +474,11 @@ export async function importRecipes(
             let servings = Math.round(parseNum(servingsRaw) ?? 1)
             if (servings < 1) servings = 1
 
+            const categoryLabelIn = category || 'Principales'
+            const menuIdResolved = resolveMenuCategoryIdFromLegacyLabel(categoryLabelIn, menuRowsForRecipe)
+            const menuRowResolved = menuIdResolved ? menuRowsForRecipe.find((r) => r.id === menuIdResolved) : undefined
+            const categoryDb = menuRowResolved ? denormalizedRecipeCategoryName(menuRowResolved) : categoryLabelIn
+
             const has_half_ration =
                 typeof halfRaw === 'boolean'
                     ? halfRaw
@@ -488,7 +502,8 @@ export async function importRecipes(
 
             const insertPayload: Record<string, unknown> = {
                 name: recipeName,
-                category: category || 'Principales',
+                category: categoryDb,
+                menu_category_id: menuIdResolved,
                 sale_price,
                 sales_price_pavello,
                 servings,

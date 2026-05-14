@@ -76,7 +76,7 @@ export default async function RecetasTpvPage() {
     return (
       <DashboardDetailLayout
         title="Mapeo TPV"
-        subtitle="Artículos BDP ↔ recetas: el inventario se descuenta según ventas TPV"
+        subtitle="Artículos TPV ↔ recetas; el inventario se descuenta con ventas TPV"
         maxWidthClass="max-w-7xl"
       >
         <div
@@ -117,6 +117,98 @@ export default async function RecetasTpvPage() {
   const recipes = (recipesRes.data ?? []) as unknown as Recipe[]
   const recipeNameById = new Map(recipes.map((r) => [r.id, r.name]))
 
+  /** Receta → ingredientes; luego ingrediente → nombres de albarán aprendidos (`supplier_item_mappings`). */
+  let albaranLearnedByRecipeId: Record<string, AlbaranLearnedName[]> = {}
+  if (recipes.length > 0) {
+    const recipeIdChunks = chunkIds(
+      recipes.map((r) => r.id),
+      120
+    )
+    const riRows: { recipe_id: string; ingredient_id: string }[] = []
+    for (const ids of recipeIdChunks) {
+      const { data: ri, error: riErr } = await supabase
+        .from('recipe_ingredients')
+        .select('recipe_id, ingredient_id')
+        .in('recipe_id', ids)
+      if (riErr) console.error('Error fetching recipe_ingredients (recetas-tpv):', riErr)
+      for (const row of (ri ?? []) as { recipe_id: string; ingredient_id: string }[]) {
+        if (row.recipe_id && row.ingredient_id) riRows.push(row)
+      }
+    }
+
+    const ingredientIds = [...new Set(riRows.map((r) => r.ingredient_id))]
+    type SimRow = {
+      supplier_item_name: string
+      ingredient_id: string
+      suppliers: { name: string } | null
+    }
+    const simRows: SimRow[] = []
+    for (const ids of chunkIds(ingredientIds, 120)) {
+      if (ids.length === 0) continue
+      const { data: sim, error: simErr } = await supabase
+        .from('supplier_item_mappings')
+        .select('supplier_item_name, ingredient_id, suppliers(name)')
+        .in('ingredient_id', ids)
+      if (simErr) console.error('Error fetching supplier_item_mappings (recetas-tpv):', simErr)
+      for (const raw of sim ?? []) {
+        const row = raw as {
+          supplier_item_name: string | null
+          ingredient_id: string | null
+          suppliers: { name: string } | { name: string }[] | null
+        }
+        const emb = row.suppliers
+        const holder = Array.isArray(emb) ? emb[0] ?? null : emb
+        simRows.push({
+          supplier_item_name: String(row.supplier_item_name ?? ''),
+          ingredient_id: String(row.ingredient_id ?? ''),
+          suppliers: holder?.name ? { name: String(holder.name) } : null,
+        })
+      }
+    }
+
+    const byIngredient = new Map<string, AlbaranLearnedName[]>()
+    for (const s of simRows) {
+      const name = String(s.supplier_item_name ?? '').trim()
+      const iid = String(s.ingredient_id ?? '')
+      if (!name || !iid) continue
+      const sn = s.suppliers?.name != null ? String(s.suppliers.name).trim() : null
+      const list = byIngredient.get(iid) ?? []
+      list.push({ supplier_item_name: name, supplier_name: sn || null, ingredient_id: iid })
+      byIngredient.set(iid, list)
+    }
+
+    const recipeToIngredients = new Map<string, Set<string>>()
+    for (const r of riRows) {
+      const set = recipeToIngredients.get(r.recipe_id) ?? new Set()
+      set.add(r.ingredient_id)
+      recipeToIngredients.set(r.recipe_id, set)
+    }
+
+    const dedupeKey = (a: AlbaranLearnedName) =>
+      `${a.ingredient_id}::${a.supplier_name ?? ''}::${a.supplier_item_name}`
+
+    albaranLearnedByRecipeId = {}
+    for (const recipe of recipes) {
+      const ings = recipeToIngredients.get(recipe.id)
+      if (!ings || ings.size === 0) {
+        albaranLearnedByRecipeId[recipe.id] = []
+        continue
+      }
+      const seen = new Set<string>()
+      const acc: AlbaranLearnedName[] = []
+      for (const ingId of ings) {
+        for (const al of byIngredient.get(ingId) ?? []) {
+          const k = dedupeKey(al)
+          if (seen.has(k)) continue
+          seen.add(k)
+          acc.push(al)
+        }
+      }
+      acc.sort((a, b) => a.supplier_item_name.localeCompare(b.supplier_item_name, 'es'))
+      albaranLearnedByRecipeId[recipe.id] = acc
+    }
+  }
+
   const mappings: MappingRow[] = ((mappingsRes.data ?? []) as MappingDbRow[]).map((m) => ({
     articulo_id: m.articulo_id,
     recipe_id: m.recipe_id,
@@ -128,7 +220,7 @@ export default async function RecetasTpvPage() {
   return (
     <DashboardDetailLayout
       title="Mapeo TPV"
-      subtitle="Artículos BDP ↔ recetas: el inventario se descuenta según ventas TPV"
+      subtitle="Artículos TPV ↔ recetas y nombres de producto aprendidos desde albaranes (por ingredientes de la receta)"
       maxWidthClass="max-w-7xl"
     >
       {mappingsRes.error ? (
@@ -141,7 +233,12 @@ export default async function RecetasTpvPage() {
           <span className="font-mono text-xs">{mappingsRes.error.message}</span>
         </div>
       ) : null}
-      <MappingClient mappings={mappings} articles={articles} recipes={recipes} />
+      <MappingClient
+        mappings={mappings}
+        articles={articles}
+        recipes={recipes}
+        albaranLearnedByRecipeId={albaranLearnedByRecipeId}
+      />
     </DashboardDetailLayout>
   )
 }
