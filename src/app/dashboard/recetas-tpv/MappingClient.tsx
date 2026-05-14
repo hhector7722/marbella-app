@@ -341,22 +341,19 @@ export default function MappingClient({
                     isBusy && 'pointer-events-none opacity-50'
                   )}
                 >
-                  <div className="flex min-w-0 flex-col items-center justify-center px-1 py-1 text-center">
-                    <p className="line-clamp-2 text-[9px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
-                    <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                      <span className="font-mono text-[8px] leading-none text-zinc-500">{row.articulo_id}</span>
-                      <span
-                        className={cn(
-                          'rounded px-0.5 py-0 text-[7px] font-bold leading-none',
-                          row.mapped ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                        )}
-                      >
-                        {row.mapped ? '·' : '—'}
-                      </span>
-                    </div>
+                  <div className="flex min-w-0 flex-col items-start justify-start px-1 py-1 text-left">
+                    <p className="line-clamp-2 w-full text-[9px] font-semibold leading-tight text-zinc-900">{row.nombre}</p>
+                    <span
+                      className={cn(
+                        'mt-0.5 shrink-0 rounded px-0.5 py-0 text-[7px] font-bold leading-none',
+                        row.mapped ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      )}
+                    >
+                      {row.mapped ? '·' : '—'}
+                    </span>
                   </div>
 
-                  <div className="flex min-w-0 items-start justify-center px-0.5 py-1">
+                  <div className="flex min-w-0 items-start justify-start px-0.5 py-1">
                     <RecipeCombobox
                       compact
                       micro
@@ -924,7 +921,7 @@ function RecipeCombobox({
         className={cn(
           'min-w-0 w-full',
           micro
-            ? 'flex items-start justify-center border-0 bg-transparent py-1 text-center shadow-none outline-none ring-0'
+            ? 'flex items-start justify-start border-0 bg-transparent py-1 text-left shadow-none outline-none ring-0'
             : 'flex min-w-0 w-full items-center justify-between gap-0.5 truncate rounded border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
           !micro && h,
           micro ? 'px-1 text-[10px]' : btnPad
@@ -936,7 +933,7 @@ function RecipeCombobox({
           className={cn(
             'min-w-0 font-semibold',
             micro
-              ? 'whitespace-normal break-words text-center leading-snug [overflow-wrap:anywhere]'
+              ? 'whitespace-normal break-words text-left leading-snug [overflow-wrap:anywhere]'
               : 'truncate',
             selectedRecipe ? 'text-zinc-900' : 'text-zinc-400'
           )}
