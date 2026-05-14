@@ -83,6 +83,45 @@ export type CartaCategoryNamesRow = {
 
 const UNCATEGORIZED_FALLBACK = 'Sin categoría'
 
+export function prettifyChildTitle(parentTitle: string, rawChildTitle: string) {
+  if (!rawChildTitle) return ''
+  const prefix = `${parentTitle.trim()} - `
+  if (rawChildTitle.startsWith(prefix)) return rawChildTitle.slice(prefix.length).trim()
+  return rawChildTitle
+}
+
+/** Quita prefijos "Padre - " aunque el padre venga traducido o con distinto separador. */
+export function stripLeadingParentFromChildLabel(parentTitleRaw: string, label: string): string {
+  let s = label.trim()
+  const pr = parentTitleRaw.trim()
+  if (!s || !pr) return s
+
+  const parents = new Set<string>()
+  parents.add(pr)
+  for (const lang of ['es', 'ca', 'en'] as const) {
+    parents.add(translateParentCategoryTitle(lang, pr))
+  }
+
+  const seps = [' - ', ' – ', ' — ', ': ', ' / ', ' /', '/']
+  let guard = 0
+  while (guard++ < 8) {
+    let changed = false
+    outer: for (const p of parents) {
+      if (!p) continue
+      for (const sep of seps) {
+        const pref = p + sep
+        if (pref.length <= s.length && s.slice(0, pref.length).toLowerCase() === pref.toLowerCase()) {
+          s = s.slice(pref.length).trim()
+          changed = true
+          break outer
+        }
+      }
+    }
+    if (!changed) break
+  }
+  return s
+}
+
 /** Título de sección padre según idioma (overrides BD > mapa fijo > nombre base). */
 export function getCartaParentCategoryLabel(lang: CartaLang, row: CartaCategoryNamesRow, uncategorizedLabel?: string) {
   const raw = (row.category_parent_name?.trim() || uncategorizedLabel?.trim() || UNCATEGORIZED_FALLBACK).trim()
@@ -106,11 +145,34 @@ export function getCartaChildCategoryLabel(lang: CartaLang, row: CartaCategoryNa
   return en || es || translateChildCategoryTitle('en', short)
 }
 
-export function prettifyChildTitle(parentTitle: string, rawChildTitle: string) {
-  if (!rawChildTitle) return ''
-  const prefix = `${parentTitle.trim()} - `
-  if (rawChildTitle.startsWith(prefix)) return rawChildTitle.slice(prefix.length).trim()
-  return rawChildTitle
+/**
+ * Texto solo subcategoría para botones/pestañas (sin repetir el nombre de la categoría padre).
+ * Usa overrides i18n de hijo y elimina prefijos de padre si la BD los incluye en el nombre.
+ */
+export function getCartaSubcategoryPickerLabel(
+  lang: CartaLang,
+  row: CartaCategoryNamesRow,
+  parentTitleRaw: string,
+  childTitleRaw: string
+) {
+  const base = (childTitleRaw || row.category_child_name || '').trim()
+  const es = row.category_child_name_es?.trim()
+  const ca = row.category_child_name_ca?.trim()
+  const en = row.category_child_name_en?.trim()
+
+  let localized =
+    lang === 'es' ? es || base : lang === 'ca' ? ca || es || base : en || es || base
+
+  let pick = stripLeadingParentFromChildLabel(parentTitleRaw, localized)
+  if (!pick) pick = stripLeadingParentFromChildLabel(parentTitleRaw, base)
+  if (!pick) pick = prettifyChildTitle(parentTitleRaw, base)
+  if (!pick) {
+    const full = getCartaChildCategoryLabel(lang, row, parentTitleRaw, base)
+    pick = stripLeadingParentFromChildLabel(parentTitleRaw, full).trim()
+  }
+  if (!pick) return ''
+
+  return translateChildCategoryTitle(lang, pick)
 }
 
 export type CartaNameRow = {

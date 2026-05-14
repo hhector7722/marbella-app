@@ -11,6 +11,7 @@ import {
     getCartaChildCategoryLabel,
     getCartaDisplayName,
     getCartaParentCategoryLabel,
+    getCartaSubcategoryPickerLabel,
     tPublicUi,
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
@@ -62,6 +63,16 @@ type GroupedGroup = {
     sortOrder: number
     coverPhotoUrl: string | null
     _subList: GroupedSub[]
+}
+
+function subPickerButtonLabel(sub: GroupedSub, lang: CartaLang, parentTitleRaw: string, uncategorized: string) {
+    const row = sub.rows[0]
+    const childRaw = (row?.category_child_name ?? '').trim()
+    if (row) {
+        const only = getCartaSubcategoryPickerLabel(lang, row, parentTitleRaw, childRaw).trim()
+        if (only) return only
+    }
+    return sub.title.trim() || uncategorized
 }
 
 type ReorderScope = 'parents' | 'subs' | 'products' | null
@@ -917,7 +928,12 @@ export function MenuAccordion({
                         isUuidLike(openGroup._subList[0]!.key) ? (
                             <div className="flex shrink-0 items-center justify-center gap-1 border-b border-zinc-100 bg-white px-2 py-2 sm:px-3">
                                 <span className="min-w-0 max-w-[75%] truncate text-center text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-[11px]">
-                                    {openGroup._subList[0]!.title.trim() || tPublicUi(lang).uncategorized}
+                                    {subPickerButtonLabel(
+                                        openGroup._subList[0]!,
+                                        lang,
+                                        openGroup.parentTitleRaw,
+                                        tPublicUi(lang).uncategorized
+                                    )}
                                 </span>
                                 <button
                                     type="button"
@@ -935,7 +951,7 @@ export function MenuAccordion({
                         (selectedSubKeyByGroup[openGroup.key] || reorderScope === 'subs') ? (
                             <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
                                 {reorderScope === 'subs' ? (
-                                    <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
+                                    <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
@@ -965,8 +981,12 @@ export function MenuAccordion({
                                                         )}
                                                     >
                                                         <span className="line-clamp-3 min-w-0">
-                                                            {sub.title.trim() ||
-                                                                tPublicUi(lang).uncategorized}
+                                                            {subPickerButtonLabel(
+                                                                sub,
+                                                                lang,
+                                                                openGroup.parentTitleRaw,
+                                                                tPublicUi(lang).uncategorized
+                                                            )}
                                                         </span>
                                                     </button>
                                                 </div>
@@ -974,7 +994,7 @@ export function MenuAccordion({
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="flex w-full min-w-0 gap-1 sm:gap-1.5">
+                                    <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
@@ -1001,8 +1021,12 @@ export function MenuAccordion({
                                                         )}
                                                     >
                                                         <span className="line-clamp-3 min-w-0">
-                                                            {sub.title.trim() ||
-                                                                tPublicUi(lang).uncategorized}
+                                                            {subPickerButtonLabel(
+                                                                sub,
+                                                                lang,
+                                                                openGroup.parentTitleRaw,
+                                                                tPublicUi(lang).uncategorized
+                                                            )}
                                                         </span>
                                                     </button>
                                                     {editMode && onEditChildCategory && isUuidLike(sub.key) ? (
@@ -1040,7 +1064,7 @@ export function MenuAccordion({
                                     <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600">
                                         {tPublicUi(lang).pickSubcategoryTitle}
                                     </p>
-                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                                    <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                                         {openGroup._subList.map((sub) => (
                                             <button
                                                 key={sub.key}
@@ -1051,10 +1075,15 @@ export function MenuAccordion({
                                                         [openGroup.key]: sub.key,
                                                     }))
                                                 }
-                                                className="flex min-h-[52px] w-full flex-col items-center justify-center rounded-xl bg-[#36606F] px-3 py-3 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-white shadow-sm active:bg-[#2d4f5c] sm:min-h-[56px] sm:text-xs"
+                                                className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-sm active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
                                             >
-                                                <span className="line-clamp-4">
-                                                    {sub.title.trim() || tPublicUi(lang).uncategorized}
+                                                <span className="line-clamp-3 min-w-0">
+                                                    {subPickerButtonLabel(
+                                                        sub,
+                                                        lang,
+                                                        openGroup.parentTitleRaw,
+                                                        tPublicUi(lang).uncategorized
+                                                    )}
                                                 </span>
                                             </button>
                                         ))}
