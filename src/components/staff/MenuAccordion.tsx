@@ -262,7 +262,7 @@ function MenuCard({
                                 <Loader2 className="h-5 w-5 animate-spin text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]" />
                             ) : isActive ? (
                                 <Check
-                                    className="h-7 w-7 text-emerald-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]"
+                                    className="h-7 w-7 text-emerald-400"
                                     strokeWidth={3.25}
                                     aria-hidden
                                 />
