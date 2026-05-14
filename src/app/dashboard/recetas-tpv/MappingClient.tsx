@@ -1,19 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import {
-  BookOpen,
-  Check,
-  ClipboardSignature,
-  Loader2,
-  Search,
-  Trash2,
-  ChevronDown,
-  X,
-  Truck,
-} from 'lucide-react'
+import { Check, Loader2, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AlbaranLearnedName, MappingRow, Recipe, TpvArticle } from './page'
 import { deleteMapping, upsertMapping } from './actions'
@@ -31,10 +20,9 @@ type UiRow = {
   factor_porcion: number
 }
 
-function formatStatCount(n: number): string {
-  if (n === 0) return '\u00a0'
-  return String(n)
-}
+/** Misma rejilla en todas las anchuras; en pantallas estrechas se desplaza horizontalmente. */
+const TABLE_GRID =
+  'grid grid-cols-[minmax(11rem,1.15fr)_minmax(12rem,1.35fr)_minmax(3.25rem,0.45fr)_minmax(9.5rem,1fr)_minmax(5.5rem,0.55fr)] divide-x divide-zinc-200'
 
 export default function MappingClient({
   mappings,
@@ -109,16 +97,6 @@ export default function MappingClient({
     })
   }, [uiRows, query, status, drafts, albaranLearnedByRecipeId])
 
-  const counts = useMemo(() => {
-    let mapped = 0
-    let withAlbaranHint = 0
-    for (const r of uiRows) {
-      if (r.mapped) mapped += 1
-      if (r.recipe_id && (albaranLearnedByRecipeId[r.recipe_id]?.length ?? 0) > 0) withAlbaranHint += 1
-    }
-    return { total: uiRows.length, mapped, withAlbaranHint }
-  }, [uiRows, albaranLearnedByRecipeId])
-
   const grouped = useMemo(() => {
     const groups = new Map<string, UiRow[]>()
     const fallback = 'Sin familia'
@@ -190,61 +168,20 @@ export default function MappingClient({
   }
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm md:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 space-y-2">
-            <h2 className="text-sm font-black uppercase tracking-wide text-zinc-500">Cómo leer esta pantalla</h2>
-            <ul className="list-inside list-disc space-y-1.5 text-sm leading-relaxed text-zinc-700">
-              <li>
-                <span className="font-semibold text-zinc-900">Columna TPV</span>: artículo del terminal; es lo que
-                aparece en el ticket.
-              </li>
-              <li>
-                <span className="font-semibold text-zinc-900">Receta + factor</span>: qué escandallo descuenta el
-                stock al vender ese artículo (factor = raciones por unidad TPV).
-              </li>
-              <li>
-                <span className="font-semibold text-zinc-900">Nombres en albarán</span>: textos ya aprendidos en{' '}
-                <Link href="/dashboard/albaranes" className="font-semibold text-[#36606F] underline-offset-2 hover:underline">
-                  albaranes
-                </Link>{' '}
-                para ingredientes de la receta elegida (varios proveedores o variantes de nombre).
-              </li>
-            </ul>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col lg:items-stretch">
-            <div className="flex min-h-12 min-w-[9rem] flex-1 items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-2 lg:flex-initial">
-              <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Artículos</span>
-              <span className="text-lg font-black tabular-nums text-zinc-900">{formatStatCount(counts.total)}</span>
-            </div>
-            <div className="flex min-h-12 min-w-[9rem] flex-1 items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-2 lg:flex-initial">
-              <span className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Con receta</span>
-              <span className="text-lg font-black tabular-nums text-emerald-900">{formatStatCount(counts.mapped)}</span>
-            </div>
-            <div className="flex min-h-12 min-w-[9rem] flex-1 items-center justify-between gap-3 rounded-xl border border-sky-100 bg-sky-50/80 px-4 py-2 lg:flex-initial">
-              <span className="text-xs font-semibold uppercase tracking-wide text-sky-900">Con texto albarán</span>
-              <span className="text-lg font-black tabular-nums text-sky-950">
-                {formatStatCount(counts.withAlbaranHint)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-md lg:flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+    <div className="space-y-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
-            className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-12 pr-4 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-            placeholder="Buscar por artículo TPV, ID, receta o texto de albarán…"
+            className="h-10 w-full rounded-lg border border-zinc-200 bg-white pl-10 pr-3 text-sm text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+            placeholder="Buscar artículo, ID, receta o texto albarán…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Buscar en mapeos TPV"
           />
         </div>
 
-        <div className="flex shrink-0 rounded-xl bg-zinc-100 p-1.5 shadow-inner">
+        <div className="flex shrink-0 rounded-lg bg-zinc-100 p-1">
           <FilterButton active={status === 'all'} onClick={() => setStatus('all')}>
             Todos
           </FilterButton>
@@ -257,173 +194,144 @@ export default function MappingClient({
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {grouped.map(({ family, rows }) => (
-          <section key={family} className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
-            <header className="flex items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50/60 px-4 py-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-zinc-800">{family}</p>
-                <p className="mt-0.5 text-xs text-zinc-500">Agrupación por familia BDP</p>
-              </div>
-              <div className="shrink-0 rounded-full bg-zinc-200 px-2.5 py-1 text-xs font-semibold text-zinc-700">
+          <section key={family} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <header className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-3 py-2">
+              <span className="truncate text-xs font-bold uppercase tracking-wide text-zinc-700">{family}</span>
+              <span className="shrink-0 rounded-md bg-zinc-200/80 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-800">
                 {rows.length}
-              </div>
+              </span>
             </header>
 
-            <div className="hidden xl:grid xl:grid-cols-12 xl:gap-4 xl:border-b xl:border-zinc-100 xl:bg-zinc-50/40 xl:px-4 xl:py-2.5">
-              <div className="col-span-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                <ClipboardSignature className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden />
-                Artículo TPV
-              </div>
-              <div className="col-span-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                <BookOpen className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden />
-                Receta y factor
-              </div>
-              <div className="col-span-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                <Truck className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden />
-                Nombres en albarán
-              </div>
-              <div className="col-span-2 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                Acciones
-              </div>
-            </div>
+            <div className="overflow-x-auto">
+              <div className="min-w-[36rem]">
+                <div
+                  className={cn(
+                    TABLE_GRID,
+                    'border-b-2 border-zinc-300 bg-zinc-100 text-[10px] font-bold uppercase tracking-wide text-zinc-600'
+                  )}
+                >
+                  <div className="px-2 py-2">TPV</div>
+                  <div className="px-2 py-2">Receta</div>
+                  <div className="px-1 py-2 text-center">F.</div>
+                  <div className="px-2 py-2">Albarán</div>
+                  <div className="px-1 py-2 text-center">Act.</div>
+                </div>
 
-            <div className="divide-y divide-zinc-100">
-              {rows.map((row) => {
-                const draft = getDraft(row)
-                const isBusy = busyId === row.articulo_id || (isPending && busyId === row.articulo_id)
-                const hasChanges =
-                  draft.recipe_id !== row.recipe_id || Number(draft.factor) !== Number(row.factor_porcion ?? 1)
-                const rid = effectiveRecipeId(row)
-                const albaranList = rid ? (albaranLearnedByRecipeId[rid] ?? []) : []
+                <div className="divide-y divide-zinc-200">
+                  {rows.map((row, idx) => {
+                    const draft = getDraft(row)
+                    const isBusy = busyId === row.articulo_id || (isPending && busyId === row.articulo_id)
+                    const hasChanges =
+                      draft.recipe_id !== row.recipe_id || Number(draft.factor) !== Number(row.factor_porcion ?? 1)
+                    const rid = effectiveRecipeId(row)
+                    const albaranList = rid ? (albaranLearnedByRecipeId[rid] ?? []) : []
 
-                return (
-                  <div
-                    key={row.articulo_id}
-                    className={cn(
-                      'px-4 py-4 transition-opacity xl:grid xl:grid-cols-12 xl:items-start xl:gap-4 xl:py-4',
-                      isBusy && 'pointer-events-none opacity-60'
-                    )}
-                  >
-                    <div className="xl:col-span-3">
-                      <div className="mb-3 flex items-start justify-between gap-2 xl:mb-0">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-base font-semibold text-zinc-900">{row.nombre}</p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs text-zinc-500">ID {row.articulo_id}</span>
+                    return (
+                      <div
+                        key={row.articulo_id}
+                        className={cn(
+                          TABLE_GRID,
+                          'items-stretch',
+                          idx % 2 === 1 ? 'bg-zinc-50/70' : 'bg-white',
+                          isBusy && 'pointer-events-none opacity-50'
+                        )}
+                      >
+                        <div className="min-w-0 px-2 py-2">
+                          <p className="line-clamp-2 text-xs font-semibold leading-snug text-zinc-900">{row.nombre}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            <span className="font-mono text-[10px] text-zinc-500">{row.articulo_id}</span>
                             {row.departamento ? (
-                              <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                              <span className="max-w-[6rem] truncate rounded bg-zinc-100 px-1 py-0 text-[10px] text-zinc-600">
                                 {row.departamento}
                               </span>
                             ) : null}
                             <span
                               className={cn(
-                                'rounded-md px-2 py-0.5 text-xs font-semibold',
-                                row.mapped ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'
+                                'rounded px-1 py-0 text-[10px] font-bold',
+                                row.mapped ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                               )}
                             >
-                              {row.mapped ? 'Con receta' : 'Sin receta'}
+                              {row.mapped ? 'OK' : '—'}
                             </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="mb-3 space-y-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 xl:col-span-4 xl:mb-0 xl:border-0 xl:bg-transparent xl:p-0">
-                      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 xl:hidden">
-                        <BookOpen className="h-4 w-4" aria-hidden />
-                        Receta y factor
-                      </p>
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 px-2 py-1.5">
                           <RecipeCombobox
+                            compact
                             recipes={recipes}
                             selectedId={draft.recipe_id}
                             onSelect={(id) => setDraft(row.articulo_id, { recipe_id: id })}
                             onClear={() => setDraft(row.articulo_id, { recipe_id: null })}
                           />
-                          {row.recipe_name && draft.recipe_id === row.recipe_id ? (
-                            <p className="mt-1.5 text-xs text-zinc-500">
-                              Guardado: <span className="font-medium text-zinc-700">{row.recipe_name}</span>
-                            </p>
-                          ) : null}
                         </div>
-                        <div className="w-full shrink-0 sm:w-28">
-                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                            Factor
-                          </label>
+
+                        <div className="flex items-center justify-center px-1 py-1.5">
                           <input
-                            className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-center text-base font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+                            className="h-9 w-full max-w-[3.25rem] rounded-md border border-zinc-200 bg-white px-1 text-center text-xs font-semibold text-zinc-900 tabular-nums shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
                             type="number"
                             step="0.01"
                             min="0.01"
                             inputMode="decimal"
                             value={draft.factor}
                             onChange={(e) => setDraft(row.articulo_id, { factor: e.target.value })}
-                            aria-label={`Factor de porción para ${row.nombre}`}
+                            aria-label={`Factor ${row.nombre}`}
                           />
                         </div>
+
+                        <div className="min-w-0 px-2 py-1.5">
+                          <AlbaranNamesCompact list={albaranList} hasRecipe={Boolean(rid)} />
+                        </div>
+
+                        <div className="flex shrink-0 flex-col items-stretch justify-center gap-1 px-1.5 py-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onSave(row)}
+                            disabled={!hasChanges || !draft.recipe_id}
+                            className={cn(
+                              'flex h-9 min-h-9 shrink-0 items-center justify-center gap-1 rounded-md text-xs font-bold transition-colors',
+                              !hasChanges || !draft.recipe_id
+                                ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
+                                : 'bg-[#36606F] text-white hover:bg-[#2A4B57]'
+                            )}
+                            title="Guardar"
+                          >
+                            {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete(row)}
+                            disabled={!row.mapped}
+                            className={cn(
+                              'flex h-9 min-h-9 shrink-0 items-center justify-center rounded-md border text-rose-600 transition-colors',
+                              row.mapped
+                                ? 'border-rose-200 bg-rose-50 hover:bg-rose-100'
+                                : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-300'
+                            )}
+                            title="Eliminar mapeo"
+                            aria-label="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-[11px] leading-snug text-zinc-500">
-                        1 = una unidad TPV descuenta una vez el escandallo según la receta.
-                      </p>
-                    </div>
+                    )
+                  })}
+                </div>
 
-                    <div className="mb-3 xl:col-span-3 xl:mb-0">
-                      <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 xl:hidden">
-                        <Truck className="h-4 w-4" aria-hidden />
-                        Nombres en albarán
-                      </p>
-                      <AlbaranNamesPanel list={albaranList} hasRecipe={Boolean(rid)} />
-                    </div>
-
-                    <div className="flex shrink-0 items-center justify-end gap-2 border-t border-zinc-100 pt-3 xl:col-span-2 xl:border-t-0 xl:pt-0">
-                      <button
-                        type="button"
-                        onClick={() => onSave(row)}
-                        disabled={!hasChanges || !draft.recipe_id}
-                        className={cn(
-                          'flex h-12 min-w-[7.5rem] shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors',
-                          !hasChanges || !draft.recipe_id
-                            ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
-                            : 'bg-[#36606F] text-white shadow-sm hover:bg-[#2A4B57]'
-                        )}
-                        title="Guardar mapeo TPV → receta"
-                      >
-                        {isBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-                        Guardar
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDelete(row)}
-                        disabled={!row.mapped}
-                        className={cn(
-                          'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                          row.mapped
-                            ? 'border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100'
-                            : 'cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-300'
-                        )}
-                        title="Quitar mapeo"
-                        aria-label={`Eliminar mapeo de ${row.nombre}`}
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {rows.length === 0 ? (
-                <div className="px-4 py-10 text-center text-sm text-zinc-500">Sin resultados en este grupo.</div>
-              ) : null}
+                {rows.length === 0 ? (
+                  <div className="px-3 py-8 text-center text-xs text-zinc-500">Sin resultados.</div>
+                ) : null}
+              </div>
             </div>
           </section>
         ))}
 
         {grouped.length === 0 ? (
-          <div className="rounded-xl border border-zinc-100 bg-white p-10 text-center text-sm text-zinc-500 shadow-sm">
-            No hay artículos que coincidan con los filtros actuales.
+          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
+            No hay artículos que coincidan.
           </div>
         ) : null}
       </div>
@@ -431,42 +339,25 @@ export default function MappingClient({
   )
 }
 
-function AlbaranNamesPanel({ list, hasRecipe }: { list: AlbaranLearnedName[]; hasRecipe: boolean }) {
-  if (!hasRecipe) {
-    return (
-      <div className="min-h-[3rem] rounded-xl border border-dashed border-zinc-200 bg-zinc-50/80 px-3 py-2.5 text-xs leading-relaxed text-zinc-500">
-        Elige una receta para ver aquí los textos de albarán ya guardados para sus ingredientes.
-      </div>
-    )
-  }
-  if (list.length === 0) {
-    return (
-      <div className="min-h-[3rem] rounded-xl border border-dashed border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs leading-relaxed text-amber-950">
-        Aún no hay nombres de proveedor/albarán enlazados a los ingredientes de esta receta. Cuando confirmes líneas
-        en{' '}
-        <Link href="/dashboard/albaranes" className="font-semibold underline-offset-2 hover:underline">
-          Albaranes
-        </Link>
-        , aparecerán aquí.
-      </div>
-    )
+function AlbaranNamesCompact({ list, hasRecipe }: { list: AlbaranLearnedName[]; hasRecipe: boolean }) {
+  if (!hasRecipe || list.length === 0) {
+    return <span className="block text-center text-sm text-zinc-300">—</span>
   }
   return (
-    <div className="max-h-40 overflow-y-auto rounded-xl border border-zinc-100 bg-white p-2 shadow-inner">
-      <ul className="flex flex-col gap-1.5">
-        {list.map((item) => (
-          <li
-            key={`${item.ingredient_id}-${item.supplier_name ?? ''}-${item.supplier_item_name}`}
-            className="rounded-lg bg-zinc-50 px-2.5 py-2 text-xs leading-snug text-zinc-800"
-          >
-            <span className="font-semibold text-zinc-900">{item.supplier_item_name}</span>
-            {item.supplier_name ? (
-              <span className="mt-0.5 block text-[11px] text-zinc-500">Proveedor: {item.supplier_name}</span>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="max-h-[5.5rem] space-y-0.5 overflow-y-auto text-[11px] leading-tight text-zinc-800">
+      {list.map((item) => (
+        <li
+          key={`${item.ingredient_id}-${item.supplier_name ?? ''}-${item.supplier_item_name}`}
+          className="truncate border-l-2 border-sky-200 pl-1.5"
+          title={item.supplier_name ? `${item.supplier_item_name} (${item.supplier_name})` : item.supplier_item_name}
+        >
+          <span className="font-medium text-zinc-900">{item.supplier_item_name}</span>
+          {item.supplier_name ? (
+            <span className="text-zinc-500"> · {item.supplier_name}</span>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -484,7 +375,7 @@ function FilterButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'h-[38px] min-h-[38px] rounded-lg px-5 text-sm font-semibold transition-colors',
+        'h-9 min-h-9 shrink-0 rounded-md px-3 text-xs font-semibold transition-colors',
         active ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-800'
       )}
     >
@@ -498,11 +389,13 @@ function RecipeCombobox({
   selectedId,
   onSelect,
   onClear,
+  compact = false,
 }: {
   recipes: Recipe[]
   selectedId: string | null
   onSelect: (id: string) => void
   onClear: () => void
+  compact?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -525,20 +418,28 @@ function RecipeCombobox({
     return recipes.filter((r) => r.name.toLowerCase().includes(q)).slice(0, 60)
   }, [recipes, search])
 
+  const h = compact ? 'h-9 min-h-9' : 'h-12 min-h-12'
+  const btnPad = compact ? 'px-2 text-xs' : 'px-4 text-sm'
+  const clearW = compact ? 'w-9 min-w-9' : 'w-12 min-w-12'
+
   return (
     <div className="relative" ref={wrapperRef}>
-      <div className="flex gap-2">
+      <div className="flex gap-1">
         <button
           type="button"
           onClick={() => setIsOpen((v) => !v)}
-          className="flex h-12 min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 text-left shadow-sm transition-colors hover:bg-zinc-50"
+          className={cn(
+            'flex w-full items-center justify-between gap-2 rounded-md border border-zinc-200 bg-white text-left shadow-sm transition-colors hover:bg-zinc-50',
+            h,
+            btnPad
+          )}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
         >
           <span className={cn('min-w-0 truncate font-semibold', selectedRecipe ? 'text-zinc-900' : 'text-zinc-400')}>
-            {selectedRecipe ? selectedRecipe.name : 'Seleccionar receta…'}
+            {selectedRecipe ? selectedRecipe.name : 'Receta…'}
           </span>
-          <ChevronDown className={cn('h-5 w-5 shrink-0 text-zinc-400 transition-transform', isOpen && 'rotate-180')} />
+          <ChevronDown className={cn('h-4 w-4 shrink-0 text-zinc-400 transition-transform', isOpen && 'rotate-180')} />
         </button>
 
         <button
@@ -549,35 +450,37 @@ function RecipeCombobox({
             setSearch('')
           }}
           className={cn(
-            'flex h-12 min-h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors',
+            'flex shrink-0 items-center justify-center rounded-md border transition-colors',
+            h,
+            clearW,
             selectedId
               ? 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
               : 'cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-300'
           )}
           disabled={!selectedId}
-          title="Quitar receta"
-          aria-label="Quitar receta seleccionada"
+          title="Quitar"
+          aria-label="Quitar receta"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
       {isOpen ? (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl">
-          <div className="border-b border-zinc-100 bg-zinc-50 p-2">
+        <div className="absolute left-0 right-0 z-50 mt-1 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl">
+          <div className="border-b border-zinc-100 bg-zinc-50 p-1.5">
             <input
-              className="h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-              placeholder="Buscar receta…"
+              className="h-8 w-full rounded border border-zinc-200 bg-white px-2 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+              placeholder="Buscar…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
             />
           </div>
-          <div className="max-h-[260px] overflow-y-auto">
+          <div className="max-h-[220px] overflow-y-auto">
             {filteredRecipes.length === 0 ? (
-              <div className="p-4 text-center text-sm text-zinc-500">No hay resultados.</div>
+              <div className="p-3 text-center text-xs text-zinc-500">Sin resultados.</div>
             ) : (
-              <ul className="py-1" role="listbox">
+              <ul className="py-0.5" role="listbox">
                 {filteredRecipes.map((r) => (
                   <li key={r.id} role="none">
                     <button
@@ -590,7 +493,7 @@ function RecipeCombobox({
                         setSearch('')
                       }}
                       className={cn(
-                        'w-full px-4 py-3 text-left text-sm font-semibold transition-colors hover:bg-zinc-100',
+                        'w-full px-2 py-2 text-left text-xs font-semibold transition-colors hover:bg-zinc-100',
                         r.id === selectedId ? 'bg-emerald-50 text-emerald-700' : 'text-zinc-800'
                       )}
                     >
