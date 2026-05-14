@@ -625,17 +625,18 @@ function IngredientEscandalloModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 sm:items-center"
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/40 p-3"
       role="presentation"
       onClick={onClose}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ing-modal-title"
-        className="max-h-[88vh] w-full max-w-lg overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex min-h-dvh items-center justify-center py-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ing-modal-title"
+          className="max-h-[88vh] w-full max-w-lg overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-zinc-100 bg-[#36606F] px-3 py-2 text-white">
           <div className="min-w-0">
             <h2 id="ing-modal-title" className="text-xs font-bold leading-tight">
@@ -780,6 +781,7 @@ function IngredientEscandalloModal({
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>
