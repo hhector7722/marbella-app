@@ -40,6 +40,32 @@ type IngredientModalState = {
 const TABLE_GRID_COLS =
   'grid w-full grid-cols-[minmax(0,0.72fr)_minmax(0,0.68fr)_minmax(0,1.12fr)_1.75rem]'
 
+/** Misma clave lógica que en upsert conflict (proveedor + nombre), pero tolera variantes tipográficas (acentos, mayúsculas). */
+function normalizeSupplierItemNameForDedupe(s: string): string {
+  return s
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+}
+
+function albaranLearnedLogicalKey(a: AlbaranLearnedName): string {
+  return `${a.supplier_id ?? ''}::${normalizeSupplierItemNameForDedupe(a.supplier_item_name)}`
+}
+
+/** Solo vista tabla: evita dos líneas casi iguales (p. ej. CAFÉ vs CAFÈ). En el modal siguen todas las filas para poder borrar duplicados reales en BD. */
+function dedupeAlbaranForTablePreview(rows: AlbaranLearnedName[]): AlbaranLearnedName[] {
+  const byKey = new Map<string, AlbaranLearnedName>()
+  for (const a of rows) {
+    const k = albaranLearnedLogicalKey(a)
+    if (!byKey.has(k)) byKey.set(k, a)
+  }
+  return [...byKey.values()].sort((a, b) =>
+    a.supplier_item_name.localeCompare(b.supplier_item_name, 'es')
+  )
+}
+
 export default function MappingClient({
   mappings,
   articles,
@@ -469,9 +495,9 @@ function IngredientEscandalloBlock({
           {line.albaran.length === 0 ? (
             <div className="text-[8px] leading-tight text-zinc-400">→ —</div>
           ) : (
-            line.albaran.map((a, i) => (
+            dedupeAlbaranForTablePreview(line.albaran).map((a) => (
               <div
-                key={`${line.ingredient_id}-alb-${i}`}
+                key={a.id ? `${line.ingredient_id}-${a.id}` : `${line.ingredient_id}-${albaranLearnedLogicalKey(a)}`}
                 className="text-[8px] leading-tight text-zinc-600"
                 title={a.supplier_name ? `${a.supplier_item_name} · ${a.supplier_name}` : a.supplier_item_name}
               >
