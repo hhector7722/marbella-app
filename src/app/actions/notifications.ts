@@ -38,6 +38,8 @@ export async function saveSubscription(subscription: any) {
 
 export type UserShiftForNotification = { userId: string; start: string; end: string };
 
+const SCHEDULE_NOTIFY_ROLES = new Set(['manager', 'admin', 'supervisor']);
+
 export async function sendScheduleNotifications(dateStr: string, userShifts: UserShiftForNotification[]) {
     const userIds = [...new Set(userShifts.map(s => s.userId))];
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
@@ -52,6 +54,30 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     }
 
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return {
+            success: false,
+            error: 'Sesión no válida',
+            sentCount: 0,
+            targetCount: userIds.length,
+            missingSubscriptionUserIds: userIds,
+        };
+    }
+    const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+    if (!callerProfile?.role || !SCHEDULE_NOTIFY_ROLES.has(callerProfile.role)) {
+        return {
+            success: false,
+            error: 'Solo manager, admin o supervisor pueden enviar avisos de horario.',
+            sentCount: 0,
+            targetCount: userIds.length,
+            missingSubscriptionUserIds: userIds,
+        };
+    }
 
     const { data: subscriptions, error } = await supabase
         .from('push_subscriptions')

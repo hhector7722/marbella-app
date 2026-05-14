@@ -22,6 +22,7 @@ DROP POLICY IF EXISTS "Users can view their own subscriptions" ON public.push_su
 DROP POLICY IF EXISTS "Users can update their own subscriptions" ON public.push_subscriptions;
 DROP POLICY IF EXISTS "Users can delete their own subscriptions" ON public.push_subscriptions;
 DROP POLICY IF EXISTS "Managers can view all subscriptions" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "Elevated roles can view all push subscriptions" ON public.push_subscriptions;
 DROP POLICY IF EXISTS "Anyone can view manager subscriptions" ON public.push_subscriptions;
 
 -- 4. Create Policies
@@ -36,10 +37,16 @@ CREATE POLICY "Users can view their own subscriptions"
     ON public.push_subscriptions FOR SELECT TO authenticated
     USING (auth.uid() = user_id);
 
--- SELECT: Managers can view ALL (to send schedule alerts)
-CREATE POLICY "Managers can view all subscriptions"
+-- SELECT: Manager / admin / supervisor can view ALL (to send schedule alerts)
+CREATE POLICY "Elevated roles can view all push subscriptions"
     ON public.push_subscriptions FOR SELECT TO authenticated
-    USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'manager'));
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles p
+            WHERE p.id = auth.uid()
+              AND p.role IN ('manager', 'admin', 'supervisor')
+        )
+    );
 
 -- SELECT: Staff can view MANAGERS (to send closing alerts)
 CREATE POLICY "Anyone can view manager subscriptions"
