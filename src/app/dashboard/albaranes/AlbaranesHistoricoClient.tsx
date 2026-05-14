@@ -967,11 +967,10 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
-                <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
-                  {/* Cabecera: nombre del proveedor (clicable manager, sin subrayado)
-                      a la izquierda y, en la misma línea, la fecha · nº de albarán
-                      como metadato secundario justo a su derecha. */}
-                  <div className="min-w-0 flex-1 flex items-baseline gap-3">
+                <div className="bg-[#36606F] px-3 py-2.5 sm:px-5 sm:py-4 flex items-center justify-between gap-2 sm:gap-3 text-white shrink-0">
+                  {/* Cabecera: en móvil nombre en línea propia + metadato debajo (más ancho para truncate);
+                      en sm+ nombre y fecha·nº en una fila. Iconos compactos solo en pantallas estrechas. */}
+                  <div className="min-w-0 flex-1 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
                     {detail ? (
                       <button
                         type="button"
@@ -981,13 +980,13 @@ export default function AlbaranesHistoricoClient({
                           setSupplierResults([])
                           setSupplierError(null)
                         }}
-                        className="text-sm font-black uppercase tracking-wider truncate hover:opacity-80 text-left min-w-0"
+                        className="text-left w-full min-w-0 text-xs font-black uppercase tracking-wide sm:text-sm sm:tracking-wider truncate hover:opacity-80"
                         title="Cambiar proveedor"
                       >
                         {detail.supplier_name ?? 'Añadir proveedor'}
                       </button>
                     ) : (
-                      <p className="text-sm font-black uppercase tracking-wider truncate min-w-0">
+                      <p className="text-xs font-black uppercase tracking-wide truncate min-w-0 sm:text-sm sm:tracking-wider">
                         Proveedor pendiente
                       </p>
                     )}
@@ -997,7 +996,7 @@ export default function AlbaranesHistoricoClient({
                       const hasDate = dateStr && dateStr !== '—'
                       if (!hasDate && !invNum) return null
                       return (
-                        <p className="text-[11px] font-medium text-white/70 truncate shrink-0">
+                        <p className="text-[10px] font-medium text-white/70 truncate min-w-0 sm:text-[11px] sm:shrink-0">
                           {hasDate ? dateStr : ''}
                           {hasDate && invNum ? ' · ' : ''}
                           {invNum ? invNum : ''}
@@ -1006,7 +1005,7 @@ export default function AlbaranesHistoricoClient({
                     })()}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0 sm:gap-2">
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1015,15 +1014,19 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Auto-mapear aprendidos"
                         title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
                         className={cn(
-                          'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]',
+                          'min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]',
                           autoMapLoading && 'opacity-60 pointer-events-none'
                         )}
                       >
-                        {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                        {autoMapLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
+                        )}
                       </button>
                     ) : null}
                     {detail?.signed_url || (detail?.extra_document_sheets?.length ?? 0) > 0 ? (
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-px shrink-0 sm:gap-1">
                         {detail?.signed_url ? (
                           <a
                             href={detail.signed_url}
@@ -1031,9 +1034,9 @@ export default function AlbaranesHistoricoClient({
                             rel="noreferrer"
                             aria-label="Ver hoja 1 (principal)"
                             title="Hoja 1 — imagen principal del albarán"
-                            className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
+                            className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
                           >
-                            <Eye className="h-5 w-5" />
+                            <Eye className="h-4 w-4 md:h-5 md:w-5" />
                           </a>
                         ) : null}
                         {(detail?.extra_document_sheets ?? []).map((sheet) => (
@@ -1044,9 +1047,9 @@ export default function AlbaranesHistoricoClient({
                             rel="noreferrer"
                             aria-label={`Ver hoja ${sheet.page_order}`}
                             title={`Hoja ${sheet.page_order}`}
-                            className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
+                            className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]"
                           >
-                            <Eye className="h-5 w-5" />
+                            <Eye className="h-4 w-4 md:h-5 md:w-5" />
                           </a>
                         ))}
                       </div>
@@ -1059,20 +1062,24 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Eliminar albarán"
                         title="Eliminar albarán y revertir su stock"
                         className={cn(
-                          'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:bg-rose-500/30 transition active:scale-[0.99] text-white',
+                          'min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl hover:bg-rose-500/30 transition active:scale-[0.99] text-white',
                           deletingInvoice && 'opacity-60 pointer-events-none'
                         )}
                       >
-                        {deletingInvoice ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                        {deletingInvoice ? (
+                          <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                        )}
                       </button>
                     ) : null}
                     <button
                       type="button"
                       onClick={closeModal}
-                      className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:opacity-80 transition active:scale-[0.99]"
+                      className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl hover:opacity-80 transition active:scale-[0.99]"
                       aria-label="Cerrar"
                     >
-                      <X className="h-5 w-5" />
+                      <X className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
                   </div>
                 </div>
