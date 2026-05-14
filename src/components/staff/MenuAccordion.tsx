@@ -207,6 +207,10 @@ function MenuCard({
     const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
     const busy = editMode && productToggleBusyId === row.articulo_id
 
+    useEffect(() => {
+        if (editMode) setLightboxOpen(false)
+    }, [editMode])
+
     return (
         <div
             className={cn(
@@ -221,16 +225,25 @@ function MenuCard({
                             type="button"
                             className={cn(
                                 'relative flex h-full w-full touch-manipulation items-center justify-center bg-white active:bg-zinc-50',
-                                productReorderMode && onReorderTap ? 'cursor-pointer' : 'cursor-zoom-in'
+                                productReorderMode && onReorderTap ? 'cursor-pointer' : editMode ? 'cursor-default' : 'cursor-zoom-in'
                             )}
                             aria-label={
-                                productReorderMode && onReorderTap ? 'Seleccionar para reordenar' : 'Ver foto ampliada'
+                                productReorderMode && onReorderTap
+                                    ? 'Seleccionar para reordenar'
+                                    : editMode
+                                      ? 'Foto del producto'
+                                      : 'Ver foto ampliada'
                             }
                             onClick={(e) => {
                                 if (productReorderMode && onReorderTap) {
                                     e.preventDefault()
                                     e.stopPropagation()
                                     onReorderTap(row.articulo_id)
+                                    return
+                                }
+                                if (editMode) {
+                                    e.preventDefault()
+                                    e.stopPropagation()
                                     return
                                 }
                                 setLightboxOpen(true)
@@ -335,7 +348,7 @@ function MenuCard({
                 src={row.photo_url}
                 alt={displayName}
                 title={displayName}
-                open={lightboxOpen && !!row.photo_url && !(productReorderMode && onReorderTap)}
+                open={lightboxOpen && !!row.photo_url && !(productReorderMode && onReorderTap) && !editMode}
                 onClose={() => setLightboxOpen(false)}
             />
         </div>

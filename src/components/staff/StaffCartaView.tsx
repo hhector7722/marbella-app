@@ -44,7 +44,7 @@ export function StaffCartaView({
                 alt="Bar La Marbella"
                 width={320}
                 height={86}
-                className="h-12 w-auto max-w-[240px] brightness-0 sm:h-16 sm:max-w-[300px] md:h-[4.5rem] md:max-w-[360px]"
+                className="h-12 w-auto max-w-[240px] sm:h-16 sm:max-w-[300px] md:h-[4.5rem] md:max-w-[360px]"
                 priority
               />
             </div>
