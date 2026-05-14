@@ -393,35 +393,37 @@ export default function MappingClient({
                   </div>
 
                   <div className="flex shrink-0 flex-col items-center justify-center gap-0 px-0 py-1">
-                    <button
-                      type="button"
-                      onClick={() => onSave(row)}
-                      disabled={!hasChanges || !draft.recipe_id}
-                      className={cn(
-                        'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
-                        'text-[10px] font-bold transition-colors',
-                        !hasChanges || !draft.recipe_id
-                          ? 'cursor-not-allowed text-zinc-300'
-                          : 'text-emerald-600 hover:text-emerald-800'
-                      )}
-                      title="Guardar"
-                    >
-                      {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(row)}
-                      disabled={!row.mapped}
-                      className={cn(
-                        'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
-                        'transition-colors',
-                        row.mapped ? 'text-rose-600 hover:text-rose-800' : 'cursor-not-allowed text-zinc-300'
-                      )}
-                      title="Eliminar mapeo"
-                      aria-label="Eliminar"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {hasChanges && draft.recipe_id ? (
+                      <button
+                        type="button"
+                        onClick={() => onSave(row)}
+                        disabled={isBusy}
+                        className={cn(
+                          'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
+                          'text-[10px] font-bold text-emerald-600 transition-colors hover:text-emerald-800',
+                          isBusy && 'opacity-60'
+                        )}
+                        title="Guardar"
+                      >
+                        {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    ) : null}
+                    {row.mapped ? (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(row)}
+                        disabled={isBusy}
+                        className={cn(
+                          'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
+                          'text-rose-600 transition-colors hover:text-rose-800',
+                          isBusy && 'opacity-60'
+                        )}
+                        title="Eliminar mapeo"
+                        aria-label="Eliminar"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               )
@@ -586,7 +588,6 @@ function IngredientEscandalloModal({
     const st = addByIng[ingredientId] ?? { supplierId: '', text: '', factor: '1' }
     const sid = Number(st.supplierId)
     const txt = st.text.trim()
-    const fc = Number(st.factor)
     if (!Number.isFinite(sid) || sid <= 0) {
       toast.error('Elige proveedor.')
       return
@@ -595,16 +596,12 @@ function IngredientEscandalloModal({
       toast.error('Escribe el texto del albarán.')
       return
     }
-    if (!Number.isFinite(fc) || fc <= 0) {
-      toast.error('Factor inválido.')
-      return
-    }
     void runAsync(() =>
       upsertSupplierMappingForIngredientAction({
         supplier_id: sid,
         supplier_item_name: txt,
         ingredient_id: ingredientId,
-        conversion_factor: fc,
+        conversion_factor: 1,
       })
     )
   }
@@ -639,36 +636,36 @@ function IngredientEscandalloModal({
         className="max-h-[88vh] w-full max-w-lg overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-zinc-100 bg-[#36606F] px-4 py-3 text-white">
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-zinc-100 bg-[#36606F] px-3 py-2 text-white">
           <div className="min-w-0">
-            <h2 id="ing-modal-title" className="text-sm font-bold leading-tight">
+            <h2 id="ing-modal-title" className="text-xs font-bold leading-tight">
               Ingredientes y albarán
             </h2>
-            <p className="mt-1 text-[11px] leading-snug text-white/85">
+            <p className="mt-0.5 text-[10px] leading-snug text-white/85">
               <span className="font-semibold">{articuloNombre}</span>
               <span className="text-white/60"> · </span>
-              <span>{recipeName}</span>
+              <span className="line-clamp-2">{recipeName}</span>
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 min-h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
+            className="flex h-9 min-h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
             aria-label="Cerrar"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="max-h-[calc(88vh-5rem)] overflow-y-auto px-3 py-3">
+        <div className="max-h-[calc(88vh-4rem)] overflow-y-auto px-2 py-2">
           {matchRows.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-zinc-600">
-                Esta receta aún no tiene líneas en el escandallo. Vincula ingredientes existentes del catálogo; se
-                guardan en la misma receta que en <span className="font-semibold">/recipes</span>.
+            <div className="space-y-2">
+              <p className="text-[11px] leading-snug text-zinc-600">
+                Escandallo vacío. Añade ingredientes del catálogo (misma receta que en{' '}
+                <span className="font-semibold">/recipes</span>).
               </p>
               <RecipeLinkIngredientBlock
-                title="Vincular ingrediente"
+                title="Vincular"
                 pending={pending}
                 linkableIngredients={linkableIngredients}
                 linkIngredientId={linkIngredientId}
@@ -680,107 +677,98 @@ function IngredientEscandalloModal({
             </div>
           ) : (
             <>
-              <ul className="space-y-4">
+              <ul className="space-y-2">
                 {matchRows.map((line) => {
                   const st = addByIng[line.ingredient_id] ?? { supplierId: '', text: '', factor: '1' }
                   return (
-                    <li key={line.ingredient_id} className="rounded-lg border border-zinc-100 p-3 shadow-sm">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
+                    <li key={line.ingredient_id} className="rounded-md border border-zinc-100 p-1.5 shadow-sm">
                       <div className="min-w-0">
                         <Link
                           href="/ingredients"
-                          className="text-sm font-bold text-[#36606F] hover:underline"
+                          className="text-[11px] font-bold leading-tight text-[#36606F] hover:underline"
                           onClick={onClose}
                         >
                           {line.ingredient_name}
                         </Link>
-                        <p className="mt-0.5 font-mono text-[10px] text-zinc-500">{line.ingredient_id}</p>
+                        <p className="truncate font-mono text-[8px] leading-none text-zinc-400">{line.ingredient_id}</p>
                       </div>
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => removeIngredientFromRecipe(line.ingredient_id)}
-                        className="shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
-                      >
-                        Quitar de la receta
-                      </button>
-                    </div>
 
-                    <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
-                      Textos en albarán (mapeo)
-                    </p>
-                    <ul className="space-y-1.5">
-                      {line.albaran.map((a, i) => (
-                        <li
-                          key={a.id || `${line.ingredient_id}-a-${i}`}
-                          className="flex items-start justify-between gap-2 rounded-md bg-zinc-50 px-2 py-1.5 text-sm"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-medium text-zinc-900">{a.supplier_item_name}</p>
-                            {a.supplier_name ? <p className="text-xs text-zinc-500">{a.supplier_name}</p> : null}
-                          </div>
+                      <p className="mt-1 text-[8px] font-bold uppercase tracking-wide text-zinc-500">Albarán</p>
+                      <ul className="mt-0.5 space-y-0.5">
+                        {line.albaran.map((a, i) => (
+                          <li
+                            key={a.id || `${line.ingredient_id}-a-${i}`}
+                            className="flex items-center justify-between gap-1 rounded bg-zinc-50 px-1 py-0.5"
+                          >
+                            <div className="min-w-0 text-[10px] leading-tight">
+                              <span className="font-medium text-zinc-900">{a.supplier_item_name}</span>
+                              {a.supplier_name ? (
+                                <span className="text-zinc-500"> · {a.supplier_name}</span>
+                              ) : null}
+                            </div>
+                            <button
+                              type="button"
+                              disabled={pending}
+                              onClick={() => removeAlbaranRow(a)}
+                              className="shrink-0 rounded p-1 text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                              aria-label="Eliminar mapeo de albarán"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-1 rounded border border-dashed border-zinc-200 bg-zinc-50/60 p-1">
+                        <p className="text-[8px] font-bold uppercase text-zinc-600">Añadir texto albarán</p>
+                        <div className="mt-0.5 flex min-h-8 flex-wrap items-stretch gap-1">
+                          <select
+                            className="h-8 min-h-8 w-[38%] min-w-0 shrink-0 rounded border border-zinc-200 bg-white px-1 text-[10px] text-zinc-900"
+                            value={st.supplierId}
+                            onChange={(e) => setAdd(line.ingredient_id, { supplierId: e.target.value })}
+                            aria-label="Proveedor"
+                          >
+                            <option value="">Prov…</option>
+                            {suppliersMini.map((s) => (
+                              <option key={s.id} value={String(s.id)}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            className="h-8 min-h-8 min-w-0 flex-1 rounded border border-zinc-200 bg-white px-1.5 text-[10px] text-zinc-900"
+                            placeholder="Texto albarán"
+                            value={st.text}
+                            onChange={(e) => setAdd(line.ingredient_id, { text: e.target.value })}
+                          />
+                        </div>
+                        <div className="mt-1 flex items-center justify-end gap-1">
                           <button
                             type="button"
                             disabled={pending}
-                            onClick={() => removeAlbaranRow(a)}
-                            className="shrink-0 rounded-md p-2 text-rose-600 hover:bg-rose-100 disabled:opacity-50"
-                            aria-label="Eliminar mapeo de albarán"
+                            onClick={() => removeIngredientFromRecipe(line.ingredient_id)}
+                            className="h-8 min-h-8 shrink-0 rounded border border-rose-300 bg-rose-50 px-2 text-[10px] font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            Eliminar
                           </button>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="mt-3 space-y-2 rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 p-2">
-                      <p className="text-[10px] font-bold uppercase text-zinc-600">Añadir texto de albarán</p>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                        <select
-                          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm sm:min-w-[10rem]"
-                          value={st.supplierId}
-                          onChange={(e) => setAdd(line.ingredient_id, { supplierId: e.target.value })}
-                          aria-label="Proveedor"
-                        >
-                          <option value="">Proveedor…</option>
-                          {suppliersMini.map((s) => (
-                            <option key={s.id} value={String(s.id)}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          className="h-11 min-h-11 min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2 text-sm"
-                          placeholder="Texto como en albarán"
-                          value={st.text}
-                          onChange={(e) => setAdd(line.ingredient_id, { text: e.target.value })}
-                        />
-                        <input
-                          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-center text-sm sm:w-20"
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          value={st.factor}
-                          onChange={(e) => setAdd(line.ingredient_id, { factor: e.target.value })}
-                          aria-label="Factor conversión"
-                        />
-                        <button
-                          type="button"
-                          disabled={pending}
-                          onClick={() => addAlbaranRow(line.ingredient_id)}
-                          className="flex h-11 min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-[#36606F] px-3 text-sm font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Guardar
-                        </button>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => addAlbaranRow(line.ingredient_id)}
+                            className="flex h-8 min-h-8 shrink-0 items-center gap-0.5 rounded bg-[#36606F] px-2.5 text-[10px] font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
+                          >
+                            <Plus className="h-3 w-3" />
+                            Guardar
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-              <div className="mt-4 border-t border-zinc-100 pt-4">
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="mt-2 border-t border-zinc-100 pt-2">
                 <RecipeLinkIngredientBlock
-                  title="Añadir otro ingrediente a la receta"
+                  title="Otro ingrediente"
                   pending={pending}
                   linkableIngredients={linkableIngredients}
                   linkIngredientId={linkIngredientId}
@@ -818,11 +806,11 @@ function RecipeLinkIngredientBlock({
   onSubmit: () => void
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/60 p-3">
-      <p className="text-[10px] font-bold uppercase text-zinc-600">{title}</p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+    <div className="rounded-md border border-dashed border-zinc-200 bg-zinc-50/60 p-1.5">
+      <p className="text-[8px] font-bold uppercase text-zinc-600">{title}</p>
+      <div className="mt-1 flex flex-wrap items-stretch gap-1">
         <select
-          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm sm:min-w-[12rem]"
+          className="h-8 min-h-8 min-w-0 flex-1 rounded border border-zinc-200 bg-white px-1 text-[10px] sm:max-w-[65%]"
           value={linkIngredientId}
           onChange={(e) => onChangeIngredient(e.target.value)}
           aria-label="Ingrediente"
@@ -835,7 +823,7 @@ function RecipeLinkIngredientBlock({
           ))}
         </select>
         <select
-          className="h-11 min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm sm:w-28"
+          className="h-8 min-h-8 w-[4.5rem] shrink-0 rounded border border-zinc-200 bg-white px-1 text-[10px]"
           value={linkUnit}
           onChange={(e) => onChangeUnit(e.target.value)}
           aria-label="Unidad"
@@ -850,14 +838,14 @@ function RecipeLinkIngredientBlock({
           type="button"
           disabled={pending}
           onClick={onSubmit}
-          className="flex h-11 min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-[#36606F] px-4 text-sm font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
+          className="flex h-8 min-h-8 shrink-0 items-center justify-center gap-0.5 rounded bg-[#36606F] px-2 text-[10px] font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
         >
-          <Plus className="h-4 w-4" />
-          Añadir a la receta
+          <Plus className="h-3 w-3" />
+          Añadir
         </button>
       </div>
       {linkableIngredients.length === 0 ? (
-        <p className="mt-2 text-xs text-amber-800">No quedan ingredientes en la lista cargada.</p>
+        <p className="mt-1 text-[9px] text-amber-800">Sin ingredientes libres en la lista.</p>
       ) : null}
     </div>
   )
