@@ -286,7 +286,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
           </button>
         ) : (
           <div className="flex flex-col gap-2 rounded-xl bg-white p-2 md:gap-3 md:p-3">
-            {/* Altura fija del carrusel en móvil: deja hueco para «Añadir hoja» + puntos + «Guardar» sin scroll de página */}
+            {/* Carrusel: altura acotada en móvil para dejar «puntos + Añadir hoja + Guardar» visibles sin scroll vertical */}
             <div className="relative shrink-0 md:min-h-0 md:flex-1">
               {pendingBatch.items.length > 1 ? (
                 <>
@@ -318,53 +318,48 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 ref={carouselRef}
                 onScroll={onCarouselScroll}
                 className={cn(
-                  'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-lg bg-zinc-50',
-                  /* Altura del visor: reserva espacio para CTAs debajo (móvil sin scroll a Guardar) */
-                  'min-h-[12rem] h-[calc(100svh-21rem)] md:h-[min(62vh,calc(100vh-15rem))]',
+                  'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-xl bg-zinc-50',
+                  'min-h-[10rem] h-[calc(100svh-26rem)] md:h-[min(56vh,calc(100vh-16rem))]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
               >
                 {pendingBatch.items.map((it) => (
                   <div
                     key={it.id}
-                    className="relative box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-1 py-2"
+                    className="box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-2 py-1"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={it.dataUri}
-                      alt=""
-                      className="mx-auto block h-auto w-full max-w-full object-contain max-h-[min(68dvh,calc(100svh-23rem))] md:max-h-[min(58vh,calc(100vh-16rem))]"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removePendingItemById(it.id)
-                      }}
-                      className="absolute right-1 top-1 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
-                      aria-label="Quitar esta foto del borrador"
-                    >
-                      <X className="h-4 w-4" strokeWidth={3} />
-                    </button>
+                    <div className="relative inline-flex max-h-full max-w-full">
+                      {/* Marco redondeado + recorte; el botón se ancla a la esquina de la imagen */}
+                      <div className="relative inline-block max-h-full max-w-full overflow-hidden rounded-xl bg-zinc-100/40">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={it.dataUri}
+                          alt=""
+                          className="block h-auto max-h-[min(48dvh,calc(100svh-30rem))] w-auto max-w-full rounded-xl object-contain md:max-h-[min(52vh,calc(100vh-18rem))]"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removePendingItemById(it.id)
+                          }}
+                          className={cn(
+                            'absolute left-full top-0 z-40 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-0 bg-rose-600 text-white shadow-none ring-0 outline-none',
+                            'focus-visible:outline-none focus-visible:ring-0 active:scale-95'
+                          )}
+                          aria-label="Quitar esta foto del borrador"
+                        >
+                          <X className="h-3.5 w-3.5" strokeWidth={3} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={triggerAnotherCapture}
-              disabled={isProcessing}
-              className={cn(
-                'min-h-12 w-full shrink-0 border-0 bg-transparent p-0 text-center text-sm font-semibold uppercase tracking-wide text-[#36606F] shadow-none outline-none ring-0 hover:underline hover:underline-offset-4 active:opacity-80',
-                isProcessing && 'pointer-events-none opacity-50'
-              )}
-            >
-              Añadir hoja
-            </button>
-
             {pendingBatch.items.length > 1 ? (
-              <div className="flex shrink-0 justify-center gap-px py-0.5">
+              <div className="flex shrink-0 justify-center gap-0 py-1">
                 {pendingBatch.items.map((_, i) => (
                   <button
                     key={i}
@@ -373,7 +368,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                     aria-label={`Ir a la foto ${i + 1}`}
                     aria-current={i === carouselIndex ? 'true' : undefined}
                     className={cn(
-                      'inline-flex min-h-9 min-w-9 items-center justify-center rounded-full p-0.5 active:scale-95',
+                      'inline-flex min-h-10 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
                       i === carouselIndex ? 'text-[#36606F]' : 'text-zinc-300'
                     )}
                   >
@@ -387,6 +382,18 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 ))}
               </div>
             ) : null}
+
+            <button
+              type="button"
+              onClick={triggerAnotherCapture}
+              disabled={isProcessing}
+              className={cn(
+                'min-h-12 w-full shrink-0 border-0 bg-transparent p-0 text-center text-sm font-semibold uppercase tracking-wide text-[#36606F] shadow-none outline-none ring-0 hover:underline hover:underline-offset-4 active:opacity-80',
+                isProcessing && 'pointer-events-none opacity-50'
+              )}
+            >
+              Añadir hoja
+            </button>
 
             <button
               type="button"
