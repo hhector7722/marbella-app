@@ -93,6 +93,16 @@ function RecipeDetailContent() {
     const isStaffView = searchParams.get('view') === 'staff';
     const catFilter = searchParams.get('cat');
 
+    /** Lista: misma `cat` / `view` que en la ficha; sin params si el detalle no traía filtro (entrada directa u otra ruta). */
+    const recipesListHref = useMemo(() => {
+        const qs = new URLSearchParams();
+        const cat = searchParams.get('cat');
+        if (cat) qs.set('cat', cat);
+        if (searchParams.get('view') === 'staff') qs.set('view', 'staff');
+        const s = qs.toString();
+        return s ? `/recipes?${s}` : '/recipes';
+    }, [searchParams]);
+
     useEffect(() => {
         void (async () => {
             const [catRes, mcoRes] = await Promise.all([
@@ -805,7 +815,7 @@ function RecipeDetailContent() {
                     <div className="grid min-h-[48px] w-full grid-cols-3 items-center gap-1">
                         <div className="flex shrink-0 justify-start">
                             <Link
-                                href="/recipes"
+                                href={recipesListHref}
                                 aria-label="Volver a recetas"
                                 className={cn(
                                     'flex h-12 w-12 shrink-0 items-center justify-center',
