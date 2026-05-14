@@ -921,6 +921,42 @@ export function MenuAccordion({
                             </button>
                         </div>
 
+                        {reorderScope === 'subs' || reorderScope === 'products' ? (
+                            <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-2 py-2 sm:px-3 sm:py-2.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="flex min-w-0 items-start gap-2 text-[11px] font-black uppercase leading-snug tracking-wide text-amber-950 sm:items-center">
+                                        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 sm:mt-0" aria-hidden />
+                                        <span className="min-w-0">
+                                            {reorderScope === 'subs'
+                                                ? '1) Pulsa la pestaña a mover. 2) Pulsa la posición destino. 3) Guardar orden.'
+                                                : '1) Pulsa el plato a mover. 2) Pulsa el destino (otra tarjeta). 3) Guardar orden.'}
+                                        </span>
+                                    </span>
+                                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            className="min-h-[48px] rounded-xl border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 active:bg-zinc-100"
+                                            onClick={cancelReorder}
+                                            disabled={committingReorder}
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl border border-[#36606F] bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
+                                            onClick={() => void commitReorder()}
+                                            disabled={committingReorder}
+                                        >
+                                            {committingReorder ? (
+                                                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                                            ) : null}
+                                            Guardar orden
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+
                         {editMode &&
                         !reorderScope &&
                         openGroup._subList.length === 1 &&
