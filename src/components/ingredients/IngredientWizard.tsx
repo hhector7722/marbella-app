@@ -154,7 +154,7 @@ export function IngredientWizard({
   initialHowCharged?: IngredientWizardHowCharged | null
   initialPricingMode?: IngredientWizardPricing | null
   mode?: 'create' | 'editPricing' | 'editFull'
-  onSaved?: (ingredientId: string) => void
+  onSaved?: (ingredientId: string, meta?: { name?: string | null }) => void
   onClose?: () => void
 }) {
   const supabase = createClient()
@@ -374,7 +374,7 @@ export function IngredientWizard({
     try {
       const id = await ensureIngredientId(clean)
       await supabase.from('ingredients').update({ name: clean }).eq('id', id)
-      onSaved?.(id)
+      onSaved?.(id, { name: clean })
       advance()
     } catch (e: any) {
       toast.error(e?.message || 'Error guardando nombre')
@@ -619,7 +619,8 @@ export function IngredientWizard({
         price_locked: draft.priceLocked === true,
       })
       // Notificar al padre el ID final para enlazarlo (ej. mapeo desde albaranes)
-      if (ingredientId) onSaved?.(ingredientId)
+      if (ingredientId)
+        onSaved?.(ingredientId, { name: String(draft.name || '').trim() || null })
       onClose?.()
     } catch (e: any) {
       toast.error(e?.message || 'Error al guardar')
@@ -627,7 +628,7 @@ export function IngredientWizard({
   }
 
   function closeWithoutSavingOptional() {
-    if (ingredientId) onSaved?.(ingredientId)
+    if (ingredientId) onSaved?.(ingredientId, { name: String(draft.name || '').trim() || null })
     onClose?.()
   }
 
