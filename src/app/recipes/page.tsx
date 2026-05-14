@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import {
     type MenuCategoryRow,
+    denormalizedRecipeCategoryName,
     labelMenuCategoryForRecipesEs,
     menuCategoryFromUrlParam,
     menuCategoryToUrlParam,
@@ -80,6 +81,7 @@ function RecipesContent() {
         router.replace(next ? `/recipes?${next}` : '/recipes');
     };
 
+    useEffect(() => {
     useEffect(() => {
         void (async () => {
             const [catRes, mcoRes] = await Promise.all([
