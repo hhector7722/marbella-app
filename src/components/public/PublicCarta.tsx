@@ -156,15 +156,15 @@ export function PublicCarta({
   }
 
   return (
-    <main className="h-[100dvh] bg-[#5B8FB9]">
+    <main className="flex h-[100dvh] flex-col bg-white text-zinc-900">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 pb-2 pt-0">
+        <header className="shrink-0 border-b border-zinc-100 bg-white pb-3 pt-1">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-1">
             <div className="flex min-h-[52px] items-center justify-start">
               {backHref ? (
                 <Link
                   href={backHref}
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center text-[#36606F] transition-colors hover:text-[#2a4a56] active:opacity-80"
                   aria-label="Volver a inicio"
                   title="Volver a inicio"
                 >
@@ -173,22 +173,25 @@ export function PublicCarta({
               ) : null}
             </div>
 
-            <div className="flex justify-center px-1">
+            <div className="flex flex-col items-center justify-center gap-1 px-1">
               <Image
                 src="/icons/logo-white.png"
                 alt="Bar La Marbella"
                 width={260}
                 height={70}
-                className="h-11 w-auto max-w-[220px] sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
+                className="h-11 w-auto max-w-[220px] brightness-0 sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
                 priority
               />
+              <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400 sm:text-[11px]">
+                {tPublicUi(lang).subtitle}
+              </p>
             </div>
 
             <div className="flex min-h-[52px] items-center justify-end">
               {cartaEditHref ? (
                 <Link
                   href={cartaEditHref}
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-white shadow-none outline-none ring-0 transition-opacity hover:opacity-85 active:opacity-70 focus-visible:opacity-100"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80 focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
                   aria-label="Editar carta"
                   title="Editar carta"
                 >
@@ -198,17 +201,17 @@ export function PublicCarta({
             </div>
           </div>
 
-          <div className="mt-2 w-full px-0 sm:mt-2.5">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" />
+          <div className="mt-3 w-full px-0 sm:mt-3.5">
+            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" />
           </div>
         </header>
 
         <section className="mt-4 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-5">
-          <div className="grid grid-cols-1 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {grouped.map((group) => (
               <div
                 key={group.key}
-                className="overflow-hidden rounded-xl border-2 border-zinc-200/60 bg-white shadow-sm transition-colors duration-150"
+                className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-zinc-200/90 hover:shadow-md"
               >
                 <button
                   type="button"
@@ -255,16 +258,16 @@ export function PublicCarta({
         >
           <button
             type="button"
-            className="absolute inset-0 bg-[#1e3a45]/55 backdrop-blur-md transition-opacity"
+            className="absolute inset-0 bg-zinc-900/30 backdrop-blur-[2px] transition-opacity"
             aria-label="Cerrar"
             onClick={() => setOpenKey(null)}
           />
           {/* Misma idea que modal recetas staff: altura tope fija, cabecera fija, solo el cuerpo hace scroll */}
           <div
-            className="relative z-10 flex w-full max-w-lg max-h-[82vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-h-[78vh] sm:max-w-xl animate-in zoom-in-95 duration-200"
+            className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] border border-zinc-100/80 bg-white shadow-[0_24px_80px_-12px_rgba(15,23,42,0.18)] animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-white px-3 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
               <h2
                 id="carta-section-modal-title"
                 className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
@@ -282,7 +285,7 @@ export function PublicCarta({
             </div>
 
             {openGroup._subList.length > 1 && selectedSubKeyByGroup[openGroup.key] ? (
-              <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
+              <div className="shrink-0 border-b border-zinc-100 bg-zinc-50/60 px-2.5 pb-2.5 pt-2 sm:px-3">
                 <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto pb-0.5 sm:gap-1.5">
                   {openGroup._subList.map((sub) => {
                     const sel = selectedSubKeyByGroup[openGroup.key]
@@ -313,7 +316,7 @@ export function PublicCarta({
               </div>
             ) : null}
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50/40 px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
               {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
                 <div className="space-y-3 px-1 py-2 sm:px-2">
                   <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600">
@@ -353,7 +356,7 @@ export function PublicCarta({
                           return (
                           <div
                             key={row.articulo_id}
-                            className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
+                            className="flex flex-col items-center overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm"
                           >
                             <div className="flex w-full flex-col items-center px-1 pb-1.5 pt-1.5 sm:px-1.5 sm:pb-2 sm:pt-2">
                               {row.category_parent_name &&

@@ -210,7 +210,7 @@ function MenuCard({
     return (
         <div
             className={cn(
-                'flex h-full flex-col items-center overflow-hidden rounded-2xl bg-white',
+                'flex h-full flex-col items-center overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm',
                 editMode && !isActive && 'opacity-75'
             )}
         >
@@ -654,7 +654,7 @@ export function MenuAccordion({
     const gridBlock = (
         <div
             className={cn(
-                'grid grid-cols-1 gap-2 sm:gap-4',
+                'grid grid-cols-1 gap-3 sm:gap-4',
                 hideLangPicker && 'pt-0',
                 !hideLangPicker && 'mt-4 sm:mt-5'
             )}
@@ -707,10 +707,10 @@ export function MenuAccordion({
                 const headerCard = (
                     <div
                         className={cn(
-                            'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                            'overflow-hidden rounded-2xl border bg-white shadow-sm transition-[border-color,box-shadow] duration-200',
                             isOpen
-                                ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                                : 'border-zinc-200/60'
+                                ? 'border-[#36606F]/35 shadow-md ring-1 ring-[#36606F]/10'
+                                : 'border-zinc-100 hover:border-zinc-200/90 hover:shadow-md'
                         )}
                     >
                         <div className="flex min-h-[52px] w-full items-stretch">
@@ -740,10 +740,10 @@ export function MenuAccordion({
                 const parentReorderCard = (
                     <div
                         className={cn(
-                            'overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-[border-color,box-shadow] duration-150',
+                            'overflow-hidden rounded-2xl border bg-white shadow-sm transition-[border-color,box-shadow] duration-200',
                             isOpen
-                                ? 'border-[#36606F] shadow-md ring-1 ring-[#36606F]/20'
-                                : 'border-zinc-200/60',
+                                ? 'border-[#36606F]/35 shadow-md ring-1 ring-[#36606F]/10'
+                                : 'border-zinc-100 hover:border-zinc-200/90 hover:shadow-md',
                             reorderPick === group.key && isUuidLike(group.key) && 'ring-2 ring-amber-500 ring-offset-2 ring-offset-amber-50'
                         )}
                     >
@@ -859,15 +859,15 @@ export function MenuAccordion({
                 >
                     <button
                         type="button"
-                        className="absolute inset-0 bg-[#1e3a45]/55 backdrop-blur-md transition-opacity"
+                        className="absolute inset-0 bg-zinc-900/30 backdrop-blur-[2px] transition-opacity"
                         aria-label="Cerrar"
                         onClick={() => setOpenKey(null)}
                     />
                     <div
-                        className="relative z-10 flex w-full max-w-lg max-h-[82vh] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl min-h-0 sm:max-h-[78vh] sm:max-w-xl animate-in zoom-in-95 duration-200"
+                        className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] border border-zinc-100/80 bg-white shadow-[0_24px_80px_-12px_rgba(15,23,42,0.18)] animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex shrink-0 items-center gap-1.5 bg-white px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
+                        <div className="flex shrink-0 items-center gap-1.5 border-b border-zinc-100 bg-white px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
                             <h2
                                 id="staff-carta-section-modal-title"
                                 className="min-w-0 flex-1 truncate text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
@@ -949,7 +949,7 @@ export function MenuAccordion({
 
                         {openGroup._subList.length > 1 &&
                         (selectedSubKeyByGroup[openGroup.key] || reorderScope === 'subs') ? (
-                            <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
+                            <div className="shrink-0 border-b border-zinc-100 bg-zinc-50/60 px-2.5 pb-2.5 pt-2 sm:px-3">
                                 {reorderScope === 'subs' ? (
                                     <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
@@ -1056,7 +1056,7 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50/40 px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
                             {openGroup._subList.length > 1 &&
                             !selectedSubKeyByGroup[openGroup.key] &&
                             reorderScope !== 'subs' ? (

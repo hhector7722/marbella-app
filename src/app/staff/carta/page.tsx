@@ -41,7 +41,7 @@ export default async function StaffCartaPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-[#5B8FB9] px-4 py-10">
+            <div className="min-h-screen bg-white px-4 py-10">
                 <div
                     className="mx-auto max-w-2xl rounded-xl border border-red-200 bg-red-50 p-4 text-center shadow-sm"
                     role="alert"

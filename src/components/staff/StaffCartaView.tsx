@@ -23,14 +23,14 @@ export function StaffCartaView({
   const [editing, setEditing] = useState(false)
 
   return (
-    <div className="h-[100dvh] bg-[#5B8FB9]">
+    <div className="flex h-[100dvh] flex-col bg-white text-zinc-900">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 pb-2 pt-0 sm:pb-3">
+        <header className="shrink-0 border-b border-zinc-100 bg-white pb-3 pt-1 sm:pb-3.5">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
             <div className="flex min-h-[52px] items-center justify-start">
               <Link
                 href="/staff/dashboard"
-                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center text-white transition-opacity hover:opacity-85 active:opacity-70"
+                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center text-[#36606F] transition-colors hover:text-[#2a4a56] active:opacity-80"
                 aria-label="Volver a inicio"
                 title="Volver a inicio"
               >
@@ -44,7 +44,7 @@ export function StaffCartaView({
                 alt="Bar La Marbella"
                 width={260}
                 height={70}
-                className="h-11 w-auto max-w-[220px] sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
+                className="h-11 w-auto max-w-[220px] brightness-0 sm:h-14 sm:max-w-[280px] md:h-[4.25rem] md:max-w-[320px]"
                 priority
               />
             </div>
@@ -53,7 +53,7 @@ export function StaffCartaView({
               {canOpenMapeo ? (
                 <Link
                   href="/dashboard/recetas-tpv"
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-white shadow-none outline-none ring-0 transition-opacity hover:opacity-85 active:opacity-70"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80"
                   aria-label="Ir a mapeo TPV"
                   title="Mapeo TPV"
                 >
@@ -64,7 +64,7 @@ export function StaffCartaView({
                 <button
                   type="button"
                   onClick={() => setEditing((v) => !v)}
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-white shadow-none outline-none ring-0 transition-opacity hover:opacity-85 active:opacity-70"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80"
                   aria-label={editing ? 'Salir de edición' : 'Entrar en edición'}
                   title={editing ? 'Salir de edición' : 'Editar'}
                 >
@@ -78,12 +78,12 @@ export function StaffCartaView({
             </div>
           </div>
 
-          <div className="mt-2 w-full px-0 sm:mt-2.5">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" />
+          <div className="mt-3 w-full px-0 sm:mt-3.5">
+            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" />
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-6">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-white pb-6">
           {editing && canEditMenu ? (
             <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
           ) : (
