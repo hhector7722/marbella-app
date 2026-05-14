@@ -74,6 +74,10 @@ async function start() {
         }, 10000);
 
         // 2. TELEMETRÍA / MONITOR COCINA (CON CEREBRO MATEMÁTICO ANTIFRAUDE)
+        //    Contrato JSON → Supabase `estado_sala.radiografia_completa` (Radar / KDS):
+        //    - `timestamp_tpv`: ISO UTC de la **apertura más temprana** con `row.Hora` no nulo
+        //      (la primera fila del ticket puede ser menú/pack con Hora NULL; antes quedaba "ahora" o vacío).
+        //    - Cada `producto` incluye `hora` (misma semántica) para que el dashboard pueda fallback.
         setInterval(async () => {
             try {
                 const resVivas = await pool.request().query(`
@@ -202,7 +206,8 @@ async function start() {
                             mesa: row.Mesa.toString(),
                             notas_comanda: row.Nota_Cabecera1 || '',
                             nombre_cliente: '',
-                            timestamp_tpv: row.Hora ? new Date(row.Hora).toISOString() : new Date().toISOString(),
+                            /** ms desde epoch; mínimo de todas las `row.Hora` válidas del ticket */
+                            aperturaMs: null,
                             productosMap: new Map()
                         });
                     }
@@ -210,6 +215,14 @@ async function start() {
                     const mesa = mapa.get(idMesa);
                     const nc = (row.Nombre_Cliente && String(row.Nombre_Cliente).trim()) || '';
                     if (nc && !mesa.nombre_cliente) mesa.nombre_cliente = nc;
+
+                    if (row.Hora) {
+                        const t = new Date(row.Hora).getTime();
+                        if (!Number.isNaN(t)) {
+                            if (mesa.aperturaMs == null || t < mesa.aperturaMs) mesa.aperturaMs = t;
+                        }
+                    }
+
                     const idPlato = row.articulo_id + '-' + row.nombre.trim();
 
                     if (!mesa.productosMap.has(idPlato)) {
@@ -218,11 +231,19 @@ async function start() {
                             nombre: row.nombre.trim(),
                             unidades: 0,
                             precio: parseFloat(row.precio),
-                            notas: row.notas.trim()
+                            notas: row.notas.trim(),
+                            hora: null
                         });
                     }
 
-                    mesa.productosMap.get(idPlato).unidades += parseFloat(row.unidades);
+                    const p = mesa.productosMap.get(idPlato);
+                    p.unidades += parseFloat(row.unidades);
+                    if (row.Hora) {
+                        const t = new Date(row.Hora).getTime();
+                        if (!Number.isNaN(t)) {
+                            if (!p.hora || t < new Date(p.hora).getTime()) p.hora = new Date(row.Hora).toISOString();
+                        }
+                    }
                 });
 
                 // 4. Limpiamos la basura y empaquetamos (CON BLINDAJE PARA EL TRIGGER DE SUPABASE)
@@ -240,7 +261,9 @@ async function start() {
                         mesa: mesa.mesa,
                         notas_comanda: mesa.notas_comanda,
                         nombre_cliente: mesa.nombre_cliente || '',
-                        timestamp_tpv: mesa.timestamp_tpv,
+                        timestamp_tpv: mesa.aperturaMs != null
+                            ? new Date(mesa.aperturaMs).toISOString()
+                            : new Date().toISOString(),
                         productos: productosReales
                     };
                 }).filter(mesa => mesa.productos.some(p => p.unidades > 0));

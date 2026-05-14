@@ -81,6 +81,8 @@ mesa: v.mesa || 0,
 
 // =====================================
 // FASE 2: TELEMETRÍA Y COMANDERO (KDS)
+// Body: `{ total_mesas_vivas, sala }` donde cada elemento de `sala` sigue el contrato
+// documentado en `context/index.txt` (timestamp_tpv ISO UTC, productos[].hora opcional).
 // =====================================
 app.post('/api/telemetria', async (req, res) => {
 // ✨ EL CHIVATO DEL JSON ✨

@@ -71,11 +71,42 @@ export function parseTPVDate(dateStr: string | null | undefined): Date {
 }
 
 /**
+ * Timestamps en `estado_sala.radiografia_completa` (ver `context/index.txt`):
+ * - El bridge Node usa `new Date(row.Hora).toISOString()` → **ISO UTC con Z real** (hay que usar `new Date(iso)`).
+ * - Otros emisores pueden mandar “hora local con Z mentirosa” → `parseTPVDate` (componentes literales).
+ */
+export function parseRadiografiaTimestamp(raw: string | number | null | undefined): Date | null {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number') {
+    const ms = raw > 0 && raw < 1e12 ? raw * 1000 : raw;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const s = raw.trim();
+  if (!s || s.toLowerCase() === 'invalid date') return null;
+  if (/^\d{10,13}$/.test(s)) {
+    const n = Number(s);
+    const d = new Date(n < 1e12 ? n * 1000 : n);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  // ISO 8601 con Z u offset (incl. ms) — contrato del extractor `index.txt`
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = parseTPVDate(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Formatea una fecha para mostrarla como HH:mm (local).
  */
 export function formatLocalTime(date: Date | string | null | undefined): string {
   if (!date) return '--:--';
-  const d = (date instanceof Date) ? date : parseTPVDate(date);
+  const d =
+    date instanceof Date
+      ? date
+      : parseRadiografiaTimestamp(date) ?? parseTPVDate(date);
   
   return d.toLocaleTimeString('es-ES', { 
     hour: '2-digit', 

@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Clock, Euro } from 'lucide-react';
-import { parseTPVDate, parseDBDate, formatLocalTime } from '@/utils/date-utils';
+import { Euro } from 'lucide-react';
+import { parseRadiografiaTimestamp, parseDBDate, formatLocalTime } from '@/utils/date-utils';
 import { cn } from '@/lib/utils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -45,21 +45,7 @@ const APERTURA_KEYS = [
 const KEY_DATE_HINT = /(fecha|hora|time|timestamp|apertura|dt|tpv)/i;
 
 function mesaAperturaToDate(raw: string | number | undefined): Date | null {
-  if (raw == null || raw === '') return null;
-  if (typeof raw === 'number') {
-    const ms = raw > 0 && raw < 1e12 ? raw * 1000 : raw;
-    const d = new Date(ms);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  const s = raw.trim();
-  if (!s) return null;
-  if (/^\d{10,13}$/.test(s)) {
-    const n = Number(s);
-    const d = new Date(n < 1e12 ? n * 1000 : n);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  const d = parseTPVDate(s);
-  return Number.isNaN(d.getTime()) ? null : d;
+  return parseRadiografiaTimestamp(raw ?? null);
 }
 
 /** Si la cabecera no trae hora, muchos extractores mandan `Hora` solo en cada línea de producto. */
@@ -141,8 +127,8 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
           <span className="text-[11px] md:text-sm font-bold text-white flex items-center tabular-nums tracking-tight">
             {totalCalculado.toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
           </span>
-          <span className="text-[9px] md:text-[10px] font-bold flex items-center text-white/90">
-            <Clock size={10} className="mr-0.5 shrink-0" /> {estado.hora}
+          <span className="text-[9px] md:text-[10px] font-bold flex items-center text-white/90 tabular-nums">
+            {estado.hora}
           </span>
         </div>
       </div>
@@ -318,7 +304,7 @@ export default function RadarSala() {
       <div className="p-3 md:p-6 lg:p-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 xl:gap-10">
         {mesasOrdenadas.map((m) => (
           <TarjetaMesa
-            key={m.id_ticket}
+            key={`mesa-${String(m.mesa ?? '')}-${String(m.id_ticket ?? m.numero_documento ?? '')}`}
             m={m}
             estado={calcularEstado(mesaAperturaToDate(resolveMesaAperturaRaw(m)))}
           />
