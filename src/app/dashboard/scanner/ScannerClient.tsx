@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Loader2, Search, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
@@ -43,19 +43,23 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const effectiveSupplierId = pendingBatch?.supplierId ?? selectedSupplierId
 
   useEffect(() => {
-    if (showSupplierModal) {
-      const fetchSuppliers = async () => {
-        setLoadingSuppliers(true)
-        const { data, error } = await supabase
-          .from('suppliers')
-          .select('id, name, image_url')
-          .order('name')
-        if (!error && data) setSuppliers(data)
-        setLoadingSuppliers(false)
-      }
-      void fetchSuppliers()
+    if (!showSupplierModal && !pendingBatch) return
+    const fetchSuppliers = async () => {
+      setLoadingSuppliers(true)
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('id, name, image_url')
+        .order('name')
+      if (!error && data) setSuppliers(data)
+      setLoadingSuppliers(false)
     }
-  }, [showSupplierModal, supabase])
+    void fetchSuppliers()
+  }, [showSupplierModal, pendingBatch, supabase])
+
+  const pendingSupplierName = useMemo(() => {
+    if (!pendingBatch) return null
+    return suppliers.find((s) => s.id === pendingBatch.supplierId)?.name?.trim() || null
+  }, [pendingBatch, suppliers])
 
   const removePendingItemById = (itemId: string) => {
     setPendingBatch((prev) => {
@@ -127,7 +131,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const openModal = () => {
     if (pendingBatch) {
       setMessageTone('error')
-      setMessage('Primero guarda el albarán en curso con «Guardar».')
+      setMessage('Primero guarda el borrador con «Guardar» o descártalo con «Cancelar borrador».')
       return
     }
     setMessage(null)
@@ -137,6 +141,19 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   const closeModal = () => {
     setShowSupplierModal(false)
     setSearchQuery('')
+  }
+
+  const discardPendingBatch = () => {
+    setPendingBatch(null)
+    setPreview(null)
+    setSelectedSupplierId(null)
+    setCarouselIndex(0)
+    prevBatchLenRef.current = 0
+    setMessage(null)
+    requestAnimationFrame(() => {
+      carouselRef.current?.scrollTo({ left: 0, behavior: 'auto' })
+    })
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const commitPendingBatch = async () => {
@@ -285,31 +302,56 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
             Escanear albarán
           </button>
         ) : (
-          <div className="flex max-h-[min(92dvh,calc(100svh-8.5rem))] flex-col gap-1.5 rounded-xl bg-white p-3 md:max-h-[min(88dvh,calc(100vh-9rem))]">
+          <div className="flex max-h-[min(92dvh,calc(100svh-8.5rem))] flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm md:max-h-[min(88dvh,calc(100vh-9rem))]">
+            <div className="flex shrink-0 items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-wider text-[#36606F]">
+                  Borrador · {pendingBatch.items.length}{' '}
+                  {pendingBatch.items.length === 1 ? 'hoja' : 'hojas'}
+                </p>
+                {pendingSupplierName ? (
+                  <p className="mt-0.5 truncate text-[11px] font-bold text-zinc-600">{pendingSupplierName}</p>
+                ) : (
+                  <p className="mt-0.5 text-[11px] font-bold text-zinc-500">Proveedor seleccionado</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={discardPendingBatch}
+                disabled={isProcessing}
+                className={cn(
+                  'shrink-0 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 min-h-12',
+                  isProcessing && 'pointer-events-none opacity-50'
+                )}
+              >
+                Cancelar borrador
+              </button>
+            </div>
+
             <div className="relative min-h-0 shrink">
               {pendingBatch.items.length > 1 ? (
                 <>
                   <button
                     type="button"
                     className={cn(
-                      'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                      'absolute left-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:h-12 md:w-12',
                       carouselIndex <= 0 && 'pointer-events-none opacity-35'
                     )}
                     aria-label="Foto anterior"
                     onClick={() => scrollCarouselToIndex(carouselIndex - 1)}
                   >
-                    <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                    <ChevronLeft className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.5} />
                   </button>
                   <button
                     type="button"
                     className={cn(
-                      'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                      'absolute right-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:h-12 md:w-12',
                       carouselIndex >= pendingBatch.items.length - 1 && 'pointer-events-none opacity-35'
                     )}
                     aria-label="Foto siguiente"
                     onClick={() => scrollCarouselToIndex(carouselIndex + 1)}
                   >
-                    <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
+                    <ChevronRight className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.5} />
                   </button>
                 </>
               ) : null}
@@ -317,7 +359,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 ref={carouselRef}
                 onScroll={onCarouselScroll}
                 className={cn(
-                  'flex max-h-[calc(100svh-13.5rem)] overflow-x-auto overflow-y-visible rounded-lg bg-zinc-50 snap-x snap-mandatory md:max-h-[calc(100vh-15.5rem)]',
+                  'touch-pan-x overscroll-x-contain flex max-h-[calc(100svh-13.5rem)] overflow-x-auto overflow-y-visible rounded-lg bg-zinc-50 snap-x snap-mandatory md:max-h-[calc(100vh-15.5rem)]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
               >
@@ -338,10 +380,10 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                         e.stopPropagation()
                         removePendingItemById(it.id)
                       }}
-                      className="absolute right-0 top-0 z-10 flex h-9 w-9 translate-x-[18%] -translate-y-[18%] items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
+                      className="absolute right-1 top-1 z-30 flex h-11 w-11 min-h-[48px] min-w-[48px] items-center justify-center rounded-full bg-rose-600 text-white shadow-md ring-2 ring-white active:scale-95"
                       aria-label="Quitar esta foto del borrador"
                     >
-                      <X className="h-4 w-4" strokeWidth={3} />
+                      <X className="h-5 w-5" strokeWidth={3} />
                     </button>
                   </div>
                 ))}
@@ -379,11 +421,11 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
                 onClick={triggerAnotherCapture}
                 disabled={isProcessing}
                 className={cn(
-                  'w-full min-h-11 rounded-lg px-3 text-xs font-medium uppercase tracking-wide text-[#36606F] bg-transparent hover:bg-zinc-50 active:scale-[0.99] transition',
+                  'min-h-12 w-full rounded-xl border-2 border-[#36606F] bg-white px-4 text-sm font-black uppercase tracking-wider text-[#36606F] hover:bg-zinc-50 active:scale-[0.99] transition',
                   isProcessing && 'opacity-60 pointer-events-none'
                 )}
               >
-                Añadir hoja
+                Añadir otra hoja al mismo albarán
               </button>
               <button
                 type="button"
