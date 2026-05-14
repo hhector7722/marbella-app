@@ -103,6 +103,8 @@
 
 - [x] **Ingredientes `/ingredients`: primera fila como `/recipes` (2026-05-02)**: Eliminada la caja petróleo `bg-[#36606F]` con padding; barra de búsqueda `flex-1 min-w-0` sobre el fondo `#5B8FB9`; proveedor + **Añadir** verde (`emerald-600/700`, igual que recetas) en `shrink-0` con mismos gaps/tamaños táctiles (dropdown alineado a la derecha en móvil).
 
+- [x] **Ingredientes: modal edición por encima del Navbar (2026-05-14)**: `IngredientEditModal` usaba `z-[60]` y quedaba bajo la cabecera fija (`Navbar` `z-[100]`). Overlay del modal → `z-[110]` para que el velo cubra también la barra superior.
+
 - [x] **Inventario `/dashboard/inventory`: visibilidad por artículo (2026-05-02)**: Columna `ingredients.inventory_visible` (default true); gerencia/admin: lápiz activa modo edición en la misma página — interruptor en esquina superior derecha de la imagen de cada artículo + **Guardar lista** junto al filtro (barra de búsqueda se estrecha con `flex-1`). Sin modal. Staff solo ve `inventory_visible = true`. Migración `20260502150000_ingredients_inventory_visible.sql`.
 
 - [x] **Inventario `/dashboard/inventory`: UI recuento (2026-05-02)**: Interfaz solo de recuento: sin textos de stock teórico ni comparación con el real en pantalla; pie orientado a “cantidades contadas”; botón **Guardar recuento**; se envían todas las cantidades informadas (el servidor aplica movimientos solo donde haya diferencia interna). Mensajes y descripciones de movimiento sin mencionar teórico en la narrativa al usuario.
