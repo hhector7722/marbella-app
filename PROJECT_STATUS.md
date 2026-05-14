@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-17 (Albaranes: DELETE stock vía RPC, sin PostgREST/RLS en cliente)
+**Última actualización:** 2026-05-14 (Pedidos `/orders/new`: cabecera sin panel petróleo)
+
+- [x] **Pedidos `/orders/new`: cabecera sin caja petróleo (2026-05-14)**: Eliminado el contenedor `bg-[#36606F]` + `rounded-2xl` + padding interno que agrupaba proveedor, buscador y CTAs «Pedido nuevo» / «Tramitar». La zona sticky comparte el fondo `#5B8FB9` de la página ([`page.tsx`](src/app/orders/new/page.tsx)).
 
 - [x] **Albaranes: borrar stock al eliminar albarán / deshacer match (2026-05-17)**: Aunque `reference_doc` exista en Postgres, PostgREST puede seguir fallando (caché de esquema) y el **DELETE** desde supabase-js puede chocar con **RLS** en `stock_movements`. **BD**: [`20260517140000_delete_albaran_stock_movements_rpc.sql`](supabase/migrations/20260517140000_delete_albaran_stock_movements_rpc.sql) — `delete_stock_movements_for_purchase_invoice(uuid)` y `delete_stock_movements_for_albaran_line(uuid)` (`SECURITY DEFINER`, solo `profiles.role` manager/admin). **App**: [`deletePurchaseInvoiceAction`](src/app/dashboard/albaranes/actions.ts) y [`unmapInvoiceLineAction`](src/app/dashboard/albaranes/actions.ts) llaman a esas RPC en lugar de `.from('stock_movements').delete()`.
 

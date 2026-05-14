@@ -303,7 +303,7 @@ export default function NewOrderPage() {
             <Toaster position="top-right" />
 
             <div className="max-w-7xl mx-auto">
-                <div className="sticky top-0 z-50 bg-[#36606F] rounded-2xl px-4 md:px-6 pt-4 pb-4">
+                <div className="sticky top-0 z-50 shrink-0 bg-[#5B8FB9] pb-4 pt-0">
                     <div className="flex flex-col gap-4">
                         {/* Fila 1: Proveedor y Buscador */}
                         <div className="flex items-center gap-2">
