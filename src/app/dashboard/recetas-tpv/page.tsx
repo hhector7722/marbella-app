@@ -60,7 +60,7 @@ export default async function RecetasTpvPage() {
   const supabase = await createClient()
 
   /** Sin embeds PostgREST: resolución manual de `bdp_departamentos` desde `bdp_articulos` (misma idea que otros listados TPV). */
-  const [mappingsRes, articlesRes, recipesRes, deptRes, suppliersRes] = await Promise.all([
+  const [mappingsRes, articlesRes, recipesRes, deptRes, suppliersRes, ingredientsRes] = await Promise.all([
     supabase.from('map_tpv_receta').select('articulo_id, recipe_id, factor_porcion').limit(5000),
     supabase
       .from('bdp_articulos')
@@ -70,6 +70,7 @@ export default async function RecetasTpvPage() {
     supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
     supabase.from('bdp_departamentos').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
     supabase.from('suppliers').select('id, name').order('name').limit(2000),
+    supabase.from('ingredients').select('id, name').order('name').limit(5000),
   ])
 
   if (mappingsRes.error) console.error('Error fetching map_tpv_receta:', mappingsRes.error)
@@ -77,13 +78,10 @@ export default async function RecetasTpvPage() {
   if (recipesRes.error) console.error('Error fetching recipes:', recipesRes.error)
   if (deptRes.error) console.error('Error fetching bdp_departamentos:', deptRes.error)
   if (suppliersRes.error) console.error('Error fetching suppliers (recetas-tpv):', suppliersRes.error)
+  if (ingredientsRes.error) console.error('Error fetching ingredients (recetas-tpv):', ingredientsRes.error)
   if (articlesRes.error) {
     return (
-      <DashboardDetailLayout
-        title="Mapeo TPV"
-        subtitle="Artículos TPV ↔ recetas; el inventario se descuenta con ventas TPV"
-        maxWidthClass="max-w-7xl"
-      >
+      <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
         <div
           className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm"
           role="alert"
@@ -107,6 +105,11 @@ export default async function RecetasTpvPage() {
     id: s.id,
     name: String(s.name ?? ''),
   }))
+
+  const ingredientsMini = ((ingredientsRes.data ?? []) as { id: string; name: string | null }[]).map((r) => ({
+    id: String(r.id ?? ''),
+    name: String(r.name ?? '').trim() || String(r.id ?? ''),
+  })).filter((r) => r.id)
 
   const articles: TpvArticle[] = articlesRaw.map((a) => {
     const did = a.departamento_id
@@ -251,11 +254,7 @@ export default async function RecetasTpvPage() {
   }))
 
   return (
-    <DashboardDetailLayout
-      title="Mapeo TPV"
-      subtitle="TPV ↔ receta: escandallo (ingredientes BD) y textos de albarán enlazados por ingrediente"
-      maxWidthClass="max-w-7xl"
-    >
+    <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
       {mappingsRes.error ? (
         <div
           className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
@@ -271,6 +270,7 @@ export default async function RecetasTpvPage() {
         articles={articles}
         recipes={recipes}
         suppliersMini={suppliersMini}
+        ingredientsMini={ingredientsMini}
         recipeIngredientMatchByRecipeId={recipeIngredientMatchByRecipeId}
       />
     </DashboardDetailLayout>

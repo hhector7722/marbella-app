@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Check, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
+import { Check, Filter, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
 import {
+  addRecipeIngredientLineAction,
   deleteMapping,
   deleteRecipeIngredientLineAction,
   deleteSupplierMappingByIdAction,
@@ -35,21 +36,23 @@ type IngredientModalState = {
   recipe_name: string
 }
 
-/** TPV | Receta | Factor | Ingredientes | acciones — filas sin zebra (fondo tarjeta). */
-const TABLE_GRID =
-  'grid w-full grid-cols-[minmax(0,0.72fr)_minmax(0,0.68fr)_minmax(2.25rem,2.75rem)_minmax(0,1.12fr)_1.75rem] divide-x divide-zinc-200'
+/** TPV | Receta | Ingredientes | acciones — columna factor oculta (valor sigue en borrador al guardar). */
+const TABLE_GRID_COLS =
+  'grid w-full grid-cols-[minmax(0,0.72fr)_minmax(0,0.68fr)_minmax(0,1.12fr)_1.75rem]'
 
 export default function MappingClient({
   mappings,
   articles,
   recipes,
   suppliersMini,
+  ingredientsMini,
   recipeIngredientMatchByRecipeId,
 }: {
   mappings: MappingRow[]
   articles: TpvArticle[]
   recipes: Recipe[]
   suppliersMini: { id: number; name: string }[]
+  ingredientsMini: { id: string; name: string }[]
   recipeIngredientMatchByRecipeId: Record<string, RecipeIngredientMatchRow[]>
 }) {
   const router = useRouter()
@@ -60,6 +63,9 @@ export default function MappingClient({
   const [drafts, setDrafts] = useState<Record<number, { recipe_id: string | null; factor: string }>>({})
   const [busyId, setBusyId] = useState<number | null>(null)
   const [ingModal, setIngModal] = useState<IngredientModalState | null>(null)
+  const [deptFilter, setDeptFilter] = useState<string | null>(null)
+  const [deptMenuOpen, setDeptMenuOpen] = useState(false)
+  const deptMenuRef = useRef<HTMLDivElement>(null)
 
   const mappingByArticulo = useMemo(() => {
     const m = new Map<number, { recipe_id: string; factor_porcion: number; recipe_name?: string | null }>()
@@ -91,6 +97,25 @@ export default function MappingClient({
     return rows
   }, [articles, mappingByArticulo])
 
+  useEffect(() => {
+    if (!deptMenuOpen) return
+    function handleDown(e: MouseEvent) {
+      if (deptMenuRef.current && !deptMenuRef.current.contains(e.target as Node)) {
+        setDeptMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleDown)
+    return () => document.removeEventListener('mousedown', handleDown)
+  }, [deptMenuOpen])
+
+  const departmentOptions = useMemo(() => {
+    const labels = new Set<string>()
+    for (const r of uiRows) {
+      labels.add(r.departamento?.trim() ? r.departamento.trim() : 'Sin departamento')
+    }
+    return [...labels].sort((a, b) => a.localeCompare(b, 'es'))
+  }, [uiRows])
+
   const effectiveRecipeId = (row: UiRow) => {
     const d = drafts[row.articulo_id]
     if (d?.recipe_id != null) return d.recipe_id
@@ -111,6 +136,10 @@ export default function MappingClient({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return uiRows.filter((r) => {
+      if (deptFilter != null) {
+        const rowDept = r.departamento?.trim() ? r.departamento.trim() : 'Sin departamento'
+        if (rowDept !== deptFilter) return false
+      }
       if (status === 'mapped' && !r.mapped) return false
       if (status === 'unmapped' && r.mapped) return false
       if (!q) return true
@@ -118,7 +147,7 @@ export default function MappingClient({
       const blob = `${r.nombre} ${String(r.articulo_id)} ${r.departamento ?? ''} ${r.recipe_name ?? ''} ${matchSearchBlob(rid)}`.toLowerCase()
       return blob.includes(q)
     })
-  }, [uiRows, query, status, drafts, recipeIngredientMatchByRecipeId])
+  }, [uiRows, query, status, drafts, recipeIngredientMatchByRecipeId, deptFilter])
 
   /** Sin agrupación por departamento en la UI: solo orden estable (dept + nombre). */
   const sortedRows = useMemo(() => {
@@ -193,45 +222,101 @@ export default function MappingClient({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
-          <input
-            className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-8 pr-2 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
-            placeholder="Buscar…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Buscar en mapeos TPV"
-          />
-        </div>
-
-        <div className="flex shrink-0 rounded-md bg-zinc-100 p-0.5">
-          <FilterButton active={status === 'all'} onClick={() => setStatus('all')}>
-            Todos
-          </FilterButton>
-          <FilterButton active={status === 'mapped'} onClick={() => setStatus('mapped')}>
-            Con receta
-          </FilterButton>
-          <FilterButton active={status === 'unmapped'} onClick={() => setStatus('unmapped')}>
-            Sin receta
-          </FilterButton>
-        </div>
+      <div className="relative min-w-0">
+        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+        <input
+          className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-8 pr-2 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
+          placeholder="Buscar…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Buscar en mapeos TPV"
+        />
       </div>
 
       <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
+        <div className="grid w-full shrink-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center rounded-t-lg border-b border-zinc-200 bg-white py-0">
+          <div ref={deptMenuRef} className="relative flex justify-start pl-1">
+            <div className="relative inline-flex">
+              <button
+                type="button"
+                onClick={() => setDeptMenuOpen((v) => !v)}
+                className="flex h-11 min-h-11 w-11 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-zinc-600 outline-none ring-0 hover:text-zinc-900"
+                aria-expanded={deptMenuOpen}
+                aria-haspopup="listbox"
+                aria-label="Filtrar por departamento"
+                title="Departamento"
+              >
+                <Filter className="h-5 w-5" strokeWidth={2} />
+              </button>
+              {deptFilter != null ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeptFilter(null)
+                  }}
+                  className="absolute -right-0.5 -top-0.5 z-[1] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-1 ring-white"
+                  aria-label="Quitar filtro de departamento"
+                >
+                  <X className="h-2 w-2 stroke-[3]" aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            {deptMenuOpen ? (
+              <div
+                className="absolute left-0 top-full z-[60] mt-1 max-h-56 min-w-[12rem] overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-xl"
+                role="listbox"
+              >
+                {departmentOptions.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    role="option"
+                    aria-selected={deptFilter === label}
+                    className={cn(
+                      'flex w-full px-3 py-2 text-left text-xs font-semibold hover:bg-zinc-50',
+                      deptFilter === label && 'bg-emerald-50 text-emerald-800'
+                    )}
+                    onClick={() => {
+                      setDeptFilter(label)
+                      setDeptMenuOpen(false)
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex min-w-0 justify-center">
+            <div className="inline-flex items-stretch">
+              <FilterButton active={status === 'all'} onClick={() => setStatus('all')}>
+                Todos
+              </FilterButton>
+              <FilterButton active={status === 'mapped'} onClick={() => setStatus('mapped')}>
+                Con receta
+              </FilterButton>
+              <FilterButton active={status === 'unmapped'} onClick={() => setStatus('unmapped')}>
+                Sin receta
+              </FilterButton>
+            </div>
+          </div>
+          <div aria-hidden className="shrink-0" />
+        </div>
+
         <div className="w-full min-w-0">
           <div
             className={cn(
-              TABLE_GRID,
+              TABLE_GRID_COLS,
+              'divide-x divide-[#2A4B57]',
               'border-b border-[#2A4B57] bg-[#36606F] text-[10px] font-semibold normal-case leading-tight tracking-normal text-white sm:text-[11px]'
             )}
           >
-            <div className="px-1 py-2">TPV</div>
-            <div className="px-1 py-2">Receta</div>
-            <div className="px-0 py-2 text-center">Factor</div>
-            <div className="px-1 py-2">Ingredientes</div>
-            <div className="px-0 py-2 text-center"> </div>
-          </div>
+              <div className="px-1 py-2">TPV</div>
+              <div className="px-1 py-2">Receta</div>
+              <div className="px-1 py-2">Ingredientes</div>
+              <div className="px-0 py-2 text-center"> </div>
+            </div>
 
           <div>
             {sortedRows.map((row, idx) => {
@@ -247,7 +332,8 @@ export default function MappingClient({
                 <div
                   key={row.articulo_id}
                   className={cn(
-                    TABLE_GRID,
+                    TABLE_GRID_COLS,
+                    'divide-x divide-zinc-200',
                     'items-stretch border-b border-zinc-100 bg-white',
                     idx === sortedRows.length - 1 && 'border-b-0',
                     isBusy && 'pointer-events-none opacity-50'
@@ -279,19 +365,6 @@ export default function MappingClient({
                     />
                   </div>
 
-                  <div className="flex items-center justify-center px-0 py-0.5">
-                    <input
-                      className="h-8 w-full min-w-0 rounded border border-zinc-200 bg-white px-0.5 text-center text-[10px] font-semibold tabular-nums text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      inputMode="decimal"
-                      value={draft.factor}
-                      onChange={(e) => setDraft(row.articulo_id, { factor: e.target.value })}
-                      aria-label={`Factor ${row.nombre}`}
-                    />
-                  </div>
-
                   <div className="min-w-0 px-0.5 py-0.5">
                     <button
                       type="button"
@@ -315,16 +388,17 @@ export default function MappingClient({
                     </button>
                   </div>
 
-                  <div className="flex shrink-0 flex-col items-stretch justify-center gap-0.5 px-0 py-0.5">
+                  <div className="flex shrink-0 flex-col items-stretch justify-center gap-1 px-0 py-0.5">
                     <button
                       type="button"
                       onClick={() => onSave(row)}
                       disabled={!hasChanges || !draft.recipe_id}
                       className={cn(
-                        'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-[10px] font-bold transition-colors',
+                        'flex h-11 min-h-11 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none outline-none ring-0',
+                        'text-[10px] font-bold transition-colors',
                         !hasChanges || !draft.recipe_id
-                          ? 'cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400'
-                          : 'border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700'
+                          ? 'cursor-not-allowed text-zinc-300'
+                          : 'text-emerald-600 hover:text-emerald-800'
                       )}
                       title="Guardar"
                     >
@@ -335,10 +409,9 @@ export default function MappingClient({
                       onClick={() => onDelete(row)}
                       disabled={!row.mapped}
                       className={cn(
-                        'flex h-8 min-h-8 w-full shrink-0 items-center justify-center rounded border text-rose-600 transition-colors',
-                        row.mapped
-                          ? 'border-rose-200 bg-rose-50 hover:bg-rose-100'
-                          : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-300'
+                        'flex h-11 min-h-11 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none outline-none ring-0',
+                        'transition-colors',
+                        row.mapped ? 'text-rose-600 hover:text-rose-800' : 'cursor-not-allowed text-zinc-300'
                       )}
                       title="Eliminar mapeo"
                       aria-label="Eliminar"
@@ -365,6 +438,7 @@ export default function MappingClient({
         recipeName={ingModal?.recipe_name ?? ''}
         matchRows={modalMatchRows}
         suppliersMini={suppliersMini}
+        ingredientsMini={ingredientsMini}
         onDone={() => router.refresh()}
       />
     </div>
@@ -417,6 +491,7 @@ function IngredientEscandalloModal({
   recipeName,
   matchRows,
   suppliersMini,
+  ingredientsMini,
   onDone,
 }: {
   open: boolean
@@ -426,6 +501,7 @@ function IngredientEscandalloModal({
   recipeName: string
   matchRows: RecipeIngredientMatchRow[]
   suppliersMini: { id: number; name: string }[]
+  ingredientsMini: { id: string; name: string }[]
   onDone: () => void
 }) {
   const [pending, startTransition] = useTransition()
@@ -679,8 +755,8 @@ function FilterButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'h-8 min-h-8 shrink-0 rounded px-2 text-[10px] font-semibold transition-colors',
-        active ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-800'
+        'h-11 min-h-11 shrink-0 border-0 bg-transparent p-0 px-1 text-[10px] font-semibold transition-colors sm:px-1.5',
+        active ? 'font-black text-[#36606F] underline decoration-2 underline-offset-[6px]' : 'text-zinc-500 hover:text-zinc-800'
       )}
     >
       {children}

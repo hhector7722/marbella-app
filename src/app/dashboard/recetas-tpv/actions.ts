@@ -132,6 +132,52 @@ export async function upsertSupplierMappingForIngredientAction(params: {
 
   revalidatePath('/dashboard/recetas-tpv')
   revalidatePath('/dashboard/albaranes')
+  revalidatePath('/recipes')
+  return { success: true as const }
+}
+
+export async function addRecipeIngredientLineAction(params: {
+  recipe_id: string
+  ingredient_id: string
+  unit?: string
+}) {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, error: gate.error }
+
+  const rid = String(params.recipe_id ?? '').trim()
+  const iid = String(params.ingredient_id ?? '').trim()
+  if (!rid || !iid) return { success: false, error: 'Receta o ingrediente inválidos.' }
+
+  const unitDb = String(params.unit ?? 'kg').trim() || 'kg'
+
+  const { data: dup, error: dupErr } = await gate.supabase
+    .from('recipe_ingredients')
+    .select('id')
+    .eq('recipe_id', rid)
+    .eq('ingredient_id', iid)
+    .maybeSingle()
+
+  if (dupErr) {
+    console.error('addRecipeIngredientLineAction dup:', dupErr)
+    return { success: false, error: dupErr.message }
+  }
+  if (dup) return { success: false, error: 'Ese ingrediente ya está en el escandallo de esta receta.' }
+
+  const { error } = await gate.supabase.from('recipe_ingredients').insert({
+    recipe_id: rid,
+    ingredient_id: iid,
+    quantity_gross: 1,
+    quantity_half: 0.5,
+    unit: unitDb,
+  })
+
+  if (error) {
+    console.error('addRecipeIngredientLineAction:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard/recetas-tpv')
+  revalidatePath('/recipes')
   return { success: true as const }
 }
 
