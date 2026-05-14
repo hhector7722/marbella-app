@@ -15,14 +15,16 @@ export function PricingStepHeader({ title, hint }: { title: string; hint: string
 export function PricingChoiceButton({
   title,
   subtitle,
+  selected,
   className,
   ...props
-}: ComponentProps<'button'> & { title: string; subtitle: string }) {
+}: ComponentProps<'button'> & { title: string; subtitle: string; selected?: boolean }) {
   return (
     <button
       type="button"
       className={cn(
         'flex min-h-14 flex-col items-stretch justify-center gap-0.5 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50',
+        selected && 'border-[#36606F] bg-[#36606F]/5 ring-2 ring-[#36606F]/25 shadow-md',
         className,
       )}
       {...props}

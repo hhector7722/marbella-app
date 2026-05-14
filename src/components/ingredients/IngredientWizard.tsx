@@ -1,5 +1,6 @@
 // SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 import { useEffect, useMemo, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy'
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing'
@@ -138,6 +139,50 @@ function allowedHowChargedOptionsForCategory(cat: IngredientWizardCategory | nul
   return all
 }
 
+function needsLiquidQuestion(h: IngredientWizardHowCharged): boolean {
+  return h === 'pack' || h === 'unidad'
+}
+
+function isDraftReadyForPriceStep(d: WizardDraft): boolean {
+  if (!d.pricingMode || !d.howCharged) return false
+  if (needsLiquidQuestion(d.howCharged) && d.containsLiquid == null) return false
+  return true
+}
+
+/** Inferir si el contenido por pieza es “líquido” según unidad guardada en BD. */
+function inferContainsLiquidFromPackUnit(unitRaw: string | null | undefined): boolean {
+  const u = String(unitRaw ?? '').toLowerCase()
+  if (['ml', 'cl', 'l'].includes(u)) return true
+  if (['g', 'kg', 'ud'].includes(u) || u === '') return false
+  return false
+}
+
+function formatWizardPricingSummary(d: WizardDraft): string {
+  const parts: string[] = []
+  if (d.pricingMode === 'per_purchase_unit') {
+    if (d.howCharged === 'kilo') parts.push('Factura: por kilo')
+    else if (d.howCharged === 'litro') parts.push('Factura: por litro')
+    else if (d.howCharged === 'unidad') parts.push('Factura: por unidad')
+    else parts.push('Factura: por compra')
+    parts.push(`Almacén / recetas en ${d.baseUnit}`)
+    if (Number.isFinite(d.supplierPrice) && d.supplierPrice > 0) {
+      parts.push(`PVP actual ${d.supplierPrice.toFixed(2).replace('.', ',')} €`)
+    }
+  } else {
+    parts.push('Factura: por pack o caja')
+    const n = d.unitsInside
+    if (n != null && Number.isFinite(n) && n > 0) parts.push(`${n} uds por pack`)
+    const q = d.contentPerUnitQty
+    const u = d.contentPerUnitUnit
+    if (q != null && Number.isFinite(q) && q > 0) parts.push(`${q} ${u}/pieza`)
+    if (Number.isFinite(d.supplierPrice) && d.supplierPrice > 0) {
+      parts.push(`Precio pack ${d.supplierPrice.toFixed(2).replace('.', ',')} €`)
+    }
+  }
+  if (d.priceLocked) parts.push('Precio fijo (albaranes no lo cambian)')
+  return parts.join(' · ')
+}
+
 export function IngredientWizard({
   ingredientId: initialIngredientId,
   initialName,
@@ -161,6 +206,7 @@ export function IngredientWizard({
   const [ingredientId, setIngredientId] = useState<string | null>(initialIngredientId ?? null)
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [saving, setSaving] = useState(false)
+  const [ingredientHydrated, setIngredientHydrated] = useState(() => !initialIngredientId)
   const [draft, setDraft] = useState<WizardDraft>(() => ({
     name: String(initialName ?? '').trim(),
     category: initialCategory ?? null,
@@ -206,7 +252,11 @@ export function IngredientWizard({
 
   useEffect(() => {
     const id = initialIngredientId ?? null
-    if (!id) return
+    if (!id) {
+      setIngredientHydrated(true)
+      return
+    }
+    setIngredientHydrated(false)
     let cancelled = false
 
     async function loadExistingIngredient() {
@@ -261,22 +311,33 @@ export function IngredientWizard({
         const currentPrice = (data as any).current_price == null ? 0 : Number((data as any).current_price)
         const supplierPrice = pricingMode === 'per_pack' ? (Number.isFinite(packPrice as any) ? (packPrice as number) : 0) : currentPrice
 
-        setDraft((d) => ({
-          ...d,
+        const packUnitRaw = (data as any).pack_unit_size_unit
+
+        let containsLiquidVal: boolean | null = null
+        if (pricingMode === 'per_pack') {
+          containsLiquidVal = inferContainsLiquidFromPackUnit(packUnitRaw == null ? undefined : String(packUnitRaw))
+        } else if (baseUnit === 'l') {
+          containsLiquidVal = true
+        } else if (baseUnit === 'kg') {
+          containsLiquidVal = false
+        } else {
+          containsLiquidVal = false
+        }
+
+        const rawUnitLower = String(packUnitRaw ?? 'ud').toLowerCase()
+        const contentPerUnitUnitResolved: WizardDraft['contentPerUnitUnit'] =
+          baseUnit === 'l' && rawUnitLower === 'ud' ? 'ml' : (rawUnitLower as WizardDraft['contentPerUnitUnit']) || 'ud'
+
+        const nextDraft: WizardDraft = {
           name: String((data as any).name ?? '').trim(),
           category: cat,
-          pricingMode,
           howCharged,
-          containsLiquid: baseUnit === 'l' ? true : d.containsLiquid,
+          pricingMode,
+          containsLiquid: containsLiquidVal,
           supplierPrice: Number.isFinite(supplierPrice) ? supplierPrice : 0,
           unitsInside: (data as any).pack_units == null ? null : Number((data as any).pack_units),
           contentPerUnitQty: (data as any).pack_unit_size_qty == null ? null : Number((data as any).pack_unit_size_qty),
-          contentPerUnitUnit: (() => {
-            const raw = String((data as any).pack_unit_size_unit ?? 'ud').toLowerCase()
-            // Si la unidad base es litros, nunca permitir ud.
-            if (baseUnit === 'l' && raw === 'ud') return 'ml'
-            return (raw as any) || 'ud'
-          })(),
+          contentPerUnitUnit: contentPerUnitUnitResolved,
           baseUnit,
           wastePercentage: (data as any).waste_percentage == null ? 0 : Number((data as any).waste_percentage),
           orderUnit: String((data as any).order_unit ?? 'unidad'),
@@ -284,7 +345,9 @@ export function IngredientWizard({
           supplier: (data as any).supplier ?? null,
           supplier2: (data as any).supplier_2 ?? null,
           priceLocked: (data as any).price_locked === true,
-        }))
+        }
+
+        setDraft(nextDraft)
 
         const rawS1 = (data as any).supplier
         const rawS2 = (data as any).supplier_2
@@ -295,15 +358,19 @@ export function IngredientWizard({
         setIsCustomSupplier2(!!s2 && !nameSet.has(s2))
         setCustomSupplier2Name(!!s2 && !nameSet.has(s2) ? s2 : '')
 
-        // Si el objetivo es editar precio, entrar en el asistente de cobro (paso 3)
-        // para replicar el flujo completo de /ingredients (cómo lo cobra → precio).
         const m = mode ?? 'create'
-        if (m === 'editPricing') setStep(3)
-        else if (m === 'editFull') setStep(2)
+        if (m === 'editPricing') {
+          setStep(isDraftReadyForPriceStep(nextDraft) ? 4 : 3)
+        } else if (m === 'editFull') {
+          setStep(2)
+        }
       } catch (e: any) {
         toast.error(e?.message || 'Error cargando ingrediente')
       } finally {
-        if (!cancelled) setSaving(false)
+        if (!cancelled) {
+          setSaving(false)
+          setIngredientHydrated(true)
+        }
       }
     }
 
@@ -311,8 +378,7 @@ export function IngredientWizard({
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialIngredientId])
+  }, [initialIngredientId, mode, supabase])
 
   async function upsertDraft(patch: Partial<WizardDraft>) {
     setDraft((d) => ({ ...d, ...patch }))
@@ -399,10 +465,6 @@ export function IngredientWizard({
     } catch (e: any) {
       toast.error(e?.message || 'Error guardando categoría')
     }
-  }
-
-  function needsLiquidQuestion(h: IngredientWizardHowCharged): boolean {
-    return h === 'pack' || h === 'unidad'
   }
 
   async function finalizeHowChargedAndAdvance(next: {
@@ -632,6 +694,15 @@ export function IngredientWizard({
     onClose?.()
   }
 
+  if (!ingredientHydrated) {
+    return (
+      <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-8 flex min-h-[12rem] flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-[#36606F]" aria-hidden />
+        <p className="text-center text-sm font-bold text-zinc-600">Cargando configuración del ingrediente…</p>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4">
       {step === 1 ? (
@@ -732,6 +803,7 @@ export function IngredientWizard({
             {allowedHowChargedOptionsForCategory(draft.category).includes('kilo') && (
               <PricingChoiceButton
                 disabled={saving}
+                selected={draft.howCharged === 'kilo'}
                 title={pricingAssistantCopy.invoiceStyle.perKg}
                 subtitle={pricingAssistantCopy.invoiceStyle.perKgSub}
                 onClick={() => handlePickHowCharged('kilo')}
@@ -740,6 +812,7 @@ export function IngredientWizard({
             {allowedHowChargedOptionsForCategory(draft.category).includes('litro') && (
               <PricingChoiceButton
                 disabled={saving}
+                selected={draft.howCharged === 'litro'}
                 title={pricingAssistantCopy.invoiceStyle.perL}
                 subtitle={pricingAssistantCopy.invoiceStyle.perLSub}
                 onClick={() => handlePickHowCharged('litro')}
@@ -748,6 +821,7 @@ export function IngredientWizard({
             {allowedHowChargedOptionsForCategory(draft.category).includes('pack') && (
               <PricingChoiceButton
                 disabled={saving}
+                selected={draft.howCharged === 'pack'}
                 title={pricingAssistantCopy.invoiceStyle.perPack}
                 subtitle={pricingAssistantCopy.invoiceStyle.perPackSub}
                 onClick={() => handlePickHowCharged('pack')}
@@ -756,6 +830,7 @@ export function IngredientWizard({
             {allowedHowChargedOptionsForCategory(draft.category).includes('unidad') && (
               <PricingChoiceButton
                 disabled={saving}
+                selected={draft.howCharged === 'unidad'}
                 title={pricingAssistantCopy.invoiceStyle.perUnit}
                 subtitle={pricingAssistantCopy.invoiceStyle.perUnitSub}
                 onClick={() => handlePickHowCharged('unidad')}
