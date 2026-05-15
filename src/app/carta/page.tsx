@@ -23,6 +23,12 @@ export default async function PublicCartaPage() {
     }
   }
 
+  const { data: menuCategories } = await supabase
+    .from('categories')
+    .select('id, name, parent_id, sort_order, slug')
+    .eq('scope', 'menu')
+    .order('sort_order', { ascending: true })
+
   const { data, error } = await supabase
     .from('v_public_menu_items')
     .select(
@@ -49,6 +55,13 @@ export default async function PublicCartaPage() {
   return (
     <PublicCarta
       items={(data ?? []) as PublicMenuRow[]}
+      menuCategories={(menuCategories ?? []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        parent_id: c.parent_id,
+        sort_order: c.sort_order,
+        slug: c.slug ?? null,
+      }))}
       backHref={backHref}
       cartaEditHref={cartaEditHref}
     />

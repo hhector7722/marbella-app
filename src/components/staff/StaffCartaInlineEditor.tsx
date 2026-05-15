@@ -486,6 +486,14 @@ export function StaffCartaInlineEditor({
           platoMarbellaCategoryId={platoMarbellaCategoryId}
           onPlatoMarbellaSlotChange={onPlatoMarbellaSlotChange}
           platoMarbellaSlotSavingId={platoMarbellaSlotSavingId}
+          menuCategories={categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            parent_id: c.parent_id,
+            sort_order: c.sort_order,
+            slug: c.slug ?? null,
+          }))}
+          showEmptyMenuChildCategories
         />
       </div>
 

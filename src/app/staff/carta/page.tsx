@@ -27,6 +27,16 @@ export default async function StaffCartaPage() {
     const canEditMenu = role === 'manager' || role === 'admin' || role === 'supervisor';
     const canOpenMapeo = role === 'manager' || role === 'admin';
 
+    const { data: menuCategories, error: catError } = await supabase
+        .from('categories')
+        .select('id, name, parent_id, sort_order, slug')
+        .eq('scope', 'menu')
+        .order('sort_order', { ascending: true });
+
+    if (catError) {
+        console.error('Error fetching menu categories (staff/carta):', catError);
+    }
+
     const { data, error } = await supabase
         .from('v_digital_menu_items')
         .select(
@@ -56,6 +66,13 @@ export default async function StaffCartaPage() {
     return (
         <StaffCartaView
             items={(data ?? []) as DigitalMenuRow[]}
+            menuCategories={(menuCategories ?? []).map((c) => ({
+                id: c.id,
+                name: c.name,
+                parent_id: c.parent_id,
+                sort_order: c.sort_order,
+                slug: c.slug ?? null,
+            }))}
             canEditMenu={canEditMenu}
             canOpenMapeo={canOpenMapeo}
         />

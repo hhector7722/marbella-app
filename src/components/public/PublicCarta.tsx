@@ -19,7 +19,12 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
-import { isPlatoMarbellaSubcategoryRows } from '@/lib/carta-plato-marbella'
+import {
+  bucketMenuRowForPlatoMarbella,
+  isPlatoMarbellaMenuSub,
+  platoMarbellaCategoryIdFromCatalog,
+  type MenuCategoryCatalogEntry,
+} from '@/lib/carta-plato-marbella'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -71,14 +76,17 @@ function formatPrice(precio: PublicMenuRow['precio']) {
 
 export function PublicCarta({
   items,
+  menuCategories = [],
   backHref,
   cartaEditHref,
 }: {
   items: PublicMenuRow[]
+  menuCategories?: MenuCategoryCatalogEntry[]
   /** Solo usuarios autenticados: destino del botón volver (Inicio). */
   backHref: string | null
   cartaEditHref: string | null
 }) {
+  const platoMarbellaCategoryId = platoMarbellaCategoryIdFromCatalog(menuCategories)
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
@@ -87,7 +95,11 @@ export function PublicCarta({
   const grouped = useMemo(() => {
     const groups = new Map<string, Group>()
 
-    for (const row of items) {
+    const catalog = menuCategories
+    const pmId = platoMarbellaCategoryId
+
+    for (const raw of items) {
+      const row = bucketMenuRowForPlatoMarbella(raw, pmId, catalog)
       const parentTitleRaw = (row.category_parent_name?.trim() || 'Sin categoría').trim()
       const parentTitle = getCartaParentCategoryLabel(lang, row, tPublicUi(lang).uncategorized)
       const parentSort = row.category_parent_sort_order ?? 9999
@@ -141,7 +153,10 @@ export function PublicCarta({
     }
 
     return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }> }>
-  }, [items, lang])
+  }, [items, lang, menuCategories, platoMarbellaCategoryId])
+
+  const isPlatoMarbellaSub = (subKey: string, rows: PublicMenuRow[]) =>
+    isPlatoMarbellaMenuSub(subKey, rows, platoMarbellaCategoryId)
 
   const openGroup = useMemo(
     () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
@@ -334,10 +349,10 @@ export function PublicCarta({
                       key={sub.key}
                       className={cn(
                         'space-y-2',
-                        isPlatoMarbellaSubcategoryRows(sub.rows) && 'flex min-h-0 flex-1 flex-col'
+                        isPlatoMarbellaSub(sub.key, sub.rows) && 'flex min-h-0 flex-1 flex-col'
                       )}
                     >
-                      {isPlatoMarbellaSubcategoryRows(sub.rows) ? (
+                      {isPlatoMarbellaSub(sub.key, sub.rows) ? (
                         <PlatoMarbellaMenuView
                           rows={sub.rows}
                           lang={lang}

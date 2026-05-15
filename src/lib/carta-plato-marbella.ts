@@ -54,6 +54,15 @@ export function isPlatoMarbellaSubcategoryRows(rows: PlatoMarbellaMenuRow[]): bo
   return first != null && isPlatoMarbellaSubcategory(first)
 }
 
+export function isPlatoMarbellaMenuSub(
+  subKey: string,
+  rows: PlatoMarbellaMenuRow[],
+  platoMarbellaCategoryId: string | null
+): boolean {
+  if (isPlatoMarbellaSubcategoryRows(rows)) return true
+  return platoMarbellaCategoryId != null && subKey === platoMarbellaCategoryId
+}
+
 export type GroupedPlatoMarbella = {
   menuPrice: number | null
   menuPriceArticuloId: number | null
@@ -114,6 +123,57 @@ export function groupPlatoMarbellaItems(rows: PlatoMarbellaMenuRow[]): GroupedPl
     unassigned: sortByOrder(unassigned),
     priceOnlyRows: sortByOrder(priceOnlyRows),
   }
+}
+
+export type MenuCategoryCatalogEntry = {
+  id: string
+  name: string
+  parent_id: string | null
+  sort_order: number | null
+  slug?: string | null
+}
+
+type MenuRowWithCategory = PlatoMarbellaMenuRow & {
+  category_parent_id?: string | null
+  category_child_id?: string | null
+  category_child_name?: string | null
+  category_child_slug?: string | null
+  category_child_sort_order?: number | null
+  category_child_name_es?: string | null
+  category_child_name_ca?: string | null
+  category_child_name_en?: string | null
+}
+
+/** Artículos con tramo/precio menú bajo padre Platos → subcategoría Plato Marbella. */
+export function bucketMenuRowForPlatoMarbella<T extends MenuRowWithCategory>(
+  row: T,
+  platoMarbellaCategoryId: string | null,
+  catalog: MenuCategoryCatalogEntry[]
+): T {
+  if (!platoMarbellaCategoryId) return row
+  if (!row.plato_marbella_slot && !row.plato_marbella_is_menu_price) return row
+  const pm = catalog.find((c) => c.id === platoMarbellaCategoryId)
+  if (!pm?.parent_id) return row
+  if (row.category_parent_id !== pm.parent_id) return row
+  if (row.category_child_id === platoMarbellaCategoryId) return row
+
+  const slug = pm.slug?.trim() || PLATO_MARBELLA_CHILD_SLUG
+  return {
+    ...row,
+    category_child_id: pm.id,
+    category_child_name: pm.name,
+    category_child_slug: slug,
+    category_child_sort_order: pm.sort_order ?? row.category_child_sort_order ?? null,
+    category_child_name_es: row.category_child_name_es ?? pm.name,
+    category_child_name_ca: row.category_child_name_ca ?? pm.name,
+    category_child_name_en: row.category_child_name_en ?? pm.name,
+  }
+}
+
+export function platoMarbellaCategoryIdFromCatalog(
+  catalog: MenuCategoryCatalogEntry[]
+): string | null {
+  return catalog.find((c) => (c.slug?.trim() ?? '') === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null
 }
 
 export function platoMarbellaSlotsForLang(lang: CartaLang): Record<PlatoMarbellaSlot, string> {

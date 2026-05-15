@@ -5,20 +5,25 @@ import Image from 'next/image'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
+import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
+import { platoMarbellaCategoryIdFromCatalog } from '@/lib/carta-plato-marbella'
 import Link from 'next/link'
 import { ChevronLeft, Pencil, RefreshCw, X } from 'lucide-react'
 import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
 
 export function StaffCartaView({
   items,
+  menuCategories = [],
   canEditMenu,
   canOpenMapeo,
 }: {
   items: DigitalMenuRow[]
+  menuCategories?: MenuCategoryCatalogEntry[]
   canEditMenu: boolean
   /** Manager/admin: acceso al mapeo TPV en dashboard */
   canOpenMapeo?: boolean
 }) {
+  const platoMarbellaCategoryId = platoMarbellaCategoryIdFromCatalog(menuCategories)
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const [editing, setEditing] = useState(false)
 
@@ -88,7 +93,15 @@ export function StaffCartaView({
             <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
-              <MenuAccordion items={items} lang={lang} onLangChange={setLang} hideLangPicker />
+              <MenuAccordion
+                items={items}
+                lang={lang}
+                onLangChange={setLang}
+                hideLangPicker
+                menuCategories={menuCategories}
+                platoMarbellaCategoryId={platoMarbellaCategoryId}
+                showEmptyMenuChildCategories
+              />
             </div>
           )}
         </div>
