@@ -25,15 +25,20 @@ import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
+import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
-import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
+import type {
+  PurchaseInvoiceDetail,
+  PurchaseInvoiceLine,
+  PurchaseInvoiceListItem,
+  SupplierListItem,
+} from './actions'
 import { appendScannerPageToInvoiceAction } from '../scanner/actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
   autoMapKnownLinesAction,
-  confirmInvoiceLineMappingAction,
   deletePurchaseInvoiceAction,
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
@@ -42,10 +47,7 @@ import {
   rectifyInvoiceLineStockAction,
   repairOrphanLineStockAction,
   repairOrphanLinesInInvoiceAction,
-  resolveLineMappingAction,
-  updateMappedLineConversionFactorAction,
   searchSuppliersForInvoiceAction,
-  searchIngredientsForMappingAction,
   setPurchaseInvoiceSupplierAction,
   unmapInvoiceLineAction,
   updatePurchaseInvoiceLineAction,
@@ -113,17 +115,9 @@ export default function AlbaranesHistoricoClient({
   const [stockStatusByLineId, setStockStatusByLineId] = useState<
     Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }>
   >({})
-  /** Línea en edición completa (datos + vínculo). Solo una a la vez. */
-  const [activeEditLineId, setActiveEditLineId] = useState<string | null>(null)
-  const [mappingError, setMappingError] = useState<string | null>(null)
-  const [mappingLoading, setMappingLoading] = useState(false)
-  /** Nombre legible del ingrediente elegido (preselección o búsqueda). */
-  const [ingredientPickLabelByLineId, setIngredientPickLabelByLineId] = useState<Record<string, string | null>>({})
-  const [ingredientSearchQuery, setIngredientSearchQuery] = useState('')
-  const [ingredientSearchResults, setIngredientSearchResults] = useState<Array<{ id: string; name: string; purchase_unit: string; current_price: number }>>([])
-  const [ingredientSearchLoading, setIngredientSearchLoading] = useState(false)
-  const [selectedIngredientByLineId, setSelectedIngredientByLineId] = useState<Record<string, string | null>>({})
-  const [factorByLineId, setFactorByLineId] = useState<Record<string, string>>({})
+  /** Línea abierta en el modal de mapeo/calibración dimensional. */
+  const [lineForMappingModal, setLineForMappingModal] = useState<PurchaseInvoiceLine | null>(null)
+  const [lineActionBusy, setLineActionBusy] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
   const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
@@ -340,14 +334,7 @@ export default function AlbaranesHistoricoClient({
     setSaveWarning(null)
     setDraftLines({})
     setStockStatusByLineId({})
-    setActiveEditLineId(null)
-    setMappingError(null)
-    setIngredientPickLabelByLineId({})
-    setIngredientSearchQuery('')
-    setIngredientSearchResults([])
-    setIngredientSearchLoading(false)
-    setSelectedIngredientByLineId({})
-    setFactorByLineId({})
+    setLineForMappingModal(null)
     try {
       const res = await getPurchaseInvoiceDetailAction(id)
       if (detailReqRef.current !== reqId) return
@@ -463,21 +450,13 @@ export default function AlbaranesHistoricoClient({
     setSupplierError(null)
     setSupplierSaving(false)
     setStockStatusByLineId({})
-    setActiveEditLineId(null)
-    setMappingError(null)
-    setMappingLoading(false)
-    setIngredientPickLabelByLineId({})
-    setIngredientSearchQuery('')
-    setIngredientSearchResults([])
-    setIngredientSearchLoading(false)
-    setSelectedIngredientByLineId({})
-    setFactorByLineId({})
+    setLineForMappingModal(null)
+    setLineActionBusy(false)
     setWizardOpen(false)
     setWizardIngredientId(null)
     setWizardInitialName(null)
     setWizardTargetLineId(null)
     setWizardInvoiceContext(null)
-    setActiveEditLineId(null)
     setAppendSheetBusy(false)
     if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
     setInvoiceImageViewerOpen(false)
@@ -559,7 +538,6 @@ export default function AlbaranesHistoricoClient({
         }
       }
       setDraftLines(nextDraft)
-      if (activeEditLineId === lineId) closeLineEdit()
     } finally {
       setSavingLineId(null)
     }
@@ -620,175 +598,61 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  function closeLineEdit() {
-    setActiveEditLineId(null)
-    setMappingError(null)
-    setIngredientSearchQuery('')
-    setIngredientSearchResults([])
-  }
-
-  async function openLineEdit(lineId: string) {
-    if (!detail) return
-    setActiveEditLineId(lineId)
-    setMappingError(null)
-    setMappingLoading(true)
-    try {
-      // Resolver con cascada (diccionario exacto -> alias del proveedor -> fuzzy ingrediente)
-      const res = await resolveLineMappingAction({ invoiceId: detail.id, lineId })
-      if (!res.success) {
-        setMappingError(res.message)
-        return
-      }
-      const { suggestedIngredientId, suggestedFactor, candidates } = res.result
-      const lineRow = detail.lines.find((x) => x.id === lineId)
-      const mappedIngredientId = lineRow?.ingredient_id ? String(lineRow.ingredient_id) : null
-      const storedFactor = lineRow?.conversion_factor
-
-      let pickLabel: string | null = lineRow?.ingredient_name?.trim() || null
-      if (!pickLabel && suggestedIngredientId && Array.isArray(candidates) && candidates.length > 0) {
-        const c = candidates.find((x: { id: string }) => String(x.id) === String(suggestedIngredientId))
-        pickLabel = c?.name ? String(c.name) : null
-      }
-      setIngredientPickLabelByLineId((p) => ({ ...p, [lineId]: pickLabel }))
-
-      // Preselección silenciosa (sin UI de «sugerencia»): resolver + línea ya mapeada.
-      setSelectedIngredientByLineId((p) => ({
-        ...p,
-        [lineId]: suggestedIngredientId ?? mappedIngredientId ?? p[lineId] ?? null,
-      }))
-      // Factor: resolver (diccionario/alias) > factor ya guardado en esta línea > estado previo > 1.
-      setFactorByLineId((p) => {
-        let next = '1'
-        if (suggestedFactor != null && Number.isFinite(suggestedFactor) && suggestedFactor > 0) {
-          next = String(suggestedFactor)
-        } else if (storedFactor != null && Number.isFinite(Number(storedFactor)) && Number(storedFactor) > 0) {
-          next = String(storedFactor)
-        } else if (p[lineId] != null && String(p[lineId]).trim() !== '') {
-          next = String(p[lineId])
-        }
-        return { ...p, [lineId]: next }
-      })
-      setIngredientSearchQuery('')
-      setIngredientSearchResults([])
-    } finally {
-      setMappingLoading(false)
-    }
-  }
-
-  async function runIngredientSearch(q: string) {
-    const query = q.trim()
-    setIngredientSearchQuery(q)
-    setMappingError(null)
-    if (query.length < 2) {
-      setIngredientSearchResults([])
-      return
-    }
-    setIngredientSearchLoading(true)
-    try {
-      const res = await searchIngredientsForMappingAction({ query, limit: 40 })
-      if (!res.success) {
-        setMappingError(res.message)
-        return
-      }
-      setIngredientSearchResults(res.items)
-    } finally {
-      setIngredientSearchLoading(false)
-    }
-  }
-
-  async function confirmMapping(lineId: string) {
-    if (!detail) return
-    setMappingError(null)
-    const ingredientId = selectedIngredientByLineId[lineId]
-    const factorRaw = factorByLineId[lineId] ?? '1'
-    const factor = Number(String(factorRaw).replace(',', '.'))
-    if (!ingredientId) return setMappingError('Selecciona un ingrediente.')
-    if (!Number.isFinite(factor) || factor <= 0) return setMappingError('Factor inválido.')
-
-    const lineRow = detail.lines.find((x) => x.id === lineId)
-    const alreadyMapped =
-      String(lineRow?.status ?? '') === 'mapped' &&
-      Boolean(lineRow?.ingredient_id) &&
-      String(lineRow?.ingredient_id) === String(ingredientId)
-
-    setMappingLoading(true)
-    try {
-      const res = alreadyMapped
-        ? await updateMappedLineConversionFactorAction({
-            invoiceId: detail.id,
-            lineId,
-            conversionFactor: factor,
-          })
-        : await confirmInvoiceLineMappingAction({ lineId, invoiceId: detail.id, ingredientId, conversionFactor: factor })
-
-      if (!res.success) {
-        setMappingError(res.message)
-        return
-      }
-      if (alreadyMapped && 'stockRectified' in res && res.stockRectified) {
-        toast.success('Factor guardado y stock rectificado.')
-      } else if (alreadyMapped) {
-        toast.success('Factor guardado en el diccionario.')
-      }
-      if (alreadyMapped && 'warning' in res) {
-        const w = res.warning
-        if (typeof w === 'string' && w.trim()) toast.info(w)
-      }
-
-      const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
-      if (!refreshed.success) {
-        setMappingError(`Mapeo OK, pero no se pudo recargar: ${refreshed.message}`)
-        return
-      }
-      setDetail(refreshed.detail)
-      const st = await getInvoiceStockStatusesAction({ lineIds: refreshed.detail.lines.map((l) => l.id) })
-      if (st.success) {
-        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
-        for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
-        setStockStatusByLineId(map)
-      }
-      closeLineEdit()
-    } finally {
-      setMappingLoading(false)
-    }
+  function openLineMappingModal(line: PurchaseInvoiceLine) {
+    setLineForMappingModal(line)
   }
 
   async function rectifyLine(lineId: string) {
     if (!detail) return
-    setMappingError(null)
     const line = detail.lines.find((l) => l.id === lineId)
     const ingredientId = line?.ingredient_id ?? null
-    if (!ingredientId) return setMappingError('Esta línea no tiene ingrediente asignado.')
+    if (!ingredientId) {
+      toast.error('Esta línea no tiene ingrediente asignado.')
+      return
+    }
     const status = stockStatusByLineId[lineId]
-    if (!status?.stockApplied || status.stockAppliedQty == null) return setMappingError('No hay stock aplicado previo para rectificar.')
+    if (!status?.stockApplied || status.stockAppliedQty == null) {
+      toast.error('No hay stock aplicado previo para rectificar.')
+      return
+    }
 
-    const next = window.prompt(`Cantidad correcta a aplicar en stock (unidad base). Antes: ${status.stockAppliedQty}`, String(status.stockAppliedQty))
+    const next = window.prompt(
+      `Cantidad correcta a aplicar en stock (unidad base). Antes: ${status.stockAppliedQty}`,
+      String(status.stockAppliedQty)
+    )
     if (next == null) return
     const newQty = Number(String(next).replace(',', '.'))
-    if (!Number.isFinite(newQty) || newQty <= 0) return setMappingError('Cantidad inválida.')
+    if (!Number.isFinite(newQty) || newQty <= 0) {
+      toast.error('Cantidad inválida.')
+      return
+    }
 
-    setMappingLoading(true)
+    setLineActionBusy(true)
     try {
       const res = await rectifyInvoiceLineStockAction({ lineId, ingredientId, newQtyApplied: newQty })
-      if (!res.success) return setMappingError(res.message)
-      const st = await getInvoiceStockStatusesAction({ lineIds: detail.lines.map((l) => l.id) })
-      if (st.success) {
-        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
-        for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
-        setStockStatusByLineId(map)
+      if (!res.success) {
+        toast.error(res.message)
+        return
       }
+      await refreshDetailAndStock()
     } finally {
-      setMappingLoading(false)
+      setLineActionBusy(false)
     }
   }
 
-  // Refresca detalle + estado de stock de un albarán. Se usa tras
-  // operaciones que pueden cambiar mapped_ingredient_id / status / stock.
+  // Refresca detalle + estado de stock de un albarán. Sincroniza la línea del modal si está abierta.
   async function refreshDetailAndStock() {
     if (!detail) return
     const dRes = await getPurchaseInvoiceDetailAction(detail.id)
-    if (!dRes.success) return
+    if (!dRes.success) {
+      toast.error(`No se pudo recargar el albarán: ${dRes.message}`)
+      return
+    }
     setDetail(dRes.detail)
+    setLineForMappingModal((prev) => {
+      if (!prev) return null
+      return dRes.detail.lines.find((l) => l.id === prev.id) ?? null
+    })
     const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
     if (st.success) {
       const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
@@ -848,18 +712,31 @@ export default function AlbaranesHistoricoClient({
   // para volver a mapear. Mantiene el aprendizaje en el diccionario porque el
   // usuario va a re-mapear (si lo cambia, el upsert lo sobrescribe).
   async function editMapping(lineId: string) {
-    setMappingError(null)
-    setMappingLoading(true)
+    if (!detail) return
+    setLineActionBusy(true)
     try {
       const res = await unmapInvoiceLineAction({ lineId })
       if (!res.success) {
-        setMappingError(res.message)
+        toast.error(res.message)
         return
       }
-      await refreshDetailAndStock()
-      await openLineEdit(lineId)
+      const dRes = await getPurchaseInvoiceDetailAction(detail.id)
+      if (!dRes.success) {
+        toast.error(`Match deshecho, pero no se pudo recargar: ${dRes.message}`)
+        return
+      }
+      setDetail(dRes.detail)
+      const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
+      if (st.success) {
+        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+        for (const s of st.statuses)
+          map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
+        setStockStatusByLineId(map)
+      }
+      const line = dRes.detail.lines.find((l) => l.id === lineId)
+      if (line) openLineMappingModal(line)
     } finally {
-      setMappingLoading(false)
+      setLineActionBusy(false)
     }
   }
 
@@ -872,17 +749,17 @@ export default function AlbaranesHistoricoClient({
           'Vas a eliminar este match: se revertirá el stock aplicado de esta línea y se borrará el aprendizaje. ¿Continuar?'
         )
     if (!ok) return
-    setMappingError(null)
-    setMappingLoading(true)
+    setLineActionBusy(true)
     try {
       const res = await unmapInvoiceLineAction({ lineId, removeFromDictionary: true })
       if (!res.success) {
-        setMappingError(res.message)
+        toast.error(res.message)
         return
       }
+      if (lineForMappingModal?.id === lineId) setLineForMappingModal(null)
       await refreshDetailAndStock()
     } finally {
-      setMappingLoading(false)
+      setLineActionBusy(false)
     }
   }
 
@@ -947,7 +824,7 @@ export default function AlbaranesHistoricoClient({
       setDetail(null)
       setDraftLines({})
       setStockStatusByLineId({})
-    setActiveEditLineId(null)
+      setLineForMappingModal(null)
       const lRes = await listPurchaseInvoicesAction({ limit: 60 })
       if (lRes.success) setItems(lRes.items)
     } finally {
@@ -1311,10 +1188,10 @@ export default function AlbaranesHistoricoClient({
                       <button
                         type="button"
                         onClick={() => void repairAllMappedLinesWithoutStock()}
-                        disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || mappingLoading}
+                        disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
                         className={cn(
                           'shrink-0 min-h-[48px] px-4 rounded-xl bg-amber-700 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2',
-                          (repairingInvoiceStockBatch || repairingStockLineId !== null || mappingLoading) &&
+                          (repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy) &&
                             'opacity-60 pointer-events-none'
                         )}
                       >
@@ -1341,8 +1218,6 @@ export default function AlbaranesHistoricoClient({
                           ) : (
                             detail.lines.map((l) => {
                               const d = draftLines[l.id]
-                              const canEdit = true
-                              const isEditing = activeEditLineId === l.id
                               const stock = stockStatusByLineId[l.id]
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
@@ -1354,7 +1229,32 @@ export default function AlbaranesHistoricoClient({
                               // `ingredient_id`: garantiza el affordance de edición en todos
                               // los casos (incluido el edge en que la línea perdió el match).
                               const needsRepair = lineNeedsStockRepair(l)
-                              const stockBusy = repairingStockLineId !== null || repairingInvoiceStockBatch || mappingLoading
+                              const stockBusy =
+                                repairingStockLineId !== null || repairingInvoiceStockBatch || lineActionBusy
+
+                              function openWizardForLine(opts: {
+                                ingredientId: string | null
+                                initialName: string | null
+                              }) {
+                                const draft = draftLines[l.id]
+                                const unitRaw = draft?.unit_price?.trim()
+                                  ? draft.unit_price
+                                  : l.unit_price == null
+                                    ? ''
+                                    : String(l.unit_price)
+                                const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
+                                setWizardInvoiceContext({
+                                  lineLabel: String(draft?.original_name ?? l.original_name ?? '').trim() || null,
+                                  quantity:
+                                    draft?.quantity?.trim() ||
+                                    (l.quantity == null ? null : String(l.quantity)),
+                                  unitPrice: Number.isFinite(unitN) ? unitN : null,
+                                })
+                                setWizardIngredientId(opts.ingredientId)
+                                setWizardInitialName(opts.initialName)
+                                setWizardTargetLineId(l.id)
+                                setWizardOpen(true)
+                              }
                               return (
                                 <div key={l.id} className="p-3">
                                   {/* Cabecera de la fila: a la izquierda, área expandible
@@ -1366,14 +1266,7 @@ export default function AlbaranesHistoricoClient({
                                       anidados vía role="button") que en algunos navegadores
                                       colapsa la zona de acciones y deja el lápiz invisible. */}
                                   <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (activeEditLineId === l.id) closeLineEdit()
-                                        else void openLineEdit(l.id)
-                                      }}
-                                      className="flex-1 min-w-0 text-left flex items-center gap-2"
-                                    >
+                                    <div className="flex-1 min-w-0 flex items-center gap-2 min-h-12">
                                       <span className="text-sm font-black text-zinc-900 truncate">
                                         {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
                                       </span>
@@ -1408,10 +1301,9 @@ export default function AlbaranesHistoricoClient({
                                           ) : null}
                                         </>
                                       ) : null}
-                                    </button>
+                                    </div>
 
-                                    {/* Acciones al extremo derecho (hermanas del botón expandir).
-                                        shrink-0 para que NUNCA colapsen en pantallas estrechas. */}
+                                    {/* Acciones al extremo derecho — shrink-0 para no colapsar en táctil. */}
                                     <div className="flex items-center gap-1 shrink-0">
                                       {needsRepair ? (
                                         <button
@@ -1435,326 +1327,150 @@ export default function AlbaranesHistoricoClient({
                                           )}
                                         </button>
                                       ) : null}
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          void openLineEdit(l.id)
-                                        }}
-                                        className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
-                                        aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
-                                        title={l.ingredient_id ? 'Ajustar match (cambiar factor o ingrediente)' : 'Mapear línea'}
-                                      >
-                                        <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                      </button>
+                                      {isManager ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => openLineMappingModal(l)}
+                                          disabled={stockBusy}
+                                          className={cn(
+                                            'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                                            stockBusy && 'opacity-60 pointer-events-none'
+                                          )}
+                                          aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
+                                          title={l.ingredient_id ? 'Ajustar match (factor o ingrediente)' : 'Mapear línea'}
+                                        >
+                                          <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                                        </button>
+                                      ) : null}
                                     </div>
                                   </div>
 
-                                  {isEditing ? (
-                                    <div className="mt-2 rounded-xl border border-[#36606F]/25 bg-[#36606F]/[0.12] p-2 sm:p-2.5">
-                                    <div className="flex flex-col gap-2">
-                                      {mappingError ? (
-                                        <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-bold text-rose-800">
-                                          {mappingError}
-                                        </div>
-                                      ) : null}
+                                  {l.ingredient_name && l.original_name && l.ingredient_name !== l.original_name ? (
+                                    <p className="mt-1 text-xs font-semibold text-zinc-500 truncate">{l.original_name}</p>
+                                  ) : null}
 
-                                      {mappingLoading ? (
-                                        <div className="flex items-center gap-2 py-2 text-xs font-semibold text-zinc-600">
-                                          <Loader2 className="h-4 w-4 animate-spin text-[#36606F]" />
-                                          Preparando edición…
-                                        </div>
-                                      ) : (
-                                        <>
-                                      <div className="flex flex-wrap items-stretch gap-1.5">
-                                        <input
-                                          value={d?.original_name ?? ''}
-                                          onChange={(e) => setDraft(l.id, { original_name: e.target.value })}
-                                          className="min-h-12 min-w-[8rem] flex-1 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
-                                          placeholder="Nombre línea"
-                                        />
-                                        <div className="relative min-h-12 min-w-[10rem] flex-[1.4]">
-                                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                                          <input
-                                            value={ingredientSearchQuery}
-                                            onChange={(e) => void runIngredientSearch(e.target.value)}
-                                            placeholder="Producto almacén…"
-                                            className="h-full w-full rounded-lg border border-zinc-200/90 bg-white py-2 pl-9 pr-2 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/40"
-                                          />
-                                        </div>
-                                        <input
-                                          id={`factor-top-${l.id}`}
-                                          inputMode="decimal"
-                                          value={factorByLineId[l.id] ?? '1'}
-                                          onChange={(e) =>
-                                            setFactorByLineId((p) => ({
-                                              ...p,
-                                              [l.id]: e.target.value,
-                                            }))
-                                          }
-                                          title="Unidades de compra del ingrediente por 1 unidad del albarán"
-                                          className="w-20 min-h-12 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2 text-sm font-bold text-zinc-900 outline-none focus:border-[#36606F]/40"
-                                          placeholder="×"
-                                          aria-label="Factor de conversión"
-                                        />
-                                        {(() => {
-                                          const mappedSameIngredient =
-                                            Boolean(l.ingredient_id) &&
-                                            String(l.status ?? '') === 'mapped' &&
-                                            String(selectedIngredientByLineId[l.id] ?? '') ===
-                                              String(l.ingredient_id)
-                                          return (
-                                            <button
-                                              type="button"
-                                              onClick={() => void confirmMapping(l.id)}
-                                              disabled={mappingLoading || !detail.supplier_id}
-                                              className={cn(
-                                                'min-h-12 shrink-0 rounded-lg bg-[#36606F] px-3 text-[11px] font-black uppercase tracking-wide text-white shadow-sm hover:bg-[#2d4f5c]',
-                                                (mappingLoading || !detail.supplier_id) &&
-                                                  'pointer-events-none opacity-50'
-                                              )}
-                                            >
-                                              {mappedSameIngredient ? 'Guardar' : 'Vincular'}
-                                            </button>
-                                          )
-                                        })()}
+                                  <div className="mt-2 grid grid-cols-3 gap-1.5">
+                                    <label className="min-w-0 block">
+                                      <span
+                                        className="text-[9px] font-black uppercase tracking-wider text-zinc-500"
+                                        title="Si el PU es €/kg, indica los kg totales de la línea, no solo piezas."
+                                      >
+                                        Cant.
+                                      </span>
+                                      <input
+                                        inputMode="decimal"
+                                        value={d?.quantity ?? ''}
+                                        onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
+                                        className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                        placeholder=" "
+                                      />
+                                    </label>
+                                    <label className="min-w-0 block">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">PU</span>
+                                      <input
+                                        inputMode="decimal"
+                                        value={d?.unit_price ?? ''}
+                                        onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
+                                        className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                        placeholder=" "
+                                      />
+                                    </label>
+                                    <label className="min-w-0 block">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Total</span>
+                                      <input
+                                        inputMode="decimal"
+                                        value={d?.total_price ?? ''}
+                                        onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
+                                        className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                        placeholder=" "
+                                      />
+                                    </label>
+                                  </div>
+
+                                  {!detail.supplier_id ? (
+                                    <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">
+                                      Falta proveedor en el albarán.
+                                    </p>
+                                  ) : null}
+
+                                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                    {isLineDirty(l) ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => saveLine(l.id)}
+                                        disabled={savingLineId === l.id}
+                                        className={cn(
+                                          'min-h-12 shrink-0 rounded-lg border border-[#36606F]/30 bg-white px-2.5 text-[10px] font-bold uppercase text-[#36606F]',
+                                          savingLineId === l.id && 'opacity-60 pointer-events-none'
+                                        )}
+                                      >
+                                        {savingLineId === l.id ? '…' : 'Guardar línea'}
+                                      </button>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      onClick={() => openWizardForLine({ ingredientId: null, initialName: l.original_name || '' })}
+                                      className="min-h-12 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
+                                    >
+                                      + Nuevo
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openWizardForLine({
+                                          ingredientId: l.ingredient_id ? String(l.ingredient_id) : null,
+                                          initialName: null,
+                                        })
+                                      }
+                                      disabled={!l.ingredient_id}
+                                      className={cn(
+                                        'min-h-12 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-[#36606F] hover:bg-zinc-50',
+                                        !l.ingredient_id && 'pointer-events-none opacity-45'
+                                      )}
+                                    >
+                                      Configurar precio
+                                    </button>
+                                    {stockApplied ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => void rectifyLine(l.id)}
+                                        disabled={lineActionBusy}
+                                        className={cn(
+                                          'min-h-12 shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-bold uppercase text-amber-800',
+                                          lineActionBusy && 'opacity-60 pointer-events-none'
+                                        )}
+                                      >
+                                        Rectificar stock
+                                      </button>
+                                    ) : null}
+                                    {l.ingredient_id ? (
+                                      <>
                                         <button
                                           type="button"
-                                          onClick={closeLineEdit}
-                                          className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-lg border border-zinc-200/90 bg-white text-zinc-600 hover:bg-zinc-50"
-                                          aria-label="Cerrar edición"
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </button>
-                                      </div>
-
-                                      {selectedIngredientByLineId[l.id] ? (
-                                        <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1">
-                                          <div className="flex min-w-0 items-center gap-1.5">
-                                            <Check className="h-4 w-4 shrink-0 text-emerald-700" strokeWidth={2.5} />
-                                            <span className="truncate text-xs font-black text-emerald-950">
-                                              {ingredientPickLabelByLineId[l.id]?.trim() || 'Producto seleccionado'}
-                                            </span>
-                                          </div>
-                                          <button
-                                            type="button"
-                                            className="shrink-0 text-[10px] font-bold uppercase text-emerald-900 underline-offset-2 hover:underline"
-                                            onClick={() => {
-                                              setSelectedIngredientByLineId((p) => ({ ...p, [l.id]: null }))
-                                              setIngredientPickLabelByLineId((p) => ({ ...p, [l.id]: null }))
-                                            }}
-                                          >
-                                            Cambiar
-                                          </button>
-                                        </div>
-                                      ) : null}
-
-                                      {ingredientSearchLoading ? (
-                                        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
-                                          <Loader2 className="h-4 w-4 animate-spin" />
-                                          Buscando…
-                                        </div>
-                                      ) : ingredientSearchResults.length ? (
-                                        <div className="max-h-28 space-y-1 overflow-y-auto">
-                                          {ingredientSearchResults.map((it) => (
-                                            <button
-                                              key={it.id}
-                                              type="button"
-                                              onClick={() => {
-                                                setSelectedIngredientByLineId((p) => ({ ...p, [l.id]: it.id }))
-                                                setIngredientPickLabelByLineId((p) => ({ ...p, [l.id]: it.name }))
-                                              }}
-                                              className={cn(
-                                                'flex w-full min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition active:scale-[0.99]',
-                                                selectedIngredientByLineId[l.id] === it.id
-                                                  ? 'border-[#36606F] bg-[#36606F]/8 ring-1 ring-[#36606F]/20'
-                                                  : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                                              )}
-                                            >
-                                              <span className="truncate text-sm font-bold text-zinc-900">{it.name}</span>
-                                              <span className="shrink-0 text-xs font-semibold text-zinc-500">
-                                                {Number(it.current_price || 0).toFixed(2)}€/{it.purchase_unit || '—'}
-                                              </span>
-                                            </button>
-                                          ))}
-                                        </div>
-                                      ) : ingredientSearchQuery.trim().length >= 2 ? (
-                                        <p className="text-xs text-zinc-500">Sin resultados. Prueba otra palabra o crea el ingrediente.</p>
-                                      ) : null}
-
-                                        <div className="grid grid-cols-3 gap-1.5">
-                                          <label className="min-w-0 block">
-                                            <span
-                                              className="text-[9px] font-black uppercase tracking-wider text-zinc-500"
-                                              title="Si el PU es €/kg, indica los kg totales de la línea, no solo piezas."
-                                            >
-                                              Cant.
-                                            </span>
-                                            {canEdit ? (
-                                              <input
-                                                inputMode="decimal"
-                                                value={d?.quantity ?? ''}
-                                                onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
-                                                className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                                placeholder="—"
-                                              />
-                                            ) : (
-                                              <p className="mt-0.5 text-sm font-bold text-zinc-800">
-                                                {l.quantity == null ? '—' : String(l.quantity)}
-                                              </p>
-                                            )}
-                                          </label>
-                                          <label className="min-w-0 block">
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">PU</span>
-                                            {canEdit ? (
-                                              <input
-                                                inputMode="decimal"
-                                                value={d?.unit_price ?? ''}
-                                                onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
-                                                className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                                placeholder="—"
-                                              />
-                                            ) : (
-                                              <p className="mt-0.5 text-sm font-bold text-zinc-800">{formatMaybeMoney(l.unit_price)}</p>
-                                            )}
-                                          </label>
-                                          <label className="min-w-0 block">
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Total</span>
-                                            {canEdit ? (
-                                              <input
-                                                inputMode="decimal"
-                                                value={d?.total_price ?? ''}
-                                                onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
-                                                className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                                placeholder="—"
-                                              />
-                                            ) : (
-                                              <p className="mt-0.5 text-sm font-bold text-zinc-800">{formatMaybeMoney(l.total_price)}</p>
-                                            )}
-                                          </label>
-                                        </div>
-
-                                      {!detail.supplier_id ? (
-                                        <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">
-                                          Falta proveedor en el albarán.
-                                        </p>
-                                      ) : null}
-
-                                      <div className="flex flex-wrap items-center gap-1.5 border-t border-[#36606F]/10 pt-2">
-                                        {isLineDirty(l) ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => saveLine(l.id)}
-                                            disabled={savingLineId === l.id}
-                                            className={cn(
-                                              'min-h-12 rounded-lg border border-[#36606F]/30 bg-white px-2.5 text-[10px] font-bold uppercase text-[#36606F]',
-                                              savingLineId === l.id && 'opacity-60 pointer-events-none'
-                                            )}
-                                          >
-                                            {savingLineId === l.id ? '…' : 'Guardar línea'}
-                                          </button>
-                                        ) : null}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const d = draftLines[l.id]
-                                            const unitRaw = d?.unit_price?.trim()
-                                              ? d.unit_price
-                                              : l.unit_price == null
-                                                ? ''
-                                                : String(l.unit_price)
-                                            const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
-                                            setWizardInvoiceContext({
-                                              lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
-                                              quantity:
-                                                d?.quantity?.trim() ||
-                                                (l.quantity == null ? null : String(l.quantity)),
-                                              unitPrice: Number.isFinite(unitN) ? unitN : null,
-                                            })
-                                            setWizardIngredientId(null)
-                                            setWizardInitialName(l.original_name || '')
-                                            setWizardTargetLineId(l.id)
-                                            setWizardOpen(true)
-                                          }}
-                                          className="min-h-12 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
-                                        >
-                                          + Nuevo
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const d = draftLines[l.id]
-                                            const unitRaw = d?.unit_price?.trim()
-                                              ? d.unit_price
-                                              : l.unit_price == null
-                                                ? ''
-                                                : String(l.unit_price)
-                                            const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
-                                            setWizardInvoiceContext({
-                                              lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
-                                              quantity:
-                                                d?.quantity?.trim() ||
-                                                (l.quantity == null ? null : String(l.quantity)),
-                                              unitPrice: Number.isFinite(unitN) ? unitN : null,
-                                            })
-                                            setWizardIngredientId(selectedIngredientByLineId[l.id] ?? null)
-                                            setWizardInitialName(null)
-                                            setWizardTargetLineId(l.id)
-                                            setWizardOpen(true)
-                                          }}
-                                          disabled={!selectedIngredientByLineId[l.id]}
+                                          onClick={() => void editMapping(l.id)}
+                                          disabled={lineActionBusy}
                                           className={cn(
-                                            'min-h-12 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-[#36606F] hover:bg-zinc-50',
-                                            !selectedIngredientByLineId[l.id] && 'pointer-events-none opacity-45'
+                                            'min-h-12 shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 text-[10px] font-bold uppercase text-zinc-700',
+                                            lineActionBusy && 'opacity-60 pointer-events-none'
                                           )}
                                         >
-                                          Configurar precio
+                                          Editar match
                                         </button>
-                                        {stockApplied ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => void rectifyLine(l.id)}
-                                            disabled={mappingLoading}
-                                            className={cn(
-                                              'min-h-12 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-bold uppercase text-amber-800',
-                                              mappingLoading && 'opacity-60 pointer-events-none'
-                                            )}
-                                          >
-                                            Rectificar stock
-                                          </button>
-                                        ) : null}
-                                        {l.ingredient_id ? (
-                                          <>
-                                            <button
-                                              type="button"
-                                              onClick={() => void editMapping(l.id)}
-                                              disabled={mappingLoading}
-                                              className={cn(
-                                                'min-h-12 rounded-lg border border-zinc-200 bg-white px-2.5 text-[10px] font-bold uppercase text-zinc-700',
-                                                mappingLoading && 'opacity-60 pointer-events-none'
-                                              )}
-                                            >
-                                              Editar match
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => void removeMapping(l.id)}
-                                              disabled={mappingLoading}
-                                              className={cn(
-                                                'min-h-12 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-[10px] font-bold uppercase text-rose-700',
-                                                mappingLoading && 'opacity-60 pointer-events-none'
-                                              )}
-                                            >
-                                              Eliminar
-                                            </button>
-                                          </>
-                                        ) : null}
-                                      </div>
-                                        </>
-                                      )}
-                                    </div>
-                                    </div>
-                                  ) : null}
+                                        <button
+                                          type="button"
+                                          onClick={() => void removeMapping(l.id)}
+                                          disabled={lineActionBusy}
+                                          className={cn(
+                                            'min-h-12 shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-[10px] font-bold uppercase text-rose-700',
+                                            lineActionBusy && 'opacity-60 pointer-events-none'
+                                          )}
+                                        >
+                                          Eliminar
+                                        </button>
+                                      </>
+                                    ) : null}
+                                  </div>
+
                                 </div>
                               )
                             })
@@ -1765,6 +1481,16 @@ export default function AlbaranesHistoricoClient({
                     <div className="text-sm font-bold text-zinc-500">Sin datos.</div>
                   )}
                 </div>
+
+                <LineMappingModal
+                  open={!!lineForMappingModal}
+                  line={lineForMappingModal}
+                  invoiceId={detail?.id ?? null}
+                  supplierId={detail?.supplier_id ?? null}
+                  portalTarget={modalContainer}
+                  onClose={() => setLineForMappingModal(null)}
+                  onSuccess={() => refreshDetailAndStock()}
+                />
 
                 {supplierPickerOpen ? (
                   <div
@@ -1868,23 +1594,26 @@ export default function AlbaranesHistoricoClient({
                         mode={wizardIngredientId ? 'editPricing' : 'create'}
                         flow="express"
                         invoiceContext={wizardInvoiceContext ?? undefined}
-                        onSaved={(id, meta) => {
+                        onSaved={async () => {
                           const lineId = wizardTargetLineId
-                          if (!lineId) return
-                          setSelectedIngredientByLineId((p) => ({ ...p, [lineId]: id }))
-                          const nm = meta?.name?.trim()
-                          if (nm) setIngredientPickLabelByLineId((p) => ({ ...p, [lineId]: nm }))
-                          const f = meta?.suggestedConversionFactor
-                          if (f != null && Number.isFinite(f) && f > 0) {
-                            setFactorByLineId((p) => ({ ...p, [lineId]: String(f) }))
-                          }
+                          const invoiceId = detail?.id
+                          setWizardOpen(false)
+                          setWizardIngredientId(null)
+                          setWizardInitialName(null)
+                          setWizardTargetLineId(null)
+                          setWizardInvoiceContext(null)
+                          if (!lineId || !invoiceId) return
+                          await refreshDetailAndStock()
+                          const dRes = await getPurchaseInvoiceDetailAction(invoiceId)
+                          if (!dRes.success) return
+                          const line = dRes.detail.lines.find((l) => l.id === lineId)
+                          if (line) openLineMappingModal(line)
                         }}
                         onClose={() => {
                           setWizardOpen(false)
                           setWizardIngredientId(null)
                           setWizardInitialName(null)
                           setWizardTargetLineId(null)
-    setWizardInvoiceContext(null)
                           setWizardInvoiceContext(null)
                         }}
                       />

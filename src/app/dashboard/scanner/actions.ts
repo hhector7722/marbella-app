@@ -54,7 +54,13 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     "fecha": "YYYY-MM-DD",
     "total": 0.00,
     "lineas": [
-        { "nombre": "Nombre del artículo", "cantidad": 0.000, "precio_unidad": 0.0000, "total_linea": 0.00 }
+        { 
+          "nombre": "Nombre original exacto", 
+          "cantidad": 0.000, 
+          "unidad_medida": "garrafa|caja|bolsa|l|kg|ud (extrae la unidad literal del papel, NO la inventes. Si no hay, pon null)",
+          "precio_unidad": 0.0000, 
+          "total_linea": 0.00 
+        }
     ]
 }`
 
@@ -225,6 +231,7 @@ export async function appendScannerPageToInvoiceAction(params: {
         invoice_id: invoiceId,
         original_name: line?.nombre || 'Sin nombre',
         quantity: line?.cantidad || 0,
+        line_unit: line?.unidad_medida || null,
         unit_price: line?.precio_unidad || 0,
         total_price: line?.total_linea || 0,
         status: 'pending',
@@ -347,6 +354,7 @@ export async function processScannerImage(
         invoice_id: invoice.id,
         original_name: line?.nombre || 'Sin nombre',
         quantity: line?.cantidad || 0,
+        line_unit: line?.unidad_medida || null,
         unit_price: line?.precio_unidad || 0,
         total_price: line?.total_linea || 0,
         status: 'pending',

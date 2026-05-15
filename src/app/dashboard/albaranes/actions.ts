@@ -81,7 +81,7 @@ async function effectiveConversionFactorForIngredient(
 
 /**
  * Tras cambiar factor o precio unitario en una línea mapeada, recalcula
- * `ingredients.current_price` desde `unit_price / conversion_factor` (salvo `price_locked`).
+ * `ingredients.current_price` vía RPC dimensional (salvo `price_locked`).
  */
 async function resyncIngredientPriceForMappedLine(
   supabase: SupabaseServerClient,
@@ -93,47 +93,46 @@ async function resyncIngredientPriceForMappedLine(
 
   const { data: mapping, error: mapErr } = await supabase
     .from('supplier_item_mappings')
-    .select('conversion_factor')
+    .select('conversion_factor, line_content_qty, line_content_unit')
     .eq('supplier_id', supplierId)
     .eq('supplier_item_name', originalName)
     .eq('ingredient_id', ingredientId)
     .maybeSingle()
   if (mapErr) return { ok: false, message: mapErr.message }
 
-  const factorRaw = (mapping as any)?.conversion_factor as number | null
-  let factor = factorRaw && Number.isFinite(Number(factorRaw)) && Number(factorRaw) !== 0 ? Number(factorRaw) : null
-  if (!factor) return { ok: true, warning: 'No hay factor de conversión; no se actualiza precio automático.' }
-
-  factor = await effectiveConversionFactorForIngredient(supabase, ingredientId, factor)
-
-  const newPrice = unitPrice / factor
-  if (!Number.isFinite(newPrice) || newPrice <= 0) {
-    return { ok: true, warning: 'El precio calculado es inválido; no se actualiza ingrediente.' }
-  }
-
   const { data: ing, error: ingErr } = await supabase
     .from('ingredients')
-    .select('current_price, price_locked')
+    .select('current_price, price_locked, purchase_unit')
     .eq('id', ingredientId)
     .maybeSingle()
   if (ingErr) return { ok: false, message: ingErr.message }
 
   if ((ing as any)?.price_locked === true) {
-    const { error: mapOnlyErr } = await supabase
+    await supabase
       .from('supplier_item_mappings')
       .update({ last_known_price: unitPrice })
       .eq('supplier_id', supplierId)
       .eq('supplier_item_name', originalName)
       .eq('ingredient_id', ingredientId)
-    if (mapOnlyErr) return { ok: false, message: `Error actualizando mapeo: ${mapOnlyErr.message}` }
-    return {
-      ok: true,
-      warning: 'Este ingrediente tiene precio fijo: no se ha cambiado el precio del catálogo (solo referencia del proveedor).',
-    }
+    return { ok: true, warning: 'Precio fijo: no se ha cambiado el precio del catálogo.' }
+  }
+
+  const factorRaw = (mapping as any)?.conversion_factor as number | null
+  const fallbackFactor = await effectiveConversionFactorForIngredient(supabase, ingredientId, factorRaw)
+
+  const { data: newPrice, error: rpcErr } = await supabase.rpc('invoice_line_price_to_purchase_unit', {
+    p_unit_price: unitPrice,
+    p_mapping_content_qty: (mapping as any)?.line_content_qty || null,
+    p_mapping_content_unit: (mapping as any)?.line_content_unit || null,
+    p_ingredient_purchase_unit: (ing as any)?.purchase_unit,
+    p_fallback_factor: fallbackFactor,
+  })
+
+  if (rpcErr || newPrice == null) {
+    return { ok: false, message: 'Descuadre dimensional: Imposible calcular el nuevo precio unitario.' }
   }
 
   const oldPrice = ((ing as any)?.current_price as number | null) ?? 0
-
   const { error: histErr } = await supabase.from('ingredient_price_history').insert({
     ingredient_id: ingredientId,
     old_price: oldPrice,
@@ -147,13 +146,12 @@ async function resyncIngredientPriceForMappedLine(
     .eq('id', ingredientId)
   if (ingUpdErr) return { ok: false, message: `Error actualizando ingrediente: ${ingUpdErr.message}` }
 
-  const { error: mapUpdErr } = await supabase
+  await supabase
     .from('supplier_item_mappings')
     .update({ last_known_price: unitPrice })
     .eq('supplier_id', supplierId)
     .eq('supplier_item_name', originalName)
     .eq('ingredient_id', ingredientId)
-  if (mapUpdErr) return { ok: false, message: `Error actualizando mapeo: ${mapUpdErr.message}` }
 
   return { ok: true }
 }
@@ -407,8 +405,13 @@ export type PurchaseInvoiceLine = {
   status: string | null
   ingredient_id: string | null
   ingredient_name: string | null
+  /** Unidad literal extraída del albarán (escáner). */
+  line_unit: string | null
   /** Factor en `supplier_item_mappings` para esta línea mapeada (mismo proveedor + nombre + ingrediente). */
   conversion_factor: number | null
+  line_billing_unit: string | null
+  line_content_qty: number | null
+  line_content_unit: string | null
 }
 
 export type PurchaseInvoiceExtraSheet = {
@@ -477,6 +480,7 @@ export async function getPurchaseInvoiceDetailAction(
         total_price,
         status,
         mapped_ingredient_id,
+        line_unit,
         ingredients(name)
       )
     `
@@ -529,7 +533,11 @@ export async function getPurchaseInvoiceDetailAction(
     status: l.status ?? null,
     ingredient_id: l.mapped_ingredient_id ?? null,
     ingredient_name: l.ingredients?.name ?? null,
+    line_unit: l.line_unit ?? null,
     conversion_factor: null as number | null,
+    line_billing_unit: null as string | null,
+    line_content_qty: null as number | null,
+    line_content_unit: null as string | null,
   })) as PurchaseInvoiceLine[]
 
   const supplierIdForMaps = (data as any).supplier_id as number | null
@@ -542,22 +550,41 @@ export async function getPurchaseInvoiceDetailAction(
     if (uniqueNames.length > 0) {
       const { data: mapRows, error: mapErr } = await gate.supabase
         .from('supplier_item_mappings')
-        .select('supplier_item_name, ingredient_id, conversion_factor')
+        .select(
+          'supplier_item_name, ingredient_id, conversion_factor, line_billing_unit, line_content_qty, line_content_unit'
+        )
         .eq('supplier_id', supplierIdForMaps)
         .in('supplier_item_name', uniqueNames)
       if (mapErr) return { success: false, message: mapErr.message }
-      const facMap = new Map<string, number>()
+      type MapRow = {
+        conversion_factor: number
+        line_billing_unit: string | null
+        line_content_qty: number | null
+        line_content_unit: string | null
+      }
+      const mapByKey = new Map<string, MapRow>()
       for (const r of mapRows ?? []) {
         const nm = String((r as any).supplier_item_name ?? '').trim()
         const ing = String((r as any).ingredient_id ?? '')
         const cf = Number((r as any).conversion_factor)
         if (!nm || !ing || !Number.isFinite(cf) || cf <= 0) continue
-        facMap.set(`${nm}::${ing}`, cf)
+        mapByKey.set(`${nm}::${ing}`, {
+          conversion_factor: cf,
+          line_billing_unit: (r as any).line_billing_unit ?? null,
+          line_content_qty:
+            (r as any).line_content_qty == null ? null : Number((r as any).line_content_qty),
+          line_content_unit: (r as any).line_content_unit ?? null,
+        })
       }
       for (const ln of lines) {
         if (!ln.ingredient_id) continue
         const key = `${String(ln.original_name ?? '').trim()}::${ln.ingredient_id}`
-        ln.conversion_factor = facMap.get(key) ?? null
+        const m = mapByKey.get(key)
+        if (!m) continue
+        ln.conversion_factor = m.conversion_factor
+        ln.line_billing_unit = m.line_billing_unit
+        ln.line_content_qty = m.line_content_qty
+        ln.line_content_unit = m.line_content_unit
       }
     }
   }
@@ -793,6 +820,10 @@ export type IngredientCandidate = {
   score: number
   current_price: number
   purchase_unit: string
+  supplier_pricing_mode: string | null
+  pack_units: number | null
+  pack_unit_size_qty: number | null
+  pack_unit_size_unit: string | null
 }
 
 // Fuente del match propuesto en la línea, de mayor a menor confianza.
@@ -810,6 +841,9 @@ export type ResolvedLineMapping = {
   source: MappingSource
   suggestedIngredientId: string | null
   suggestedFactor: number | null
+  lineBillingUnit: string | null
+  lineContentQty: number | null
+  lineContentUnit: string | null
   /** Candidatos para mostrar en el desplegable de "Sugerencias". */
   candidates: IngredientCandidate[]
   /** Alias ya guardados para el ingrediente sugerido (variantes de nombre). */
@@ -841,13 +875,26 @@ export async function resolveLineMappingAction(params: {
 
   const { data: lineRow, error: lineErr } = await gate.supabase
     .from('purchase_invoice_lines')
-    .select('original_name')
+    .select('original_name, line_unit')
     .eq('id', lineId)
     .maybeSingle()
   if (lineErr) return { success: false, message: lineErr.message }
   const originalName = String((lineRow as any)?.original_name ?? '').trim()
+  const lineUnitFromInvoice = (lineRow as any)?.line_unit as string | null
   if (!originalName) {
-    return { success: true, result: { source: 'none', suggestedIngredientId: null, suggestedFactor: null, candidates: [], knownAliases: [] } }
+    return {
+      success: true,
+      result: {
+        source: 'none',
+        suggestedIngredientId: null,
+        suggestedFactor: null,
+        lineBillingUnit: null,
+        lineContentQty: null,
+        lineContentUnit: null,
+        candidates: [],
+        knownAliases: [],
+      },
+    }
   }
 
   const { data: invRow, error: invErr } = await gate.supabase
@@ -864,7 +911,9 @@ export async function resolveLineMappingAction(params: {
   // los candidatos con precio/unidad y para el fuzzy final).
   const { data: ingRows, error: ingErr } = await gate.supabase
     .from('ingredients')
-    .select('id, name, current_price, purchase_unit')
+    .select(
+      'id, name, current_price, purchase_unit, supplier_pricing_mode, pack_units, pack_unit_size_qty, pack_unit_size_unit'
+    )
     .order('name')
     .limit(4000)
   if (ingErr) return { success: false, message: ingErr.message }
@@ -873,8 +922,25 @@ export async function resolveLineMappingAction(params: {
     name: String(r.name ?? ''),
     current_price: Number(r.current_price) || 0,
     purchase_unit: r.purchase_unit ?? 'kg',
+    supplier_pricing_mode: r.supplier_pricing_mode ?? null,
+    pack_units: r.pack_units ?? null,
+    pack_unit_size_qty: r.pack_unit_size_qty ?? null,
+    pack_unit_size_unit: r.pack_unit_size_unit ?? null,
   }))
   const ingredientById = new Map(ingredients.map((i) => [i.id, i]))
+
+  const dimensionalFromMapping = (m: {
+    line_billing_unit?: string | null
+    line_content_qty?: number | null
+    line_content_unit?: string | null
+  }) => ({
+    lineBillingUnit: (m.line_billing_unit as string | null) ?? null,
+    lineContentQty:
+      m.line_content_qty == null || !Number.isFinite(Number(m.line_content_qty))
+        ? null
+        : Number(m.line_content_qty),
+    lineContentUnit: (m.line_content_unit as string | null) ?? null,
+  })
 
   const enrichCandidates = (cands: { id: string; name: string; score: number }[]): IngredientCandidate[] =>
     cands.map((c) => {
@@ -885,6 +951,10 @@ export async function resolveLineMappingAction(params: {
         score: c.score,
         current_price: row?.current_price ?? 0,
         purchase_unit: row?.purchase_unit ?? 'kg',
+        supplier_pricing_mode: row?.supplier_pricing_mode ?? null,
+        pack_units: row?.pack_units ?? null,
+        pack_unit_size_qty: row?.pack_unit_size_qty ?? null,
+        pack_unit_size_unit: row?.pack_unit_size_unit ?? null,
       }
     })
 
@@ -905,7 +975,9 @@ export async function resolveLineMappingAction(params: {
   if (supplierId != null) {
     const { data: exact, error: exErr } = await gate.supabase
       .from('supplier_item_mappings')
-      .select('ingredient_id, conversion_factor')
+      .select(
+        'ingredient_id, conversion_factor, line_billing_unit, line_content_qty, line_content_unit'
+      )
       .eq('supplier_id', supplierId)
       .eq('supplier_item_name', originalName)
       .maybeSingle()
@@ -921,14 +993,30 @@ export async function resolveLineMappingAction(params: {
       const row = ingredientById.get(ingredientId)
       const aliases = await aliasesOf(ingredientId)
       const candidates: IngredientCandidate[] = row
-        ? [{ id: row.id, name: row.name, score: 100, current_price: row.current_price, purchase_unit: row.purchase_unit }]
+        ? [
+            {
+              id: row.id,
+              name: row.name,
+              score: 100,
+              current_price: row.current_price,
+              purchase_unit: row.purchase_unit,
+              supplier_pricing_mode: row.supplier_pricing_mode,
+              pack_units: row.pack_units,
+              pack_unit_size_qty: row.pack_unit_size_qty,
+              pack_unit_size_unit: row.pack_unit_size_unit,
+            },
+          ]
         : []
+      const dim = dimensionalFromMapping(exact as any)
       return {
         success: true,
         result: {
           source: 'dictionary_exact',
           suggestedIngredientId: ingredientId,
           suggestedFactor: factor,
+          lineBillingUnit: dim.lineBillingUnit ?? lineUnitFromInvoice,
+          lineContentQty: dim.lineContentQty,
+          lineContentUnit: dim.lineContentUnit,
           candidates,
           knownAliases: aliases,
         },
@@ -939,7 +1027,9 @@ export async function resolveLineMappingAction(params: {
     //    Buscamos mapeos del proveedor y reusamos el scorer del fuzzy.
     const { data: supplierMaps, error: smErr } = await gate.supabase
       .from('supplier_item_mappings')
-      .select('supplier_item_name, ingredient_id, conversion_factor')
+      .select(
+        'supplier_item_name, ingredient_id, conversion_factor, line_billing_unit, line_content_qty, line_content_unit'
+      )
       .eq('supplier_id', supplierId)
       .limit(2000)
     if (smErr) return { success: false, message: smErr.message }
@@ -949,6 +1039,9 @@ export async function resolveLineMappingAction(params: {
         ingredient_id: r.ingredient_id ? String(r.ingredient_id) : null,
         factor: Number(r.conversion_factor) || 1,
         alias: String(r.supplier_item_name ?? ''),
+        line_billing_unit: r.line_billing_unit ?? null,
+        line_content_qty: r.line_content_qty ?? null,
+        line_content_unit: r.line_content_unit ?? null,
       }))
       .filter((r: { ingredient_id: string | null; alias: string }) => r.ingredient_id && r.alias)
 
@@ -966,14 +1059,30 @@ export async function resolveLineMappingAction(params: {
         const aliases = await aliasesOf(bestAliasId)
         const row = ingredientById.get(bestAliasId)
         const candidates: IngredientCandidate[] = row
-          ? [{ id: row.id, name: row.name, score: aliasMatches[0]?.score ?? 80, current_price: row.current_price, purchase_unit: row.purchase_unit }]
+          ? [
+              {
+                id: row.id,
+                name: row.name,
+                score: aliasMatches[0]?.score ?? 80,
+                current_price: row.current_price,
+                purchase_unit: row.purchase_unit,
+                supplier_pricing_mode: row.supplier_pricing_mode,
+                pack_units: row.pack_units,
+                pack_unit_size_qty: row.pack_unit_size_qty,
+                pack_unit_size_unit: row.pack_unit_size_unit,
+              },
+            ]
           : []
+        const dim = winner ? dimensionalFromMapping(winner) : { lineBillingUnit: null, lineContentQty: null, lineContentUnit: null }
         return {
           success: true,
           result: {
             source: 'alias_fuzzy',
             suggestedIngredientId: bestAliasId,
             suggestedFactor: winner?.factor ?? 1,
+            lineBillingUnit: dim.lineBillingUnit ?? lineUnitFromInvoice,
+            lineContentQty: dim.lineContentQty,
+            lineContentUnit: dim.lineContentUnit,
             candidates,
             knownAliases: aliases,
           },
@@ -996,6 +1105,9 @@ export async function resolveLineMappingAction(params: {
       source: suggested ? 'ingredient_fuzzy' : 'none',
       suggestedIngredientId: suggested,
       suggestedFactor,
+      lineBillingUnit: lineUnitFromInvoice,
+      lineContentQty: null,
+      lineContentUnit: null,
       candidates,
       knownAliases: aliases,
     },
@@ -1055,7 +1167,22 @@ export async function suggestIngredientsForLineAction(params: {
 export async function searchIngredientsForMappingAction(params: {
   query: string
   limit?: number
-}): Promise<{ success: true; items: { id: string; name: string; purchase_unit: string; current_price: number }[] } | { success: false; message: string }> {
+}): Promise<
+  | {
+      success: true
+      items: {
+        id: string
+        name: string
+        purchase_unit: string
+        current_price: number
+        supplier_pricing_mode: string | null
+        pack_units: number | null
+        pack_unit_size_qty: number | null
+        pack_unit_size_unit: string | null
+      }[]
+    }
+  | { success: false; message: string }
+> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
@@ -1066,7 +1193,9 @@ export async function searchIngredientsForMappingAction(params: {
 
   const { data, error } = await gate.supabase
     .from('ingredients')
-    .select('id,name,purchase_unit,current_price')
+    .select(
+      'id,name,purchase_unit,current_price,supplier_pricing_mode,pack_units,pack_unit_size_qty,pack_unit_size_unit'
+    )
     .ilike('name', `%${q}%`)
     .order('name')
     .limit(limit)
@@ -1077,6 +1206,10 @@ export async function searchIngredientsForMappingAction(params: {
     name: String(r.name ?? ''),
     purchase_unit: r.purchase_unit ?? 'kg',
     current_price: Number(r.current_price) || 0,
+    supplier_pricing_mode: r.supplier_pricing_mode ?? null,
+    pack_units: r.pack_units == null ? null : Number(r.pack_units),
+    pack_unit_size_qty: r.pack_unit_size_qty == null ? null : Number(r.pack_unit_size_qty),
+    pack_unit_size_unit: r.pack_unit_size_unit ?? null,
   }))
 
   return { success: true, items }
@@ -1087,6 +1220,9 @@ export async function confirmInvoiceLineMappingAction(params: {
   invoiceId: string
   ingredientId: string
   conversionFactor: number
+  lineBillingUnit?: string | null
+  lineContentQty?: number | null
+  lineContentUnit?: string | null
 }): Promise<{ success: true } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
@@ -1127,6 +1263,9 @@ export async function confirmInvoiceLineMappingAction(params: {
         supplier_item_name: originalName,
         ingredient_id: ingredientId,
         conversion_factor: effectiveFactor,
+        line_billing_unit: params.lineBillingUnit || null,
+        line_content_qty: params.lineContentQty || null,
+        line_content_unit: params.lineContentUnit || null,
         last_known_price: (line as any)?.unit_price ?? null,
       },
       { onConflict: 'supplier_id,supplier_item_name' }
@@ -1166,6 +1305,9 @@ export async function updateMappedLineConversionFactorAction(params: {
   invoiceId: string
   lineId: string
   conversionFactor: number
+  lineBillingUnit?: string | null
+  lineContentQty?: number | null
+  lineContentUnit?: string | null
 }): Promise<
   { success: true; warning?: string; stockRectified: boolean } | { success: false; message: string }
 > {
@@ -1213,6 +1355,9 @@ export async function updateMappedLineConversionFactorAction(params: {
       supplier_item_name: originalName,
       ingredient_id: ingredientId,
       conversion_factor: factor,
+      line_billing_unit: params.lineBillingUnit || null,
+      line_content_qty: params.lineContentQty || null,
+      line_content_unit: params.lineContentUnit || null,
       last_known_price: unitPrice ?? null,
     },
     { onConflict: 'supplier_id,supplier_item_name' }
@@ -1251,7 +1396,10 @@ export async function updateMappedLineConversionFactorAction(params: {
           'Hay stock aplicado y la línea no tiene cantidad válida: corrige la cantidad en la línea o usa «Rectificar stock».',
       }
     }
-    const newQty = lineQty * factor
+    const contentQty = params.lineContentQty
+    const effectiveQtyPerUnit =
+      contentQty != null && Number.isFinite(contentQty) && contentQty > 0 ? contentQty : factor
+    const newQty = lineQty * effectiveQtyPerUnit
     if (Math.abs(newQty - oldApplied) > 1e-6) {
       const rect = await rectifyInvoiceLineStockAction({ lineId, ingredientId, newQtyApplied: newQty })
       if (!rect.success) return { success: false, message: rect.message }

@@ -89,3 +89,79 @@ export function suggestedAlbaranConversionFactorFromIngredient(row: {
   if (packCount === 1) return perPiece
   return perPiece / packCount
 }
+
+/** Unidades operativas para `line_content_unit` en mapeos de albarán. */
+export const ALBARAN_LINE_CONTENT_UNITS = ['l', 'ml', 'cl', 'kg', 'g', 'ud'] as const
+
+export type IngredientDimensionalSource = {
+  supplier_pricing_mode?: string | null
+  purchase_unit?: string | null
+  pack_unit_size_qty?: number | null
+  pack_unit_size_unit?: string | null
+  pack_units?: number | null
+}
+
+export type DimensionalMappingSuggestion = {
+  lineBillingUnit: string
+  lineContentQty: string
+  lineContentUnit: string
+  conversionFactor: number | null
+}
+
+/**
+ * Propone tríada dimensional + factor legacy de respaldo para UI de mapeo de albaranes.
+ * Prioridad: mapeo guardado en BD > pack del ingrediente > unidad de compra homogénea.
+ */
+export function suggestedDimensionalMappingFromIngredient(
+  row: IngredientDimensionalSource,
+  options?: {
+    lineUnitFromInvoice?: string | null
+    storedBillingUnit?: string | null
+    storedContentQty?: number | null
+    storedContentUnit?: string | null
+  }
+): DimensionalMappingSuggestion {
+  const lineUnitHint = String(options?.lineUnitFromInvoice ?? '').trim().toLowerCase()
+  const storedQty = options?.storedContentQty
+  const storedUnit = options?.storedContentUnit ? norm(options.storedContentUnit) : ''
+  if (storedQty != null && Number.isFinite(Number(storedQty)) && Number(storedQty) > 0 && storedUnit) {
+    return {
+      lineBillingUnit: String(options?.storedBillingUnit ?? '').trim() || lineUnitHint || 'ud',
+      lineContentQty: String(storedQty),
+      lineContentUnit: storedUnit,
+      conversionFactor: suggestedAlbaranConversionFactorFromIngredient(row),
+    }
+  }
+
+  const mode = String(row.supplier_pricing_mode ?? 'per_purchase_unit')
+  const pu = norm(row.purchase_unit)
+
+  if (mode === 'per_pack') {
+    const pq = row.pack_unit_size_qty == null ? null : Number(row.pack_unit_size_qty)
+    const pUnit = row.pack_unit_size_unit ? norm(row.pack_unit_size_unit) : ''
+    if (pq != null && Number.isFinite(pq) && pq > 0 && pUnit) {
+      return {
+        lineBillingUnit: lineUnitHint || 'ud',
+        lineContentQty: String(pq),
+        lineContentUnit: pUnit,
+        conversionFactor: suggestedAlbaranConversionFactorFromIngredient(row),
+      }
+    }
+  }
+
+  if (pu === 'l' || pu === 'kg') {
+    return {
+      lineBillingUnit: lineUnitHint || pu,
+      lineContentQty: '1',
+      lineContentUnit: pu,
+      conversionFactor: 1,
+    }
+  }
+
+  return {
+    lineBillingUnit: lineUnitHint || 'ud',
+    lineContentQty: '1',
+    lineContentUnit: 'ud',
+    conversionFactor: suggestedAlbaranConversionFactorFromIngredient(row) ?? 1,
+  }
+}
