@@ -30,7 +30,12 @@ alter table public.digital_menu_overrides
     )
   );
 
-create or replace view public.v_digital_menu_items as
+-- CREATE OR REPLACE no permite insertar columnas en medio: Postgres empareja por posición.
+-- Hay que recrear las vistas (hija primero).
+drop view if exists public.v_public_menu_items;
+drop view if exists public.v_digital_menu_items;
+
+create view public.v_digital_menu_items as
 select
   a.id as articulo_id,
   a.nombre as articulo_nombre,
@@ -108,7 +113,7 @@ comment on view public.v_digital_menu_items is
 
 grant select on public.v_digital_menu_items to authenticated;
 
-create or replace view public.v_public_menu_items as
+create view public.v_public_menu_items as
 select
   articulo_id,
   carta_nombre,
