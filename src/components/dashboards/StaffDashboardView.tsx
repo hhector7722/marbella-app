@@ -1055,7 +1055,7 @@ export default function StaffDashboardView() {
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
+                                            <span className="font-bold text-sm tracking-tight text-left">Carta</span>
                                         </Link>
 
                                         <button

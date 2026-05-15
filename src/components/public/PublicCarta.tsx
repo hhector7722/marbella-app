@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { ChevronLeft, Pencil, X } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
+import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   type CartaLang,
@@ -206,53 +207,25 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto pb-6 sm:mt-5">
-          <div
-            className="grid min-h-0 flex-1 grid-cols-1 gap-3 sm:gap-4"
-            style={
-              grouped.length > 0
-                ? { gridTemplateRows: `repeat(${grouped.length}, minmax(4.5rem, 1fr))` }
-                : undefined
-            }
-          >
+        <section className="mt-3 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-4">
+          <CartaCategoryGrid>
             {grouped.map((group) => (
-              <div
+              <CartaCategoryCard
                 key={group.key}
-                className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedSubKeyByGroup((p) => {
-                      const n = { ...p }
-                      delete n[group.key]
-                      return n
-                    })
-                    setOpenKey((prev) => (prev === group.key ? null : group.key))
-                  }}
-                  className="flex h-full min-h-0 w-full shrink-0 flex-1 items-center justify-center px-3 py-2.5 active:bg-zinc-50 sm:px-4"
-                  aria-expanded={openKey === group.key}
-                >
-                  <span className="flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
-                    {group.coverPhotoUrl ? (
-                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white sm:h-14 sm:w-14">
-                        <Image
-                          src={group.coverPhotoUrl}
-                          alt=""
-                          fill
-                          sizes="56px"
-                          className="object-contain object-center"
-                        />
-                      </span>
-                    ) : null}
-                    <span className="min-w-0 max-w-[85%] text-center text-sm font-black uppercase leading-tight tracking-widest text-[#36606F] sm:max-w-none sm:text-base md:text-lg">
-                      {group.title}
-                    </span>
-                  </span>
-                </button>
-              </div>
+                title={group.title}
+                coverPhotoUrl={group.coverPhotoUrl}
+                ariaExpanded={openKey === group.key}
+                onClick={() => {
+                  setSelectedSubKeyByGroup((p) => {
+                    const n = { ...p }
+                    delete n[group.key]
+                    return n
+                  })
+                  setOpenKey((prev) => (prev === group.key ? null : group.key))
+                }}
+              />
             ))}
-          </div>
+          </CartaCategoryGrid>
         </section>
       </div>
 

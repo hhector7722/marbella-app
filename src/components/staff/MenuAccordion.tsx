@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
+import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { cn } from '@/lib/utils'
 import { Check, Circle, GripVertical, Loader2, Pencil, X } from 'lucide-react'
@@ -665,181 +666,76 @@ export function MenuAccordion({
     }
 
     const gridBlock = (
-        <div
-            className={cn(
-                'grid grid-cols-1 gap-3 sm:gap-4',
-                hideLangPicker && 'min-h-0 flex-1 pt-0',
-                !hideLangPicker && 'mt-4 sm:mt-5'
-            )}
-            style={
-                hideLangPicker && displayGrouped.length > 0
-                    ? {
-                          gridTemplateRows: `repeat(${displayGrouped.length}, minmax(4.5rem, 1fr))`,
-                      }
-                    : undefined
-            }
+        <CartaCategoryGrid
+            className={cn(hideLangPicker && 'min-h-0 flex-1 pt-0', !hideLangPicker && 'mt-4 sm:mt-5')}
         >
             {displayGrouped.map((group) => {
                 const isOpen = openKey === group.key
-                const headerMain = (
-                    <>
-                        <button
-                            type="button"
-                            onClick={() => headerToggle(group.key)}
-                            className={cn(
-                                'flex min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3',
-                                hideLangPicker ? 'min-h-0 h-full' : 'min-h-[52px]'
-                            )}
-                            aria-expanded={isOpen}
-                        >
-                            <span className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2 sm:gap-3">
-                                {group.coverPhotoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
-                                    <img
-                                        src={group.coverPhotoUrl}
-                                        alt=""
-                                        className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain object-center sm:h-14 sm:w-14"
-                                    />
-                                ) : null}
-                                <span className="min-w-0 max-w-[85%] text-center text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-base md:text-lg">
-                                    {group.title}
-                                </span>
-                            </span>
-                        </button>
-                        {editMode && isUuidLike(group.key) && onEditParentCategory ? (
-                            <span
-                                className="flex shrink-0 items-stretch pr-1"
+
+                if (reorderScope === 'parents') {
+                    return (
+                        <CartaCategoryCard
+                            key={group.key}
+                            title={group.title}
+                            coverPhotoUrl={group.coverPhotoUrl}
+                            nativeImg
+                            highlighted={reorderPick === group.key && isUuidLike(group.key)}
+                            disabled={!isUuidLike(group.key)}
+                            onClick={() => handleParentReorderTap(group.key)}
+                        />
+                    )
+                }
+
+                return (
+                    <div key={group.key} className="flex min-w-0 w-full items-stretch">
+                        {editMode && onPersistParentCategoryOrder && !reorderScope ? (
+                            <button
+                                type="button"
+                                className="flex w-10 shrink-0 touch-manipulation items-center justify-center self-stretch bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-11"
+                                aria-label="Cambiar posición de secciones"
+                                title="Cambiar posición de secciones"
                                 onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
+                                    setOpenKey(null)
+                                    setReorderPick(null)
+                                    setParentKeysDraft(groupedRef.current.map((g) => g.key))
+                                    setReorderScope('parents')
                                 }}
                             >
-                                <button
-                                    type="button"
-                                    onClick={() => onEditParentCategory?.(group.key)}
-                                    className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center self-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                    aria-label="Editar categoría"
-                                    title="Editar categoría"
-                                >
-                                    <Pencil className="h-5 w-5" strokeWidth={2.5} />
-                                </button>
-                            </span>
-                        ) : null}
-                    </>
-                )
-                const headerCard = (
-                    <div
-                        className={cn(
-                            'overflow-hidden rounded-2xl bg-white transition-colors duration-200',
-                            isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70',
-                            hideLangPicker && 'flex min-h-0 flex-1 flex-col'
-                        )}
-                    >
-                        <div
-                            className={cn(
-                                'flex w-full items-stretch',
-                                hideLangPicker ? 'min-h-0 flex-1' : 'min-h-[52px]'
-                            )}
-                        >
-                            {editMode && onPersistParentCategoryOrder && !reorderScope ? (
-                                <button
-                                    type="button"
-                                    className={cn(
-                                        'flex w-11 shrink-0 touch-manipulation items-center justify-center bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-12',
-                                        hideLangPicker ? 'min-h-0 self-stretch' : 'min-h-[52px]'
-                                    )}
-                                    aria-label="Cambiar posición de secciones"
-                                    title="Cambiar posición de secciones"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        setOpenKey(null)
-                                        setReorderPick(null)
-                                        setParentKeysDraft(groupedRef.current.map((g) => g.key))
-                                        setReorderScope('parents')
-                                    }}
-                                >
-                                    <GripVertical className="h-5 w-5" strokeWidth={2.5} />
-                                </button>
-                            ) : null}
-                            {headerMain}
-                        </div>
-                    </div>
-                )
-
-                const parentReorderCard = (
-                    <div
-                        className={cn(
-                            'overflow-hidden rounded-2xl bg-white transition-colors duration-200',
-                            isOpen ? 'bg-zinc-50' : 'hover:bg-zinc-50/70',
-                            reorderPick === group.key && isUuidLike(group.key) && 'bg-amber-50/80',
-                            hideLangPicker && 'flex min-h-0 flex-1 flex-col'
-                        )}
-                    >
-                        <div
-                            className={cn(
-                                'flex w-full items-stretch',
-                                hideLangPicker ? 'min-h-0 flex-1' : 'min-h-[52px]'
-                            )}
-                        >
-                            <button
-                                type="button"
-                                disabled={!isUuidLike(group.key)}
-                                onClick={() => handleParentReorderTap(group.key)}
-                                className={cn(
-                                    'flex min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 active:bg-zinc-50 sm:px-3',
-                                    hideLangPicker ? 'min-h-0 h-full' : 'min-h-[52px]',
-                                    !isUuidLike(group.key) && 'cursor-not-allowed opacity-50'
-                                )}
-                            >
-                                <span className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2 sm:gap-3">
-                                    {group.coverPhotoUrl ? (
-                                        // eslint-disable-next-line @next/next/no-img-element -- URL desde Storage/receta
-                                        <img
-                                            src={group.coverPhotoUrl}
-                                            alt=""
-                                            className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain object-center sm:h-14 sm:w-14"
-                                        />
-                                    ) : null}
-                                    <span className="min-w-0 max-w-[85%] text-center text-sm font-black uppercase leading-tight tracking-wide text-[#36606F] sm:max-w-none sm:text-base md:text-lg">
-                                        {group.title}
-                                    </span>
-                                </span>
+                                <GripVertical className="h-5 w-5" strokeWidth={2.5} />
                             </button>
-                            {editMode && isUuidLike(group.key) && onEditParentCategory ? (
-                                <span
-                                    className="flex shrink-0 items-stretch pr-1"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                    }}
-                                >
+                        ) : null}
+                        <CartaCategoryCard
+                            className="min-w-0 flex-1"
+                            title={group.title}
+                            coverPhotoUrl={group.coverPhotoUrl}
+                            nativeImg
+                            ariaExpanded={isOpen}
+                            onClick={() => headerToggle(group.key)}
+                            overlay={
+                                editMode && isUuidLike(group.key) && onEditParentCategory ? (
                                     <button
                                         type="button"
-                                        onClick={() => onEditParentCategory?.(group.key)}
-                                        className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center self-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            onEditParentCategory(group.key)
+                                        }}
+                                        className="absolute right-0 top-0 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#36606F] active:opacity-70 sm:min-h-[48px] sm:min-w-[48px]"
                                         aria-label="Editar categoría"
                                         title="Editar categoría"
                                     >
                                         <Pencil className="h-5 w-5" strokeWidth={2.5} />
                                     </button>
-                                </span>
-                            ) : null}
-                        </div>
+                                ) : null
+                            }
+                        />
                     </div>
                 )
-
-                return (
-                    <Fragment key={group.key}>
-                        <div className={cn(hideLangPicker && 'flex h-full min-h-0 flex-col')}>
-                            {reorderScope === 'parents' ? parentReorderCard : headerCard}
-                        </div>
-                    </Fragment>
-                )
             })}
-        </div>
+        </CartaCategoryGrid>
     )
-
     return (
         <div className={hideLangPicker ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'}>
             {!hideLangPicker ? (
