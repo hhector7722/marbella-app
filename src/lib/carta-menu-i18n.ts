@@ -71,6 +71,15 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       editorMenuPrice: 'Precio del menú en carta',
       editorMenuPriceHint:
         'Las opciones no muestran precio; solo el artículo marcado como precio del menú.',
+      staffEditHint: 'Asigna cada opción a un tramo. Pulsa el lápiz para nombre y foto.',
+      staffReorderHint: '1) Pulsa la opción a mover. 2) Pulsa la posición destino en este tramo. 3) Guardar orden.',
+      staffReorderPickSection: 'Tramo a reordenar',
+      staffMenuPriceSection: 'Precio del menú (solo uno)',
+      staffSlotShortEntrante: 'Entr.',
+      staffSlotShortPrincipal: 'Princ.',
+      staffSlotShortGuarnicion: 'Guarn.',
+      staffMarkMenuPrice: 'Precio menú',
+      staffEditItem: 'Editar',
     },
     ca: {
       intro: 'Un sol plat amb tres eleccions: entrant, plat principal i guarnició.',
@@ -87,6 +96,15 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       editorMenuPrice: 'Preu del menú a la carta',
       editorMenuPriceHint:
         'Les opcions no mostren preu; només l’article marcat com a preu del menú.',
+      staffEditHint: 'Assigna cada opció a un tram. Prem el llapis per nom i foto.',
+      staffReorderHint: '1) Prem l’opció a moure. 2) Prem la posició destí en aquest tram. 3) Desar ordre.',
+      staffReorderPickSection: 'Tram a reordenar',
+      staffMenuPriceSection: 'Preu del menú (només un)',
+      staffSlotShortEntrante: 'Entr.',
+      staffSlotShortPrincipal: 'Princ.',
+      staffSlotShortGuarnicion: 'Guarn.',
+      staffMarkMenuPrice: 'Preu menú',
+      staffEditItem: 'Editar',
     },
     en: {
       intro: 'One plate with three choices: starter, main course and side.',
@@ -102,6 +120,15 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       editorSlotGuarnicion: 'Side',
       editorMenuPrice: 'Menu price on the card',
       editorMenuPriceHint: 'Options show no price; only the item marked as menu price.',
+      staffEditHint: 'Assign each option to a section. Tap pencil for name and photo.',
+      staffReorderHint: '1) Tap the option to move. 2) Tap destination in this section. 3) Save order.',
+      staffReorderPickSection: 'Section to reorder',
+      staffMenuPriceSection: 'Menu price (one only)',
+      staffSlotShortEntrante: 'Start.',
+      staffSlotShortPrincipal: 'Main',
+      staffSlotShortGuarnicion: 'Side',
+      staffMarkMenuPrice: 'Menu price',
+      staffEditItem: 'Edit',
     },
   } as const
   return dict[lang]

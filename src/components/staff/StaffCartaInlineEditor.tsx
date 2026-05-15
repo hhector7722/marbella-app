@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { setMenuCategorySortOrders, upsertMenuOverride } from '@/app/dashboard/carta/actions'
+import { PLATO_MARBELLA_CHILD_SLUG, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import { MenuCategoryEditModal } from '@/components/carta/MenuCategoryEditModal'
 import { MenuItemEditModal } from '@/components/carta/MenuItemEditModal'
@@ -81,6 +82,7 @@ export function StaffCartaInlineEditor({
   const [loading, setLoading] = useState(true)
   const [, startTransition] = useTransition()
   const [savingArticuloId, setSavingArticuloId] = useState<number | null>(null)
+  const [platoMarbellaSlotSavingId, setPlatoMarbellaSlotSavingId] = useState<number | null>(null)
 
   const [digitalRows, setDigitalRows] = useState<DigitalMenuRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
@@ -94,6 +96,11 @@ export function StaffCartaInlineEditor({
     for (const c of categories) m.set(c.id, c)
     return m
   }, [categories])
+
+  const platoMarbellaCategoryId = useMemo(
+    () => categories.find((c) => c.slug === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null,
+    [categories]
+  )
 
   const categoryForModal = useMemo(() => {
     if (!categoryModalId) return null
@@ -374,6 +381,54 @@ export function StaffCartaInlineEditor({
     }
   }
 
+  const onPlatoMarbellaSlotChange = (
+    articulo_id: number,
+    slot: PlatoMarbellaSlot | null,
+    isMenuPrice: boolean
+  ) => {
+    if (!platoMarbellaCategoryId) {
+      toast.error('No se encontró la subcategoría Plato Marbella en el menú.')
+      return
+    }
+
+    setDigitalRows((rows) =>
+      rows.map((r) => {
+        if (r.articulo_id === articulo_id) {
+          return {
+            ...r,
+            category_id: platoMarbellaCategoryId,
+            plato_marbella_slot: isMenuPrice ? null : slot,
+            plato_marbella_is_menu_price: isMenuPrice,
+          }
+        }
+        if (isMenuPrice && r.plato_marbella_is_menu_price) {
+          return { ...r, plato_marbella_is_menu_price: false }
+        }
+        return r
+      })
+    )
+
+    startTransition(async () => {
+      setPlatoMarbellaSlotSavingId(articulo_id)
+      try {
+        const res = await upsertMenuOverride({
+          articulo_id,
+          category_id: platoMarbellaCategoryId,
+          plato_marbella_slot: slot,
+          plato_marbella_is_menu_price: isMenuPrice,
+        })
+        if (!res.success) {
+          toast.error(res.error ?? 'No se pudo guardar el tramo')
+          await load({ silent: true })
+          return
+        }
+        await load({ silent: true })
+      } finally {
+        setPlatoMarbellaSlotSavingId(null)
+      }
+    })
+  }
+
   const onToggleVisible = (articulo_id: number) => {
     const row = digitalRows.find((x) => x.articulo_id === articulo_id)
     const nextHidden = !(row?.editor_is_hidden ?? false)
@@ -428,6 +483,9 @@ export function StaffCartaInlineEditor({
           onPersistParentCategoryOrder={persistParentCategoryOrder}
           onPersistChildCategoryOrder={persistChildCategoryOrder}
           onPersistProductOrder={persistProductOrder}
+          platoMarbellaCategoryId={platoMarbellaCategoryId}
+          onPlatoMarbellaSlotChange={onPlatoMarbellaSlotChange}
+          platoMarbellaSlotSavingId={platoMarbellaSlotSavingId}
         />
       </div>
 

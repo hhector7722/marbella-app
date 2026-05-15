@@ -14,7 +14,20 @@ export type PlatoMarbellaMenuRow = {
   plato_marbella_is_menu_price?: boolean | null
 }
 
-const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
+export const PLATO_MARBELLA_SLOTS: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
+
+const SLOT_ORDER = PLATO_MARBELLA_SLOTS
+
+export type PlatoMarbellaReorderSection = PlatoMarbellaSlot | 'unassigned'
+
+export function platoMarbellaRowsForReorderSection(
+  rows: PlatoMarbellaMenuRow[],
+  section: PlatoMarbellaReorderSection
+): PlatoMarbellaMenuRow[] {
+  const g = groupPlatoMarbellaItems(rows)
+  if (section === 'unassigned') return g.unassigned
+  return g.sections[section]
+}
 
 function sortByOrder<T extends { sort_order?: number | null; articulo_id: number }>(rows: T[]): T[] {
   return rows.slice().sort((a, b) => {
