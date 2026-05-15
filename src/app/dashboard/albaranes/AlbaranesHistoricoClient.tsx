@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import {
   AlertCircle,
-  ArrowRight,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -114,7 +113,8 @@ export default function AlbaranesHistoricoClient({
   const [stockStatusByLineId, setStockStatusByLineId] = useState<
     Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }>
   >({})
-  const [mappingOpenLineId, setMappingOpenLineId] = useState<string | null>(null)
+  /** Línea en edición completa (datos + vínculo). Solo una a la vez. */
+  const [activeEditLineId, setActiveEditLineId] = useState<string | null>(null)
   const [mappingError, setMappingError] = useState<string | null>(null)
   const [mappingLoading, setMappingLoading] = useState(false)
   /** Nombre legible del ingrediente elegido (preselección o búsqueda). */
@@ -129,7 +129,6 @@ export default function AlbaranesHistoricoClient({
   const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
   const [wizardTargetLineId, setWizardTargetLineId] = useState<string | null>(null)
   const [wizardInvoiceContext, setWizardInvoiceContext] = useState<IngredientWizardInvoiceContext | null>(null)
-  const [expandedLineIds, setExpandedLineIds] = useState<Record<string, boolean>>({})
   const [repairingStockLineId, setRepairingStockLineId] = useState<string | null>(null)
   const [repairingInvoiceStockBatch, setRepairingInvoiceStockBatch] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
@@ -341,7 +340,7 @@ export default function AlbaranesHistoricoClient({
     setSaveWarning(null)
     setDraftLines({})
     setStockStatusByLineId({})
-    setMappingOpenLineId(null)
+    setActiveEditLineId(null)
     setMappingError(null)
     setIngredientPickLabelByLineId({})
     setIngredientSearchQuery('')
@@ -464,7 +463,7 @@ export default function AlbaranesHistoricoClient({
     setSupplierError(null)
     setSupplierSaving(false)
     setStockStatusByLineId({})
-    setMappingOpenLineId(null)
+    setActiveEditLineId(null)
     setMappingError(null)
     setMappingLoading(false)
     setIngredientPickLabelByLineId({})
@@ -478,7 +477,7 @@ export default function AlbaranesHistoricoClient({
     setWizardInitialName(null)
     setWizardTargetLineId(null)
     setWizardInvoiceContext(null)
-    setExpandedLineIds({})
+    setActiveEditLineId(null)
     setAppendSheetBusy(false)
     if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
     setInvoiceImageViewerOpen(false)
@@ -560,6 +559,7 @@ export default function AlbaranesHistoricoClient({
         }
       }
       setDraftLines(nextDraft)
+      if (activeEditLineId === lineId) closeLineEdit()
     } finally {
       setSavingLineId(null)
     }
@@ -620,10 +620,17 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  async function openMapping(lineId: string) {
-    if (!detail) return
+  function closeLineEdit() {
+    setActiveEditLineId(null)
     setMappingError(null)
-    setMappingOpenLineId(lineId)
+    setIngredientSearchQuery('')
+    setIngredientSearchResults([])
+  }
+
+  async function openLineEdit(lineId: string) {
+    if (!detail) return
+    setActiveEditLineId(lineId)
+    setMappingError(null)
     setMappingLoading(true)
     try {
       // Resolver con cascada (diccionario exacto -> alias del proveedor -> fuzzy ingrediente)
@@ -740,7 +747,7 @@ export default function AlbaranesHistoricoClient({
         for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
         setStockStatusByLineId(map)
       }
-      setMappingOpenLineId(null)
+      closeLineEdit()
     } finally {
       setMappingLoading(false)
     }
@@ -850,7 +857,7 @@ export default function AlbaranesHistoricoClient({
         return
       }
       await refreshDetailAndStock()
-      await openMapping(lineId)
+      await openLineEdit(lineId)
     } finally {
       setMappingLoading(false)
     }
@@ -940,8 +947,7 @@ export default function AlbaranesHistoricoClient({
       setDetail(null)
       setDraftLines({})
       setStockStatusByLineId({})
-      setExpandedLineIds({})
-      setMappingOpenLineId(null)
+    setActiveEditLineId(null)
       const lRes = await listPurchaseInvoicesAction({ limit: 60 })
       if (lRes.success) setItems(lRes.items)
     } finally {
@@ -1336,7 +1342,7 @@ export default function AlbaranesHistoricoClient({
                             detail.lines.map((l) => {
                               const d = draftLines[l.id]
                               const canEdit = true
-                              const isExpanded = Boolean(expandedLineIds[l.id])
+                              const isEditing = activeEditLineId === l.id
                               const stock = stockStatusByLineId[l.id]
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
@@ -1362,7 +1368,10 @@ export default function AlbaranesHistoricoClient({
                                   <div className="flex items-center gap-2">
                                     <button
                                       type="button"
-                                      onClick={() => setExpandedLineIds((p) => ({ ...p, [l.id]: !Boolean(p[l.id]) }))}
+                                      onClick={() => {
+                                        if (activeEditLineId === l.id) closeLineEdit()
+                                        else void openLineEdit(l.id)
+                                      }}
                                       className="flex-1 min-w-0 text-left flex items-center gap-2"
                                     >
                                       <span className="text-sm font-black text-zinc-900 truncate">
@@ -1430,8 +1439,7 @@ export default function AlbaranesHistoricoClient({
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          setExpandedLineIds((p) => ({ ...p, [l.id]: true }))
-                                          void openMapping(l.id)
+                                          void openLineEdit(l.id)
                                         }}
                                         className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition"
                                         aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
@@ -1442,430 +1450,309 @@ export default function AlbaranesHistoricoClient({
                                     </div>
                                   </div>
 
-                                  {isExpanded ? (
-                                    <div className="mt-3 rounded-2xl border border-[#36606F]/12 bg-[#36606F]/[0.06] p-3 sm:p-4">
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                      <div className="min-w-0 flex-1 space-y-3">
-                                        {canEdit ? (
-                                          <input
-                                            value={d?.original_name ?? ''}
-                                            onChange={(e) => setDraft(l.id, { original_name: e.target.value })}
-                                            className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
-                                            placeholder="Nombre línea"
-                                          />
-                                        ) : null}
+                                  {isEditing ? (
+                                    <div className="mt-2 rounded-xl border border-[#36606F]/25 bg-[#36606F]/[0.12] p-2 sm:p-2.5">
+                                    <div className="flex flex-col gap-2">
+                                      {mappingError ? (
+                                        <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-bold text-rose-800">
+                                          {mappingError}
+                                        </div>
+                                      ) : null}
 
-                                        <div className="mt-2 grid grid-cols-3 gap-2">
-                                          <div className="min-w-0">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Cantidad</p>
-                                            <p className="text-[10px] font-bold text-zinc-500 leading-snug mb-1">
-                                              Si el PU es €/kg, pon aquí los <span className="text-zinc-800">kg totales</span> de la línea (p. ej. pesada), no solo el nº de piezas.
-                                            </p>
+                                      {mappingLoading ? (
+                                        <div className="flex items-center gap-2 py-2 text-xs font-semibold text-zinc-600">
+                                          <Loader2 className="h-4 w-4 animate-spin text-[#36606F]" />
+                                          Preparando edición…
+                                        </div>
+                                      ) : (
+                                        <>
+                                      <div className="flex flex-wrap items-stretch gap-1.5">
+                                        <input
+                                          value={d?.original_name ?? ''}
+                                          onChange={(e) => setDraft(l.id, { original_name: e.target.value })}
+                                          className="min-h-12 min-w-[8rem] flex-1 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
+                                          placeholder="Nombre línea"
+                                        />
+                                        <div className="relative min-h-12 min-w-[10rem] flex-[1.4]">
+                                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                                          <input
+                                            value={ingredientSearchQuery}
+                                            onChange={(e) => void runIngredientSearch(e.target.value)}
+                                            placeholder="Producto almacén…"
+                                            className="h-full w-full rounded-lg border border-zinc-200/90 bg-white py-2 pl-9 pr-2 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/40"
+                                          />
+                                        </div>
+                                        <input
+                                          id={`factor-top-${l.id}`}
+                                          inputMode="decimal"
+                                          value={factorByLineId[l.id] ?? '1'}
+                                          onChange={(e) =>
+                                            setFactorByLineId((p) => ({
+                                              ...p,
+                                              [l.id]: e.target.value,
+                                            }))
+                                          }
+                                          title="Unidades de compra del ingrediente por 1 unidad del albarán"
+                                          className="w-20 min-h-12 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2 text-sm font-bold text-zinc-900 outline-none focus:border-[#36606F]/40"
+                                          placeholder="×"
+                                          aria-label="Factor de conversión"
+                                        />
+                                        {(() => {
+                                          const mappedSameIngredient =
+                                            Boolean(l.ingredient_id) &&
+                                            String(l.status ?? '') === 'mapped' &&
+                                            String(selectedIngredientByLineId[l.id] ?? '') ===
+                                              String(l.ingredient_id)
+                                          return (
+                                            <button
+                                              type="button"
+                                              onClick={() => void confirmMapping(l.id)}
+                                              disabled={mappingLoading || !detail.supplier_id}
+                                              className={cn(
+                                                'min-h-12 shrink-0 rounded-lg bg-[#36606F] px-3 text-[11px] font-black uppercase tracking-wide text-white shadow-sm hover:bg-[#2d4f5c]',
+                                                (mappingLoading || !detail.supplier_id) &&
+                                                  'pointer-events-none opacity-50'
+                                              )}
+                                            >
+                                              {mappedSameIngredient ? 'Guardar' : 'Vincular'}
+                                            </button>
+                                          )
+                                        })()}
+                                        <button
+                                          type="button"
+                                          onClick={closeLineEdit}
+                                          className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-lg border border-zinc-200/90 bg-white text-zinc-600 hover:bg-zinc-50"
+                                          aria-label="Cerrar edición"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
+
+                                      {selectedIngredientByLineId[l.id] ? (
+                                        <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1">
+                                          <div className="flex min-w-0 items-center gap-1.5">
+                                            <Check className="h-4 w-4 shrink-0 text-emerald-700" strokeWidth={2.5} />
+                                            <span className="truncate text-xs font-black text-emerald-950">
+                                              {ingredientPickLabelByLineId[l.id]?.trim() || 'Producto seleccionado'}
+                                            </span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            className="shrink-0 text-[10px] font-bold uppercase text-emerald-900 underline-offset-2 hover:underline"
+                                            onClick={() => {
+                                              setSelectedIngredientByLineId((p) => ({ ...p, [l.id]: null }))
+                                              setIngredientPickLabelByLineId((p) => ({ ...p, [l.id]: null }))
+                                            }}
+                                          >
+                                            Cambiar
+                                          </button>
+                                        </div>
+                                      ) : null}
+
+                                      {ingredientSearchLoading ? (
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                          Buscando…
+                                        </div>
+                                      ) : ingredientSearchResults.length ? (
+                                        <div className="max-h-28 space-y-1 overflow-y-auto">
+                                          {ingredientSearchResults.map((it) => (
+                                            <button
+                                              key={it.id}
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedIngredientByLineId((p) => ({ ...p, [l.id]: it.id }))
+                                                setIngredientPickLabelByLineId((p) => ({ ...p, [l.id]: it.name }))
+                                              }}
+                                              className={cn(
+                                                'flex w-full min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition active:scale-[0.99]',
+                                                selectedIngredientByLineId[l.id] === it.id
+                                                  ? 'border-[#36606F] bg-[#36606F]/8 ring-1 ring-[#36606F]/20'
+                                                  : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                              )}
+                                            >
+                                              <span className="truncate text-sm font-bold text-zinc-900">{it.name}</span>
+                                              <span className="shrink-0 text-xs font-semibold text-zinc-500">
+                                                {Number(it.current_price || 0).toFixed(2)}€/{it.purchase_unit || '—'}
+                                              </span>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ) : ingredientSearchQuery.trim().length >= 2 ? (
+                                        <p className="text-xs text-zinc-500">Sin resultados. Prueba otra palabra o crea el ingrediente.</p>
+                                      ) : null}
+
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                          <label className="min-w-0 block">
+                                            <span
+                                              className="text-[9px] font-black uppercase tracking-wider text-zinc-500"
+                                              title="Si el PU es €/kg, indica los kg totales de la línea, no solo piezas."
+                                            >
+                                              Cant.
+                                            </span>
                                             {canEdit ? (
                                               <input
                                                 inputMode="decimal"
                                                 value={d?.quantity ?? ''}
                                                 onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
-                                                className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                                className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
                                                 placeholder="—"
                                               />
                                             ) : (
-                                              <p className="text-sm font-bold text-zinc-800 mt-1">{l.quantity == null ? '—' : String(l.quantity)}</p>
+                                              <p className="mt-0.5 text-sm font-bold text-zinc-800">
+                                                {l.quantity == null ? '—' : String(l.quantity)}
+                                              </p>
                                             )}
-                                          </div>
-                                          <div className="min-w-0">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">PU</p>
+                                          </label>
+                                          <label className="min-w-0 block">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">PU</span>
                                             {canEdit ? (
                                               <input
                                                 inputMode="decimal"
                                                 value={d?.unit_price ?? ''}
                                                 onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
-                                                className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                                className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
                                                 placeholder="—"
                                               />
                                             ) : (
-                                              <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.unit_price)}</p>
+                                              <p className="mt-0.5 text-sm font-bold text-zinc-800">{formatMaybeMoney(l.unit_price)}</p>
                                             )}
-                                          </div>
-                                          <div className="min-w-0">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Total</p>
+                                          </label>
+                                          <label className="min-w-0 block">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Total</span>
                                             {canEdit ? (
                                               <input
                                                 inputMode="decimal"
                                                 value={d?.total_price ?? ''}
                                                 onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
-                                                className="w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                                                className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
                                                 placeholder="—"
                                               />
                                             ) : (
-                                              <p className="text-sm font-bold text-zinc-800 mt-1">{formatMaybeMoney(l.total_price)}</p>
+                                              <p className="mt-0.5 text-sm font-bold text-zinc-800">{formatMaybeMoney(l.total_price)}</p>
                                             )}
-                                          </div>
+                                          </label>
                                         </div>
 
                                       {!detail.supplier_id ? (
-                                        <div className="mt-3 bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700">
-                                          Falta proveedor. Asigna el proveedor para poder mapear líneas y aplicar stock.
-                                        </div>
+                                        <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">
+                                          Falta proveedor en el albarán.
+                                        </p>
                                       ) : null}
 
-                                      {mappingOpenLineId === l.id ? (
-                                        <div className="overflow-hidden rounded-xl border border-[#36606F]/15 bg-white/90 shadow-sm">
-                                          <div className="flex items-start justify-between gap-3 border-b border-[#36606F]/10 bg-[#36606F]/[0.08] px-4 py-3">
-                                            <div className="min-w-0">
-                                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#36606F]">
-                                                Vincular con almacén
-                                              </p>
-                                              <p className="mt-0.5 text-xs font-medium leading-snug text-zinc-600">
-                                                {String(l.status ?? '') === 'mapped' && l.ingredient_id
-                                                  ? 'Puedes cambiar el producto o solo el factor. Si ya hay stock aplicado, al guardar se rectifica en almacén.'
-                                                  : 'Indica qué artículo del almacén corresponde a esta línea del albarán.'}
-                                              </p>
-                                            </div>
-                                            <button
-                                              type="button"
-                                              onClick={() => setMappingOpenLineId(null)}
-                                              className="min-h-12 shrink-0 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
-                                            >
-                                              Cerrar
-                                            </button>
-                                          </div>
-
-                                          <div className="space-y-4 p-4">
-                                            {mappingError ? (
-                                              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800">
-                                                {mappingError}
-                                              </div>
-                                            ) : null}
-
-                                            {mappingLoading ? (
-                                              <div className="flex items-center gap-2 py-6 text-sm font-semibold text-zinc-600">
-                                                <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
-                                                Preparando…
-                                              </div>
-                                            ) : (
-                                              <>
-                                                <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
-                                                  <div className="min-w-0 flex-1 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                                                    <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                                                      En el albarán aparece
-                                                    </p>
-                                                    <p className="mt-2 break-words text-base font-black leading-snug text-zinc-900">
-                                                      {String(d?.original_name ?? l.original_name ?? '').trim() || '—'}
-                                                    </p>
-                                                    <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-zinc-200/80 pt-3 text-center">
-                                                      <div>
-                                                        <dt className="text-[9px] font-black uppercase text-zinc-400">Cant.</dt>
-                                                        <dd className="mt-0.5 text-xs font-bold text-zinc-800">
-                                                          {d?.quantity?.trim()
-                                                            ? d.quantity
-                                                            : l.quantity == null
-                                                              ? '—'
-                                                              : String(l.quantity)}
-                                                        </dd>
-                                                      </div>
-                                                      <div>
-                                                        <dt className="text-[9px] font-black uppercase text-zinc-400">P. unit.</dt>
-                                                        <dd className="mt-0.5 text-xs font-bold text-zinc-800">
-                                                          {d?.unit_price?.trim()
-                                                            ? formatMaybeMoney(
-                                                                Number(String(d.unit_price).replace(',', '.'))
-                                                              )
-                                                            : formatMaybeMoney(l.unit_price)}
-                                                        </dd>
-                                                      </div>
-                                                      <div>
-                                                        <dt className="text-[9px] font-black uppercase text-zinc-400">Total</dt>
-                                                        <dd className="mt-0.5 text-xs font-bold text-zinc-800">
-                                                          {d?.total_price?.trim()
-                                                            ? formatMaybeMoney(
-                                                                Number(String(d.total_price).replace(',', '.'))
-                                                              )
-                                                            : formatMaybeMoney(l.total_price)}
-                                                        </dd>
-                                                      </div>
-                                                    </dl>
-                                                    <p className="mt-3 text-[10px] leading-snug text-zinc-500">
-                                                      Puedes corregir cantidades arriba en la línea antes de guardar el vínculo.
-                                                    </p>
-                                                  </div>
-
-                                                  <div className="hidden shrink-0 items-center justify-center self-center px-1 text-zinc-300 md:flex">
-                                                    <ArrowRight className="h-7 w-7" strokeWidth={1.75} aria-hidden />
-                                                  </div>
-
-                                                  <div className="min-w-0 flex-1 rounded-xl border border-zinc-200 p-4">
-                                                    <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                                                      En almacén es
-                                                    </p>
-
-                                                    {selectedIngredientByLineId[l.id] ? (
-                                                      <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
-                                                        <div className="flex min-w-0 items-center gap-2">
-                                                          <Check className="h-5 w-5 shrink-0 text-emerald-700" strokeWidth={2.5} />
-                                                          <span className="truncate text-sm font-black text-emerald-950">
-                                                            {ingredientPickLabelByLineId[l.id]?.trim() ||
-                                                              'Producto del almacén (confirma o elige otro en la lista)'}
-                                                          </span>
-                                                        </div>
-                                                        <button
-                                                          type="button"
-                                                          className="shrink-0 rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-900 underline-offset-2 hover:underline"
-                                                          onClick={() => {
-                                                            setSelectedIngredientByLineId((p) => ({
-                                                              ...p,
-                                                              [l.id]: null,
-                                                            }))
-                                                            setIngredientPickLabelByLineId((p) => ({
-                                                              ...p,
-                                                              [l.id]: null,
-                                                            }))
-                                                          }}
-                                                        >
-                                                          Cambiar
-                                                        </button>
-                                                      </div>
-                                                    ) : (
-                                                      <p className="mt-2 text-xs text-zinc-500">
-                                                        Busca abajo y toca el producto correcto.
-                                                      </p>
-                                                    )}
-
-                                                    <div className="relative mt-4">
-                                                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                                                      <input
-                                                        value={ingredientSearchQuery}
-                                                        onChange={(e) => void runIngredientSearch(e.target.value)}
-                                                        placeholder="Buscar por nombre…"
-                                                        className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white py-3 pl-10 pr-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/40"
-                                                      />
-                                                    </div>
-
-                                                    {ingredientSearchLoading ? (
-                                                      <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-zinc-500">
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        Buscando…
-                                                      </div>
-                                                    ) : ingredientSearchResults.length ? (
-                                                      <div className="mt-2 max-h-[200px] space-y-1.5 overflow-y-auto pr-0.5">
-                                                        {ingredientSearchResults.map((it) => (
-                                                          <button
-                                                            key={it.id}
-                                                            type="button"
-                                                            onClick={() => {
-                                                              setSelectedIngredientByLineId((p) => ({
-                                                                ...p,
-                                                                [l.id]: it.id,
-                                                              }))
-                                                              setIngredientPickLabelByLineId((p) => ({
-                                                                ...p,
-                                                                [l.id]: it.name,
-                                                              }))
-                                                            }}
-                                                            className={cn(
-                                                              'flex w-full min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition active:scale-[0.99]',
-                                                              selectedIngredientByLineId[l.id] === it.id
-                                                                ? 'border-[#36606F] bg-[#36606F]/8 ring-1 ring-[#36606F]/20'
-                                                                : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                                                            )}
-                                                          >
-                                                            <span className="truncate text-sm font-bold text-zinc-900">
-                                                              {it.name}
-                                                            </span>
-                                                            <span className="shrink-0 text-xs font-semibold text-zinc-500">
-                                                              {Number(it.current_price || 0).toFixed(2)}€/
-                                                              {it.purchase_unit || '—'}
-                                                            </span>
-                                                          </button>
-                                                        ))}
-                                                      </div>
-                                                    ) : ingredientSearchQuery.trim().length >= 2 ? (
-                                                      <p className="mt-2 text-xs text-zinc-500">
-                                                        Sin resultados. Prueba otra palabra o crea el ingrediente.
-                                                      </p>
-                                                    ) : null}
-
-                                                    <div className="mt-5 border-t border-zinc-100 pt-4">
-                                                      <label
-                                                        htmlFor={`factor-${l.id}`}
-                                                        className="text-[10px] font-black uppercase tracking-wider text-zinc-500"
-                                                      >
-                                                        Factor de conversión
-                                                      </label>
-                                                      <input
-                                                        id={`factor-${l.id}`}
-                                                        inputMode="decimal"
-                                                        value={factorByLineId[l.id] ?? '1'}
-                                                        onChange={(e) =>
-                                                          setFactorByLineId((p) => ({
-                                                            ...p,
-                                                            [l.id]: e.target.value,
-                                                          }))
-                                                        }
-                                                        className="mt-1.5 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-base font-bold text-zinc-900 outline-none focus:border-[#36606F]/40"
-                                                        placeholder="1"
-                                                      />
-                                                      <p className="mt-2 text-[11px] leading-snug text-zinc-500">
-                                                        Unidades de <span className="font-semibold text-zinc-700">compra del ingrediente</span> que equivalen a{' '}
-                                                        <span className="font-semibold text-zinc-700">1</span> unidad de lo que indica el albarán (ej. caja de 12
-                                                        → factor <span className="font-semibold text-zinc-700">12</span>).
-                                                      </p>
-                                                    </div>
-                                                  </div>
-                                                </div>
-
-                                                <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 pt-4 sm:flex-row sm:flex-wrap sm:justify-end">
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                      const d = draftLines[l.id]
-                                                      const unitRaw = d?.unit_price?.trim()
-                                                        ? d.unit_price
-                                                        : l.unit_price == null
-                                                          ? ''
-                                                          : String(l.unit_price)
-                                                      const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
-                                                      setWizardInvoiceContext({
-                                                        lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
-                                                        quantity:
-                                                          d?.quantity?.trim() ||
-                                                          (l.quantity == null ? null : String(l.quantity)),
-                                                        unitPrice: Number.isFinite(unitN) ? unitN : null,
-                                                      })
-                                                      setWizardIngredientId(null)
-                                                      setWizardInitialName(l.original_name || '')
-                                                      setWizardTargetLineId(l.id)
-                                                      setWizardOpen(true)
-                                                    }}
-                                                    className="min-h-12 rounded-xl border border-zinc-200 bg-white px-4 text-xs font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
-                                                  >
-                                                    Nuevo producto
-                                                  </button>
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                      const d = draftLines[l.id]
-                                                      const unitRaw = d?.unit_price?.trim()
-                                                        ? d.unit_price
-                                                        : l.unit_price == null
-                                                          ? ''
-                                                          : String(l.unit_price)
-                                                      const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
-                                                      setWizardInvoiceContext({
-                                                        lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
-                                                        quantity:
-                                                          d?.quantity?.trim() ||
-                                                          (l.quantity == null ? null : String(l.quantity)),
-                                                        unitPrice: Number.isFinite(unitN) ? unitN : null,
-                                                      })
-                                                      setWizardIngredientId(selectedIngredientByLineId[l.id] ?? null)
-                                                      setWizardInitialName(null)
-                                                      setWizardTargetLineId(l.id)
-                                                      setWizardOpen(true)
-                                                    }}
-                                                    disabled={!selectedIngredientByLineId[l.id]}
-                                                    className={cn(
-                                                      'min-h-12 rounded-xl border border-zinc-200 bg-white px-4 text-xs font-bold uppercase tracking-wide text-[#36606F] hover:bg-zinc-50',
-                                                      !selectedIngredientByLineId[l.id] && 'pointer-events-none opacity-45'
-                                                    )}
-                                                  >
-                                                    Configurar precio
-                                                  </button>
-                                                  {(() => {
-                                                    const mappedSameIngredient =
-                                                      Boolean(l.ingredient_id) &&
-                                                      String(l.status ?? '') === 'mapped' &&
-                                                      String(selectedIngredientByLineId[l.id] ?? '') ===
-                                                        String(l.ingredient_id)
-                                                    return (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => void confirmMapping(l.id)}
-                                                        disabled={mappingLoading || !detail.supplier_id}
-                                                        className={cn(
-                                                          'min-h-12 w-full rounded-xl bg-[#36606F] px-4 text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-[#2d4f5c] sm:ml-auto sm:w-auto sm:min-w-[200px]',
-                                                          (mappingLoading || !detail.supplier_id) &&
-                                                            'pointer-events-none opacity-50'
-                                                        )}
-                                                      >
-                                                        {mappedSameIngredient ? 'Guardar factor' : 'Guardar vínculo'}
-                                                      </button>
-                                                    )
-                                                  })()}
-                                                </div>
-                                              </>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ) : null}
-                                    </div>
-
-                                    {canEdit ? (
-                                      <div className="shrink-0 w-full sm:w-auto flex flex-col gap-2">
+                                      <div className="flex flex-wrap items-center gap-1.5 border-t border-[#36606F]/10 pt-2">
                                         {isLineDirty(l) ? (
                                           <button
                                             type="button"
                                             onClick={() => saveLine(l.id)}
                                             disabled={savingLineId === l.id}
                                             className={cn(
-                                              'w-full min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition',
+                                              'min-h-12 rounded-lg border border-[#36606F]/30 bg-white px-2.5 text-[10px] font-bold uppercase text-[#36606F]',
                                               savingLineId === l.id && 'opacity-60 pointer-events-none'
                                             )}
                                           >
-                                            {savingLineId === l.id ? 'Guardando…' : 'Guardar cambios'}
+                                            {savingLineId === l.id ? '…' : 'Guardar línea'}
                                           </button>
                                         ) : null}
-
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const d = draftLines[l.id]
+                                            const unitRaw = d?.unit_price?.trim()
+                                              ? d.unit_price
+                                              : l.unit_price == null
+                                                ? ''
+                                                : String(l.unit_price)
+                                            const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
+                                            setWizardInvoiceContext({
+                                              lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
+                                              quantity:
+                                                d?.quantity?.trim() ||
+                                                (l.quantity == null ? null : String(l.quantity)),
+                                              unitPrice: Number.isFinite(unitN) ? unitN : null,
+                                            })
+                                            setWizardIngredientId(null)
+                                            setWizardInitialName(l.original_name || '')
+                                            setWizardTargetLineId(l.id)
+                                            setWizardOpen(true)
+                                          }}
+                                          className="min-h-12 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
+                                        >
+                                          + Nuevo
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const d = draftLines[l.id]
+                                            const unitRaw = d?.unit_price?.trim()
+                                              ? d.unit_price
+                                              : l.unit_price == null
+                                                ? ''
+                                                : String(l.unit_price)
+                                            const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
+                                            setWizardInvoiceContext({
+                                              lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
+                                              quantity:
+                                                d?.quantity?.trim() ||
+                                                (l.quantity == null ? null : String(l.quantity)),
+                                              unitPrice: Number.isFinite(unitN) ? unitN : null,
+                                            })
+                                            setWizardIngredientId(selectedIngredientByLineId[l.id] ?? null)
+                                            setWizardInitialName(null)
+                                            setWizardTargetLineId(l.id)
+                                            setWizardOpen(true)
+                                          }}
+                                          disabled={!selectedIngredientByLineId[l.id]}
+                                          className={cn(
+                                            'min-h-12 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-[#36606F] hover:bg-zinc-50',
+                                            !selectedIngredientByLineId[l.id] && 'pointer-events-none opacity-45'
+                                          )}
+                                        >
+                                          Configurar precio
+                                        </button>
                                         {stockApplied ? (
                                           <button
                                             type="button"
                                             onClick={() => void rectifyLine(l.id)}
                                             disabled={mappingLoading}
                                             className={cn(
-                                              'w-full min-h-[48px] px-4 rounded-xl border border-amber-200 bg-amber-50 text-xs font-black uppercase tracking-wider text-amber-800 active:scale-[0.99] transition',
+                                              'min-h-12 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-bold uppercase text-amber-800',
                                               mappingLoading && 'opacity-60 pointer-events-none'
                                             )}
                                           >
                                             Rectificar stock
                                           </button>
                                         ) : null}
-
-                                        {/* Gestión del match para líneas ya mapeadas: corregir o eliminar.
-                                            Editar revierte stock y reabre el modal; Eliminar revierte stock
-                                            y borra el aprendizaje en supplier_item_mappings. */}
                                         {l.ingredient_id ? (
-                                          <div className="grid grid-cols-2 gap-2">
+                                          <>
                                             <button
                                               type="button"
                                               onClick={() => void editMapping(l.id)}
                                               disabled={mappingLoading}
                                               className={cn(
-                                                'min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700 active:scale-[0.99] transition',
+                                                'min-h-12 rounded-lg border border-zinc-200 bg-white px-2.5 text-[10px] font-bold uppercase text-zinc-700',
                                                 mappingLoading && 'opacity-60 pointer-events-none'
                                               )}
-                                              title="Corregir match (revierte stock y reabre mapeo)"
                                             >
-                                              <Pencil className="h-4 w-4" />
-                                              Editar
+                                              Editar match
                                             </button>
                                             <button
                                               type="button"
                                               onClick={() => void removeMapping(l.id)}
                                               disabled={mappingLoading}
                                               className={cn(
-                                                'min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-xs font-black uppercase tracking-wider text-rose-700 active:scale-[0.99] transition',
+                                                'min-h-12 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-[10px] font-bold uppercase text-rose-700',
                                                 mappingLoading && 'opacity-60 pointer-events-none'
                                               )}
-                                              title="Eliminar match (revierte stock y borra aprendizaje)"
                                             >
-                                              <XCircle className="h-4 w-4" />
                                               Eliminar
                                             </button>
-                                          </div>
+                                          </>
                                         ) : null}
                                       </div>
-                                    ) : null}
-                                  </div>
+                                        </>
+                                      )}
+                                    </div>
                                     </div>
                                   ) : null}
                                 </div>
