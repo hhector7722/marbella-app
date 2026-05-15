@@ -35,7 +35,7 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - **Propinas**: pools y reparto calculado en SQL.
 - **Recetas / escandallo**: recetas, ingredientes, conversiones, coste (`get_recipe_cost`).
 - **Carta digital**: QR público `/carta`, edición staff `/staff/carta`, Plato Marbella en 3 tramos.
-- **Proveedores / albaranes**: escáner in-app (Gemini) + mapeo proveedor→ingrediente + stock automático.
+- **Proveedores / albaranes**: escáner in-app (Gemini, incl. `unidad_medida` por línea) + mapeo proveedor→ingrediente con **tríada dimensional** (ud. facturación × cant./ud. contenido) + precio vía RPC `invoice_line_price_to_purchase_unit` + stock automático al mapear.
 - **Pedidos**: pedidos a proveedores, PDFs y limpieza automática por cron.
 - **Inventario / mermas / consumo personal**: recuento, ledger, waste, RPC `process_staff_consumption`.
 - **IA integrada**: Copiloto (chat + voz LiveKit) con RBAC y registro de llamadas.
@@ -90,6 +90,7 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 ### Dinero / stock
 - Diferenciar **PVP** vs **coste**; funciones en `lib/utils.ts` / `lib/recipe-cost.ts`.
 - Albaranes: stock `PURCHASE` idempotente por `reference_doc = 'ALB-LINE-<lineId>'`; borrado vía RPC `SECURITY DEFINER` (no DELETE directo en `stock_movements` si RLS/PostgREST fallan).
+- **Conversión dimensional albarán (obligatoria en mapeo UI)**: tríada en `supplier_item_mappings` — `line_billing_unit` (ej. garrafa), `line_content_qty` + `line_content_unit` (ej. 5 + `l`). Precio catálogo: RPC `invoice_line_price_to_purchase_unit` (usa `convert_pricing_qty` o fallback `conversion_factor`). **No** recalcular en TS con `unit_price / factor` a ciegas. Trigger `handle_new_invoice_line`: `RAISE` si conversión imposible (anti-silent). Helpers UI: `src/lib/ingredient-pack-pricing.ts` (`ALBARAN_LINE_CONTENT_UNITS`, `suggestedDimensionalMappingFromIngredient`). SSOT: `context/INGREDIENTS_PRECIOS_Y_ALBARANES.md` (matriz; pendiente ampliar tríada).
 
 ---
 
@@ -114,6 +115,7 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 ### Albaranes (permisos app, 2026-05-13+)
 - **Lectura/lista/detalle/imagen**: todo `authenticated` (RLS `SELECT` abierto; sin filtrar por `created_by`).
 - **Edición/mapeo/stock/reparar**: todo `authenticated` en server actions.
+- **Mapeo línea↔ingrediente (UI activa)**: modal centrado [`LineMappingModal.tsx`](src/components/albaranes/LineMappingModal.tsx) desde [`AlbaranesHistoricoClient.tsx`](src/app/dashboard/albaranes/AlbaranesHistoricoClient.tsx) (lápiz 48px; **sin** panel inline expandible). Acciones: `confirmInvoiceLineMappingAction`, `updateMappedLineConversionFactorAction`, `resolveLineMappingAction`, `searchIngredientsForMappingAction` en [`albaranes/actions.ts`](src/app/dashboard/albaranes/actions.ts). Legacy FormData: `confirmarMapeoAction` en [`lib/actions/albaranes.ts`](src/lib/actions/albaranes.ts) — no usar en el flujo del histórico.
 - **Eliminar albarán completo**: solo **manager/admin** (`deletePurchaseInvoiceAction`).
 - Storage bucket `albaranes`: SELECT/UPDATE para `authenticated`; INSERT por carpeta `{uid}/`.
 
@@ -204,7 +206,7 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - Sala/KDS: `estado_sala`, `kds_orders`, `kds_order_lines`
 - Recetas: `recipes` (+ `menu_category_id`, `elaboration_video_url`), `recipe_ingredients`, `ingredients` (+ `price_locked`, `inventory_visible`, pack fields), `ingredient_price_history`, `categories`, `menu_category_overrides`
 - Carta: `digital_menu_overrides` (+ `plato_marbella_slot`, `plato_marbella_is_menu_price`), vistas `v_digital_menu_items`, `v_public_menu_items`
-- Proveedores/albaranes: `suppliers`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `supplier_item_mappings`
+- Proveedores/albaranes: `suppliers`, `purchase_invoices`, `purchase_invoice_lines` (+ `line_unit` texto OCR), `purchase_invoice_attachments`, `supplier_item_mappings` (+ `line_billing_unit`, `line_content_qty`, `line_content_unit`)
 - Stock: `stock_movements` (+ `reference_doc` tipo `ALB-LINE-<uuid>`)
 - Pedidos: `purchase_orders`, `purchase_order_items`, `order_drafts`
 - Documentos: `nominas`, `nominas_excepciones`, `employee_documents`
@@ -215,6 +217,7 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - Finanzas: `get_financial_statement(p_start_date, p_end_date) -> jsonb`
 - Tesorería: `get_operational_box_status`, `get_treasury_period_summary`, `get_theoretical_balance`
 - Recetas: `get_recipe_cost`, `convert_pricing_qty`
+- Albaranes precio: `invoice_line_price_to_purchase_unit(p_unit_price, p_mapping_content_qty, p_mapping_content_unit, p_ingredient_purchase_unit, p_fallback_factor)`
 - Personal: `get_monthly_timesheet`, `get_worker_weekly_log_grid`, `get_weekly_worker_stats` (+ `p_only_completed_weeks`), `rpc_recalculate_all_balances`, `fn_recalc_and_propagate_snapshots`
 - Cierres: `get_cash_closings_summary`
 - Albaranes/stock: `delete_stock_movements_for_purchase_invoice`, `delete_stock_movements_for_albaran_line`
@@ -222,9 +225,13 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - RBAC helpers: `get_employee_role`, `get_my_employee_id`, `is_manager_or_admin()`
 
 ### Triggers albaranes (operativa crítica)
-- `handle_new_invoice_line` — auto-mapeo + precio (respeta `ingredients.price_locked`)
+- `handle_new_invoice_line` — auto-mapeo + precio vía `invoice_line_price_to_purchase_unit` (respeta `price_locked`; **falla en voz alta** si no hay tríada/factor válido)
 - `handle_invoice_line_mapped_stock` — `PURCHASE` al pasar línea a `status='mapped'`
 - Adjuntos multipágina: `purchase_invoice_attachments` (misma cabecera, varias hojas)
+
+### Migración remota (conversión estricta)
+- **Aplicada en prod** (Dashboard Supabase): versión `20260515141008`, nombre `albaranes_strict_unit_conversion` (2026-05-15).
+- **Archivo local repo**: `supabase/migrations/20260515160700_albaranes_strict_unit_conversion.sql` (mismo contenido; prefijo distinto — no re-aplicar si ya existe la versión remota).
 
 ---
 
@@ -249,22 +256,27 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 
 ## 10) Prompt corto recomendado (inicio de sesión)
 
-> Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, Supabase (Auth + RLS + Realtime + Storage) con SSR @supabase/ssr. Dominios: sala/radar, KDS, tesorería, finanzas (RPC get_financial_statement), personal/horas (AcumulaHoras), propinas, recetas/escandallo, carta QR (/carta, Plato Marbella 3 tramos), albaranes solo vía /dashboard/scanner (webhook email 410), pedidos, inventario/mermas. Reglas: frontend tonto (agregaciones en SQL RPCs), RLS estricto, anti-silent-fail, zero-display (0→" "), fechas sin new Date('YYYY-MM-DD'), proxy con getSession() no getUser(). No inventes columnas; usa supabase/migrations y PROJECT_STATUS.md. Precios ingredientes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md.
+> Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, Supabase (Auth + RLS + Realtime + Storage) con SSR @supabase/ssr. Dominios: sala/radar, KDS, tesorería, finanzas (RPC get_financial_statement), personal/horas (AcumulaHoras), propinas, recetas/escandallo, carta QR (/carta, Plato Marbella 3 tramos), albaranes vía /dashboard/scanner + histórico /dashboard/albaranes con LineMappingModal (tríada dimensional + RPC invoice_line_price_to_purchase_unit; webhook email 410), pedidos, inventario/mermas. Reglas: frontend tonto (agregaciones en SQL RPCs), RLS estricto, anti-silent-fail, zero-display (0→" "), fechas sin new Date('YYYY-MM-DD'), proxy con getSession() no getUser(). No inventes columnas; usa supabase/migrations y PROJECT_STATUS.md. Precios ingredientes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md.
 
 ---
 
 ## 11) Estado actual (snapshot operativo)
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización: 2026-05-15** (entradas recientes hasta 2026-05-17 en albaranes/stock).
+**Fuente**: `PROJECT_STATUS.md` — **última actualización prompt: 2026-05-15** (ver `PROJECT_STATUS.md` para entradas hasta 2026-05-17).
 
 Hitos recientes (evitar drift al copiar este prompt):
 
 - **Carta (2026-05-15)**: subcategoría `platos-marbella` — vista `PlatoMarbellaMenuView` (entrante / principal / guarnición); `digital_menu_overrides.plato_marbella_slot`, `plato_marbella_is_menu_price`; editor en `MenuItemEditModal`.
+- **Albaranes: conversión dimensional estricta (2026-05-15)**:
+  - **BD aplicada** en remoto: `20260515141008` / `albaranes_strict_unit_conversion` (columnas `line_unit`, tríada en `supplier_item_mappings`, RPC `invoice_line_price_to_purchase_unit`, trigger `handle_new_invoice_line` reforzado).
+  - **Escáner**: Gemini devuelve `unidad_medida`; insert con `line_unit` ([`scanner/actions.ts`](src/app/dashboard/scanner/actions.ts)).
+  - **UI mapeo**: [`LineMappingModal.tsx`](src/components/albaranes/LineMappingModal.tsx) — modal Bento (match + ecuación garrafa × 5 l); integrado en histórico; **retirado** panel inline en fila.
+  - **Server**: mapeo dimensional en `confirmInvoiceLineMappingAction` / `updateMappedLineConversionFactorAction`; resync precio vía RPC, no `unit_price/factor` en TS.
 - **Albaranes (2026-05-11 → 2026-05-17)**:
   - Entrada única: `/dashboard/scanner` con proveedor obligatorio; webhook `/api/webhooks/albaranes` = **410 Gone**.
   - Multipágina: `purchase_invoice_attachments`.
   - Acceso amplio `authenticated`; delete albarán solo manager/admin.
-  - RPCs `delete_stock_movements_for_purchase_invoice` / `_albaran_line` para borrado de stock seguro.
+  - RPCs `delete_stock_movements_for_purchase_invoice` / `_albaran_line` (migración repo `20260517140000` — confirmar en Dashboard si no aparece en lista reciente).
   - Stock automático al mapear; `price_locked` bloquea actualización de precio desde albarán.
 - **Proxy/auth (2026-05-13)**: `src/proxy.ts` con `getSession()`; staff puede `/dashboard/albaranes` y `/dashboard/scanner`; timeouts SSR en layout/albaranes.
 - **Mapeo TPV (2026-05-14)**: `/dashboard/recetas-tpv` — factor TPV + mappings albarán por ingrediente.
