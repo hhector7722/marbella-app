@@ -70,6 +70,8 @@ export type WizardResult = {
 }
 
 const PACK_UNITS_PRESETS = [12, 24]
+/** Atajos para packaging (paletinas, vasos, etc.). */
+const COUNTABLE_PACK_UNITS_PRESETS = [100, 500, 1000]
 const VOLUME_PRESETS = [
   { qty: 200, unit: 'ml' as const },
   { qty: 250, unit: 'ml' as const },
@@ -163,14 +165,21 @@ function needsLiquidQuestion(h: IngredientWizardHowCharged): boolean {
   return h === 'pack' || h === 'unidad'
 }
 
-/** Caja/pieza con volumen o peso → per_pack; kilo/litro en factura → per_purchase_unit; piezas contables → ud. */
+/** Caja con piezas contables (ud) → per_pack; pieza suelta → per_purchase_unit; volumen/peso → per_pack. */
 function pricingModeForHowCharged(h: IngredientWizardHowCharged, baseUnit: WizardBaseUnit): IngredientWizardPricing {
   if (h === 'kilo' || h === 'litro') return 'per_purchase_unit'
-  if (h === 'pack' || h === 'unidad') {
+  if (h === 'pack') {
+    return 'per_pack'
+  }
+  if (h === 'unidad') {
     if (baseUnit === 'ud') return 'per_purchase_unit'
     return 'per_pack'
   }
   return 'per_purchase_unit'
+}
+
+function isCountableCategory(cat: IngredientWizardCategory | null): boolean {
+  return cat === 'Packaging' || cat === 'Limpieza' || cat === 'Otros'
 }
 
 function isDraftReadyForPriceStep(d: WizardDraft): boolean {
@@ -422,10 +431,14 @@ export function IngredientWizard({
                   : 'Comida'
 
         const purchaseUnit = String((data as any).purchase_unit ?? 'kg').toLowerCase()
-        const baseUnit: WizardBaseUnit = purchaseUnit === 'l' ? 'l' : purchaseUnit === 'ud' ? 'ud' : 'kg'
+        let baseUnit: WizardBaseUnit = purchaseUnit === 'l' ? 'l' : purchaseUnit === 'ud' ? 'ud' : 'kg'
 
         const spm = ((data as any).supplier_pricing_mode ?? 'per_purchase_unit') as IngredientWizardPricing
         const pricingMode: IngredientWizardPricing = spm === 'per_pack' ? 'per_pack' : 'per_purchase_unit'
+
+        if (pricingMode === 'per_pack' && isCountableCategory(cat)) {
+          baseUnit = 'ud'
+        }
 
         const howCharged: IngredientWizardHowCharged =
           pricingMode === 'per_pack' ? 'pack' : baseUnit === 'kg' ? 'kilo' : baseUnit === 'l' ? 'litro' : 'unidad'
@@ -448,8 +461,14 @@ export function IngredientWizard({
         }
 
         const rawUnitLower = String(packUnitRaw ?? 'ud').toLowerCase()
-        const contentPerUnitUnitResolved: WizardDraft['contentPerUnitUnit'] =
-          baseUnit === 'l' && rawUnitLower === 'ud' ? 'ml' : (rawUnitLower as WizardDraft['contentPerUnitUnit']) || 'ud'
+        const allowedContentUnits = new Set(['ml', 'cl', 'l', 'g', 'kg', 'ud'])
+        const contentPerUnitUnitResolved: WizardDraft['contentPerUnitUnit'] = allowedContentUnits.has(rawUnitLower)
+          ? (rawUnitLower as WizardDraft['contentPerUnitUnit'])
+          : baseUnit === 'l'
+            ? 'ml'
+            : baseUnit === 'kg'
+              ? 'g'
+              : 'ud'
 
         const nextDraft: WizardDraft = {
           name: String((data as any).name ?? '').trim(),
@@ -788,12 +807,21 @@ export function IngredientWizard({
       })
     }
 
+    // Packaging / limpieza / otros: caja de piezas contables → per_pack en ud sin pantalla de líquido.
+    if (h === 'pack' && isCountableCategory(draft.category)) {
+      return finalizeHowChargedAndAdvance({
+        howCharged: 'pack',
+        pricingMode: 'per_pack',
+        baseUnit: 'ud',
+        containsLiquid: false,
+      })
+    }
+
     if (needsLiquidQuestion(h)) {
-      // guardamos selección y esperamos a la respuesta Sí/No para decidir la lógica
+      // guardamos selección y esperamos a la respuesta (peso / volumen / ud)
       await upsertDraft({
         howCharged: h,
         containsLiquid: null,
-        // resetea configuración de pack para evitar confusión visual previa
         unitsInside: null,
         contentPerUnitQty: null,
         contentPerUnitUnit: 'ud',
@@ -1193,7 +1221,7 @@ export function IngredientWizard({
                 <p className="text-xs leading-snug text-zinc-600">{pricingAssistantCopy.amounts.howManyInPackHint}</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {PACK_UNITS_PRESETS.map((n) => (
+                {(isCountableCategory(draft.category) ? COUNTABLE_PACK_UNITS_PRESETS : PACK_UNITS_PRESETS).map((n) => (
                   <button
                     key={n}
                     type="button"
@@ -1241,7 +1269,9 @@ export function IngredientWizard({
                       onChange={(e) => setDraft((d) => ({ ...d, contentPerUnitUnit: e.target.value as any }))}
                       className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white"
                     >
-                      {draft.baseUnit === 'l' ? (
+                      {draft.baseUnit === 'ud' && draft.howCharged === 'pack' ? (
+                        <option value="ud">ud (unidad)</option>
+                      ) : draft.baseUnit === 'l' ? (
                         <>
                           <option value="ml">ml</option>
                           <option value="cl">cl</option>
@@ -1313,7 +1343,21 @@ export function IngredientWizard({
                     ))}
                   </div>
                 )}
-                {draft.baseUnit === 'ud' && (
+                {draft.baseUnit === 'ud' && draft.howCharged === 'pack' ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        contentPerUnitQty: 1,
+                        contentPerUnitUnit: 'ud',
+                      }))
+                    }
+                    className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black"
+                  >
+                    1 ud por pieza
+                  </button>
+                ) : draft.baseUnit === 'ud' ? (
                   <div className="mt-2 space-y-3">
                     <div>
                       <div className="text-[10px] font-bold uppercase text-zinc-500 mb-1.5">Volumen</div>
@@ -1360,7 +1404,7 @@ export function IngredientWizard({
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           )}
