@@ -11,11 +11,13 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - **Regla**: tras **cualquier cambio** relevante en el repo (código, migraciones, rutas, permisos, env vars, reglas duras), **revisar y actualizar** este documento si aplica.
 - **Fuente de verdad**:
   - Estado funcional y roadmap: `PROJECT_STATUS.md`
+  - Precios ingredientes ↔ albaranes: `context/INGREDIENTS_PRECIOS_Y_ALBARANES.md`
+  - Sync TPV / KDS: `context/ARQUITECTURA_SYNC_KDS.md`, bridge `context/index.txt`
   - Esquema y cambios DB: `supabase/migrations/` (y `schema_dump.sql` si existe)
 - **Qué cambios obligan a tocar este archivo** (no exhaustivo):
-  - Nuevas rutas o cambios de comportamiento en `/dashboard/*`, `/staff/*`, `/api/*`
+  - Nuevas rutas o cambios de comportamiento en `/dashboard/*`, `/staff/*`, `/api/*`, `/carta`
   - Nuevas tablas/columnas/RPCs/triggers/RLS o cambios de permisos
-  - Cambios de stack/versiones, build (Webpack/Turbopack), o librerías base
+  - Cambios de stack/versiones, build (Webpack), o librerías base
   - Nuevas variables de entorno o cambios en nombres/contratos
   - Nuevas “reglas duras” del proyecto (UX táctil, fechas, zero-display, anti-silent)
 
@@ -25,205 +27,249 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 
 **Bar La Marbella** es un sistema operativo táctil para hostelería con varios dominios:
 
-- **Sala (Radar en vivo)**: estado de mesas/tickets en tiempo real.
-- **KDS (Cocina)**: comandas y líneas, reconciliadas por deltas desde el Radar.
+- **Sala (Radar en vivo)**: estado de mesas/tickets en tiempo real (`estado_sala`, telemetría BDP).
+- **KDS (Cocina)**: comandas y líneas desde `estado_sala` → `kds_orders` / `kds_order_lines`.
 - **Tesorería / Caja**: movimientos, arqueos, cierres, diferencia físico vs teórico.
-- **Personal**: asistencia, fichajes, horarios, horas extra y snapshots semanales.
+- **Finanzas**: PyG (devengo) vs cash flow (caja) vía RPC consolidada.
+- **Personal**: asistencia, fichajes, horarios, horas extra, snapshots semanales (`AcumulaHoras`).
 - **Propinas**: pools y reparto calculado en SQL.
-- **Recetas / escandallo**: recetas, ingredientes, conversiones y coste.
-- **Proveedores / albaranes**: extracción cognitiva (IA) + mapeo proveedor→ingrediente + actualización de precios.
+- **Recetas / escandallo**: recetas, ingredientes, conversiones, coste (`get_recipe_cost`).
+- **Carta digital**: QR público `/carta`, edición staff `/staff/carta`, Plato Marbella en 3 tramos.
+- **Proveedores / albaranes**: escáner in-app (Gemini) + mapeo proveedor→ingrediente + stock automático.
 - **Pedidos**: pedidos a proveedores, PDFs y limpieza automática por cron.
-- **IA integrada**: chat (y voz/tiempo real en partes) con RBAC y registro de llamadas.
+- **Inventario / mermas / consumo personal**: recuento, ledger, waste, RPC `process_staff_consumption`.
+- **IA integrada**: Copiloto (chat + voz LiveKit) con RBAC y registro de llamadas.
 
 ---
 
 ## 2) Stack (confirmado en repo)
 
-- **Framework**: Next.js **16.1.4** (App Router)
-- **UI**: React **19.2.3**
+- **Framework**: Next.js **16.2.6** (App Router)
+- **UI**: React **19.2.6**
 - **Lenguaje**: TypeScript (strict)
-- **CSS**: TailwindCSS (sin estilos inline)
+- **CSS**: TailwindCSS (sin estilos inline; usar `cn()` de `@/lib/utils`)
 - **Iconos**: `lucide-react`
 - **Estado**: `zustand`
-- **Notificaciones UI**: `sonner`
+- **Notificaciones UI**: `sonner` (+ `sileo` en pruebas)
+- **Validación**: `zod`
+- **IA app**: Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`)
+- **Voz**: LiveKit (`livekit-client`, `livekit-server-sdk`)
 - **PDF/Excel/Imagen**: `jspdf`, `jspdf-autotable`, `xlsx`, `papaparse`, `html-to-image`, `pdfjs-dist`, `pdf2json`
 - **Backend**: Supabase (Postgres + Auth + RLS + Realtime + Storage)
   - SSR: `@supabase/ssr` (cookies)
-- **Build**: Webpack forzado (por estabilidad en Vercel)
+- **Build**: Webpack forzado (`next dev/build --webpack`) por estabilidad en Vercel
 
 ---
 
 ## 3) Reglas duras del proyecto (NO negociables)
 
 ### UX / Frontend (táctil)
-- **Touch-first**: cualquier elemento interactivo debe ser cómodo al tacto (targets ~48px+).
-- **Bento layout**: tarjetas limpias, bordes suaves, sombras contenidas.
-- **Flexbox safety**: las botoneras/zonas táctiles **no deben colapsar** (p. ej. `shrink-0` donde aplique).
+- **Touch-first**: targets ~48px+ (`min-h-12`, etc.).
+- **Bento layout**: tarjetas limpias, `rounded-xl`, `shadow-sm`, `border-zinc-100`.
+- **Flexbox safety**: botoneras inferiores y controles +/- con `shrink-0`; contenido superior con `flex-1`.
 
 ### Display
-- **Regla Zero-Display**: en vistas de lectura (no formularios), cualquier valor igual a **0** debe mostrarse como **" "** (espacio) para evitar ruido visual.
+- **Regla Zero-Display**: en vistas de lectura (no formularios), valor **0** → **" "** (espacio).
 
 ### Fechas / Zona horaria
-- **Timezone immunity**: prohibido `new Date('YYYY-MM-DD')` para fechas locales (provoca shifts). Usar:
-  - `new Date(y, m - 1, d)` o
-  - utilidades safe del proyecto (`parseTPVDate`, `parseDBDate`, `getStartOfLocalToday`, etc.).
-- **Anti-ISO-slice (cuando aplique)**: no manipular strings DateTime SQL/BDP con slices ingenuos sin limpiar `T`/`Z`.
+- **Timezone immunity**: prohibido `new Date('YYYY-MM-DD')` para fechas locales. Usar `new Date(y, m - 1, d)` o utilidades del proyecto (`parseTPVDate`, `parseDBDate`, `parseRadiografiaTimestamp`, `getStartOfLocalToday`, etc.).
+- **Anti-ISO-slice**: no manipular DateTime SQL/BDP con slices ingenuos; limpiar `T`/`Z` antes.
+- **Telemetría TPV** (`context/index.txt`): `timestamp_tpv` = mínimo de todas las `Hora` válidas del ticket; cada producto lleva `hora` ISO.
 
 ### Backend / Supabase
-- **RLS obligatorio** para tablas (policies explícitas).
-- **Anti-silent failures**: no esconder ausencia de datos o errores críticos; la UI debe alertar (toast/error) o el servidor debe `throw`.
-- **No inventar esquema**: no inventes nombres de tablas/columnas. Si falta confirmación, consulta `schema_dump.sql` o migraciones.
+- **RLS obligatorio** en tablas nuevas.
+- **Anti-silent failures**: errores/ausencia de datos críticos → `toast.error` o `throw`; nunca `if (!data) return` en flujos principales sin alerta.
+- **No inventar esquema**: confirmar en migraciones / `schema_dump.sql`.
+- **QUERY SAFETY**: prohibido `.not('column', 'in', [array])` en supabase-js; usar `.neq()` encadenados u `.or()`.
+- **Auth en edge/proxy**: usar **`getSession()`** para guards de ruta (no `getUser()` — puede colgar). Layout/actions críticos: timeouts con `withTimeout` / `ssrWithTimeout`.
+
+### Horas / nóminas
+- Revisar **`AcumulaHoras`** en perfil antes de lógica de extras (banco de horas vs pago).
+- Horas extras en UI: solo **semanas completadas** (`p_only_completed_weeks` en RPC).
+
+### Dinero / stock
+- Diferenciar **PVP** vs **coste**; funciones en `lib/utils.ts` / `lib/recipe-cost.ts`.
+- Albaranes: stock `PURCHASE` idempotente por `reference_doc = 'ALB-LINE-<lineId>'`; borrado vía RPC `SECURITY DEFINER` (no DELETE directo en `stock_movements` si RLS/PostgREST fallan).
 
 ---
 
 ## 4) Arquitectura y seguridad (Supabase SSR + RBAC)
 
 ### SSR Supabase
-- Server: `createServerClient` con cookies (`src/utils/supabase/server.ts`).
+- Server: `createServerClient` (`src/utils/supabase/server.ts`).
 - Client: `createBrowserClient` (`src/utils/supabase/client.ts`).
 
-### Middleware (RBAC + bypass)
-- **Bypass crítico**: `/api/*` pasa sin auth para evitar redirecciones que rompan ingestas automáticas.
-- Protección global: sin sesión → `/login`.
-- Staff/supervisor bloqueados de `/dashboard/*` salvo excepciones operativas (ver `src/middleware.ts`).
+### Proxy de rutas (`src/proxy.ts`) — sustituye middleware clásico
+- **Bypass**: `/api/*` sin auth (ingestas automáticas).
+- **Público sin login**: `/carta`, `/carta/*`.
+- Sin sesión → `/login` (salvo `/auth`, recovery en `/profile` con query tokens).
+- **Staff/supervisor** en `/dashboard/*`: solo permitido:
+  - `/dashboard/propinas`
+  - `/dashboard/kds`
+  - `/dashboard/albaranes`
+  - `/dashboard/scanner`
+  - Resto de `/dashboard/*` → redirect `/staff/dashboard`
+- Guard usa **`auth.getSession()`** + `profiles.role` con **`.maybeSingle()`**.
+
+### Albaranes (permisos app, 2026-05-13+)
+- **Lectura/lista/detalle/imagen**: todo `authenticated` (RLS `SELECT` abierto; sin filtrar por `created_by`).
+- **Edición/mapeo/stock/reparar**: todo `authenticated` en server actions.
+- **Eliminar albarán completo**: solo **manager/admin** (`deletePurchaseInvoiceAction`).
+- Storage bucket `albaranes`: SELECT/UPDATE para `authenticated`; INSERT por carpeta `{uid}/`.
 
 ---
 
 ## 5) Rutas (App Router) — mapa mental
 
+### Público
+- `/carta` — carta QR (i18n ES/CA/EN, secciones desde BD)
+
 ### Manager / gestión (`/dashboard/*`)
+- `/dashboard` — hub
 - Sala: `/dashboard/sala`
 - KDS: `/dashboard/kds`
 - Ventas: `/dashboard/ventas`
+- Finanzas: `/dashboard/finanzas` (PyG + caja, RPC `get_financial_statement`)
 - Tesorería: `/dashboard/movements`
 - Cierres: `/dashboard/history`
 - Ledger: `/dashboard/ledger`
 - Mano de obra: `/dashboard/labor`
 - Horas extra: `/dashboard/overtime`
 - Propinas: `/dashboard/propinas`
+- Albaranes histórico: `/dashboard/albaranes`
+- Escáner albaranes (única entrada): `/dashboard/scanner`
+- Albaranes precios (legacy foto): `/dashboard/albaranes-precios`
+- Inventario: `/dashboard/inventory`, mermas `/dashboard/inventory/waste`, auditoría `/dashboard/inventory/ledger`
+- Consumo personal: `/dashboard/consumo-personal`
 - Imports: `/dashboard/import`, `/dashboard/recetas-import`
-- Albaranes precios (foto + mapeo): `/dashboard/albaranes-precios`
+- Mapeo TPV↔receta: `/dashboard/recetas-tpv`
+- Carta (gestión): `/dashboard/carta`
+
+### Operativa general
+- Recetas: `/recipes`, `/recipes/[id]`, `/recipes/import`
+- Ingredientes: `/ingredients`
+- Proveedores: `/suppliers`
+- Pedidos: `/orders/new`
+- Perfil: `/profile`
+- Registros: `/registros`
+- Admin legacy: `/admin/import`, `/admin/mapeo`
 
 ### Staff (`/staff/*`)
 - `/staff/dashboard`
 - `/staff/history`
-- `/staff/schedule`
-- etc.
-
-### Perfil
-- `/profile` (vista por rol: staff / manager-self / manager-employee)
+- `/staff/carta` — editor inline carta (toggle Editar, reorden, i18n categorías)
+- `/staff` — redirect hub
 
 ---
 
 ## 6) API Routes (exactas)
 
-### Webhooks
-- `POST /api/webhooks/albaranes`
-  - Auth: `Authorization: Bearer WEBHOOK_SECRET`
-  - Requiere: `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`
-  - Flujo: Gemini extrae JSON → sube PDF a bucket `albaranes` → inserta cabecera en `purchase_invoices` y líneas en `purchase_invoice_lines`.
-- `POST /api/webhooks/nominas`
-  - Auth: `Authorization: Bearer WEBHOOK_SECRET`
-  - Usa: service role
-  - Flujo: parse PDF (pdf2json) → extrae DNI/NIE válido → sube a bucket `nominas` → inserta fila en `nominas` (y opcional en `employee_documents`).
+### Webhooks BDP (TPV bridge)
+- `POST /api/webhooks/bdp/ventas` — tickets cobrados → `tickets_marbella` / líneas
+- `POST /api/webhooks/bdp/telemetria` — radiografía sala → `estado_sala` (Radar/KDS)
+
+### Webhooks documentos
+- `POST /api/webhooks/albaranes` — **410 Gone** (retirado; usar `/dashboard/scanner`)
+- `POST /api/webhooks/nominas` — PDF nómina individual (Bearer `WEBHOOK_SECRET`, service role)
+- `POST /api/webhooks/nominas-summary` — PDF resumen coste empresa → `payroll_monthly_totals`
 
 ### Cron
-- `GET /api/cron/cleanup-order-pdfs`
-  - Auth: `Authorization: Bearer CRON_SECRET` (si existe)
-  - Usa: service role
-  - Flujo: borra PDFs >7 días del bucket `orders` y pone `purchase_orders.pdf_url = null`.
+- `GET /api/cron/cleanup-order-pdfs` — Bearer `CRON_SECRET`; borra PDFs >7d bucket `orders`
+- `GET /api/cron/cleanup-audio` — limpieza audio copiloto
 
-### Serving seguro (documentos en dominio app)
-- `GET /api/nominas/open?owner=<uuid>&path=<storagePath>`
-- `GET /api/employee-documents/open?owner=<uuid>&path=<storagePath>&tipo=<comunicado|contrato|sancion>`
+### Copiloto (IA)
+- `POST /api/copiloto` — chat
+- `POST /api/copiloto/tools` — tool calling
+- `POST /api/copiloto/transcribe` — transcripción
+- `GET /api/copiloto/voice/token` — token LiveKit
+
+### Serving seguro (documentos)
+- `GET /api/nominas/open?owner=&path=`
+- `GET /api/employee-documents/open?owner=&path=&tipo=`
+- `POST /api/employee-documents/dni`
+- `POST /api/profile/avatar`
 
 ---
 
 ## 7) DB (esquema confirmado) — tablas y RPCs útiles
 
-**Fuente**: `schema_dump.sql` (y migraciones `supabase/migrations/`).
+**Fuente**: `supabase/migrations/` (prioridad sobre `schema_dump.sql` si divergen).
 
 ### Tablas (principales)
 - IA: `ai_call_logs`, `ai_chat_sessions`, `ai_chat_messages`
 - Tesorería: `cash_boxes`, `cash_box_inventory`, `treasury_log`, `cash_closings`, `denominations_log`, `weekly_closings_log`
-- Personal/horas: `profiles`, `time_logs`, `weekly_snapshots`, `shifts`
+- Finanzas fijas: `fixed_monthly_costs`, `payroll_monthly_totals`
+- Personal: `profiles`, `time_logs`, `weekly_snapshots`, `shifts`
 - Ventas: `tickets_marbella`, `ticket_lines_marbella`, `ventas_marbella`
-- Recetas/ingredientes: `recipes`, `recipe_ingredients`, `ingredients`, `ingredient_price_history`, `categories`
-- Proveedores/albaranes: `suppliers`, `purchase_invoices`, `purchase_invoice_lines`, `supplier_item_mappings`
+- Sala/KDS: `estado_sala`, `kds_orders`, `kds_order_lines`
+- Recetas: `recipes` (+ `menu_category_id`, `elaboration_video_url`), `recipe_ingredients`, `ingredients` (+ `price_locked`, `inventory_visible`, pack fields), `ingredient_price_history`, `categories`, `menu_category_overrides`
+- Carta: `digital_menu_overrides` (+ `plato_marbella_slot`, `plato_marbella_is_menu_price`), vistas `v_digital_menu_items`, `v_public_menu_items`
+- Proveedores/albaranes: `suppliers`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `supplier_item_mappings`
+- Stock: `stock_movements` (+ `reference_doc` tipo `ALB-LINE-<uuid>`)
 - Pedidos: `purchase_orders`, `purchase_order_items`, `order_drafts`
 - Documentos: `nominas`, `nominas_excepciones`, `employee_documents`
 - TPV catálogo: `bdp_articulos`, `bdp_departamentos`, `bdp_familias`, `map_tpv_receta`
 
-### RPCs / funciones (nombres exactos)
-- Ventas:
-  - `get_daily_sales_stats(target_date date) -> jsonb`
-  - `get_hourly_sales(p_start_date date, p_end_date date) -> table(fecha, hora, total)`
-  - `get_ticket_lines(p_numero_documento text) -> table(...)`
-  - `get_product_sales_ranking(p_start_date date, p_end_date date) -> table(...)`
-- Tesorería:
-  - `get_operational_box_status() -> table(box_id, theoretical_balance, physical_balance, difference)`
-  - `get_treasury_period_summary(p_box_id uuid, p_start_date timestamptz, p_end_date timestamptz) -> table(income, expense)`
-  - `get_theoretical_balance(target_date timestamptz) -> numeric`
-- Personal/horas:
-  - `get_monthly_timesheet(p_user_id uuid, p_year int, p_month int) -> jsonb`
-  - `get_worker_weekly_log_grid(p_user_id uuid, p_start_date date, p_contracted_hours numeric) -> jsonb`
-  - `get_weekly_worker_stats(p_start_date date, p_end_date date, p_user_id uuid) -> jsonb`
-  - `rpc_recalculate_all_balances() -> jsonb`
-  - `fn_recalc_and_propagate_snapshots(p_user_id uuid, p_start_date date)`
-- Cierres:
-  - `get_cash_closings_summary(p_start_date date, p_end_date date) -> jsonb`
+### RPCs / funciones (nombres exactos, selección)
+- Ventas: `get_daily_sales_stats`, `get_hourly_sales`, `get_ticket_lines`, `get_product_sales_ranking`
+- Finanzas: `get_financial_statement(p_start_date, p_end_date) -> jsonb`
+- Tesorería: `get_operational_box_status`, `get_treasury_period_summary`, `get_theoretical_balance`
+- Recetas: `get_recipe_cost`, `convert_pricing_qty`
+- Personal: `get_monthly_timesheet`, `get_worker_weekly_log_grid`, `get_weekly_worker_stats` (+ `p_only_completed_weeks`), `rpc_recalculate_all_balances`, `fn_recalc_and_propagate_snapshots`
+- Cierres: `get_cash_closings_summary`
+- Albaranes/stock: `delete_stock_movements_for_purchase_invoice`, `delete_stock_movements_for_albaran_line`
+- Consumo: `process_staff_consumption`
+- RBAC helpers: `get_employee_role`, `get_my_employee_id`, `is_manager_or_admin()`
+
+### Triggers albaranes (operativa crítica)
+- `handle_new_invoice_line` — auto-mapeo + precio (respeta `ingredients.price_locked`)
+- `handle_invoice_line_mapped_stock` — `PURCHASE` al pasar línea a `status='mapped'`
+- Adjuntos multipágina: `purchase_invoice_attachments` (misma cabecera, varias hojas)
 
 ---
 
-## 8) KDS / Radar (Gemelo Digital) — fuente de verdad
+## 8) KDS / Radar — fuente de verdad
 
-El pipeline operativo TPV→Supabase→KDS está documentado en:
-- `context/ARQUITECTURA_SYNC_KDS.md`
-- Migraciones KDS (ver `supabase/migrations/20260408*`, `20260417*`, `20260418*`, `20260420*`, etc.)
-
-Nota: este dominio puede no estar reflejado en `schema_dump.sql` si el dump está desfasado respecto a migraciones.
-
----
-
-## 9) Variables de entorno (lo mínimo que debe conocer un LLM)
-
-- **Supabase (cliente)**:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Supabase (server privileged)**:
-  - `SUPABASE_SERVICE_ROLE_KEY`
-- **Webhooks**:
-  - `WEBHOOK_SECRET`
-- **IA extracción documentos**:
-  - `GEMINI_API_KEY`
-- **IA Copiloto (OpenAI)**:
-  - `OPENAI_API_KEY`
-- **Cron**:
-  - `CRON_SECRET`
+- Documentación: `context/ARQUITECTURA_SYNC_KDS.md`
+- Bridge Node: `context/index.txt` → POST telemetría/ventas al dominio ERP
+- Migraciones KDS: prefijos `20260408*`, `20260417*`, `20260418*`, `20260420*`, `20260511130000*` (packs en historial)
+- Cliente sala: `parseRadiografiaTimestamp`, keys estables `mesa-{mesa}-{ticket}`
 
 ---
 
-## 10) Prompt corto recomendado (para iniciar trabajo con otro LLM)
+## 9) Variables de entorno (mínimo para un LLM)
 
-Pega esto como “contexto del proyecto”:
+- **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **Webhooks**: `WEBHOOK_SECRET`
+- **IA documentos**: `GEMINI_API_KEY`
+- **Copiloto**: `OPENAI_API_KEY` (+ vars LiveKit si voz)
+- **Cron**: `CRON_SECRET`
 
-> Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, backend Supabase (Auth + RLS + Realtime + Storage) con SSR via @supabase/ssr. Dominio: sala/radar, KDS cocina, tesorería/caja, personal/horas, propinas, recetas/escandallo, pedidos, proveedores/albaranes cognitivos y documentos empleados. Regla clave: frontend tonto (agregaciones/reglas en SQL RPCs), RLS estricto, anti-silent-fail, zero-display (0→" "), y fechas inmunes a timezone shifts (prohibido new Date('YYYY-MM-DD')). No inventes columnas/tabla; usa schema_dump.sql y migraciones como fuente de verdad.
+---
+
+## 10) Prompt corto recomendado (inicio de sesión)
+
+> Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, Supabase (Auth + RLS + Realtime + Storage) con SSR @supabase/ssr. Dominios: sala/radar, KDS, tesorería, finanzas (RPC get_financial_statement), personal/horas (AcumulaHoras), propinas, recetas/escandallo, carta QR (/carta, Plato Marbella 3 tramos), albaranes solo vía /dashboard/scanner (webhook email 410), pedidos, inventario/mermas. Reglas: frontend tonto (agregaciones en SQL RPCs), RLS estricto, anti-silent-fail, zero-display (0→" "), fechas sin new Date('YYYY-MM-DD'), proxy con getSession() no getUser(). No inventes columnas; usa supabase/migrations y PROJECT_STATUS.md. Precios ingredientes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md.
 
 ---
 
 ## 11) Estado actual (snapshot operativo)
 
-**Fuente**: `PROJECT_STATUS.md` (última actualización indicada allí: **2026-04-22**).
+**Fuente**: `PROJECT_STATUS.md` — **última actualización: 2026-05-15** (entradas recientes hasta 2026-05-17 en albaranes/stock).
 
-Hitos recientes relevantes para el contexto (para evitar drift al trabajar con un LLM):
+Hitos recientes (evitar drift al copiar este prompt):
 
-- **KDS v1 operativo (UI actual)**: restaurado trigger v1 sobre cambios en `estado_sala` para poblar `kds_orders` / `kds_order_lines` (hotfix **2026-04-22**).
-- **Albaranes (histórico + automatizaciones)**:
-  - Trigger **auto-precio** al insertar líneas de albarán (`purchase_invoice_lines`) (**2026-04-22**).
-  - Trigger **auto-stock** al mapear línea (`status='mapped'`) con `stock_movements` idempotente por `ALB-LINE-<lineId>` (fix posterior indicado en estado).
-- **Recetas**:
-  - Elaboración/Presentación guardan en BD (anti-silent en fallos).
-  - Soporte de **vídeo de elaboración**: Storage `recipe_videos` y `recipes.elaboration_video_url` (**2026-04-22**).
-- **Horas extras**: filtradas para no listar semanas abiertas/futuras (solo semanas completadas) y UI alineada a esa regla.
-
+- **Carta (2026-05-15)**: subcategoría `platos-marbella` — vista `PlatoMarbellaMenuView` (entrante / principal / guarnición); `digital_menu_overrides.plato_marbella_slot`, `plato_marbella_is_menu_price`; editor en `MenuItemEditModal`.
+- **Albaranes (2026-05-11 → 2026-05-17)**:
+  - Entrada única: `/dashboard/scanner` con proveedor obligatorio; webhook `/api/webhooks/albaranes` = **410 Gone**.
+  - Multipágina: `purchase_invoice_attachments`.
+  - Acceso amplio `authenticated`; delete albarán solo manager/admin.
+  - RPCs `delete_stock_movements_for_purchase_invoice` / `_albaran_line` para borrado de stock seguro.
+  - Stock automático al mapear; `price_locked` bloquea actualización de precio desde albarán.
+- **Proxy/auth (2026-05-13)**: `src/proxy.ts` con `getSession()`; staff puede `/dashboard/albaranes` y `/dashboard/scanner`; timeouts SSR en layout/albaranes.
+- **Mapeo TPV (2026-05-14)**: `/dashboard/recetas-tpv` — factor TPV + mappings albarán por ingrediente.
+- **Recetas (2026-05-14)**: `recipes.menu_category_id` alineado al menú BD; coste escandallo con puente pack (`get_recipe_cost`).
+- **Finanzas (2026-04-24+)**: `/dashboard/finanzas` + nóminas resumen y alquiler en RPC.
+- **Sala (2026-05-13)**: hora mesa alineada al contrato `context/index.txt` (`aperturaMs`, `hora` por producto).
+- **Horas extras**: solo semanas cerradas en listados y RPC con `p_only_completed_weeks`.
 
