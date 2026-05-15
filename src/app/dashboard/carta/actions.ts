@@ -4,6 +4,8 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 /** Campos opcionales = solo se actualizan si van en el objeto (merge con fila existente). */
+export type PlatoMarbellaSlotValue = 'entrante' | 'principal' | 'guarnicion'
+
 export type MenuOverrideUpsertInput = {
   articulo_id: number
 } & Partial<{
@@ -17,6 +19,8 @@ export type MenuOverrideUpsertInput = {
   override_descripcion: string | null
   override_precio: number | null
   override_photo_url: string | null
+  plato_marbella_slot: PlatoMarbellaSlotValue | null
+  plato_marbella_is_menu_price: boolean
 }>
 
 async function requireManager() {
@@ -55,6 +59,29 @@ type OverrideRow = {
   override_descripcion: string | null
   override_precio: number | null
   override_photo_url: string | null
+  plato_marbella_slot: PlatoMarbellaSlotValue | null
+  plato_marbella_is_menu_price: boolean
+}
+
+/** Un solo artículo con precio del menú por subcategoría Plato Marbella. */
+export async function clearPlatoMarbellaMenuPriceExcept(
+  category_id: string,
+  keep_articulo_id: number
+): Promise<{ success: true } | { success: false; error: string }> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, error: gate.error }
+
+  const { error } = await gate.supabase
+    .from('digital_menu_overrides')
+    .update({ plato_marbella_is_menu_price: false })
+    .eq('category_id', category_id)
+    .neq('articulo_id', keep_articulo_id)
+
+  if (error) {
+    console.error('clearPlatoMarbellaMenuPriceExcept:', error)
+    return { success: false, error: error.message }
+  }
+  return { success: true }
 }
 
 export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
@@ -76,11 +103,29 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
 
   const ex = existing as OverrideRow | null
 
+  let nextSlot =
+    'plato_marbella_slot' in input ? input.plato_marbella_slot! : (ex?.plato_marbella_slot ?? null)
+  let nextMenuPrice =
+    'plato_marbella_is_menu_price' in input
+      ? Boolean(input.plato_marbella_is_menu_price)
+      : (ex?.plato_marbella_is_menu_price ?? false)
+
+  if (nextMenuPrice) nextSlot = null
+  if (nextSlot) nextMenuPrice = false
+
+  const mergedCategoryId =
+    'category_id' in input ? input.category_id! : (ex?.category_id ?? null)
+
+  if (nextMenuPrice && mergedCategoryId) {
+    const cleared = await clearPlatoMarbellaMenuPriceExcept(mergedCategoryId, input.articulo_id)
+    if (!cleared.success) return cleared
+  }
+
   const merged: OverrideRow = {
     articulo_id: input.articulo_id,
     is_hidden: 'is_hidden' in input ? Boolean(input.is_hidden) : (ex?.is_hidden ?? false),
     sort_order: 'sort_order' in input ? input.sort_order! : (ex?.sort_order ?? null),
-    category_id: 'category_id' in input ? input.category_id! : (ex?.category_id ?? null),
+    category_id: mergedCategoryId,
     override_nombre: 'override_nombre' in input ? input.override_nombre! : (ex?.override_nombre ?? null),
     override_nombre_es: 'override_nombre_es' in input ? input.override_nombre_es! : (ex?.override_nombre_es ?? null),
     override_nombre_ca: 'override_nombre_ca' in input ? input.override_nombre_ca! : (ex?.override_nombre_ca ?? null),
@@ -88,6 +133,8 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     override_descripcion: 'override_descripcion' in input ? input.override_descripcion! : (ex?.override_descripcion ?? null),
     override_precio: 'override_precio' in input ? input.override_precio! : (ex?.override_precio ?? null),
     override_photo_url: 'override_photo_url' in input ? input.override_photo_url! : (ex?.override_photo_url ?? null),
+    plato_marbella_slot: nextSlot,
+    plato_marbella_is_menu_price: nextMenuPrice,
   }
 
   const { error } = await supabase

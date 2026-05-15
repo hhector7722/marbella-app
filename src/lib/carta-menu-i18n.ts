@@ -51,6 +51,60 @@ const SUB: Record<string, { es: string; ca: string; en: string }> = {
   Cervezas: { es: 'Cervezas', ca: 'Cerveses', en: 'Beers' },
   Vinos: { es: 'Vinos', ca: 'Vins', en: 'Wines' },
   Aperitivos: { es: 'Aperitivos', ca: 'Aperitius', en: 'Aperitifs' },
+  'Plato Marbella': { es: 'Plato Marbella', ca: 'Plat Marbella', en: 'Marbella plate' },
+}
+
+export function tPlatoMarbellaUi(lang: CartaLang) {
+  const dict = {
+    es: {
+      intro: 'Un solo plato con tres elecciones: entrante, plato principal y guarnición.',
+      stepEntrante: '1 · Entrante',
+      stepPrincipal: '2 · Principal',
+      stepGuarnicion: '3 · Guarnición',
+      unassigned: 'Sin tramo asignado',
+      unassignedHint: 'Asigna cada opción a un tramo en el editor de carta.',
+      editorSlotLabel: 'Tramo del plato',
+      editorSlotNone: '— Ninguno (precio menú u otro) —',
+      editorSlotEntrante: 'Entrante',
+      editorSlotPrincipal: 'Plato principal',
+      editorSlotGuarnicion: 'Guarnición',
+      editorMenuPrice: 'Precio del menú en carta',
+      editorMenuPriceHint:
+        'Las opciones no muestran precio; solo el artículo marcado como precio del menú.',
+    },
+    ca: {
+      intro: 'Un sol plat amb tres eleccions: entrant, plat principal i guarnició.',
+      stepEntrante: '1 · Entrant',
+      stepPrincipal: '2 · Principal',
+      stepGuarnicion: '3 · Guarnició',
+      unassigned: 'Sense tram assignat',
+      unassignedHint: 'Assigna cada opció a un tram a l’editor de carta.',
+      editorSlotLabel: 'Tram del plat',
+      editorSlotNone: '— Cap (preu menú o altre) —',
+      editorSlotEntrante: 'Entrant',
+      editorSlotPrincipal: 'Plat principal',
+      editorSlotGuarnicion: 'Guarnició',
+      editorMenuPrice: 'Preu del menú a la carta',
+      editorMenuPriceHint:
+        'Les opcions no mostren preu; només l’article marcat com a preu del menú.',
+    },
+    en: {
+      intro: 'One plate with three choices: starter, main course and side.',
+      stepEntrante: '1 · Starter',
+      stepPrincipal: '2 · Main',
+      stepGuarnicion: '3 · Side',
+      unassigned: 'No section assigned',
+      unassignedHint: 'Assign each option to a section in the menu editor.',
+      editorSlotLabel: 'Plate section',
+      editorSlotNone: '— None (menu price or other) —',
+      editorSlotEntrante: 'Starter',
+      editorSlotPrincipal: 'Main course',
+      editorSlotGuarnicion: 'Side',
+      editorMenuPrice: 'Menu price on the card',
+      editorMenuPriceHint: 'Options show no price; only the item marked as menu price.',
+    },
+  } as const
+  return dict[lang]
 }
 
 export function translateParentCategoryTitle(lang: CartaLang, raw: string) {

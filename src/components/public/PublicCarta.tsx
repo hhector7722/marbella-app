@@ -18,6 +18,8 @@ import {
   tPublicUi,
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
+import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
+import { isPlatoMarbellaSubcategoryRows } from '@/lib/carta-plato-marbella'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -43,8 +45,11 @@ export type PublicMenuRow = {
   category_child_name_ca?: string | null
   category_child_name_en?: string | null
   category_child_sort_order: number | null
+  category_child_slug?: string | null
   recipe_id?: string | null
   tpv_factor_porcion?: number | null
+  plato_marbella_slot?: string | null
+  plato_marbella_is_menu_price?: boolean | null
 }
 
 type Group = {
@@ -325,7 +330,21 @@ export function PublicCarta({
                     ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
                     : openGroup._subList
                   ).map((sub) => (
-                    <div key={sub.key} className="space-y-2">
+                    <div
+                      key={sub.key}
+                      className={cn(
+                        'space-y-2',
+                        isPlatoMarbellaSubcategoryRows(sub.rows) && 'flex min-h-0 flex-1 flex-col'
+                      )}
+                    >
+                      {isPlatoMarbellaSubcategoryRows(sub.rows) ? (
+                        <PlatoMarbellaMenuView
+                          rows={sub.rows}
+                          lang={lang}
+                          subTitle={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
+                          onPhotoClick={(src, alt) => setLightbox({ src, alt })}
+                        />
+                      ) : (
                       <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                         {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => {
                           const medioStr = formatPrice(row.precio_medio_display ?? null)
@@ -395,6 +414,7 @@ export function PublicCarta({
                           )
                         })}
                       </div>
+                      )}
                     </div>
                   ))}
                 </div>

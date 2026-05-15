@@ -5,13 +5,16 @@ import { Camera, Trash2, Upload, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import { upsertMenuOverride } from '@/app/dashboard/carta/actions'
+import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
+import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
+import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
 
 type CategoryRow = {
   id: string
   name: string
   parent_id: string | null
   sort_order: number | null
+  slug?: string | null
 }
 
 export function MenuItemEditModal({
@@ -39,6 +42,17 @@ export function MenuItemEditModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
   const [removeOverridePhoto, setRemoveOverridePhoto] = useState(false)
+  const [platoSlot, setPlatoSlot] = useState<'' | PlatoMarbellaSlotValue>('')
+  const [platoMenuPrice, setPlatoMenuPrice] = useState(false)
+
+  const platoMarbellaCategoryId = useMemo(
+    () => categories.find((c) => c.slug === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null,
+    [categories]
+  )
+  const isPlatoMarbellaCategory = Boolean(
+    platoMarbellaCategoryId && categoryId === platoMarbellaCategoryId
+  )
+  const platoUi = tPlatoMarbellaUi('es' satisfies CartaLang)
 
   const categoryOptions = useMemo(() => {
     const parents = categories
@@ -90,7 +104,7 @@ export function MenuItemEditModal({
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
@@ -110,6 +124,12 @@ export function MenuItemEditModal({
         setOverridePhotoUrl(typeof ov === 'string' && ov.trim() ? ov.trim() : null)
         setSelectedFile(null)
         setRemoveOverridePhoto(false)
+        const slot = (overrideRes.data as { plato_marbella_slot?: string | null } | null)
+          ?.plato_marbella_slot
+        setPlatoSlot(
+          slot === 'entrante' || slot === 'principal' || slot === 'guarnicion' ? slot : ''
+        )
+        setPlatoMenuPrice(Boolean((overrideRes.data as { plato_marbella_is_menu_price?: boolean } | null)?.plato_marbella_is_menu_price))
         if (previewBlobUrl) {
           URL.revokeObjectURL(previewBlobUrl)
           setPreviewBlobUrl(null)
@@ -269,7 +289,13 @@ export function MenuItemEditModal({
                 <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Categoría</span>
                 <select
                   value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
+                  onChange={(e) => {
+                    setCategoryId(e.target.value)
+                    if (e.target.value !== platoMarbellaCategoryId) {
+                      setPlatoSlot('')
+                      setPlatoMenuPrice(false)
+                    }
+                  }}
                   className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-[#36606F]"
                 >
                   {categoryOptions.map((o) => (
@@ -279,6 +305,43 @@ export function MenuItemEditModal({
                   ))}
                 </select>
               </label>
+
+              {isPlatoMarbellaCategory ? (
+                <div className="mt-3 space-y-3 rounded-xl border border-[#36606F]/20 bg-[#36606F]/5 p-3">
+                  <label className="block space-y-1">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">
+                      {platoUi.editorSlotLabel}
+                    </span>
+                    <select
+                      value={platoSlot}
+                      disabled={platoMenuPrice}
+                      onChange={(e) =>
+                        setPlatoSlot((e.target.value || '') as '' | PlatoMarbellaSlotValue)
+                      }
+                      className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-[#36606F] disabled:opacity-50"
+                    >
+                      <option value="">{platoUi.editorSlotNone}</option>
+                      <option value="entrante">{platoUi.editorSlotEntrante}</option>
+                      <option value="principal">{platoUi.editorSlotPrincipal}</option>
+                      <option value="guarnicion">{platoUi.editorSlotGuarnicion}</option>
+                    </select>
+                  </label>
+                  <label className="flex min-h-[48px] cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={platoMenuPrice}
+                      onChange={(e) => {
+                        const on = e.target.checked
+                        setPlatoMenuPrice(on)
+                        if (on) setPlatoSlot('')
+                      }}
+                      className="h-5 w-5 shrink-0 rounded border-zinc-300"
+                    />
+                    <span className="text-sm font-bold text-zinc-900">{platoUi.editorMenuPrice}</span>
+                  </label>
+                  <p className="text-[11px] font-semibold text-zinc-600">{platoUi.editorMenuPriceHint}</p>
+                </div>
+              ) : null}
 
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
@@ -339,6 +402,15 @@ export function MenuItemEditModal({
                         override_nombre_en: nameEn.trim() || null,
                         category_id: categoryId.trim() ? categoryId.trim() : null,
                         ...(nextOverridePhotoUrl !== undefined ? { override_photo_url: nextOverridePhotoUrl } : {}),
+                        ...(isPlatoMarbellaCategory
+                          ? {
+                              plato_marbella_slot: platoMenuPrice ? null : platoSlot || null,
+                              plato_marbella_is_menu_price: platoMenuPrice,
+                            }
+                          : {
+                              plato_marbella_slot: null,
+                              plato_marbella_is_menu_price: false,
+                            }),
                       })
                       if (!res.success) {
                         toast.error(res.error ?? 'No se pudo guardar el producto')

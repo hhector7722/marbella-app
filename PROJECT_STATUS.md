@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-14 (Pedidos `/orders/new`: cabecera sin panel petróleo)
+**Última actualización:** 2026-05-15 (Carta: Plato Marbella en 3 tramos)
+
+- [x] **Carta: Plato Marbella en 3 tramos (2026-05-15)**: Subcategoría `platos-marbella` con vista dedicada en QR y staff: entrante / principal / guarnición en bandas horizontales, precio único del menú arriba (sin precio en opciones). **BD**: [`20260515140000_plato_marbella_menu_slots.sql`](supabase/migrations/20260515140000_plato_marbella_menu_slots.sql) — `digital_menu_overrides.plato_marbella_slot`, `plato_marbella_is_menu_price`, `category_child_slug` en vistas carta. **UI**: [`PlatoMarbellaMenuView.tsx`](src/components/carta/PlatoMarbellaMenuView.tsx), [`carta-plato-marbella.ts`](src/lib/carta-plato-marbella.ts), integración en [`PublicCarta.tsx`](src/components/public/PublicCarta.tsx) y [`MenuAccordion.tsx`](src/components/staff/MenuAccordion.tsx). **Editor**: selector de tramo + «Precio del menú» en [`MenuItemEditModal.tsx`](src/components/carta/MenuItemEditModal.tsx).
 
 - [x] **Pedidos `/orders/new`: cabecera sin caja petróleo (2026-05-14)**: Eliminado el contenedor `bg-[#36606F]` + `rounded-2xl` + padding interno que agrupaba proveedor, buscador y CTAs «Pedido nuevo» / «Tramitar». La zona sticky comparte el fondo `#5B8FB9` de la página ([`page.tsx`](src/app/orders/new/page.tsx)).
 

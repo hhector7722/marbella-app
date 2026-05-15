@@ -16,6 +16,8 @@ import {
     tPublicUi,
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
+import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
+import { isPlatoMarbellaSubcategoryRows } from '@/lib/carta-plato-marbella'
 
 export type DigitalMenuRow = {
     articulo_id: number
@@ -42,6 +44,9 @@ export type DigitalMenuRow = {
     category_child_name_ca?: string | null
     category_child_name_en?: string | null
     category_child_sort_order: number | null
+    category_child_slug?: string | null
+    plato_marbella_slot?: string | null
+    plato_marbella_is_menu_price?: boolean | null
     recipe_id: string
     recipe_name: string
     descripcion: string | null
@@ -485,6 +490,7 @@ export function MenuAccordion({
     const [productIdsDraft, setProductIdsDraft] = useState<number[] | null>(null)
     const [reorderPick, setReorderPick] = useState<string | null>(null)
     const [committingReorder, setCommittingReorder] = useState(false)
+    const [platoLightbox, setPlatoLightbox] = useState<{ src: string; alt: string } | null>(null)
 
     const openGroupBase = useMemo(
         () => (openKey ? (grouped as GroupedGroup[]).find((g) => g.key === openKey) ?? null : null),
@@ -1108,6 +1114,23 @@ export function MenuAccordion({
                                                         )
                                                     })}
                                                 </div>
+                                            ) : isPlatoMarbellaSubcategoryRows(sub.rows) ? (
+                                                <PlatoMarbellaMenuView
+                                                    rows={sub.rows}
+                                                    lang={lang}
+                                                    subTitle={subPickerButtonLabel(
+                                                        sub,
+                                                        lang,
+                                                        openGroup.parentTitleRaw,
+                                                        tPublicUi(lang).uncategorized
+                                                    )}
+                                                    showUnassigned={editMode}
+                                                    onPhotoClick={
+                                                        editMode
+                                                            ? undefined
+                                                            : (src, alt) => setPlatoLightbox({ src, alt })
+                                                    }
+                                                />
                                             ) : (
                                                 <div className="grid grid-cols-3 items-stretch gap-2 md:gap-3">
                                                     {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => (
@@ -1136,6 +1159,14 @@ export function MenuAccordion({
                     </div>
                 </div>
             ) : null}
+
+            <CartaImageLightbox
+                src={platoLightbox?.src ?? null}
+                alt={platoLightbox?.alt ?? ''}
+                title={platoLightbox?.alt ?? ''}
+                open={platoLightbox != null}
+                onClose={() => setPlatoLightbox(null)}
+            />
         </div>
     )
 }

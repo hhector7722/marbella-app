@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
-/** Tarjeta de categoría padre: imagen dominante + título (carta visual). */
+/** Tarjeta de categoría padre: imagen y título equilibrados (carta visual). */
 export function CartaCategoryCard({
   title,
   coverPhotoUrl,
@@ -36,34 +36,34 @@ export function CartaCategoryCard({
         disabled={disabled}
         aria-expanded={ariaExpanded}
         className={cn(
-          'flex w-full min-h-[48px] touch-manipulation flex-col items-center px-0.5 pb-1 pt-0.5 transition-opacity active:opacity-85',
+          'flex w-full min-h-[48px] touch-manipulation flex-col items-center justify-center px-0.5 py-1 transition-opacity active:opacity-85',
           highlighted && 'rounded-2xl bg-amber-50/90',
           disabled && 'cursor-not-allowed opacity-50'
         )}
       >
-        <span className="relative mx-auto flex aspect-[4/5] w-full items-center justify-center sm:aspect-square">
+        <span className="relative mx-auto flex aspect-[5/4] w-[78%] max-w-[136px] items-center justify-center sm:max-w-[148px] sm:aspect-square sm:w-[76%]">
           {coverPhotoUrl ? (
             nativeImg ? (
               // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
               <img
                 src={coverPhotoUrl}
                 alt=""
-                className="h-full w-full object-contain object-center p-0.5"
+                className="h-full w-full object-contain object-center p-1"
               />
             ) : (
               <Image
                 src={coverPhotoUrl}
                 alt=""
                 fill
-                sizes="(max-width: 640px) 45vw, 220px"
-                className="object-contain object-center p-0.5"
+                sizes="(max-width: 640px) 38vw, 180px"
+                className="object-contain object-center p-1"
               />
             )
           ) : (
-            <span className="block h-[72%] w-[72%] rounded-2xl bg-zinc-100/90" aria-hidden />
+            <span className="block h-[65%] w-[65%] rounded-xl bg-zinc-100/90" aria-hidden />
           )}
         </span>
-        <span className="mt-2.5 w-full px-0.5 text-center text-[11px] font-black uppercase leading-tight tracking-[0.14em] text-[#36606F] sm:mt-3 sm:text-xs sm:tracking-[0.16em]">
+        <span className="mt-2 w-full px-0.5 text-center text-xs font-black uppercase leading-snug tracking-[0.12em] text-[#36606F] sm:mt-2.5 sm:text-sm sm:tracking-[0.14em]">
           {title}
         </span>
       </button>
@@ -75,7 +75,7 @@ export function CartaCategoryGrid({ className, children }: { className?: string;
   return (
     <div
       className={cn(
-        'grid grid-cols-2 gap-x-2 gap-y-5 pb-2 sm:gap-x-3 sm:gap-y-7',
+        'grid grid-cols-2 gap-x-2 gap-y-4 pb-2 sm:gap-x-3 sm:gap-y-5',
         className
       )}
     >

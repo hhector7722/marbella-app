@@ -16,6 +16,7 @@ type CategoryRow = {
   parent_id: string | null
   sort_order: number | null
   cover_articulo_id: number | null
+  slug?: string | null
 }
 
 type OverrideRow = {
@@ -30,6 +31,8 @@ type OverrideRow = {
   override_descripcion: string | null
   override_precio: number | string | null
   override_photo_url: string | null
+  plato_marbella_slot?: string | null
+  plato_marbella_is_menu_price?: boolean | null
 }
 
 type MapRow = {
@@ -122,7 +125,7 @@ export function StaffCartaInlineEditor({
 
       let categoriesRes = await supabase
         .from('categories')
-        .select('id, name, parent_id, sort_order, cover_articulo_id')
+        .select('id, name, parent_id, sort_order, cover_articulo_id, slug')
         .eq('scope', 'menu')
         .limit(5000)
       if (categoriesRes.error) {
@@ -246,6 +249,7 @@ export function StaffCartaInlineEditor({
         const category_child_name_ca = chBase ? ntrim(chOvr?.override_name_ca) || chBase : null
         const category_child_name_en = chBase ? ntrim(chOvr?.override_name_en) || chBase : null
         const category_child_sort_order = c?.parent_id ? c.sort_order : null
+        const category_child_slug = c?.parent_id ? (c.slug ?? null) : null
 
         const parentForCover = category_parent_id
         const category_parent_cover_photo_url =
@@ -291,6 +295,9 @@ export function StaffCartaInlineEditor({
           category_child_name_ca,
           category_child_name_en,
           category_child_sort_order,
+          category_child_slug,
+          plato_marbella_slot: o?.plato_marbella_slot ?? null,
+          plato_marbella_is_menu_price: o?.plato_marbella_is_menu_price ?? false,
           recipe_id: r.id,
           recipe_name: r.name,
           descripcion: buildDescripcion(o, r),
@@ -446,6 +453,7 @@ export function StaffCartaInlineEditor({
           name: c.name,
           parent_id: c.parent_id,
           sort_order: c.sort_order,
+          slug: c.slug ?? null,
         }))}
       />
     </>
