@@ -28,7 +28,7 @@ import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
-import { IngredientWizard } from '@/components/ingredients/IngredientWizard'
+import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type { PurchaseInvoiceDetail, PurchaseInvoiceListItem, SupplierListItem } from './actions'
 import { appendScannerPageToInvoiceAction } from '../scanner/actions'
 import { ScannerClient } from '../scanner/ScannerClient'
@@ -128,6 +128,7 @@ export default function AlbaranesHistoricoClient({
   const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
   const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
   const [wizardTargetLineId, setWizardTargetLineId] = useState<string | null>(null)
+  const [wizardInvoiceContext, setWizardInvoiceContext] = useState<IngredientWizardInvoiceContext | null>(null)
   const [expandedLineIds, setExpandedLineIds] = useState<Record<string, boolean>>({})
   const [repairingStockLineId, setRepairingStockLineId] = useState<string | null>(null)
   const [repairingInvoiceStockBatch, setRepairingInvoiceStockBatch] = useState(false)
@@ -476,6 +477,7 @@ export default function AlbaranesHistoricoClient({
     setWizardIngredientId(null)
     setWizardInitialName(null)
     setWizardTargetLineId(null)
+    setWizardInvoiceContext(null)
     setExpandedLineIds({})
     setAppendSheetBusy(false)
     if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
@@ -1715,6 +1717,20 @@ export default function AlbaranesHistoricoClient({
                                                   <button
                                                     type="button"
                                                     onClick={() => {
+                                                      const d = draftLines[l.id]
+                                                      const unitRaw = d?.unit_price?.trim()
+                                                        ? d.unit_price
+                                                        : l.unit_price == null
+                                                          ? ''
+                                                          : String(l.unit_price)
+                                                      const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
+                                                      setWizardInvoiceContext({
+                                                        lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
+                                                        quantity:
+                                                          d?.quantity?.trim() ||
+                                                          (l.quantity == null ? null : String(l.quantity)),
+                                                        unitPrice: Number.isFinite(unitN) ? unitN : null,
+                                                      })
                                                       setWizardIngredientId(null)
                                                       setWizardInitialName(l.original_name || '')
                                                       setWizardTargetLineId(l.id)
@@ -1722,11 +1738,25 @@ export default function AlbaranesHistoricoClient({
                                                     }}
                                                     className="min-h-12 rounded-xl border border-zinc-200 bg-white px-4 text-xs font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
                                                   >
-                                                    Crear ingrediente nuevo
+                                                    Nuevo producto
                                                   </button>
                                                   <button
                                                     type="button"
                                                     onClick={() => {
+                                                      const d = draftLines[l.id]
+                                                      const unitRaw = d?.unit_price?.trim()
+                                                        ? d.unit_price
+                                                        : l.unit_price == null
+                                                          ? ''
+                                                          : String(l.unit_price)
+                                                      const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
+                                                      setWizardInvoiceContext({
+                                                        lineLabel: String(d?.original_name ?? l.original_name ?? '').trim() || null,
+                                                        quantity:
+                                                          d?.quantity?.trim() ||
+                                                          (l.quantity == null ? null : String(l.quantity)),
+                                                        unitPrice: Number.isFinite(unitN) ? unitN : null,
+                                                      })
                                                       setWizardIngredientId(selectedIngredientByLineId[l.id] ?? null)
                                                       setWizardInitialName(null)
                                                       setWizardTargetLineId(l.id)
@@ -1738,7 +1768,7 @@ export default function AlbaranesHistoricoClient({
                                                       !selectedIngredientByLineId[l.id] && 'pointer-events-none opacity-45'
                                                     )}
                                                   >
-                                                    Revisar precio del producto
+                                                    Configurar precio
                                                   </button>
                                                   {(() => {
                                                     const mappedSameIngredient =
@@ -1947,18 +1977,26 @@ export default function AlbaranesHistoricoClient({
                         ingredientId={wizardIngredientId}
                         initialName={wizardInitialName ?? undefined}
                         mode={wizardIngredientId ? 'editPricing' : 'create'}
+                        flow="express"
+                        invoiceContext={wizardInvoiceContext ?? undefined}
                         onSaved={(id, meta) => {
                           const lineId = wizardTargetLineId
                           if (!lineId) return
                           setSelectedIngredientByLineId((p) => ({ ...p, [lineId]: id }))
                           const nm = meta?.name?.trim()
                           if (nm) setIngredientPickLabelByLineId((p) => ({ ...p, [lineId]: nm }))
+                          const f = meta?.suggestedConversionFactor
+                          if (f != null && Number.isFinite(f) && f > 0) {
+                            setFactorByLineId((p) => ({ ...p, [lineId]: String(f) }))
+                          }
                         }}
                         onClose={() => {
                           setWizardOpen(false)
                           setWizardIngredientId(null)
                           setWizardInitialName(null)
                           setWizardTargetLineId(null)
+    setWizardInvoiceContext(null)
+                          setWizardInvoiceContext(null)
                         }}
                       />
                     </div>

@@ -3,8 +3,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy'
-import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing'
+import {
+  resolveDeclaredPurchaseUnitWithPackContent,
+  suggestedAlbaranConversionFactorFromIngredient,
+} from '@/lib/ingredient-pack-pricing'
 import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls'
+import {
+  IngredientExpressPricePanel,
+  type ExpressKind,
+} from '@/components/ingredients/IngredientExpressPricePanel'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 
@@ -36,6 +43,19 @@ export type WizardDraft = {
   /** Si true, los albaranes no actualizan `current_price` en catálogo. */
   priceLocked: boolean
 }
+
+export type IngredientWizardInvoiceContext = {
+  lineLabel?: string | null
+  quantity?: string | number | null
+  unitPrice?: number | null
+}
+
+export type IngredientWizardSavedMeta = {
+  name?: string | null
+  suggestedConversionFactor?: number | null
+}
+
+type WizardStep = 1 | 2 | 3 | 4 | 5 | 'express'
 
 export type WizardResult = {
   supplier_pricing_mode: IngredientWizardPricing
@@ -143,6 +163,16 @@ function needsLiquidQuestion(h: IngredientWizardHowCharged): boolean {
   return h === 'pack' || h === 'unidad'
 }
 
+/** Caja/pieza con volumen o peso → per_pack; kilo/litro en factura → per_purchase_unit; piezas contables → ud. */
+function pricingModeForHowCharged(h: IngredientWizardHowCharged, baseUnit: WizardBaseUnit): IngredientWizardPricing {
+  if (h === 'kilo' || h === 'litro') return 'per_purchase_unit'
+  if (h === 'pack' || h === 'unidad') {
+    if (baseUnit === 'ud') return 'per_purchase_unit'
+    return 'per_pack'
+  }
+  return 'per_purchase_unit'
+}
+
 function isDraftReadyForPriceStep(d: WizardDraft): boolean {
   if (!d.pricingMode || !d.howCharged) return false
   if (needsLiquidQuestion(d.howCharged) && d.containsLiquid == null) return false
@@ -157,16 +187,94 @@ function inferContainsLiquidFromPackUnit(unitRaw: string | null | undefined): bo
   return false
 }
 
+function inferExpressKind(d: WizardDraft): ExpressKind | null {
+  if (d.howCharged === 'kilo') return 'kg'
+  if (d.howCharged === 'litro') return 'l'
+  if (d.howCharged === 'pack') return 'pack'
+  if (d.howCharged === 'unidad') {
+    if (d.pricingMode === 'per_pack' && d.baseUnit === 'l') return 'piece_liquid'
+    if (d.pricingMode === 'per_pack' && d.baseUnit === 'kg') return 'piece_liquid'
+    return 'piece'
+  }
+  return null
+}
+
+function draftPatchForExpressKind(kind: ExpressKind): Partial<WizardDraft> {
+  if (kind === 'kg') {
+    return {
+      howCharged: 'kilo',
+      pricingMode: 'per_purchase_unit',
+      baseUnit: 'kg',
+      containsLiquid: false,
+      unitsInside: null,
+      contentPerUnitQty: null,
+      contentPerUnitUnit: 'ud',
+    }
+  }
+  if (kind === 'l') {
+    return {
+      howCharged: 'litro',
+      pricingMode: 'per_purchase_unit',
+      baseUnit: 'l',
+      containsLiquid: true,
+      unitsInside: null,
+      contentPerUnitQty: null,
+      contentPerUnitUnit: 'ud',
+    }
+  }
+  if (kind === 'piece') {
+    return {
+      howCharged: 'unidad',
+      pricingMode: 'per_purchase_unit',
+      baseUnit: 'ud',
+      containsLiquid: false,
+      unitsInside: null,
+      contentPerUnitQty: null,
+      contentPerUnitUnit: 'ud',
+    }
+  }
+  if (kind === 'piece_liquid') {
+    return {
+      howCharged: 'unidad',
+      pricingMode: 'per_pack',
+      baseUnit: 'l',
+      containsLiquid: true,
+      unitsInside: 1,
+      contentPerUnitQty: 750,
+      contentPerUnitUnit: 'ml',
+    }
+  }
+  return {
+    howCharged: 'pack',
+    pricingMode: 'per_pack',
+    baseUnit: 'l',
+    containsLiquid: true,
+    unitsInside: 24,
+    contentPerUnitQty: 330,
+    contentPerUnitUnit: 'ml',
+  }
+}
+
+function dbCategoryForExpressKind(kind: ExpressKind): string {
+  if (kind === 'l' || kind === 'piece_liquid') return 'Bebidas'
+  if (kind === 'pack') return 'Bebidas'
+  return 'Alimentos'
+}
+
 function formatWizardPricingSummary(d: WizardDraft): string {
   const parts: string[] = []
+  const unitCostPreview = computeUnitCost(d)
+
   if (d.pricingMode === 'per_purchase_unit') {
     if (d.howCharged === 'kilo') parts.push('Factura: por kilo')
     else if (d.howCharged === 'litro') parts.push('Factura: por litro')
     else if (d.howCharged === 'unidad') parts.push('Factura: por unidad')
     else parts.push('Factura: por compra')
     parts.push(`Almacén / recetas en ${d.baseUnit}`)
-    if (Number.isFinite(d.supplierPrice) && d.supplierPrice > 0) {
-      parts.push(`PVP actual ${d.supplierPrice.toFixed(2).replace('.', ',')} €`)
+    if (unitCostPreview != null && unitCostPreview > 0) {
+      parts.push(`Coste ${unitCostPreview.toFixed(2).replace('.', ',')} €/${d.baseUnit}`)
+    } else if (Number.isFinite(d.supplierPrice) && d.supplierPrice > 0) {
+      parts.push(`Importe factura ${d.supplierPrice.toFixed(2).replace('.', ',')} €`)
     }
   } else {
     parts.push('Factura: por pack o caja')
@@ -177,6 +285,9 @@ function formatWizardPricingSummary(d: WizardDraft): string {
     if (q != null && Number.isFinite(q) && q > 0) parts.push(`${q} ${u}/pieza`)
     if (Number.isFinite(d.supplierPrice) && d.supplierPrice > 0) {
       parts.push(`Precio pack ${d.supplierPrice.toFixed(2).replace('.', ',')} €`)
+    }
+    if (unitCostPreview != null && unitCostPreview > 0) {
+      parts.push(`Coste ${unitCostPreview.toFixed(2).replace('.', ',')} €/${d.baseUnit}`)
     }
   }
   if (d.priceLocked) parts.push('Precio fijo (albaranes no lo cambian)')
@@ -190,6 +301,8 @@ export function IngredientWizard({
   initialHowCharged,
   initialPricingMode,
   mode,
+  flow = 'full',
+  invoiceContext,
   onSaved,
   onClose,
 }: {
@@ -199,12 +312,22 @@ export function IngredientWizard({
   initialHowCharged?: IngredientWizardHowCharged | null
   initialPricingMode?: IngredientWizardPricing | null
   mode?: 'create' | 'editPricing' | 'editFull'
-  onSaved?: (ingredientId: string, meta?: { name?: string | null }) => void
+  /** `express`: una pantalla con precio del albarán (ideal desde mapeo). `full`: asistente completo. */
+  flow?: 'full' | 'express'
+  invoiceContext?: IngredientWizardInvoiceContext
+  onSaved?: (ingredientId: string, meta?: IngredientWizardSavedMeta) => void
   onClose?: () => void
 }) {
   const supabase = createClient()
+  const isExpress = flow === 'express'
+  const initialUnitPrice = useMemo(() => {
+    const n = Number(invoiceContext?.unitPrice)
+    return Number.isFinite(n) && n >= 0 ? n : 0
+  }, [invoiceContext?.unitPrice])
+
   const [ingredientId, setIngredientId] = useState<string | null>(initialIngredientId ?? null)
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+  const [step, setStep] = useState<WizardStep>(() => (isExpress ? 'express' : 1))
+  const [expressKind, setExpressKind] = useState<ExpressKind | null>(null)
   const [saving, setSaving] = useState(false)
   const [ingredientHydrated, setIngredientHydrated] = useState(() => !initialIngredientId)
   const [draft, setDraft] = useState<WizardDraft>(() => ({
@@ -213,7 +336,7 @@ export function IngredientWizard({
     howCharged: initialHowCharged ?? null,
     pricingMode: initialPricingMode ?? null,
     containsLiquid: null,
-    supplierPrice: 0,
+    supplierPrice: initialUnitPrice,
     unitsInside: null,
     contentPerUnitQty: null,
     contentPerUnitUnit: 'ud',
@@ -359,7 +482,10 @@ export function IngredientWizard({
         setCustomSupplier2Name(!!s2 && !nameSet.has(s2) ? s2 : '')
 
         const m = mode ?? 'create'
-        if (m === 'editPricing') {
+        if (isExpress) {
+          setStep('express')
+          setExpressKind(inferExpressKind(nextDraft))
+        } else if (m === 'editPricing') {
           setStep(isDraftReadyForPriceStep(nextDraft) ? 4 : 3)
         } else if (m === 'editFull') {
           setStep(2)
@@ -378,7 +504,18 @@ export function IngredientWizard({
     return () => {
       cancelled = true
     }
-  }, [initialIngredientId, mode, supabase])
+  }, [initialIngredientId, isExpress, mode, supabase])
+
+  useEffect(() => {
+    if (!isExpress || !ingredientHydrated) return
+    if (initialUnitPrice > 0) {
+      setDraft((d) => (d.supplierPrice > 0 ? d : { ...d, supplierPrice: initialUnitPrice }))
+    }
+    if (!expressKind && initialUnitPrice > 0 && !initialIngredientId) {
+      setExpressKind('piece_liquid')
+      setDraft((d) => ({ ...d, ...draftPatchForExpressKind('piece_liquid') }))
+    }
+  }, [expressKind, initialIngredientId, initialUnitPrice, ingredientHydrated, isExpress])
 
   async function upsertDraft(patch: Partial<WizardDraft>) {
     setDraft((d) => ({ ...d, ...patch }))
@@ -427,11 +564,114 @@ export function IngredientWizard({
   }
 
   function advance() {
-    setStep((s) => (s === 5 ? 5 : ((s + 1) as any)))
+    setStep((s) => {
+      if (s === 'express') return 'express'
+      if (s === 5) return 5
+      return (s + 1) as WizardStep
+    })
   }
 
   function back() {
-    setStep((s) => (s === 1 ? 1 : ((s - 1) as any)))
+    setStep((s) => {
+      if (s === 'express') return 'express'
+      if (s === 1) return 1
+      return (s - 1) as WizardStep
+    })
+  }
+
+  const expressPreviewDraft = useMemo(() => {
+    if (!expressKind) return draft
+    return { ...draft, ...draftPatchForExpressKind(expressKind) }
+  }, [draft, expressKind])
+
+  const expressUnitCost = useMemo(() => computeUnitCost(expressPreviewDraft), [expressPreviewDraft])
+
+  const expressSuggestedFactor = useMemo(() => {
+    if (!expressKind) return null
+    const d = expressPreviewDraft
+    return suggestedAlbaranConversionFactorFromIngredient({
+      supplier_pricing_mode: d.pricingMode ?? undefined,
+      purchase_unit: d.baseUnit,
+      pack_unit_size_qty: d.contentPerUnitQty,
+      pack_unit_size_unit: d.contentPerUnitUnit,
+      pack_units: d.unitsInside,
+    })
+  }, [expressKind, expressPreviewDraft])
+
+  async function persistPricingFromDraft(d: WizardDraft) {
+    if (!d.pricingMode) throw new Error('Falta el modo de precio')
+    if (d.pricingMode === 'per_purchase_unit') {
+      if (!Number.isFinite(d.supplierPrice) || d.supplierPrice < 0) throw new Error('Precio inválido')
+      await savePatch({
+        supplier_pricing_mode: 'per_purchase_unit',
+        current_price: d.supplierPrice,
+        purchase_unit: d.baseUnit,
+        unit_type: d.baseUnit,
+        pack_price: null,
+        pack_units: null,
+        pack_unit_size_qty: null,
+        pack_unit_size_unit: null,
+      })
+      return
+    }
+    if (!Number.isFinite(d.supplierPrice) || d.supplierPrice < 0) throw new Error('Precio inválido')
+    if (!d.unitsInside || d.unitsInside <= 0) throw new Error('Indica cuántas piezas trae el pack')
+    const qty = d.contentPerUnitQty ?? 1
+    const unit = d.contentPerUnitUnit ?? 'ud'
+    const storePurchase = toWizardPurchaseBase(resolveDeclaredPurchaseUnitWithPackContent(d.baseUnit, unit))
+    if (storePurchase !== 'ud' && (!Number.isFinite(qty) || qty <= 0)) {
+      throw new Error('Indica tamaño por unidad (ej. 750 ml)')
+    }
+    const converted = convertQty(qty, unit, storePurchase)
+    if (converted == null) throw new Error(`Conversión no soportada: ${unit} → ${storePurchase}`)
+    await savePatch({
+      supplier_pricing_mode: 'per_pack',
+      pack_price: d.supplierPrice,
+      pack_units: d.unitsInside,
+      pack_unit_size_qty: qty,
+      pack_unit_size_unit: unit,
+      purchase_unit: storePurchase,
+      unit_type: storePurchase,
+    })
+  }
+
+  function pickExpressKind(kind: ExpressKind) {
+    setExpressKind(kind)
+    setDraft((d) => ({ ...d, ...draftPatchForExpressKind(kind) }))
+  }
+
+  async function handleExpressSave() {
+    const cleanName = String(draft.name || '').trim()
+    if (!cleanName) return toast.error('Nombre requerido')
+    if (!expressKind) return toast.error('Elige cómo cobra el proveedor')
+    try {
+      setSaving(true)
+      const merged: WizardDraft = {
+        ...draft,
+        ...draftPatchForExpressKind(expressKind),
+        name: cleanName,
+      }
+      setDraft(merged)
+      const id = await ensureIngredientId(cleanName)
+      await supabase.from('ingredients').update({ name: cleanName }).eq('id', id)
+      const catDb = dbCategoryForExpressKind(expressKind)
+      await savePatch({ category: catDb })
+      await persistPricingFromDraft(merged)
+      const factor = suggestedAlbaranConversionFactorFromIngredient({
+        supplier_pricing_mode: merged.pricingMode ?? undefined,
+        purchase_unit: merged.baseUnit,
+        pack_unit_size_qty: merged.contentPerUnitQty,
+        pack_unit_size_unit: merged.contentPerUnitUnit,
+        pack_units: merged.unitsInside,
+      })
+      toast.success('Precio guardado')
+      onSaved?.(id, { name: cleanName, suggestedConversionFactor: factor })
+      onClose?.()
+    } catch (e: any) {
+      toast.error(e?.message || 'Error guardando precio')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleConfirmName() {
@@ -572,51 +812,7 @@ export function IngredientWizard({
 
   async function handleSavePricingAndAdvance() {
     try {
-      if (!draft.pricingMode) return toast.error('Falta seleccionar cómo cobra el proveedor')
-      if (draft.pricingMode === 'per_purchase_unit') {
-        if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
-        await savePatch({
-          supplier_pricing_mode: 'per_purchase_unit',
-          current_price: draft.supplierPrice,
-          purchase_unit: draft.baseUnit,
-          unit_type: draft.baseUnit,
-          pack_price: null,
-          pack_units: null,
-          pack_unit_size_qty: null,
-          pack_unit_size_unit: null,
-        })
-        advance()
-        return
-      }
-
-      // per_pack
-      if (!Number.isFinite(draft.supplierPrice) || draft.supplierPrice < 0) return toast.error('Precio inválido')
-      if (!draft.unitsInside || draft.unitsInside <= 0) return toast.error('Unidades dentro inválido')
-      const qty = draft.contentPerUnitQty ?? 1
-      const unit = draft.contentPerUnitUnit ?? 'ud'
-
-      const storePurchase = toWizardPurchaseBase(
-        resolveDeclaredPurchaseUnitWithPackContent(draft.baseUnit, unit)
-      )
-      if (storePurchase !== 'ud') {
-        if (!Number.isFinite(qty) || qty <= 0) {
-          return toast.error('Indica cantidad y medida por unidad (ej. 740 ml)')
-        }
-      }
-      const converted = convertQty(qty, unit, storePurchase)
-      if (converted == null) {
-        return toast.error(`Conversión no soportada: ${unit} -> ${storePurchase}`)
-      }
-
-      await savePatch({
-        supplier_pricing_mode: 'per_pack',
-        pack_price: draft.supplierPrice,
-        pack_units: draft.unitsInside,
-        pack_unit_size_qty: qty,
-        pack_unit_size_unit: unit,
-        purchase_unit: storePurchase,
-        unit_type: storePurchase,
-      })
+      await persistPricingFromDraft(draft)
       advance()
     } catch (e: any) {
       toast.error(e?.message || 'Error guardando precio')
@@ -705,7 +901,50 @@ export function IngredientWizard({
 
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4">
-      {step === 1 ? (
+      {step === 'express' ? (
+        <IngredientExpressPricePanel
+          draft={{
+            name: draft.name,
+            supplierPrice: draft.supplierPrice,
+            unitsInside: draft.unitsInside,
+            contentPerUnitQty: draft.contentPerUnitQty,
+            contentPerUnitUnit: draft.contentPerUnitUnit,
+          }}
+          setDraft={(updater) => {
+            setDraft((d) => {
+              const slice =
+                typeof updater === 'function'
+                  ? updater({
+                      name: d.name,
+                      supplierPrice: d.supplierPrice,
+                      unitsInside: d.unitsInside,
+                      contentPerUnitQty: d.contentPerUnitQty,
+                      contentPerUnitUnit: d.contentPerUnitUnit,
+                    })
+                  : updater
+              return {
+                ...d,
+                ...slice,
+                contentPerUnitUnit: (slice.contentPerUnitUnit ?? d.contentPerUnitUnit) as WizardDraft['contentPerUnitUnit'],
+              }
+            })
+          }}
+          expressKind={expressKind}
+          onPickKind={pickExpressKind}
+          invoiceContext={invoiceContext}
+          initialUnitPrice={initialUnitPrice}
+          showNameField={!initialIngredientId}
+          saving={saving}
+          unitCost={expressUnitCost}
+          previewBaseUnit={expressPreviewDraft.baseUnit}
+          suggestedFactor={expressSuggestedFactor}
+          onSave={() => void handleExpressSave()}
+          onAdvanced={() => {
+            if (expressKind) setDraft((d) => ({ ...d, ...draftPatchForExpressKind(expressKind) }))
+            setStep(3)
+          }}
+        />
+      ) : step === 1 ? (
         <div className="space-y-3">
           <PricingStepHeader title={pricingAssistantCopy.name.title} hint={pricingAssistantCopy.name.hint} />
           <label className="block space-y-2">
@@ -857,9 +1096,10 @@ export function IngredientWizard({
                     title={pricingAssistantCopy.baseMeasure.weight}
                     subtitle={pricingAssistantCopy.baseMeasure.weightSub}
                     onClick={() => {
+                      const h = draft.howCharged as IngredientWizardHowCharged
                       void finalizeHowChargedAndAdvance({
-                        howCharged: draft.howCharged as any,
-                        pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
+                        howCharged: h,
+                        pricingMode: pricingModeForHowCharged(h, 'kg'),
                         baseUnit: 'kg',
                         containsLiquid: false,
                       })
@@ -870,9 +1110,10 @@ export function IngredientWizard({
                     title={pricingAssistantCopy.baseMeasure.volume}
                     subtitle={pricingAssistantCopy.baseMeasure.volumeSub}
                     onClick={() => {
+                      const h = draft.howCharged as IngredientWizardHowCharged
                       void finalizeHowChargedAndAdvance({
-                        howCharged: draft.howCharged as any,
-                        pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
+                        howCharged: h,
+                        pricingMode: pricingModeForHowCharged(h, 'l'),
                         baseUnit: 'l',
                         containsLiquid: true,
                       })
@@ -883,9 +1124,10 @@ export function IngredientWizard({
                     title={pricingAssistantCopy.baseMeasure.count}
                     subtitle={pricingAssistantCopy.baseMeasure.countSub}
                     onClick={() => {
+                      const h = draft.howCharged as IngredientWizardHowCharged
                       void finalizeHowChargedAndAdvance({
-                        howCharged: draft.howCharged as any,
-                        pricingMode: draft.howCharged === 'pack' ? 'per_pack' : 'per_purchase_unit',
+                        howCharged: h,
+                        pricingMode: pricingModeForHowCharged(h, 'ud'),
                         baseUnit: 'ud',
                         containsLiquid: false,
                       })

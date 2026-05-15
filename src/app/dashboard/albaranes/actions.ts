@@ -1,6 +1,7 @@
 'use server'
 
 // SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
+import { suggestedAlbaranConversionFactorFromIngredient } from '@/lib/ingredient-pack-pricing'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
@@ -57,6 +58,27 @@ function isMissingReferenceDocColumnError(message: string | undefined): boolean 
   return m.includes('reference_doc') && m.includes('does not exist')
 }
 
+/** Si el diccionario tiene factor 1 por defecto pero el ingrediente es botella→L, usa 0,75 L/botella. */
+async function effectiveConversionFactorForIngredient(
+  supabase: SupabaseServerClient,
+  ingredientId: string,
+  storedFactor: number | null | undefined
+): Promise<number> {
+  let factor =
+    storedFactor != null && Number.isFinite(Number(storedFactor)) && Number(storedFactor) > 0
+      ? Number(storedFactor)
+      : 1
+  const { data: ing } = await supabase
+    .from('ingredients')
+    .select('supplier_pricing_mode, purchase_unit, pack_units, pack_unit_size_qty, pack_unit_size_unit')
+    .eq('id', ingredientId)
+    .maybeSingle()
+  if (!ing) return factor
+  const implied = suggestedAlbaranConversionFactorFromIngredient(ing as any)
+  if (implied != null && implied > 0 && Math.abs(factor - 1) < 1e-9) factor = implied
+  return factor
+}
+
 /**
  * Tras cambiar factor o precio unitario en una línea mapeada, recalcula
  * `ingredients.current_price` desde `unit_price / conversion_factor` (salvo `price_locked`).
@@ -79,8 +101,10 @@ async function resyncIngredientPriceForMappedLine(
   if (mapErr) return { ok: false, message: mapErr.message }
 
   const factorRaw = (mapping as any)?.conversion_factor as number | null
-  const factor = factorRaw && Number.isFinite(Number(factorRaw)) && Number(factorRaw) !== 0 ? Number(factorRaw) : null
+  let factor = factorRaw && Number.isFinite(Number(factorRaw)) && Number(factorRaw) !== 0 ? Number(factorRaw) : null
   if (!factor) return { ok: true, warning: 'No hay factor de conversión; no se actualiza precio automático.' }
+
+  factor = await effectiveConversionFactorForIngredient(supabase, ingredientId, factor)
 
   const newPrice = unitPrice / factor
   if (!Number.isFinite(newPrice) || newPrice <= 0) {
@@ -889,7 +913,11 @@ export async function resolveLineMappingAction(params: {
 
     if (exact && (exact as any).ingredient_id) {
       const ingredientId = String((exact as any).ingredient_id)
-      const factor = Number((exact as any).conversion_factor) || 1
+      const factor = await effectiveConversionFactorForIngredient(
+        gate.supabase,
+        ingredientId,
+        (exact as any).conversion_factor
+      )
       const row = ingredientById.get(ingredientId)
       const aliases = await aliasesOf(ingredientId)
       const candidates: IngredientCandidate[] = row
@@ -959,12 +987,15 @@ export async function resolveLineMappingAction(params: {
   const suggested = pickSuggestedCandidate(fuzzy)
   const candidates = enrichCandidates(fuzzy)
   const aliases = await aliasesOf(suggested)
+  const suggestedFactor = suggested
+    ? await effectiveConversionFactorForIngredient(gate.supabase, suggested, 1)
+    : null
   return {
     success: true,
     result: {
       source: suggested ? 'ingredient_fuzzy' : 'none',
       suggestedIngredientId: suggested,
-      suggestedFactor: suggested ? 1 : null,
+      suggestedFactor,
       candidates,
       knownAliases: aliases,
     },
@@ -1085,6 +1116,8 @@ export async function confirmInvoiceLineMappingAction(params: {
   const originalName = String((line as any)?.original_name ?? '').trim()
   if (!originalName) return { success: false, message: 'La línea no tiene nombre' }
 
+  const effectiveFactor = await effectiveConversionFactorForIngredient(gate.supabase, ingredientId, factor)
+
   // 1) Aprendizaje: diccionario proveedor+texto -> ingrediente+factor
   const { error: mapErr } = await gate.supabase
     .from('supplier_item_mappings')
@@ -1093,7 +1126,7 @@ export async function confirmInvoiceLineMappingAction(params: {
         supplier_id: supplierId,
         supplier_item_name: originalName,
         ingredient_id: ingredientId,
-        conversion_factor: factor,
+        conversion_factor: effectiveFactor,
         last_known_price: (line as any)?.unit_price ?? null,
       },
       { onConflict: 'supplier_id,supplier_item_name' }
@@ -1106,6 +1139,15 @@ export async function confirmInvoiceLineMappingAction(params: {
     .update({ mapped_ingredient_id: ingredientId, status: 'mapped' })
     .eq('id', lineId)
   if (updErr) return { success: false, message: updErr.message }
+
+  const unitPrice = (line as any)?.unit_price as number | null
+  const priceRes = await resyncIngredientPriceForMappedLine(gate.supabase, {
+    supplierId,
+    originalName,
+    ingredientId,
+    unitPrice,
+  })
+  if (!priceRes.ok) return { success: false, message: priceRes.message }
 
   // 3) Revalidaciones para refrescar UI
   try {

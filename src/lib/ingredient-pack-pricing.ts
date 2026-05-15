@@ -31,3 +31,61 @@ export function resolveDeclaredPurchaseUnitWithPackContent(
   }
   return dec || 'ud'
 }
+
+/** Convierte `pack_unit_size_*` a la unidad homogénea del ingrediente (`purchase_unit`). */
+export function convertPackUnitSizeToPurchaseUnit(
+  sizeQty: number | null | undefined,
+  sizeUnit: string | null | undefined,
+  purchaseUnit: string | null | undefined
+): number | null {
+  const qty = sizeQty == null ? null : Number(sizeQty)
+  if (qty == null || !Number.isFinite(qty) || qty <= 0) return null
+  const from = norm(sizeUnit)
+  const to = norm(purchaseUnit)
+  if (from === to) return qty
+  if (to === 'l') {
+    if (from === 'ml') return qty / 1000
+    if (from === 'cl') return qty / 100
+    if (from === 'l') return qty
+    return null
+  }
+  if (to === 'kg') {
+    if (from === 'g') return qty / 1000
+    if (from === 'kg') return qty
+    return null
+  }
+  if (to === 'ud' && from === 'ud') return qty
+  return null
+}
+
+/**
+ * Litros (o kg) equivalentes por **una unidad de línea de albarán** cuando el proveedor
+ * factura por botella/lata pero el catálogo costea en L/kg vía `per_pack`.
+ * Ej.: 750 ml + purchase_unit=l → 0,75 (factor en mapeo si cantidad = botellas).
+ */
+export function suggestedAlbaranConversionFactorFromIngredient(row: {
+  supplier_pricing_mode?: string | null
+  purchase_unit?: string | null
+  pack_unit_size_qty?: number | null
+  pack_unit_size_unit?: string | null
+  pack_units?: number | null
+}): number | null {
+  const mode = String(row.supplier_pricing_mode ?? 'per_purchase_unit')
+  const pu = norm(row.purchase_unit)
+  if (mode !== 'per_pack') {
+    if (pu === 'ud') return 1
+    if (pu === 'l' || pu === 'kg') return 1
+    return null
+  }
+  const perPiece = convertPackUnitSizeToPurchaseUnit(
+    row.pack_unit_size_qty,
+    row.pack_unit_size_unit,
+    row.purchase_unit
+  )
+  if (perPiece == null || perPiece <= 0) return null
+  const unitsInPack = row.pack_units == null ? 1 : Number(row.pack_units)
+  const packCount = Number.isFinite(unitsInPack) && unitsInPack > 0 ? unitsInPack : 1
+  // Una línea = una pieza facturada; el pack del catálogo describe esa pieza (pack_units=1 típico).
+  if (packCount === 1) return perPiece
+  return perPiece / packCount
+}
