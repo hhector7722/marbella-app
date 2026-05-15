@@ -1443,8 +1443,9 @@ export default function AlbaranesHistoricoClient({
                                   </div>
 
                                   {isExpanded ? (
-                                    <div className="mt-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                      <div className="min-w-0 flex-1">
+                                    <div className="mt-3 rounded-2xl border border-[#36606F]/12 bg-[#36606F]/[0.06] p-3 sm:p-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                      <div className="min-w-0 flex-1 space-y-3">
                                         {canEdit ? (
                                           <input
                                             value={d?.original_name ?? ''}
@@ -1509,8 +1510,8 @@ export default function AlbaranesHistoricoClient({
                                       ) : null}
 
                                       {mappingOpenLineId === l.id ? (
-                                        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
-                                          <div className="flex items-start justify-between gap-3 border-b border-zinc-100 bg-zinc-50/90 px-4 py-3">
+                                        <div className="overflow-hidden rounded-xl border border-[#36606F]/15 bg-white/90 shadow-sm">
+                                          <div className="flex items-start justify-between gap-3 border-b border-[#36606F]/10 bg-[#36606F]/[0.08] px-4 py-3">
                                             <div className="min-w-0">
                                               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#36606F]">
                                                 Vincular con almacén
@@ -1865,6 +1866,7 @@ export default function AlbaranesHistoricoClient({
                                       </div>
                                     ) : null}
                                   </div>
+                                    </div>
                                   ) : null}
                                 </div>
                               )
