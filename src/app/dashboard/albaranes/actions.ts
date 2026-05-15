@@ -1135,29 +1135,39 @@ export async function suggestIngredientsForLineAction(params: {
 
   const { data: ingRows, error } = await gate.supabase
     .from('ingredients')
-    .select('id, name, current_price, purchase_unit')
+    .select(
+      'id, name, current_price, purchase_unit, supplier_pricing_mode, pack_units, pack_unit_size_qty, pack_unit_size_unit'
+    )
     .order('name')
     .limit(4000)
   if (error) return { success: false, message: error.message }
 
   const ingredients = (ingRows ?? []).map((r: any) => ({
-    id: r.id,
+    id: String(r.id),
     name: String(r.name ?? ''),
     current_price: Number(r.current_price) || 0,
-    purchase_unit: r.purchase_unit ?? 'kg',
+    purchase_unit: String(r.purchase_unit ?? 'kg'),
+    supplier_pricing_mode: r.supplier_pricing_mode != null ? String(r.supplier_pricing_mode) : null,
+    pack_units: r.pack_units != null ? Number(r.pack_units) : null,
+    pack_unit_size_qty: r.pack_unit_size_qty != null ? Number(r.pack_unit_size_qty) : null,
+    pack_unit_size_unit: r.pack_unit_size_unit != null ? String(r.pack_unit_size_unit) : null,
   }))
 
   const cands = matchIngredientCandidates(extractedName, ingredients, 8)
   const suggested = pickSuggestedCandidate(cands)
 
-  const enriched: IngredientCandidate[] = cands.map((c: any) => {
-    const row = ingredients.find((i: any) => i.id === c.id)
+  const enriched: IngredientCandidate[] = cands.map((c) => {
+    const row = ingredients.find((i) => i.id === c.id)
     return {
       id: c.id,
-      name: c.name,
+      name: row?.name ?? c.name,
       score: c.score,
       current_price: row?.current_price ?? 0,
       purchase_unit: row?.purchase_unit ?? 'kg',
+      supplier_pricing_mode: row?.supplier_pricing_mode ?? null,
+      pack_units: row?.pack_units ?? null,
+      pack_unit_size_qty: row?.pack_unit_size_qty ?? null,
+      pack_unit_size_unit: row?.pack_unit_size_unit ?? null,
     }
   })
 
