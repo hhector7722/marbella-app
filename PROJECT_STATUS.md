@@ -1,6 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-15 (Carta: Plato Marbella en 3 tramos)
+**Última actualización:** 2026-05-16 (TPV ventas: Fecha_Sistema)
+
+- [x] **TPV ventas: modo solo poll por defecto (2026-05-16)**: Tras recuperar el día, el catch-up en segundo plano seguía ocupando el bridge y parecía “parado” en la venta actual. **`context/index.txt`**: `BDP_RUN_CATCHUP=1` opcional para historial; **por defecto sin catch-up**; poll inmediato + cada 5s; `ticketKey()` normalizado; `axios` timeout 45s. Operación normal en el PC TPV: solo actualizar `index` y reiniciar (servidor Linux ya con `fecha_sistema`).
+
+- [x] **TPV ventas: poll en vivo + catch-up en paralelo (2026-05-16)**: Tras el despliegue inicial, el `await catchUpVentas` bloqueaba el poll 10s → cobros nuevos no entraban hasta terminar cientos de tickets. **`context/index.txt`**: `setInterval` poll **antes** del catch-up en segundo plano; log `🔄 Poll ventas: N nuevo(s)`. **`context/server.txt`**: responde 200 tras upsert; stock vía `scheduleTicketStock` (RPC async, no bloquea al bridge). Sigue `Fecha_Sistema`, catch-up paginado 100, `fecha_sistema` en receptor.
+
+- [x] **TPV ventas: `Fecha_Sistema` + catch-up paginado (2026-05-16)**: BDP con `Fecha` (Data) desfasada dejaba fuera del poll `Fecha >= GETDATE()` y no entraban ventas en Supabase. **`context/index.txt`**: filtro `CAST(Fecha_Sistema AS DATE) >= ayer`; `SELECT` con `Fecha_Sistema`, `Hora_Cierre`, `fecha_bdp`; catch-up al arrancar (OFFSET 100, ~525 tickets); poll `TOP 50`; telemetría ventas directas por `Fecha_Sistema`. **`context/server.txt`**: día contable desde `fecha_sistema` (Madrid), `hora_cierre` del payload, `fecha_real` recepción; `VENTAS_FECHA_MODO=fecha_sistema|tpv`; RPC stock tras upsert. Despliegue: copiar ambos al TPV/VPS y reiniciar Node.
 
 - [x] **Carta: Plato Marbella en 3 tramos (2026-05-15)**: Subcategoría `platos-marbella` con vista dedicada en QR y staff: entrante / principal / guarnición en bandas horizontales, precio único del menú arriba (sin precio en opciones). **BD**: [`20260515140000_plato_marbella_menu_slots.sql`](supabase/migrations/20260515140000_plato_marbella_menu_slots.sql) — `digital_menu_overrides.plato_marbella_slot`, `plato_marbella_is_menu_price`, `category_child_slug` en vistas carta. **UI**: [`PlatoMarbellaMenuView.tsx`](src/components/carta/PlatoMarbellaMenuView.tsx), [`carta-plato-marbella.ts`](src/lib/carta-plato-marbella.ts), integración en [`PublicCarta.tsx`](src/components/public/PublicCarta.tsx) y [`MenuAccordion.tsx`](src/components/staff/MenuAccordion.tsx). **Editor**: selector de tramo + «Precio del menú» en [`MenuItemEditModal.tsx`](src/components/carta/MenuItemEditModal.tsx).
 

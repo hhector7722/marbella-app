@@ -1,14 +1,5 @@
 const path = require('path');
 
-
-
-
-
-
-
-
-
-
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
@@ -21,12 +12,87 @@ app.use(express.json({ limit: '20mb' }));
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
+/** fecha_sistema (default) | tpv (legacy: confiar en v.fecha del bridge) */
+const VENTAS_FECHA_MODO = (process.env.VENTAS_FECHA_MODO || 'fecha_sistema').toLowerCase();
+const TZ_MADRID = 'Europe/Madrid';
+
 if (!supabaseUrl || !supabaseKey) {
     console.error("❌ ERROR CRÍTICO: No se han encontrado las variables de Supabase en el archivo .env");
     process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+function parseIso(value) {
+    if (value == null || value === '') return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function ymdMadrid(date) {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: TZ_MADRID,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(date);
+}
+
+/**
+ * Día contable desde Fecha_Sistema (Data Sistema BDP), no Fecha de negocio desfasada.
+ * Body ventas: fecha_sistema, hora_cierre, fecha_bdp (auditoría), fecha (Hora línea, fallback).
+ */
+function resolveVentaTimestamps(v) {
+    const receivedAt = new Date();
+
+    if (VENTAS_FECHA_MODO === 'tpv') {
+        const base = parseIso(v.fecha) || receivedAt;
+        const cierre = parseIso(v.hora_cierre) || base;
+        return {
+            fecha: base.toISOString(),
+            hora_cierre: cierre.toISOString(),
+            fecha_real: receivedAt.toISOString(),
+            diaNegocio: ymdMadrid(base),
+        };
+    }
+
+    const instant =
+        parseIso(v.fecha_sistema) ||
+        parseIso(v.hora_cierre) ||
+        parseIso(v.fecha) ||
+        receivedAt;
+
+    const horaCierre = parseIso(v.hora_cierre) || parseIso(v.fecha) || instant;
+
+    return {
+        fecha: instant.toISOString(),
+        hora_cierre: horaCierre.toISOString(),
+        fecha_real: receivedAt.toISOString(),
+        diaNegocio: ymdMadrid(instant),
+    };
+}
+
+/** Stock en segundo plano: el bridge no espera la RPC (evita colas de catch-up). */
+function scheduleTicketStock(v) {
+    const numeroDocStr = String(v.numero_documento);
+    void (async () => {
+        try {
+            if (Number(v.total_documento) >= 0) {
+                const { error: ledgerErr } = await supabase.rpc('process_ticket_stock_deduction', {
+                    p_numero_documento: numeroDocStr,
+                });
+                if (ledgerErr) console.error(`[LEDGER] Deducción ${numeroDocStr}:`, ledgerErr.message);
+            } else {
+                const { error: refundErr } = await supabase.rpc('revert_ticket_stock_deduction', {
+                    p_numero_documento: numeroDocStr,
+                });
+                if (refundErr) console.error(`[LEDGER] Reintegro ${numeroDocStr}:`, refundErr.message);
+            }
+        } catch (err) {
+            console.error(`[LEDGER] Excepción ${numeroDocStr}:`, err.message);
+        }
+    })();
+}
 
 // =====================================
 // FASE 1: VENTAS Y LÍNEAS DE TICKET
@@ -39,12 +105,19 @@ app.post('/api/ventas', async (req, res) => {
         console.log(`[VENTAS] Recibidos ${ventas.length} tickets cerrados.`);
 
         for (const v of ventas) {
+            const ts = resolveVentaTimestamps(v);
+
+            console.log(
+                `[VENTAS] ${v.numero_documento} | modo=${VENTAS_FECHA_MODO} | fecha_bdp=${v.fecha_bdp || '—'} | fecha_sistema=${v.fecha_sistema || '—'} | dia=${ts.diaNegocio}`
+            );
+
             const { error: errCab } = await supabase.from('tickets_marbella').upsert([{
                 numero_documento: v.numero_documento,
-mesa: v.mesa || 0,
+                mesa: v.mesa || 0,
                 total_documento: v.total_documento,
-                fecha: v.fecha,
-                hora_cierre: v.fecha,
+                fecha: ts.fecha,
+                hora_cierre: ts.hora_cierre,
+                fecha_real: ts.fecha_real,
             }], { onConflict: 'numero_documento' });
 
             if (errCab) {
@@ -61,7 +134,8 @@ mesa: v.mesa || 0,
                     unidades: l.unidades,
                     precio_unidad: l.precio,
                     importe_total: l.unidades * l.precio,
-                    fecha_negocio: v.fecha
+                    fecha_negocio: ts.fecha,
+                    fecha_real: ts.fecha_real,
                 }));
 
                 const { error: errLin } = await supabase.from('ticket_lines_marbella').upsert(
@@ -71,6 +145,8 @@ mesa: v.mesa || 0,
 
                 if (errLin) console.error(`Error líneas de ${v.numero_documento}:`, errLin.message);
             }
+
+            scheduleTicketStock(v);
         }
         res.status(200).json({ success: true });
     } catch (err) {
@@ -81,23 +157,19 @@ mesa: v.mesa || 0,
 
 // =====================================
 // FASE 2: TELEMETRÍA Y COMANDERO (KDS)
-// Body: `{ total_mesas_vivas, sala }` donde cada elemento de `sala` sigue el contrato
-// documentado en `context/index.txt` (timestamp_tpv ISO UTC, productos[].hora opcional).
+// Body: `{ total_mesas_vivas, sala }` — contrato en `context/index.txt`
 // =====================================
 app.post('/api/telemetria', async (req, res) => {
-// ✨ EL CHIVATO DEL JSON ✨
     console.log("\n====== NUEVO PAQUETE DE WINDOWS ======");
     console.log(JSON.stringify(req.body, null, 2));
     console.log("======================================\n");
- try {
+    try {
         const { total_mesas_vivas, sala } = req.body;
         if (!sala) return res.status(200).send();
 
-        // EL TRUCO MAGICO: Recorremos el JSON y le metemos "id_ticket" a cada mesa
-        // para que tu Trigger de Supabase no falle.
         const salaDisfrazada = sala.map(mesa => ({
             ...mesa,
-            id_ticket: mesa.numero_documento, // <--- ESTO ARREGLA EL ERROR 500
+            id_ticket: mesa.numero_documento,
             nombre_cliente:
                 mesa.nombre_cliente != null && String(mesa.nombre_cliente).trim() !== ''
                     ? String(mesa.nombre_cliente).trim()
@@ -108,7 +180,7 @@ app.post('/api/telemetria', async (req, res) => {
             id: 1,
             ultima_actualizacion: new Date().toISOString(),
             mesas_activas: parseInt(total_mesas_vivas) || 0,
-            radiografia_completa: salaDisfrazada // Mandamos el JSON disfrazado
+            radiografia_completa: salaDisfrazada,
         }], { onConflict: 'id' });
 
         if (error) throw error;
@@ -125,6 +197,7 @@ app.post('/api/telemetria', async (req, res) => {
 app.listen(3000, () => {
     console.log('----------------------------------------');
     console.log('🚀 RECEPTOR ERP BDP (PRODUCCIÓN ACTIVA)');
+    console.log(`Modo fecha ventas: ${VENTAS_FECHA_MODO}`);
     console.log('Conectado a Supabase y escuchando en el puerto 3000');
     console.log('----------------------------------------');
 });
