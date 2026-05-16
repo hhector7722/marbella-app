@@ -2,6 +2,8 @@
 
 **Última actualización:** 2026-05-16 (TPV ventas: Fecha_Sistema)
 
+- [x] **TPV ventas: poll por Hora_Cierre + memoria semilla (2026-05-16)**: Cobros nuevos no entraban tras reinicio: el poll usaba solo `Fecha_Sistema` (NULL en algunos tickets) y/o rellenaba memoria con `TOP 50` sin enviar. **`context/index.txt`**: `POLL_VIVO_WHERE` por `Hora_Cierre` últimas 3h; `seedMemoriaTicketsRecientes` (24h sin reenvío) si no hay catch-up; heartbeat `⏱ Poll`; `BDP_GATEWAY_URL` para LAN (`192.168.1.205:3000`).
+
 - [x] **TPV ventas: modo solo poll por defecto (2026-05-16)**: Tras recuperar el día, el catch-up en segundo plano seguía ocupando el bridge y parecía “parado” en la venta actual. **`context/index.txt`**: `BDP_RUN_CATCHUP=1` opcional para historial; **por defecto sin catch-up**; poll inmediato + cada 5s; `ticketKey()` normalizado; `axios` timeout 45s. Operación normal en el PC TPV: solo actualizar `index` y reiniciar (servidor Linux ya con `fecha_sistema`).
 
 - [x] **TPV ventas: poll en vivo + catch-up en paralelo (2026-05-16)**: Tras el despliegue inicial, el `await catchUpVentas` bloqueaba el poll 10s → cobros nuevos no entraban hasta terminar cientos de tickets. **`context/index.txt`**: `setInterval` poll **antes** del catch-up en segundo plano; log `🔄 Poll ventas: N nuevo(s)`. **`context/server.txt`**: responde 200 tras upsert; stock vía `scheduleTicketStock` (RPC async, no bloquea al bridge). Sigue `Fecha_Sistema`, catch-up paginado 100, `fecha_sistema` en receptor.
