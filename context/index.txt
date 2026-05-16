@@ -15,15 +15,15 @@ const config = {
     options: { encrypt: false, trustServerCertificate: true, instanceName: 'BDPSOFTWARECF', enableArithAbort: true }
 };
 
-/** Catch-up histórico (Fecha_Sistema) */
+/**
+ * Ventana de negocio BDP (Data Sistema). Funciona aunque Fecha (día TPV) vaya desfasada.
+ * El filtro solo por Hora_Cierre 3h devolvía 0 filas en producción (reloj/Hora_Cierre NULL).
+ */
 const VENTAS_WHERE = `
-  WHERE CAST(Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
-`;
-
-/** Poll en vivo: por Hora_Cierre reciente (no depende solo de Fecha_Sistema, que a veces va NULL) */
-const POLL_VIVO_WHERE = `
-  WHERE Hora_Cierre IS NOT NULL
-    AND Hora_Cierre >= DATEADD(minute, -180, GETDATE())
+  WHERE (
+    (Fecha_Sistema IS NOT NULL AND CAST(Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
+    OR (Fecha_Sistema IS NULL AND CAST(Fecha AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
+  )
 `;
 
 const CABECERA_SELECT = `
@@ -35,8 +35,7 @@ const CABECERA_SELECT = `
 const CATCHUP_PAGE_SIZE = 100;
 const POLL_INTERVAL_MS = 5000;
 const AXIOS_TIMEOUT_MS = 45000;
-const POLL_TOP = 80;
-const MEMORIA_SEED_HORAS = 24;
+const POLL_TOP = 50;
 
 /** Solo historial al arrancar si BDP_RUN_CATCHUP=1. Por defecto OFF → solo poll (cobros nuevos). */
 const RUN_CATCHUP = process.env.BDP_RUN_CATCHUP === '1';
@@ -67,7 +66,7 @@ async function buildPayloadVenta(pool, t) {
     const horaLinea = lRes.recordset[0]?.Hora;
 
     return {
-        numero_documento: t.Numero_Documento,
+        numero_documento: ticketKey(t.Numero_Documento),
         mesa: t.Mesa,
         total_documento: parseFloat(t.Total_Documento) || 0,
         fecha_sistema: toIso(t.Fecha_Sistema),
@@ -145,21 +144,26 @@ async function catchUpVentas(pool) {
     console.log(`📦 Catch-up listo: ${enviados} enviados (${escaneados} cabeceras en ventana).`);
 }
 
-/** Tras reinicio sin catch-up: no reenviar el día ya sincronizado; solo cobros posteriores. */
-async function seedMemoriaTicketsRecientes(pool) {
-    const res = await pool.request()
-        .input('horas', sql.Int, MEMORIA_SEED_HORAS)
-        .query(`
-            SELECT Numero_Documento
-            FROM Documentos_Cabecera WITH (NOLOCK)
-            WHERE Hora_Cierre IS NOT NULL
-              AND Hora_Cierre >= DATEADD(hour, -@horas, GETDATE())
+async function logDiagnosticoSql(pool) {
+    try {
+        const diag = await pool.request().query(`
+            SELECT
+                GETDATE() AS sql_ahora,
+                (SELECT COUNT(*) FROM Documentos_Cabecera WITH (NOLOCK) ${VENTAS_WHERE}) AS en_ventana,
+                (SELECT COUNT(*) FROM Documentos_Cabecera WITH (NOLOCK)
+                    WHERE Hora_Cierre IS NOT NULL AND Hora_Cierre >= DATEADD(hour, -3, GETDATE())) AS hora_cierre_3h,
+                (SELECT MAX(Hora_Cierre) FROM Documentos_Cabecera WITH (NOLOCK)) AS max_hora_cierre,
+                (SELECT MAX(Numero_Documento) FROM Documentos_Cabecera WITH (NOLOCK) ${VENTAS_WHERE}) AS max_doc_ventana
         `);
-
-    for (const row of res.recordset || []) {
-        memoriaTickets.add(ticketKey(row.Numero_Documento));
+        const d = diag.recordset[0] || {};
+        console.log('🔎 SQL GETDATE()      =', d.sql_ahora);
+        console.log('🔎 Docs en ventana    =', d.en_ventana, '(Fecha_Sistema ayer/hoy)');
+        console.log('🔎 Docs Hora_Cierre 3h =', d.hora_cierre_3h);
+        console.log('🔎 MAX Hora_Cierre    =', d.max_hora_cierre);
+        console.log('🔎 MAX Num.Documento  =', d.max_doc_ventana);
+    } catch (e) {
+        console.error('🔎 Diagnóstico SQL falló:', e.message);
     }
-    console.log(`🧠 Memoria inicial: ${memoriaTickets.size} tickets (últimas ${MEMORIA_SEED_HORAS}h, sin reenvío).`);
 }
 
 async function pollVentasRecientes(pool) {
@@ -167,22 +171,18 @@ async function pollVentasRecientes(pool) {
     ventasPollBusy = true;
     try {
         const res = await pool.request().query(`
-                SELECT TOP (${POLL_TOP}) ${CABECERA_SELECT}
-                FROM Documentos_Cabecera WITH (NOLOCK)
-                ${POLL_VIVO_WHERE}
-                ORDER BY Hora_Cierre DESC
-            `);
+            SELECT TOP (${POLL_TOP}) ${CABECERA_SELECT}
+            FROM Documentos_Cabecera WITH (NOLOCK)
+            ${VENTAS_WHERE}
+            ORDER BY Hora_Cierre DESC, Numero_Documento DESC
+        `);
 
         const candidatos = res.recordset || [];
         let nuevos = 0;
-        let omitidosMemoria = 0;
 
         for (const t of candidatos) {
             const key = ticketKey(t.Numero_Documento);
-            if (memoriaTickets.has(key)) {
-                omitidosMemoria++;
-                continue;
-            }
+            if (memoriaTickets.has(key)) continue;
             try {
                 await enviarTicket(pool, t);
                 nuevos++;
@@ -194,13 +194,9 @@ async function pollVentasRecientes(pool) {
         pollTick++;
         const ts = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         if (nuevos > 0) {
-            console.log(`🔄 [${ts}] Poll: ${nuevos} NUEVO(S) | candidatos=${candidatos.length} en memoria=${omitidosMemoria}`);
+            console.log(`🔄 [${ts}] Poll: ${nuevos} enviado(s) | candidatos=${candidatos.length} | memoria=${memoriaTickets.size}`);
         } else if (pollTick % 12 === 0) {
-            if (candidatos.length === 0) {
-                console.log(`⏱ [${ts}] Poll: 0 cobros con Hora_Cierre en 3h`);
-            } else {
-                console.log(`⏱ [${ts}] Poll OK — ${candidatos.length} recientes, 0 nuevos (esperando cobro)`);
-            }
+            console.log(`⏱ [${ts}] Poll: 0 nuevos | candidatos=${candidatos.length} | memoria=${memoriaTickets.size}`);
         }
     } finally {
         ventasPollBusy = false;
@@ -211,11 +207,9 @@ async function start() {
     try {
         let pool = await sql.connect(config);
         console.log(`✅ Sistema Activado → ${DOMINIO}`);
-        console.log(`📋 Modo ventas: poll cada ${POLL_INTERVAL_MS / 1000}s (Hora_Cierre 3h) | catch-up: ${RUN_CATCHUP ? 'SÍ' : 'NO'}`);
+        console.log(`📋 Poll cada ${POLL_INTERVAL_MS / 1000}s (Fecha_Sistema) | catch-up arranque: ${RUN_CATCHUP ? 'SÍ' : 'NO'}`);
 
-        if (!RUN_CATCHUP) {
-            await seedMemoriaTicketsRecientes(pool);
-        }
+        await logDiagnosticoSql(pool);
 
         void pollVentasRecientes(pool);
 

@@ -1,0 +1,41 @@
+# Despliegue bridge BDP (ventas + telemetría)
+
+## Archivos fuente (repo)
+- context/index.txt  → copiar como index.js en el PC TPV (ej. C:\Users\Pos\Desktop\AgenteBDP\index.js)
+- context/server.txt → copiar como server.js en erp-gateway (/root/server-receptor/server.js)
+
+## PC del TPV (PowerShell en carpeta AgenteBDP)
+
+taskkill /F /IM node.exe 2>$null
+Start-Sleep -Seconds 2
+
+$env:BDP_GATEWAY_URL = "http://192.168.1.205:3000"
+
+# Primera vez o tras hueco de ventas: catch-up completo
+$env:BDP_RUN_CATCHUP = "1"
+node index.js
+# Esperar: 📦 Catch-up listo: ...
+
+# Operación normal (solo cobros nuevos cada 5s)
+# Ctrl+C y luego:
+$env:BDP_RUN_CATCHUP = "0"
+node index.js
+
+## Gateway Linux (erp-gateway)
+
+cd /root/server-receptor
+cp server.js server.js.bak
+# pegar context/server.txt como server.js
+grep scheduleTicketStock server.js
+pm2 restart receptor
+pm2 logs receptor --lines 20
+
+## Verificación
+- TPV: 🔎 Docs en ventana > 0 | ✅ Venta enviada | 🔄 Poll: N enviado(s)
+- Gateway: [VENTAS] ... | dia=YYYY-MM-DD (hoy)
+- App: /dashboard/ventas filtro hoy
+
+## Variables opcionales
+- BDP_GATEWAY_URL=http://192.168.1.205:3000
+- BDP_RUN_CATCHUP=1  (solo recuperación histórica)
+- VENTAS_FECHA_MODO=fecha_sistema  (en server .env, default)

@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-16 (TPV ventas: Fecha_Sistema)
+**Última actualización:** 2026-05-16 (TPV ventas: despliegue + verificación)
+
+- [x] **TPV ventas: artefactos despliegue (2026-05-16)**: `context/DEPLOY_BDP_VENTAS.txt` (pasos TPV + gateway), `context/backfill_ventas_fecha_hoy.sql` (solo si KPIs siguen en ayer), `context/verify_ventas_hoy.sql` (conteos dashboard). Código fuente: `context/index.txt`, `context/server.txt`.
+
+- [x] **TPV ventas: fix poll 0 cobros (2026-05-16)**: En producción el poll `Hora_Cierre 3h` devolvía **0 filas** (`Memoria inicial: 16`); ventas paradas desde ~14:42. **`context/index.txt`**: poll vuelve a `VENTAS_WHERE` (Fecha_Sistema); eliminada memoria semilla 24h; diagnóstico SQL al arranque (`GETDATE`, counts). Tras copiar a `AgenteBDP/index.js`: una vez `BDP_RUN_CATCHUP=1` para hueco, luego poll normal.
 
 - [x] **TPV ventas: poll por Hora_Cierre + memoria semilla (2026-05-16)**: Cobros nuevos no entraban tras reinicio: el poll usaba solo `Fecha_Sistema` (NULL en algunos tickets) y/o rellenaba memoria con `TOP 50` sin enviar. **`context/index.txt`**: `POLL_VIVO_WHERE` por `Hora_Cierre` últimas 3h; `seedMemoriaTicketsRecientes` (24h sin reenvío) si no hay catch-up; heartbeat `⏱ Poll`; `BDP_GATEWAY_URL` para LAN (`192.168.1.205:3000`).
 
