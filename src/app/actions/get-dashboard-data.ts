@@ -131,12 +131,13 @@ export async function getDashboardData() {
         const physicalCents = parseNumericToCents(opStatus.physical_balance ?? 0);
         actualBalance = physicalCents / 100;
 
-        // SALDO del libro: running_balance más reciente (atemporal), excluyendo ADJUSTMENT/SWAP
+        // SALDO del libro (caja operativa): running_balance más reciente, excluyendo ADJUSTMENT/SWAP
         let latestLedgerSaldoCents = 0;
         try {
             const { data: ledgerRows, error: ledgerError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
+                .eq('box_id', opStatus.box_id)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: false })

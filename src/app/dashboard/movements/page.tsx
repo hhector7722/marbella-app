@@ -176,8 +176,8 @@ export default function MovementsPage() {
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
-    // DIFERENCIA (UI) = SALDO ACTUAL (físico) - SALDO (running_balance más reciente del libro)
-    // Nota: “saldo” aquí ignora ADJUSTMENT/SWAP (como hace la lista).
+    // SALDO ACTUAL (KPI) = running_balance más reciente del libro (caja operativa).
+    // DIFERENCIA (UI) = efectivo físico contado − saldo libro (ignora ADJUSTMENT/SWAP).
     const [physicalBalanceCents, setPhysicalBalanceCents] = useState<number>(0);
     const [latestLedgerSaldoCents, setLatestLedgerSaldoCents] = useState<number>(0);
     const [latestLedgerLoading, setLatestLedgerLoading] = useState<boolean>(true);
@@ -192,8 +192,7 @@ export default function MovementsPage() {
 
     // 1. CARGA ATEMPORAL (Global)
     useEffect(() => {
-        fetchCurrentBoxStatus();
-        fetchLatestLedgerSaldo();
+        void fetchCurrentBoxStatus();
     }, []);
 
     async function fetchCurrentBoxStatus() {
@@ -216,23 +215,28 @@ export default function MovementsPage() {
                     difference: Number(status.difference ?? 0),
                     loading: false
                 });
+
+                await fetchLatestLedgerSaldo(status.box_id);
             } else {
                 toast.error("BLOQUEO: No se ha detectado ninguna 'Caja Operativa' en la base de datos.");
                 setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
+                setLatestLedgerLoading(false);
             }
         } catch (error) {
             console.error("Error crítico leyendo caja:", error);
             toast.error("Error de base de datos. Revisa la consola.");
             setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
+            setLatestLedgerLoading(false);
         }
     }
 
-    async function fetchLatestLedgerSaldo() {
+    async function fetchLatestLedgerSaldo(boxId: string) {
         setLatestLedgerLoading(true);
         try {
             const { data: ledgerRows, error: ledgerError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
+                .eq('box_id', boxId)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: false })
@@ -313,9 +317,8 @@ export default function MovementsPage() {
     }
 
     const refreshMovementsAfterMutation = async () => {
-        // Recalcular y refrescar: saldo actual + resumen del periodo + listado (con mismos filtros)
+        // Recalcular y refrescar: saldo libro + físico (DIFER) + resumen del periodo + listado
         await fetchCurrentBoxStatus();
-        await fetchLatestLedgerSaldo();
         await fetchFilteredMovements();
     };
 
@@ -325,8 +328,7 @@ export default function MovementsPage() {
             const from = pageIndex * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
 
-            // Ocultar visualmente los movimientos de otras cajas (como la de Cambio),
-            // pero manteniendo el running_balance global intacto.
+            // Solo movimientos de la caja operativa; running_balance es por box_id (vista SQL).
             let q = supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
@@ -429,7 +431,6 @@ export default function MovementsPage() {
 
             setCashModalMode('none');
             await fetchCurrentBoxStatus();
-            await fetchLatestLedgerSaldo();
             await fetchFilteredMovements();
             toast.success('Operación realizada correctamente');
         } catch (error) {
@@ -907,7 +908,13 @@ export default function MovementsPage() {
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {physicalBalanceCents !== 0 ? formatCentsToEur(physicalBalanceCents) : " "}
+                                    {latestLedgerLoading ? (
+                                        " "
+                                    ) : latestLedgerSaldoCents !== 0 ? (
+                                        formatCentsToEur(latestLedgerSaldoCents)
+                                    ) : (
+                                        " "
+                                    )}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
@@ -1243,7 +1250,6 @@ export default function MovementsPage() {
                     onSuccess={async () => {
                         setIsClosingModalOpen(false);
                         await fetchCurrentBoxStatus();
-                        await fetchLatestLedgerSaldo();
                         await fetchFilteredMovements();
                         toast.success("Cierre realizado correctamente");
                     }}
