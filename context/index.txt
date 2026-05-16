@@ -2,82 +2,242 @@ const sql = require('mssql');
 const axios = require('axios');
 
 // ✨ CONEXIÓN DIRECTA POR RED LOCAL ✨
-const DOMINIO = "http://erp-marbella.duckdns.org:3000";
+// En el PC TPV, si DuckDNS falla en LAN: set BDP_GATEWAY_URL=http://192.168.1.205:3000
+const DOMINIO = process.env.BDP_GATEWAY_URL || "http://erp-marbella.duckdns.org:3000";
 const URL_VENTAS = `${DOMINIO}/api/ventas`;
 const URL_TELEMETRIA = `${DOMINIO}/api/telemetria`;
 
 const config = {
-    user: 'proxmox_reader', 
-    password: 'heyJUDE5!', 
+    user: 'proxmox_reader',
+    password: 'heyJUDE5!',
     server: 'localhost',
     database: 'Bdp-Net_NetHos_38',
     options: { encrypt: false, trustServerCertificate: true, instanceName: 'BDPSOFTWARECF', enableArithAbort: true }
 };
 
+/** Catch-up histórico (Fecha_Sistema) */
+const VENTAS_WHERE = `
+  WHERE CAST(Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
+`;
+
+/** Poll en vivo: por Hora_Cierre reciente (no depende solo de Fecha_Sistema, que a veces va NULL) */
+const POLL_VIVO_WHERE = `
+  WHERE Hora_Cierre IS NOT NULL
+    AND Hora_Cierre >= DATEADD(minute, -180, GETDATE())
+`;
+
+const CABECERA_SELECT = `
+  Numero_Documento, Serie, Numero, Total_Documento,
+  Fecha, Fecha_Sistema, Hora_Cierre,
+  ISNULL(Mesa, 0) AS Mesa
+`;
+
+const CATCHUP_PAGE_SIZE = 100;
+const POLL_INTERVAL_MS = 5000;
+const AXIOS_TIMEOUT_MS = 45000;
+const POLL_TOP = 80;
+const MEMORIA_SEED_HORAS = 24;
+
+/** Solo historial al arrancar si BDP_RUN_CATCHUP=1. Por defecto OFF → solo poll (cobros nuevos). */
+const RUN_CATCHUP = process.env.BDP_RUN_CATCHUP === '1';
+
 let memoriaTickets = new Set();
-let ultimoEstadoSala = ""; // <-- AÑADIDO: Memoria del último estado de la sala
+let ultimoEstadoSala = "";
+let ventasPollBusy = false;
+let pollTick = 0;
+
+function ticketKey(numeroDocumento) {
+    return String(numeroDocumento ?? '').trim();
+}
+
+function toIso(val) {
+    if (val == null) return null;
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+    
+async function buildPayloadVenta(pool, t) {
+    const lRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
+        .query("SELECT PLU, Descripcion, Unidades, Precio, Hora FROM Documentos_Lineas WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
+    const mRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
+        .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Menus WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
+    const pRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
+        .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Packs WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
+
+    const horaLinea = lRes.recordset[0]?.Hora;
+
+    return {
+        numero_documento: t.Numero_Documento,
+        mesa: t.Mesa,
+        total_documento: parseFloat(t.Total_Documento) || 0,
+        fecha_sistema: toIso(t.Fecha_Sistema),
+        hora_cierre: toIso(t.Hora_Cierre),
+        fecha_bdp: toIso(t.Fecha),
+        fecha: horaLinea ? new Date(horaLinea).toISOString() : (toIso(t.Hora_Cierre) || new Date().toISOString()),
+        lineas: [
+            ...lRes.recordset.map(l => ({
+                articulo_id: l.PLU,
+                nombre: l.Descripcion?.trim() || "Sin Nombre",
+                unidades: parseFloat(l.Unidades) || 0,
+                precio: parseFloat(l.Precio) || 0
+            })),
+            ...mRes.recordset.map(m => ({
+                articulo_id: m.PLU,
+                nombre: '↳ ' + (m.Descripcion?.trim() || "Sin Nombre"),
+                unidades: parseFloat(m.Unidades) || 0,
+                precio: 0
+            })),
+            ...pRes.recordset.map(p => ({
+                articulo_id: p.PLU,
+                nombre: '↳ ' + (p.Descripcion?.trim() || "Sin Nombre"),
+                unidades: parseFloat(p.Unidades) || 0,
+                precio: 0
+            }))
+        ]
+    };
+}
+
+async function enviarTicket(pool, t) {
+    const key = ticketKey(t.Numero_Documento);
+    const payload = await buildPayloadVenta(pool, t);
+    await axios.post(URL_VENTAS, { ventas: [payload] }, { timeout: AXIOS_TIMEOUT_MS });
+    memoriaTickets.add(key);
+    console.log(`✅ Venta enviada -> Ticket: ${key} | Mesa: ${t.Mesa} | Fecha_Sistema: ${payload.fecha_sistema || '—'}`);
+}
+
+async function catchUpVentas(pool) {
+    console.log('📦 Catch-up ventas (Fecha_Sistema, paginado)...');
+    let offset = 0;
+    let enviados = 0;
+    let escaneados = 0;
+
+    while (true) {
+        const res = await pool.request()
+            .input('off', sql.Int, offset)
+            .input('lim', sql.Int, CATCHUP_PAGE_SIZE)
+            .query(`
+                SELECT ${CABECERA_SELECT}
+                FROM Documentos_Cabecera WITH (NOLOCK)
+                ${VENTAS_WHERE}
+                ORDER BY Hora_Cierre DESC
+                OFFSET @off ROWS FETCH NEXT @lim ROWS ONLY
+            `);
+
+        const batch = res.recordset || [];
+        if (!batch.length) break;
+
+        for (const t of batch) {
+            escaneados++;
+            if (memoriaTickets.has(ticketKey(t.Numero_Documento))) continue;
+            await new Promise((r) => setTimeout(r, 50));
+            try {
+                await enviarTicket(pool, t);
+                enviados++;
+            } catch (e) {
+                console.error(`❌ Catch-up ticket ${t.Numero_Documento}:`, e.message);
+            }
+        }
+
+        offset += CATCHUP_PAGE_SIZE;
+        if (batch.length < CATCHUP_PAGE_SIZE) break;
+    }
+
+    console.log(`📦 Catch-up listo: ${enviados} enviados (${escaneados} cabeceras en ventana).`);
+}
+
+/** Tras reinicio sin catch-up: no reenviar el día ya sincronizado; solo cobros posteriores. */
+async function seedMemoriaTicketsRecientes(pool) {
+    const res = await pool.request()
+        .input('horas', sql.Int, MEMORIA_SEED_HORAS)
+        .query(`
+            SELECT Numero_Documento
+            FROM Documentos_Cabecera WITH (NOLOCK)
+            WHERE Hora_Cierre IS NOT NULL
+              AND Hora_Cierre >= DATEADD(hour, -@horas, GETDATE())
+        `);
+
+    for (const row of res.recordset || []) {
+        memoriaTickets.add(ticketKey(row.Numero_Documento));
+    }
+    console.log(`🧠 Memoria inicial: ${memoriaTickets.size} tickets (últimas ${MEMORIA_SEED_HORAS}h, sin reenvío).`);
+}
+
+async function pollVentasRecientes(pool) {
+    if (ventasPollBusy) return;
+    ventasPollBusy = true;
+    try {
+        const res = await pool.request().query(`
+                SELECT TOP (${POLL_TOP}) ${CABECERA_SELECT}
+                FROM Documentos_Cabecera WITH (NOLOCK)
+                ${POLL_VIVO_WHERE}
+                ORDER BY Hora_Cierre DESC
+            `);
+
+        const candidatos = res.recordset || [];
+        let nuevos = 0;
+        let omitidosMemoria = 0;
+
+        for (const t of candidatos) {
+            const key = ticketKey(t.Numero_Documento);
+            if (memoriaTickets.has(key)) {
+                omitidosMemoria++;
+                continue;
+            }
+            try {
+                await enviarTicket(pool, t);
+                nuevos++;
+            } catch (e) {
+                console.error(`❌ ERROR ticket ${key}:`, e.message);
+            }
+        }
+
+        pollTick++;
+        const ts = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (nuevos > 0) {
+            console.log(`🔄 [${ts}] Poll: ${nuevos} NUEVO(S) | candidatos=${candidatos.length} en memoria=${omitidosMemoria}`);
+        } else if (pollTick % 12 === 0) {
+            if (candidatos.length === 0) {
+                console.log(`⏱ [${ts}] Poll: 0 cobros con Hora_Cierre en 3h`);
+            } else {
+                console.log(`⏱ [${ts}] Poll OK — ${candidatos.length} recientes, 0 nuevos (esperando cobro)`);
+            }
+        }
+    } finally {
+        ventasPollBusy = false;
+    }
+}
 
 async function start() {
     try {
         let pool = await sql.connect(config);
-        console.log('✅ Sistema Activado: Conectado a BDP y enlazado con erp-marbella.duckdns.org');
+        console.log(`✅ Sistema Activado → ${DOMINIO}`);
+        console.log(`📋 Modo ventas: poll cada ${POLL_INTERVAL_MS / 1000}s (Hora_Cierre 3h) | catch-up: ${RUN_CATCHUP ? 'SÍ' : 'NO'}`);
 
-        // 1. ENVÍO DE VENTAS (HISTORIAL DE COBRADOS)
+        if (!RUN_CATCHUP) {
+            await seedMemoriaTicketsRecientes(pool);
+        }
+
+        void pollVentasRecientes(pool);
+
         setInterval(async () => {
             try {
-                const res = await pool.request().query("SELECT TOP 50 Numero_Documento, Serie, Numero, Total_Documento, Fecha, ISNULL(Mesa, 0) AS Mesa FROM Documentos_Cabecera WITH (NOLOCK) WHERE Fecha >= CAST(GETDATE() AS DATE) ORDER BY Fecha DESC, Hora_Cierre DESC");
-                
-                for (const t of res.recordset) {
-                    if (!memoriaTickets.has(t.Numero_Documento)) {
-                        const lRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
-                            .query("SELECT PLU, Descripcion, Unidades, Precio, Hora FROM Documentos_Lineas WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
-                        const mRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
-                            .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Menus WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
-                        const pRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
-                            .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Packs WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
-
-                        const payloadVenta = {
-                            numero_documento: t.Numero_Documento,
-                            mesa: t.Mesa, 
-                            total_documento: parseFloat(t.Total_Documento) || 0,
-                            fecha: lRes.recordset[0]?.Hora ? new Date(lRes.recordset[0].Hora).toISOString() : new Date().toISOString(),
-                            lineas: [
-                                ...lRes.recordset.map(l => ({
-                                    articulo_id: l.PLU,
-                                    nombre: l.Descripcion?.trim() || "Sin Nombre",
-                                    unidades: parseFloat(l.Unidades) || 0,
-                                    precio: parseFloat(l.Precio) || 0
-                                })),
-                                ...mRes.recordset.map(m => ({
-                                    articulo_id: m.PLU,
-                                    nombre: '↳ ' + (m.Descripcion?.trim() || "Sin Nombre"),
-                                    unidades: parseFloat(m.Unidades) || 0,
-                                    precio: 0
-                                })),
-                                ...pRes.recordset.map(p => ({
-                                    articulo_id: p.PLU,
-                                    nombre: '↳ ' + (p.Descripcion?.trim() || "Sin Nombre"),
-                                    unidades: parseFloat(p.Unidades) || 0,
-                                    precio: 0
-                                }))
-                            ]
-                        };
-
-                        await axios.post(URL_VENTAS, { ventas: [payloadVenta] });
-                        memoriaTickets.add(t.Numero_Documento);
-                        console.log(`✅ Venta enviada -> Ticket: ${t.Numero_Documento} | Mesa: ${t.Mesa}`);
-                    }
-                }
+                await pollVentasRecientes(pool);
             } catch (e) {
                 console.error("❌ ERROR EN VENTAS:", e.message);
             }
-        }, 10000);
+        }, POLL_INTERVAL_MS);
+
+        if (RUN_CATCHUP) {
+            void catchUpVentas(pool).catch((e) => {
+                console.error('❌ Catch-up en segundo plano:', e.message);
+            });
+        }
 
         // 2. TELEMETRÍA / MONITOR COCINA (CON CEREBRO MATEMÁTICO ANTIFRAUDE)
         //    Contrato JSON → Supabase `estado_sala.radiografia_completa` (Radar / KDS):
         //    - `timestamp_tpv`: ISO UTC de la **apertura más temprana** con `row.Hora` no nulo
-        //      (la primera fila del ticket puede ser menú/pack con Hora NULL; antes quedaba "ahora" o vacío).
         //    - Cada `producto` incluye `hora` (misma semántica) para que el dashboard pueda fallback.
+        //    Ventas directas: filtro por Fecha_Sistema (alineado con ventas cobradas).
         setInterval(async () => {
             try {
                 const resVivas = await pool.request().query(`
@@ -114,7 +274,7 @@ async function start() {
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Lineas L WITH (NOLOCK) ON D.Serie = L.Serie AND D.Numero = L.Numero
                     WHERE L.Unidades <> 0 
-                    AND CAST(D.Fecha AS DATE) = CAST(GETDATE() AS DATE)
+                    AND CAST(D.Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
                     AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
 
@@ -152,7 +312,7 @@ async function start() {
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Menus M WITH (NOLOCK) ON D.Serie = M.Serie AND D.Numero = M.Numero
                     WHERE M.Unidades <> 0 
-                    AND CAST(D.Fecha AS DATE) = CAST(GETDATE() AS DATE)
+                    AND CAST(D.Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
                     AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
 
@@ -190,23 +350,22 @@ async function start() {
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Packs P WITH (NOLOCK) ON D.Serie = P.Serie AND D.Numero = P.Numero
                     WHERE P.Unidades <> 0 
-                    AND CAST(D.Fecha AS DATE) = CAST(GETDATE() AS DATE)
+                    AND CAST(D.Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
                     AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
                 `);
-                
+
                 let mapa = new Map();
 
                 resVivas.recordset.forEach(row => {
                     const idMesa = row.Numero_Referencia.toString();
-                    
+
                     if (!mapa.has(idMesa)) {
                         mapa.set(idMesa, {
                             numero_documento: idMesa,
                             mesa: row.Mesa.toString(),
                             notas_comanda: row.Nota_Cabecera1 || '',
                             nombre_cliente: '',
-                            /** ms desde epoch; mínimo de todas las `row.Hora` válidas del ticket */
                             aperturaMs: null,
                             productosMap: new Map()
                         });
@@ -246,18 +405,15 @@ async function start() {
                     }
                 });
 
-                // 4. Limpiamos la basura y empaquetamos (CON BLINDAJE PARA EL TRIGGER DE SUPABASE)
                 const sala = Array.from(mapa.values()).map(mesa => {
-                    
-                    // Inyectamos el numero_documento DENTRO de cada plato para que el Trigger de Supabase no llore
                     const productosReales = Array.from(mesa.productosMap.values()).map(p => ({
                         ...p,
-                        numero_documento: mesa.numero_documento // ✨ BLINDAJE EXTRA
+                        numero_documento: mesa.numero_documento
                     }));
 
                     return {
                         numero_documento: mesa.numero_documento,
-                        id_ticket: mesa.numero_documento, // ✨ BLINDAJE EXTRA
+                        id_ticket: mesa.numero_documento,
                         mesa: mesa.mesa,
                         notas_comanda: mesa.notas_comanda,
                         nombre_cliente: mesa.nombre_cliente || '',
@@ -268,13 +424,12 @@ async function start() {
                     };
                 }).filter(mesa => mesa.productos.some(p => p.unidades > 0));
 
-                // Solo enviamos la mesa si le queda al menos 1 plato vivo
-                const estadoActual = JSON.stringify(sala); // <-- AÑADIDO: Convierte el estado actual a un bloque de texto
+                const estadoActual = JSON.stringify(sala);
 
-                if (estadoActual !== ultimoEstadoSala) {   // <-- AÑADIDO: Solo si ha cambiado respecto al anterior
+                if (estadoActual !== ultimoEstadoSala) {
                     await axios.post(URL_TELEMETRIA, { sala, total_mesas_vivas: sala.length });
                     process.stdout.write(`\r[${new Date().toLocaleTimeString()}] 📡 Enviando a Cocina: ${sala.length} mesas vivas en curso.  `);
-                    ultimoEstadoSala = estadoActual;       // <-- AÑADIDO: Guardamos el nuevo estado como referencia
+                    ultimoEstadoSala = estadoActual;
                 }
 
             } catch (e) { console.error('\nError Telemetría:', e.message);
