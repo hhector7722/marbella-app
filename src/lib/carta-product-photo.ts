@@ -4,33 +4,33 @@ export const PRODUCT_PHOTO_HEIGHT = 1500
 
 export type CartaPhotoScale = 's' | 'm' | 'l'
 
-const IMG_BASE = 'pointer-events-none h-auto w-auto object-contain object-center'
+const IMG_BASE =
+  'pointer-events-none h-auto w-auto max-h-full max-w-full origin-center object-contain object-center'
 
-/** Producto entero visible; altura visual acotada para parecerse entre tarjetas (talla M). */
-export const CARTA_PRODUCT_PHOTO_IMG_CLASS =
-  `${IMG_BASE} max-h-[90%] max-w-[94%]`
-
-/** Bebidas: imagen contenida en marco de altura fija (talla M). */
-export const CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS =
-  `${IMG_BASE} max-h-full max-w-[80%]`
-
+/** Escala visual con transform (más fiable que max-h % dentro del marco flex). */
 const FOOD_SCALE_CLASS: Record<CartaPhotoScale, string> = {
-  s: `${IMG_BASE} max-h-[68%] max-w-[76%]`,
-  m: CARTA_PRODUCT_PHOTO_IMG_CLASS,
-  l: `${IMG_BASE} max-h-[98%] max-w-[98%]`,
+  s: `${IMG_BASE} scale-[0.52]`,
+  m: `${IMG_BASE} scale-[0.78]`,
+  l: `${IMG_BASE} scale-[1]`,
 }
 
 const DRINK_SCALE_CLASS: Record<CartaPhotoScale, string> = {
-  s: `${IMG_BASE} max-h-[72%] max-w-[68%]`,
-  m: CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS,
-  l: `${IMG_BASE} max-h-full max-w-[92%]`,
+  s: `${IMG_BASE} scale-[0.48]`,
+  m: `${IMG_BASE} scale-[0.72]`,
+  l: `${IMG_BASE} scale-[0.94]`,
 }
 
 const COVER_SCALE_CLASS: Record<CartaPhotoScale, string> = {
-  s: 'h-[78%] w-[78%] object-contain object-center',
-  m: 'h-full w-full object-contain object-center',
-  l: 'h-[95%] w-[95%] object-contain object-center',
+  s: 'max-h-full max-w-full origin-center object-contain object-center scale-[0.62]',
+  m: 'h-full w-full object-contain object-center scale-[0.82]',
+  l: 'max-h-full max-w-full origin-center object-contain object-center scale-[1]',
 }
+
+/** @deprecated Usar getCartaProductPhotoImgClass */
+export const CARTA_PRODUCT_PHOTO_IMG_CLASS = FOOD_SCALE_CLASS.m
+
+/** @deprecated Usar getCartaProductPhotoImgClass */
+export const CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS = DRINK_SCALE_CLASS.m
 
 /** Altura explícita: el grid reserva fila; sin aspect-ratio que colapse con img grande. */
 export const CARTA_DRINK_PHOTO_FRAME_CLASS =

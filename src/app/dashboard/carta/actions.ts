@@ -150,7 +150,11 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     .from('digital_menu_overrides')
     .upsert(merged, { onConflict: 'articulo_id', ignoreDuplicates: false })
 
-  if (error && /carta_photo_scale/i.test(error.message)) {
+  if (
+    error &&
+    /carta_photo_scale/i.test(error.message) &&
+    /does not exist|could not find the/i.test(error.message)
+  ) {
     const { carta_photo_scale: _drop, ...withoutScale } = merged
     const retry = await supabase
       .from('digital_menu_overrides')

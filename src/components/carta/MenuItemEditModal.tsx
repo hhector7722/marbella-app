@@ -100,7 +100,7 @@ export function MenuItemEditModal({
     setLoading(true)
     ;(async () => {
       try {
-        const [mapRes, recipeRes, overrideRes] = await Promise.all([
+        const [mapRes, recipeRes, overrideResWithScale, overrideResBase] = await Promise.all([
           supabase
             .from('bdp_articulos')
             .select('id, nombre')
@@ -114,11 +114,23 @@ export function MenuItemEditModal({
           supabase
             .from('digital_menu_overrides')
             .select(
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price'
+            )
+            .eq('articulo_id', articuloId)
+            .maybeSingle(),
+          supabase
+            .from('digital_menu_overrides')
+            .select(
               'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
         ])
+        const overrideRes =
+          overrideResWithScale.error?.message?.includes('carta_photo_scale') &&
+          !overrideResBase.error
+            ? overrideResBase
+            : overrideResWithScale
         if (mapRes.error) throw mapRes.error
         if (recipeRes.error) throw recipeRes.error
         if (overrideRes.error) throw overrideRes.error
@@ -313,7 +325,10 @@ export function MenuItemEditModal({
                     ))}
                   </div>
                   <div className="mt-2 flex justify-center">
-                    <div className={cn(previewFrameClass, 'w-[42%] max-w-[7rem]')}>
+                    <div
+                      className={cn(previewFrameClass, 'w-[min(42vw,7.5rem)] border border-zinc-100')}
+                      aria-live="polite"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={displayPhotoSrc!} alt="" className={previewImgClass} />
                     </div>
