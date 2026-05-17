@@ -236,13 +236,13 @@ function MenuCard({
                 editMode && !isActive && 'opacity-75'
             )}
         >
-            <div className="flex w-full flex-col items-center px-2 pt-2">
-                <div className="relative mx-auto h-14 w-full max-w-[min(100%,8rem)] shrink-0 bg-white sm:h-16">
+            <div className="flex w-full flex-col items-center px-1 pt-1.5 sm:px-1.5 sm:pt-2">
+                <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-white">
                     {row.photo_url ? (
                         <button
                             type="button"
                             className={cn(
-                                'relative flex h-full w-full touch-manipulation items-center justify-center bg-white active:bg-zinc-50',
+                                'absolute inset-0 flex touch-manipulation items-center justify-center bg-white active:bg-zinc-50',
                                 productReorderMode && onReorderTap ? 'cursor-pointer' : editMode ? 'cursor-default' : 'cursor-zoom-in'
                             )}
                             aria-label={
@@ -271,11 +271,11 @@ function MenuCard({
                             <img
                                 src={row.photo_url}
                                 alt=""
-                                className="pointer-events-none h-full w-full max-h-full object-contain object-center p-1.5"
+                                className="pointer-events-none h-full w-full object-contain object-center p-0.5"
                             />
                         </button>
                     ) : (
-                        <div className="h-full w-full bg-white" />
+                        <div className="absolute inset-0 bg-white" aria-hidden />
                     )}
                     {editMode && onToggleProductActive ? (
                         <button

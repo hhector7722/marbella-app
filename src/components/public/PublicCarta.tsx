@@ -375,7 +375,7 @@ export function PublicCarta({
                                 row.photo_url ? (
                                   <button
                                     type="button"
-                                    className="relative mx-auto h-11 w-full max-w-[min(100%,7rem)] shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50 sm:h-12"
+                                    className="relative mx-auto aspect-[4/5] w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50"
                                     aria-label="Ver foto ampliada"
                                     onClick={() =>
                                       setLightbox({
@@ -389,11 +389,11 @@ export function PublicCarta({
                                       alt=""
                                       fill
                                       sizes="(max-width: 640px) 33vw, 20vw"
-                                      className="pointer-events-none object-contain object-center p-1.5"
+                                      className="pointer-events-none object-contain object-center p-0.5"
                                     />
                                   </button>
                                 ) : (
-                                  <div className="relative mx-auto h-11 w-full max-w-[min(100%,7rem)] shrink-0 bg-white sm:h-12">
+                                  <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-white">
                                     <div className="h-full w-full bg-white" />
                                   </div>
                                 )
