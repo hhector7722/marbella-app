@@ -21,7 +21,8 @@ export default function StaffError({
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-black tracking-tight text-zinc-900">Ha ocurrido un error</h2>
           <p className="text-sm font-semibold text-zinc-700">
-            Si ha pasado al fichar salida, suele ser un problema de permisos (RLS) o una regla de base de datos.
+            {error.message?.trim() ||
+              'Si ha pasado al fichar salida, suele ser un problema de permisos (RLS) o una regla de base de datos.'}
           </p>
 
           <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs font-mono text-zinc-800 break-all">

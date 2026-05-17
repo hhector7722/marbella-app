@@ -164,11 +164,6 @@ export function MenuItemEditModal({
     }
   }, [previewBlobUrl])
 
-  if (!open || articuloId == null) return null
-
-  const displayPhotoSrc =
-    previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
-
   const previewParentName = useMemo(() => {
     if (!categoryId) return null
     const cat = categories.find((c) => c.id === categoryId)
@@ -176,6 +171,11 @@ export function MenuItemEditModal({
     if (!cat.parent_id) return cat.name
     return categories.find((c) => c.id === cat.parent_id)?.name ?? null
   }, [categoryId, categories])
+
+  if (!open || articuloId == null) return null
+
+  const displayPhotoSrc =
+    previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
 
   const previewIsDrink = isCartaDrinksSection(previewParentName)
   const previewFrameClass = previewIsDrink
