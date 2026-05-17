@@ -18,6 +18,7 @@ import {
   tPublicUi,
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
+import { CARTA_PRODUCT_PHOTO_IMG_CLASS } from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
 import {
   bucketMenuRowForPlatoMarbella,
@@ -375,7 +376,7 @@ export function PublicCarta({
                                 row.photo_url ? (
                                   <button
                                     type="button"
-                                    className="relative mx-auto aspect-[4/5] w-full shrink-0 cursor-zoom-in touch-manipulation bg-white active:bg-zinc-50"
+                                    className="relative mx-auto flex aspect-[4/5] w-full shrink-0 cursor-zoom-in touch-manipulation items-center justify-center bg-white active:bg-zinc-50"
                                     aria-label="Ver foto ampliada"
                                     onClick={() =>
                                       setLightbox({
@@ -384,12 +385,11 @@ export function PublicCarta({
                                       })
                                     }
                                   >
-                                    <Image
+                                    {/* eslint-disable-next-line @next/next/no-img-element -- mismo criterio que staff */}
+                                    <img
                                       src={row.photo_url}
                                       alt=""
-                                      fill
-                                      sizes="(max-width: 640px) 33vw, 20vw"
-                                      className="pointer-events-none object-contain object-center p-0.5"
+                                      className={CARTA_PRODUCT_PHOTO_IMG_CLASS}
                                     />
                                   </button>
                                 ) : (

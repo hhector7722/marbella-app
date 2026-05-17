@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { CARTA_PRODUCT_PHOTO_IMG_CLASS } from '@/lib/carta-product-photo'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -48,17 +48,12 @@ function OptionCard({
       {photo ? (
         <button
           type="button"
-          className="relative mx-auto aspect-[4/5] w-full min-h-[48px] shrink-0 touch-manipulation active:bg-zinc-50"
+          className="relative mx-auto flex aspect-[4/5] w-full min-h-[48px] shrink-0 touch-manipulation items-center justify-center active:bg-zinc-50"
           aria-label="Ver foto ampliada"
           onClick={() => onPhotoClick?.(photo, name)}
         >
-          <Image
-            src={photo}
-            alt=""
-            fill
-            sizes="42vw"
-            className="pointer-events-none object-contain object-center p-1.5"
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL desde BD */}
+          <img src={photo} alt="" className={CARTA_PRODUCT_PHOTO_IMG_CLASS} />
         </button>
       ) : (
         <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-zinc-50" aria-hidden />

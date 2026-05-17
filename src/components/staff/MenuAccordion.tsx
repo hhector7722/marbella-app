@@ -30,6 +30,7 @@ import {
     type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
+import { CARTA_PRODUCT_PHOTO_IMG_CLASS } from '@/lib/carta-product-photo'
 
 export type DigitalMenuRow = {
     articulo_id: number
@@ -271,7 +272,7 @@ function MenuCard({
                             <img
                                 src={row.photo_url}
                                 alt=""
-                                className="pointer-events-none h-full w-full object-contain object-center p-0.5"
+                                className={CARTA_PRODUCT_PHOTO_IMG_CLASS}
                             />
                         </button>
                     ) : (

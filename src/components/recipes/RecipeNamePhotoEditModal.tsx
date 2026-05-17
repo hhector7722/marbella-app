@@ -207,7 +207,7 @@ export function RecipeNamePhotoEditModal({
                             onChange={handlePickFile}
                         />
                         <p className="text-[10px] font-semibold leading-snug text-zinc-500">
-                            Se unifica el tamaño en carta (misma altura visual, 4:5). Vuelve a subir cada foto.
+                            Se recorta blanco de bordes y se guarda entero en 4:5. Vuelve a subir si ves recortes viejos.
                         </p>
                     </div>
                 </div>

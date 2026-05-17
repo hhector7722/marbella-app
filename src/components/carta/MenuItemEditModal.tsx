@@ -255,8 +255,8 @@ export function MenuItemEditModal({
                   </div>
                 </div>
                 <p className="mt-2 text-[11px] font-semibold text-zinc-500">
-                  Si no subes imagen, se usa la foto de la receta. Al subir, se igualan proporciones en carta
-                  (misma altura visual entre productos).
+                  Si no subes imagen, se usa la foto de la receta. Al subir, el producto se guarda entero (sin
+                  recortar). Vuelve a subir si una foto se ve cortada.
                 </p>
               </div>
 
