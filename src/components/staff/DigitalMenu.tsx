@@ -6,7 +6,7 @@ export async function DigitalMenu() {
         const { data, error } = await supabase
         .from('v_digital_menu_items')
         .select(
-            'articulo_id, articulo_nombre, carta_nombre, carta_nombre_es, carta_nombre_ca, carta_nombre_en, departamento_id, departamento_nombre, category_id, category_parent_id, category_parent_name, category_parent_name_es, category_parent_name_ca, category_parent_name_en, category_parent_sort_order, category_parent_cover_photo_url, category_child_id, category_child_name, category_child_name_es, category_child_name_ca, category_child_name_en, category_child_sort_order, category_child_slug, recipe_id, recipe_name, descripcion, precio, photo_url, carta_photo_scale, sort_order, tpv_factor_porcion, plato_marbella_slot, plato_marbella_is_menu_price'
+            'articulo_id, articulo_nombre, carta_nombre, carta_nombre_es, carta_nombre_ca, carta_nombre_en, departamento_id, departamento_nombre, category_id, category_parent_id, category_parent_name, category_parent_name_es, category_parent_name_ca, category_parent_name_en, category_parent_sort_order, category_parent_cover_photo_url, category_child_id, category_child_name, category_child_name_es, category_child_name_ca, category_child_name_en, category_child_sort_order, category_child_slug, recipe_id, recipe_name, descripcion, precio, photo_url, sort_order, tpv_factor_porcion, plato_marbella_slot, plato_marbella_is_menu_price'
         )
         .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
         .order('category_parent_name', { ascending: true, nullsFirst: false })

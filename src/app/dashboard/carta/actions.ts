@@ -146,9 +146,17 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
             : 'm'),
   }
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from('digital_menu_overrides')
     .upsert(merged, { onConflict: 'articulo_id', ignoreDuplicates: false })
+
+  if (error && /carta_photo_scale/i.test(error.message)) {
+    const { carta_photo_scale: _drop, ...withoutScale } = merged
+    const retry = await supabase
+      .from('digital_menu_overrides')
+      .upsert(withoutScale, { onConflict: 'articulo_id', ignoreDuplicates: false })
+    error = retry.error
+  }
 
   if (error) {
     console.error('upsertMenuOverride error:', error)

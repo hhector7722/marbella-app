@@ -114,7 +114,7 @@ export function MenuItemEditModal({
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),

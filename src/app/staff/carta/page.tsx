@@ -7,6 +7,11 @@ import { StaffCartaView } from '@/components/staff/StaffCartaView';
 import type { DigitalMenuRow } from '@/components/staff/MenuAccordion';
 
 import { resolveMenuCategoryCoverById, splitMenuCategoryCovers } from '@/lib/carta-category-covers';
+import {
+    CARTA_DIGITAL_MENU_COLUMNS,
+    CARTA_DIGITAL_MENU_COLUMNS_WITH_SCALE,
+    isCartaPhotoScaleColumnError,
+} from '@/lib/carta-menu-select';
 
 
 
@@ -112,27 +117,21 @@ export default async function StaffCartaPage() {
 
 
 
-    const { data, error } = await supabase
+    const menuOrder = (cols: string) =>
+        supabase
+            .from('v_digital_menu_items')
+            .select(cols)
+            .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
+            .order('category_parent_name', { ascending: true, nullsFirst: false })
+            .order('category_child_sort_order', { ascending: true, nullsFirst: false })
+            .order('category_child_name', { ascending: true, nullsFirst: false })
+            .order('sort_order', { ascending: true, nullsFirst: false })
+            .order('carta_nombre', { ascending: true });
 
-        .from('v_digital_menu_items')
-
-        .select(
-
-            'articulo_id, articulo_nombre, carta_nombre, carta_nombre_es, carta_nombre_ca, carta_nombre_en, departamento_id, departamento_nombre, category_id, category_parent_id, category_parent_name, category_parent_name_es, category_parent_name_ca, category_parent_name_en, category_parent_sort_order, category_parent_cover_photo_url, category_child_id, category_child_name, category_child_name_es, category_child_name_ca, category_child_name_en, category_child_sort_order, category_child_slug, recipe_id, recipe_name, descripcion, precio, photo_url, carta_photo_scale, sort_order, tpv_factor_porcion, plato_marbella_slot, plato_marbella_is_menu_price'
-
-        )
-
-        .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
-
-        .order('category_parent_name', { ascending: true, nullsFirst: false })
-
-        .order('category_child_sort_order', { ascending: true, nullsFirst: false })
-
-        .order('category_child_name', { ascending: true, nullsFirst: false })
-
-        .order('sort_order', { ascending: true, nullsFirst: false })
-
-        .order('carta_nombre', { ascending: true });
+    let { data, error } = await menuOrder(CARTA_DIGITAL_MENU_COLUMNS_WITH_SCALE);
+    if (error && isCartaPhotoScaleColumnError(error.message)) {
+        ({ data, error } = await menuOrder(CARTA_DIGITAL_MENU_COLUMNS));
+    }
 
 
 
@@ -168,7 +167,7 @@ export default async function StaffCartaPage() {
 
         <StaffCartaView
 
-            items={(data ?? []) as DigitalMenuRow[]}
+            items={(data ?? []) as unknown as DigitalMenuRow[]}
 
             menuCategories={(menuCategories ?? []).map((c) => ({
 

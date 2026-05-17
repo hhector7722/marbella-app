@@ -39,22 +39,24 @@ export async function resolveMenuCategoryCoverById(
     .in('articulo_id', coverIds)
   if (covErr) throw covErr
 
-  const { data: covOvs, error: covOvsErr } = await supabase
+  let covOvsRes = await supabase
     .from('digital_menu_overrides')
     .select('articulo_id, override_photo_url, carta_photo_scale')
     .in('articulo_id', coverIds)
-  if (covOvsErr) throw covOvsErr
+  if (covOvsRes.error?.message?.includes('carta_photo_scale')) {
+    covOvsRes = (await supabase
+      .from('digital_menu_overrides')
+      .select('articulo_id, override_photo_url')
+      .in('articulo_id', coverIds)) as typeof covOvsRes
+  }
+  if (covOvsRes.error) throw covOvsRes.error
+  const covOvs = covOvsRes.data
 
   const ovPhoto = new Map<number, string | null>()
   const ovScale = new Map<number, CartaPhotoScale>()
   for (const r of covOvs ?? []) {
-    const row = r as {
-      articulo_id: number
-      override_photo_url?: string | null
-      carta_photo_scale?: string | null
-    }
-    ovPhoto.set(row.articulo_id, ntrim(row.override_photo_url))
-    ovScale.set(row.articulo_id, normalizeCartaPhotoScale(row.carta_photo_scale))
+    ovPhoto.set(r.articulo_id, ntrim(r.override_photo_url))
+    ovScale.set(r.articulo_id, normalizeCartaPhotoScale(r.carta_photo_scale))
   }
   for (const r of covMaps ?? []) {
     const rec0 = (r as { recipes?: { photo_url?: string | null } | { photo_url?: string | null }[] }).recipes
@@ -64,7 +66,7 @@ export async function resolveMenuCategoryCoverById(
     const ovr = ovPhoto.get(aid) ?? null
     coverByArticulo.set(aid, {
       url: ovr ?? ph,
-      scale: ovScale.get(aid) ?? 'm',
+      scale: ovScale.get(aid) ?? ('m' as CartaPhotoScale),
     })
   }
 
