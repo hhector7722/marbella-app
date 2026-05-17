@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
+import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
 import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
 
@@ -205,7 +206,7 @@ export function MenuItemEditModal({
                   <div className="flex flex-wrap gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       id="menu-item-photo-upload"
                       onChange={(e) => {
@@ -254,7 +255,8 @@ export function MenuItemEditModal({
                   </div>
                 </div>
                 <p className="mt-2 text-[11px] font-semibold text-zinc-500">
-                  Si no subes imagen, se usa la foto de la receta por defecto.
+                  Si no subes imagen, se usa la foto de la receta. Al subir, se recortan márgenes blancos y se
+                  normaliza a 4:5 (1200×1500).
                 </p>
               </div>
 
@@ -361,22 +363,12 @@ export function MenuItemEditModal({
 
                       try {
                         if (selectedFile) {
-                          const fileExt = selectedFile.name.split('.').pop()
-                          const cleanBase = selectedFile.name
-                            .toLowerCase()
-                            .replace(/\.[^/.]+$/, '')
-                            .normalize('NFD')
-                            .replace(/[\u0300-\u036f]/g, '')
-                            .replace(/[^a-z0-9]/g, '_')
-                          const fileName = `${Date.now()}-${cleanBase || 'carta'}.${fileExt}`
-                          const filePath = `menu-items/${articuloId}/${fileName}`
-
-                          const up = await supabase.storage.from('carta_items').upload(filePath, selectedFile, { upsert: true })
-                          if (up.error) throw up.error
-                          const { data } = supabase.storage.from('carta_items').getPublicUrl(filePath)
-                          const pub = data?.publicUrl
-                          if (!pub) throw new Error('No se pudo obtener la URL pública de la imagen.')
-                          nextOverridePhotoUrl = pub
+                          const fd = new FormData()
+                          fd.append('file', selectedFile)
+                          fd.append('articulo_id', String(articuloId))
+                          const up = await uploadNormalizedCartaItemPhoto(fd)
+                          if (!up.success) throw new Error(up.error)
+                          nextOverridePhotoUrl = up.publicUrl
                         } else if (removeOverridePhoto) {
                           nextOverridePhotoUrl = null
                         }

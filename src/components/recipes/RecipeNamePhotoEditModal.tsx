@@ -6,6 +6,7 @@ import { Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { uploadNormalizedRecipePhoto } from '@/app/dashboard/carta/photo-actions';
 
 export type RecipeNamePhotoSaved = { name: string; photo_url: string | null };
 
@@ -69,8 +70,8 @@ export function RecipeNamePhotoEditModal({
         e.target.value = '';
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('La imagen es muy grande (Máx 5MB)');
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('La imagen es muy grande (máx. 10 MB)');
             return;
         }
 
@@ -93,22 +94,11 @@ export function RecipeNamePhotoEditModal({
             let photo_url: string | null = baselinePhotoUrl;
 
             if (selectedFile) {
-                const fileExt = selectedFile.name.split('.').pop();
-                const cleanBase = selectedFile.name
-                    .toLowerCase()
-                    .replace(/\.[^/.]+$/, '')
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^a-z0-9]/g, '_');
-
-                const fileName = `${Date.now()}-${cleanBase || 'receta'}.${fileExt}`;
-                const up = await supabase.storage.from('recipes').upload(fileName, selectedFile, { upsert: true });
-                if (up.error) throw up.error;
-
-                const { data } = supabase.storage.from('recipes').getPublicUrl(fileName);
-                const pub = data?.publicUrl;
-                if (!pub) throw new Error('No se pudo obtener la URL de la imagen.');
-                photo_url = pub;
+                const fd = new FormData();
+                fd.append('file', selectedFile);
+                const up = await uploadNormalizedRecipePhoto(fd);
+                if (!up.success) throw new Error(up.error);
+                photo_url = up.publicUrl;
             }
 
             const { error } = await supabase.from('recipes').update({ name: trimmed, photo_url }).eq('id', recipeId);
@@ -212,10 +202,13 @@ export function RecipeNamePhotoEditModal({
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp"
                             className="hidden"
                             onChange={handlePickFile}
                         />
+                        <p className="text-[10px] font-semibold leading-snug text-zinc-500">
+                            Se recortan márgenes blancos y se guarda en 4:5 (1200×1500) para la carta.
+                        </p>
                     </div>
                 </div>
 

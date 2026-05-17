@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     },
   },
   // 🧠 AISLAMIENTO ESTRICTO: Evita que Webpack/Turbopack minifique y rompa la librería
-  serverExternalPackages: ["pdf-parse"],
+  serverExternalPackages: ["pdf-parse", "sharp"],
 
   images: {
     remotePatterns: [
