@@ -375,17 +375,14 @@ export function PublicCarta({
                           onPhotoClick={(src, alt) => setLightbox({ src, alt })}
                         />
                       ) : (
-                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                      <div className="grid grid-cols-3 items-start gap-x-1.5 gap-y-2 sm:gap-x-2 sm:gap-y-2.5">
                         {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => {
                           const medioStr = formatPrice(row.precio_medio_display ?? null)
                           const showMedio = medioStr.trim() !== ''
                           return (
                           <div
                             key={row.articulo_id}
-                            className={cn(
-                              'flex flex-col items-center rounded-2xl bg-white',
-                              isCartaDrinksSection(row.category_parent_name) ? 'overflow-visible' : 'overflow-hidden'
-                            )}
+                            className="flex min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white"
                           >
                             <div className="flex w-full flex-col items-center gap-0.5 px-1 pb-1 pt-1 sm:px-1.5 sm:pb-1.5 sm:pt-1.5">
                               {cartaShowsProductPhoto(row.category_parent_name) ? (

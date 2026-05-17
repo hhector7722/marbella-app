@@ -250,18 +250,18 @@ function MenuCard({
     return (
         <div
             className={cn(
-                'flex h-full flex-col items-center rounded-2xl bg-white',
-                isDrink ? 'overflow-visible' : 'overflow-hidden',
+                'flex min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
                 editMode && !isActive && 'opacity-75'
             )}
         >
             <div className="flex w-full flex-col items-center gap-0.5 px-1 pt-1 sm:px-1.5 sm:pt-1.5">
-                <div className={cn(frameClass, 'relative')}>
-                    {row.photo_url ? (
+                {row.photo_url ? (
+                    <div className="relative w-full shrink-0">
                         <button
                             type="button"
                             className={cn(
-                                'absolute inset-0 flex touch-manipulation items-center justify-center bg-white active:bg-zinc-50',
+                                frameClass,
+                                'touch-manipulation active:bg-zinc-50',
                                 productReorderMode && onReorderTap ? 'cursor-pointer' : editMode ? 'cursor-default' : 'cursor-zoom-in'
                             )}
                             aria-label={
@@ -293,10 +293,7 @@ function MenuCard({
                                 className={imgClass}
                             />
                         </button>
-                    ) : (
-                        <div className="absolute inset-0 bg-white" aria-hidden />
-                    )}
-                    {editMode && onToggleProductActive ? (
+                        {editMode && onToggleProductActive ? (
                         <button
                             type="button"
                             className="absolute right-0 top-0 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none outline-none ring-0 sm:right-0.5 sm:top-0.5 sm:min-h-[48px] sm:min-w-[48px]"
@@ -324,8 +321,11 @@ function MenuCard({
                                 />
                             )}
                         </button>
-                    ) : null}
-                </div>
+                        ) : null}
+                    </div>
+                ) : (
+                    <div className={frameClass} aria-hidden />
+                )}
             </div>
 
             <div
@@ -1224,7 +1224,7 @@ export function MenuAccordion({
                                                         orderedIds={productIdsDraft}
                                                     />
                                                 ) : (
-                                                <div className="grid grid-cols-3 items-stretch gap-2 md:gap-3">
+                                                <div className="grid grid-cols-3 items-start gap-x-2 gap-y-2.5 md:gap-x-3 md:gap-y-3">
                                                     {sub.rows.map((row) => {
                                                         const picked =
                                                             reorderPick === String(row.articulo_id)
@@ -1296,7 +1296,7 @@ export function MenuAccordion({
                                                     />
                                                 )
                                             ) : (
-                                                <div className="grid grid-cols-3 items-stretch gap-2 md:gap-3">
+                                                <div className="grid grid-cols-3 items-start gap-x-2 gap-y-2.5 md:gap-x-3 md:gap-y-3">
                                                     {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => (
                                                         <div key={row.articulo_id} className="h-full">
                                                             <MenuCard
