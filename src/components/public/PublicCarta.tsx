@@ -17,8 +17,16 @@ import {
   getCartaSubcategoryPickerLabel,
   tPublicUi,
 } from '@/lib/carta-menu-i18n'
+import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
-import { CARTA_PRODUCT_PHOTO_IMG_CLASS } from '@/lib/carta-product-photo'
+import {
+  CARTA_DEFAULT_PHOTO_FRAME_CLASS,
+  CARTA_DRINK_PHOTO_FRAME_CLASS,
+  CARTA_PRODUCT_PHOTO_IMG_CLASS,
+  CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS,
+  cartaShowsProductPhoto,
+  isCartaDrinksSection,
+} from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
 import {
   bucketMenuRowForPlatoMarbella,
@@ -78,11 +86,13 @@ function formatPrice(precio: PublicMenuRow['precio']) {
 export function PublicCarta({
   items,
   menuCategories = [],
+  categoryCoverById = {},
   backHref,
   cartaEditHref,
 }: {
   items: PublicMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
+  categoryCoverById?: Record<string, string | null>
   /** Solo usuarios autenticados: destino del botón volver (Inicio). */
   backHref: string | null
   cartaEditHref: string | null
@@ -150,11 +160,24 @@ export function PublicCarta({
             getCartaDisplayName(a, lang).localeCompare(getCartaDisplayName(b, lang), 'es', { sensitivity: 'base' })
         )
       }
-      ;(g as any)._subList = subList
+      ;(g as any)._subList = subList.map((s) => ({
+        ...s,
+        coverPhotoUrl: categoryCoverById[s.key] ?? null,
+      }))
     }
 
-    return groupList as Array<Group & { _subList: Array<{ key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }> }>
-  }, [items, lang, menuCategories, platoMarbellaCategoryId])
+    return groupList as Array<
+      Group & {
+        _subList: Array<{
+          key: string
+          title: string
+          sortOrder: number
+          rows: PublicMenuRow[]
+          coverPhotoUrl: string | null
+        }>
+      }
+    >
+  }, [items, lang, menuCategories, platoMarbellaCategoryId, categoryCoverById])
 
   const isPlatoMarbellaSub = (subKey: string, rows: PublicMenuRow[]) =>
     isPlatoMarbellaMenuSub(subKey, rows, platoMarbellaCategoryId)
@@ -165,7 +188,7 @@ export function PublicCarta({
   )
 
   const subCategoryButtonLabel = (
-    sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[] },
+    sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
     parentTitleRaw: string
   ) => {
     const row = sub.rows[0]
@@ -180,8 +203,8 @@ export function PublicCarta({
   return (
     <main className="flex h-[100dvh] flex-col bg-white text-zinc-900">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 border-b border-zinc-100 bg-white pb-3 pt-1">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-1">
+        <header className="shrink-0 bg-white pb-1 pt-1">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-0.5">
             <div className="flex min-h-[52px] items-center justify-start">
               {backHref ? (
                 <Link
@@ -195,13 +218,13 @@ export function PublicCarta({
               ) : null}
             </div>
 
-            <div className="flex flex-col items-center justify-center gap-1.5 px-1">
+            <div className="flex flex-col items-center justify-center gap-1 px-1">
               <Image
                 src="/icons/logo-white.png"
                 alt="Bar La Marbella"
                 width={320}
                 height={86}
-                className="h-12 w-auto max-w-[240px] sm:h-16 sm:max-w-[300px] md:h-[4.5rem] md:max-w-[360px]"
+                className="h-10 w-auto max-w-[220px] sm:h-12 sm:max-w-[260px] md:h-14 md:max-w-[300px]"
                 priority
               />
               <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400 sm:text-[11px]">
@@ -223,16 +246,17 @@ export function PublicCarta({
             </div>
           </div>
 
-          <div className="mt-3 w-full px-0 sm:mt-3.5">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" />
+          <div className="mt-1 w-full px-0 sm:mt-1.5">
+            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
           </div>
         </header>
 
-        <section className="mt-3 min-h-0 flex-1 overflow-y-auto pb-6 sm:mt-4">
-          <CartaCategoryGrid>
+        <section className="mt-0 min-h-0 flex-1 overflow-hidden pb-2 sm:mt-1">
+          <CartaCategoryGrid compact>
             {grouped.map((group) => (
               <CartaCategoryCard
                 key={group.key}
+                compact
                 title={group.title}
                 coverPhotoUrl={group.coverPhotoUrl}
                 ariaExpanded={openKey === group.key}
@@ -292,25 +316,18 @@ export function PublicCarta({
                     const sel = selectedSubKeyByGroup[openGroup.key]
                     const isActive = sel === sub.key
                     return (
-                      <button
+                      <CartaSubcategoryPickerButton
                         key={sub.key}
-                        type="button"
+                        label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
+                        coverPhotoUrl={sub.coverPhotoUrl}
+                        isActive={isActive}
                         onClick={() =>
                           setSelectedSubKeyByGroup((p) => ({
                             ...p,
                             [openGroup.key]: sub.key,
                           }))
                         }
-                        className={cn(
-                          'flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
-                          'bg-transparent border-0 shadow-none',
-                          isActive ? 'text-[#36606F]' : 'text-[#36606F]/60 hover:text-[#36606F] active:opacity-80'
-                        )}
-                      >
-                        <span className="line-clamp-3 min-w-0">
-                          {subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                        </span>
-                      </button>
+                      />
                     )
                   })}
                 </div>
@@ -322,21 +339,18 @@ export function PublicCarta({
                 <div className="px-1 py-2 sm:px-2">
                   <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                     {openGroup._subList.map((sub) => (
-                      <button
+                      <CartaSubcategoryPickerButton
                         key={sub.key}
-                        type="button"
+                        variant="grid"
+                        label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
+                        coverPhotoUrl={sub.coverPhotoUrl}
                         onClick={() =>
                           setSelectedSubKeyByGroup((p) => ({
                             ...p,
                             [openGroup.key]: sub.key,
                           }))
                         }
-                        className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
-                      >
-                        <span className="line-clamp-3 min-w-0">
-                          {subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                        </span>
-                      </button>
+                      />
                     ))}
                   </div>
                 </div>
@@ -368,15 +382,22 @@ export function PublicCarta({
                           return (
                           <div
                             key={row.articulo_id}
-                            className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
+                            className={cn(
+                              'flex flex-col items-center rounded-2xl bg-white',
+                              isCartaDrinksSection(row.category_parent_name) ? 'overflow-visible' : 'overflow-hidden'
+                            )}
                           >
-                            <div className="flex w-full flex-col items-center px-1 pb-1 pt-1 sm:px-1.5 sm:pb-1.5 sm:pt-1.5">
-                              {row.category_parent_name &&
-                              ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
+                            <div className="flex w-full flex-col items-center gap-0.5 px-1 pb-1 pt-1 sm:px-1.5 sm:pb-1.5 sm:pt-1.5">
+                              {cartaShowsProductPhoto(row.category_parent_name) ? (
                                 row.photo_url ? (
                                   <button
                                     type="button"
-                                    className="relative mx-auto flex aspect-[4/5] w-full shrink-0 cursor-zoom-in touch-manipulation items-center justify-center bg-white active:bg-zinc-50"
+                                    className={cn(
+                                      isCartaDrinksSection(row.category_parent_name)
+                                        ? CARTA_DRINK_PHOTO_FRAME_CLASS
+                                        : CARTA_DEFAULT_PHOTO_FRAME_CLASS,
+                                      'cursor-zoom-in touch-manipulation active:bg-zinc-50'
+                                    )}
                                     aria-label="Ver foto ampliada"
                                     onClick={() =>
                                       setLightbox({
@@ -389,28 +410,38 @@ export function PublicCarta({
                                     <img
                                       src={row.photo_url}
                                       alt=""
-                                      className={CARTA_PRODUCT_PHOTO_IMG_CLASS}
+                                      className={
+                                        isCartaDrinksSection(row.category_parent_name)
+                                          ? CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS
+                                          : CARTA_PRODUCT_PHOTO_IMG_CLASS
+                                      }
                                     />
                                   </button>
                                 ) : (
-                                  <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-white">
+                                  <div
+                                    className={
+                                      isCartaDrinksSection(row.category_parent_name)
+                                        ? CARTA_DRINK_PHOTO_FRAME_CLASS
+                                        : CARTA_DEFAULT_PHOTO_FRAME_CLASS
+                                    }
+                                  >
                                     <div className="h-full w-full bg-white" />
                                   </div>
                                 )
                               ) : null}
-                              <div className="flex w-full min-w-0 flex-col items-center gap-0">
+                              <div className="flex w-full min-w-0 flex-col items-center gap-0.5">
                                 <p
-                                  className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-none text-zinc-900 sm:text-[11px]"
+                                  className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
                                   title={getCartaDisplayName(row, lang)}
                                 >
                                   {getCartaDisplayName(row, lang)}
                                 </p>
-                                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-0 py-0">
-                                  <span className="text-center text-xs font-black tabular-nums text-[#36606F] leading-none">
+                                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-0.5 py-0">
+                                  <span className="text-center text-xs font-black tabular-nums leading-tight text-[#36606F]">
                                     {formatPrice(row.precio)}
                                   </span>
                                   {showMedio ? (
-                                    <span className="text-center text-[11px] font-black tabular-nums text-[#36606F]/90 leading-none">
+                                    <span className="text-center text-[11px] font-black tabular-nums leading-tight text-[#36606F]/90">
                                       {medioStr}
                                     </span>
                                   ) : null}

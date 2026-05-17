@@ -86,6 +86,7 @@ export function StaffCartaInlineEditor({
 
   const [digitalRows, setDigitalRows] = useState<DigitalMenuRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
+  const [categoryCoverById, setCategoryCoverById] = useState<Record<string, string | null>>({})
   const [itemsForCover, setItemsForCover] = useState<Array<{ articulo_id: number; articulo_nombre: string }>>([])
 
   const [categoryModalId, setCategoryModalId] = useState<string | null>(null)
@@ -181,8 +182,9 @@ export function StaffCartaInlineEditor({
       const ovByArt = new Map<number, OverrideRow>()
       for (const o of overrides) ovByArt.set(o.articulo_id, o)
 
-      const parents = cats.filter((c) => !c.parent_id)
-      const coverIds = [...new Set(parents.map((p) => p.cover_articulo_id).filter((x): x is number => x != null))]
+      const coverIds = [
+        ...new Set(cats.map((c) => c.cover_articulo_id).filter((x): x is number => x != null)),
+      ]
       const coverPhotoByArticulo = new Map<number, string | null>()
       if (coverIds.length) {
         const { data: covMaps, error: covErr } = await supabase
@@ -208,13 +210,19 @@ export function StaffCartaInlineEditor({
         }
       }
 
-      const parentCoverUrl = new Map<string, string | null>()
-      for (const p of parents) {
-        if (!p.cover_articulo_id) {
-          parentCoverUrl.set(p.id, null)
+      const coverByCategoryId: Record<string, string | null> = {}
+      for (const c of cats) {
+        if (!c.cover_articulo_id) {
+          coverByCategoryId[c.id] = null
           continue
         }
-        parentCoverUrl.set(p.id, coverPhotoByArticulo.get(p.cover_articulo_id) ?? null)
+        coverByCategoryId[c.id] = coverPhotoByArticulo.get(c.cover_articulo_id) ?? null
+      }
+      setCategoryCoverById(coverByCategoryId)
+
+      const parentCoverUrl = new Map<string, string | null>()
+      for (const p of cats.filter((c) => !c.parent_id)) {
+        parentCoverUrl.set(p.id, coverByCategoryId[p.id] ?? null)
       }
 
       const mapRows = (mapRes.data ?? []) as unknown as MapRow[]
@@ -494,6 +502,7 @@ export function StaffCartaInlineEditor({
             slug: c.slug ?? null,
           }))}
           showEmptyMenuChildCategories
+          categoryCoverById={categoryCoverById}
         />
       </div>
 

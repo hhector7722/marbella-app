@@ -8,22 +8,25 @@ export function CartaLangPicker({
   onChange,
   tone = 'default',
   layout = 'inline',
+  compact = false,
 }: {
   lang: CartaLang
   onChange: (next: CartaLang) => void
   tone?: 'default' | 'onBlue'
   /** inline: compact cluster; spread: tres columnas iguales a todo el ancho */
   layout?: 'inline' | 'spread'
+  /** Home carta: targets táctiles algo más bajos para caber sin scroll */
+  compact?: boolean
 }) {
   const inner = (
     <>
-      <LangTextBtn tone={tone} layout={layout} active={lang === 'es'} onClick={() => onChange('es')}>
+      <LangTextBtn compact={compact} tone={tone} layout={layout} active={lang === 'es'} onClick={() => onChange('es')}>
         Español
       </LangTextBtn>
-      <LangTextBtn tone={tone} layout={layout} active={lang === 'ca'} onClick={() => onChange('ca')}>
+      <LangTextBtn compact={compact} tone={tone} layout={layout} active={lang === 'ca'} onClick={() => onChange('ca')}>
         Català
       </LangTextBtn>
-      <LangTextBtn tone={tone} layout={layout} active={lang === 'en'} onClick={() => onChange('en')}>
+      <LangTextBtn compact={compact} tone={tone} layout={layout} active={lang === 'en'} onClick={() => onChange('en')}>
         English
       </LangTextBtn>
     </>
@@ -43,12 +46,14 @@ export function CartaLangPicker({
 function LangTextBtn({
   tone,
   layout,
+  compact,
   active,
   onClick,
   children,
 }: {
   tone: 'default' | 'onBlue'
   layout: 'inline' | 'spread'
+  compact?: boolean
   active: boolean
   onClick: () => void
   children: React.ReactNode
@@ -58,7 +63,8 @@ function LangTextBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        'min-h-[48px] px-1 text-xs font-black uppercase tracking-widest sm:text-sm',
+        compact ? 'min-h-[44px]' : 'min-h-[48px]',
+        'px-1 text-xs font-black uppercase tracking-widest sm:text-sm',
         layout === 'spread' && 'flex w-full items-center justify-center text-center',
         tone === 'onBlue'
           ? active

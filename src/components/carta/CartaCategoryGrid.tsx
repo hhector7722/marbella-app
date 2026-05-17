@@ -15,6 +15,7 @@ export function CartaCategoryCard({
   ariaExpanded,
   nativeImg = false,
   overlay,
+  compact = false,
 }: {
   title: string
   coverPhotoUrl: string | null
@@ -26,6 +27,7 @@ export function CartaCategoryCard({
   /** URLs arbitrarias desde BD (staff); si no, `next/image`. */
   nativeImg?: boolean
   overlay?: ReactNode
+  compact?: boolean
 }) {
   return (
     <div className={cn('relative min-w-0', className)}>
@@ -41,7 +43,14 @@ export function CartaCategoryCard({
           disabled && 'cursor-not-allowed opacity-50'
         )}
       >
-        <span className="relative mx-auto flex aspect-[5/4] w-[78%] max-w-[136px] items-center justify-center sm:max-w-[148px] sm:aspect-square sm:w-[76%]">
+        <span
+          className={cn(
+            'relative mx-auto flex items-center justify-center',
+            compact
+              ? 'aspect-[5/4] w-[72%] max-w-[120px] sm:max-w-[128px]'
+              : 'aspect-[5/4] w-[78%] max-w-[136px] sm:max-w-[148px] sm:aspect-square sm:w-[76%]'
+          )}
+        >
           {coverPhotoUrl ? (
             nativeImg ? (
               // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
@@ -63,7 +72,14 @@ export function CartaCategoryCard({
             <span className="block h-[65%] w-[65%] rounded-xl bg-zinc-100/90" aria-hidden />
           )}
         </span>
-        <span className="mt-2 w-full px-0.5 text-center text-xs font-black uppercase leading-snug tracking-[0.12em] text-[#36606F] sm:mt-2.5 sm:text-sm sm:tracking-[0.14em]">
+        <span
+          className={cn(
+            'w-full px-0.5 text-center font-black uppercase leading-snug text-[#36606F]',
+            compact
+              ? 'mt-1 text-[11px] tracking-[0.1em] sm:text-xs'
+              : 'mt-2 text-xs tracking-[0.12em] sm:mt-2.5 sm:text-sm sm:tracking-[0.14em]'
+          )}
+        >
           {title}
         </span>
       </button>
@@ -71,11 +87,20 @@ export function CartaCategoryCard({
   )
 }
 
-export function CartaCategoryGrid({ className, children }: { className?: string; children: ReactNode }) {
+export function CartaCategoryGrid({
+  className,
+  children,
+  compact = false,
+}: {
+  className?: string
+  children: ReactNode
+  compact?: boolean
+}) {
   return (
     <div
       className={cn(
-        'grid grid-cols-2 gap-x-2 gap-y-4 pb-2 sm:gap-x-3 sm:gap-y-5',
+        'grid grid-cols-2 pb-2',
+        compact ? 'gap-x-1.5 gap-y-2 sm:gap-x-2 sm:gap-y-3' : 'gap-x-2 gap-y-4 sm:gap-x-3 sm:gap-y-5',
         className
       )}
     >

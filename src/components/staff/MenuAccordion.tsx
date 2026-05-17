@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
+import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { cn } from '@/lib/utils'
 import { Check, Circle, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
@@ -30,7 +31,13 @@ import {
     type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
-import { CARTA_PRODUCT_PHOTO_IMG_CLASS } from '@/lib/carta-product-photo'
+import {
+    CARTA_DEFAULT_PHOTO_FRAME_CLASS,
+    CARTA_DRINK_PHOTO_FRAME_CLASS,
+    CARTA_PRODUCT_PHOTO_IMG_CLASS,
+    CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS,
+    isCartaDrinksSection,
+} from '@/lib/carta-product-photo'
 
 export type DigitalMenuRow = {
     articulo_id: number
@@ -73,7 +80,13 @@ export type DigitalMenuRow = {
     tpv_factor_porcion?: number | null
 }
 
-type GroupedSub = { key: string; title: string; sortOrder: number; rows: DigitalMenuRow[] }
+type GroupedSub = {
+    key: string
+    title: string
+    sortOrder: number
+    rows: DigitalMenuRow[]
+    coverPhotoUrl: string | null
+}
 type GroupedGroup = {
     key: string
     title: string
@@ -230,15 +243,20 @@ function MenuCard({
         if (editMode) setLightboxOpen(false)
     }, [editMode])
 
+    const isDrink = isCartaDrinksSection(row.category_parent_name)
+    const frameClass = isDrink ? CARTA_DRINK_PHOTO_FRAME_CLASS : CARTA_DEFAULT_PHOTO_FRAME_CLASS
+    const imgClass = isDrink ? CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS : CARTA_PRODUCT_PHOTO_IMG_CLASS
+
     return (
         <div
             className={cn(
-                'flex h-full flex-col items-center overflow-hidden rounded-2xl bg-white',
+                'flex h-full flex-col items-center rounded-2xl bg-white',
+                isDrink ? 'overflow-visible' : 'overflow-hidden',
                 editMode && !isActive && 'opacity-75'
             )}
         >
-            <div className="flex w-full flex-col items-center px-1 pt-1 sm:px-1.5 sm:pt-1.5">
-                <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-white">
+            <div className="flex w-full flex-col items-center gap-0.5 px-1 pt-1 sm:px-1.5 sm:pt-1.5">
+                <div className={cn(frameClass, 'relative')}>
                     {row.photo_url ? (
                         <button
                             type="button"
@@ -272,7 +290,7 @@ function MenuCard({
                             <img
                                 src={row.photo_url}
                                 alt=""
-                                className={CARTA_PRODUCT_PHOTO_IMG_CLASS}
+                                className={imgClass}
                             />
                         </button>
                     ) : (
@@ -312,7 +330,7 @@ function MenuCard({
 
             <div
                 className={cn(
-                    'flex min-h-0 w-full flex-1 flex-col items-center gap-0 px-2 pb-2 pt-0',
+                    'flex min-h-0 w-full flex-1 flex-col items-center gap-0.5 px-2 pb-2 pt-0',
                     editMode && onEditProduct && !productReorderMode && 'cursor-pointer touch-manipulation active:bg-zinc-50'
                 )}
                 role={editMode && onEditProduct && !productReorderMode ? 'button' : undefined}
@@ -336,12 +354,12 @@ function MenuCard({
                 }
             >
                 <p
-                    className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-none text-zinc-900 sm:text-[11px]"
+                    className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
                     title={displayName}
                 >
                     {displayName}
                 </p>
-                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-0 py-0">
+                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-0.5 py-0">
                     {showPrice && showMedio ? (
                         <>
                             <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)] leading-none">
@@ -397,6 +415,8 @@ export function MenuAccordion({
     platoMarbellaSlotSavingId,
     menuCategories,
     showEmptyMenuChildCategories = false,
+    categoryCoverById = {},
+    homeCompact = false,
 }: {
     items: DigitalMenuRow[]
     lang?: CartaLang
@@ -421,6 +441,9 @@ export function MenuAccordion({
     /** Catálogo menu (scope=menu) para pestañas vacías y reagrupar Plato Marbella. */
     menuCategories?: MenuCategoryCatalogEntry[]
     showEmptyMenuChildCategories?: boolean
+    categoryCoverById?: Record<string, string | null>
+    /** Home staff/carta: grid más compacto sin scroll */
+    homeCompact?: boolean
 }) {
     const [internalLang, setInternalLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
     const controlled = controlledLang !== undefined && onLangChange !== undefined
@@ -517,11 +540,12 @@ export function MenuAccordion({
             ;(g as any)._subList = subList.map((s) => ({
                 ...s,
                 title: s.title,
+                coverPhotoUrl: categoryCoverById[s.key] ?? null,
             }))
         }
 
         return groupList as unknown as GroupedGroup[]
-    }, [items, lang, menuCategories, platoMarbellaCategoryId, showEmptyMenuChildCategories])
+    }, [items, lang, menuCategories, platoMarbellaCategoryId, showEmptyMenuChildCategories, categoryCoverById])
 
     const groupedRef = useRef<GroupedGroup[]>([])
     groupedRef.current = grouped as GroupedGroup[]
@@ -739,6 +763,7 @@ export function MenuAccordion({
 
     const gridBlock = (
         <CartaCategoryGrid
+            compact={homeCompact}
             className={cn(hideLangPicker && 'min-h-0 flex-1 pt-0', !hideLangPicker && 'mt-4 sm:mt-5')}
         >
             {displayGrouped.map((group) => {
@@ -780,6 +805,7 @@ export function MenuAccordion({
                         ) : null}
                         <CartaCategoryCard
                             className="min-w-0 flex-1"
+                            compact={homeCompact}
                             title={group.title}
                             coverPhotoUrl={group.coverPhotoUrl}
                             nativeImg
@@ -1099,56 +1125,49 @@ export function MenuAccordion({
                                             const sel = selectedSubKeyByGroup[openGroup.key]
                                             const isActive = sel === sub.key
                                             return (
-                                                <div key={sub.key} className="relative min-w-0 flex-1 basis-0">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setSelectedSubKeyByGroup((p) => ({
-                                                                ...p,
-                                                                [openGroup.key]: sub.key,
-                                                            }))
-                                                        }
-                                                        className={cn(
-                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
-                                                            'bg-transparent border-0 shadow-none',
-                                                            editMode &&
-                                                                onEditChildCategory &&
-                                                                isUuidLike(sub.key) &&
-                                                                'pr-5 sm:pr-6',
-                                                            isActive
-                                                                ? 'text-[#36606F]'
-                                                                : 'text-[#36606F]/60 hover:text-[#36606F] active:opacity-80'
-                                                        )}
-                                                    >
-                                                        <span className="line-clamp-3 min-w-0">
-                                                            {subPickerButtonLabel(
-                                                                sub,
-                                                                lang,
-                                                                openGroup.parentTitleRaw,
-                                                                tPublicUi(lang).uncategorized
-                                                            )}
-                                                        </span>
-                                                    </button>
-                                                    {editMode && onEditChildCategory && isUuidLike(sub.key) ? (
-                                                        <span
-                                                            className="absolute right-0 top-1/2 z-10 flex -translate-y-1/2 items-stretch pr-0.5"
-                                                            onClick={(e) => {
-                                                                e.preventDefault()
-                                                                e.stopPropagation()
-                                                            }}
-                                                        >
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => onEditChildCategory(sub.key)}
-                                                                className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-[#36606F] active:bg-zinc-100 sm:min-h-[44px] sm:min-w-[44px]"
-                                                                aria-label="Editar subcategoría"
-                                                                title="Editar subcategoría"
+                                                <CartaSubcategoryPickerButton
+                                                    key={sub.key}
+                                                    label={subPickerButtonLabel(
+                                                        sub,
+                                                        lang,
+                                                        openGroup.parentTitleRaw,
+                                                        tPublicUi(lang).uncategorized
+                                                    )}
+                                                    coverPhotoUrl={sub.coverPhotoUrl}
+                                                    isActive={isActive}
+                                                    className={
+                                                        editMode && onEditChildCategory && isUuidLike(sub.key)
+                                                            ? 'pr-5 sm:pr-6'
+                                                            : undefined
+                                                    }
+                                                    onClick={() =>
+                                                        setSelectedSubKeyByGroup((p) => ({
+                                                            ...p,
+                                                            [openGroup.key]: sub.key,
+                                                        }))
+                                                    }
+                                                    overlay={
+                                                        editMode && onEditChildCategory && isUuidLike(sub.key) ? (
+                                                            <span
+                                                                className="absolute right-0 top-1/2 z-10 flex -translate-y-1/2 items-stretch pr-0.5"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault()
+                                                                    e.stopPropagation()
+                                                                }}
                                                             >
-                                                                <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                                            </button>
-                                                        </span>
-                                                    ) : null}
-                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => onEditChildCategory(sub.key)}
+                                                                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-[#36606F] active:bg-zinc-100 sm:min-h-[44px] sm:min-w-[44px]"
+                                                                    aria-label="Editar subcategoría"
+                                                                    title="Editar subcategoría"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                                                                </button>
+                                                            </span>
+                                                        ) : null
+                                                    }
+                                                />
                                             )
                                         })}
                                     </div>
@@ -1163,26 +1182,23 @@ export function MenuAccordion({
                                 <div className="px-1 py-2 sm:px-2">
                                     <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                                         {openGroup._subList.map((sub) => (
-                                            <button
+                                            <CartaSubcategoryPickerButton
                                                 key={sub.key}
-                                                type="button"
+                                                variant="grid"
+                                                label={subPickerButtonLabel(
+                                                    sub,
+                                                    lang,
+                                                    openGroup.parentTitleRaw,
+                                                    tPublicUi(lang).uncategorized
+                                                )}
+                                                coverPhotoUrl={sub.coverPhotoUrl}
                                                 onClick={() =>
                                                     setSelectedSubKeyByGroup((p) => ({
                                                         ...p,
                                                         [openGroup.key]: sub.key,
                                                     }))
                                                 }
-                                                className="flex min-h-[48px] min-w-0 flex-1 basis-0 flex-col items-center justify-center rounded-xl bg-white px-2 py-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] active:bg-zinc-50 sm:min-h-[52px] sm:px-3 sm:text-xs"
-                                            >
-                                                <span className="line-clamp-3 min-w-0">
-                                                    {subPickerButtonLabel(
-                                                        sub,
-                                                        lang,
-                                                        openGroup.parentTitleRaw,
-                                                        tPublicUi(lang).uncategorized
-                                                    )}
-                                                </span>
-                                            </button>
+                                            />
                                         ))}
                                     </div>
                                 </div>

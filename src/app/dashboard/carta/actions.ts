@@ -164,8 +164,8 @@ export async function setMenuSectionCoverArticulo(category_id: string, cover_art
     .maybeSingle()
 
   if (catErr) return { success: false as const, error: catErr.message }
-  if (!cat || cat.scope !== 'menu' || cat.parent_id != null) {
-    return { success: false as const, error: 'Categoría inválida (solo secciones padre del menú).' }
+  if (!cat || cat.scope !== 'menu') {
+    return { success: false as const, error: 'Categoría inválida (solo categorías del menú).' }
   }
 
   if (cover_articulo_id != null) {
@@ -185,7 +185,6 @@ export async function setMenuSectionCoverArticulo(category_id: string, cover_art
     .update({ cover_articulo_id })
     .eq('id', category_id)
     .eq('scope', 'menu')
-    .is('parent_id', null)
 
   if (error) {
     console.error('setMenuSectionCoverArticulo error:', error)

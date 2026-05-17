@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-16 (Movements: SALDO ACTUAL = libro por caja)
+**Última actualización:** 2026-05-15 (Carta: home compacta, subcategorías con foto, bebidas)
+
+- [x] **Carta QR/staff: home compacta + subcategorías con imagen + bebidas (2026-05-15)**: Home `/carta` y `/staff/carta` — fondo blanco, sin `border-b` visible, grid categorías más compacto (`overflow-hidden`, `CartaLangPicker` compact). **Subcategorías**: portada en hijos vía `categories.cover_articulo_id` + [`CartaSubcategoryPickerButton.tsx`](src/components/carta/CartaSubcategoryPickerButton.tsx); [`setMenuSectionCoverArticulo`](src/app/dashboard/carta/actions.ts) acepta padre e hijo; [`resolveMenuCategoryCoverById`](src/lib/carta-category-covers.ts). **Bebidas**: migración [`20260515150000_public_carta_bebidas_photos.sql`](supabase/migrations/20260515150000_public_carta_bebidas_photos.sql) (`photo_url` en QR); marco/imagen más pequeños solo en `Bebidas` ([`carta-product-photo.ts`](src/lib/carta-product-photo.ts)); más aire nombre/precio.
 
 - [x] **Movements `/dashboard/movements`: SALDO ACTUAL = saldo libro (2026-05-16)**: El KPI **SALDO ACTUAL** mostraba efectivo físico (`physical_balance`) y la columna **SALDO** el `running_balance` del libro — de ahí el descuadre visible (+13,75 € = **DIFER. ACTUAL**). **BD**: [`20260516120000_treasury_running_balance_per_box.sql`](supabase/migrations/20260516120000_treasury_running_balance_per_box.sql) — `v_treasury_movements_balance` con `PARTITION BY box_id`. **App**: [`movements/page.tsx`](src/app/dashboard/movements/page.tsx) — SALDO ACTUAL = último `running_balance` de la caja operativa; DIFER. = físico − libro; [`get-dashboard-data.ts`](src/app/actions/get-dashboard-data.ts) filtra ledger por `box_id` operativa. Dashboard admin **Caja Inicial** sigue mostrando dinero físico.
 

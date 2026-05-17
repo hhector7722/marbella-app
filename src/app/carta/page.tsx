@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
+import { resolveMenuCategoryCoverById } from '@/lib/carta-category-covers'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,9 +26,22 @@ export default async function PublicCartaPage() {
 
   const { data: menuCategories } = await supabase
     .from('categories')
-    .select('id, name, parent_id, sort_order, slug')
+    .select('id, name, parent_id, sort_order, slug, cover_articulo_id')
     .eq('scope', 'menu')
     .order('sort_order', { ascending: true })
+
+  let categoryCoverById: Record<string, string | null> = {}
+  try {
+    categoryCoverById = await resolveMenuCategoryCoverById(
+      supabase,
+      (menuCategories ?? []).map((c) => ({
+        id: c.id,
+        cover_articulo_id: c.cover_articulo_id ?? null,
+      }))
+    )
+  } catch (e) {
+    console.error('resolveMenuCategoryCoverById (carta):', e)
+  }
 
   const { data, error } = await supabase
     .from('v_public_menu_items')
@@ -62,9 +76,9 @@ export default async function PublicCartaPage() {
         sort_order: c.sort_order,
         slug: c.slug ?? null,
       }))}
+      categoryCoverById={categoryCoverById}
       backHref={backHref}
       cartaEditHref={cartaEditHref}
     />
   )
 }
-

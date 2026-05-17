@@ -14,11 +14,13 @@ import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEdito
 export function StaffCartaView({
   items,
   menuCategories = [],
+  categoryCoverById = {},
   canEditMenu,
   canOpenMapeo,
 }: {
   items: DigitalMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
+  categoryCoverById?: Record<string, string | null>
   canEditMenu: boolean
   /** Manager/admin: acceso al mapeo TPV en dashboard */
   canOpenMapeo?: boolean
@@ -30,7 +32,7 @@ export function StaffCartaView({
   return (
     <div className="flex h-[100dvh] flex-col bg-white text-zinc-900">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 border-b border-zinc-100 bg-white pb-3 pt-1 sm:pb-3.5">
+        <header className="shrink-0 bg-white pb-1 pt-1">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
             <div className="flex min-h-[52px] items-center justify-start">
               <Link
@@ -49,7 +51,7 @@ export function StaffCartaView({
                 alt="Bar La Marbella"
                 width={320}
                 height={86}
-                className="h-12 w-auto max-w-[240px] sm:h-16 sm:max-w-[300px] md:h-[4.5rem] md:max-w-[360px]"
+                className="h-10 w-auto max-w-[220px] sm:h-12 sm:max-w-[260px] md:h-14 md:max-w-[300px]"
                 priority
               />
             </div>
@@ -83,12 +85,12 @@ export function StaffCartaView({
             </div>
           </div>
 
-          <div className="mt-3 w-full px-0 sm:mt-3.5">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" />
+          <div className="mt-1 w-full px-0 sm:mt-1.5">
+            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white pb-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
           {editing && canEditMenu ? (
             <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
           ) : (
@@ -99,8 +101,10 @@ export function StaffCartaView({
                 onLangChange={setLang}
                 hideLangPicker
                 menuCategories={menuCategories}
+                categoryCoverById={categoryCoverById}
                 platoMarbellaCategoryId={platoMarbellaCategoryId}
                 showEmptyMenuChildCategories
+                homeCompact
               />
             </div>
           )}

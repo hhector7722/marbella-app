@@ -146,14 +146,15 @@ export function MenuCategoryEditModal({
                   </label>
                 </div>
 
-                <div className={cn('space-y-2', !isParent && 'opacity-60')}>
-                  <p className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Portada (solo padre)</p>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                    {isParent ? 'Portada sección' : 'Portada subcategoría'}
+                  </p>
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <input
                       value={coverQuery}
                       onChange={(e) => setCoverQuery(e.target.value)}
-                      disabled={!isParent}
                       placeholder="Buscar artículo…"
                       className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F] disabled:bg-zinc-50"
                     />
@@ -161,12 +162,10 @@ export function MenuCategoryEditModal({
                   <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-100 bg-white">
                     <button
                       type="button"
-                      disabled={!isParent}
                       onClick={() => setCoverArticuloId(null)}
                       className={cn(
                         'flex min-h-[48px] w-full items-center justify-between gap-3 px-3 text-left text-xs font-black uppercase tracking-wide',
-                        coverArticuloId == null ? 'bg-[#36606F]/10 text-[#36606F]' : 'text-zinc-700 active:bg-zinc-50',
-                        !isParent && 'pointer-events-none'
+                        coverArticuloId == null ? 'bg-[#36606F]/10 text-[#36606F]' : 'text-zinc-700 active:bg-zinc-50'
                       )}
                     >
                       Sin portada
@@ -176,12 +175,10 @@ export function MenuCategoryEditModal({
                       <button
                         key={it.articulo_id}
                         type="button"
-                        disabled={!isParent}
                         onClick={() => setCoverArticuloId(it.articulo_id)}
                         className={cn(
                           'flex min-h-[48px] w-full items-center justify-between gap-3 px-3 text-left',
-                          coverArticuloId === it.articulo_id ? 'bg-[#36606F]/10 text-[#36606F]' : 'text-zinc-900 active:bg-zinc-50',
-                          !isParent && 'pointer-events-none'
+                          coverArticuloId === it.articulo_id ? 'bg-[#36606F]/10 text-[#36606F]' : 'text-zinc-900 active:bg-zinc-50'
                         )}
                       >
                         <span className="min-w-0 flex-1 truncate text-xs font-bold">{it.articulo_nombre}</span>
@@ -216,12 +213,10 @@ export function MenuCategoryEditModal({
                           return
                         }
 
-                        if (isParent) {
-                          const resCover = await setMenuSectionCoverArticulo(category.id, coverArticuloId)
-                          if (!resCover.success) {
-                            toast.error(resCover.error ?? 'No se pudo guardar la portada')
-                            return
-                          }
+                        const resCover = await setMenuSectionCoverArticulo(category.id, coverArticuloId)
+                        if (!resCover.success) {
+                          toast.error(resCover.error ?? 'No se pudo guardar la portada')
+                          return
                         }
 
                         toast.success('Categoría guardada')
