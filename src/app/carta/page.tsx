@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
-import { resolveMenuCategoryCoverById } from '@/lib/carta-category-covers'
+import { resolveMenuCategoryCoverById, splitMenuCategoryCovers } from '@/lib/carta-category-covers'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,14 +31,18 @@ export default async function PublicCartaPage() {
     .order('sort_order', { ascending: true })
 
   let categoryCoverById: Record<string, string | null> = {}
+  let categoryCoverScaleById: Record<string, 's' | 'm' | 'l'> = {}
   try {
-    categoryCoverById = await resolveMenuCategoryCoverById(
+    const resolved = await resolveMenuCategoryCoverById(
       supabase,
       (menuCategories ?? []).map((c) => ({
         id: c.id,
         cover_articulo_id: c.cover_articulo_id ?? null,
       }))
     )
+    const split = splitMenuCategoryCovers(resolved)
+    categoryCoverById = split.categoryCoverById
+    categoryCoverScaleById = split.categoryCoverScaleById
   } catch (e) {
     console.error('resolveMenuCategoryCoverById (carta):', e)
   }
@@ -46,7 +50,7 @@ export default async function PublicCartaPage() {
   const { data, error } = await supabase
     .from('v_public_menu_items')
     .select(
-      'articulo_id, carta_nombre, carta_nombre_es, carta_nombre_ca, carta_nombre_en, precio, photo_url, category_parent_id, category_parent_name, category_parent_name_es, category_parent_name_ca, category_parent_name_en, category_parent_sort_order, category_parent_cover_photo_url, category_child_id, category_child_name, category_child_name_es, category_child_name_ca, category_child_name_en, category_child_sort_order, category_child_slug, sort_order, recipe_id, tpv_factor_porcion, plato_marbella_slot, plato_marbella_is_menu_price'
+      'articulo_id, carta_nombre, carta_nombre_es, carta_nombre_ca, carta_nombre_en, precio, photo_url, carta_photo_scale, category_parent_id, category_parent_name, category_parent_name_es, category_parent_name_ca, category_parent_name_en, category_parent_sort_order, category_parent_cover_photo_url, category_child_id, category_child_name, category_child_name_es, category_child_name_ca, category_child_name_en, category_child_sort_order, category_child_slug, sort_order, recipe_id, tpv_factor_porcion, plato_marbella_slot, plato_marbella_is_menu_price'
     )
     .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
     .order('category_parent_name', { ascending: true, nullsFirst: false })
@@ -77,6 +81,7 @@ export default async function PublicCartaPage() {
         slug: c.slug ?? null,
       }))}
       categoryCoverById={categoryCoverById}
+      categoryCoverScaleById={categoryCoverScaleById}
       backHref={backHref}
       cartaEditHref={cartaEditHref}
     />

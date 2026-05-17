@@ -22,9 +22,9 @@ import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import {
   CARTA_DEFAULT_PHOTO_FRAME_CLASS,
   CARTA_DRINK_PHOTO_FRAME_CLASS,
-  CARTA_PRODUCT_PHOTO_IMG_CLASS,
-  CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS,
+  type CartaPhotoScale,
   cartaShowsProductPhoto,
+  getCartaProductPhotoImgClass,
   isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
@@ -45,6 +45,7 @@ export type PublicMenuRow = {
   /** Par entero/medio fusionado (solo presentación). */
   precio_medio_display?: number | string | null
   photo_url: string | null
+  carta_photo_scale?: CartaPhotoScale | string | null
   sort_order: number | null
   category_parent_id: string | null
   category_parent_name: string | null
@@ -73,6 +74,7 @@ type Group = {
   parentTitleRaw: string
   sortOrder: number
   coverPhotoUrl: string | null
+  coverPhotoScale: CartaPhotoScale
   subs: Map<string, { key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }>
 }
 
@@ -87,12 +89,14 @@ export function PublicCarta({
   items,
   menuCategories = [],
   categoryCoverById = {},
+  categoryCoverScaleById = {},
   backHref,
   cartaEditHref,
 }: {
   items: PublicMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
   categoryCoverById?: Record<string, string | null>
+  categoryCoverScaleById?: Record<string, CartaPhotoScale>
   /** Solo usuarios autenticados: destino del botón volver (Inicio). */
   backHref: string | null
   cartaEditHref: string | null
@@ -126,10 +130,12 @@ export function PublicCarta({
         parentTitleRaw,
         sortOrder: parentSort,
         coverPhotoUrl: null as string | null,
+        coverPhotoScale: categoryCoverScaleById[parentKey] ?? 'm',
         subs: new Map(),
       }
       const cov = row.category_parent_cover_photo_url?.trim()
       if (cov) g.coverPhotoUrl = cov
+      if (categoryCoverScaleById[parentKey]) g.coverPhotoScale = categoryCoverScaleById[parentKey]
 
       const sg =
         g.subs.get(childKey) ?? {
@@ -163,6 +169,7 @@ export function PublicCarta({
       ;(g as any)._subList = subList.map((s) => ({
         ...s,
         coverPhotoUrl: categoryCoverById[s.key] ?? null,
+        coverPhotoScale: categoryCoverScaleById[s.key] ?? 'm',
       }))
     }
 
@@ -174,10 +181,11 @@ export function PublicCarta({
           sortOrder: number
           rows: PublicMenuRow[]
           coverPhotoUrl: string | null
+          coverPhotoScale: CartaPhotoScale
         }>
       }
     >
-  }, [items, lang, menuCategories, platoMarbellaCategoryId, categoryCoverById])
+  }, [items, lang, menuCategories, platoMarbellaCategoryId, categoryCoverById, categoryCoverScaleById])
 
   const isPlatoMarbellaSub = (subKey: string, rows: PublicMenuRow[]) =>
     isPlatoMarbellaMenuSub(subKey, rows, platoMarbellaCategoryId)
@@ -259,6 +267,7 @@ export function PublicCarta({
                 compact
                 title={group.title}
                 coverPhotoUrl={group.coverPhotoUrl}
+                coverPhotoScale={group.coverPhotoScale}
                 ariaExpanded={openKey === group.key}
                 onClick={() => {
                   setSelectedSubKeyByGroup((p) => {
@@ -320,6 +329,7 @@ export function PublicCarta({
                         key={sub.key}
                         label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
                         coverPhotoUrl={sub.coverPhotoUrl}
+                        coverPhotoScale={sub.coverPhotoScale}
                         isActive={isActive}
                         onClick={() =>
                           setSelectedSubKeyByGroup((p) => ({
@@ -344,6 +354,7 @@ export function PublicCarta({
                         variant="grid"
                         label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
                         coverPhotoUrl={sub.coverPhotoUrl}
+                        coverPhotoScale={sub.coverPhotoScale}
                         onClick={() =>
                           setSelectedSubKeyByGroup((p) => ({
                             ...p,
@@ -407,11 +418,10 @@ export function PublicCarta({
                                     <img
                                       src={row.photo_url}
                                       alt=""
-                                      className={
+                                      className={getCartaProductPhotoImgClass(
+                                        row.carta_photo_scale,
                                         isCartaDrinksSection(row.category_parent_name)
-                                          ? CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS
-                                          : CARTA_PRODUCT_PHOTO_IMG_CLASS
-                                      }
+                                      )}
                                     />
                                   </button>
                                 ) : (

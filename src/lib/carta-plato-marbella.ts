@@ -8,6 +8,7 @@ export type PlatoMarbellaMenuRow = {
   articulo_id: number
   precio: number | string | null
   photo_url?: string | null
+  carta_photo_scale?: string | null
   sort_order?: number | null
   category_child_slug?: string | null
   plato_marbella_slot?: string | null

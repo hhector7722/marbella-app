@@ -3,11 +3,13 @@
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { getCartaCoverPhotoImgClass, type CartaPhotoScale } from '@/lib/carta-product-photo'
 
 /** Tarjeta de categoría padre: imagen y título equilibrados (carta visual). */
 export function CartaCategoryCard({
   title,
   coverPhotoUrl,
+  coverPhotoScale = 'm',
   onClick,
   className,
   highlighted = false,
@@ -19,6 +21,7 @@ export function CartaCategoryCard({
 }: {
   title: string
   coverPhotoUrl: string | null
+  coverPhotoScale?: CartaPhotoScale | string | null
   onClick: () => void
   className?: string
   highlighted?: boolean
@@ -29,6 +32,7 @@ export function CartaCategoryCard({
   overlay?: ReactNode
   compact?: boolean
 }) {
+  const coverImgClass = getCartaCoverPhotoImgClass(coverPhotoScale)
   return (
     <div className={cn('relative min-w-0', className)}>
       {overlay}
@@ -57,7 +61,7 @@ export function CartaCategoryCard({
               <img
                 src={coverPhotoUrl}
                 alt=""
-                className="h-full w-full object-contain object-center p-1"
+                className={cn(coverImgClass, 'p-1')}
               />
             ) : (
               <Image

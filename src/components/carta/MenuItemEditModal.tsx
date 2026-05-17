@@ -9,6 +9,14 @@ import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
 import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
+import {
+  CARTA_DEFAULT_PHOTO_FRAME_CLASS,
+  CARTA_DRINK_PHOTO_FRAME_CLASS,
+  type CartaPhotoScale,
+  getCartaProductPhotoImgClass,
+  isCartaDrinksSection,
+  normalizeCartaPhotoScale,
+} from '@/lib/carta-product-photo'
 
 type CategoryRow = {
   id: string
@@ -45,6 +53,7 @@ export function MenuItemEditModal({
   const [removeOverridePhoto, setRemoveOverridePhoto] = useState(false)
   const [platoSlot, setPlatoSlot] = useState<'' | PlatoMarbellaSlotValue>('')
   const [platoMenuPrice, setPlatoMenuPrice] = useState(false)
+  const [photoScale, setPhotoScale] = useState<CartaPhotoScale>('m')
 
   const platoMarbellaCategoryId = useMemo(
     () => categories.find((c) => c.slug === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null,
@@ -105,7 +114,7 @@ export function MenuItemEditModal({
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
@@ -131,6 +140,11 @@ export function MenuItemEditModal({
           slot === 'entrante' || slot === 'principal' || slot === 'guarnicion' ? slot : ''
         )
         setPlatoMenuPrice(Boolean((overrideRes.data as { plato_marbella_is_menu_price?: boolean } | null)?.plato_marbella_is_menu_price))
+        setPhotoScale(
+          normalizeCartaPhotoScale(
+            (overrideRes.data as { carta_photo_scale?: string | null } | null)?.carta_photo_scale
+          )
+        )
         if (previewBlobUrl) {
           URL.revokeObjectURL(previewBlobUrl)
           setPreviewBlobUrl(null)
@@ -154,6 +168,21 @@ export function MenuItemEditModal({
 
   const displayPhotoSrc =
     previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
+
+  const previewParentName = useMemo(() => {
+    if (!categoryId) return null
+    const cat = categories.find((c) => c.id === categoryId)
+    if (!cat) return null
+    if (!cat.parent_id) return cat.name
+    return categories.find((c) => c.id === cat.parent_id)?.name ?? null
+  }, [categoryId, categories])
+
+  const previewIsDrink = isCartaDrinksSection(previewParentName)
+  const previewFrameClass = previewIsDrink
+    ? CARTA_DRINK_PHOTO_FRAME_CLASS
+    : CARTA_DEFAULT_PHOTO_FRAME_CLASS
+  const previewImgClass = getCartaProductPhotoImgClass(photoScale, previewIsDrink)
+  const hasPhoto = Boolean(displayPhotoSrc?.trim())
 
   return (
     <div
@@ -259,6 +288,41 @@ export function MenuItemEditModal({
                   recortar). Vuelve a subir si una foto se ve cortada.
                 </p>
               </div>
+
+              {hasPhoto ? (
+                <div className="mt-3">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                    Tamaño en carta
+                  </p>
+                  <div className="mt-1 flex gap-2">
+                    {(['s', 'm', 'l'] as const).map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => setPhotoScale(size)}
+                        className={cn(
+                          'min-h-[48px] flex-1 rounded-xl border text-xs font-black uppercase tracking-widest',
+                          photoScale === size
+                            ? 'border-[#36606F] bg-[#36606F] text-white'
+                            : 'border-zinc-200 bg-white text-zinc-800 active:bg-zinc-50'
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex justify-center">
+                    <div className={cn(previewFrameClass, 'w-[42%] max-w-[7rem]')}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={displayPhotoSrc!} alt="" className={previewImgClass} />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[11px] font-semibold text-zinc-500">
+                    S reduce productos que se ven grandes (ej. olivas); L amplía platos que se ven pequeños.
+                  </p>
+                </div>
+              ) : null}
 
               <div className="mt-3 grid grid-cols-1 gap-2">
                 <label className="space-y-1">
@@ -393,6 +457,7 @@ export function MenuItemEditModal({
                         override_nombre_ca: nameCa.trim() || null,
                         override_nombre_en: nameEn.trim() || null,
                         category_id: categoryId.trim() ? categoryId.trim() : null,
+                        carta_photo_scale: photoScale,
                         ...(nextOverridePhotoUrl !== undefined ? { override_photo_url: nextOverridePhotoUrl } : {}),
                         ...(isPlatoMarbellaCategory
                           ? {

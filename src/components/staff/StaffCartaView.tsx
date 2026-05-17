@@ -15,12 +15,14 @@ export function StaffCartaView({
   items,
   menuCategories = [],
   categoryCoverById = {},
+  categoryCoverScaleById = {},
   canEditMenu,
   canOpenMapeo,
 }: {
   items: DigitalMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
   categoryCoverById?: Record<string, string | null>
+  categoryCoverScaleById?: Record<string, 's' | 'm' | 'l'>
   canEditMenu: boolean
   /** Manager/admin: acceso al mapeo TPV en dashboard */
   canOpenMapeo?: boolean
@@ -102,6 +104,7 @@ export function StaffCartaView({
                 hideLangPicker
                 menuCategories={menuCategories}
                 categoryCoverById={categoryCoverById}
+                categoryCoverScaleById={categoryCoverScaleById}
                 platoMarbellaCategoryId={platoMarbellaCategoryId}
                 showEmptyMenuChildCategories
                 homeCompact

@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react'
 import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { setMenuCategorySortOrders, upsertMenuOverride } from '@/app/dashboard/carta/actions'
 import { PLATO_MARBELLA_CHILD_SLUG, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
+import { normalizeCartaPhotoScale, type CartaPhotoScale } from '@/lib/carta-product-photo'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import { MenuCategoryEditModal } from '@/components/carta/MenuCategoryEditModal'
 import { MenuItemEditModal } from '@/components/carta/MenuItemEditModal'
@@ -34,6 +35,7 @@ type OverrideRow = {
   override_photo_url: string | null
   plato_marbella_slot?: string | null
   plato_marbella_is_menu_price?: boolean | null
+  carta_photo_scale?: string | null
 }
 
 type MapRow = {
@@ -87,6 +89,7 @@ export function StaffCartaInlineEditor({
   const [digitalRows, setDigitalRows] = useState<DigitalMenuRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [categoryCoverById, setCategoryCoverById] = useState<Record<string, string | null>>({})
+  const [categoryCoverScaleById, setCategoryCoverScaleById] = useState<Record<string, CartaPhotoScale>>({})
   const [itemsForCover, setItemsForCover] = useState<Array<{ articulo_id: number; articulo_nombre: string }>>([])
 
   const [categoryModalId, setCategoryModalId] = useState<string | null>(null)
@@ -186,6 +189,7 @@ export function StaffCartaInlineEditor({
         ...new Set(cats.map((c) => c.cover_articulo_id).filter((x): x is number => x != null)),
       ]
       const coverPhotoByArticulo = new Map<number, string | null>()
+      const coverScaleByArticulo = new Map<number, CartaPhotoScale>()
       if (coverIds.length) {
         const { data: covMaps, error: covErr } = await supabase
           .from('map_tpv_receta')
@@ -194,12 +198,14 @@ export function StaffCartaInlineEditor({
         if (covErr) throw covErr
         const { data: covOvs, error: covOvsErr } = await supabase
           .from('digital_menu_overrides')
-          .select('articulo_id, override_photo_url')
+          .select('articulo_id, override_photo_url, carta_photo_scale')
           .in('articulo_id', coverIds)
         if (covOvsErr) throw covOvsErr
         const ovPhoto = new Map<number, string | null>()
+        const ovScale = new Map<number, CartaPhotoScale>()
         for (const r of (covOvs ?? []) as any[]) {
           ovPhoto.set(r.articulo_id, ntrim(r.override_photo_url))
+          ovScale.set(r.articulo_id, normalizeCartaPhotoScale(r.carta_photo_scale))
         }
         for (const r of (covMaps ?? []) as any[]) {
           const rec0 = r.recipes
@@ -207,18 +213,23 @@ export function StaffCartaInlineEditor({
           const ph = ntrim(rec?.photo_url ?? null)
           const ovr = ovPhoto.get(r.articulo_id) ?? null
           coverPhotoByArticulo.set(r.articulo_id, ovr ?? ph)
+          coverScaleByArticulo.set(r.articulo_id, ovScale.get(r.articulo_id) ?? 'm')
         }
       }
 
       const coverByCategoryId: Record<string, string | null> = {}
+      const coverScaleByCategoryId: Record<string, CartaPhotoScale> = {}
       for (const c of cats) {
         if (!c.cover_articulo_id) {
           coverByCategoryId[c.id] = null
+          coverScaleByCategoryId[c.id] = 'm'
           continue
         }
         coverByCategoryId[c.id] = coverPhotoByArticulo.get(c.cover_articulo_id) ?? null
+        coverScaleByCategoryId[c.id] = coverScaleByArticulo.get(c.cover_articulo_id) ?? 'm'
       }
       setCategoryCoverById(coverByCategoryId)
+      setCategoryCoverScaleById(coverScaleByCategoryId)
 
       const parentCoverUrl = new Map<string, string | null>()
       for (const p of cats.filter((c) => !c.parent_id)) {
@@ -318,6 +329,7 @@ export function StaffCartaInlineEditor({
           descripcion: buildDescripcion(o, r),
           precio: precioRaw != null ? Number(precioRaw) : null,
           photo_url,
+          carta_photo_scale: normalizeCartaPhotoScale(o?.carta_photo_scale),
           sort_order: o?.sort_order ?? null,
           tpv_factor_porcion,
         })
@@ -503,6 +515,7 @@ export function StaffCartaInlineEditor({
           }))}
           showEmptyMenuChildCategories
           categoryCoverById={categoryCoverById}
+          categoryCoverScaleById={categoryCoverScaleById}
         />
       </div>
 

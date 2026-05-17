@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { CARTA_PRODUCT_PHOTO_IMG_CLASS } from '@/lib/carta-product-photo'
+import { getCartaProductPhotoImgClass } from '@/lib/carta-product-photo'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -53,7 +53,11 @@ function OptionCard({
           onClick={() => onPhotoClick?.(photo, name)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- URL desde BD */}
-          <img src={photo} alt="" className={CARTA_PRODUCT_PHOTO_IMG_CLASS} />
+          <img
+            src={photo}
+            alt=""
+            className={getCartaProductPhotoImgClass(row.carta_photo_scale, false)}
+          />
         </button>
       ) : (
         <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-zinc-50" aria-hidden />

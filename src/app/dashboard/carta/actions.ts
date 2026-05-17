@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 
 /** Campos opcionales = solo se actualizan si van en el objeto (merge con fila existente). */
 export type PlatoMarbellaSlotValue = 'entrante' | 'principal' | 'guarnicion'
@@ -21,6 +22,7 @@ export type MenuOverrideUpsertInput = {
   override_photo_url: string | null
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
+  carta_photo_scale: CartaPhotoScale
 }>
 
 async function requireManager() {
@@ -61,6 +63,7 @@ type OverrideRow = {
   override_photo_url: string | null
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
+  carta_photo_scale: CartaPhotoScale
 }
 
 /** Un solo artículo con precio del menú por subcategoría Plato Marbella. */
@@ -135,6 +138,12 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     override_photo_url: 'override_photo_url' in input ? input.override_photo_url! : (ex?.override_photo_url ?? null),
     plato_marbella_slot: nextSlot,
     plato_marbella_is_menu_price: nextMenuPrice,
+    carta_photo_scale:
+      'carta_photo_scale' in input
+        ? input.carta_photo_scale!
+        : (ex?.carta_photo_scale === 's' || ex?.carta_photo_scale === 'l'
+            ? ex.carta_photo_scale
+            : 'm'),
   }
 
   const { error } = await supabase

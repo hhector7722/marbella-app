@@ -34,8 +34,8 @@ import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
 import {
     CARTA_DEFAULT_PHOTO_FRAME_CLASS,
     CARTA_DRINK_PHOTO_FRAME_CLASS,
-    CARTA_PRODUCT_PHOTO_IMG_CLASS,
-    CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS,
+    type CartaPhotoScale,
+    getCartaProductPhotoImgClass,
     isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 
@@ -74,6 +74,7 @@ export type DigitalMenuRow = {
     /** Par entero/medio fusionado (solo UI): precio del artículo medio. */
     precio_medio_display?: number | string | null
     photo_url: string | null
+    carta_photo_scale?: CartaPhotoScale | string | null
     /** `digital_menu_overrides.sort_order` (orden dentro de la subcategoría en carta). */
     sort_order?: number | null
     /** Desde `map_tpv_receta.factor_porcion` vía vista carta. */
@@ -86,6 +87,7 @@ type GroupedSub = {
     sortOrder: number
     rows: DigitalMenuRow[]
     coverPhotoUrl: string | null
+    coverPhotoScale: CartaPhotoScale
 }
 type GroupedGroup = {
     key: string
@@ -94,6 +96,7 @@ type GroupedGroup = {
     parentTitleRaw: string
     sortOrder: number
     coverPhotoUrl: string | null
+    coverPhotoScale: CartaPhotoScale
     _subList: GroupedSub[]
 }
 
@@ -245,7 +248,7 @@ function MenuCard({
 
     const isDrink = isCartaDrinksSection(row.category_parent_name)
     const frameClass = isDrink ? CARTA_DRINK_PHOTO_FRAME_CLASS : CARTA_DEFAULT_PHOTO_FRAME_CLASS
-    const imgClass = isDrink ? CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS : CARTA_PRODUCT_PHOTO_IMG_CLASS
+    const imgClass = getCartaProductPhotoImgClass(row.carta_photo_scale, isDrink)
 
     return (
         <div
@@ -416,6 +419,7 @@ export function MenuAccordion({
     menuCategories,
     showEmptyMenuChildCategories = false,
     categoryCoverById = {},
+    categoryCoverScaleById = {},
     homeCompact = false,
 }: {
     items: DigitalMenuRow[]
@@ -442,6 +446,7 @@ export function MenuAccordion({
     menuCategories?: MenuCategoryCatalogEntry[]
     showEmptyMenuChildCategories?: boolean
     categoryCoverById?: Record<string, string | null>
+    categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
 }) {
@@ -457,6 +462,7 @@ export function MenuAccordion({
             parentTitleRaw: string
             sortOrder: number
             coverPhotoUrl: string | null
+            coverPhotoScale: CartaPhotoScale
             subs: Map<string, { title: string; sortOrder: number; rows: DigitalMenuRow[] }>
         }
 
@@ -482,10 +488,14 @@ export function MenuAccordion({
                 parentTitleRaw,
                 sortOrder: parentSort,
                 coverPhotoUrl: null as string | null,
+                coverPhotoScale: categoryCoverScaleById[parentKey] ?? 'm',
                 subs: new Map(),
             }
             const cov = row.category_parent_cover_photo_url?.trim()
             if (cov) g.coverPhotoUrl = cov
+            if (categoryCoverScaleById[parentKey]) {
+                g.coverPhotoScale = categoryCoverScaleById[parentKey]
+            }
 
             const subTitle = getCartaChildCategoryLabel(lang, row, parentTitleRaw, childTitleRaw)
 
@@ -541,11 +551,20 @@ export function MenuAccordion({
                 ...s,
                 title: s.title,
                 coverPhotoUrl: categoryCoverById[s.key] ?? null,
+                coverPhotoScale: categoryCoverScaleById[s.key] ?? 'm',
             }))
         }
 
         return groupList as unknown as GroupedGroup[]
-    }, [items, lang, menuCategories, platoMarbellaCategoryId, showEmptyMenuChildCategories, categoryCoverById])
+    }, [
+        items,
+        lang,
+        menuCategories,
+        platoMarbellaCategoryId,
+        showEmptyMenuChildCategories,
+        categoryCoverById,
+        categoryCoverScaleById,
+    ])
 
     const groupedRef = useRef<GroupedGroup[]>([])
     groupedRef.current = grouped as GroupedGroup[]
@@ -775,6 +794,7 @@ export function MenuAccordion({
                             key={group.key}
                             title={group.title}
                             coverPhotoUrl={group.coverPhotoUrl}
+                            coverPhotoScale={group.coverPhotoScale}
                             nativeImg
                             highlighted={reorderPick === group.key && isUuidLike(group.key)}
                             disabled={!isUuidLike(group.key)}
@@ -808,6 +828,7 @@ export function MenuAccordion({
                             compact={homeCompact}
                             title={group.title}
                             coverPhotoUrl={group.coverPhotoUrl}
+                            coverPhotoScale={group.coverPhotoScale}
                             nativeImg
                             ariaExpanded={isOpen}
                             onClick={() => headerToggle(group.key)}
@@ -1134,6 +1155,7 @@ export function MenuAccordion({
                                                         tPublicUi(lang).uncategorized
                                                     )}
                                                     coverPhotoUrl={sub.coverPhotoUrl}
+                                                    coverPhotoScale={sub.coverPhotoScale}
                                                     isActive={isActive}
                                                     className={
                                                         editMode && onEditChildCategory && isUuidLike(sub.key)
@@ -1192,6 +1214,7 @@ export function MenuAccordion({
                                                     tPublicUi(lang).uncategorized
                                                 )}
                                                 coverPhotoUrl={sub.coverPhotoUrl}
+                                                coverPhotoScale={sub.coverPhotoScale}
                                                 onClick={() =>
                                                     setSelectedSubKeyByGroup((p) => ({
                                                         ...p,
