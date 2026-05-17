@@ -237,7 +237,7 @@ function MenuCard({
                 editMode && !isActive && 'opacity-75'
             )}
         >
-            <div className="flex w-full flex-col items-center px-1 pt-1.5 sm:px-1.5 sm:pt-2">
+            <div className="flex w-full flex-col items-center px-1 pt-1 sm:px-1.5 sm:pt-1.5">
                 <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-white">
                     {row.photo_url ? (
                         <button
@@ -312,7 +312,7 @@ function MenuCard({
 
             <div
                 className={cn(
-                    'flex min-h-0 w-full flex-1 flex-col items-center gap-0.5 px-2 pb-3 pt-1',
+                    'flex min-h-0 w-full flex-1 flex-col items-center gap-0 px-2 pb-2 pt-0',
                     editMode && onEditProduct && !productReorderMode && 'cursor-pointer touch-manipulation active:bg-zinc-50'
                 )}
                 role={editMode && onEditProduct && !productReorderMode ? 'button' : undefined}
@@ -336,12 +336,12 @@ function MenuCard({
                 }
             >
                 <p
-                    className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
+                    className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-none text-zinc-900 sm:text-[11px]"
                     title={displayName}
                 >
                     {displayName}
                 </p>
-                <div className="flex min-h-[44px] w-full shrink-0 flex-col items-center justify-center gap-0.5 py-0.5">
+                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-0 py-0">
                     {showPrice && showMedio ? (
                         <>
                             <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)] leading-none">

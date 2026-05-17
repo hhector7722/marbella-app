@@ -59,7 +59,7 @@ function OptionCard({
         <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-zinc-50" aria-hidden />
       )}
       <p
-        className="line-clamp-3 px-1.5 pb-2 pt-1 text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
+        className="line-clamp-3 px-1.5 pb-1.5 pt-0.5 text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
         title={name}
       >
         {name}

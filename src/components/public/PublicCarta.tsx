@@ -370,7 +370,7 @@ export function PublicCarta({
                             key={row.articulo_id}
                             className="flex flex-col items-center overflow-hidden rounded-2xl bg-white"
                           >
-                            <div className="flex w-full flex-col items-center px-1 pb-1.5 pt-1.5 sm:px-1.5 sm:pb-2 sm:pt-2">
+                            <div className="flex w-full flex-col items-center px-1 pb-1 pt-1 sm:px-1.5 sm:pb-1.5 sm:pt-1.5">
                               {row.category_parent_name &&
                               ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name) ? (
                                 row.photo_url ? (
@@ -398,22 +398,14 @@ export function PublicCarta({
                                   </div>
                                 )
                               ) : null}
-                              <div
-                                className={cn(
-                                  'flex w-full min-w-0 flex-col items-center gap-0.5',
-                                  row.category_parent_name &&
-                                    ['Tapas', 'Bocadillos', 'Platos'].includes(row.category_parent_name)
-                                    ? 'mt-1'
-                                    : 'mt-0'
-                                )}
-                              >
+                              <div className="flex w-full min-w-0 flex-col items-center gap-0">
                                 <p
-                                  className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
+                                  className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-none text-zinc-900 sm:text-[11px]"
                                   title={getCartaDisplayName(row, lang)}
                                 >
                                   {getCartaDisplayName(row, lang)}
                                 </p>
-                                <div className="flex min-h-[44px] w-full shrink-0 flex-col items-center justify-center gap-0.5 py-0.5">
+                                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-0 py-0">
                                   <span className="text-center text-xs font-black tabular-nums text-[#36606F] leading-none">
                                     {formatPrice(row.precio)}
                                   </span>
