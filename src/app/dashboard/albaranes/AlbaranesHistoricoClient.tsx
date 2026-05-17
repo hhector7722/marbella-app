@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
+import { LineEditModal } from '@/components/albaranes/LineEditModal'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
@@ -115,6 +116,8 @@ export default function AlbaranesHistoricoClient({
   const [stockStatusByLineId, setStockStatusByLineId] = useState<
     Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }>
   >({})
+  /** Línea abierta en el modal de edición (datos + acciones). */
+  const [lineForEditModal, setLineForEditModal] = useState<PurchaseInvoiceLine | null>(null)
   /** Línea abierta en el modal de mapeo/calibración dimensional. */
   const [lineForMappingModal, setLineForMappingModal] = useState<PurchaseInvoiceLine | null>(null)
   const [lineActionBusy, setLineActionBusy] = useState(false)
@@ -334,6 +337,7 @@ export default function AlbaranesHistoricoClient({
     setSaveWarning(null)
     setDraftLines({})
     setStockStatusByLineId({})
+    setLineForEditModal(null)
     setLineForMappingModal(null)
     try {
       const res = await getPurchaseInvoiceDetailAction(id)
@@ -450,6 +454,7 @@ export default function AlbaranesHistoricoClient({
     setSupplierError(null)
     setSupplierSaving(false)
     setStockStatusByLineId({})
+    setLineForEditModal(null)
     setLineForMappingModal(null)
     setLineActionBusy(false)
     setWizardOpen(false)
@@ -598,8 +603,34 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  function openLineEditModal(line: PurchaseInvoiceLine) {
+    setLineForEditModal(line)
+  }
+
   function openLineMappingModal(line: PurchaseInvoiceLine) {
     setLineForMappingModal(line)
+  }
+
+  function openWizardForLine(
+    line: PurchaseInvoiceLine,
+    opts: { ingredientId: string | null; initialName: string | null }
+  ) {
+    const d = draftLines[line.id]
+    const unitRaw = d?.unit_price?.trim()
+      ? d.unit_price
+      : line.unit_price == null
+        ? ''
+        : String(line.unit_price)
+    const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
+    setWizardInvoiceContext({
+      lineLabel: String(d?.original_name ?? line.original_name ?? '').trim() || null,
+      quantity: d?.quantity?.trim() || (line.quantity == null ? null : String(line.quantity)),
+      unitPrice: Number.isFinite(unitN) ? unitN : null,
+    })
+    setWizardIngredientId(opts.ingredientId)
+    setWizardInitialName(opts.initialName)
+    setWizardTargetLineId(line.id)
+    setWizardOpen(true)
   }
 
   async function rectifyLine(lineId: string) {
@@ -649,6 +680,10 @@ export default function AlbaranesHistoricoClient({
       return
     }
     setDetail(dRes.detail)
+    setLineForEditModal((prev) => {
+      if (!prev) return null
+      return dRes.detail.lines.find((l) => l.id === prev.id) ?? null
+    })
     setLineForMappingModal((prev) => {
       if (!prev) return null
       return dRes.detail.lines.find((l) => l.id === prev.id) ?? null
@@ -756,6 +791,7 @@ export default function AlbaranesHistoricoClient({
         toast.error(res.message)
         return
       }
+      if (lineForEditModal?.id === lineId) setLineForEditModal(null)
       if (lineForMappingModal?.id === lineId) setLineForMappingModal(null)
       await refreshDetailAndStock()
     } finally {
@@ -824,6 +860,7 @@ export default function AlbaranesHistoricoClient({
       setDetail(null)
       setDraftLines({})
       setStockStatusByLineId({})
+      setLineForEditModal(null)
       setLineForMappingModal(null)
       const lRes = await listPurchaseInvoicesAction({ limit: 60 })
       if (lRes.success) setItems(lRes.items)
@@ -1217,262 +1254,76 @@ export default function AlbaranesHistoricoClient({
                             <div className="p-3 text-sm font-bold text-zinc-500">No hay líneas guardadas.</div>
                           ) : (
                             detail.lines.map((l) => {
-                              const d = draftLines[l.id]
                               const stock = stockStatusByLineId[l.id]
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
                               const noMatch = !l.ingredient_name
-                              // Líneas con ingrediente vinculado → el lápiz reabre el mapping
-                              // para ajustar factor/ingrediente. Las que no tienen match → el
-                              // lápiz lanza el mismo modal en modo «mapeo manual». Por eso
-                              // mostramos SIEMPRE el lápiz al manager, sin condicionarlo a
-                              // `ingredient_id`: garantiza el affordance de edición en todos
-                              // los casos (incluido el edge en que la línea perdió el match).
                               const needsRepair = lineNeedsStockRepair(l)
                               const stockBusy =
                                 repairingStockLineId !== null || repairingInvoiceStockBatch || lineActionBusy
+                              const displayName = l.ingredient_name
+                                ? l.ingredient_name
+                                : l.original_name || 'Sin nombre'
 
-                              function openWizardForLine(opts: {
-                                ingredientId: string | null
-                                initialName: string | null
-                              }) {
-                                const draft = draftLines[l.id]
-                                const unitRaw = draft?.unit_price?.trim()
-                                  ? draft.unit_price
-                                  : l.unit_price == null
-                                    ? ''
-                                    : String(l.unit_price)
-                                const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
-                                setWizardInvoiceContext({
-                                  lineLabel: String(draft?.original_name ?? l.original_name ?? '').trim() || null,
-                                  quantity:
-                                    draft?.quantity?.trim() ||
-                                    (l.quantity == null ? null : String(l.quantity)),
-                                  unitPrice: Number.isFinite(unitN) ? unitN : null,
-                                })
-                                setWizardIngredientId(opts.ingredientId)
-                                setWizardInitialName(opts.initialName)
-                                setWizardTargetLineId(l.id)
-                                setWizardOpen(true)
-                              }
                               return (
-                                <div key={l.id} className="p-3">
-                                  {/* Cabecera de la fila: a la izquierda, área expandible
-                                      (botón único) con el nombre + iconos de estado (X rojo /
-                                      Check verde / RotateCcw ámbar) — solo visibles para manager.
-                                      A la derecha, BLOQUE DE ACCIONES como hermano del botón anterior
-                                      (no anidado) con AlertCircle clickeable (reparar stock) y
-                                      Pencil (ajustar match). Esto evita HTML inválido (botones
-                                      anidados vía role="button") que en algunos navegadores
-                                      colapsa la zona de acciones y deja el lápiz invisible. */}
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex-1 min-w-0 flex items-center gap-2 min-h-12">
-                                      <span className="text-sm font-black text-zinc-900 truncate">
-                                        {l.ingredient_name ? l.ingredient_name : l.original_name || 'Sin nombre'}
-                                      </span>
-                                      {isManager ? (
-                                        <>
-                                          {noMatch ? (
-                                            <span
-                                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-rose-600 text-white shrink-0"
-                                              aria-label="Sin match"
-                                              title="Sin match — pulsa el lápiz para mapear"
-                                            >
-                                              <X className="h-3 w-3" strokeWidth={3.5} />
-                                            </span>
-                                          ) : null}
-                                          {stockApplied ? (
-                                            <span
-                                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white shrink-0"
-                                              aria-label="Stock aplicado"
-                                              title="Stock aplicado"
-                                            >
-                                              <Check className="h-3 w-3" strokeWidth={3.5} />
-                                            </span>
-                                          ) : null}
-                                          {rectified ? (
-                                            <span
-                                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-white shrink-0"
-                                              aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                              title={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                            >
-                                              <RotateCcw className="h-3 w-3" strokeWidth={3} />
-                                            </span>
-                                          ) : null}
-                                        </>
-                                      ) : null}
-                                    </div>
-
-                                    {/* Acciones al extremo derecho — shrink-0 para no colapsar en táctil. */}
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      {needsRepair ? (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            void repairStockForLine(l.id)
-                                          }}
-                                          disabled={stockBusy}
-                                          aria-label="Sin stock aplicado — pulsar para aplicar"
-                                          title="Sin stock aplicado — pulsar para aplicar"
-                                          className={cn(
-                                            'min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl bg-amber-500 text-white active:scale-[0.99] transition',
-                                            stockBusy && 'opacity-60 pointer-events-none'
-                                          )}
-                                        >
-                                          {repairingStockLineId === l.id ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                          ) : (
-                                            <AlertCircle className="h-4 w-4" strokeWidth={2.5} />
-                                          )}
-                                        </button>
-                                      ) : null}
-                                      {isManager ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => openLineMappingModal(l)}
-                                          disabled={stockBusy}
-                                          className={cn(
-                                            'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
-                                            stockBusy && 'opacity-60 pointer-events-none'
-                                          )}
-                                          aria-label={l.ingredient_id ? 'Ajustar match' : 'Mapear línea'}
-                                          title={l.ingredient_id ? 'Ajustar match (factor o ingrediente)' : 'Mapear línea'}
-                                        >
-                                          <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                        </button>
-                                      ) : null}
-                                    </div>
-                                  </div>
-
-                                  {l.ingredient_name && l.original_name && l.ingredient_name !== l.original_name ? (
-                                    <p className="mt-1 text-xs font-semibold text-zinc-500 truncate">{l.original_name}</p>
-                                  ) : null}
-
-                                  <div className="mt-2 grid grid-cols-3 gap-1.5">
-                                    <label className="min-w-0 block">
+                                <div key={l.id} className="flex items-center gap-2 px-3 py-2.5 min-h-[56px]">
+                                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                                    <span className="text-sm font-black text-zinc-900 truncate">{displayName}</span>
+                                    {noMatch ? (
                                       <span
-                                        className="text-[9px] font-black uppercase tracking-wider text-zinc-500"
-                                        title="Si el PU es €/kg, indica los kg totales de la línea, no solo piezas."
+                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white"
+                                        aria-label="Sin match"
+                                        title="Sin match"
                                       >
-                                        Cant.
+                                        <X className="h-3 w-3" strokeWidth={3.5} />
                                       </span>
-                                      <input
-                                        inputMode="decimal"
-                                        value={d?.quantity ?? ''}
-                                        onChange={(e) => setDraft(l.id, { quantity: e.target.value })}
-                                        className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                        placeholder=" "
-                                      />
-                                    </label>
-                                    <label className="min-w-0 block">
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">PU</span>
-                                      <input
-                                        inputMode="decimal"
-                                        value={d?.unit_price ?? ''}
-                                        onChange={(e) => setDraft(l.id, { unit_price: e.target.value })}
-                                        className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                        placeholder=" "
-                                      />
-                                    </label>
-                                    <label className="min-w-0 block">
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Total</span>
-                                      <input
-                                        inputMode="decimal"
-                                        value={d?.total_price ?? ''}
-                                        onChange={(e) => setDraft(l.id, { total_price: e.target.value })}
-                                        className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200/90 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
-                                        placeholder=" "
-                                      />
-                                    </label>
-                                  </div>
-
-                                  {!detail.supplier_id ? (
-                                    <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">
-                                      Falta proveedor en el albarán.
-                                    </p>
-                                  ) : null}
-
-                                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                    {isLineDirty(l) ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => saveLine(l.id)}
-                                        disabled={savingLineId === l.id}
-                                        className={cn(
-                                          'min-h-12 shrink-0 rounded-lg border border-[#36606F]/30 bg-white px-2.5 text-[10px] font-bold uppercase text-[#36606F]',
-                                          savingLineId === l.id && 'opacity-60 pointer-events-none'
-                                        )}
-                                      >
-                                        {savingLineId === l.id ? '…' : 'Guardar línea'}
-                                      </button>
                                     ) : null}
-                                    <button
-                                      type="button"
-                                      onClick={() => openWizardForLine({ ingredientId: null, initialName: l.original_name || '' })}
-                                      className="min-h-12 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
-                                    >
-                                      + Nuevo
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        openWizardForLine({
-                                          ingredientId: l.ingredient_id ? String(l.ingredient_id) : null,
-                                          initialName: null,
-                                        })
-                                      }
-                                      disabled={!l.ingredient_id}
-                                      className={cn(
-                                        'min-h-12 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 text-[10px] font-bold uppercase tracking-wide text-[#36606F] hover:bg-zinc-50',
-                                        !l.ingredient_id && 'pointer-events-none opacity-45'
-                                      )}
-                                    >
-                                      Configurar precio
-                                    </button>
+                                    {needsRepair ? (
+                                      <span
+                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"
+                                        aria-label="Sin stock aplicado"
+                                        title="Sin stock aplicado"
+                                      >
+                                        <AlertCircle className="h-3 w-3" strokeWidth={2.5} />
+                                      </span>
+                                    ) : null}
                                     {stockApplied ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => void rectifyLine(l.id)}
-                                        disabled={lineActionBusy}
-                                        className={cn(
-                                          'min-h-12 shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-bold uppercase text-amber-800',
-                                          lineActionBusy && 'opacity-60 pointer-events-none'
-                                        )}
+                                      <span
+                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white"
+                                        aria-label="Stock aplicado"
+                                        title="Stock aplicado"
                                       >
-                                        Rectificar stock
-                                      </button>
+                                        <Check className="h-3 w-3" strokeWidth={3.5} />
+                                      </span>
                                     ) : null}
-                                    {l.ingredient_id ? (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() => void editMapping(l.id)}
-                                          disabled={lineActionBusy}
-                                          className={cn(
-                                            'min-h-12 shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 text-[10px] font-bold uppercase text-zinc-700',
-                                            lineActionBusy && 'opacity-60 pointer-events-none'
-                                          )}
-                                        >
-                                          Editar match
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => void removeMapping(l.id)}
-                                          disabled={lineActionBusy}
-                                          className={cn(
-                                            'min-h-12 shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-[10px] font-bold uppercase text-rose-700',
-                                            lineActionBusy && 'opacity-60 pointer-events-none'
-                                          )}
-                                        >
-                                          Eliminar
-                                        </button>
-                                      </>
+                                    {rectified ? (
+                                      <span
+                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"
+                                        aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                        title={`Stock rectificado (REV${stock?.rectifiedCount})`}
+                                      >
+                                        <RotateCcw className="h-3 w-3" strokeWidth={3} />
+                                      </span>
                                     ) : null}
                                   </div>
-
+                                  {isManager ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openLineEditModal(l)}
+                                      disabled={stockBusy}
+                                      className={cn(
+                                        'min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                                        stockBusy && 'opacity-60 pointer-events-none'
+                                      )}
+                                      aria-label="Editar línea"
+                                      title="Editar línea"
+                                    >
+                                      <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                                    </button>
+                                  ) : null}
                                 </div>
                               )
+                            
                             })
                           )}
                         </div>
@@ -1481,6 +1332,56 @@ export default function AlbaranesHistoricoClient({
                     <div className="text-sm font-bold text-zinc-500">Sin datos.</div>
                   )}
                 </div>
+
+                <LineEditModal
+                  open={!!lineForEditModal}
+                  line={lineForEditModal}
+                  draft={lineForEditModal ? draftLines[lineForEditModal.id] ?? null : null}
+                  invoiceId={detail?.id ?? null}
+                  supplierId={detail?.supplier_id ?? null}
+                  portalTarget={modalContainer}
+                  isManager={isManager}
+                  stockApplied={lineForEditModal ? Boolean(stockStatusByLineId[lineForEditModal.id]?.stockApplied) : false}
+                  needsRepair={lineForEditModal ? lineNeedsStockRepair(lineForEditModal) : false}
+                  saving={lineForEditModal ? savingLineId === lineForEditModal.id : false}
+                  busy={lineActionBusy || repairingStockLineId !== null}
+                  isDirty={lineForEditModal ? isLineDirty(lineForEditModal) : false}
+                  onClose={() => setLineForEditModal(null)}
+                  onDraftChange={(patch) => {
+                    if (!lineForEditModal) return
+                    setDraft(lineForEditModal.id, patch)
+                  }}
+                  onSaveLine={async () => {
+                    if (!lineForEditModal) return
+                    await saveLine(lineForEditModal.id)
+                  }}
+                  onOpenMapping={() => {
+                    if (lineForEditModal) openLineMappingModal(lineForEditModal)
+                  }}
+                  onOpenWizardNew={() => {
+                    if (!lineForEditModal) return
+                    openWizardForLine(lineForEditModal, { ingredientId: null, initialName: lineForEditModal.original_name || '' })
+                  }}
+                  onOpenWizardPrice={() => {
+                    if (!lineForEditModal) return
+                    openWizardForLine(lineForEditModal, {
+                      ingredientId: lineForEditModal.ingredient_id ? String(lineForEditModal.ingredient_id) : null,
+                      initialName: null,
+                    })
+                  }}
+                  onRectifyStock={() => {
+                    if (lineForEditModal) void rectifyLine(lineForEditModal.id)
+                  }}
+                  onEditMapping={() => {
+                    if (lineForEditModal) void editMapping(lineForEditModal.id)
+                  }}
+                  onRemoveMapping={() => {
+                    if (lineForEditModal) void removeMapping(lineForEditModal.id)
+                  }}
+                  onRepairStock={() => {
+                    if (lineForEditModal) void repairStockForLine(lineForEditModal.id)
+                  }}
+                />
 
                 <LineMappingModal
                   open={!!lineForMappingModal}
