@@ -226,7 +226,7 @@ export function PublicCarta({
               ) : null}
             </div>
 
-            <div className="flex flex-col items-center justify-center gap-1 px-1">
+            <div className="flex justify-center px-1">
               <Image
                 src="/icons/logo-white.png"
                 alt="Bar La Marbella"
@@ -235,9 +235,6 @@ export function PublicCarta({
                 className="h-10 w-auto max-w-[220px] sm:h-12 sm:max-w-[260px] md:h-14 md:max-w-[300px]"
                 priority
               />
-              <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400 sm:text-[11px]">
-                {tPublicUi(lang).subtitle}
-              </p>
             </div>
 
             <div className="flex min-h-[52px] items-center justify-end">
