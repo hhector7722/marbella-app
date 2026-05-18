@@ -12,6 +12,8 @@ export function tPublicUi(lang: CartaLang) {
       uncategorized: 'Sin categoría',
       pickSubcategoryTitle: 'Elige una subcategoría',
       backToSubcategories: 'Ver todas las subcategorías',
+      racionEntero: 'Entero',
+      racionMedio: 'Medio',
     },
     ca: {
       title: 'La carta',
@@ -20,6 +22,8 @@ export function tPublicUi(lang: CartaLang) {
       uncategorized: 'Sense categoria',
       pickSubcategoryTitle: 'Tria una subcategoria',
       backToSubcategories: 'Veure totes les subcategories',
+      racionEntero: 'Sencer',
+      racionMedio: 'Mig',
     },
     en: {
       title: 'Menu',
@@ -28,6 +32,8 @@ export function tPublicUi(lang: CartaLang) {
       uncategorized: 'Uncategorized',
       pickSubcategoryTitle: 'Choose a subcategory',
       backToSubcategories: 'All subcategories',
+      racionEntero: 'Full',
+      racionMedio: 'Half',
     },
   } as const
   return dict[lang]

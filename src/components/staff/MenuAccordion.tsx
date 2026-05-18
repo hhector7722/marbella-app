@@ -5,6 +5,7 @@ import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
+import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
 import { cn } from '@/lib/utils'
 import { Check, Circle, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
@@ -210,13 +211,6 @@ function applyReorderDrafts(
     return base
 }
 
-function formatPriceDisplay(precio: number | string | null | undefined): string {
-    if (precio === null || precio === undefined) return ' '
-    const n = typeof precio === 'string' ? parseFloat(precio) : precio
-    if (Number.isNaN(n) || Math.abs(n) < 0.005) return ' '
-    return `${n.toFixed(2)}€`
-}
-
 function MenuCard({
     row,
     lang,
@@ -245,10 +239,6 @@ function MenuCard({
     photoFrameStyle?: { aspectRatio?: number; height?: string }
 }) {
     const [lightboxOpen, setLightboxOpen] = useState(false)
-    const priceStr = formatPriceDisplay(row.precio)
-    const priceMedioStr = formatPriceDisplay(row.precio_medio_display ?? null)
-    const showPrice = priceStr.trim() !== ''
-    const showMedio = priceMedioStr.trim() !== ''
     const displayName = getCartaDisplayName(row, lang)
     const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
     const busy = editMode && productToggleBusyId === row.articulo_id
@@ -395,26 +385,12 @@ function MenuCard({
                 >
                     {displayName}
                 </p>
-                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0">
-                    {showPrice && showMedio ? (
-                        <>
-                            <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)] leading-none">
-                                {priceStr}
-                            </span>
-                            <span className="text-center font-mono font-black tabular-nums text-[#36606F]/90 text-[clamp(8px,1.1vw,10px)] leading-none">
-                                {priceMedioStr}
-                            </span>
-                        </>
-                    ) : showPrice ? (
-                        <span className="text-center font-mono font-black tabular-nums text-[#36606F] text-[clamp(9px,1.2vw,11px)]">
-                            {priceStr}
-                        </span>
-                    ) : (
-                        <span className="min-h-[1em] font-mono text-[clamp(9px,1.2vw,11px)] text-transparent select-none" aria-hidden>
-                            {' '}
-                        </span>
-                    )}
-                </div>
+                <CartaDualRacionPrices
+                    lang={lang}
+                    precio={row.precio}
+                    precioMedio={row.precio_medio_display}
+                    variant="staff"
+                />
             </div>
 
             <CartaImageLightbox

@@ -18,6 +18,7 @@ import {
   tPublicUi,
 } from '@/lib/carta-menu-i18n'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
+import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
@@ -78,13 +79,6 @@ type Group = {
   coverPhotoUrl: string | null
   coverPhotoScale: CartaPhotoScale
   subs: Map<string, { key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }>
-}
-
-function formatPrice(precio: PublicMenuRow['precio']) {
-  if (precio == null) return ' '
-  const n = typeof precio === 'string' ? Number(precio) : precio
-  if (!Number.isFinite(n) || n === 0) return ' '
-  return `${n.toFixed(2)}€`
 }
 
 export function PublicCarta({
@@ -421,8 +415,6 @@ export function PublicCarta({
                               )}
                             >
                               {chunk.map((row) => {
-                          const medioStr = formatPrice(row.precio_medio_display ?? null)
-                          const showMedio = medioStr.trim() !== ''
                           const isDrink = isCartaDrinksSection(row.category_parent_name)
                           const showPhoto = cartaShowsProductPhoto(
                             row.category_parent_name,
@@ -495,16 +487,12 @@ export function PublicCarta({
                                 >
                                   {getCartaDisplayName(row, lang)}
                                 </p>
-                                <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0">
-                                  <span className="text-center text-xs font-black tabular-nums leading-tight text-[#36606F]">
-                                    {formatPrice(row.precio)}
-                                  </span>
-                                  {showMedio ? (
-                                    <span className="text-center text-[11px] font-black tabular-nums leading-tight text-[#36606F]/90">
-                                      {medioStr}
-                                    </span>
-                                  ) : null}
-                                </div>
+                                <CartaDualRacionPrices
+                                  lang={lang}
+                                  precio={row.precio}
+                                  precioMedio={row.precio_medio_display}
+                                  variant="public"
+                                />
                               </div>
                             </div>
                           )
