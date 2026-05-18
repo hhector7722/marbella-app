@@ -36,6 +36,28 @@ const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
 const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas', 'Limpieza', 'Otros'];
 const PACK_UNITS_PRESETS_EDIT = [12, 24];
 
+function isCountableIngredientCategory(category: string | null | undefined): boolean {
+    const c = String(category ?? '');
+    return c === 'Packaging' || c === 'Limpieza' || c === 'Otros';
+}
+
+function packNeedsBaseMeasureStep(category: string | null | undefined): boolean {
+    return !isCountableIngredientCategory(category);
+}
+
+function displayPricingWizardStep(
+    logicalStep: 1 | 2 | 3,
+    category: string | null | undefined
+): { current: number; total: number } {
+    const total = packNeedsBaseMeasureStep(category) ? 3 : 2;
+    if (total === 2 && logicalStep === 3) return { current: 2, total: 2 };
+    return { current: logicalStep, total };
+}
+
+function resolvedPackPurchaseUnit(form: Partial<Ingredient>): string {
+    return resolveDeclaredPurchaseUnitWithPackContent(form.purchase_unit ?? 'ud', form.pack_unit_size_unit ?? null);
+}
+
 function normalizeUnit(u: string | null | undefined): 'g' | 'kg' | 'ml' | 'l' | 'ud' | 'cl' {
     const s = String(u ?? '').trim().toLowerCase();
     if (s === 'u' || s === 'ud' || s === 'un' || s === 'unidad') return 'ud';
@@ -117,7 +139,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
     const [customSupplier2Name, setCustomSupplier2Name] = useState('');
     const [allSuppliers, setAllSuppliers] = useState<{ id: number; name: string }[]>([]);
     const [editPricingOpen, setEditPricingOpen] = useState(false);
-    const [editPricingStep, setEditPricingStep] = useState<1 | 2>(1);
+    const [editPricingStep, setEditPricingStep] = useState<1 | 2 | 3>(1);
 
     const supplierNamesFromDb = useMemo(
         () =>
@@ -278,6 +300,8 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
 
     if (!ingredient) return null;
     const targetIngredient = activeIngredient ?? ingredient;
+    const pricingWizardSteps = displayPricingWizardStep(editPricingStep, editForm.category);
+    const packBaseUnit = resolvedPackPurchaseUnit(editForm);
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -365,7 +389,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     {(editForm.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
                                         <div className="mt-1 text-xs text-zinc-500">
                                             {Number(editForm.pack_units ?? 0) || '—'} uds · {Number(editForm.pack_unit_size_qty ?? 0) || '—'}
-                                            {String(editForm.pack_unit_size_unit ?? '') || ''} · base {normalizeUnit(editForm.purchase_unit)}
+                                            {String(editForm.pack_unit_size_unit ?? '') || ''} · base {normalizeUnit(packBaseUnit)}
                                         </div>
                                     ) : null}
                                 </div>
@@ -400,7 +424,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                 {pricingAssistantCopy.modal.header}
                                             </div>
                                             <div className="truncate text-sm font-black text-white">
-                                                {pricingAssistantCopy.modal.step(editPricingStep === 1 ? 1 : 2, 2)}
+                                                {pricingAssistantCopy.modal.step(pricingWizardSteps.current, pricingWizardSteps.total)}
                                             </div>
                                         </div>
                                         <button
@@ -437,7 +461,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                 pack_unit_size_qty: null,
                                                                 pack_unit_size_unit: null,
                                                             }));
-                                                            setEditPricingStep(2);
+                                                            setEditPricingStep(3);
                                                         }}
                                                     />
                                                     <PricingChoiceButton
@@ -454,30 +478,30 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                 pack_unit_size_qty: null,
                                                                 pack_unit_size_unit: null,
                                                             }));
-                                                            setEditPricingStep(2);
+                                                            setEditPricingStep(3);
                                                         }}
                                                     />
                                                     <PricingChoiceButton
                                                         title={pricingAssistantCopy.invoiceStyle.perPack}
                                                         subtitle={pricingAssistantCopy.invoiceStyle.perPackSub}
                                                         onClick={() => {
-                                                            const base = (
-                                                                editForm.category === 'Bebidas'
-                                                                    ? 'l'
-                                                                    : editForm.category === 'Packaging' ||
-                                                                        editForm.category === 'Limpieza' ||
-                                                                        editForm.category === 'Otros'
-                                                                      ? 'ud'
-                                                                      : 'kg'
-                                                            ) as 'kg' | 'l' | 'ud';
+                                                            if (isCountableIngredientCategory(editForm.category)) {
+                                                                setEditForm((p) => ({
+                                                                    ...p,
+                                                                    supplier_pricing_mode: 'per_pack',
+                                                                    purchase_unit: 'ud',
+                                                                    unit_type: 'ud',
+                                                                    pack_units: p.pack_units ?? 12,
+                                                                    pack_unit_size_qty: 1,
+                                                                    pack_unit_size_unit: 'ud',
+                                                                }));
+                                                                setEditPricingStep(3);
+                                                                return;
+                                                            }
                                                             setEditForm((p) => ({
                                                                 ...p,
                                                                 supplier_pricing_mode: 'per_pack',
-                                                                purchase_unit: base,
-                                                                unit_type: base,
-                                                                pack_units: p.pack_units ?? 12,
-                                                                pack_unit_size_qty: p.pack_unit_size_qty ?? null,
-                                                                pack_unit_size_unit: p.pack_unit_size_unit ?? (base === 'l' ? 'ml' : 'ud'),
+                                                                pack_units: p.pack_units ?? 1,
                                                             }));
                                                             setEditPricingStep(2);
                                                         }}
@@ -486,15 +510,23 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                         title={pricingAssistantCopy.invoiceStyle.perUnit}
                                                         subtitle={pricingAssistantCopy.invoiceStyle.perUnitSub}
                                                         onClick={() => {
+                                                            if (isCountableIngredientCategory(editForm.category)) {
+                                                                setEditForm((p) => ({
+                                                                    ...p,
+                                                                    supplier_pricing_mode: 'per_purchase_unit',
+                                                                    purchase_unit: 'ud',
+                                                                    unit_type: 'ud',
+                                                                    pack_price: null,
+                                                                    pack_units: null,
+                                                                    pack_unit_size_qty: null,
+                                                                    pack_unit_size_unit: null,
+                                                                }));
+                                                                setEditPricingStep(3);
+                                                                return;
+                                                            }
                                                             setEditForm((p) => ({
                                                                 ...p,
                                                                 supplier_pricing_mode: 'per_purchase_unit',
-                                                                purchase_unit: 'ud',
-                                                                unit_type: 'ud',
-                                                                pack_price: null,
-                                                                pack_units: null,
-                                                                pack_unit_size_qty: null,
-                                                                pack_unit_size_unit: null,
                                                             }));
                                                             setEditPricingStep(2);
                                                         }}
@@ -515,7 +547,97 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                             </>
                                         )}
 
-                                        {editPricingStep === 2 && (
+                                        {editPricingStep === 2 && packNeedsBaseMeasureStep(editForm.category) && (
+                                            <>
+                                                <PricingStepHeader
+                                                    title={pricingAssistantCopy.baseMeasure.title}
+                                                    hint={pricingAssistantCopy.baseMeasure.hint}
+                                                />
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.baseMeasure.weight}
+                                                        subtitle={pricingAssistantCopy.baseMeasure.weightSub}
+                                                        onClick={() => {
+                                                            const isPack =
+                                                                (editForm.supplier_pricing_mode ?? 'per_purchase_unit') ===
+                                                                'per_pack';
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                supplier_pricing_mode: 'per_pack',
+                                                                purchase_unit: 'kg',
+                                                                unit_type: 'kg',
+                                                                pack_units: isPack ? (p.pack_units ?? 1) : 1,
+                                                                pack_unit_size_qty: isPack ? (p.pack_unit_size_qty ?? 1) : 1,
+                                                                pack_unit_size_unit: 'kg',
+                                                            }));
+                                                            setEditPricingStep(3);
+                                                        }}
+                                                    />
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.baseMeasure.volume}
+                                                        subtitle={pricingAssistantCopy.baseMeasure.volumeSub}
+                                                        onClick={() => {
+                                                            const isPack =
+                                                                (editForm.supplier_pricing_mode ?? 'per_purchase_unit') ===
+                                                                'per_pack';
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                supplier_pricing_mode: 'per_pack',
+                                                                purchase_unit: 'l',
+                                                                unit_type: 'l',
+                                                                pack_units: isPack ? (p.pack_units ?? 1) : 1,
+                                                                pack_unit_size_qty: isPack ? (p.pack_unit_size_qty ?? null) : null,
+                                                                pack_unit_size_unit: 'l',
+                                                            }));
+                                                            setEditPricingStep(3);
+                                                        }}
+                                                    />
+                                                    <PricingChoiceButton
+                                                        title={pricingAssistantCopy.baseMeasure.count}
+                                                        subtitle={pricingAssistantCopy.baseMeasure.countSub}
+                                                        onClick={() => {
+                                                            const isPack =
+                                                                (editForm.supplier_pricing_mode ?? 'per_purchase_unit') ===
+                                                                'per_pack';
+                                                            if (isPack) {
+                                                                setEditForm((p) => ({
+                                                                    ...p,
+                                                                    supplier_pricing_mode: 'per_pack',
+                                                                    purchase_unit: 'ud',
+                                                                    unit_type: 'ud',
+                                                                    pack_units: p.pack_units ?? 1,
+                                                                    pack_unit_size_qty: 1,
+                                                                    pack_unit_size_unit: 'ud',
+                                                                }));
+                                                            } else {
+                                                                setEditForm((p) => ({
+                                                                    ...p,
+                                                                    supplier_pricing_mode: 'per_purchase_unit',
+                                                                    purchase_unit: 'ud',
+                                                                    unit_type: 'ud',
+                                                                    pack_price: null,
+                                                                    pack_units: null,
+                                                                    pack_unit_size_qty: null,
+                                                                    pack_unit_size_unit: null,
+                                                                }));
+                                                            }
+                                                            setEditPricingStep(3);
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditPricingStep(1)}
+                                                        className="min-h-12 flex-1 rounded-xl bg-rose-600 font-black text-white hover:bg-rose-700"
+                                                    >
+                                                        Atrás
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {editPricingStep === 3 && (
                                             <>
                                                 <PricingStepHeader
                                                     title={pricingAssistantCopy.amounts.title}
@@ -608,17 +730,44 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                     <span className="text-[10px] font-bold uppercase text-zinc-400">Medida</span>
                                                                     <select
                                                                         value={editForm.pack_unit_size_unit || 'ud'}
-                                                                        onChange={(e) =>
-                                                                            setEditForm({ ...editForm, pack_unit_size_unit: e.target.value })
-                                                                        }
+                                                                        onChange={(e) => {
+                                                                            const unit = e.target.value;
+                                                                            const stored = resolveDeclaredPurchaseUnitWithPackContent(
+                                                                                editForm.purchase_unit ?? 'ud',
+                                                                                unit
+                                                                            );
+                                                                            setEditForm({
+                                                                                ...editForm,
+                                                                                pack_unit_size_unit: unit,
+                                                                                purchase_unit: stored,
+                                                                                unit_type: stored,
+                                                                            });
+                                                                        }}
                                                                         className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm"
                                                                     >
-                                                                        <option value="ud">ud</option>
-                                                                        <option value="ml">ml</option>
-                                                                        <option value="cl">cl</option>
-                                                                        <option value="l">L</option>
-                                                                        <option value="g">g</option>
-                                                                        <option value="kg">kg</option>
+                                                                        {normalizeUnit(editForm.purchase_unit) === 'ud' ? (
+                                                                            <option value="ud">ud</option>
+                                                                        ) : normalizeUnit(editForm.purchase_unit) === 'l' ? (
+                                                                            <>
+                                                                                <option value="ml">ml</option>
+                                                                                <option value="cl">cl</option>
+                                                                                <option value="l">L</option>
+                                                                            </>
+                                                                        ) : normalizeUnit(editForm.purchase_unit) === 'kg' ? (
+                                                                            <>
+                                                                                <option value="g">g</option>
+                                                                                <option value="kg">kg</option>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <option value="ud">ud</option>
+                                                                                <option value="ml">ml</option>
+                                                                                <option value="cl">cl</option>
+                                                                                <option value="l">L</option>
+                                                                                <option value="g">g</option>
+                                                                                <option value="kg">kg</option>
+                                                                            </>
+                                                                        )}
                                                                     </select>
                                                                 </label>
                                                             </div>
@@ -671,7 +820,11 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                 <div className="flex gap-2">
                                                     <button
                                                         type="button"
-                                                        onClick={() => setEditPricingStep(1)}
+                                                        onClick={() =>
+                                                            setEditPricingStep(
+                                                                packNeedsBaseMeasureStep(editForm.category) ? 2 : 1
+                                                            )
+                                                        }
                                                         className="min-h-12 flex-1 rounded-xl bg-rose-600 font-black text-white hover:bg-rose-700"
                                                     >
                                                         Atrás
@@ -679,6 +832,15 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                     <button
                                                         type="button"
                                                         onClick={() => {
+                                                            const stored = resolveDeclaredPurchaseUnitWithPackContent(
+                                                                editForm.purchase_unit ?? 'ud',
+                                                                editForm.pack_unit_size_unit ?? null
+                                                            );
+                                                            setEditForm((p) => ({
+                                                                ...p,
+                                                                purchase_unit: stored,
+                                                                unit_type: stored,
+                                                            }));
                                                             setEditPricingOpen(false);
                                                             setEditPricingStep(1);
                                                             toast.success('Precio actualizado (pendiente de Guardar)');

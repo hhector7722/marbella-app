@@ -24,11 +24,12 @@ export function resolveDeclaredPurchaseUnitWithPackContent(
 ): string {
   const dec = norm(declaredPurchaseUnit)
   const sz = norm(packUnitSizeUnit)
-  if (dec === 'ud') {
-    if (sz === 'ml' || sz === 'l' || sz === 'cl') return 'l'
-    if (sz === 'g' || sz === 'kg') return 'kg'
-    return 'ud'
-  }
+  const szIsVol = sz === 'ml' || sz === 'l' || sz === 'cl'
+  const szIsMass = sz === 'g' || sz === 'kg'
+  // El contenido del pack manda: garrafa 5 L no puede quedar en base kg.
+  if (szIsVol) return 'l'
+  if (szIsMass) return 'kg'
+  if (dec === 'ud') return 'ud'
   return dec || 'ud'
 }
 
@@ -71,7 +72,9 @@ export function suggestedAlbaranConversionFactorFromIngredient(row: {
   pack_units?: number | null
 }): number | null {
   const mode = String(row.supplier_pricing_mode ?? 'per_purchase_unit')
-  const pu = norm(row.purchase_unit)
+  const pu = norm(
+    resolveDeclaredPurchaseUnitWithPackContent(row.purchase_unit, row.pack_unit_size_unit)
+  )
   if (mode !== 'per_pack') {
     if (pu === 'ud') return 1
     if (pu === 'l' || pu === 'kg') return 1

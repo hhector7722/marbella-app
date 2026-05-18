@@ -64,7 +64,7 @@ export const pricingAssistantCopy = {
   },
   modal: {
     header: 'Ayuda para el precio',
-    step: (n: 1 | 2, total: 2) => `Pregunta ${n} de ${total}`,
+    step: (n: number, total: number) => `Pregunta ${n} de ${total}`,
     done: 'Listo',
   },
   express: {
