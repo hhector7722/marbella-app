@@ -321,9 +321,8 @@ export function PublicCarta({
                       return (
                         <CartaSubcategoryPickerButton
                           key={sub.key}
+                          variant="label"
                           label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                          coverPhotoUrl={sub.coverPhotoUrl}
-                          coverPhotoScale={sub.coverPhotoScale}
                           isActive={isActive}
                           onClick={() =>
                             setSelectedSubKeyByGroup((p) => ({

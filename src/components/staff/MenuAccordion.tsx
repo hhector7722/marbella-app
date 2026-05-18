@@ -1007,14 +1007,13 @@ export function MenuAccordion({
                                             return (
                                                 <CartaSubcategoryPickerButton
                                                     key={sub.key}
+                                                    variant="label"
                                                     label={subPickerButtonLabel(
                                                         sub,
                                                         lang,
                                                         openGroup.parentTitleRaw,
                                                         tPublicUi(lang).uncategorized
                                                     )}
-                                                    coverPhotoUrl={sub.coverPhotoUrl}
-                                                    coverPhotoScale={sub.coverPhotoScale}
                                                     isActive={isActive}
                                                     className={
                                                         editMode &&
