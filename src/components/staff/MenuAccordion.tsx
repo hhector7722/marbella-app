@@ -937,12 +937,94 @@ export function MenuAccordion({
                         onClick={() => setOpenKey(null)}
                     />
                     <div
-                        className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
+                        className={cn(
+                            'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
+                            openShowSubPicker ? 'h-auto' : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
+                        )}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex shrink-0 items-center gap-1.5 bg-white px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
+                        {!openShowSubPicker ? (
+                        <div
+                            className={cn(
+                                'flex shrink-0 bg-white px-2 py-2 sm:px-3 sm:py-2.5',
+                                openShowSubTabs
+                                    ? 'flex-col gap-1 sm:gap-1.5'
+                                    : 'items-center gap-1.5 sm:gap-2'
+                            )}
+                        >
                             {openShowSubTabs ? (
-                                <div className="flex min-w-0 flex-1 overflow-x-auto pb-0.5">
+                                <div className="flex min-w-0 items-center justify-between gap-1.5">
+                                    {editMode &&
+                                    !reorderScope &&
+                                    ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
+                                        (onPersistProductOrder &&
+                                            modalProductSub &&
+                                            modalProductSub.rows.length > 0)) ? (
+                                        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-1 sm:gap-1.5">
+                                            {onPersistChildCategoryOrder && openGroup._subList.length > 1 ? (
+                                                <button
+                                                    type="button"
+                                                    className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
+                                                    onClick={() => {
+                                                        setReorderPick(null)
+                                                        setSubKeysDraft(openGroup._subList.map((s) => s.key))
+                                                        setReorderScope('subs')
+                                                    }}
+                                                >
+                                                    Reordenar pestañas
+                                                </button>
+                                            ) : null}
+                                            {onPersistProductOrder &&
+                                            modalProductSub &&
+                                            modalProductSub.rows.length > 0 ? (
+                                                <button
+                                                    type="button"
+                                                    className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
+                                                    onClick={() => {
+                                                        if (
+                                                            isPlatoMarbellaSub(
+                                                                modalProductSub.key,
+                                                                modalProductSub.rows
+                                                            )
+                                                        ) {
+                                                            startPlatoMarbellaProductReorder(
+                                                                modalProductSub.rows,
+                                                                'entrante'
+                                                            )
+                                                        } else {
+                                                            setReorderPick(null)
+                                                            setProductIdsDraft(
+                                                                modalProductSub.rows.map((r) => r.articulo_id)
+                                                            )
+                                                            setReorderScope('products')
+                                                        }
+                                                    }}
+                                                >
+                                                    {modalProductSub &&
+                                                    isPlatoMarbellaSub(
+                                                        modalProductSub.key,
+                                                        modalProductSub.rows
+                                                    )
+                                                        ? 'Organizar opciones'
+                                                        : 'Reordenar platos'}
+                                                </button>
+                                            ) : null}
+                                        </div>
+                                    ) : (
+                                        <span className="min-w-0 flex-1" aria-hidden />
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                        aria-label="Cerrar"
+                                        onClick={() => setOpenKey(null)}
+                                    >
+                                        <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                    </button>
+                                </div>
+                            ) : null}
+                            {openShowSubTabs ? (
+                                <div className="flex min-w-0 overflow-x-auto pb-0.5">
                                     <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const isActive = openSelectedSubKey === sub.key
@@ -1037,8 +1119,6 @@ export function MenuAccordion({
                                         })}
                                     </div>
                                 </div>
-                            ) : openShowSubPicker ? (
-                                <span className="min-w-0 flex-1" aria-hidden />
                             ) : (
                                 <h2
                                     id="staff-carta-section-modal-title"
@@ -1047,9 +1127,9 @@ export function MenuAccordion({
                                     {openGroup.title}
                                 </h2>
                             )}
-                            {editMode &&
+                            {!openShowSubTabs &&
+                            editMode &&
                             !reorderScope &&
-                            !openShowSubPicker &&
                             ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
                                 (onPersistProductOrder &&
                                     modalProductSub &&
@@ -1094,15 +1174,18 @@ export function MenuAccordion({
                                     ) : null}
                                 </div>
                             ) : null}
-                            <button
-                                type="button"
-                                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                aria-label="Cerrar"
-                                onClick={() => setOpenKey(null)}
-                            >
-                                <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                            </button>
+                            {!openShowSubTabs ? (
+                                <button
+                                    type="button"
+                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                    aria-label="Cerrar"
+                                    onClick={() => setOpenKey(null)}
+                                >
+                                    <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                </button>
+                            ) : null}
                         </div>
+                        ) : null}
 
                         {reorderScope === 'subs' || reorderScope === 'products' ? (
                             <div className="shrink-0 bg-amber-50 px-2 py-2 sm:px-3 sm:py-2.5">
@@ -1217,9 +1300,16 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+                        <div
+                            className={cn(
+                                'bg-white',
+                                openShowSubPicker
+                                    ? 'px-2.5 py-3 sm:px-3 sm:py-4'
+                                    : 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
+                            )}
+                        >
                             {openShowSubPicker ? (
-                                <div className="px-1 py-2 sm:px-2">
+                                <div className="px-0.5 sm:px-1">
                                     <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                                         {openGroup._subList.map((sub) => (
                                             <CartaSubcategoryPickerButton

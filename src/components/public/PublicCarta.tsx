@@ -301,14 +301,36 @@ export function PublicCarta({
             aria-label="Cerrar"
             onClick={() => setOpenKey(null)}
           />
-          {/* Misma idea que modal recetas staff: altura tope fija, cabecera fija, solo el cuerpo hace scroll */}
           <div
-            className="relative z-10 flex w-full max-w-lg max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-h-[78vh] sm:max-w-xl"
+            className={cn(
+              'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
+              openShowSubPicker ? 'h-auto' : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
+            )}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
+            {!openShowSubPicker ? (
+            <div
+              className={cn(
+                'flex shrink-0 bg-white px-3 py-2.5 sm:px-3.5 sm:py-3',
+                openShowSubTabs
+                  ? 'flex-col gap-1 sm:gap-1.5'
+                  : 'items-center justify-between gap-2 sm:gap-3'
+              )}
+            >
               {openShowSubTabs ? (
-                <div className="flex min-w-0 flex-1 overflow-x-auto pb-0.5">
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                    aria-label="Cerrar"
+                    onClick={() => setOpenKey(null)}
+                  >
+                    <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                  </button>
+                </div>
+              ) : null}
+              {openShowSubTabs ? (
+                <div className="flex min-w-0 overflow-x-auto pb-0.5">
                   <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
                     {openGroup._subList.map((sub) => {
                       const isActive = openSelectedSubKey === sub.key
@@ -329,8 +351,6 @@ export function PublicCarta({
                     })}
                   </div>
                 </div>
-              ) : openShowSubPicker ? (
-                <span className="min-w-0 flex-1" aria-hidden />
               ) : (
                 <h2
                   id="carta-section-modal-title"
@@ -339,19 +359,30 @@ export function PublicCarta({
                   {openGroup.title}
                 </h2>
               )}
-              <button
-                type="button"
-                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                aria-label="Cerrar"
-                onClick={() => setOpenKey(null)}
-              >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-              </button>
+              {!openShowSubTabs ? (
+                <button
+                  type="button"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                  aria-label="Cerrar"
+                  onClick={() => setOpenKey(null)}
+                >
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                </button>
+              ) : null}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
+            ) : null}
+
+            <div
+              className={cn(
+                'bg-white',
+                openShowSubPicker
+                  ? 'px-2.5 py-3 sm:px-3 sm:py-4'
+                  : 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
+              )}
+            >
               {openShowSubPicker ? (
-                <div className="px-1 py-2 sm:px-2">
+                <div className="px-0.5 sm:px-1">
                   <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                     {openGroup._subList.map((sub) => (
                       <CartaSubcategoryPickerButton
