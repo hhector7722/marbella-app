@@ -38,6 +38,7 @@ import {
     type CartaProductGridRowDensity,
     cartaProductGridRowDensity,
     chunkCartaProductGridRows,
+    getCartaProductGridRowFrameStyle,
     getCartaProductPhotoFrameStyle,
     getCartaProductPhotoScaleFactor,
     isCartaDrinksSection,
@@ -226,6 +227,7 @@ function MenuCard({
     productToggleBusyId,
     onReorderTap,
     rowDensity = 'normal',
+    photoFrameStyle,
 }: {
     row: DigitalMenuRow
     lang: CartaLang
@@ -239,6 +241,8 @@ function MenuCard({
     onReorderTap?: (articuloId: number) => void
     /** Densidad vertical de la fila del grid (3 productos): compacta gaps si todas las fotos son S/M. */
     rowDensity?: CartaProductGridRowDensity
+    /** Marco de foto compartido por fila del grid (alinea nombre/precio entre S/M/L). */
+    photoFrameStyle?: { aspectRatio?: number; height?: string }
 }) {
     const [lightboxOpen, setLightboxOpen] = useState(false)
     const priceStr = formatPriceDisplay(row.precio)
@@ -255,28 +259,31 @@ function MenuCard({
 
     const isDrink = isCartaDrinksSection(row.category_parent_name)
     const layoutFactor = getCartaProductPhotoScaleFactor(row.carta_photo_scale, isDrink)
-    const frameStyle = getCartaProductPhotoFrameStyle(isDrink, layoutFactor)
+    const frameStyle =
+        photoFrameStyle ?? getCartaProductPhotoFrameStyle(isDrink, layoutFactor)
 
     return (
         <div
             className={cn(
-                'flex min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
+                'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
                 rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
                 rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
                 rowDensity === 'normal' && 'gap-1 sm:gap-1.5',
                 editMode && !isActive && 'opacity-75'
             )}
         >
-            <div
-                className={cn(
-                    'flex w-full flex-col items-center',
-                    rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
-                    rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
-                    rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
-                )}
-            >
-                {row.photo_url ? (
-                    <div className="relative w-full shrink-0">
+            {photoFrameStyle || row.photo_url ? (
+                <div
+                    className={cn(
+                        'w-full shrink-0',
+                        row.photo_url && 'relative',
+                        rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
+                        rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
+                        rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
+                    )}
+                >
+                    {row.photo_url ? (
+                        <>
                         <button
                             type="button"
                             className={cn(
@@ -342,19 +349,20 @@ function MenuCard({
                             )}
                         </button>
                         ) : null}
-                    </div>
-                ) : (
-                    <div
-                        className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS}
-                        style={frameStyle}
-                        aria-hidden
-                    />
-                )}
-            </div>
+                        </>
+                    ) : (
+                        <div
+                            className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS}
+                            style={frameStyle}
+                            aria-hidden
+                        />
+                    )}
+                </div>
+            ) : null}
 
             <div
                 className={cn(
-                    'flex min-h-0 w-full flex-1 flex-col items-center pt-0',
+                    'flex min-h-0 w-full shrink-0 flex-col items-center pt-0',
                     rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
                     rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
                     rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5',
@@ -1274,11 +1282,18 @@ export function MenuAccordion({
                                                 <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                                                     {chunkCartaProductGridRows(sub.rows, 3).map((chunk, chunkIdx) => {
                                                         const rowDensity = cartaProductGridRowDensity(chunk)
+                                                        const isDrinkRow = isCartaDrinksSection(
+                                                            chunk[0]?.category_parent_name
+                                                        )
+                                                        const rowFrameStyle = getCartaProductGridRowFrameStyle(
+                                                            chunk,
+                                                            isDrinkRow
+                                                        )
                                                         return (
                                                             <div
                                                                 key={chunkIdx}
                                                                 className={cn(
-                                                                    'grid grid-cols-3 items-start gap-x-2 md:gap-x-3',
+                                                                    'grid grid-cols-3 items-stretch gap-x-2 md:gap-x-3',
                                                                     rowDensity === 'compact' && 'gap-y-0',
                                                                     rowDensity === 'cozy' && 'gap-y-1',
                                                                     rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
@@ -1322,6 +1337,7 @@ export function MenuAccordion({
                                                                     }
                                                                     onReorderTap={handleProductReorderTap}
                                                                     rowDensity={rowDensity}
+                                                                    photoFrameStyle={rowFrameStyle}
                                                                 />
                                                             </div>
                                                         )
@@ -1365,11 +1381,18 @@ export function MenuAccordion({
                                                         3
                                                     ).map((chunk, chunkIdx) => {
                                                         const rowDensity = cartaProductGridRowDensity(chunk)
+                                                        const isDrinkRow = isCartaDrinksSection(
+                                                            chunk[0]?.category_parent_name
+                                                        )
+                                                        const rowFrameStyle = getCartaProductGridRowFrameStyle(
+                                                            chunk,
+                                                            isDrinkRow
+                                                        )
                                                         return (
                                                             <div
                                                                 key={chunkIdx}
                                                                 className={cn(
-                                                                    'grid grid-cols-3 items-start gap-x-2 md:gap-x-3',
+                                                                    'grid grid-cols-3 items-stretch gap-x-2 md:gap-x-3',
                                                                     rowDensity === 'compact' && 'gap-y-0',
                                                                     rowDensity === 'cozy' && 'gap-y-1',
                                                                     rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
@@ -1389,6 +1412,7 @@ export function MenuAccordion({
                                                                     productToggleBusyId
                                                                 }
                                                                 rowDensity={rowDensity}
+                                                                photoFrameStyle={rowFrameStyle}
                                                             />
                                                         </div>
                                                     ))}

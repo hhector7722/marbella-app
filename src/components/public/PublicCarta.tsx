@@ -26,8 +26,7 @@ import {
   cartaProductGridRowDensity,
   cartaShowsProductPhoto,
   chunkCartaProductGridRows,
-  getCartaProductPhotoFrameStyle,
-  getCartaProductPhotoScaleFactor,
+  getCartaProductGridRowFrameStyle,
   isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
@@ -392,11 +391,18 @@ export function PublicCarta({
                           3
                         ).map((chunk, chunkIdx) => {
                           const rowDensity = cartaProductGridRowDensity(chunk)
+                          const isDrinkRow = isCartaDrinksSection(
+                            chunk[0]?.category_parent_name
+                          )
+                          const rowFrameStyle = getCartaProductGridRowFrameStyle(
+                            chunk,
+                            isDrinkRow
+                          )
                           return (
                             <div
                               key={chunkIdx}
                               className={cn(
-                                'grid grid-cols-3 items-start gap-x-1.5 sm:gap-x-2',
+                                'grid grid-cols-3 items-stretch gap-x-1.5 sm:gap-x-2',
                                 rowDensity === 'compact' && 'gap-y-0',
                                 rowDensity === 'cozy' && 'gap-y-1',
                                 rowDensity === 'normal' && 'gap-y-2 sm:gap-y-2.5'
@@ -406,38 +412,34 @@ export function PublicCarta({
                           const medioStr = formatPrice(row.precio_medio_display ?? null)
                           const showMedio = medioStr.trim() !== ''
                           const isDrink = isCartaDrinksSection(row.category_parent_name)
-                          const layoutFactor = getCartaProductPhotoScaleFactor(
-                            row.carta_photo_scale,
-                            isDrink
-                          )
-                          const frameStyle = getCartaProductPhotoFrameStyle(isDrink, layoutFactor)
+                          const showPhoto = cartaShowsProductPhoto(row.category_parent_name)
                           return (
                           <div
                             key={row.articulo_id}
                             className={cn(
-                              'flex min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
+                              'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
                               rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
                               rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
                               rowDensity === 'normal' && 'gap-1 sm:gap-1.5'
                             )}
                           >
-                            <div
-                              className={cn(
-                                'flex w-full flex-col items-center',
-                                rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
-                                rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
-                                rowDensity === 'normal' && 'gap-1 px-1 pb-1 pt-1 sm:gap-1.5 sm:px-1.5 sm:pb-1.5 sm:pt-1.5'
-                              )}
-                            >
-                              {cartaShowsProductPhoto(row.category_parent_name) ? (
-                                row.photo_url ? (
+                            {showPhoto ? (
+                              <div
+                                className={cn(
+                                  'w-full shrink-0',
+                                  rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
+                                  rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
+                                  rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
+                                )}
+                              >
+                                {row.photo_url ? (
                                   <button
                                     type="button"
                                     className={cn(
                                       CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
                                       'cursor-zoom-in touch-manipulation active:bg-zinc-50'
                                     )}
-                                    style={frameStyle}
+                                    style={rowFrameStyle}
                                     aria-label="Ver foto ampliada"
                                     onClick={() =>
                                       setLightbox({
@@ -455,20 +457,22 @@ export function PublicCarta({
                                 ) : (
                                   <div
                                     className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS}
-                                    style={frameStyle}
+                                    style={rowFrameStyle}
+                                    aria-hidden
                                   >
                                     <div className="h-full w-full bg-white" />
                                   </div>
-                                )
-                              ) : null}
-                              <div
-                                className={cn(
-                                  'flex w-full min-w-0 flex-col items-center',
-                                  rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
-                                  rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
-                                  rowDensity === 'normal' && 'gap-1'
                                 )}
-                              >
+                              </div>
+                            ) : null}
+                            <div
+                              className={cn(
+                                'flex w-full min-w-0 shrink-0 flex-col items-center',
+                                rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
+                                rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
+                                rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5'
+                              )}
+                            >
                                 <p
                                   className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
                                   title={getCartaDisplayName(row, lang)}
@@ -487,7 +491,6 @@ export function PublicCarta({
                                 </div>
                               </div>
                             </div>
-                          </div>
                           )
                         })}
                             </div>

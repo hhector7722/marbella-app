@@ -141,3 +141,35 @@ export function chunkCartaProductGridRows<T>(rows: T[], columns = 3): T[][] {
   }
   return out
 }
+
+/** Factor de marco compartido por fila del grid: el máximo de la fila para alinear nombre/precio. */
+export function getCartaProductGridRowPhotoSlotFactor(
+  rows: Array<{
+    photo_url?: string | null
+    carta_photo_scale?: string | null
+  }>,
+  isDrink: boolean
+): number {
+  let maxF = 0
+  for (const r of rows) {
+    if (String(r.photo_url ?? '').trim() === '') continue
+    const f = getCartaProductPhotoScaleFactor(r.carta_photo_scale, isDrink)
+    if (f > maxF) maxF = f
+  }
+  if (maxF <= 0) return getCartaProductPhotoScaleFactor('m', isDrink)
+  return maxF
+}
+
+/** Estilo de marco idéntico en las 3 celdas de una fila; la foto individual sigue escalando dentro (centrada). */
+export function getCartaProductGridRowFrameStyle(
+  rows: Array<{
+    photo_url?: string | null
+    carta_photo_scale?: string | null
+  }>,
+  isDrink: boolean
+): ReturnType<typeof getCartaProductPhotoFrameStyle> {
+  return getCartaProductPhotoFrameStyle(
+    isDrink,
+    getCartaProductGridRowPhotoSlotFactor(rows, isDrink)
+  )
+}
