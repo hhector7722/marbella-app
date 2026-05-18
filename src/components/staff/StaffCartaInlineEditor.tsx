@@ -435,7 +435,7 @@ export function StaffCartaInlineEditor({
     isMenuPrice: boolean
   ) => {
     if (!platoMarbellaCategoryId) {
-      toast.error('No se encontró la subcategoría Plato Marbella en el menú.')
+      toast.error('No se encontró la subcategoría Comida de mediodía en el menú.')
       return
     }
 

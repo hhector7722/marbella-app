@@ -1,7 +1,12 @@
 'use client'
 
+import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
+import {
+  PlatoMarbellaPlateVisual,
+  type PlatoMarbellaPlateSelection,
+} from '@/components/carta/PlatoMarbellaPlateVisual'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -16,6 +21,9 @@ import {
 } from '@/lib/carta-plato-marbella'
 import {
   CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+  cartaProductGridRowDensity,
+  chunkCartaProductGridRows,
+  getCartaProductGridRowFrameStyle,
   getCartaProductPhotoFrameStyle,
   getCartaProductPhotoScaleFactor,
 } from '@/lib/carta-product-photo'
@@ -27,23 +35,24 @@ function formatMenuPrice(precio: number | null) {
   return `${precio.toFixed(2)}€`
 }
 
-function stepChipLabel(lang: CartaLang, slot: PlatoMarbellaSlot) {
-  const ui = tPlatoMarbellaUi(lang)
-  if (slot === 'entrante') return ui.stepEntrante
-  if (slot === 'principal') return ui.stepPrincipal
-  return ui.stepGuarnicion
-}
-
 type OptionRow = PlatoMarbellaMenuRow & CartaNameRow
 
-function OptionCard({
+function OptionGridCard({
   row,
   lang,
+  selected,
+  onSelect,
   onPhotoClick,
+  rowFrameStyle,
+  rowDensity,
 }: {
   row: OptionRow
   lang: CartaLang
+  selected: boolean
+  onSelect: () => void
   onPhotoClick?: (src: string, alt: string) => void
+  rowFrameStyle: CSSProperties
+  rowDensity: 'compact' | 'cozy' | 'normal'
 }) {
   const name = getCartaDisplayName(row, lang)
   const photo = row.photo_url?.trim() || null
@@ -51,33 +60,63 @@ function OptionCard({
   const frameStyle = getCartaProductPhotoFrameStyle(false, layoutFactor)
 
   return (
-    <div className="flex w-[42vw] max-w-[9.5rem] shrink-0 flex-col overflow-hidden rounded-2xl bg-white sm:w-36">
-      {photo ? (
-        <button
-          type="button"
-          className={cn(
-            CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-            'min-h-[48px] w-full touch-manipulation active:bg-zinc-50'
-          )}
-          style={frameStyle}
-          aria-label="Ver foto ampliada"
-          onClick={() => onPhotoClick?.(photo, name)}
-        >
-          <CartaMenuProductPhoto src={photo} scale={row.carta_photo_scale} isDrink={false} />
-        </button>
-      ) : (
-        <div
-          className={cn(CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS, 'w-full bg-zinc-50')}
-          style={frameStyle}
-          aria-hidden
-        />
+    <div
+      className={cn(
+        'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
+        rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
+        rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
+        rowDensity === 'normal' && 'gap-1 sm:gap-1.5',
+        selected && 'ring-2 ring-[#36606F] ring-offset-2 ring-offset-white'
       )}
-      <p
-        className="line-clamp-3 px-1.5 pb-1.5 pt-0.5 text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
-        title={name}
+    >
+      <div
+        className={cn(
+          'w-full shrink-0',
+          rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
+          rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
+          rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
+        )}
       >
-        {name}
-      </p>
+        {photo ? (
+          <button
+            type="button"
+            className={cn(
+              CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+              'min-h-[48px] w-full touch-manipulation active:bg-zinc-50'
+            )}
+            style={frameStyle}
+            aria-label="Ver foto ampliada"
+            onClick={() => onPhotoClick?.(photo, name)}
+          >
+            <CartaMenuProductPhoto src={photo} scale={row.carta_photo_scale} isDrink={false} />
+          </button>
+        ) : (
+          <div
+            className={cn(CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS, 'w-full bg-zinc-50')}
+            style={rowFrameStyle}
+            aria-hidden
+          />
+        )}
+      </div>
+      <button
+        type="button"
+        className={cn(
+          'flex min-h-[48px] w-full min-w-0 shrink-0 flex-col items-center justify-center touch-manipulation active:bg-zinc-50',
+          rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
+          rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:pb-2',
+          rowDensity === 'normal' && 'gap-1 px-2 pb-2'
+        )}
+        aria-pressed={selected}
+        aria-label={name}
+        onClick={onSelect}
+      >
+        <p
+          className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
+          title={name}
+        >
+          {name}
+        </p>
+      </button>
     </div>
   )
 }
@@ -101,43 +140,106 @@ export function PlatoMarbellaMenuView({
   const slotLabels = platoMarbellaSlotsForLang(lang)
   const grouped = groupPlatoMarbellaItems(rows)
 
+  const [pickedBySlot, setPickedBySlot] = useState<
+    Record<PlatoMarbellaSlot, { articulo_id: number; name: string; photoUrl: string | null } | null>
+  >(() => ({ entrante: null, principal: null, guarnicion: null }))
+
+  const plateSelections = useMemo((): Record<
+    PlatoMarbellaSlot,
+    PlatoMarbellaPlateSelection | null
+  > => {
+    return {
+      entrante: pickedBySlot.entrante
+        ? { name: pickedBySlot.entrante.name, photoUrl: pickedBySlot.entrante.photoUrl }
+        : null,
+      principal: pickedBySlot.principal
+        ? { name: pickedBySlot.principal.name, photoUrl: pickedBySlot.principal.photoUrl }
+        : null,
+      guarnicion: pickedBySlot.guarnicion
+        ? { name: pickedBySlot.guarnicion.name, photoUrl: pickedBySlot.guarnicion.photoUrl }
+        : null,
+    }
+  }, [pickedBySlot])
+
+  const togglePick = useCallback((row: OptionRow, slot: PlatoMarbellaSlot) => {
+    const name = getCartaDisplayName(row, lang)
+    const photoUrl = row.photo_url?.trim() || null
+    setPickedBySlot((prev) => {
+      const current = prev[slot]
+      if (current?.articulo_id === row.articulo_id) {
+        return { ...prev, [slot]: null }
+      }
+      return {
+        ...prev,
+        [slot]: { articulo_id: row.articulo_id, name, photoUrl },
+      }
+    })
+  }, [lang])
+
+  const isRowSelected = useCallback(
+    (row: OptionRow, slot: PlatoMarbellaSlot) =>
+      pickedBySlot[slot]?.articulo_id === row.articulo_id,
+    [pickedBySlot]
+  )
+
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
-      <div className="shrink-0 space-y-2 border-b border-zinc-100 bg-white px-2 pb-3 pt-1 sm:px-3">
+      <div className="shrink-0 space-y-2.5 border-b border-zinc-100 bg-white px-2 pb-3 pt-1 sm:space-y-3 sm:px-3">
         {subTitle ? (
           <p className="text-center text-[11px] font-black uppercase tracking-[0.12em] text-[#36606F] sm:text-xs">
             {subTitle}
           </p>
         ) : null}
-        <p className="text-center text-xs font-semibold leading-snug text-zinc-600 sm:text-sm">{ui.intro}</p>
-        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
-          {SLOT_ORDER.map((slot) => (
-            <span
-              key={slot}
-              className="rounded-full border border-[#36606F]/25 bg-[#36606F]/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#36606F] sm:text-[11px]"
-            >
-              {stepChipLabel(lang, slot)}
-            </span>
-          ))}
-        </div>
+        <p className="text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-sm">
+          {ui.intro}
+        </p>
+        <p className="text-center text-[11px] font-bold uppercase tracking-wide text-[#36606F]/90 sm:text-xs">
+          {ui.schedule}
+        </p>
         <p className="text-center text-2xl font-black tabular-nums text-[#36606F] sm:text-3xl">
           {formatMenuPrice(grouped.menuPrice)}
         </p>
+        <PlatoMarbellaPlateVisual lang={lang} selections={plateSelections} />
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-2 py-3 custom-scrollbar sm:space-y-6 sm:px-3 sm:py-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-2 py-3 custom-scrollbar sm:space-y-5 sm:px-3 sm:py-4">
         {SLOT_ORDER.map((slot) => {
           const sectionRows = grouped.sections[slot]
           if (sectionRows.length === 0) return null
           return (
             <section key={slot} className="space-y-2">
-              <h3 className="sticky top-0 z-10 bg-white/95 py-1 text-center text-xs font-black uppercase tracking-[0.14em] text-[#36606F] backdrop-blur-sm sm:text-sm">
+              <h3 className="text-center text-xs font-black uppercase tracking-[0.14em] text-[#36606F] sm:text-sm">
                 {slotLabels[slot]}
               </h3>
-              <div className="flex gap-2 overflow-x-auto pb-1 overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-                {sectionRows.map((row) => (
-                  <OptionCard key={row.articulo_id} row={row as OptionRow} lang={lang} onPhotoClick={onPhotoClick} />
-                ))}
+              <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
+                {chunkCartaProductGridRows(sectionRows as OptionRow[], 3).map((chunk, chunkIdx) => {
+                  const rowDensity = cartaProductGridRowDensity(chunk)
+                  const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
+                  return (
+                    <div
+                      key={chunkIdx}
+                      className={cn(
+                        'grid grid-cols-3 items-stretch gap-x-1.5 sm:gap-x-2',
+                        rowDensity === 'compact' && 'gap-y-0',
+                        rowDensity === 'cozy' && 'gap-y-1',
+                        rowDensity === 'normal' && 'gap-y-2 sm:gap-y-2.5'
+                      )}
+                    >
+                      {chunk.map((row) => (
+                        <OptionGridCard
+                          key={row.articulo_id}
+                          row={row as OptionRow}
+                          lang={lang}
+                          selected={isRowSelected(row as OptionRow, slot)}
+                          onSelect={() => togglePick(row as OptionRow, slot)}
+                          onPhotoClick={onPhotoClick}
+                          rowFrameStyle={rowFrameStyle}
+                          rowDensity={rowDensity}
+                        />
+                      ))}
+                    </div>
+                  )
+                })}
               </div>
             </section>
           )
@@ -145,11 +247,22 @@ export function PlatoMarbellaMenuView({
 
         {showUnassigned && grouped.unassigned.length > 0 ? (
           <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/80 p-2">
-            <h3 className="text-center text-xs font-black uppercase tracking-wide text-amber-900">{ui.unassigned}</h3>
+            <h3 className="text-center text-xs font-black uppercase tracking-wide text-amber-900">
+              {ui.unassigned}
+            </h3>
             <p className="text-center text-[11px] font-semibold text-amber-800">{ui.unassignedHint}</p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {grouped.unassigned.map((row) => (
-                <OptionCard key={row.articulo_id} row={row as OptionRow} lang={lang} onPhotoClick={onPhotoClick} />
+            <div className="flex flex-col gap-y-2">
+              {chunkCartaProductGridRows(grouped.unassigned as OptionRow[], 3).map((chunk, chunkIdx) => (
+                <div key={chunkIdx} className="grid grid-cols-3 gap-2">
+                  {chunk.map((row) => (
+                    <div
+                      key={row.articulo_id}
+                      className="rounded-2xl border border-amber-200 bg-white p-2 text-center text-[10px] font-bold text-zinc-800"
+                    >
+                      {getCartaDisplayName(row as OptionRow, lang)}
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
           </section>
