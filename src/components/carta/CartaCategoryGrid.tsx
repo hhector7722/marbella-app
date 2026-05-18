@@ -3,7 +3,8 @@
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import { getCartaCoverPhotoImgClass, type CartaPhotoScale } from '@/lib/carta-product-photo'
+import { CartaMenuCoverPhoto } from '@/components/carta/CartaMenuCoverPhoto'
+import { getCartaCoverPhotoScaleFactor, type CartaPhotoScale } from '@/lib/carta-product-photo'
 
 /** Tarjeta de categoría padre: imagen y título equilibrados (carta visual). */
 export function CartaCategoryCard({
@@ -32,7 +33,7 @@ export function CartaCategoryCard({
   overlay?: ReactNode
   compact?: boolean
 }) {
-  const coverImgClass = getCartaCoverPhotoImgClass(coverPhotoScale)
+  const coverScale = getCartaCoverPhotoScaleFactor(coverPhotoScale)
   return (
     <div className={cn('relative min-w-0', className)}>
       {overlay}
@@ -57,20 +58,20 @@ export function CartaCategoryCard({
         >
           {coverPhotoUrl ? (
             nativeImg ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
-              <img
-                src={coverPhotoUrl}
-                alt=""
-                className={cn(coverImgClass, 'p-1')}
-              />
+              <CartaMenuCoverPhoto src={coverPhotoUrl} scale={coverPhotoScale} className="p-1" />
             ) : (
-              <Image
-                src={coverPhotoUrl}
-                alt=""
-                fill
-                sizes="(max-width: 640px) 38vw, 180px"
-                className="object-contain object-center p-1"
-              />
+              <div
+                className="relative h-full w-full origin-center"
+                style={{ transform: `scale(${coverScale})` }}
+              >
+                <Image
+                  src={coverPhotoUrl}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 38vw, 180px"
+                  className="object-contain object-center p-1"
+                />
+              </div>
             )
           ) : (
             <span className="block h-[65%] w-[65%] rounded-xl bg-zinc-100/90" aria-hidden />

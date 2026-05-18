@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { getCartaProductPhotoImgClass } from '@/lib/carta-product-photo'
+import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -52,12 +52,7 @@ function OptionCard({
           aria-label="Ver foto ampliada"
           onClick={() => onPhotoClick?.(photo, name)}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL desde BD */}
-          <img
-            src={photo}
-            alt=""
-            className={getCartaProductPhotoImgClass(row.carta_photo_scale, false)}
-          />
+          <CartaMenuProductPhoto src={photo} scale={row.carta_photo_scale} isDrink={false} />
         </button>
       ) : (
         <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-zinc-50" aria-hidden />

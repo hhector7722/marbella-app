@@ -541,6 +541,13 @@ export function StaffCartaInlineEditor({
           setItemModalArticuloId(null)
           void load({ silent: true })
         }}
+        onSaved={({ articulo_id, carta_photo_scale }) => {
+          setDigitalRows((prev) =>
+            prev.map((r) =>
+              r.articulo_id === articulo_id ? { ...r, carta_photo_scale } : r
+            )
+          )
+        }}
         articuloId={itemModalArticuloId}
         categories={categories.map((c) => ({
           id: c.id,

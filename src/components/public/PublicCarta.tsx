@@ -19,12 +19,12 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
+import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
   CARTA_DEFAULT_PHOTO_FRAME_CLASS,
   CARTA_DRINK_PHOTO_FRAME_CLASS,
   type CartaPhotoScale,
   cartaShowsProductPhoto,
-  getCartaProductPhotoImgClass,
   isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
@@ -411,14 +411,10 @@ export function PublicCarta({
                                       })
                                     }
                                   >
-                                    {/* eslint-disable-next-line @next/next/no-img-element -- mismo criterio que staff */}
-                                    <img
+                                    <CartaMenuProductPhoto
                                       src={row.photo_url}
-                                      alt=""
-                                      className={getCartaProductPhotoImgClass(
-                                        row.carta_photo_scale,
-                                        isCartaDrinksSection(row.category_parent_name)
-                                      )}
+                                      scale={row.carta_photo_scale}
+                                      isDrink={isCartaDrinksSection(row.category_parent_name)}
                                     />
                                   </button>
                                 ) : (

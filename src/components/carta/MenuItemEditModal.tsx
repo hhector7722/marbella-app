@@ -9,11 +9,11 @@ import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
 import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
+import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
   CARTA_DEFAULT_PHOTO_FRAME_CLASS,
   CARTA_DRINK_PHOTO_FRAME_CLASS,
   type CartaPhotoScale,
-  getCartaProductPhotoImgClass,
   isCartaDrinksSection,
   normalizeCartaPhotoScale,
 } from '@/lib/carta-product-photo'
@@ -29,11 +29,14 @@ type CategoryRow = {
 export function MenuItemEditModal({
   open,
   onClose,
+  onSaved,
   articuloId,
   categories,
 }: {
   open: boolean
   onClose: () => void
+  /** Actualiza la fila en el grid staff sin esperar recarga completa. */
+  onSaved?: (patch: { articulo_id: number; carta_photo_scale: CartaPhotoScale }) => void
   articuloId: number | null
   categories: CategoryRow[]
 }) {
@@ -193,7 +196,6 @@ export function MenuItemEditModal({
   const previewFrameClass = previewIsDrink
     ? CARTA_DRINK_PHOTO_FRAME_CLASS
     : CARTA_DEFAULT_PHOTO_FRAME_CLASS
-  const previewImgClass = getCartaProductPhotoImgClass(photoScale, previewIsDrink)
   const hasPhoto = Boolean(displayPhotoSrc?.trim())
 
   return (
@@ -329,8 +331,11 @@ export function MenuItemEditModal({
                       className={cn(previewFrameClass, 'w-[min(42vw,7.5rem)] border border-zinc-100')}
                       aria-live="polite"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={displayPhotoSrc!} alt="" className={previewImgClass} />
+                      <CartaMenuProductPhoto
+                        src={displayPhotoSrc!}
+                        scale={photoScale}
+                        isDrink={previewIsDrink}
+                      />
                     </div>
                   </div>
                   <p className="mt-2 text-[11px] font-semibold text-zinc-500">
@@ -488,6 +493,12 @@ export function MenuItemEditModal({
                         toast.error(res.error ?? 'No se pudo guardar el producto')
                         return
                       }
+                      if (res.carta_photo_scale_persisted === false) {
+                        toast.warning(
+                          'Guardado sin talla de foto: ejecuta la migración 20260515170000_carta_photo_scale en Supabase.'
+                        )
+                      }
+                      onSaved?.({ articulo_id: articuloId, carta_photo_scale: photoScale })
                       toast.success('Producto guardado')
                       onClose()
                     })

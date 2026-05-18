@@ -146,6 +146,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
             : 'm'),
   }
 
+  let cartaPhotoScalePersisted = true
   let { error } = await supabase
     .from('digital_menu_overrides')
     .upsert(merged, { onConflict: 'articulo_id', ignoreDuplicates: false })
@@ -155,6 +156,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     /carta_photo_scale/i.test(error.message) &&
     /does not exist|could not find the/i.test(error.message)
   ) {
+    cartaPhotoScalePersisted = false
     const { carta_photo_scale: _drop, ...withoutScale } = merged
     const retry = await supabase
       .from('digital_menu_overrides')
@@ -169,7 +171,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
 
   revalidatePath('/dashboard/carta')
   revalidatePath('/staff/carta')
-  return { success: true as const }
+  return { success: true as const, carta_photo_scale_persisted: cartaPhotoScalePersisted }
 }
 
 export async function setMenuSectionCoverArticulo(category_id: string, cover_articulo_id: number | null) {

@@ -30,12 +30,12 @@ import {
     type PlatoMarbellaReorderSection,
     type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
+import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
 import {
     CARTA_DEFAULT_PHOTO_FRAME_CLASS,
     CARTA_DRINK_PHOTO_FRAME_CLASS,
     type CartaPhotoScale,
-    getCartaProductPhotoImgClass,
     isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 
@@ -248,7 +248,6 @@ function MenuCard({
 
     const isDrink = isCartaDrinksSection(row.category_parent_name)
     const frameClass = isDrink ? CARTA_DRINK_PHOTO_FRAME_CLASS : CARTA_DEFAULT_PHOTO_FRAME_CLASS
-    const imgClass = getCartaProductPhotoImgClass(row.carta_photo_scale, isDrink)
 
     return (
         <div
@@ -289,11 +288,10 @@ function MenuCard({
                                 setLightboxOpen(true)
                             }}
                         >
-                            {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias desde BD */}
-                            <img
+                            <CartaMenuProductPhoto
                                 src={row.photo_url}
-                                alt=""
-                                className={imgClass}
+                                scale={row.carta_photo_scale}
+                                isDrink={isDrink}
                             />
                         </button>
                         {editMode && onToggleProductActive ? (

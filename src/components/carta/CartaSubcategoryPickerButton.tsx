@@ -1,10 +1,8 @@
 'use client'
 
+import { CartaMenuCoverPhoto } from '@/components/carta/CartaMenuCoverPhoto'
 import { cn } from '@/lib/utils'
-import {
-  getCartaCoverPhotoImgClass,
-  type CartaPhotoScale,
-} from '@/lib/carta-product-photo'
+import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 
 export function CartaSubcategoryPickerButton({
   label,
@@ -27,7 +25,6 @@ export function CartaSubcategoryPickerButton({
   variant?: 'tabs' | 'grid'
 }) {
   const photo = coverPhotoUrl?.trim() || null
-  const imgClass = getCartaCoverPhotoImgClass(coverPhotoScale)
   return (
     <div className={cn('relative min-w-0 flex-1 basis-0', className)}>
       {overlay}
@@ -51,8 +48,7 @@ export function CartaSubcategoryPickerButton({
           )}
         >
           {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
-            <img src={photo} alt="" className={imgClass} />
+            <CartaMenuCoverPhoto src={photo} scale={coverPhotoScale} />
           ) : (
             <span className="block h-[70%] w-[70%] rounded-lg bg-zinc-100/90" aria-hidden />
           )}
