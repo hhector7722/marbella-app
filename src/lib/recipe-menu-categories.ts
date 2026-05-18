@@ -52,7 +52,7 @@ export const LEGACY_RECIPE_CATEGORY_TO_MENU_SLUG: Record<string, string> = {
   principales: 'platos-platos',
   postres: 'helados',
   bebidas: 'bebidas',
-  vinos: 'bebidas-vinos',
+  vinos: 'bebidas',
   cocktails: 'bebidas-aperitivos',
   cóctails: 'bebidas-aperitivos',
   menús: 'menus-packs',

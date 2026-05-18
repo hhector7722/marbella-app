@@ -412,7 +412,10 @@ export function PublicCarta({
                           const medioStr = formatPrice(row.precio_medio_display ?? null)
                           const showMedio = medioStr.trim() !== ''
                           const isDrink = isCartaDrinksSection(row.category_parent_name)
-                          const showPhoto = cartaShowsProductPhoto(row.category_parent_name)
+                          const showPhoto = cartaShowsProductPhoto(
+                            row.category_parent_name,
+                            row.photo_url
+                          )
                           return (
                           <div
                             key={row.articulo_id}

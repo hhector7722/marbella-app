@@ -71,7 +71,17 @@ export function getCartaProductPhotoFrameStyle(
   return { aspectRatio: getCartaFoodPhotoFrameAspectRatio(f) }
 }
 
-export const CARTA_PARENTS_WITH_PRODUCT_PHOTOS = ['Tapas', 'Bocadillos', 'Platos', 'Bebidas'] as const
+export const CARTA_PARENTS_WITH_PRODUCT_PHOTOS = [
+  'Tapas',
+  'Bocadillos',
+  'Platos',
+  'Bebidas',
+  'Cafetería',
+  'Extras',
+  'Snacks',
+  'Menús',
+  'Helados',
+] as const
 
 export function normalizeCartaPhotoScale(
   value: string | null | undefined
@@ -119,7 +129,12 @@ export function isCartaDrinksSection(parentName: string | null | undefined): boo
   return (parentName?.trim() ?? '') === 'Bebidas'
 }
 
-export function cartaShowsProductPhoto(parentName: string | null | undefined): boolean {
+/** Grid con foto si hay URL o si la sección usa fotos por defecto (aunque aún no tenga imagen). */
+export function cartaShowsProductPhoto(
+  parentName: string | null | undefined,
+  photoUrl?: string | null
+): boolean {
+  if (String(photoUrl ?? '').trim() !== '') return true
   const n = parentName?.trim() ?? ''
   return (CARTA_PARENTS_WITH_PRODUCT_PHOTOS as readonly string[]).includes(n)
 }
@@ -135,7 +150,9 @@ export function cartaProductGridRowDensity(
   }>
 ): CartaProductGridRowDensity {
   const relevant = rows.filter(
-    (r) => cartaShowsProductPhoto(r.category_parent_name) && String(r.photo_url ?? '').trim() !== ''
+    (r) =>
+      cartaShowsProductPhoto(r.category_parent_name, r.photo_url) &&
+      String(r.photo_url ?? '').trim() !== ''
   )
   if (relevant.length === 0) return 'normal'
   const scales = relevant.map((r) => normalizeCartaPhotoScale(r.carta_photo_scale))
