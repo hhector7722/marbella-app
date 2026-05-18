@@ -194,7 +194,11 @@ export function MenuItemEditModal({
     previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
 
   const previewIsDrink = isCartaDrinksSection(previewParentName)
-  const previewLayoutFactor = getCartaProductPhotoScaleFactor(photoScale, previewIsDrink)
+  const previewLayoutFactor = getCartaProductPhotoScaleFactor(
+    photoScale,
+    previewIsDrink,
+    articuloId
+  )
   const previewFrameStyle = getCartaProductPhotoFrameStyle(previewIsDrink, previewLayoutFactor)
   const hasPhoto = Boolean(displayPhotoSrc?.trim())
 
@@ -339,6 +343,7 @@ export function MenuItemEditModal({
                         src={displayPhotoSrc!}
                         scale={photoScale}
                         isDrink={previewIsDrink}
+                        articuloId={articuloId}
                       />
                     </div>
                   </div>

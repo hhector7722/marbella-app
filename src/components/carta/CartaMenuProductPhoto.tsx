@@ -12,15 +12,18 @@ export function CartaMenuProductPhoto({
   alt = '',
   scale,
   isDrink = false,
+  articuloId,
   className,
 }: {
   src: string
   alt?: string
   scale?: CartaPhotoScale | string | null
   isDrink?: boolean
+  /** Si hay override en `carta-product-photo`, prevalece sobre S/M/L. */
+  articuloId?: number | null
   className?: string
 }) {
-  const factor = getCartaProductPhotoScaleFactor(scale, isDrink)
+  const factor = getCartaProductPhotoScaleFactor(scale, isDrink, articuloId)
   return (
     // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
     <img

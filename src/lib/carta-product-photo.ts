@@ -23,6 +23,11 @@ const COVER_SCALE_FACTOR: Record<CartaPhotoScale, number> = {
   l: 1,
 }
 
+/** Factor visual absoluto por artículo (solo imagen; el marco de fila sigue la talla S/M/L de BD). */
+const CARTA_PHOTO_ARTICULO_FACTOR_OVERRIDE: Readonly<Record<number, number>> = {
+  61: 0.48, // OLIVES FARCIDES — más pequeño que S global
+}
+
 export const CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLASS =
   'pointer-events-none h-auto w-auto max-h-full max-w-full origin-center object-contain object-center'
 
@@ -78,8 +83,13 @@ export function normalizeCartaPhotoScale(
 
 export function getCartaProductPhotoScaleFactor(
   scale: CartaPhotoScale | string | null | undefined,
-  isDrink: boolean
+  isDrink: boolean,
+  articuloId?: number | null
 ): number {
+  if (articuloId != null) {
+    const fixed = CARTA_PHOTO_ARTICULO_FACTOR_OVERRIDE[articuloId]
+    if (fixed != null) return fixed
+  }
   const s = normalizeCartaPhotoScale(scale)
   return isDrink ? DRINK_SCALE_FACTOR[s] : FOOD_SCALE_FACTOR[s]
 }

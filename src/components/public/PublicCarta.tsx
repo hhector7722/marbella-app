@@ -452,6 +452,7 @@ export function PublicCarta({
                                       src={row.photo_url}
                                       scale={row.carta_photo_scale}
                                       isDrink={isDrink}
+                                      articuloId={row.articulo_id}
                                     />
                                   </button>
                                 ) : (
