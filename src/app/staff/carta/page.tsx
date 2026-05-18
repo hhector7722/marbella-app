@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 
 import { StaffCartaView } from '@/components/staff/StaffCartaView';
+import { fetchCartaUiLabels } from '@/lib/carta-ui-labels';
 
 import type { DigitalMenuRow } from '@/components/staff/MenuAccordion';
 
@@ -158,7 +159,7 @@ export default async function StaffCartaPage() {
         ({ data, error } = await menuOrder(CARTA_DIGITAL_MENU_COLUMNS));
     }
 
-
+    const cartaUiLabels = await fetchCartaUiLabels(supabase);
 
     if (error) {
 
@@ -215,6 +216,8 @@ export default async function StaffCartaPage() {
             canEditMenu={canEditMenu}
 
             canOpenMapeo={canOpenMapeo}
+
+            cartaUiLabels={cartaUiLabels}
 
         />
 

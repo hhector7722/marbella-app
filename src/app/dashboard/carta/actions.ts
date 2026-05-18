@@ -434,3 +434,60 @@ export async function setMenuItemSortOrders(input: MenuItemSortOrderInput[]) {
   return { success: true as const }
 }
 
+export type CartaUiLabelsUpsertInput = {
+  racion_entero_es: string
+  racion_entero_ca: string
+  racion_entero_en: string
+  racion_medio_es: string
+  racion_medio_ca: string
+  racion_medio_en: string
+}
+
+function trimLabel(s: string, field: string): { ok: true; value: string } | { ok: false; message: string } {
+  const t = s.trim()
+  if (!t) return { ok: false, message: `${field} no puede estar vacío` }
+  if (t.length > 32) return { ok: false, message: `${field}: máximo 32 caracteres` }
+  return { ok: true, value: t }
+}
+
+export async function upsertCartaUiLabelsAction(input: CartaUiLabelsUpsertInput) {
+  const gate = await requireManager()
+  if (!gate.ok) return { ok: false as const, message: gate.error }
+
+  const eEs = trimLabel(input.racion_entero_es, 'Entero (ES)')
+  const eCa = trimLabel(input.racion_entero_ca, 'Entero (CA)')
+  const eEn = trimLabel(input.racion_entero_en, 'Entero (EN)')
+  const mEs = trimLabel(input.racion_medio_es, 'Medio (ES)')
+  const mCa = trimLabel(input.racion_medio_ca, 'Medio (CA)')
+  const mEn = trimLabel(input.racion_medio_en, 'Medio (EN)')
+  for (const f of [eEs, eCa, eEn, mEs, mCa, mEn]) {
+    if (!f.ok) return { ok: false as const, message: f.message }
+  }
+  if (!eEs.ok || !eCa.ok || !eEn.ok || !mEs.ok || !mCa.ok || !mEn.ok) {
+    return { ok: false as const, message: 'Validación de etiquetas fallida' }
+  }
+
+  const { error } = await gate.supabase.from('carta_ui_labels').upsert(
+    {
+      id: 'default',
+      racion_entero_es: eEs.value,
+      racion_entero_ca: eCa.value,
+      racion_entero_en: eEn.value,
+      racion_medio_es: mEs.value,
+      racion_medio_ca: mCa.value,
+      racion_medio_en: mEn.value,
+    },
+    { onConflict: 'id' }
+  )
+
+  if (error) {
+    console.error('upsertCartaUiLabelsAction:', error)
+    return { ok: false as const, message: error.message }
+  }
+
+  revalidatePath('/dashboard/carta')
+  revalidatePath('/staff/carta')
+  revalidatePath('/carta')
+  return { ok: true as const }
+}
+

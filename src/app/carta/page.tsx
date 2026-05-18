@@ -1,5 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
+import { CartaUiLabelsProvider } from '@/lib/carta-racion-labels-context'
+import { fetchCartaUiLabels } from '@/lib/carta-ui-labels'
 import { resolveMenuCategoryCoverById, splitMenuCategoryCovers } from '@/lib/carta-category-covers'
 import {
   CARTA_PUBLIC_MENU_COLUMNS,
@@ -99,6 +101,8 @@ export default async function PublicCartaPage() {
     ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS))
   }
 
+  const cartaUiLabels = await fetchCartaUiLabels(supabase)
+
   if (error) {
     return (
       <main className="min-h-screen bg-white px-5 py-8">
@@ -111,19 +115,21 @@ export default async function PublicCartaPage() {
   }
 
   return (
-    <PublicCarta
-      items={(data ?? []) as unknown as PublicMenuRow[]}
-      menuCategories={menuCategories.map((c) => ({
-        id: c.id,
-        name: c.name,
-        parent_id: c.parent_id,
-        sort_order: c.sort_order,
-        slug: c.slug ?? null,
-      }))}
-      categoryCoverById={categoryCoverById}
-      categoryCoverScaleById={categoryCoverScaleById}
-      backHref={backHref}
-      cartaEditHref={cartaEditHref}
-    />
+    <CartaUiLabelsProvider labels={cartaUiLabels}>
+      <PublicCarta
+        items={(data ?? []) as unknown as PublicMenuRow[]}
+        menuCategories={menuCategories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          parent_id: c.parent_id,
+          sort_order: c.sort_order,
+          slug: c.slug ?? null,
+        }))}
+        categoryCoverById={categoryCoverById}
+        categoryCoverScaleById={categoryCoverScaleById}
+        backHref={backHref}
+        cartaEditHref={cartaEditHref}
+      />
+    </CartaUiLabelsProvider>
   )
 }

@@ -9,6 +9,8 @@ import CartaMappingCreatorClient, {
   type CartaTpvArticle,
 } from './CartaMappingCreatorClient'
 import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
+import { CartaRacionLabelsEditor } from '@/components/carta/CartaRacionLabelsEditor'
+import { fetchCartaUiLabels } from '@/lib/carta-ui-labels'
 
 export default async function CartaDashboardPage() {
   const supabase = await createClient()
@@ -61,6 +63,7 @@ export default async function CartaDashboardPage() {
 
   const mappedIds = new Set(((mappings ?? []) as any[]).map((m) => m.articulo_id))
   const unmappedArticles = enrichedArticles.filter((a) => !mappedIds.has(a.id))
+  const cartaUiLabels = await fetchCartaUiLabels(supabase)
 
   return (
     <DashboardDetailLayout
@@ -84,6 +87,8 @@ export default async function CartaDashboardPage() {
           recipes={(recipes ?? []) as unknown as CartaRecipe[]}
           departamentos={(departamentos ?? []) as any[]}
         />
+
+        <CartaRacionLabelsEditor initial={cartaUiLabels} />
 
         <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-widest text-[#36606F]">Edición visual (nueva)</p>

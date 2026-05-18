@@ -1,7 +1,8 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { type CartaLang, tPublicUi } from '@/lib/carta-menu-i18n'
+import { type CartaLang } from '@/lib/carta-menu-i18n'
+import { useCartaRacionLabels } from '@/lib/carta-racion-labels-context'
 import { formatCartaPrice, formatCartaPriceAriaAmount } from '@/lib/carta-price-display'
 
 type CartaDualRacionPricesProps = {
@@ -12,15 +13,14 @@ type CartaDualRacionPricesProps = {
 }
 
 function buildDualRacionAriaLabel(
-  lang: CartaLang,
+  labels: { racionEntero: string; racionMedio: string },
   enteroPrice: number | string | null | undefined,
   medioPrice: number | string | null | undefined
 ): string {
-  const t = tPublicUi(lang)
   const enteroAmt = formatCartaPriceAriaAmount(enteroPrice)
   const medioAmt = formatCartaPriceAriaAmount(medioPrice)
   if (!enteroAmt || !medioAmt) return ''
-  return `${t.racionEntero} ${enteroAmt}, ${t.racionMedio} ${medioAmt}`
+  return `${labels.racionEntero} ${enteroAmt}, ${labels.racionMedio} ${medioAmt}`
 }
 
 export function CartaDualRacionPrices({
@@ -29,7 +29,7 @@ export function CartaDualRacionPrices({
   precioMedio,
   variant = 'public',
 }: CartaDualRacionPricesProps) {
-  const t = tPublicUi(lang)
+  const t = useCartaRacionLabels(lang)
   const priceStr = formatCartaPrice(precio)
   const priceMedioStr = formatCartaPrice(precioMedio ?? null)
   const showPrice = priceStr.trim() !== ''
@@ -59,7 +59,7 @@ export function CartaDualRacionPrices({
   }
 
   if (showPrice && showMedio) {
-    const ariaLabel = buildDualRacionAriaLabel(lang, precio, precioMedio)
+    const ariaLabel = buildDualRacionAriaLabel(t, precio, precioMedio)
     return (
       <div
         role="group"
