@@ -341,6 +341,8 @@ export type Database = {
       categories: {
         Row: {
           cover_articulo_id: number | null
+          cover_photo_url: string | null
+          cover_photo_scale: string | null
           id: string
           name: string
           parent_id: string | null
@@ -350,6 +352,8 @@ export type Database = {
         }
         Insert: {
           cover_articulo_id?: number | null
+          cover_photo_url?: string | null
+          cover_photo_scale?: string | null
           id?: string
           name: string
           parent_id?: string | null
@@ -359,6 +363,8 @@ export type Database = {
         }
         Update: {
           cover_articulo_id?: number | null
+          cover_photo_url?: string | null
+          cover_photo_scale?: string | null
           id?: string
           name?: string
           parent_id?: string | null

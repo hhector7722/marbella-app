@@ -13,7 +13,16 @@ import {
     isCartaPhotoScaleColumnError,
 } from '@/lib/carta-menu-select';
 
-
+type CartaMenuCategoryRow = {
+    id: string;
+    name: string;
+    parent_id: string | null;
+    sort_order: number | null;
+    slug: string | null;
+    cover_articulo_id: number | null;
+    cover_photo_url: string | null;
+    cover_photo_scale: string | null;
+};
 
 export default async function StaffCartaPage() {
 
@@ -63,22 +72,34 @@ export default async function StaffCartaPage() {
 
 
 
-    const { data: menuCategories, error: catError } = await supabase
-
-        .from('categories')
-
-        .select('id, name, parent_id, sort_order, slug, cover_articulo_id')
-
-        .eq('scope', 'menu')
-
-        .order('sort_order', { ascending: true });
-
-
-
-    if (catError) {
-
-        console.error('Error fetching menu categories (staff/carta):', catError);
-
+    let menuCategories: CartaMenuCategoryRow[] = [];
+    {
+        const full = await supabase
+            .from('categories')
+            .select('id, name, parent_id, sort_order, slug, cover_articulo_id, cover_photo_url, cover_photo_scale')
+            .eq('scope', 'menu')
+            .order('sort_order', { ascending: true });
+        if (!full.error && full.data) {
+            menuCategories = full.data as CartaMenuCategoryRow[];
+        } else {
+            if (full.error) {
+                console.error('Error fetching menu categories (staff/carta):', full.error);
+            }
+            const leg = await supabase
+                .from('categories')
+                .select('id, name, parent_id, sort_order, slug, cover_articulo_id')
+                .eq('scope', 'menu')
+                .order('sort_order', { ascending: true });
+            if (leg.error) {
+                console.error('Error fetching menu categories legacy (staff/carta):', leg.error);
+            }
+            menuCategories = (leg.data ?? []).map((c) => ({
+                ...c,
+                cover_articulo_id: c.cover_articulo_id ?? null,
+                cover_photo_url: null,
+                cover_photo_scale: null,
+            })) as CartaMenuCategoryRow[];
+        }
     }
 
 
@@ -93,11 +114,15 @@ export default async function StaffCartaPage() {
 
             supabase,
 
-            (menuCategories ?? []).map((c) => ({
+            menuCategories.map((c) => ({
 
                 id: c.id,
 
                 cover_articulo_id: c.cover_articulo_id ?? null,
+
+                cover_photo_url: c.cover_photo_url ?? null,
+
+                cover_photo_scale: c.cover_photo_scale ?? null,
 
             }))
 
@@ -169,7 +194,7 @@ export default async function StaffCartaPage() {
 
             items={(data ?? []) as unknown as DigitalMenuRow[]}
 
-            menuCategories={(menuCategories ?? []).map((c) => ({
+            menuCategories={menuCategories.map((c) => ({
 
                 id: c.id,
 

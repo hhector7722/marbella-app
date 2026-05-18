@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { CartaPhotoScale } from '@/lib/carta-product-photo'
+import { normalizeCartaPhotoScale, type CartaPhotoScale } from '@/lib/carta-product-photo'
 
 /** Campos opcionales = solo se actualizan si van en el objeto (merge con fila existente). */
 export type PlatoMarbellaSlotValue = 'entrante' | 'principal' | 'guarnicion'
@@ -174,7 +174,12 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
   return { success: true as const, carta_photo_scale_persisted: cartaPhotoScalePersisted }
 }
 
-export async function setMenuSectionCoverArticulo(category_id: string, cover_articulo_id: number | null) {
+export async function setMenuCategoryCover(input: {
+  category_id: string
+  cover_articulo_id: number | null
+  cover_photo_url: string | null
+  cover_photo_scale?: CartaPhotoScale | null
+}): Promise<{ success: true } | { success: false; error: string }> {
   const gate = await requireManager()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
@@ -183,7 +188,7 @@ export async function setMenuSectionCoverArticulo(category_id: string, cover_art
   const { data: cat, error: catErr } = await supabase
     .from('categories')
     .select('id, scope, parent_id')
-    .eq('id', category_id)
+    .eq('id', input.category_id)
     .maybeSingle()
 
   if (catErr) return { success: false as const, error: catErr.message }
@@ -191,32 +196,82 @@ export async function setMenuSectionCoverArticulo(category_id: string, cover_art
     return { success: false as const, error: 'Categoría inválida (solo categorías del menú).' }
   }
 
-  if (cover_articulo_id != null) {
+  const urlTrim = input.cover_photo_url?.trim() || null
+  let nextArticulo = input.cover_articulo_id ?? null
+  let nextUrl: string | null = urlTrim
+  let nextScale: string | null = null
+
+  if (nextUrl) {
+    nextArticulo = null
+    nextScale = normalizeCartaPhotoScale(input.cover_photo_scale ?? 'm')
+  } else if (nextArticulo != null) {
     const { data: mapRow, error: mapErr } = await supabase
       .from('map_tpv_receta')
       .select('articulo_id')
-      .eq('articulo_id', cover_articulo_id)
+      .eq('articulo_id', nextArticulo)
       .maybeSingle()
     if (mapErr) return { success: false as const, error: mapErr.message }
     if (!mapRow) {
       return { success: false as const, error: 'El artículo debe estar mapeado a receta en carta.' }
     }
+    nextUrl = null
+    nextScale = null
+  } else {
+    nextArticulo = null
+    nextUrl = null
+    nextScale = null
   }
 
-  const { error } = await supabase
+  const payload = {
+    cover_articulo_id: nextArticulo,
+    cover_photo_url: nextUrl,
+    cover_photo_scale: nextScale,
+  }
+
+  let { error } = await supabase
     .from('categories')
-    .update({ cover_articulo_id })
-    .eq('id', category_id)
+    .update(payload)
+    .eq('id', input.category_id)
     .eq('scope', 'menu')
 
+  if (
+    error &&
+    /cover_photo_url|cover_photo_scale/i.test(error.message) &&
+    /does not exist|could not find the/i.test(error.message)
+  ) {
+    if (nextUrl) {
+      return {
+        success: false as const,
+        error:
+          'La base de datos no tiene columnas de portada libre. Aplica la migración 20260518140000_categories_cover_custom_photo.sql en Supabase.',
+      }
+    }
+    const retry = await supabase
+      .from('categories')
+      .update({ cover_articulo_id: nextArticulo })
+      .eq('id', input.category_id)
+      .eq('scope', 'menu')
+    error = retry.error
+  }
+
   if (error) {
-    console.error('setMenuSectionCoverArticulo error:', error)
+    console.error('setMenuCategoryCover error:', error)
     return { success: false as const, error: error.message }
   }
 
   revalidatePath('/dashboard/carta')
   revalidatePath('/staff/carta')
   return { success: true as const }
+}
+
+/** @deprecated Usar setMenuCategoryCover con cover_photo_url null */
+export async function setMenuSectionCoverArticulo(category_id: string, cover_articulo_id: number | null) {
+  return setMenuCategoryCover({
+    category_id,
+    cover_articulo_id,
+    cover_photo_url: null,
+    cover_photo_scale: null,
+  })
 }
 
 export async function deleteMenuOverride(articulo_id: number) {

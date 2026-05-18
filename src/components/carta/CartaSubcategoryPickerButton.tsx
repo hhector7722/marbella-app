@@ -44,7 +44,9 @@ export function CartaSubcategoryPickerButton({
         <span
           className={cn(
             'relative mx-auto flex shrink-0 items-center justify-center',
-            variant === 'grid' ? 'mb-1 h-11 w-11 sm:h-12 sm:w-12' : 'mb-0.5 h-9 w-9 sm:h-10 sm:w-10'
+            variant === 'grid'
+              ? 'mb-1.5 h-16 w-16 sm:mb-2 sm:h-[4.5rem] sm:w-[4.5rem]'
+              : 'mb-1 h-12 w-12 sm:mb-1.5 sm:h-14 sm:w-14'
           )}
         >
           {photo ? (

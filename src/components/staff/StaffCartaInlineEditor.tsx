@@ -18,6 +18,8 @@ type CategoryRow = {
   parent_id: string | null
   sort_order: number | null
   cover_articulo_id: number | null
+  cover_photo_url?: string | null
+  cover_photo_scale?: string | null
   slug?: string | null
 }
 
@@ -115,6 +117,8 @@ export function StaffCartaInlineEditor({
       name: c.name,
       parent_id: c.parent_id,
       cover_articulo_id: c.cover_articulo_id ?? null,
+      cover_photo_url: (c as CategoryRow).cover_photo_url ?? null,
+      cover_photo_scale: (c as CategoryRow).cover_photo_scale ?? null,
     }
   }, [categoryModalId, categoryById])
 
@@ -136,19 +140,24 @@ export function StaffCartaInlineEditor({
 
       let categoriesRes = await supabase
         .from('categories')
-        .select('id, name, parent_id, sort_order, cover_articulo_id, slug')
+        .select('id, name, parent_id, sort_order, cover_articulo_id, slug, cover_photo_url, cover_photo_scale')
         .eq('scope', 'menu')
         .limit(5000)
       if (categoriesRes.error) {
         const legacy = await supabase
           .from('categories')
-          .select('id, name, parent_id, sort_order')
+          .select('id, name, parent_id, sort_order, cover_articulo_id, slug')
           .eq('scope', 'menu')
           .limit(5000)
         if (legacy.error) throw legacy.error
         categoriesRes = {
           ...legacy,
-          data: ((legacy.data ?? []) as any[]).map((c) => ({ ...c, cover_articulo_id: null })),
+          data: ((legacy.data ?? []) as any[]).map((c) => ({
+            ...c,
+            cover_articulo_id: c.cover_articulo_id ?? null,
+            cover_photo_url: null,
+            cover_photo_scale: null,
+          })),
         }
       }
 
@@ -177,6 +186,8 @@ export function StaffCartaInlineEditor({
       const cats = ((categoriesRes.data ?? []) as any[]).map((c) => ({
         ...c,
         cover_articulo_id: c.cover_articulo_id ?? null,
+        cover_photo_url: c.cover_photo_url ?? null,
+        cover_photo_scale: c.cover_photo_scale ?? null,
       })) as CategoryRow[]
       setCategories(cats)
 
@@ -186,7 +197,12 @@ export function StaffCartaInlineEditor({
       for (const o of overrides) ovByArt.set(o.articulo_id, o)
 
       const coverIds = [
-        ...new Set(cats.map((c) => c.cover_articulo_id).filter((x): x is number => x != null)),
+        ...new Set(
+          cats
+            .filter((c) => !ntrim(c.cover_photo_url) && c.cover_articulo_id != null)
+            .map((c) => c.cover_articulo_id)
+            .filter((x): x is number => x != null)
+        ),
       ]
       const coverPhotoByArticulo = new Map<number, string | null>()
       const coverScaleByArticulo = new Map<number, CartaPhotoScale>()
@@ -226,6 +242,12 @@ export function StaffCartaInlineEditor({
       const coverByCategoryId: Record<string, string | null> = {}
       const coverScaleByCategoryId: Record<string, CartaPhotoScale> = {}
       for (const c of cats) {
+        const custom = ntrim(c.cover_photo_url)
+        if (custom) {
+          coverByCategoryId[c.id] = custom
+          coverScaleByCategoryId[c.id] = normalizeCartaPhotoScale(c.cover_photo_scale)
+          continue
+        }
         if (!c.cover_articulo_id) {
           coverByCategoryId[c.id] = null
           coverScaleByCategoryId[c.id] = 'm'

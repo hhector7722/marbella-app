@@ -121,3 +121,52 @@ export async function uploadNormalizedCartaItemPhoto(
     return { success: false, error: msg }
   }
 }
+
+export async function uploadNormalizedCategoryCoverPhoto(
+  formData: FormData
+): Promise<{ success: true; publicUrl: string } | { success: false; error: string }> {
+  const auth = await requirePhotoUploader()
+  if (!auth.ok) return { success: false, error: auth.error }
+
+  const file = formData.get('file')
+  const categoryIdRaw = formData.get('category_id')
+  const categoryId = typeof categoryIdRaw === 'string' ? categoryIdRaw.trim() : ''
+
+  if (!(file instanceof File)) {
+    return { success: false, error: 'No se recibió ninguna imagen.' }
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(categoryId)) {
+    return { success: false, error: 'Categoría no válida.' }
+  }
+
+  try {
+    const webp = await normalizeProductPhotoFile(file)
+    const base = slugifyBase(file.name, 'portada')
+    const storagePath = `category-covers/${categoryId}/${Date.now()}-${base}.webp`
+
+    const { error: upErr } = await auth.supabase.storage
+      .from('carta_items')
+      .upload(storagePath, webp, { contentType: 'image/webp', upsert: true })
+
+    if (upErr) {
+      const msg = upErr.message ?? ''
+      if (msg.toLowerCase().includes('bucket') && msg.toLowerCase().includes('not found')) {
+        return {
+          success: false,
+          error:
+            "No existe el bucket 'carta_items' en Storage. Ejecuta las migraciones de Supabase o créalo manualmente.",
+        }
+      }
+      return { success: false, error: upErr.message }
+    }
+
+    const { data } = auth.supabase.storage.from('carta_items').getPublicUrl(storagePath)
+    const publicUrl = data?.publicUrl
+    if (!publicUrl) return { success: false, error: 'No se pudo obtener la URL pública.' }
+
+    return { success: true, publicUrl }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'No se pudo procesar la imagen'
+    return { success: false, error: msg }
+  }
+}

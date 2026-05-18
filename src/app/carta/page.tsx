@@ -9,6 +9,17 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+type CartaMenuCategoryRow = {
+  id: string
+  name: string
+  parent_id: string | null
+  sort_order: number | null
+  slug: string | null
+  cover_articulo_id: number | null
+  cover_photo_url: string | null
+  cover_photo_scale: string | null
+}
+
 export default async function PublicCartaPage() {
   const supabase = await createClient()
 
@@ -29,20 +40,40 @@ export default async function PublicCartaPage() {
     }
   }
 
-  const { data: menuCategories } = await supabase
-    .from('categories')
-    .select('id, name, parent_id, sort_order, slug, cover_articulo_id')
-    .eq('scope', 'menu')
-    .order('sort_order', { ascending: true })
+  let menuCategories: CartaMenuCategoryRow[] = []
+  {
+    const full = await supabase
+      .from('categories')
+      .select('id, name, parent_id, sort_order, slug, cover_articulo_id, cover_photo_url, cover_photo_scale')
+      .eq('scope', 'menu')
+      .order('sort_order', { ascending: true })
+    if (!full.error && full.data) {
+      menuCategories = full.data as CartaMenuCategoryRow[]
+    } else {
+      const leg = await supabase
+        .from('categories')
+        .select('id, name, parent_id, sort_order, slug, cover_articulo_id')
+        .eq('scope', 'menu')
+        .order('sort_order', { ascending: true })
+      menuCategories = (leg.data ?? []).map((c) => ({
+        ...c,
+        cover_articulo_id: c.cover_articulo_id ?? null,
+        cover_photo_url: null,
+        cover_photo_scale: null,
+      })) as CartaMenuCategoryRow[]
+    }
+  }
 
   let categoryCoverById: Record<string, string | null> = {}
   let categoryCoverScaleById: Record<string, 's' | 'm' | 'l'> = {}
   try {
     const resolved = await resolveMenuCategoryCoverById(
       supabase,
-      (menuCategories ?? []).map((c) => ({
+      menuCategories.map((c) => ({
         id: c.id,
         cover_articulo_id: c.cover_articulo_id ?? null,
+        cover_photo_url: c.cover_photo_url ?? null,
+        cover_photo_scale: c.cover_photo_scale ?? null,
       }))
     )
     const split = splitMenuCategoryCovers(resolved)
@@ -82,7 +113,7 @@ export default async function PublicCartaPage() {
   return (
     <PublicCarta
       items={(data ?? []) as unknown as PublicMenuRow[]}
-      menuCategories={(menuCategories ?? []).map((c) => ({
+      menuCategories={menuCategories.map((c) => ({
         id: c.id,
         name: c.name,
         parent_id: c.parent_id,

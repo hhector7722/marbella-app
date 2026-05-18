@@ -7,7 +7,12 @@ function ntrim(v: unknown): string | null {
   return s || null
 }
 
-type CategoryCoverRow = { id: string; cover_articulo_id: number | null }
+type CategoryCoverRow = {
+  id: string
+  cover_articulo_id: number | null
+  cover_photo_url?: string | null
+  cover_photo_scale?: string | null
+}
 
 export type MenuCategoryCoverResolved = {
   url: string | null
@@ -15,7 +20,8 @@ export type MenuCategoryCoverResolved = {
 }
 
 /**
- * Resuelve URL y talla S/M/L de portada por categoría (padre o hijo) desde cover_articulo_id.
+ * Resuelve URL y talla S/M/L de portada por categoría (padre o hijo).
+ * Si existe `cover_photo_url`, prevalece sobre `cover_articulo_id`.
  */
 export async function resolveMenuCategoryCoverById(
   supabase: SupabaseClient,
@@ -26,8 +32,20 @@ export async function resolveMenuCategoryCoverById(
     out[c.id] = { url: null, scale: 'm' }
   }
 
+  for (const c of categories) {
+    const cu = ntrim(c.cover_photo_url)
+    if (cu) {
+      out[c.id] = { url: cu, scale: normalizeCartaPhotoScale(c.cover_photo_scale) }
+    }
+  }
+
   const coverIds = [
-    ...new Set(categories.map((c) => c.cover_articulo_id).filter((x): x is number => x != null)),
+    ...new Set(
+      categories
+        .filter((c) => !ntrim(c.cover_photo_url) && c.cover_articulo_id != null)
+        .map((c) => c.cover_articulo_id)
+        .filter((x): x is number => x != null)
+    ),
   ]
   if (!coverIds.length) return out
 
@@ -71,6 +89,7 @@ export async function resolveMenuCategoryCoverById(
   }
 
   for (const c of categories) {
+    if (ntrim(c.cover_photo_url)) continue
     if (!c.cover_articulo_id) continue
     out[c.id] = coverByArticulo.get(c.cover_articulo_id) ?? { url: null, scale: 'm' }
   }
