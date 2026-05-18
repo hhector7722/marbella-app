@@ -4,22 +4,22 @@ export const PRODUCT_PHOTO_HEIGHT = 1500
 
 export type CartaPhotoScale = 's' | 'm' | 'l'
 
-/** Factor visual (transform) — diferencia clara entre tallas. */
+/** Factor visual (transform). S = antiguo M; M = mitad entre antiguo M y L. */
 const FOOD_SCALE_FACTOR: Record<CartaPhotoScale, number> = {
-  s: 0.42,
-  m: 0.72,
+  s: 0.72,
+  m: 0.86,
   l: 1,
 }
 
 const DRINK_SCALE_FACTOR: Record<CartaPhotoScale, number> = {
-  s: 0.38,
-  m: 0.65,
+  s: 0.65,
+  m: 0.785,
   l: 0.92,
 }
 
 const COVER_SCALE_FACTOR: Record<CartaPhotoScale, number> = {
-  s: 0.58,
-  m: 0.8,
+  s: 0.8,
+  m: 0.9,
   l: 1,
 }
 
