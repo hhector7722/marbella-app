@@ -197,6 +197,13 @@ export function PublicCarta({
     [grouped, openKey]
   )
 
+  const openHasMultipleSubs = (openGroup?._subList.length ?? 0) > 1
+  const openSelectedSubKey = openGroup
+    ? selectedSubKeyByGroup[openGroup.key]
+    : undefined
+  const openShowSubPicker = openHasMultipleSubs && !openSelectedSubKey
+  const openShowSubTabs = openHasMultipleSubs && Boolean(openSelectedSubKey)
+
   const subCategoryButtonLabel = (
     sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
     parentTitleRaw: string
@@ -287,7 +294,12 @@ export function PublicCarta({
           className="fixed inset-0 z-[240] flex items-center justify-center p-4 pb-safe pt-4 animate-in fade-in duration-200"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="carta-section-modal-title"
+          aria-labelledby={
+            openShowSubPicker || openShowSubTabs ? undefined : 'carta-section-modal-title'
+          }
+          aria-label={
+            openShowSubPicker || openShowSubTabs ? openGroup.title : undefined
+          }
         >
           <button
             type="button"
@@ -301,12 +313,39 @@ export function PublicCarta({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
-              <h2
-                id="carta-section-modal-title"
-                className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
-              >
-                {openGroup.title}
-              </h2>
+              {openShowSubTabs ? (
+                <div className="flex min-w-0 flex-1 overflow-x-auto pb-0.5">
+                  <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
+                    {openGroup._subList.map((sub) => {
+                      const isActive = openSelectedSubKey === sub.key
+                      return (
+                        <CartaSubcategoryPickerButton
+                          key={sub.key}
+                          label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
+                          coverPhotoUrl={sub.coverPhotoUrl}
+                          coverPhotoScale={sub.coverPhotoScale}
+                          isActive={isActive}
+                          onClick={() =>
+                            setSelectedSubKeyByGroup((p) => ({
+                              ...p,
+                              [openGroup.key]: sub.key,
+                            }))
+                          }
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : openShowSubPicker ? (
+                <span className="min-w-0 flex-1" aria-hidden />
+              ) : (
+                <h2
+                  id="carta-section-modal-title"
+                  className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
+                >
+                  {openGroup.title}
+                </h2>
+              )}
               <button
                 type="button"
                 className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
@@ -317,34 +356,8 @@ export function PublicCarta({
               </button>
             </div>
 
-            {openGroup._subList.length > 1 && selectedSubKeyByGroup[openGroup.key] ? (
-              <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
-                <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto pb-0.5 sm:gap-1.5">
-                  {openGroup._subList.map((sub) => {
-                    const sel = selectedSubKeyByGroup[openGroup.key]
-                    const isActive = sel === sub.key
-                    return (
-                      <CartaSubcategoryPickerButton
-                        key={sub.key}
-                        label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                        coverPhotoUrl={sub.coverPhotoUrl}
-                        coverPhotoScale={sub.coverPhotoScale}
-                        isActive={isActive}
-                        onClick={() =>
-                          setSelectedSubKeyByGroup((p) => ({
-                            ...p,
-                            [openGroup.key]: sub.key,
-                          }))
-                        }
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
-
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
-              {openGroup._subList.length > 1 && !selectedSubKeyByGroup[openGroup.key] ? (
+              {openShowSubPicker ? (
                 <div className="px-1 py-2 sm:px-2">
                   <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                     {openGroup._subList.map((sub) => (
@@ -366,8 +379,8 @@ export function PublicCarta({
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {(openGroup._subList.length > 1
-                    ? openGroup._subList.filter((s) => s.key === selectedSubKeyByGroup[openGroup.key])
+                  {(openHasMultipleSubs
+                    ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
                     : openGroup._subList
                   ).map((sub) => (
                     <div

@@ -661,6 +661,13 @@ export function MenuAccordion({
         return list[0] ?? null
     }, [openGroup, selectedSubKeyByGroup])
 
+    const openHasMultipleSubs = (openGroup?._subList.length ?? 0) > 1
+    const openSelectedSubKey = openGroup ? selectedSubKeyByGroup[openGroup.key] : undefined
+    const openShowSubPicker =
+        openHasMultipleSubs && !openSelectedSubKey && reorderScope !== 'subs'
+    const openShowSubTabs =
+        openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
+
     useEffect(() => {
         if (reorderScope === 'parents') {
             setOpenKey(null)
@@ -940,7 +947,12 @@ export function MenuAccordion({
                     className="fixed inset-0 z-[250] flex items-center justify-center p-4 pb-safe pt-4 animate-in fade-in duration-200"
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby="staff-carta-section-modal-title"
+                    aria-labelledby={
+                        openShowSubPicker || openShowSubTabs ? undefined : 'staff-carta-section-modal-title'
+                    }
+                    aria-label={
+                        openShowSubPicker || openShowSubTabs ? openGroup.title : undefined
+                    }
                 >
                     <button
                         type="button"
@@ -953,14 +965,116 @@ export function MenuAccordion({
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex shrink-0 items-center gap-1.5 bg-white px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
-                            <h2
-                                id="staff-carta-section-modal-title"
-                                className="min-w-0 flex-1 truncate text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
-                            >
-                                {openGroup.title}
-                            </h2>
+                            {openShowSubTabs ? (
+                                <div className="flex min-w-0 flex-1 overflow-x-auto pb-0.5">
+                                    <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
+                                        {openGroup._subList.map((sub) => {
+                                            const isActive = openSelectedSubKey === sub.key
+                                            const picked =
+                                                reorderScope === 'subs' &&
+                                                reorderPick === sub.key &&
+                                                isUuidLike(sub.key)
+                                            if (reorderScope === 'subs') {
+                                                return (
+                                                    <div
+                                                        key={sub.key}
+                                                        className="relative min-w-0 flex-1 basis-0"
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleSubReorderTap(sub.key)}
+                                                            className={cn(
+                                                                'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
+                                                                'border-0 bg-transparent shadow-none',
+                                                                isActive
+                                                                    ? 'text-[#36606F]'
+                                                                    : 'text-[#36606F]/60 active:opacity-80',
+                                                                picked && 'bg-amber-100/90'
+                                                            )}
+                                                        >
+                                                            <span className="line-clamp-3 min-w-0">
+                                                                {subPickerButtonLabel(
+                                                                    sub,
+                                                                    lang,
+                                                                    openGroup.parentTitleRaw,
+                                                                    tPublicUi(lang).uncategorized
+                                                                )}
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                )
+                                            }
+                                            return (
+                                                <CartaSubcategoryPickerButton
+                                                    key={sub.key}
+                                                    label={subPickerButtonLabel(
+                                                        sub,
+                                                        lang,
+                                                        openGroup.parentTitleRaw,
+                                                        tPublicUi(lang).uncategorized
+                                                    )}
+                                                    coverPhotoUrl={sub.coverPhotoUrl}
+                                                    coverPhotoScale={sub.coverPhotoScale}
+                                                    isActive={isActive}
+                                                    className={
+                                                        editMode &&
+                                                        onEditChildCategory &&
+                                                        isUuidLike(sub.key)
+                                                            ? 'pr-5 sm:pr-6'
+                                                            : undefined
+                                                    }
+                                                    onClick={() =>
+                                                        setSelectedSubKeyByGroup((p) => ({
+                                                            ...p,
+                                                            [openGroup.key]: sub.key,
+                                                        }))
+                                                    }
+                                                    overlay={
+                                                        editMode &&
+                                                        onEditChildCategory &&
+                                                        isUuidLike(sub.key) ? (
+                                                            <span
+                                                                className="absolute right-0 top-1/2 z-10 flex -translate-y-1/2 items-stretch pr-0.5"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault()
+                                                                    e.stopPropagation()
+                                                                }}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        onEditChildCategory(sub.key)
+                                                                    }
+                                                                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-[#36606F] active:bg-zinc-100 sm:min-h-[44px] sm:min-w-[44px]"
+                                                                    aria-label="Editar subcategoría"
+                                                                    title="Editar subcategoría"
+                                                                >
+                                                                    <Pencil
+                                                                        className="h-4 w-4"
+                                                                        strokeWidth={2.5}
+                                                                    />
+                                                                </button>
+                                                            </span>
+                                                        ) : null
+                                                    }
+                                                />
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ) : openShowSubPicker ? (
+                                <span className="min-w-0 flex-1" aria-hidden />
+                            ) : (
+                                <h2
+                                    id="staff-carta-section-modal-title"
+                                    className="min-w-0 flex-1 truncate text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
+                                >
+                                    {openGroup.title}
+                                </h2>
+                            )}
                             {editMode &&
                             !reorderScope &&
+                            !openShowSubPicker &&
                             ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
                                 (onPersistProductOrder &&
                                     modalProductSub &&
@@ -1128,112 +1242,8 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        {openGroup._subList.length > 1 &&
-                        (selectedSubKeyByGroup[openGroup.key] || reorderScope === 'subs') ? (
-                            <div className="shrink-0 bg-white px-2.5 pb-2.5 pt-2 sm:px-3">
-                                {reorderScope === 'subs' ? (
-                                    <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto sm:gap-1.5">
-                                        {openGroup._subList.map((sub) => {
-                                            const sel = selectedSubKeyByGroup[openGroup.key]
-                                            const isActive = sel === sub.key
-                                            const picked = reorderPick === sub.key && isUuidLike(sub.key)
-                                            return (
-                                                <div key={sub.key} className="relative min-w-0 flex-1 basis-0">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (reorderScope === 'subs') {
-                                                                handleSubReorderTap(sub.key)
-                                                                return
-                                                            }
-                                                            setSelectedSubKeyByGroup((p) => ({
-                                                                ...p,
-                                                                [openGroup.key]: sub.key,
-                                                            }))
-                                                        }}
-                                                        className={cn(
-                                                            'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 text-center text-[10px] font-black uppercase leading-tight tracking-wide sm:rounded-xl sm:px-1.5 sm:py-2 sm:text-[11px]',
-                                                            'bg-transparent border-0 shadow-none',
-                                                            isActive
-                                                                ? 'text-[#36606F]'
-                                                                : 'text-[#36606F]/60 hover:text-[#36606F] active:opacity-80',
-                                                            picked && 'bg-amber-100/90'
-                                                        )}
-                                                    >
-                                                        <span className="line-clamp-3 min-w-0">
-                                                            {subPickerButtonLabel(
-                                                                sub,
-                                                                lang,
-                                                                openGroup.parentTitleRaw,
-                                                                tPublicUi(lang).uncategorized
-                                                            )}
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="flex w-full min-w-0 flex-nowrap gap-1 overflow-x-auto sm:gap-1.5">
-                                        {openGroup._subList.map((sub) => {
-                                            const sel = selectedSubKeyByGroup[openGroup.key]
-                                            const isActive = sel === sub.key
-                                            return (
-                                                <CartaSubcategoryPickerButton
-                                                    key={sub.key}
-                                                    label={subPickerButtonLabel(
-                                                        sub,
-                                                        lang,
-                                                        openGroup.parentTitleRaw,
-                                                        tPublicUi(lang).uncategorized
-                                                    )}
-                                                    coverPhotoUrl={sub.coverPhotoUrl}
-                                                    coverPhotoScale={sub.coverPhotoScale}
-                                                    isActive={isActive}
-                                                    className={
-                                                        editMode && onEditChildCategory && isUuidLike(sub.key)
-                                                            ? 'pr-5 sm:pr-6'
-                                                            : undefined
-                                                    }
-                                                    onClick={() =>
-                                                        setSelectedSubKeyByGroup((p) => ({
-                                                            ...p,
-                                                            [openGroup.key]: sub.key,
-                                                        }))
-                                                    }
-                                                    overlay={
-                                                        editMode && onEditChildCategory && isUuidLike(sub.key) ? (
-                                                            <span
-                                                                className="absolute right-0 top-1/2 z-10 flex -translate-y-1/2 items-stretch pr-0.5"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault()
-                                                                    e.stopPropagation()
-                                                                }}
-                                                            >
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => onEditChildCategory(sub.key)}
-                                                                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-[#36606F] active:bg-zinc-100 sm:min-h-[44px] sm:min-w-[44px]"
-                                                                    aria-label="Editar subcategoría"
-                                                                    title="Editar subcategoría"
-                                                                >
-                                                                    <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                                                </button>
-                                                            </span>
-                                                        ) : null
-                                                    }
-                                                />
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
-
                         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5">
-                            {openGroup._subList.length > 1 &&
-                            !selectedSubKeyByGroup[openGroup.key] &&
-                            reorderScope !== 'subs' ? (
+                            {openShowSubPicker ? (
                                 <div className="px-1 py-2 sm:px-2">
                                     <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                                         {openGroup._subList.map((sub) => (
@@ -1260,10 +1270,8 @@ export function MenuAccordion({
                                 </div>
                             ) : (
                                 <div className="space-y-3 sm:space-y-4">
-                                    {(openGroup._subList.length > 1
-                                        ? openGroup._subList.filter(
-                                              (s) => s.key === selectedSubKeyByGroup[openGroup.key]
-                                          )
+                                    {(openHasMultipleSubs
+                                        ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
                                         : openGroup._subList
                                     ).map((sub) => (
                                         <section key={sub.key} className="space-y-3">
