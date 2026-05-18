@@ -32,12 +32,39 @@ export const CARTA_PRODUCT_PHOTO_IMG_CLASS = CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLA
 /** @deprecated Usar CartaMenuProductPhoto o getCartaProductPhotoScaleFactor */
 export const CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS = CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLASS
 
-/** Altura explícita: el grid reserva fila; sin aspect-ratio que colapse con img grande. */
-export const CARTA_DRINK_PHOTO_FRAME_CLASS =
-  'relative mx-auto flex h-[min(26vw,96px)] w-full shrink-0 items-center justify-center overflow-hidden bg-white'
+/** Shell del marco foto; la altura / ratio la fija `getCartaProductPhotoFrameStyle` según escala. */
+export const CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS =
+  'relative mx-auto flex w-full shrink-0 items-center justify-center overflow-hidden bg-white'
 
+/** @deprecated Usar CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS + getCartaProductPhotoFrameStyle */
+export const CARTA_DRINK_PHOTO_FRAME_CLASS =
+  `${CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS} h-[min(26vw,96px)]`
+
+/** @deprecated Usar CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS + getCartaProductPhotoFrameStyle */
 export const CARTA_DEFAULT_PHOTO_FRAME_CLASS =
-  'relative mx-auto flex aspect-[4/5] w-full shrink-0 items-center justify-center overflow-hidden bg-white'
+  `${CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS} aspect-[4/5]`
+
+const DRINK_FRAME_BASE_VW = 26
+const DRINK_FRAME_MAX_PX = 96
+
+/** Ratio ancho/alto del marco comida para un factor de escala visual (corrige hueco tras `transform: scale`). */
+export function getCartaFoodPhotoFrameAspectRatio(scaleFactor: number): number {
+  const f = Math.min(1, Math.max(0.2, scaleFactor))
+  return 4 / (5 * f)
+}
+
+export function getCartaProductPhotoFrameStyle(
+  isDrink: boolean,
+  scaleFactor: number
+): { aspectRatio?: number; height?: string } {
+  const f = Math.min(1, Math.max(0.2, scaleFactor))
+  if (isDrink) {
+    return {
+      height: `calc(min(${DRINK_FRAME_BASE_VW}vw, ${DRINK_FRAME_MAX_PX}px) * ${f})`,
+    }
+  }
+  return { aspectRatio: getCartaFoodPhotoFrameAspectRatio(f) }
+}
 
 export const CARTA_PARENTS_WITH_PRODUCT_PHOTOS = ['Tapas', 'Bocadillos', 'Platos', 'Bebidas'] as const
 
@@ -85,4 +112,32 @@ export function isCartaDrinksSection(parentName: string | null | undefined): boo
 export function cartaShowsProductPhoto(parentName: string | null | undefined): boolean {
   const n = parentName?.trim() ?? ''
   return (CARTA_PARENTS_WITH_PRODUCT_PHOTOS as readonly string[]).includes(n)
+}
+
+export type CartaProductGridRowDensity = 'normal' | 'cozy' | 'compact'
+
+/** Una “fila” del grid (p. ej. 3 celdas): compacta el layout si todas las fotos visibles son S, o si ninguna es L. */
+export function cartaProductGridRowDensity(
+  rows: Array<{
+    photo_url?: string | null
+    carta_photo_scale?: string | null
+    category_parent_name?: string | null
+  }>
+): CartaProductGridRowDensity {
+  const relevant = rows.filter(
+    (r) => cartaShowsProductPhoto(r.category_parent_name) && String(r.photo_url ?? '').trim() !== ''
+  )
+  if (relevant.length === 0) return 'normal'
+  const scales = relevant.map((r) => normalizeCartaPhotoScale(r.carta_photo_scale))
+  if (scales.every((s) => s === 's')) return 'compact'
+  if (scales.every((s) => s === 's' || s === 'm')) return 'cozy'
+  return 'normal'
+}
+
+export function chunkCartaProductGridRows<T>(rows: T[], columns = 3): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < rows.length; i += columns) {
+    out.push(rows.slice(i, i + columns))
+  }
+  return out
 }

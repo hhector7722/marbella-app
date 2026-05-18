@@ -14,6 +14,11 @@ import {
   type PlatoMarbellaMenuRow,
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
+import {
+  CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+  getCartaProductPhotoFrameStyle,
+  getCartaProductPhotoScaleFactor,
+} from '@/lib/carta-product-photo'
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
 
@@ -42,20 +47,30 @@ function OptionCard({
 }) {
   const name = getCartaDisplayName(row, lang)
   const photo = row.photo_url?.trim() || null
+  const layoutFactor = getCartaProductPhotoScaleFactor(row.carta_photo_scale, false)
+  const frameStyle = getCartaProductPhotoFrameStyle(false, layoutFactor)
 
   return (
     <div className="flex w-[42vw] max-w-[9.5rem] shrink-0 flex-col overflow-hidden rounded-2xl bg-white sm:w-36">
       {photo ? (
         <button
           type="button"
-          className="relative mx-auto flex aspect-[4/5] w-full min-h-[48px] shrink-0 touch-manipulation items-center justify-center active:bg-zinc-50"
+          className={cn(
+            CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+            'min-h-[48px] w-full touch-manipulation active:bg-zinc-50'
+          )}
+          style={frameStyle}
           aria-label="Ver foto ampliada"
           onClick={() => onPhotoClick?.(photo, name)}
         >
           <CartaMenuProductPhoto src={photo} scale={row.carta_photo_scale} isDrink={false} />
         </button>
       ) : (
-        <div className="relative mx-auto aspect-[4/5] w-full shrink-0 bg-zinc-50" aria-hidden />
+        <div
+          className={cn(CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS, 'w-full bg-zinc-50')}
+          style={frameStyle}
+          aria-hidden
+        />
       )}
       <p
         className="line-clamp-3 px-1.5 pb-1.5 pt-0.5 text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"

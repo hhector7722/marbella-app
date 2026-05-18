@@ -11,9 +11,10 @@ import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
 import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
-  CARTA_DEFAULT_PHOTO_FRAME_CLASS,
-  CARTA_DRINK_PHOTO_FRAME_CLASS,
+  CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
   type CartaPhotoScale,
+  getCartaProductPhotoFrameStyle,
+  getCartaProductPhotoScaleFactor,
   isCartaDrinksSection,
   normalizeCartaPhotoScale,
 } from '@/lib/carta-product-photo'
@@ -193,9 +194,8 @@ export function MenuItemEditModal({
     previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
 
   const previewIsDrink = isCartaDrinksSection(previewParentName)
-  const previewFrameClass = previewIsDrink
-    ? CARTA_DRINK_PHOTO_FRAME_CLASS
-    : CARTA_DEFAULT_PHOTO_FRAME_CLASS
+  const previewLayoutFactor = getCartaProductPhotoScaleFactor(photoScale, previewIsDrink)
+  const previewFrameStyle = getCartaProductPhotoFrameStyle(previewIsDrink, previewLayoutFactor)
   const hasPhoto = Boolean(displayPhotoSrc?.trim())
 
   return (
@@ -328,7 +328,11 @@ export function MenuItemEditModal({
                   </div>
                   <div className="mt-2 flex justify-center">
                     <div
-                      className={cn(previewFrameClass, 'w-[min(42vw,7.5rem)] border border-zinc-100')}
+                      className={cn(
+                        CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+                        'w-[min(42vw,7.5rem)] border border-zinc-100'
+                      )}
+                      style={previewFrameStyle}
                       aria-live="polite"
                     >
                       <CartaMenuProductPhoto

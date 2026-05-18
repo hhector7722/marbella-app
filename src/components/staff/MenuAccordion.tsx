@@ -33,9 +33,13 @@ import {
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
 import {
-    CARTA_DEFAULT_PHOTO_FRAME_CLASS,
-    CARTA_DRINK_PHOTO_FRAME_CLASS,
+    CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
     type CartaPhotoScale,
+    type CartaProductGridRowDensity,
+    cartaProductGridRowDensity,
+    chunkCartaProductGridRows,
+    getCartaProductPhotoFrameStyle,
+    getCartaProductPhotoScaleFactor,
     isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 
@@ -221,6 +225,7 @@ function MenuCard({
     onToggleProductActive,
     productToggleBusyId,
     onReorderTap,
+    rowDensity = 'normal',
 }: {
     row: DigitalMenuRow
     lang: CartaLang
@@ -232,6 +237,8 @@ function MenuCard({
     productToggleBusyId?: number | null
     /** Clic en foto en modo reordenar platos (misma lógica que la tarjeta). */
     onReorderTap?: (articuloId: number) => void
+    /** Densidad vertical de la fila del grid (3 productos): compacta gaps si todas las fotos son S/M. */
+    rowDensity?: CartaProductGridRowDensity
 }) {
     const [lightboxOpen, setLightboxOpen] = useState(false)
     const priceStr = formatPriceDisplay(row.precio)
@@ -247,25 +254,37 @@ function MenuCard({
     }, [editMode])
 
     const isDrink = isCartaDrinksSection(row.category_parent_name)
-    const frameClass = isDrink ? CARTA_DRINK_PHOTO_FRAME_CLASS : CARTA_DEFAULT_PHOTO_FRAME_CLASS
+    const layoutFactor = getCartaProductPhotoScaleFactor(row.carta_photo_scale, isDrink)
+    const frameStyle = getCartaProductPhotoFrameStyle(isDrink, layoutFactor)
 
     return (
         <div
             className={cn(
-                'flex min-w-0 flex-col items-center gap-1 overflow-hidden rounded-2xl bg-white sm:gap-1.5',
+                'flex min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
+                rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
+                rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
+                rowDensity === 'normal' && 'gap-1 sm:gap-1.5',
                 editMode && !isActive && 'opacity-75'
             )}
         >
-            <div className="flex w-full flex-col items-center px-1 pt-1 sm:px-1.5 sm:pt-1.5">
+            <div
+                className={cn(
+                    'flex w-full flex-col items-center',
+                    rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
+                    rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
+                    rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
+                )}
+            >
                 {row.photo_url ? (
                     <div className="relative w-full shrink-0">
                         <button
                             type="button"
                             className={cn(
-                                frameClass,
+                                CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
                                 'touch-manipulation active:bg-zinc-50',
                                 productReorderMode && onReorderTap ? 'cursor-pointer' : editMode ? 'cursor-default' : 'cursor-zoom-in'
                             )}
+                            style={frameStyle}
                             aria-label={
                                 productReorderMode && onReorderTap
                                     ? 'Seleccionar para reordenar'
@@ -325,13 +344,20 @@ function MenuCard({
                         ) : null}
                     </div>
                 ) : (
-                    <div className={frameClass} aria-hidden />
+                    <div
+                        className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS}
+                        style={frameStyle}
+                        aria-hidden
+                    />
                 )}
             </div>
 
             <div
                 className={cn(
-                    'flex min-h-0 w-full flex-1 flex-col items-center gap-1 px-2 pb-2 pt-0 sm:gap-1.5',
+                    'flex min-h-0 w-full flex-1 flex-col items-center pt-0',
+                    rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
+                    rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
+                    rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5',
                     editMode && onEditProduct && !productReorderMode && 'cursor-pointer touch-manipulation active:bg-zinc-50'
                 )}
                 role={editMode && onEditProduct && !productReorderMode ? 'button' : undefined}
@@ -1245,8 +1271,20 @@ export function MenuAccordion({
                                                         orderedIds={productIdsDraft}
                                                     />
                                                 ) : (
-                                                <div className="grid grid-cols-3 items-start gap-x-2 gap-y-2.5 md:gap-x-3 md:gap-y-3">
-                                                    {sub.rows.map((row) => {
+                                                <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
+                                                    {chunkCartaProductGridRows(sub.rows, 3).map((chunk, chunkIdx) => {
+                                                        const rowDensity = cartaProductGridRowDensity(chunk)
+                                                        return (
+                                                            <div
+                                                                key={chunkIdx}
+                                                                className={cn(
+                                                                    'grid grid-cols-3 items-start gap-x-2 md:gap-x-3',
+                                                                    rowDensity === 'compact' && 'gap-y-0',
+                                                                    rowDensity === 'cozy' && 'gap-y-1',
+                                                                    rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
+                                                                )}
+                                                            >
+                                                                {chunk.map((row) => {
                                                         const picked =
                                                             reorderPick === String(row.articulo_id)
                                                         return (
@@ -1283,7 +1321,11 @@ export function MenuAccordion({
                                                                         productToggleBusyId
                                                                     }
                                                                     onReorderTap={handleProductReorderTap}
+                                                                    rowDensity={rowDensity}
                                                                 />
+                                                            </div>
+                                                        )
+                                                    })}
                                                             </div>
                                                         )
                                                     })}
@@ -1317,8 +1359,23 @@ export function MenuAccordion({
                                                     />
                                                 )
                                             ) : (
-                                                <div className="grid grid-cols-3 items-start gap-x-2 gap-y-2.5 md:gap-x-3 md:gap-y-3">
-                                                    {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => (
+                                                <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
+                                                    {chunkCartaProductGridRows(
+                                                        mergeEnteroMedioForCartaDisplay(sub.rows),
+                                                        3
+                                                    ).map((chunk, chunkIdx) => {
+                                                        const rowDensity = cartaProductGridRowDensity(chunk)
+                                                        return (
+                                                            <div
+                                                                key={chunkIdx}
+                                                                className={cn(
+                                                                    'grid grid-cols-3 items-start gap-x-2 md:gap-x-3',
+                                                                    rowDensity === 'compact' && 'gap-y-0',
+                                                                    rowDensity === 'cozy' && 'gap-y-1',
+                                                                    rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
+                                                                )}
+                                                            >
+                                                                {chunk.map((row) => (
                                                         <div key={row.articulo_id} className="h-full">
                                                             <MenuCard
                                                                 row={row}
@@ -1331,9 +1388,13 @@ export function MenuAccordion({
                                                                 productToggleBusyId={
                                                                     productToggleBusyId
                                                                 }
+                                                                rowDensity={rowDensity}
                                                             />
                                                         </div>
                                                     ))}
+                                                            </div>
+                                                        )
+                                                    })}
                                                 </div>
                                             )}
                                         </section>
