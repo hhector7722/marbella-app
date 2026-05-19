@@ -23,6 +23,14 @@ export type MenuOverrideUpsertInput = {
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
   carta_photo_scale: CartaPhotoScale
+  carta_dual_racion_enabled: boolean
+  override_precio_medio: number | null
+  carta_racion_entero_es: string | null
+  carta_racion_entero_ca: string | null
+  carta_racion_entero_en: string | null
+  carta_racion_medio_es: string | null
+  carta_racion_medio_ca: string | null
+  carta_racion_medio_en: string | null
 }>
 
 async function requireManager() {
@@ -64,6 +72,14 @@ type OverrideRow = {
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
   carta_photo_scale: CartaPhotoScale
+  carta_dual_racion_enabled: boolean
+  override_precio_medio: number | null
+  carta_racion_entero_es: string | null
+  carta_racion_entero_ca: string | null
+  carta_racion_entero_en: string | null
+  carta_racion_medio_es: string | null
+  carta_racion_medio_ca: string | null
+  carta_racion_medio_en: string | null
 }
 
 /** Un solo artículo con precio del menú por subcategoría Plato Marbella. */
@@ -144,6 +160,34 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
         : (ex?.carta_photo_scale === 's' || ex?.carta_photo_scale === 'l'
             ? ex.carta_photo_scale
             : 'm'),
+    carta_dual_racion_enabled:
+      'carta_dual_racion_enabled' in input
+        ? Boolean(input.carta_dual_racion_enabled)
+        : (ex?.carta_dual_racion_enabled ?? false),
+    override_precio_medio:
+      'override_precio_medio' in input ? input.override_precio_medio! : (ex?.override_precio_medio ?? null),
+    carta_racion_entero_es:
+      'carta_racion_entero_es' in input ? input.carta_racion_entero_es! : (ex?.carta_racion_entero_es ?? null),
+    carta_racion_entero_ca:
+      'carta_racion_entero_ca' in input ? input.carta_racion_entero_ca! : (ex?.carta_racion_entero_ca ?? null),
+    carta_racion_entero_en:
+      'carta_racion_entero_en' in input ? input.carta_racion_entero_en! : (ex?.carta_racion_entero_en ?? null),
+    carta_racion_medio_es:
+      'carta_racion_medio_es' in input ? input.carta_racion_medio_es! : (ex?.carta_racion_medio_es ?? null),
+    carta_racion_medio_ca:
+      'carta_racion_medio_ca' in input ? input.carta_racion_medio_ca! : (ex?.carta_racion_medio_ca ?? null),
+    carta_racion_medio_en:
+      'carta_racion_medio_en' in input ? input.carta_racion_medio_en! : (ex?.carta_racion_medio_en ?? null),
+  }
+
+  if (!merged.carta_dual_racion_enabled) {
+    merged.override_precio_medio = null
+    merged.carta_racion_entero_es = null
+    merged.carta_racion_entero_ca = null
+    merged.carta_racion_entero_en = null
+    merged.carta_racion_medio_es = null
+    merged.carta_racion_medio_ca = null
+    merged.carta_racion_medio_en = null
   }
 
   let cartaPhotoScalePersisted = true
@@ -151,17 +195,30 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     .from('digital_menu_overrides')
     .upsert(merged, { onConflict: 'articulo_id', ignoreDuplicates: false })
 
-  if (
-    error &&
-    /carta_photo_scale/i.test(error.message) &&
-    /does not exist|could not find the/i.test(error.message)
-  ) {
-    cartaPhotoScalePersisted = false
-    const { carta_photo_scale: _drop, ...withoutScale } = merged
-    const retry = await supabase
-      .from('digital_menu_overrides')
-      .upsert(withoutScale, { onConflict: 'articulo_id', ignoreDuplicates: false })
-    error = retry.error
+  if (error) {
+    const msg = error.message ?? ''
+    if (/carta_photo_scale/i.test(msg) && /does not exist|could not find the/i.test(msg)) {
+      cartaPhotoScalePersisted = false
+      const { carta_photo_scale: _drop, ...withoutScale } = merged
+      ;({ error } = await supabase
+        .from('digital_menu_overrides')
+        .upsert(withoutScale, { onConflict: 'articulo_id', ignoreDuplicates: false }))
+    } else if (/carta_dual_racion|override_precio_medio|carta_racion_/i.test(msg)) {
+      const {
+        carta_dual_racion_enabled: _d,
+        override_precio_medio: _pm,
+        carta_racion_entero_es: _ees,
+        carta_racion_entero_ca: _eca,
+        carta_racion_entero_en: _een,
+        carta_racion_medio_es: _mes,
+        carta_racion_medio_ca: _mca,
+        carta_racion_medio_en: _men,
+        ...withoutDual
+      } = merged
+      ;({ error } = await supabase
+        .from('digital_menu_overrides')
+        .upsert(withoutDual, { onConflict: 'articulo_id', ignoreDuplicates: false }))
+    }
   }
 
   if (error) {
@@ -171,6 +228,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
 
   revalidatePath('/dashboard/carta')
   revalidatePath('/staff/carta')
+  revalidatePath('/carta')
   return { success: true as const, carta_photo_scale_persisted: cartaPhotoScalePersisted }
 }
 
@@ -432,62 +490,5 @@ export async function setMenuItemSortOrders(input: MenuItemSortOrderInput[]) {
   revalidatePath('/staff/carta')
   revalidatePath('/carta')
   return { success: true as const }
-}
-
-export type CartaUiLabelsUpsertInput = {
-  racion_entero_es: string
-  racion_entero_ca: string
-  racion_entero_en: string
-  racion_medio_es: string
-  racion_medio_ca: string
-  racion_medio_en: string
-}
-
-function trimLabel(s: string, field: string): { ok: true; value: string } | { ok: false; message: string } {
-  const t = s.trim()
-  if (!t) return { ok: false, message: `${field} no puede estar vacío` }
-  if (t.length > 32) return { ok: false, message: `${field}: máximo 32 caracteres` }
-  return { ok: true, value: t }
-}
-
-export async function upsertCartaUiLabelsAction(input: CartaUiLabelsUpsertInput) {
-  const gate = await requireManager()
-  if (!gate.ok) return { ok: false as const, message: gate.error }
-
-  const eEs = trimLabel(input.racion_entero_es, 'Entero (ES)')
-  const eCa = trimLabel(input.racion_entero_ca, 'Entero (CA)')
-  const eEn = trimLabel(input.racion_entero_en, 'Entero (EN)')
-  const mEs = trimLabel(input.racion_medio_es, 'Medio (ES)')
-  const mCa = trimLabel(input.racion_medio_ca, 'Medio (CA)')
-  const mEn = trimLabel(input.racion_medio_en, 'Medio (EN)')
-  for (const f of [eEs, eCa, eEn, mEs, mCa, mEn]) {
-    if (!f.ok) return { ok: false as const, message: f.message }
-  }
-  if (!eEs.ok || !eCa.ok || !eEn.ok || !mEs.ok || !mCa.ok || !mEn.ok) {
-    return { ok: false as const, message: 'Validación de etiquetas fallida' }
-  }
-
-  const { error } = await gate.supabase.from('carta_ui_labels').upsert(
-    {
-      id: 'default',
-      racion_entero_es: eEs.value,
-      racion_entero_ca: eCa.value,
-      racion_entero_en: eEn.value,
-      racion_medio_es: mEs.value,
-      racion_medio_ca: mCa.value,
-      racion_medio_en: mEn.value,
-    },
-    { onConflict: 'id' }
-  )
-
-  if (error) {
-    console.error('upsertCartaUiLabelsAction:', error)
-    return { ok: false as const, message: error.message }
-  }
-
-  revalidatePath('/dashboard/carta')
-  revalidatePath('/staff/carta')
-  revalidatePath('/carta')
-  return { ok: true as const }
 }
 

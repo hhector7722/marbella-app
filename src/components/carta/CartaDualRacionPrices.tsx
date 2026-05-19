@@ -1,12 +1,11 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { type CartaLang } from '@/lib/carta-menu-i18n'
-import { useCartaRacionLabels } from '@/lib/carta-racion-labels-context'
 import { formatCartaPrice, formatCartaPriceAriaAmount } from '@/lib/carta-price-display'
 
 type CartaDualRacionPricesProps = {
-  lang: CartaLang
+  racionEntero: string
+  racionMedio: string
   precio: number | string | null | undefined
   precioMedio?: number | string | null | undefined
   variant?: 'public' | 'staff'
@@ -24,12 +23,12 @@ function buildDualRacionAriaLabel(
 }
 
 export function CartaDualRacionPrices({
-  lang,
+  racionEntero,
+  racionMedio,
   precio,
   precioMedio,
   variant = 'public',
 }: CartaDualRacionPricesProps) {
-  const t = useCartaRacionLabels(lang)
   const priceStr = formatCartaPrice(precio)
   const priceMedioStr = formatCartaPrice(precioMedio ?? null)
   const showPrice = priceStr.trim() !== ''
@@ -59,7 +58,7 @@ export function CartaDualRacionPrices({
   }
 
   if (showPrice && showMedio) {
-    const ariaLabel = buildDualRacionAriaLabel(t, precio, precioMedio)
+    const ariaLabel = buildDualRacionAriaLabel({ racionEntero, racionMedio }, precio, precioMedio)
     return (
       <div
         role="group"
@@ -73,7 +72,7 @@ export function CartaDualRacionPrices({
             enteroSizeClass
           )}
         >
-          <span className="font-bold">{t.racionEntero}</span>
+          <span className="font-bold">{racionEntero}</span>
           <span className="mx-0.5 font-normal opacity-70" aria-hidden>
             ·
           </span>
@@ -86,7 +85,7 @@ export function CartaDualRacionPrices({
             medioSizeClass
           )}
         >
-          <span className="font-bold">{t.racionMedio}</span>
+          <span className="font-bold">{racionMedio}</span>
           <span className="mx-0.5 font-normal opacity-70" aria-hidden>
             ·
           </span>

@@ -3,14 +3,15 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 
 import { StaffCartaView } from '@/components/staff/StaffCartaView';
-import { fetchCartaUiLabels } from '@/lib/carta-ui-labels';
 
 import type { DigitalMenuRow } from '@/components/staff/MenuAccordion';
 
 import { resolveMenuCategoryCoverById, splitMenuCategoryCovers } from '@/lib/carta-category-covers';
 import {
     CARTA_DIGITAL_MENU_COLUMNS,
+    CARTA_DIGITAL_MENU_COLUMNS_BASE,
     CARTA_DIGITAL_MENU_COLUMNS_WITH_SCALE,
+    isCartaDualRacionColumnError,
     isCartaPhotoScaleColumnError,
 } from '@/lib/carta-menu-select';
 
@@ -158,8 +159,9 @@ export default async function StaffCartaPage() {
     if (error && isCartaPhotoScaleColumnError(error.message)) {
         ({ data, error } = await menuOrder(CARTA_DIGITAL_MENU_COLUMNS));
     }
-
-    const cartaUiLabels = await fetchCartaUiLabels(supabase);
+    if (error && isCartaDualRacionColumnError(error.message)) {
+        ({ data, error } = await menuOrder(CARTA_DIGITAL_MENU_COLUMNS_BASE));
+    }
 
     if (error) {
 
@@ -216,8 +218,6 @@ export default async function StaffCartaPage() {
             canEditMenu={canEditMenu}
 
             canOpenMapeo={canOpenMapeo}
-
-            cartaUiLabels={cartaUiLabels}
 
         />
 

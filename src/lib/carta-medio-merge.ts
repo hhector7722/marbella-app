@@ -8,6 +8,9 @@ export type CartaMedioMergeRow = {
   category_child_id: string | null
   tpv_factor_porcion?: number | null
   precio: number | string | null
+  /** Configuración explícita en editor de carta (digital_menu_overrides). */
+  carta_dual_racion_enabled?: boolean | null
+  override_precio_medio?: number | string | null
   /**
    * Nombre “estable” del artículo en carta.
    * Se usa solo como fallback de merge cuando `recipe_id` no permite emparejar
@@ -97,6 +100,41 @@ export function mergeEnteroMedioForCartaDisplay<T extends CartaMedioMergeRow>(ro
     const parent = (a.category_parent_name ?? '').trim()
     if (!CARTA_MEDIO_MERGE_PARENT_NAMES.has(parent)) {
       out.push(a as CartaMedioMerged<T>)
+      continue
+    }
+
+    if (a.carta_dual_racion_enabled) {
+      const pMedio = parsePriceNumber(a.override_precio_medio)
+      out.push({
+        ...a,
+        precio_medio_display: pMedio != null && pMedio > 0 ? pMedio : null,
+      } as CartaMedioMerged<T>)
+      for (let j = 0; j < rows.length; j++) {
+        if (j === i) continue
+        const b = rows[j]!
+        if (consumed.has(b.articulo_id)) continue
+        if ((b.category_parent_name ?? '').trim() !== parent) continue
+        if (b.category_child_id !== a.category_child_id) continue
+        const aKey = fallbackPairKey(a)
+        const bKey = fallbackPairKey(b)
+        if (aKey && bKey && aKey === bKey) {
+          consumed.add(b.articulo_id)
+        }
+        if (
+          a.recipe_id &&
+          b.recipe_id &&
+          String(a.recipe_id).trim() !== '' &&
+          pairKey(b) === pairKey(a)
+        ) {
+          const aIsEntero = isEnteroFactor(a.tpv_factor_porcion)
+          const aIsMedio = isMedioFactor(a.tpv_factor_porcion)
+          const bIsEntero = isEnteroFactor(b.tpv_factor_porcion)
+          const bIsMedio = isMedioFactor(b.tpv_factor_porcion)
+          if ((aIsEntero && bIsMedio) || (aIsMedio && bIsEntero)) {
+            consumed.add(b.articulo_id)
+          }
+        }
+      }
       continue
     }
 

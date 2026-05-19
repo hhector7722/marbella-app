@@ -19,6 +19,7 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
+import { resolveCartaDualRacionLabels } from '@/lib/carta-dual-racion'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
@@ -47,6 +48,14 @@ export type PublicMenuRow = {
   precio: number | string | null
   /** Par entero/medio fusionado (solo presentación). */
   precio_medio_display?: number | string | null
+  carta_dual_racion_enabled?: boolean | null
+  override_precio_medio?: number | string | null
+  carta_racion_entero_es?: string | null
+  carta_racion_entero_ca?: string | null
+  carta_racion_entero_en?: string | null
+  carta_racion_medio_es?: string | null
+  carta_racion_medio_ca?: string | null
+  carta_racion_medio_en?: string | null
   photo_url: string | null
   carta_photo_scale?: CartaPhotoScale | string | null
   sort_order: number | null
@@ -519,7 +528,7 @@ export function PublicCarta({
                                   {getCartaDisplayName(row, lang)}
                                 </p>
                                 <CartaDualRacionPrices
-                                  lang={lang}
+                                  {...resolveCartaDualRacionLabels(row, lang)}
                                   precio={row.precio}
                                   precioMedio={row.precio_medio_display}
                                   variant="public"

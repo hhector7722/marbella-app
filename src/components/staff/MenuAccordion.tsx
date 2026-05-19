@@ -6,6 +6,7 @@ import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCa
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
+import { resolveCartaDualRacionLabels } from '@/lib/carta-dual-racion'
 import { cn } from '@/lib/utils'
 import { Check, Circle, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
@@ -79,6 +80,14 @@ export type DigitalMenuRow = {
     precio: number | string | null
     /** Par entero/medio fusionado (solo UI): precio del artículo medio. */
     precio_medio_display?: number | string | null
+    carta_dual_racion_enabled?: boolean | null
+    override_precio_medio?: number | string | null
+    carta_racion_entero_es?: string | null
+    carta_racion_entero_ca?: string | null
+    carta_racion_entero_en?: string | null
+    carta_racion_medio_es?: string | null
+    carta_racion_medio_ca?: string | null
+    carta_racion_medio_en?: string | null
     photo_url: string | null
     carta_photo_scale?: CartaPhotoScale | string | null
     /** `digital_menu_overrides.sort_order` (orden dentro de la subcategoría en carta). */
@@ -386,7 +395,7 @@ function MenuCard({
                     {displayName}
                 </p>
                 <CartaDualRacionPrices
-                    lang={lang}
+                    {...resolveCartaDualRacionLabels(row, lang)}
                     precio={row.precio}
                     precioMedio={row.precio_medio_display}
                     variant="staff"

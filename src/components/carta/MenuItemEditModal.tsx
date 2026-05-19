@@ -8,6 +8,8 @@ import { createClient } from '@/utils/supabase/client'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
+import { isCartaDualRacionParentCategory } from '@/lib/carta-dual-racion'
+import { tPublicUi } from '@/lib/carta-menu-i18n'
 import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import {
@@ -58,6 +60,16 @@ export function MenuItemEditModal({
   const [platoSlot, setPlatoSlot] = useState<'' | PlatoMarbellaSlotValue>('')
   const [platoMenuPrice, setPlatoMenuPrice] = useState(false)
   const [photoScale, setPhotoScale] = useState<CartaPhotoScale>('m')
+  const [dualRacionEnabled, setDualRacionEnabled] = useState(false)
+  const [precioEntero, setPrecioEntero] = useState('')
+  const [precioMedio, setPrecioMedio] = useState('')
+  const [labelEnteroEs, setLabelEnteroEs] = useState('')
+  const [labelEnteroCa, setLabelEnteroCa] = useState('')
+  const [labelEnteroEn, setLabelEnteroEn] = useState('')
+  const [labelMedioEs, setLabelMedioEs] = useState('')
+  const [labelMedioCa, setLabelMedioCa] = useState('')
+  const [labelMedioEn, setLabelMedioEn] = useState('')
+  const [tpvPrecioBase, setTpvPrecioBase] = useState<string | null>(null)
 
   const platoMarbellaCategoryId = useMemo(
     () => categories.find((c) => c.slug === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null,
@@ -67,6 +79,7 @@ export function MenuItemEditModal({
     platoMarbellaCategoryId && categoryId === platoMarbellaCategoryId
   )
   const platoUi = tPlatoMarbellaUi('es' satisfies CartaLang)
+  const dualUi = tPublicUi('es')
 
   const categoryOptions = useMemo(() => {
     const parents = categories
@@ -107,7 +120,7 @@ export function MenuItemEditModal({
         const [mapRes, recipeRes, overrideResWithScale, overrideResBase] = await Promise.all([
           supabase
             .from('bdp_articulos')
-            .select('id, nombre')
+            .select('id, nombre, precio_base')
             .eq('id', articuloId)
             .maybeSingle(),
           supabase
@@ -118,14 +131,14 @@ export function MenuItemEditModal({
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price, override_precio, override_precio_medio, carta_dual_racion_enabled, carta_racion_entero_es, carta_racion_entero_ca, carta_racion_entero_en, carta_racion_medio_es, carta_racion_medio_ca, carta_racion_medio_en'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price, override_precio, override_precio_medio, carta_dual_racion_enabled, carta_racion_entero_es, carta_racion_entero_ca, carta_racion_entero_en, carta_racion_medio_es, carta_racion_medio_ca, carta_racion_medio_en'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
@@ -139,6 +152,8 @@ export function MenuItemEditModal({
         if (recipeRes.error) throw recipeRes.error
         if (overrideRes.error) throw overrideRes.error
         setTpvName(mapRes.data?.nombre ?? `#${articuloId}`)
+        const pb = mapRes.data?.precio_base
+        setTpvPrecioBase(pb != null && String(pb).trim() !== '' ? String(pb) : null)
         setCategoryId(overrideRes.data?.category_id ?? '')
         setNameEs((overrideRes.data?.override_nombre_es ?? '').trim())
         setNameCa((overrideRes.data?.override_nombre_ca ?? '').trim())
@@ -161,6 +176,24 @@ export function MenuItemEditModal({
             (overrideRes.data as { carta_photo_scale?: string | null } | null)?.carta_photo_scale
           )
         )
+        const ovData = overrideRes.data as Record<string, unknown> | null
+        setDualRacionEnabled(Boolean(ovData?.carta_dual_racion_enabled))
+        const op = ovData?.override_precio
+        setPrecioEntero(
+          op != null && String(op).trim() !== ''
+            ? String(op)
+            : pb != null && String(pb).trim() !== ''
+              ? String(pb)
+              : ''
+        )
+        const opm = ovData?.override_precio_medio
+        setPrecioMedio(opm != null && String(opm).trim() !== '' ? String(opm) : '')
+        setLabelEnteroEs(String(ovData?.carta_racion_entero_es ?? '').trim())
+        setLabelEnteroCa(String(ovData?.carta_racion_entero_ca ?? '').trim())
+        setLabelEnteroEn(String(ovData?.carta_racion_entero_en ?? '').trim())
+        setLabelMedioEs(String(ovData?.carta_racion_medio_es ?? '').trim())
+        setLabelMedioCa(String(ovData?.carta_racion_medio_ca ?? '').trim())
+        setLabelMedioEn(String(ovData?.carta_racion_medio_en ?? '').trim())
         if (previewBlobUrl) {
           URL.revokeObjectURL(previewBlobUrl)
           setPreviewBlobUrl(null)
@@ -187,6 +220,8 @@ export function MenuItemEditModal({
     if (!cat.parent_id) return cat.name
     return categories.find((c) => c.id === cat.parent_id)?.name ?? null
   }, [categoryId, categories])
+
+  const isDualRacionCategory = isCartaDualRacionParentCategory(previewParentName)
 
   if (!open || articuloId == null) return null
 
@@ -401,6 +436,88 @@ export function MenuItemEditModal({
                 </select>
               </label>
 
+              {isDualRacionCategory ? (
+                <div className="mt-3 space-y-3 rounded-xl border border-[#36606F]/20 bg-[#36606F]/5 p-3">
+                  <label className="flex min-h-[48px] cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={dualRacionEnabled}
+                      onChange={(e) => setDualRacionEnabled(e.target.checked)}
+                      className="h-5 w-5 shrink-0 rounded border-zinc-300"
+                    />
+                    <span className="text-sm font-bold text-zinc-900">
+                      Mostrar precio entero y medio en carta
+                    </span>
+                  </label>
+                  {dualRacionEnabled ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="block space-y-1">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">
+                            Precio {dualUi.racionEntero}
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={precioEntero}
+                            onChange={(e) => setPrecioEntero(e.target.value)}
+                            placeholder={tpvPrecioBase ?? '0.00'}
+                            className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm font-bold"
+                          />
+                        </label>
+                        <label className="block space-y-1">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">
+                            Precio {dualUi.racionMedio}
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={precioMedio}
+                            onChange={(e) => setPrecioMedio(e.target.value)}
+                            placeholder="0.00"
+                            className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm font-bold"
+                          />
+                        </label>
+                      </div>
+                      <p className="text-[11px] font-semibold text-zinc-600">
+                        Etiquetas en carta (vacío = texto por defecto del idioma).
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(
+                          [
+                            ['ES', labelEnteroEs, setLabelEnteroEs, labelMedioEs, setLabelMedioEs],
+                            ['CA', labelEnteroCa, setLabelEnteroCa, labelMedioCa, setLabelMedioCa],
+                            ['EN', labelEnteroEn, setLabelEnteroEn, labelMedioEn, setLabelMedioEn],
+                          ] as const
+                        ).map(([langCode, enteroVal, setEntero, medioVal, setMedio]) => (
+                          <div key={langCode} className="space-y-1.5 rounded-lg border border-zinc-100 bg-white p-2">
+                            <p className="text-center text-[10px] font-black uppercase text-zinc-500">{langCode}</p>
+                            <input
+                              type="text"
+                              value={enteroVal}
+                              onChange={(e) => setEntero(e.target.value)}
+                              placeholder={dualUi.racionEntero}
+                              maxLength={32}
+                              className="min-h-[40px] w-full rounded-lg border border-zinc-200 px-2 text-xs font-bold"
+                              aria-label={`${dualUi.racionEntero} ${langCode}`}
+                            />
+                            <input
+                              type="text"
+                              value={medioVal}
+                              onChange={(e) => setMedio(e.target.value)}
+                              placeholder={dualUi.racionMedio}
+                              maxLength={32}
+                              className="min-h-[40px] w-full rounded-lg border border-zinc-200 px-2 text-xs font-bold"
+                              aria-label={`${dualUi.racionMedio} ${langCode}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+
               {isPlatoMarbellaCategory ? (
                 <div className="mt-3 space-y-3 rounded-xl border border-[#36606F]/20 bg-[#36606F]/5 p-3">
                   <label className="block space-y-1">
@@ -480,6 +597,43 @@ export function MenuItemEditModal({
                         return
                       }
 
+                      const parsePriceInput = (raw: string): number | null => {
+                        const t = raw.trim().replace(',', '.')
+                        if (!t) return null
+                        const n = Number(t)
+                        return Number.isFinite(n) && n >= 0 ? n : null
+                      }
+
+                      let dualPayload: Record<string, unknown> = {
+                        carta_dual_racion_enabled: false,
+                        override_precio_medio: null,
+                        carta_racion_entero_es: null,
+                        carta_racion_entero_ca: null,
+                        carta_racion_entero_en: null,
+                        carta_racion_medio_es: null,
+                        carta_racion_medio_ca: null,
+                        carta_racion_medio_en: null,
+                      }
+                      if (isDualRacionCategory && dualRacionEnabled) {
+                        const pEntero = parsePriceInput(precioEntero)
+                        const pMedio = parsePriceInput(precioMedio)
+                        if (pEntero == null || pEntero <= 0 || pMedio == null || pMedio <= 0) {
+                          toast.error('Indica precio entero y medio mayores que 0')
+                          return
+                        }
+                        dualPayload = {
+                          carta_dual_racion_enabled: true,
+                          override_precio: pEntero,
+                          override_precio_medio: pMedio,
+                          carta_racion_entero_es: labelEnteroEs.trim() || null,
+                          carta_racion_entero_ca: labelEnteroCa.trim() || null,
+                          carta_racion_entero_en: labelEnteroEn.trim() || null,
+                          carta_racion_medio_es: labelMedioEs.trim() || null,
+                          carta_racion_medio_ca: labelMedioCa.trim() || null,
+                          carta_racion_medio_en: labelMedioEn.trim() || null,
+                        }
+                      }
+
                       const res = await upsertMenuOverride({
                         articulo_id: articuloId,
                         override_nombre_es: nameEs.trim() || null,
@@ -497,6 +651,7 @@ export function MenuItemEditModal({
                               plato_marbella_slot: null,
                               plato_marbella_is_menu_price: false,
                             }),
+                        ...dualPayload,
                       })
                       if (!res.success) {
                         toast.error(res.error ?? 'No se pudo guardar el producto')

@@ -1,10 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
-import { CartaUiLabelsProvider } from '@/lib/carta-racion-labels-context'
-import { fetchCartaUiLabels } from '@/lib/carta-ui-labels'
+import { isCartaDualRacionColumnError } from '@/lib/carta-dual-racion'
 import { resolveMenuCategoryCoverById, splitMenuCategoryCovers } from '@/lib/carta-category-covers'
 import {
   CARTA_PUBLIC_MENU_COLUMNS,
+  CARTA_PUBLIC_MENU_COLUMNS_BASE,
   CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE,
   isCartaPhotoScaleColumnError,
 } from '@/lib/carta-menu-select'
@@ -100,8 +100,9 @@ export default async function PublicCartaPage() {
   if (error && isCartaPhotoScaleColumnError(error.message)) {
     ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS))
   }
-
-  const cartaUiLabels = await fetchCartaUiLabels(supabase)
+  if (error && isCartaDualRacionColumnError(error.message)) {
+    ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_BASE))
+  }
 
   if (error) {
     return (
@@ -115,7 +116,6 @@ export default async function PublicCartaPage() {
   }
 
   return (
-    <CartaUiLabelsProvider labels={cartaUiLabels}>
       <PublicCarta
         items={(data ?? []) as unknown as PublicMenuRow[]}
         menuCategories={menuCategories.map((c) => ({
@@ -130,6 +130,5 @@ export default async function PublicCartaPage() {
         backHref={backHref}
         cartaEditHref={cartaEditHref}
       />
-    </CartaUiLabelsProvider>
   )
 }

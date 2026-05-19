@@ -38,6 +38,14 @@ type OverrideRow = {
   plato_marbella_slot?: string | null
   plato_marbella_is_menu_price?: boolean | null
   carta_photo_scale?: string | null
+  carta_dual_racion_enabled?: boolean | null
+  override_precio_medio?: number | string | null
+  carta_racion_entero_es?: string | null
+  carta_racion_entero_ca?: string | null
+  carta_racion_entero_en?: string | null
+  carta_racion_medio_es?: string | null
+  carta_racion_medio_ca?: string | null
+  carta_racion_medio_en?: string | null
 }
 
 type MapRow = {
@@ -360,6 +368,17 @@ export function StaffCartaInlineEditor({
           carta_photo_scale: normalizeCartaPhotoScale(o?.carta_photo_scale),
           sort_order: o?.sort_order ?? null,
           tpv_factor_porcion,
+          carta_dual_racion_enabled: o?.carta_dual_racion_enabled ?? false,
+          override_precio_medio:
+            o?.override_precio_medio != null && String(o.override_precio_medio).trim() !== ''
+              ? Number(o.override_precio_medio)
+              : null,
+          carta_racion_entero_es: o?.carta_racion_entero_es ?? null,
+          carta_racion_entero_ca: o?.carta_racion_entero_ca ?? null,
+          carta_racion_entero_en: o?.carta_racion_entero_en ?? null,
+          carta_racion_medio_es: o?.carta_racion_medio_es ?? null,
+          carta_racion_medio_ca: o?.carta_racion_medio_ca ?? null,
+          carta_racion_medio_en: o?.carta_racion_medio_en ?? null,
         })
       }
 

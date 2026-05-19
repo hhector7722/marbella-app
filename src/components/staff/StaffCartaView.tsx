@@ -10,9 +10,6 @@ import { platoMarbellaCategoryIdFromCatalog } from '@/lib/carta-plato-marbella'
 import Link from 'next/link'
 import { ChevronLeft, Pencil, RefreshCw, X } from 'lucide-react'
 import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
-import { CartaRacionLabelsEditor } from '@/components/carta/CartaRacionLabelsEditor'
-import { CartaUiLabelsProvider } from '@/lib/carta-racion-labels-context'
-import type { CartaUiLabelsRow } from '@/lib/carta-ui-labels'
 
 export function StaffCartaView({
   items,
@@ -21,7 +18,6 @@ export function StaffCartaView({
   categoryCoverScaleById = {},
   canEditMenu,
   canOpenMapeo,
-  cartaUiLabels = null,
 }: {
   items: DigitalMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
@@ -30,14 +26,12 @@ export function StaffCartaView({
   canEditMenu: boolean
   /** Manager/admin: acceso al mapeo TPV en dashboard */
   canOpenMapeo?: boolean
-  cartaUiLabels?: CartaUiLabelsRow | null
 }) {
   const platoMarbellaCategoryId = platoMarbellaCategoryIdFromCatalog(menuCategories)
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const [editing, setEditing] = useState(false)
 
   return (
-    <CartaUiLabelsProvider labels={cartaUiLabels}>
     <div className="flex h-[100dvh] flex-col bg-white text-zinc-900">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
         <header className="shrink-0 bg-white pb-1 pt-1">
@@ -100,10 +94,7 @@ export function StaffCartaView({
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
           {editing && canEditMenu ? (
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-              <CartaRacionLabelsEditor initial={cartaUiLabels} className="mx-0 mb-3 shrink-0 border-0 shadow-none" />
-              <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
-            </div>
+            <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <MenuAccordion
@@ -123,6 +114,5 @@ export function StaffCartaView({
         </div>
       </div>
     </div>
-    </CartaUiLabelsProvider>
   )
 }
