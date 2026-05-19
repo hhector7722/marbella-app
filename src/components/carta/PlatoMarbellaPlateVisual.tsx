@@ -75,8 +75,8 @@ export function PlatoMarbellaPlateVisual({
                 'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 transition-all duration-200 ease-out',
                 region.className,
                 isActive
-                  ? 'z-20 bg-white/75 shadow-[0_0_0_2px_rgba(54,96,111,0.45),inset_0_0_12px_rgba(54,96,111,0.12)]'
-                  : 'bg-transparent hover:bg-white/55 active:bg-white/70'
+                  ? 'z-20 bg-[#36606F]/16'
+                  : 'bg-transparent hover:bg-[#36606F]/8 active:bg-[#36606F]/12'
               )}
               onClick={() => onSlotChange(slot)}
             >

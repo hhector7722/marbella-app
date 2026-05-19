@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { formatCartaPrice } from '@/lib/carta-price-display'
 import { cn } from '@/lib/utils'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { PlatoMarbellaPlateVisual } from '@/components/carta/PlatoMarbellaPlateVisual'
@@ -12,6 +13,7 @@ import {
 } from '@/lib/carta-menu-i18n'
 import {
   groupPlatoMarbellaItems,
+  PLATO_MARBELLA_SLOTS,
   type PlatoMarbellaMenuRow,
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
@@ -22,6 +24,8 @@ import {
   getCartaProductPhotoFrameStyle,
   getCartaProductPhotoScaleFactor,
 } from '@/lib/carta-product-photo'
+
+const PRODUCT_ROW_MIN_REM = 5.25
 
 type OptionRow = PlatoMarbellaMenuRow & CartaNameRow
 
@@ -39,13 +43,15 @@ function OptionGridCard({
   rowFrameStyle: CSSProperties
 }) {
   const name = getCartaDisplayName(row, lang)
+  const priceLabel = formatCartaPrice(row.precio).trim()
+  const showPrice = !row.plato_marbella_is_menu_price && priceLabel.length > 0
   const photo = row.photo_url?.trim() || null
   const layoutFactor = getCartaProductPhotoScaleFactor(row.carta_photo_scale, false)
   const frameStyle = getCartaProductPhotoFrameStyle(false, layoutFactor)
 
   return (
     <div className="flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white">
-      <div className={cn('w-full shrink-0 px-0.5 pt-0.5 sm:px-1')}>
+      <div className={cn('w-full shrink-0 px-0.5 pt-0 sm:px-1')}>
         {photo ? (
           <button
             type="button"
@@ -67,14 +73,24 @@ function OptionGridCard({
           />
         )}
       </div>
-      {!hideName ? (
-        <div className="flex w-full min-w-0 shrink-0 flex-col items-center justify-center px-1 pb-0.5 pt-0">
-          <p
-            className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
-            title={name}
-          >
-            {name}
-          </p>
+      {!hideName || showPrice ? (
+        <div className="flex w-full min-w-0 shrink-0 items-start justify-center gap-1 px-0.5 pb-0 pt-px">
+          {!hideName ? (
+            <p
+              className={cn(
+                'min-w-0 text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]',
+                showPrice ? 'line-clamp-2 flex-1' : 'line-clamp-3 w-full'
+              )}
+              title={name}
+            >
+              {name}
+            </p>
+          ) : null}
+          {showPrice ? (
+            <span className="shrink-0 text-[9px] font-black tabular-nums leading-tight text-[#36606F] sm:text-[10px]">
+              {priceLabel}
+            </span>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -92,32 +108,35 @@ function CenteredProductRow({
 }) {
   const count = chunk.length
   const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
-  const widthClass = count === 1 ? 'w-1/3' : count === 2 ? 'w-2/3' : 'w-full'
   const gridColsClass =
     count === 1 ? 'grid-cols-1' : count === 2 ? 'grid-cols-2' : 'grid-cols-3'
 
-  return (
-    <div className="flex justify-center">
-      <div
-        className={cn(
-          'grid items-stretch gap-x-1.5 gap-y-0 sm:gap-x-2',
-          widthClass,
-          gridColsClass
-        )}
-      >
-        {chunk.map((row) => (
-          <OptionGridCard
-            key={row.articulo_id}
-            row={row}
-            lang={lang}
-            hideName={Boolean(row.plato_marbella_hide_name)}
-            onPhotoClick={onPhotoClick}
-            rowFrameStyle={rowFrameStyle}
-          />
-        ))}
-      </div>
+  const grid = (
+    <div
+      className={cn(
+        'grid items-stretch gap-x-2 gap-y-0 sm:gap-x-2.5',
+        gridColsClass,
+        count === 1 ? 'w-1/3' : 'w-full'
+      )}
+    >
+      {chunk.map((row) => (
+        <OptionGridCard
+          key={row.articulo_id}
+          row={row}
+          lang={lang}
+          hideName={Boolean(row.plato_marbella_hide_name)}
+          onPhotoClick={onPhotoClick}
+          rowFrameStyle={rowFrameStyle}
+        />
+      ))}
     </div>
   )
+
+  if (count === 1) {
+    return <div className="flex justify-center">{grid}</div>
+  }
+
+  return grid
 }
 
 export function PlatoMarbellaMenuView({
@@ -140,6 +159,16 @@ export function PlatoMarbellaMenuView({
 
   const activeRows = grouped.sections[activeSlot]
 
+  const maxProductRows = useMemo(() => {
+    let max = 1
+    for (const slot of PLATO_MARBELLA_SLOTS) {
+      const rowsInSlot = grouped.sections[slot] as OptionRow[]
+      const rowCount = chunkCartaProductGridRows(rowsInSlot, 3).length
+      if (rowCount > max) max = rowCount
+    }
+    return max
+  }, [grouped])
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }, [activeSlot])
@@ -160,6 +189,7 @@ export function PlatoMarbellaMenuView({
       <div
         ref={listRef}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2 pt-0 custom-scrollbar sm:px-3"
+        style={{ minHeight: `${maxProductRows * PRODUCT_ROW_MIN_REM}rem` }}
       >
         {activeRows.length === 0 ? (
           <p className="py-6 text-center text-sm font-medium text-zinc-500">{ui.emptySection}</p>

@@ -11,15 +11,17 @@ export function PlatoMarbellaModalSubheader({
   subTitle?: string | null
   menuPrice: number | null
 }) {
+  const priceLabel = formatPlatoMarbellaMenuPrice(menuPrice)
+
   return (
-    <div className="shrink-0 space-y-0 px-3 pb-0 pt-0 text-center">
+    <div className="flex shrink-0 items-baseline justify-center gap-2 px-3 pb-0 pt-0">
       {subTitle ? (
-        <p className="text-[11px] font-black uppercase leading-none tracking-wide text-[#36606F] sm:text-xs">
+        <p className="min-w-0 text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-xs">
           {subTitle}
         </p>
       ) : null}
-      <p className="text-xl font-black tabular-nums leading-none text-[#36606F] sm:text-2xl -mt-px">
-        {formatPlatoMarbellaMenuPrice(menuPrice)}
+      <p className="shrink-0 text-sm font-black tabular-nums leading-none text-[#36606F] sm:text-[15px]">
+        {priceLabel}
       </p>
     </div>
   )

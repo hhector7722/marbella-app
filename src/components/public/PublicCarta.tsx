@@ -336,7 +336,11 @@ export function PublicCarta({
           <div
             className={cn(
               'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
-              openShowSubPicker ? 'h-auto' : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
+              openShowSubPicker
+                ? 'h-auto'
+                : openPlatoMarbella
+                  ? 'h-[82vh] min-h-0 sm:h-[78vh]'
+                  : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
             )}
             onClick={(e) => e.stopPropagation()}
           >
