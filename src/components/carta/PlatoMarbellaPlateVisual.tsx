@@ -25,7 +25,7 @@ const SLOT_REGION: Record<
 }
 
 const PLATE_LABEL_CLASS =
-  'pointer-events-none absolute inset-x-0.5 text-center font-sans text-[6.5px] font-semibold leading-[1.15] tracking-[0.04em] text-zinc-500 antialiased sm:text-[7px]'
+  'pointer-events-none absolute inset-x-0.5 text-center font-sans text-[8.5px] font-semibold leading-[1.2] tracking-[0.03em] text-zinc-600 antialiased sm:text-[9.5px]'
 
 export function PlatoMarbellaPlateVisual({
   lang,
@@ -72,9 +72,11 @@ export function PlatoMarbellaPlateVisual({
               aria-selected={isActive}
               aria-label={slotLabels[slot]}
               className={cn(
-                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 transition-[background-color] duration-200 ease-out',
+                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 transition-all duration-300 ease-out',
                 region.className,
-                isActive ? 'bg-[#36606F]/10' : 'bg-transparent hover:bg-zinc-100/70 active:bg-zinc-200/50'
+                isActive
+                  ? 'bg-gradient-to-br from-[#36606F]/20 via-[#36606F]/12 to-[#5B8FB9]/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),inset_0_0_0_1px_rgba(54,96,111,0.18)]'
+                  : 'bg-transparent hover:bg-zinc-50/90 active:bg-zinc-100/80'
               )}
               onClick={() => onSlotChange(slot)}
             >
@@ -82,7 +84,7 @@ export function PlatoMarbellaPlateVisual({
                 className={cn(
                   PLATE_LABEL_CLASS,
                   region.labelClass,
-                  isActive ? 'font-bold text-[#36606F]/85' : 'text-zinc-500/90'
+                  isActive ? 'font-bold text-[#36606F]' : 'text-zinc-500'
                 )}
               >
                 {slotLabels[slot]}

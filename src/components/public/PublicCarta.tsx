@@ -33,7 +33,12 @@ import {
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
 import {
+  PlatoMarbellaModalScheduleFooter,
+  PlatoMarbellaModalSubheader,
+} from '@/components/carta/PlatoMarbellaModalChrome'
+import {
   bucketMenuRowForPlatoMarbella,
+  groupPlatoMarbellaItems,
   isPlatoMarbellaMenuSub,
   platoMarbellaCategoryIdFromCatalog,
   type MenuCategoryCatalogEntry,
@@ -206,6 +211,23 @@ export function PublicCarta({
     : undefined
   const openShowSubPicker = openHasMultipleSubs && !openSelectedSubKey
   const openShowSubTabs = openHasMultipleSubs && Boolean(openSelectedSubKey)
+
+  const openActiveSub = useMemo(() => {
+    if (!openGroup || openShowSubPicker) return null
+    if (openHasMultipleSubs) {
+      if (!openSelectedSubKey) return null
+      return openGroup._subList.find((s) => s.key === openSelectedSubKey) ?? null
+    }
+    return openGroup._subList[0] ?? null
+  }, [openGroup, openShowSubPicker, openHasMultipleSubs, openSelectedSubKey])
+
+  const openPlatoMarbella =
+    openActiveSub != null && isPlatoMarbellaSub(openActiveSub.key, openActiveSub.rows)
+
+  const openPlatoMenuPrice = useMemo(() => {
+    if (!openPlatoMarbella || !openActiveSub) return null
+    return groupPlatoMarbellaItems(openActiveSub.rows).menuPrice
+  }, [openPlatoMarbella, openActiveSub])
 
   const subCategoryButtonLabel = (
     sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
@@ -382,12 +404,24 @@ export function PublicCarta({
 
             ) : null}
 
+            {openPlatoMarbella && !openShowSubPicker && openGroup && openActiveSub ? (
+              <PlatoMarbellaModalSubheader
+                subTitle={subCategoryButtonLabel(openActiveSub, openGroup.parentTitleRaw)}
+                menuPrice={openPlatoMenuPrice}
+              />
+            ) : null}
+
             <div
               className={cn(
                 'bg-white',
                 openShowSubPicker
                   ? 'px-2.5 py-3 sm:px-3 sm:py-4'
-                  : 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
+                  : cn(
+                      'min-h-0 flex-1 overflow-y-auto overscroll-contain custom-scrollbar',
+                      openPlatoMarbella
+                        ? 'flex flex-col px-0 pb-0 pt-0 sm:px-0'
+                        : 'px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5'
+                    )
               )}
             >
               {openShowSubPicker ? (
@@ -546,6 +580,9 @@ export function PublicCarta({
                 </div>
               )}
             </div>
+            {openPlatoMarbella && !openShowSubPicker ? (
+              <PlatoMarbellaModalScheduleFooter lang={lang} />
+            ) : null}
           </div>
         </div>
       ) : null}

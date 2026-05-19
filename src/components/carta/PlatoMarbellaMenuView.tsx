@@ -23,11 +23,6 @@ import {
   getCartaProductPhotoScaleFactor,
 } from '@/lib/carta-product-photo'
 
-function formatMenuPrice(precio: number | null) {
-  if (precio == null || precio === 0) return ' '
-  return `${precio.toFixed(2)}€`
-}
-
 type OptionRow = PlatoMarbellaMenuRow & CartaNameRow
 
 function OptionGridCard({
@@ -105,6 +100,46 @@ function OptionGridCard({
   )
 }
 
+function CenteredProductRow({
+  chunk,
+  lang,
+  onPhotoClick,
+}: {
+  chunk: OptionRow[]
+  lang: CartaLang
+  onPhotoClick?: (src: string, alt: string) => void
+}) {
+  const count = chunk.length
+  const rowDensity = 'compact' as const
+  const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
+  const widthClass = count === 1 ? 'w-1/3' : count === 2 ? 'w-2/3' : 'w-full'
+  const gridColsClass =
+    count === 1 ? 'grid-cols-1' : count === 2 ? 'grid-cols-2' : 'grid-cols-3'
+
+  return (
+    <div className="flex justify-center">
+      <div
+        className={cn(
+          'grid items-stretch gap-x-1.5 gap-y-0 sm:gap-x-2',
+          widthClass,
+          gridColsClass
+        )}
+      >
+        {chunk.map((row) => (
+          <OptionGridCard
+            key={row.articulo_id}
+            row={row}
+            lang={lang}
+            onPhotoClick={onPhotoClick}
+            rowFrameStyle={rowFrameStyle}
+            rowDensity={rowDensity}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function PlatoMarbellaMenuView({
   rows,
   lang,
@@ -135,15 +170,9 @@ export function PlatoMarbellaMenuView({
 
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
-      <div className="shrink-0 space-y-1 border-b border-zinc-100 bg-white px-2 pb-2 pt-0.5 sm:px-3">
+      <div className="shrink-0 space-y-1 bg-white px-2 pb-2 pt-0.5 sm:px-3">
         <p className="text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-[13px]">
           {ui.plateTagline}
-        </p>
-        <p className="text-center text-[10px] font-bold uppercase tracking-wide text-[#36606F]/75">
-          {ui.schedule}
-        </p>
-        <p className="text-center text-xl font-black tabular-nums leading-none text-[#36606F] sm:text-2xl">
-          {formatMenuPrice(grouped.menuPrice)}
         </p>
         <PlatoMarbellaPlateVisual lang={lang} activeSlot={activeSlot} onSlotChange={onSlotChange} />
       </div>
@@ -156,27 +185,14 @@ export function PlatoMarbellaMenuView({
           <p className="py-8 text-center text-sm font-medium text-zinc-500">{ui.emptySection}</p>
         ) : (
           <div className="flex flex-col gap-y-1">
-            {chunkCartaProductGridRows(activeRows as OptionRow[], 3).map((chunk, chunkIdx) => {
-              const rowDensity = 'compact' as const
-              const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
-              return (
-                <div
-                  key={chunkIdx}
-                  className="grid grid-cols-3 items-stretch gap-x-1.5 gap-y-0 sm:gap-x-2"
-                >
-                  {chunk.map((row) => (
-                    <OptionGridCard
-                      key={row.articulo_id}
-                      row={row as OptionRow}
-                      lang={lang}
-                      onPhotoClick={onPhotoClick}
-                      rowFrameStyle={rowFrameStyle}
-                      rowDensity={rowDensity}
-                    />
-                  ))}
-                </div>
-              )
-            })}
+            {chunkCartaProductGridRows(activeRows as OptionRow[], 3).map((chunk, chunkIdx) => (
+              <CenteredProductRow
+                key={chunkIdx}
+                chunk={chunk as OptionRow[]}
+                lang={lang}
+                onPhotoClick={onPhotoClick}
+              />
+            ))}
           </div>
         )}
 
@@ -188,16 +204,11 @@ export function PlatoMarbellaMenuView({
             <p className="text-center text-[11px] font-semibold text-amber-800">{ui.unassignedHint}</p>
             <div className="flex flex-col gap-y-2">
               {chunkCartaProductGridRows(grouped.unassigned as OptionRow[], 3).map((chunk, chunkIdx) => (
-                <div key={chunkIdx} className="grid grid-cols-3 gap-2">
-                  {chunk.map((row) => (
-                    <div
-                      key={row.articulo_id}
-                      className="rounded-2xl border border-amber-200 bg-white p-2 text-center text-[10px] font-bold text-zinc-800"
-                    >
-                      {getCartaDisplayName(row as OptionRow, lang)}
-                    </div>
-                  ))}
-                </div>
+                <CenteredProductRow
+                  key={chunkIdx}
+                  chunk={chunk as OptionRow[]}
+                  lang={lang}
+                />
               ))}
             </div>
           </section>

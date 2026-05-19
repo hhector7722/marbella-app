@@ -20,9 +20,14 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
+import {
+    PlatoMarbellaModalScheduleFooter,
+    PlatoMarbellaModalSubheader,
+} from '@/components/carta/PlatoMarbellaModalChrome'
 import { PlatoMarbellaStaffEditor } from '@/components/carta/PlatoMarbellaStaffEditor'
 import {
     bucketMenuRowForPlatoMarbella,
+    groupPlatoMarbellaItems,
     isPlatoMarbellaMenuSub,
     platoMarbellaRowsForReorderSection,
     platoMarbellaCategoryIdFromCatalog,
@@ -652,6 +657,19 @@ export function MenuAccordion({
         openHasMultipleSubs && !openSelectedSubKey && reorderScope !== 'subs'
     const openShowSubTabs =
         openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
+
+    const openPlatoMarbella =
+        modalProductSub != null &&
+        !openShowSubPicker &&
+        isPlatoMarbellaSub(modalProductSub.key, modalProductSub.rows)
+
+    const openPlatoMenuPrice = useMemo(() => {
+        if (!openPlatoMarbella || !modalProductSub) return null
+        return groupPlatoMarbellaItems(modalProductSub.rows).menuPrice
+    }, [openPlatoMarbella, modalProductSub])
+
+    const showPlatoModalChrome =
+        openPlatoMarbella && !openShowSubPicker && reorderScope !== 'products'
 
     useEffect(() => {
         if (reorderScope === 'parents') {
@@ -1309,12 +1327,29 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
+                        {showPlatoModalChrome && openGroup && modalProductSub ? (
+                            <PlatoMarbellaModalSubheader
+                                subTitle={subPickerButtonLabel(
+                                    modalProductSub,
+                                    lang,
+                                    openGroup.parentTitleRaw,
+                                    tPublicUi(lang).uncategorized
+                                )}
+                                menuPrice={openPlatoMenuPrice}
+                            />
+                        ) : null}
+
                         <div
                             className={cn(
                                 'bg-white',
                                 openShowSubPicker
                                     ? 'px-2.5 py-3 sm:px-3 sm:py-4'
-                                    : 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
+                                    : cn(
+                                          'min-h-0 flex-1 overflow-y-auto overscroll-contain custom-scrollbar',
+                                          showPlatoModalChrome
+                                              ? 'flex flex-col px-0 pb-0 pt-0 sm:px-0'
+                                              : 'px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5'
+                                      )
                             )}
                         >
                             {openShowSubPicker ? (
@@ -1503,6 +1538,9 @@ export function MenuAccordion({
                                 </div>
                             )}
                         </div>
+                        {showPlatoModalChrome ? (
+                            <PlatoMarbellaModalScheduleFooter lang={lang} />
+                        ) : null}
                     </div>
                 </div>
             ) : null}

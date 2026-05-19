@@ -187,6 +187,11 @@ export function platoMarbellaSlotsForLang(lang: CartaLang): Record<PlatoMarbella
 }
 
 /** Etiquetas del plato interactivo (breves, legibles en zonas pequeñas). */
+export function formatPlatoMarbellaMenuPrice(precio: number | null): string {
+  if (precio == null || precio === 0) return ' '
+  return `${precio.toFixed(2)}€`
+}
+
 export function platoMarbellaPlateSlotLabels(lang: CartaLang): Record<PlatoMarbellaSlot, string> {
   const dict = {
     es: { entrante: 'Entrante', principal: 'Principal', guarnicion: 'Guarnición' },
