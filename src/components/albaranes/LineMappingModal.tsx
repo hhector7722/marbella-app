@@ -6,6 +6,8 @@ import { Check, Loader2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ALBARAN_LINE_CONTENT_UNITS,
+  isSimpleAlbaranUnitMapping,
+  SIMPLE_ALBARAN_UNIT_DIMENSIONAL,
   suggestedDimensionalMappingFromIngredient,
   type IngredientDimensionalSource,
 } from '@/lib/ingredient-pack-pricing'
@@ -80,6 +82,9 @@ export function LineMappingModal({
   const [ingredientId, setIngredientId] = useState<string | null>(null)
   const [ingredientLabel, setIngredientLabel] = useState<string | null>(null)
   const [ingredientPurchaseUnit, setIngredientPurchaseUnit] = useState<string>('kg')
+  const [selectedIngredientMeta, setSelectedIngredientMeta] =
+    useState<IngredientDimensionalSource | null>(null)
+  const [showAdvancedCalibration, setShowAdvancedCalibration] = useState(false)
   const [factor, setFactor] = useState('1')
   const [dimensional, setDimensional] = useState<LineDimensionalDraft>(EMPTY_DIMENSIONAL)
 
@@ -100,25 +105,40 @@ export function LineMappingModal({
         storedContentQty?: number | null
         storedContentUnit?: string | null
         conversionFactorFallback?: number | null
+        forceAdvanced?: boolean
       }
     ) => {
+      setSelectedIngredientMeta(ing)
       const suggestion = suggestedDimensionalMappingFromIngredient(ing, {
         lineUnitFromInvoice: opts?.lineUnitFromInvoice,
         storedBillingUnit: opts?.storedBillingUnit,
         storedContentQty: opts?.storedContentQty,
         storedContentUnit: opts?.storedContentUnit,
       })
-      setDimensional({
+      let nextDim: LineDimensionalDraft = {
         lineBillingUnit: suggestion.lineBillingUnit,
         lineContentQty: suggestion.lineContentQty,
         lineContentUnit: suggestion.lineContentUnit,
-      })
+      }
       const f =
         suggestion.conversionFactor ??
         (opts?.conversionFactorFallback != null && opts.conversionFactorFallback > 0
           ? opts.conversionFactorFallback
           : null)
-      if (f != null && Number.isFinite(f) && f > 0) setFactor(String(f))
+      let nextFactor =
+        f != null && Number.isFinite(f) && f > 0 ? String(f) : '1'
+
+      const simple = isSimpleAlbaranUnitMapping(ing, nextDim, nextFactor)
+      if (simple && !opts?.forceAdvanced) {
+        nextDim = { ...SIMPLE_ALBARAN_UNIT_DIMENSIONAL }
+        nextFactor = '1'
+        setShowAdvancedCalibration(false)
+      } else {
+        setShowAdvancedCalibration(true)
+      }
+
+      setDimensional(nextDim)
+      setFactor(nextFactor)
       if (ing.purchase_unit) setIngredientPurchaseUnit(String(ing.purchase_unit))
     },
     []
@@ -155,6 +175,8 @@ export function LineMappingModal({
           (pickId ? 'Producto seleccionado' : null)
       )
       if (cand?.purchase_unit) setIngredientPurchaseUnit(cand.purchase_unit)
+      setSelectedIngredientMeta(cand ?? null)
+      setShowAdvancedCalibration(false)
 
       let nextFactor = '1'
       if (suggestedFactor != null && Number.isFinite(suggestedFactor) && suggestedFactor > 0) {
@@ -168,15 +190,16 @@ export function LineMappingModal({
       }
       setFactor(nextFactor)
 
-      if (
+      const hasStoredDimensional =
         line.line_billing_unit ||
         line.line_content_qty != null ||
         line.line_content_unit ||
         lineBillingUnit ||
         lineContentQty != null ||
         lineContentUnit
-      ) {
-        setDimensional({
+
+      if (hasStoredDimensional) {
+        const storedDim: LineDimensionalDraft = {
           lineBillingUnit:
             String(line.line_billing_unit ?? lineBillingUnit ?? line.line_unit ?? '').trim() || '',
           lineContentQty:
@@ -186,7 +209,14 @@ export function LineMappingModal({
                 ? String(lineContentQty)
                 : '',
           lineContentUnit: String(line.line_content_unit ?? lineContentUnit ?? '').trim() || '',
-        })
+        }
+        setDimensional(storedDim)
+        if (cand) {
+          const simpleStored = isSimpleAlbaranUnitMapping(cand, storedDim, nextFactor)
+          setShowAdvancedCalibration(!simpleStored)
+        } else {
+          setShowAdvancedCalibration(true)
+        }
       } else if (pickId && cand) {
         applySuggestion(cand, {
           lineUnitFromInvoice: line.line_unit,
@@ -198,6 +228,7 @@ export function LineMappingModal({
           lineContentQty: '',
           lineContentUnit: '',
         })
+        setSelectedIngredientMeta(null)
       }
     } finally {
       setLoading(false)
@@ -230,8 +261,14 @@ export function LineMappingModal({
 
   const dimensionalParsed = useMemo(() => parseDimensionalPayload(dimensional), [dimensional])
 
+  const isSimpleMode = useMemo(() => {
+    if (!ingredientId || !selectedIngredientMeta || showAdvancedCalibration) return false
+    return isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor)
+  }, [ingredientId, selectedIngredientMeta, showAdvancedCalibration, dimensional, factor])
+
   const canSave = useMemo(() => {
     if (!ingredientId || !invoiceId || supplierId == null) return false
+    if (isSimpleMode) return true
     const f = Number(String(factor).replace(',', '.'))
     if (!Number.isFinite(f) || f <= 0) return false
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
@@ -239,7 +276,7 @@ export function LineMappingModal({
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
     if (!lineContentUnit) return false
     return true
-  }, [ingredientId, invoiceId, supplierId, factor, dimensionalParsed])
+  }, [ingredientId, invoiceId, supplierId, factor, dimensionalParsed, isSimpleMode])
 
   const alreadyMappedSameIngredient = useMemo(() => {
     if (!line || !ingredientId) return false
@@ -260,13 +297,21 @@ export function LineMappingModal({
       return
     }
 
-    const factorNum = Number(String(factor).replace(',', '.'))
+    let factorNum = Number(String(factor).replace(',', '.'))
+    let { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
+
+    if (isSimpleMode && selectedIngredientMeta) {
+      lineBillingUnit = SIMPLE_ALBARAN_UNIT_DIMENSIONAL.lineBillingUnit
+      lineContentQty = 1
+      lineContentUnit = SIMPLE_ALBARAN_UNIT_DIMENSIONAL.lineContentUnit
+      factorNum = 1
+    }
+
     if (!Number.isFinite(factorNum) || factorNum <= 0) {
       toast.error('Factor de conversión inválido.')
       return
     }
 
-    const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
     if (!lineBillingUnit) {
       toast.error('Indica la unidad de facturación (ej. garrafa, caja).')
       return
@@ -348,7 +393,7 @@ export function LineMappingModal({
         <div className="bg-[#36606F] px-4 py-3 flex items-start justify-between gap-3 text-white shrink-0">
           <div className="min-w-0 flex-1">
             <p id="line-mapping-title" className="text-xs font-black uppercase tracking-wider text-white/80">
-              Mapeo y calibración
+              Vincular producto
             </p>
             <p className="text-sm font-black truncate mt-0.5">{headerTitle}</p>
           </div>
@@ -373,9 +418,11 @@ export function LineMappingModal({
             <>
               <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-3">
                 <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
-                  Tarjeta A — El match
+                  Producto en almacén
                 </p>
-                <p className="text-xs font-semibold text-zinc-600 leading-snug">{headerTitle}</p>
+                <p className="text-xs font-semibold text-zinc-600 leading-snug">
+                  Busca el artículo del catálogo que coincide con esta línea del albarán.
+                </p>
 
                 <div className="relative min-h-12">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
@@ -404,6 +451,8 @@ export function LineMappingModal({
                       onClick={() => {
                         setIngredientId(null)
                         setIngredientLabel(null)
+                        setSelectedIngredientMeta(null)
+                        setShowAdvancedCalibration(false)
                       }}
                     >
                       Cambiar
@@ -450,9 +499,36 @@ export function LineMappingModal({
 
               {ingredientId ? (
                 <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
-                    Tarjeta B — La ecuación visual
-                  </p>
+                  {isSimpleMode ? (
+                    <>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+                        Unidades
+                      </p>
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-1">
+                        <p className="text-sm font-black text-emerald-950">
+                          1 unidad en el albarán = 1 unidad en almacén
+                        </p>
+                        <p className="text-xs font-medium text-emerald-900/80 leading-snug">
+                          No hace falta calibrar litros ni cajas: cada línea suma una unidad al stock
+                          (€/ud).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAdvancedCalibration(true)}
+                        className="min-h-12 w-full rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 text-xs font-bold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
+                      >
+                        Caja, litros u otra conversión…
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+                        Conversión albarán → almacén
+                      </p>
+                      <p className="text-xs font-medium text-zinc-600 leading-snug">
+                        Indica qué trae cada unidad de factura (ej. una garrafa contiene 5 litros).
+                      </p>
 
                   <div className="flex flex-wrap items-center gap-2">
                     <input
@@ -500,7 +576,7 @@ export function LineMappingModal({
 
                   <label className="block pt-1">
                     <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
-                      Factor respaldo (legacy)
+                      Factor de conversión (avanzado)
                     </span>
                     <input
                       inputMode="decimal"
@@ -509,6 +585,23 @@ export function LineMappingModal({
                       className="mt-1 w-full min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 text-sm font-bold text-zinc-700 outline-none focus:border-[#36606F]/40"
                     />
                   </label>
+
+                      {selectedIngredientMeta &&
+                      isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor) ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDimensional({ ...SIMPLE_ALBARAN_UNIT_DIMENSIONAL })
+                            setFactor('1')
+                            setShowAdvancedCalibration(false)
+                          }}
+                          className="min-h-12 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
+                        >
+                          Volver a modo unidad simple
+                        </button>
+                      ) : null}
+                    </>
+                  )}
                 </section>
               ) : null}
 

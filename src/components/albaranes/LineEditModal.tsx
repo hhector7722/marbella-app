@@ -192,7 +192,13 @@ export function LineEditModal({
                     Vinculado: <span className="text-[#36606F]">{line.ingredient_name}</span>
                   </p>
                 ) : (
-                  <p className="text-sm font-bold text-rose-700">Sin vínculo con catálogo</p>
+                  <>
+                    <p className="text-sm font-bold text-rose-700">Sin vínculo con catálogo</p>
+                    <p className="text-xs font-medium text-zinc-600 leading-snug">
+                      Elige el producto de almacén que corresponde a esta línea. Si cobráis por unidad
+                      (croissants, botes sueltos…), suele bastar con buscar el nombre y confirmar.
+                    </p>
+                  </>
                 )}
                 <button
                   type="button"
@@ -204,7 +210,7 @@ export function LineEditModal({
                   )}
                 >
                   <Link2 className="h-4 w-4" />
-                  {line.ingredient_id ? 'Ajustar vínculo' : 'Vincular con almacén'}
+                  {line.ingredient_id ? 'Ajustar vínculo' : 'Vincular producto'}
                 </button>
                 {supplierId == null ? (
                   <p className="text-[11px] font-bold text-rose-700">Asigna proveedor al albarán antes de vincular.</p>

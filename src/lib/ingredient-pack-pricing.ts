@@ -168,3 +168,59 @@ export function suggestedDimensionalMappingFromIngredient(
     conversionFactor: suggestedAlbaranConversionFactorFromIngredient(row) ?? 1,
   }
 }
+
+const BILLING_UNIT_UD_HINTS = new Set(['ud', 'u', 'un', 'unidad', 'pieza', 'piezas', 'unit', 'units'])
+
+/** Valores por defecto cuando el albarán y el catálogo facturan por unidad suelta. */
+export const SIMPLE_ALBARAN_UNIT_DIMENSIONAL = {
+  lineBillingUnit: 'ud',
+  lineContentQty: '1',
+  lineContentUnit: 'ud',
+} as const
+
+/**
+ * Mapeo trivial: producto contable (croissant, paletina…) sin caja multiud ni conversión L/kg.
+ * En este caso la UI puede ocultar la «ecuación» y el factor legacy.
+ */
+export function isSimpleAlbaranUnitMapping(
+  row: IngredientDimensionalSource,
+  dim?: {
+    lineBillingUnit?: string
+    lineContentQty?: string
+    lineContentUnit?: string
+  },
+  factor?: number | string | null
+): boolean {
+  const pu = norm(
+    resolveDeclaredPurchaseUnitWithPackContent(row.purchase_unit, row.pack_unit_size_unit)
+  )
+  if (pu !== 'ud') return false
+
+  const mode = String(row.supplier_pricing_mode ?? 'per_purchase_unit')
+  if (mode === 'per_pack') {
+    const sizeUnit = norm(row.pack_unit_size_unit)
+    if (sizeUnit && sizeUnit !== 'ud') return false
+    const pq = row.pack_unit_size_qty == null ? null : Number(row.pack_unit_size_qty)
+    if (pq != null && Number.isFinite(pq) && pq !== 1) return false
+    const packUnits = row.pack_units == null ? 1 : Number(row.pack_units)
+    if (!Number.isFinite(packUnits) || packUnits > 1) return false
+  }
+
+  if (dim) {
+    const qtyRaw = String(dim.lineContentQty ?? '1').trim().replace(',', '.')
+    const qty = qtyRaw === '' ? 1 : Number(qtyRaw)
+    const contentUnit = norm(dim.lineContentUnit)
+    if (contentUnit && contentUnit !== 'ud') return false
+    if (Number.isFinite(qty) && qty !== 1) return false
+
+    const billing = norm(dim.lineBillingUnit)
+    if (billing && billing !== 'ud' && !BILLING_UNIT_UD_HINTS.has(billing)) return false
+  }
+
+  if (factor != null && factor !== '') {
+    const f = typeof factor === 'number' ? factor : Number(String(factor).replace(',', '.'))
+    if (Number.isFinite(f) && Math.abs(f - 1) > 0.0001) return false
+  }
+
+  return true
+}
