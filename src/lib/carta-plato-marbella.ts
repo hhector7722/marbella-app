@@ -186,12 +186,12 @@ export function platoMarbellaSlotsForLang(lang: CartaLang): Record<PlatoMarbella
   return dict[lang]
 }
 
-/** Etiquetas cortas en el plato interactivo (mayúsculas, como en carta impresa). */
+/** Etiquetas del plato interactivo (breves, legibles en zonas pequeñas). */
 export function platoMarbellaPlateSlotLabels(lang: CartaLang): Record<PlatoMarbellaSlot, string> {
   const dict = {
-    es: { entrante: 'ENTRANTE', principal: 'PRINCIPAL', guarnicion: 'GUARNICIÓN' },
-    ca: { entrante: 'ENTRANT', principal: 'PRINCIPAL', guarnicion: 'GUARNICIÓ' },
-    en: { entrante: 'STARTER', principal: 'MAIN', guarnicion: 'SIDE' },
+    es: { entrante: 'Entrante', principal: 'Principal', guarnicion: 'Guarnición' },
+    ca: { entrante: 'Entrant', principal: 'Principal', guarnicion: 'Guarnició' },
+    en: { entrante: 'Starter', principal: 'Main', guarnicion: 'Side' },
   } as const
   return dict[lang]
 }

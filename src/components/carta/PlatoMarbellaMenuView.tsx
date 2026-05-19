@@ -17,7 +17,6 @@ import {
 } from '@/lib/carta-plato-marbella'
 import {
   CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-  cartaProductGridRowDensity,
   chunkCartaProductGridRows,
   getCartaProductGridRowFrameStyle,
   getCartaProductPhotoFrameStyle,
@@ -136,11 +135,14 @@ export function PlatoMarbellaMenuView({
 
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
-      <div className="shrink-0 space-y-3 border-b border-zinc-100 bg-white px-2 pb-3 pt-1 sm:px-3">
-        <p className="text-center text-[11px] font-bold uppercase tracking-wide text-[#36606F]/90 sm:text-xs">
+      <div className="shrink-0 space-y-1 border-b border-zinc-100 bg-white px-2 pb-2 pt-0.5 sm:px-3">
+        <p className="text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-[13px]">
+          {ui.plateTagline}
+        </p>
+        <p className="text-center text-[10px] font-bold uppercase tracking-wide text-[#36606F]/75">
           {ui.schedule}
         </p>
-        <p className="text-center text-2xl font-black tabular-nums text-[#36606F] sm:text-3xl">
+        <p className="text-center text-xl font-black tabular-nums leading-none text-[#36606F] sm:text-2xl">
           {formatMenuPrice(grouped.menuPrice)}
         </p>
         <PlatoMarbellaPlateVisual lang={lang} activeSlot={activeSlot} onSlotChange={onSlotChange} />
@@ -148,24 +150,19 @@ export function PlatoMarbellaMenuView({
 
       <div
         ref={listRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3 custom-scrollbar sm:px-3 sm:py-4"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 custom-scrollbar sm:px-3"
       >
         {activeRows.length === 0 ? (
           <p className="py-8 text-center text-sm font-medium text-zinc-500">{ui.emptySection}</p>
         ) : (
-          <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
+          <div className="flex flex-col gap-y-1">
             {chunkCartaProductGridRows(activeRows as OptionRow[], 3).map((chunk, chunkIdx) => {
-              const rowDensity = cartaProductGridRowDensity(chunk)
+              const rowDensity = 'compact' as const
               const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
               return (
                 <div
                   key={chunkIdx}
-                  className={cn(
-                    'grid grid-cols-3 items-stretch gap-x-1.5 sm:gap-x-2',
-                    rowDensity === 'compact' && 'gap-y-0',
-                    rowDensity === 'cozy' && 'gap-y-1',
-                    rowDensity === 'normal' && 'gap-y-2 sm:gap-y-2.5'
-                  )}
+                  className="grid grid-cols-3 items-stretch gap-x-1.5 gap-y-0 sm:gap-x-2"
                 >
                   {chunk.map((row) => (
                     <OptionGridCard

@@ -11,18 +11,21 @@ const SLOT_REGION: Record<
   { className: string; labelClass: string }
 > = {
   entrante: {
-    className: 'left-[6%] right-[6%] top-[5%] h-[40%] rounded-t-[999px] rounded-b-lg',
-    labelClass: 'top-1/2 -translate-y-[58%]',
+    className: 'left-[7%] right-[7%] top-[6%] h-[38%] rounded-t-[999px] rounded-b-md',
+    labelClass: 'top-1/2 -translate-y-[55%]',
   },
   principal: {
-    className: 'bottom-[6%] left-[6%] h-[46%] w-[43%] rounded-bl-[2rem] rounded-br-lg rounded-tl-lg',
+    className: 'bottom-[7%] left-[7%] h-[44%] w-[42%] rounded-bl-[1.25rem] rounded-br-md rounded-tl-md',
     labelClass: 'top-1/2 -translate-y-1/2',
   },
   guarnicion: {
-    className: 'bottom-[6%] right-[6%] h-[46%] w-[43%] rounded-br-[2rem] rounded-bl-lg rounded-tr-lg',
+    className: 'bottom-[7%] right-[7%] h-[44%] w-[42%] rounded-br-[1.25rem] rounded-bl-md rounded-tr-md',
     labelClass: 'top-1/2 -translate-y-1/2',
   },
 }
+
+const PLATE_LABEL_CLASS =
+  'pointer-events-none absolute inset-x-0.5 text-center font-sans text-[6.5px] font-semibold leading-[1.15] tracking-[0.04em] text-zinc-500 antialiased sm:text-[7px]'
 
 export function PlatoMarbellaPlateVisual({
   lang,
@@ -38,24 +41,24 @@ export function PlatoMarbellaPlateVisual({
   const slotLabels = platoMarbellaPlateSlotLabels(lang)
 
   return (
-    <div className={cn('mx-auto w-full max-w-[18rem] sm:max-w-xs', className)} role="tablist">
-      <div className="relative mx-auto aspect-square w-full max-w-[16rem] sm:max-w-[17rem]">
+    <div className={cn('mx-auto w-full max-w-[9.75rem] sm:max-w-[10.5rem]', className)} role="tablist">
+      <div className="relative mx-auto aspect-square w-full">
         <svg
           viewBox="0 0 200 200"
-          className="pointer-events-none absolute inset-0 h-full w-full drop-shadow-md"
+          className="pointer-events-none absolute inset-0 h-full w-full drop-shadow-sm"
           aria-hidden
         >
           <defs>
-            <radialGradient id="pm-plate-shine" cx="35%" cy="28%" r="65%">
+            <radialGradient id="pm-plate-shine" cx="38%" cy="30%" r="62%">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="55%" stopColor="#f4f4f5" />
-              <stop offset="100%" stopColor="#e4e4e7" />
+              <stop offset="50%" stopColor="#f8fafc" />
+              <stop offset="100%" stopColor="#ececef" />
             </radialGradient>
           </defs>
-          <circle cx="100" cy="100" r="92" fill="url(#pm-plate-shine)" stroke="#d4d4d8" strokeWidth="2.5" />
-          <circle cx="100" cy="100" r="78" fill="none" stroke="#e4e4e7" strokeWidth="1.5" />
-          <line x1="18" y1="102" x2="182" y2="102" stroke="#d4d4d8" strokeWidth="2" />
-          <line x1="100" y1="102" x2="100" y2="178" stroke="#d4d4d8" strokeWidth="2" />
+          <circle cx="100" cy="100" r="92" fill="url(#pm-plate-shine)" stroke="#e4e4e7" strokeWidth="2" />
+          <circle cx="100" cy="100" r="78" fill="none" stroke="#f4f4f5" strokeWidth="1" />
+          <line x1="20" y1="101" x2="180" y2="101" stroke="#e4e4e7" strokeWidth="1.5" />
+          <line x1="100" y1="101" x2="100" y2="176" stroke="#e4e4e7" strokeWidth="1.5" />
         </svg>
 
         {SLOT_ORDER.map((slot) => {
@@ -69,19 +72,17 @@ export function PlatoMarbellaPlateVisual({
               aria-selected={isActive}
               aria-label={slotLabels[slot]}
               className={cn(
-                'absolute z-10 flex min-h-[48px] touch-manipulation flex-col items-center justify-center border-2 transition-colors',
+                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 transition-[background-color] duration-200 ease-out',
                 region.className,
-                isActive
-                  ? 'border-[#36606F] bg-[#36606F]/8 shadow-inner'
-                  : 'border-transparent bg-white/40 hover:bg-white/70 active:bg-zinc-100/90'
+                isActive ? 'bg-[#36606F]/10' : 'bg-transparent hover:bg-zinc-100/70 active:bg-zinc-200/50'
               )}
               onClick={() => onSlotChange(slot)}
             >
               <span
                 className={cn(
-                  'pointer-events-none absolute inset-x-2 text-center text-[9px] font-black uppercase leading-tight tracking-[0.14em] text-zinc-900 sm:text-[10px]',
+                  PLATE_LABEL_CLASS,
                   region.labelClass,
-                  isActive && 'text-[#36606F]'
+                  isActive ? 'font-bold text-[#36606F]/85' : 'text-zinc-500/90'
                 )}
               >
                 {slotLabels[slot]}
