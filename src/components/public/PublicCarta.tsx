@@ -369,21 +369,12 @@ export function PublicCarta({
           >
             {!openShowSubPicker ? (
             openPlatoMarbella && !openShowSubTabs ? (
-              <div className="grid w-full shrink-0 grid-cols-[minmax(48px,auto)_1fr_minmax(48px,auto)] items-center bg-white px-3 py-2.5 sm:px-3.5 sm:py-3">
+              <div className="flex w-full shrink-0 items-center justify-end bg-white px-3 py-2.5 sm:px-3.5 sm:py-3">
                 <button
                   type="button"
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center justify-self-start rounded-xl text-[#36606F] active:bg-zinc-100"
+                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
                   aria-label={tPlatoMarbellaUi(lang).backToPlatos}
                   onClick={() => setPlatoMarbellaDetailOpen(false)}
-                >
-                  <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
-                </button>
-                <span className="min-w-0" aria-hidden />
-                <button
-                  type="button"
-                  className="col-start-3 inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center justify-self-end rounded-xl text-[#36606F] active:bg-zinc-100"
-                  aria-label="Cerrar"
-                  onClick={() => setOpenKey(null)}
                 >
                   <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
                 </button>

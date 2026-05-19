@@ -1001,14 +1001,7 @@ export function MenuAccordion({
                                     </div>
                                 </div>
                             ) : openPlatoMarbella ? (
-                                <button
-                                    type="button"
-                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                    aria-label={tPlatoMarbellaUi(lang).backToPlatos}
-                                    onClick={() => setPlatoMarbellaDetailOpen(false)}
-                                >
-                                    <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
-                                </button>
+                                <span className="min-w-0 flex-1" aria-hidden />
                             ) : (
                                 <h2
                                     id="staff-carta-section-modal-title"
@@ -1082,14 +1075,28 @@ export function MenuAccordion({
                                 </button>
                             ) : null}
                             {!openShowSubTabs ? (
-                                <button
-                                    type="button"
-                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                    aria-label="Cerrar"
-                                    onClick={() => setOpenKey(null)}
-                                >
-                                    <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                </button>
+                                <div className="flex shrink-0 items-center gap-1">
+                                    {openPlatoMarbella ? (
+                                        <button
+                                            type="button"
+                                            className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                            aria-label={tPlatoMarbellaUi(lang).backToPlatos}
+                                            onClick={() => setPlatoMarbellaDetailOpen(false)}
+                                        >
+                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                        </button>
+                                    ) : null}
+                                    {!openPlatoMarbella ? (
+                                        <button
+                                            type="button"
+                                            className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                            aria-label="Cerrar"
+                                            onClick={() => setOpenKey(null)}
+                                        >
+                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                        </button>
+                                    ) : null}
+                                </div>
                             ) : null}
                         </div>
                         ) : null}
