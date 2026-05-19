@@ -140,6 +140,7 @@ export type MenuCategoryCatalogEntry = {
 }
 
 type MenuRowWithCategory = PlatoMarbellaMenuRow & {
+  category_id?: string | null
   category_parent_id?: string | null
   category_child_id?: string | null
   category_child_name?: string | null
@@ -150,6 +151,19 @@ type MenuRowWithCategory = PlatoMarbellaMenuRow & {
   category_child_name_en?: string | null
 }
 
+/** Fila que pertenece al menú Plat Marbella aunque no tenga tramo (p. ej. tramo borrado por error). */
+export function isPlatoMarbellaAffiliatedRow(
+  row: MenuRowWithCategory,
+  platoMarbellaCategoryId: string | null
+): boolean {
+  if (isPlatoMarbellaBundleParticipatingRow(row)) return true
+  if (isPlatoMarbellaSubcategory(row)) return true
+  if (platoMarbellaCategoryId && row.category_child_id === platoMarbellaCategoryId) return true
+  if (platoMarbellaCategoryId && row.category_id === platoMarbellaCategoryId) return true
+  if (row.plato_marbella_hide_name) return true
+  return false
+}
+
 /** Artículos con tramo/precio menú bajo padre Platos → subcategoría Plato Marbella. */
 export function bucketMenuRowForPlatoMarbella<T extends MenuRowWithCategory>(
   row: T,
@@ -157,7 +171,7 @@ export function bucketMenuRowForPlatoMarbella<T extends MenuRowWithCategory>(
   catalog: MenuCategoryCatalogEntry[]
 ): T {
   if (!platoMarbellaCategoryId) return row
-  if (!row.plato_marbella_slot && !row.plato_marbella_is_menu_price) return row
+  if (!isPlatoMarbellaAffiliatedRow(row, platoMarbellaCategoryId)) return row
   const pm = catalog.find((c) => c.id === platoMarbellaCategoryId)
   if (!pm?.parent_id) return row
   if (row.category_parent_id !== pm.parent_id) return row
@@ -166,6 +180,7 @@ export function bucketMenuRowForPlatoMarbella<T extends MenuRowWithCategory>(
   const slug = pm.slug?.trim() || PLATO_MARBELLA_CHILD_SLUG
   return {
     ...row,
+    category_id: pm.id,
     category_child_id: pm.id,
     category_child_name: pm.name,
     category_child_slug: slug,
@@ -210,12 +225,14 @@ function sortMenuRowsByCartaOrder<T extends { sort_order?: number | null; articu
 }
 
 /** Tarjeta «entrada» al modal: artículo marcado precio menú, o el primero por orden. */
-export function pickPlatoMarbellaLauncherRow<T extends PlatoMarbellaMenuRow & { articulo_id: number; sort_order?: number | null }>(
-  bundle: T[]
-): T {
+export function pickPlatoMarbellaLauncherRow<
+  T extends PlatoMarbellaMenuRow & { articulo_id: number; sort_order?: number | null },
+>(bundle: T[]): T {
   if (!bundle.length) throw new Error('pickPlatoMarbellaLauncherRow: bundle vacío')
   const priced = bundle.filter((r) => r.plato_marbella_is_menu_price)
   if (priced.length) return sortMenuRowsByCartaOrder(priced)[0]!
+  const hideName = bundle.filter((r) => r.plato_marbella_hide_name)
+  if (hideName.length) return sortMenuRowsByCartaOrder(hideName)[0]!
   return sortMenuRowsByCartaOrder(bundle)[0]!
 }
 
@@ -246,7 +263,7 @@ export function applyPlatoMarbellaMergeIntoPlatosParentGroup<
   for (const [, sg] of group.subs) {
     const next: T[] = []
     for (const r of sg.rows) {
-      if (isPlatoMarbellaBundleParticipatingRow(r)) {
+      if (isPlatoMarbellaAffiliatedRow(r, platoMarbellaCategoryId)) {
         bundleById.set(r.articulo_id, r)
       } else {
         next.push(r)

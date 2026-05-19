@@ -647,6 +647,13 @@ export function MenuItemEditModal({
                         }
                       }
 
+                      if (isPlatoMarbellaCategory && !platoMenuPrice && !platoSlot) {
+                        toast.error(
+                          'En Plat Marbella, elige un tramo (entrante, principal o guarnición) o marca «Precio del menú».'
+                        )
+                        return
+                      }
+
                       const res = await upsertMenuOverride({
                         articulo_id: articuloId,
                         override_nombre_es: nameEs.trim() || null,

@@ -32,6 +32,7 @@ import {
     platoMarbellaRowsForReorderSection,
     platoMarbellaCategoryIdFromCatalog,
     platoMarbellaSlotsForLang,
+    platosParentCategoryIdForPlatoMarbella,
     PLATO_MARBELLA_SLOTS,
     type MenuCategoryCatalogEntry,
     type PlatoMarbellaReorderSection,
@@ -690,6 +691,8 @@ export function MenuAccordion({
     const platoBundleRows = openGroup?._platoMarbellaBundleRows ?? null
     const platoLauncherArticuloId = openGroup?._platoMarbellaLauncherArticuloId
     const hasPlatoMarbellaBundle = (platoBundleRows?.length ?? 0) > 0
+    const platosParentId = platosParentCategoryIdForPlatoMarbella(menuCategories ?? [])
+    const isOpenPlatosParent = Boolean(openGroup && platosParentId && openGroup.key === platosParentId)
 
     useEffect(() => {
         if (!openKey) setPlatoMarbellaDetailOpen(false)
@@ -1246,6 +1249,20 @@ export function MenuAccordion({
                                         </button>
                                     ) : null}
                                 </div>
+                            ) : null}
+                            {editMode &&
+                            isOpenPlatosParent &&
+                            hasPlatoMarbellaBundle &&
+                            !openPlatoMarbella &&
+                            !openShowSubPicker &&
+                            !reorderScope ? (
+                                <button
+                                    type="button"
+                                    className="min-h-[48px] shrink-0 rounded-xl border border-[#36606F]/25 bg-[#36606F]/8 px-3 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] active:bg-[#36606F]/15 sm:text-[11px]"
+                                    onClick={() => setPlatoMarbellaDetailOpen(true)}
+                                >
+                                    {tPlatoMarbellaUi(lang).staffOpenConfig}
+                                </button>
                             ) : null}
                             {!openShowSubTabs ? (
                                 <button

@@ -74,11 +74,11 @@ export function PlatoMarbellaPlateVisual({
                   : `${slotLabels[slot]} — ${ui.plateTapZone}`
               }
               className={cn(
-                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 px-1 transition-all duration-200 ease-out',
+                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center overflow-hidden border-0 px-1 transition-colors duration-200 ease-out',
                 region.className,
                 isActive
-                  ? 'z-20 bg-[#36606F]/20 ring-2 ring-inset ring-[#36606F]/45'
-                  : 'bg-white/55 ring-1 ring-inset ring-[#36606F]/20 hover:bg-[#36606F]/12 hover:ring-[#36606F]/35 active:bg-[#36606F]/16'
+                  ? 'z-20 bg-[#36606F]/14 shadow-[inset_0_0_0_2px_rgba(54,96,111,0.55)]'
+                  : 'bg-transparent shadow-[inset_0_0_0_1px_rgba(54,96,111,0.18)] hover:bg-[#36606F]/8 hover:shadow-[inset_0_0_0_1.5px_rgba(54,96,111,0.32)] active:bg-[#36606F]/12'
               )}
               onClick={() => onSlotChange(slot)}
             >

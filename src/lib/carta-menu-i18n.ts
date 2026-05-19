@@ -107,6 +107,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       plateActiveHere: 'Aquí',
       plateTapZone: 'Pulsa',
       plateExploreHint: 'Toca cada parte del plato para ver sus opciones',
+      staffOpenConfig: 'Config. Plat Marbella',
     },
     ca: {
       plateTagline: 'Tria un entrant, un principal i una guarnició',
@@ -148,6 +149,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       plateActiveHere: 'Aquí',
       plateTapZone: 'Prem',
       plateExploreHint: 'Toca cada part del plat per veure les opcions',
+      staffOpenConfig: 'Config. Plat Marbella',
     },
     en: {
       plateTagline: 'Pick a starter, a main and a side',
@@ -188,6 +190,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       plateActiveHere: 'Here',
       plateTapZone: 'Tap',
       plateExploreHint: 'Tap each part of the plate to see its options',
+      staffOpenConfig: 'Marbella plate setup',
     },
   } as const
   return dict[lang]
