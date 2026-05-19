@@ -747,9 +747,17 @@ export function IngredientWizard({
         baseUnit,
         containsLiquid,
         unitsInside: perPack ? (h === 'unidad' ? 1 : (draft.unitsInside ?? 1)) : null,
-        // Solo pedimos contenido por unidad si es líquido. Si NO es líquido, fijamos 1 ud.
+        // Si no es líquido: 1 unidad coherente con la base elegida (ud / kg / l).
         contentPerUnitQty: perPack ? (shouldAskContent ? (draft.contentPerUnitQty ?? null) : 1) : null,
-        contentPerUnitUnit: perPack ? (shouldAskContent ? (draft.contentPerUnitUnit ?? 'ml') : 'ud') : 'ud',
+        contentPerUnitUnit: perPack
+          ? shouldAskContent
+            ? (draft.contentPerUnitUnit ?? 'ml')
+            : baseUnit === 'kg'
+              ? 'kg'
+              : baseUnit === 'l'
+                ? 'l'
+                : 'ud'
+          : 'ud',
       })
 
       // IMPORTANTE:

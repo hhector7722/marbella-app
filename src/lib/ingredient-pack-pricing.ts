@@ -26,7 +26,8 @@ export function resolveDeclaredPurchaseUnitWithPackContent(
   const sz = norm(packUnitSizeUnit)
   const szIsVol = sz === 'ml' || sz === 'l' || sz === 'cl'
   const szIsMass = sz === 'g' || sz === 'kg'
-  // El contenido del pack manda: garrafa 5 L no puede quedar en base kg.
+  // El contenido del pack manda: garrafa 5 L → L; paletinas 1 ud → ud.
+  if (sz === 'ud') return 'ud'
   if (szIsVol) return 'l'
   if (szIsMass) return 'kg'
   if (dec === 'ud') return 'ud'

@@ -35,6 +35,12 @@ export interface Ingredient {
 const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
 const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas', 'Limpieza', 'Otros'];
 const PACK_UNITS_PRESETS_EDIT = [12, 24];
+const COUNTABLE_PACK_UNITS_PRESETS_EDIT = [100, 500, 1000];
+
+function parseDecimalInput(v: string): number | null {
+    const n = Number(String(v ?? '').trim().replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+}
 
 function isCountableIngredientCategory(category: string | null | undefined): boolean {
     const c = String(category ?? '');
@@ -244,46 +250,118 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
         }
     }
 
+    function buildPricingPayload(
+        form: Partial<Ingredient>
+    ): { ok: true; payload: Record<string, unknown> } | { ok: false; message: string } {
+        const mode = (form.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
+        const purchaseUnitStored =
+            mode === 'per_pack'
+                ? resolveDeclaredPurchaseUnitWithPackContent(
+                      String(form.purchase_unit ?? 'ud'),
+                      form.pack_unit_size_unit ?? null
+                  )
+                : form.purchase_unit ?? 'kg';
+
+        if (mode === 'per_pack') {
+            const packPrice = form.pack_price == null ? null : Number(form.pack_price);
+            const packUnits = form.pack_units == null ? null : Number(form.pack_units);
+            const sizeQty = form.pack_unit_size_qty == null ? 1 : Number(form.pack_unit_size_qty);
+            const sizeUnit = String(form.pack_unit_size_unit ?? 'ud').trim() || 'ud';
+            if (packPrice == null || !Number.isFinite(packPrice) || packPrice < 0) {
+                return { ok: false, message: 'Indica el precio del pack en euros' };
+            }
+            if (packUnits == null || !Number.isFinite(packUnits) || packUnits <= 0) {
+                return { ok: false, message: 'Indica cuántas piezas trae el pack (ej. 1000)' };
+            }
+            if (!Number.isFinite(sizeQty) || sizeQty <= 0) {
+                return { ok: false, message: 'Indica cuánto lleva cada pieza' };
+            }
+            const converted = convertQty(sizeQty, sizeUnit, purchaseUnitStored);
+            if (converted == null || converted <= 0) {
+                return {
+                    ok: false,
+                    message: `No se puede convertir ${sizeQty} ${sizeUnit} a ${purchaseUnitStored}. Revisa medida y base.`,
+                };
+            }
+        }
+
+        const payload: Record<string, unknown> = {
+            purchase_unit: purchaseUnitStored,
+            unit_type: purchaseUnitStored,
+            supplier_pricing_mode: mode,
+        };
+
+        if (mode === 'per_pack') {
+            payload.pack_price = form.pack_price ?? null;
+            payload.pack_units = form.pack_units ?? null;
+            payload.pack_unit_size_qty = form.pack_unit_size_qty ?? 1;
+            payload.pack_unit_size_unit = form.pack_unit_size_unit ?? 'ud';
+        } else {
+            payload.current_price = form.current_price ?? 0;
+            payload.pack_price = null;
+            payload.pack_units = null;
+            payload.pack_unit_size_qty = null;
+            payload.pack_unit_size_unit = null;
+        }
+
+        return { ok: true, payload };
+    }
+
+    async function persistPricingToDb(form: Partial<Ingredient>): Promise<boolean> {
+        const rowId = activeIngredient?.id ?? ingredient?.id;
+        if (!rowId) return false;
+        const built = buildPricingPayload(form);
+        if (!built.ok) {
+            toast.error(built.message);
+            return false;
+        }
+        const payload = built.payload;
+        setSaving(true);
+        try {
+            const { error } = await supabase.from('ingredients').update(payload).eq('id', rowId);
+            if (error) throw error;
+            setEditForm((p) => ({
+                ...p,
+                purchase_unit: payload.purchase_unit as string,
+                unit_type: payload.unit_type as string,
+                supplier_pricing_mode: payload.supplier_pricing_mode as Ingredient['supplier_pricing_mode'],
+                pack_price: (payload.pack_price as number | null | undefined) ?? p.pack_price,
+                pack_units: (payload.pack_units as number | null | undefined) ?? p.pack_units,
+                pack_unit_size_qty: (payload.pack_unit_size_qty as number | null | undefined) ?? p.pack_unit_size_qty,
+                pack_unit_size_unit: (payload.pack_unit_size_unit as string | null | undefined) ?? p.pack_unit_size_unit,
+            }));
+            return true;
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.error(msg || 'No se pudo guardar el precio');
+            return false;
+        } finally {
+            setSaving(false);
+        }
+    }
+
     async function handleSaveEdit() {
         const rowId = activeIngredient?.id ?? ingredient?.id;
         if (!rowId) return;
         setSaving(true);
         try {
-            const mode = (editForm.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
-            const purchaseUnitStored =
-                mode === 'per_pack'
-                    ? resolveDeclaredPurchaseUnitWithPackContent(
-                          String(editForm.purchase_unit ?? 'ud'),
-                          editForm.pack_unit_size_unit ?? null
-                      )
-                    : editForm.purchase_unit ?? 'kg';
+            const pricingBuilt = buildPricingPayload(editForm);
+            if (!pricingBuilt.ok) {
+                toast.error(pricingBuilt.message);
+                return;
+            }
             const payload: Record<string, unknown> = {
                 name: editForm.name,
                 supplier: editForm.supplier || null,
                 supplier_2: editForm.supplier_2 || null,
-                purchase_unit: purchaseUnitStored,
-                unit_type: purchaseUnitStored,
                 category: editForm.category,
                 waste_percentage: editForm.waste_percentage || 0,
                 image_url: editForm.image_url,
                 order_unit: editForm.order_unit || 'unidad',
                 recommended_stock: editForm.recommended_stock || null,
-                supplier_pricing_mode: mode,
                 price_locked: !!editForm.price_locked,
+                ...pricingBuilt.payload,
             };
-
-            if (mode === 'per_pack') {
-                payload.pack_price = editForm.pack_price ?? null;
-                payload.pack_units = editForm.pack_units ?? null;
-                payload.pack_unit_size_qty = editForm.pack_unit_size_qty ?? null;
-                payload.pack_unit_size_unit = editForm.pack_unit_size_unit ?? null;
-            } else {
-                payload.current_price = editForm.current_price;
-                payload.pack_price = null;
-                payload.pack_units = null;
-                payload.pack_unit_size_qty = null;
-                payload.pack_unit_size_unit = null;
-            }
 
             const { error } = await supabase.from('ingredients').update(payload).eq('id', rowId);
             if (error) throw error;
@@ -567,7 +645,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                 purchase_unit: 'kg',
                                                                 unit_type: 'kg',
                                                                 pack_units: isPack ? (p.pack_units ?? 1) : 1,
-                                                                pack_unit_size_qty: isPack ? (p.pack_unit_size_qty ?? 1) : 1,
+                                                                pack_unit_size_qty: 1,
                                                                 pack_unit_size_unit: 'kg',
                                                             }));
                                                             setEditPricingStep(3);
@@ -656,7 +734,10 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                 onChange={(e) =>
                                                                     setEditForm({
                                                                         ...editForm,
-                                                                        pack_price: e.target.value === '' ? null : parseFloat(e.target.value),
+                                                                        pack_price:
+                                                                            e.target.value === ''
+                                                                                ? null
+                                                                                : parseDecimalInput(e.target.value),
                                                                     })
                                                                 }
                                                                 className="min-h-12 w-full rounded-xl border border-zinc-200 px-3 font-mono font-bold"
@@ -671,7 +752,11 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                             </p>
                                                         </div>
                                                         <div className="grid grid-cols-3 gap-2">
-                                                            {PACK_UNITS_PRESETS_EDIT.map((n) => (
+                                                            {(isCountableIngredientCategory(editForm.category) ||
+                                                            normalizeUnit(editForm.purchase_unit) === 'ud'
+                                                                ? COUNTABLE_PACK_UNITS_PRESETS_EDIT
+                                                                : PACK_UNITS_PRESETS_EDIT
+                                                            ).map((n) => (
                                                                 <button
                                                                     key={n}
                                                                     type="button"
@@ -694,7 +779,10 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                                 onChange={(e) =>
                                                                     setEditForm((p) => ({
                                                                         ...p,
-                                                                        pack_units: e.target.value === '' ? null : parseFloat(e.target.value),
+                                                                        pack_units:
+                                                                            e.target.value === ''
+                                                                                ? null
+                                                                                : parseDecimalInput(e.target.value),
                                                                     }))
                                                                 }
                                                                 className="min-h-12 rounded-xl border border-zinc-200 px-3 font-mono text-sm"
@@ -831,21 +919,15 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => {
-                                                            const stored = resolveDeclaredPurchaseUnitWithPackContent(
-                                                                editForm.purchase_unit ?? 'ud',
-                                                                editForm.pack_unit_size_unit ?? null
-                                                            );
-                                                            setEditForm((p) => ({
-                                                                ...p,
-                                                                purchase_unit: stored,
-                                                                unit_type: stored,
-                                                            }));
+                                                        disabled={saving}
+                                                        onClick={async () => {
+                                                            const ok = await persistPricingToDb(editForm);
+                                                            if (!ok) return;
                                                             setEditPricingOpen(false);
                                                             setEditPricingStep(1);
-                                                            toast.success('Precio actualizado (pendiente de Guardar)');
+                                                            toast.success('Precio guardado');
                                                         }}
-                                                        className="min-h-12 flex-1 rounded-xl bg-zinc-200 font-black text-zinc-800 hover:bg-zinc-300"
+                                                        className="min-h-12 flex-1 rounded-xl bg-[#36606F] font-black text-white hover:bg-[#2d505c] disabled:opacity-50"
                                                     >
                                                         {pricingAssistantCopy.modal.done}
                                                     </button>
