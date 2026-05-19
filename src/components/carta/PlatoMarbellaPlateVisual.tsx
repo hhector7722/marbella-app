@@ -2,114 +2,94 @@
 
 import { cn } from '@/lib/utils'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
-import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
-import { platoMarbellaSlotsForLang, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
-
-const SLOT_LAYOUT: Record<
-  PlatoMarbellaSlot,
-  { labelClass: string; bubbleClass: string }
-> = {
-  entrante: {
-    labelClass: 'left-[8%] top-[6%]',
-    bubbleClass: 'left-[14%] top-[12%]',
-  },
-  principal: {
-    labelClass: 'left-1/2 top-[38%] -translate-x-1/2',
-    bubbleClass: 'left-1/2 top-[44%] -translate-x-1/2',
-  },
-  guarnicion: {
-    labelClass: 'right-[8%] top-[6%]',
-    bubbleClass: 'right-[14%] top-[12%]',
-  },
-}
+import { platoMarbellaPlateSlotLabels, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
 
-export type PlatoMarbellaPlateSelection = {
-  name: string
-  photoUrl: string | null
+const SLOT_REGION: Record<
+  PlatoMarbellaSlot,
+  { className: string; labelClass: string }
+> = {
+  entrante: {
+    className: 'left-[6%] right-[6%] top-[5%] h-[40%] rounded-t-[999px] rounded-b-lg',
+    labelClass: 'top-1/2 -translate-y-[58%]',
+  },
+  principal: {
+    className: 'bottom-[6%] left-[6%] h-[46%] w-[43%] rounded-bl-[2rem] rounded-br-lg rounded-tl-lg',
+    labelClass: 'top-1/2 -translate-y-1/2',
+  },
+  guarnicion: {
+    className: 'bottom-[6%] right-[6%] h-[46%] w-[43%] rounded-br-[2rem] rounded-bl-lg rounded-tr-lg',
+    labelClass: 'top-1/2 -translate-y-1/2',
+  },
 }
 
 export function PlatoMarbellaPlateVisual({
   lang,
-  selections,
+  activeSlot,
+  onSlotChange,
   className,
 }: {
   lang: CartaLang
-  selections: Record<PlatoMarbellaSlot, PlatoMarbellaPlateSelection | null>
+  activeSlot: PlatoMarbellaSlot
+  onSlotChange: (slot: PlatoMarbellaSlot) => void
   className?: string
 }) {
-  const ui = tPlatoMarbellaUi(lang)
-  const slotLabels = platoMarbellaSlotsForLang(lang)
-  const filled = SLOT_ORDER.filter((s) => selections[s] != null).length
+  const slotLabels = platoMarbellaPlateSlotLabels(lang)
 
   return (
-    <div className={cn('mx-auto w-full max-w-[17rem] sm:max-w-xs', className)}>
-      <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-[11px]">
-        {ui.plateHint}
-      </p>
-      <div className="relative mx-auto aspect-square w-full max-w-[15rem] sm:max-w-[16rem]">
+    <div className={cn('mx-auto w-full max-w-[18rem] sm:max-w-xs', className)} role="tablist">
+      <div className="relative mx-auto aspect-square w-full max-w-[16rem] sm:max-w-[17rem]">
         <svg
           viewBox="0 0 200 200"
-          className="h-full w-full drop-shadow-sm"
+          className="pointer-events-none absolute inset-0 h-full w-full drop-shadow-md"
           aria-hidden
         >
-          <ellipse cx="100" cy="108" rx="88" ry="78" fill="#f4f4f5" stroke="#d4d4d8" strokeWidth="2" />
-          <ellipse cx="100" cy="108" rx="72" ry="62" fill="#fafafa" stroke="#e4e4e7" strokeWidth="1" />
+          <defs>
+            <radialGradient id="pm-plate-shine" cx="35%" cy="28%" r="65%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="55%" stopColor="#f4f4f5" />
+              <stop offset="100%" stopColor="#e4e4e7" />
+            </radialGradient>
+          </defs>
+          <circle cx="100" cy="100" r="92" fill="url(#pm-plate-shine)" stroke="#d4d4d8" strokeWidth="2.5" />
+          <circle cx="100" cy="100" r="78" fill="none" stroke="#e4e4e7" strokeWidth="1.5" />
+          <line x1="18" y1="102" x2="182" y2="102" stroke="#d4d4d8" strokeWidth="2" />
+          <line x1="100" y1="102" x2="100" y2="178" stroke="#d4d4d8" strokeWidth="2" />
         </svg>
 
         {SLOT_ORDER.map((slot) => {
-          const sel = selections[slot]
-          const layout = SLOT_LAYOUT[slot]
+          const region = SLOT_REGION[slot]
+          const isActive = activeSlot === slot
           return (
-            <div key={slot}>
+            <button
+              key={slot}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-label={slotLabels[slot]}
+              className={cn(
+                'absolute z-10 flex min-h-[48px] touch-manipulation flex-col items-center justify-center border-2 transition-colors',
+                region.className,
+                isActive
+                  ? 'border-[#36606F] bg-[#36606F]/8 shadow-inner'
+                  : 'border-transparent bg-white/40 hover:bg-white/70 active:bg-zinc-100/90'
+              )}
+              onClick={() => onSlotChange(slot)}
+            >
               <span
                 className={cn(
-                  'pointer-events-none absolute z-20 max-w-[30%] truncate text-center text-[8px] font-black uppercase tracking-wide text-[#36606F]/80 sm:text-[9px]',
-                  layout.labelClass
+                  'pointer-events-none absolute inset-x-2 text-center text-[9px] font-black uppercase leading-tight tracking-[0.14em] text-zinc-900 sm:text-[10px]',
+                  region.labelClass,
+                  isActive && 'text-[#36606F]'
                 )}
               >
                 {slotLabels[slot]}
               </span>
-              <div
-                className={cn(
-                  'absolute z-10 flex h-[26%] w-[26%] min-h-[48px] min-w-[48px] flex-col items-center justify-center overflow-hidden rounded-full border-2 bg-white shadow-sm transition-colors',
-                  layout.bubbleClass,
-                  sel
-                    ? 'border-[#36606F] bg-[#36606F]/5'
-                    : 'border-dashed border-zinc-300 bg-zinc-50/90'
-                )}
-                aria-label={
-                  sel
-                    ? `${slotLabels[slot]}: ${sel.name}`
-                    : `${slotLabels[slot]}: ${ui.plateEmptySlot}`
-                }
-              >
-                {sel?.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={sel.photoUrl} alt="" className="h-full w-full object-cover" />
-                ) : sel ? (
-                  <span className="line-clamp-3 px-1 text-center text-[8px] font-bold leading-tight text-zinc-800 sm:text-[9px]">
-                    {sel.name}
-                  </span>
-                ) : (
-                  <span className="text-lg font-black text-zinc-300" aria-hidden>
-                    {slot === 'entrante' ? '1' : slot === 'principal' ? '2' : '3'}
-                  </span>
-                )}
-              </div>
-            </div>
+            </button>
           )
         })}
       </div>
-      <p
-        className={cn(
-          'mt-2 text-center text-[11px] font-bold sm:text-xs',
-          filled === 3 ? 'text-emerald-700' : 'text-zinc-500'
-        )}
-      >
-        {filled === 3 ? ui.plateComplete : ui.plateProgress.replace('{n}', String(filled))}
-      </p>
     </div>
   )
 }

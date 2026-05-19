@@ -427,7 +427,6 @@ export function PublicCarta({
                         <PlatoMarbellaMenuView
                           rows={sub.rows}
                           lang={lang}
-                          subTitle={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
                           onPhotoClick={(src, alt) => setLightbox({ src, alt })}
                         />
                       ) : (

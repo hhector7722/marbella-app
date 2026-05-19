@@ -1445,12 +1445,6 @@ export function MenuAccordion({
                                                     <PlatoMarbellaMenuView
                                                         rows={sub.rows}
                                                         lang={lang}
-                                                        subTitle={subPickerButtonLabel(
-                                                            sub,
-                                                            lang,
-                                                            openGroup.parentTitleRaw,
-                                                            tPublicUi(lang).uncategorized
-                                                        )}
                                                         showUnassigned
                                                         onPhotoClick={(src, alt) =>
                                                             setPlatoLightbox({ src, alt })

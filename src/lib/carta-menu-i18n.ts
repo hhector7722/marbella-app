@@ -71,6 +71,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       intro:
         'Elige un entrante, un plato principal y una guarnición. Solo se sirve el conjunto completo (no por tramos sueltos).',
       schedule: 'De lunes a viernes, de 13:00 a 15:30.',
+      emptySection: 'No hay opciones en este tramo.',
       plateHint: 'Toca cada opción para ir llenando tu plato',
       plateEmptySlot: 'pendiente',
       plateProgress: '{n} de 3 elecciones',
@@ -102,6 +103,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       intro:
         'Tria un entrant, un plat principal i una guarnició. Només es serveix el conjunt complet (no per trams a la carta).',
       schedule: 'De dilluns a divendres, de 13:00 a 15:30.',
+      emptySection: 'No hi ha opcions en aquest tram.',
       plateHint: 'Toca cada opció per omplir el plat',
       plateEmptySlot: 'pendent',
       plateProgress: '{n} de 3 eleccions',
@@ -133,6 +135,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       intro:
         'Pick a starter, a main course and a side. Only the full set is served (not individual courses).',
       schedule: 'Monday to Friday, 1:00 p.m. to 3:30 p.m.',
+      emptySection: 'No options in this section.',
       plateHint: 'Tap each option to fill your plate',
       plateEmptySlot: 'empty',
       plateProgress: '{n} of 3 choices',
