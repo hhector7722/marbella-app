@@ -182,6 +182,117 @@ export function platoMarbellaCategoryIdFromCatalog(
   return catalog.find((c) => (c.slug?.trim() ?? '') === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null
 }
 
+/** Padre «Platos» de la subcategoría Plato Marbella (por catálogo menú). */
+export function platosParentCategoryIdForPlatoMarbella(
+  catalog: MenuCategoryCatalogEntry[]
+): string | null {
+  const pm = catalog.find((c) => (c.slug?.trim() ?? '') === PLATO_MARBELLA_CHILD_SLUG)
+  const pid = pm?.parent_id?.trim()
+  return pid ? pid : null
+}
+
+/** Fila que forma parte del menú Plato Marbella (tramo o precio conjunto). */
+export function isPlatoMarbellaBundleParticipatingRow(
+  row: Pick<PlatoMarbellaMenuRow, 'plato_marbella_slot' | 'plato_marbella_is_menu_price'>
+): boolean {
+  if (row.plato_marbella_is_menu_price) return true
+  const s = (row.plato_marbella_slot as string | null | undefined)?.trim()
+  return Boolean(s)
+}
+
+function sortMenuRowsByCartaOrder<T extends { sort_order?: number | null; articulo_id: number }>(rows: T[]): T[] {
+  return rows.slice().sort((a, b) => {
+    const sa = a.sort_order ?? 9999
+    const sb = b.sort_order ?? 9999
+    if (sa !== sb) return sa - sb
+    return a.articulo_id - b.articulo_id
+  })
+}
+
+/** Tarjeta «entrada» al modal: artículo marcado precio menú, o el primero por orden. */
+export function pickPlatoMarbellaLauncherRow<T extends PlatoMarbellaMenuRow & { articulo_id: number; sort_order?: number | null }>(
+  bundle: T[]
+): T {
+  if (!bundle.length) throw new Error('pickPlatoMarbellaLauncherRow: bundle vacío')
+  const priced = bundle.filter((r) => r.plato_marbella_is_menu_price)
+  if (priced.length) return sortMenuRowsByCartaOrder(priced)[0]!
+  return sortMenuRowsByCartaOrder(bundle)[0]!
+}
+
+type PlatoMarbellaSubBucket<T> = { title: string; sortOrder: number; rows: T[] }
+
+/**
+ * Quita la subcategoría Plato Marbella del mapa de subs del padre Platos,
+ * agrupa filas del menú en `_platoMarbellaBundleRows` y deja un solo artículo «lanzador» en la primera sub (o una sub sintética).
+ */
+export function applyPlatoMarbellaMergeIntoPlatosParentGroup<
+  T extends PlatoMarbellaMenuRow & { articulo_id: number; sort_order?: number | null }
+>(
+  group: { key: string; title: string; subs: Map<string, PlatoMarbellaSubBucket<T>> },
+  platoMarbellaCategoryId: string | null,
+  catalog: MenuCategoryCatalogEntry[]
+): void {
+  const platosParentId = platosParentCategoryIdForPlatoMarbella(catalog)
+  if (!platoMarbellaCategoryId || !platosParentId || group.key !== platosParentId) return
+
+  const bundleById = new Map<number, T>()
+
+  const pmBucket = group.subs.get(platoMarbellaCategoryId)
+  if (pmBucket) {
+    for (const r of pmBucket.rows) bundleById.set(r.articulo_id, r)
+    group.subs.delete(platoMarbellaCategoryId)
+  }
+
+  for (const [, sg] of group.subs) {
+    const next: T[] = []
+    for (const r of sg.rows) {
+      if (isPlatoMarbellaBundleParticipatingRow(r)) {
+        bundleById.set(r.articulo_id, r)
+      } else {
+        next.push(r)
+      }
+    }
+    sg.rows = next
+  }
+
+  if (bundleById.size === 0) return
+
+  const bundle = sortMenuRowsByCartaOrder(Array.from(bundleById.values()))
+  const launcher = pickPlatoMarbellaLauncherRow(bundle)
+
+  const sortedEntries = Array.from(group.subs.entries()).sort((a, b) => {
+    const [, av] = a
+    const [, bv] = b
+    if (av.sortOrder !== bv.sortOrder) return av.sortOrder - bv.sortOrder
+    return av.title.localeCompare(bv.title, 'es', { sensitivity: 'base' })
+  })
+
+  let targetKey: string
+  if (sortedEntries.length === 0) {
+    targetKey = `${platosParentId}:platos-marbella-inlined`
+    group.subs.set(targetKey, {
+      title: group.title?.trim() || 'Platos',
+      sortOrder: -1,
+      rows: [],
+    })
+  } else {
+    targetKey = sortedEntries[0]![0]
+  }
+
+  const target = group.subs.get(targetKey)!
+  target.rows = target.rows.filter((r) => r.articulo_id !== launcher.articulo_id)
+  target.rows = sortMenuRowsByCartaOrder([launcher, ...target.rows])
+
+  const gAny = group as {
+    _platoMarbellaBundleRows?: T[]
+    _platoMarbellaLauncherArticuloId?: number
+    _platoMarbellaHostSubKey?: string
+  }
+  gAny._platoMarbellaBundleRows = bundle
+  gAny._platoMarbellaLauncherArticuloId = launcher.articulo_id
+  gAny._platoMarbellaHostSubKey = targetKey
+}
+
 export function platoMarbellaSlotsForLang(lang: CartaLang): Record<PlatoMarbellaSlot, string> {
   const dict = {
     es: { entrante: 'Entrante', principal: 'Plato principal', guarnicion: 'Guarnición' },

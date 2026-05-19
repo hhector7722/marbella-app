@@ -77,7 +77,9 @@ export function MenuItemEditModal({
     [categories]
   )
   const isPlatoMarbellaCategory = Boolean(
-    platoMarbellaCategoryId && categoryId === platoMarbellaCategoryId
+    (platoMarbellaCategoryId && categoryId === platoMarbellaCategoryId) ||
+      platoSlot ||
+      platoMenuPrice
   )
   const platoUi = tPlatoMarbellaUi('es' satisfies CartaLang)
   const dualUi = tPublicUi('es')

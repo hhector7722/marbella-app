@@ -11,15 +11,15 @@ const SLOT_REGION: Record<
   { className: string; labelClass: string }
 > = {
   entrante: {
-    className: 'left-[7%] right-[7%] top-[6%] h-[38%] rounded-t-[999px] rounded-b-md',
+    className: 'left-[7%] right-[7%] top-[6%] h-[30%] rounded-t-[999px] rounded-b-md',
     labelClass: 'top-1/2 -translate-y-[55%]',
   },
   principal: {
-    className: 'bottom-[7%] left-[7%] h-[44%] w-[42%] rounded-bl-[1.25rem] rounded-br-md rounded-tl-md',
+    className: 'bottom-[6%] left-[7%] h-[52%] w-[42%] rounded-bl-[1.25rem] rounded-br-md rounded-tl-md',
     labelClass: 'top-1/2 -translate-y-1/2',
   },
   guarnicion: {
-    className: 'bottom-[7%] right-[7%] h-[44%] w-[42%] rounded-br-[1.25rem] rounded-bl-md rounded-tr-md',
+    className: 'bottom-[6%] right-[7%] h-[52%] w-[42%] rounded-br-[1.25rem] rounded-bl-md rounded-tr-md',
     labelClass: 'top-1/2 -translate-y-1/2',
   },
 }
@@ -57,8 +57,8 @@ export function PlatoMarbellaPlateVisual({
           </defs>
           <circle cx="100" cy="100" r="92" fill="url(#pm-plate-shine)" stroke="#e4e4e7" strokeWidth="2" />
           <circle cx="100" cy="100" r="78" fill="none" stroke="#f4f4f5" strokeWidth="1" />
-          <line x1="20" y1="101" x2="180" y2="101" stroke="#e4e4e7" strokeWidth="1.5" />
-          <line x1="100" y1="101" x2="100" y2="176" stroke="#e4e4e7" strokeWidth="1.5" />
+          <line x1="20" y1="76" x2="180" y2="76" stroke="#e4e4e7" strokeWidth="1.5" />
+          <line x1="100" y1="76" x2="100" y2="176" stroke="#e4e4e7" strokeWidth="1.5" />
         </svg>
 
         {SLOT_ORDER.map((slot) => {

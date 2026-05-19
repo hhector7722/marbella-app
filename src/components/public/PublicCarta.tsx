@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -16,6 +16,7 @@ import {
   getCartaParentCategoryLabel,
   getCartaSubcategoryPickerLabel,
   tPublicUi,
+  tPlatoMarbellaUi,
 } from '@/lib/carta-menu-i18n'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
@@ -37,9 +38,9 @@ import {
   PlatoMarbellaModalSubheader,
 } from '@/components/carta/PlatoMarbellaModalChrome'
 import {
+  applyPlatoMarbellaMergeIntoPlatosParentGroup,
   bucketMenuRowForPlatoMarbella,
   groupPlatoMarbellaItems,
-  isPlatoMarbellaMenuSub,
   platoMarbellaCategoryIdFromCatalog,
   type MenuCategoryCatalogEntry,
 } from '@/lib/carta-plato-marbella'
@@ -117,6 +118,7 @@ export function PublicCarta({
   const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
+  const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Group>()
@@ -166,6 +168,7 @@ export function PublicCarta({
     })
 
     for (const g of groupList) {
+      applyPlatoMarbellaMergeIntoPlatosParentGroup(g, pmId, catalog)
       const subList = Array.from(g.subs.values()).sort((a, b) => {
         if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
         return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
@@ -198,9 +201,6 @@ export function PublicCarta({
     >
   }, [items, lang, menuCategories, platoMarbellaCategoryId, categoryCoverById, categoryCoverScaleById])
 
-  const isPlatoMarbellaSub = (subKey: string, rows: PublicMenuRow[]) =>
-    isPlatoMarbellaMenuSub(subKey, rows, platoMarbellaCategoryId)
-
   const openGroup = useMemo(
     () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
     [grouped, openKey]
@@ -213,6 +213,14 @@ export function PublicCarta({
   const openShowSubPicker = openHasMultipleSubs && !openSelectedSubKey
   const openShowSubTabs = openHasMultipleSubs && Boolean(openSelectedSubKey)
 
+  useEffect(() => {
+    if (!openKey) setPlatoMarbellaDetailOpen(false)
+  }, [openKey])
+
+  useEffect(() => {
+    setPlatoMarbellaDetailOpen(false)
+  }, [openSelectedSubKey])
+
   const openActiveSub = useMemo(() => {
     if (!openGroup || openShowSubPicker) return null
     if (openHasMultipleSubs) {
@@ -222,13 +230,20 @@ export function PublicCarta({
     return openGroup._subList[0] ?? null
   }, [openGroup, openShowSubPicker, openHasMultipleSubs, openSelectedSubKey])
 
+  const platoBundleRows = openGroup
+    ? ((openGroup as Group & { _platoMarbellaBundleRows?: PublicMenuRow[] })._platoMarbellaBundleRows ?? null)
+    : null
+  const platoLauncherArticuloId = openGroup
+    ? (openGroup as Group & { _platoMarbellaLauncherArticuloId?: number })._platoMarbellaLauncherArticuloId
+    : undefined
+
   const openPlatoMarbella =
-    openActiveSub != null && isPlatoMarbellaSub(openActiveSub.key, openActiveSub.rows)
+    Boolean(platoMarbellaDetailOpen && platoBundleRows && platoBundleRows.length > 0)
 
   const openPlatoMenuPrice = useMemo(() => {
-    if (!openPlatoMarbella || !openActiveSub) return null
-    return groupPlatoMarbellaItems(openActiveSub.rows).menuPrice
-  }, [openPlatoMarbella, openActiveSub])
+    if (!openPlatoMarbella || !platoBundleRows) return null
+    return groupPlatoMarbellaItems(platoBundleRows).menuPrice
+  }, [openPlatoMarbella, platoBundleRows])
 
   const subCategoryButtonLabel = (
     sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
@@ -411,9 +426,9 @@ export function PublicCarta({
 
             ) : null}
 
-            {openPlatoMarbella && !openShowSubPicker && openGroup && openActiveSub ? (
+            {openPlatoMarbella && !openShowSubPicker && openGroup ? (
               <PlatoMarbellaModalSubheader
-                subTitle={subCategoryButtonLabel(openActiveSub, openGroup.parentTitleRaw)}
+                subTitle={tPlatoMarbellaUi(lang).menuModalTitle}
                 menuPrice={openPlatoMenuPrice}
               />
             ) : null}
@@ -452,25 +467,33 @@ export function PublicCarta({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <>
+                  {openPlatoMarbella && platoBundleRows && platoBundleRows.length > 0 ? (
+                    <div className="flex min-h-0 flex-1 flex-col">
+                      <div className="shrink-0 border-b border-zinc-100 bg-white px-2 py-1 sm:px-3 sm:py-1.5">
+                        <button
+                          type="button"
+                          className="flex min-h-[48px] w-full items-center gap-2 rounded-xl bg-zinc-50 px-3 text-left text-xs font-black uppercase tracking-wide text-[#36606F] active:bg-zinc-100"
+                          onClick={() => setPlatoMarbellaDetailOpen(false)}
+                        >
+                          <ChevronLeft className="h-5 w-5 shrink-0" strokeWidth={2.5} aria-hidden />
+                          {tPlatoMarbellaUi(lang).backToList}
+                        </button>
+                      </div>
+                      <PlatoMarbellaMenuView
+                        rows={platoBundleRows}
+                        lang={lang}
+                        className="min-h-0 flex-1"
+                        onPhotoClick={(src, alt) => setLightbox({ src, alt })}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-3 sm:space-y-4">
                   {(openHasMultipleSubs
                     ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
                     : openGroup._subList
                   ).map((sub) => (
-                    <div
-                      key={sub.key}
-                      className={cn(
-                        'space-y-2',
-                        isPlatoMarbellaSub(sub.key, sub.rows) && 'flex min-h-0 flex-1 flex-col'
-                      )}
-                    >
-                      {isPlatoMarbellaSub(sub.key, sub.rows) ? (
-                        <PlatoMarbellaMenuView
-                          rows={sub.rows}
-                          lang={lang}
-                          onPhotoClick={(src, alt) => setLightbox({ src, alt })}
-                        />
-                      ) : (
+                    <div key={sub.key} className="space-y-2">
                       <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                         {chunkCartaProductGridRows(
                           mergeEnteroMedioForCartaDisplay(sub.rows),
@@ -500,6 +523,10 @@ export function PublicCarta({
                             row.category_parent_name,
                             row.photo_url
                           )
+                          const isPlatoLauncher =
+                            platoLauncherArticuloId != null &&
+                            row.articulo_id === platoLauncherArticuloId &&
+                            (platoBundleRows?.length ?? 0) > 0
                           return (
                           <div
                             key={row.articulo_id}
@@ -524,16 +551,25 @@ export function PublicCarta({
                                     type="button"
                                     className={cn(
                                       CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-                                      'cursor-zoom-in touch-manipulation active:bg-zinc-50'
+                                      'touch-manipulation active:bg-zinc-50',
+                                      isPlatoLauncher ? 'cursor-pointer' : 'cursor-zoom-in'
                                     )}
                                     style={rowFrameStyle}
-                                    aria-label="Ver foto ampliada"
-                                    onClick={() =>
+                                    aria-label={
+                                      isPlatoLauncher
+                                        ? tPlatoMarbellaUi(lang).menuModalTitle
+                                        : 'Ver foto ampliada'
+                                    }
+                                    onClick={() => {
+                                      if (isPlatoLauncher) {
+                                        setPlatoMarbellaDetailOpen(true)
+                                        return
+                                      }
                                       setLightbox({
                                         src: row.photo_url!,
                                         alt: getCartaDisplayName(row, lang),
                                       })
-                                    }
+                                    }}
                                   >
                                     <CartaMenuProductPhoto
                                       src={row.photo_url}
@@ -558,8 +594,26 @@ export function PublicCarta({
                                 'flex w-full min-w-0 shrink-0 flex-col items-center',
                                 rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
                                 rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
-                                rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5'
+                                rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5',
+                                isPlatoLauncher && 'cursor-pointer touch-manipulation active:bg-zinc-50'
                               )}
+                              role={isPlatoLauncher ? 'button' : undefined}
+                              tabIndex={isPlatoLauncher ? 0 : undefined}
+                              onClick={
+                                isPlatoLauncher
+                                  ? () => setPlatoMarbellaDetailOpen(true)
+                                  : undefined
+                              }
+                              onKeyDown={
+                                isPlatoLauncher
+                                  ? (e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        setPlatoMarbellaDetailOpen(true)
+                                      }
+                                    }
+                                  : undefined
+                              }
                             >
                                 <p
                                   className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
@@ -581,10 +635,11 @@ export function PublicCarta({
                           )
                         })}
                       </div>
-                      )}
                     </div>
                   ))}
-                </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
             {openPlatoMarbella && !openShowSubPicker ? (
