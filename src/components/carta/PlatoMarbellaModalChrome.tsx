@@ -14,7 +14,7 @@ export function PlatoMarbellaModalSubheader({
   const priceLabel = formatPlatoMarbellaMenuPrice(menuPrice)
 
   return (
-    <div className="flex shrink-0 items-baseline justify-center gap-2 px-3 pb-0 pt-0">
+    <div className="flex shrink-0 items-baseline justify-center gap-2 px-3 pb-4 pt-0 sm:pb-5">
       {subTitle ? (
         <p className="min-w-0 text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-xs">
           {subTitle}

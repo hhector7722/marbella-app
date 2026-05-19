@@ -5,10 +5,9 @@ import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
-import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
-import { resolveCartaDualRacionLabels } from '@/lib/carta-dual-racion'
+import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
 import { cn } from '@/lib/utils'
-import { Check, ChevronLeft, Circle, GripVertical, Loader2, Pencil, X } from 'lucide-react'
+import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
     type CartaLang,
     DEFAULT_CARTA_LANG,
@@ -24,7 +23,7 @@ import {
     PlatoMarbellaModalScheduleFooter,
     PlatoMarbellaModalSubheader,
 } from '@/components/carta/PlatoMarbellaModalChrome'
-import { PlatoMarbellaStaffEditor } from '@/components/carta/PlatoMarbellaStaffEditor'
+import { PlatoMarbellaStaffGridView } from '@/components/carta/PlatoMarbellaStaffGridView'
 import {
     applyPlatoMarbellaMergeIntoPlatosParentGroup,
     bucketMenuRowForPlatoMarbella,
@@ -39,17 +38,13 @@ import {
     type PlatoMarbellaReorderSection,
     type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
-import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
 import {
-    CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
     type CartaPhotoScale,
     type CartaProductGridRowDensity,
     cartaProductGridRowDensity,
     chunkCartaProductGridRows,
     getCartaProductGridRowFrameStyle,
-    getCartaProductPhotoFrameStyle,
-    getCartaProductPhotoScaleFactor,
     isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 
@@ -231,229 +226,6 @@ function applyReorderDrafts(
     return base
 }
 
-function MenuCard({
-    row,
-    lang,
-    editMode = false,
-    productReorderMode = false,
-    onEditProduct,
-    onToggleProductActive,
-    productToggleBusyId,
-    onReorderTap,
-    rowDensity = 'normal',
-    photoFrameStyle,
-    isPlatoMarbellaLauncher = false,
-    onOpenPlatoMarbella,
-    platoLauncherTitle,
-    platoLauncherPriceLabel,
-}: {
-    row: DigitalMenuRow
-    lang: CartaLang
-    editMode?: boolean
-    /** Modo reordenar productos: no abrir modal de edición al pulsar nombre/precio. */
-    productReorderMode?: boolean
-    onEditProduct?: (articuloId: number) => void
-    onToggleProductActive?: (articuloId: number) => void
-    productToggleBusyId?: number | null
-    /** Clic en foto en modo reordenar platos (misma lógica que la tarjeta). */
-    onReorderTap?: (articuloId: number) => void
-    /** Densidad vertical de la fila del grid (3 productos): compacta gaps si todas las fotos son S/M. */
-    rowDensity?: CartaProductGridRowDensity
-    /** Marco de foto compartido por fila del grid (alinea nombre/precio entre S/M/L). */
-    photoFrameStyle?: { aspectRatio?: number; height?: string }
-    /** Producto «Plat Marbella» en Platos: abre el modal del menú del día. */
-    isPlatoMarbellaLauncher?: boolean
-    onOpenPlatoMarbella?: () => void
-    platoLauncherTitle?: string
-    platoLauncherPriceLabel?: string
-}) {
-    const [lightboxOpen, setLightboxOpen] = useState(false)
-    const displayName =
-        isPlatoMarbellaLauncher && platoLauncherTitle?.trim()
-            ? platoLauncherTitle.trim()
-            : getCartaDisplayName(row, lang)
-    const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
-    const busy = editMode && productToggleBusyId === row.articulo_id
-
-    useEffect(() => {
-        if (editMode) setLightboxOpen(false)
-    }, [editMode])
-
-    const isDrink = isCartaDrinksSection(row.category_parent_name)
-    const layoutFactor = getCartaProductPhotoScaleFactor(row.carta_photo_scale, isDrink)
-    const frameStyle =
-        photoFrameStyle ?? getCartaProductPhotoFrameStyle(isDrink, layoutFactor)
-
-    return (
-        <div
-            className={cn(
-                'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
-                rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
-                rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
-                rowDensity === 'normal' && 'gap-1 sm:gap-1.5',
-                editMode && !isActive && 'opacity-75'
-            )}
-        >
-            {photoFrameStyle || row.photo_url ? (
-                <div
-                    className={cn(
-                        'w-full shrink-0',
-                        row.photo_url && 'relative',
-                        rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
-                        rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
-                        rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
-                    )}
-                >
-                    {row.photo_url ? (
-                        <>
-                        <button
-                            type="button"
-                            className={cn(
-                                CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-                                'touch-manipulation active:bg-zinc-50',
-                                productReorderMode && onReorderTap ? 'cursor-pointer' : editMode ? 'cursor-default' : 'cursor-zoom-in'
-                            )}
-                            style={frameStyle}
-                            aria-label={
-                                productReorderMode && onReorderTap
-                                    ? 'Seleccionar para reordenar'
-                                    : editMode
-                                      ? 'Foto del producto'
-                                      : 'Ver foto ampliada'
-                            }
-                            onClick={(e) => {
-                                if (productReorderMode && onReorderTap) {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    onReorderTap(row.articulo_id)
-                                    return
-                                }
-                                if (isPlatoMarbellaLauncher && onOpenPlatoMarbella) {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    onOpenPlatoMarbella()
-                                    return
-                                }
-                                if (editMode) {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    return
-                                }
-                                setLightboxOpen(true)
-                            }}
-                        >
-                            <CartaMenuProductPhoto
-                                src={row.photo_url}
-                                scale={row.carta_photo_scale}
-                                isDrink={isDrink}
-                                articuloId={row.articulo_id}
-                            />
-                        </button>
-                        {editMode && onToggleProductActive ? (
-                        <button
-                            type="button"
-                            className="absolute right-0 top-0 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none outline-none ring-0 sm:right-0.5 sm:top-0.5 sm:min-h-[48px] sm:min-w-[48px]"
-                            aria-label={isActive ? 'Desactivar en carta' : 'Activar en carta'}
-                            title={isActive ? 'Visible en carta' : 'Oculto en carta'}
-                            onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                onToggleProductActive(row.articulo_id)
-                            }}
-                        >
-                            {busy ? (
-                                <Loader2 className="h-5 w-5 animate-spin text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]" />
-                            ) : isActive ? (
-                                <Check
-                                    className="h-7 w-7 text-emerald-400"
-                                    strokeWidth={3.25}
-                                    aria-hidden
-                                />
-                            ) : (
-                                <Circle
-                                    className="h-6 w-6 text-white/35 drop-shadow-[0_2px_4px_rgba(0,0,0,0.75)]"
-                                    strokeWidth={2.5}
-                                    aria-hidden
-                                />
-                            )}
-                        </button>
-                        ) : null}
-                        </>
-                    ) : (
-                        <div
-                            className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS}
-                            style={frameStyle}
-                            aria-hidden
-                        />
-                    )}
-                </div>
-            ) : null}
-
-            <div
-                className={cn(
-                    'flex min-h-0 w-full shrink-0 flex-col items-center pt-0',
-                    rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
-                    rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
-                    rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5',
-                    editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher && 'cursor-pointer touch-manipulation active:bg-zinc-50'
-                )}
-                role={editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher ? 'button' : undefined}
-                tabIndex={editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher ? 0 : undefined}
-                onClick={
-                    isPlatoMarbellaLauncher && onOpenPlatoMarbella
-                        ? () => onOpenPlatoMarbella()
-                        : editMode && onEditProduct && !productReorderMode
-                          ? () => {
-                                onEditProduct(row.articulo_id)
-                            }
-                          : undefined
-                }
-                onKeyDown={
-                    isPlatoMarbellaLauncher && onOpenPlatoMarbella
-                        ? (e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault()
-                                  onOpenPlatoMarbella()
-                              }
-                          }
-                        : editMode && onEditProduct && !productReorderMode
-                        ? (e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault()
-                                  onEditProduct(row.articulo_id)
-                              }
-                          }
-                        : undefined
-                }
-            >
-                <p
-                    className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
-                    title={displayName}
-                >
-                    {displayName}
-                </p>
-                {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
-                    <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>
-                ) : (
-                    <CartaDualRacionPrices
-                        {...resolveCartaDualRacionLabels(row, lang)}
-                        precio={row.precio}
-                        precioMedio={row.precio_medio_display}
-                        variant="staff"
-                    />
-                )}
-            </div>
-
-            <CartaImageLightbox
-                src={row.photo_url}
-                alt={displayName}
-                title={displayName}
-                open={lightboxOpen && !!row.photo_url && !(productReorderMode && onReorderTap) && !editMode}
-                onClose={() => setLightboxOpen(false)}
-            />
-        </div>
-    )
-}
 
 function isUuidLike(s: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
@@ -649,6 +421,7 @@ export function MenuAccordion({
     const [platoMarbellaReorderSection, setPlatoMarbellaReorderSection] =
         useState<PlatoMarbellaReorderSection>('entrante')
     const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
+    const [reorderPlatoMarbellaBundle, setReorderPlatoMarbellaBundle] = useState(false)
 
     const pmCategoryIdResolved =
         platoMarbellaCategoryId ?? platoMarbellaCategoryIdFromCatalog(menuCategories ?? [])
@@ -817,10 +590,20 @@ export function MenuAccordion({
         setProductIdsDraft(null)
         setReorderPick(null)
         setPlatoMarbellaReorderSection('entrante')
+        setReorderPlatoMarbellaBundle(false)
+    }, [])
+
+    const startSubProductReorder = useCallback((subRows: DigitalMenuRow[]) => {
+        setReorderPlatoMarbellaBundle(false)
+        setPlatoMarbellaDetailOpen(false)
+        setReorderPick(null)
+        setProductIdsDraft(subRows.map((r) => r.articulo_id))
+        setReorderScope('products')
     }, [])
 
     const startPlatoMarbellaProductReorder = useCallback(
         (subRows: DigitalMenuRow[], section: PlatoMarbellaReorderSection = 'entrante') => {
+            setReorderPlatoMarbellaBundle(true)
             setPlatoMarbellaDetailOpen(true)
             setPlatoMarbellaReorderSection(section)
             setProductIdsDraft(
@@ -844,11 +627,15 @@ export function MenuAccordion({
             } else if (
                 reorderScope === 'products' &&
                 openKey &&
-                activeSubKeyForOpen &&
                 productIdsDraft &&
                 onPersistProductOrder
             ) {
-                ok = await onPersistProductOrder(openKey, activeSubKeyForOpen, productIdsDraft)
+                const subKey = reorderPlatoMarbellaBundle
+                    ? pmCategoryIdResolved
+                    : activeSubKeyForOpen ?? openGroup?._platoMarbellaHostSubKey ?? null
+                if (subKey) {
+                    ok = await onPersistProductOrder(openKey, subKey, productIdsDraft)
+                }
             }
             if (ok) {
                 cancelReorder()
@@ -868,6 +655,9 @@ export function MenuAccordion({
         onPersistChildCategoryOrder,
         onPersistProductOrder,
         cancelReorder,
+        reorderPlatoMarbellaBundle,
+        pmCategoryIdResolved,
+        openGroup?._platoMarbellaHostSubKey,
     ])
 
     if (items.length === 0) {
@@ -1074,28 +864,31 @@ export function MenuAccordion({
                                             {onPersistProductOrder &&
                                             modalProductSub &&
                                             modalProductSub.rows.length > 0 ? (
-                                                <button
-                                                    type="button"
-                                                    className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
-                                                    onClick={() => {
-                                                        if (hasPlatoMarbellaBundle && platoBundleRows) {
-                                                            startPlatoMarbellaProductReorder(
-                                                                platoBundleRows,
-                                                                'entrante'
-                                                            )
-                                                        } else {
-                                                            setReorderPick(null)
-                                                            setProductIdsDraft(
-                                                                modalProductSub.rows.map((r) => r.articulo_id)
-                                                            )
-                                                            setReorderScope('products')
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
+                                                        onClick={() =>
+                                                            startSubProductReorder(modalProductSub.rows)
                                                         }
-                                                    }}
-                                                >
-                                                    {modalProductSub && hasPlatoMarbellaBundle
-                                                        ? 'Organizar opciones'
-                                                        : 'Reordenar platos'}
-                                                </button>
+                                                    >
+                                                        {tPlatoMarbellaUi(lang).staffReorderPlatos}
+                                                    </button>
+                                                    {hasPlatoMarbellaBundle && platoBundleRows ? (
+                                                        <button
+                                                            type="button"
+                                                            className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
+                                                            onClick={() =>
+                                                                startPlatoMarbellaProductReorder(
+                                                                    platoBundleRows,
+                                                                    'entrante'
+                                                                )
+                                                            }
+                                                        >
+                                                            {tPlatoMarbellaUi(lang).staffOrganizeMarbellaMenu}
+                                                        </button>
+                                                    ) : null}
+                                                </>
                                             ) : null}
                                         </div>
                                     ) : (
@@ -1248,25 +1041,29 @@ export function MenuAccordion({
                                     {onPersistProductOrder &&
                                     modalProductSub &&
                                     modalProductSub.rows.length > 0 ? (
-                                        <button
-                                            type="button"
-                                            className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
-                                            onClick={() => {
-                                                if (hasPlatoMarbellaBundle && platoBundleRows) {
-                                                    startPlatoMarbellaProductReorder(platoBundleRows, 'entrante')
-                                                } else {
-                                                    setReorderPick(null)
-                                                    setProductIdsDraft(
-                                                        modalProductSub.rows.map((r) => r.articulo_id)
-                                                    )
-                                                    setReorderScope('products')
-                                                }
-                                            }}
-                                        >
-                                            {modalProductSub && hasPlatoMarbellaBundle
-                                                ? 'Organizar opciones'
-                                                : 'Reordenar platos'}
-                                        </button>
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
+                                                onClick={() => startSubProductReorder(modalProductSub.rows)}
+                                            >
+                                                {tPlatoMarbellaUi(lang).staffReorderPlatos}
+                                            </button>
+                                            {hasPlatoMarbellaBundle && platoBundleRows ? (
+                                                <button
+                                                    type="button"
+                                                    className="min-h-[48px] shrink-0 border-0 bg-transparent px-2 py-1 text-[10px] font-black uppercase leading-tight tracking-wide text-[#36606F] shadow-none outline-none ring-0 active:opacity-70 sm:px-2.5 sm:text-[11px]"
+                                                    onClick={() =>
+                                                        startPlatoMarbellaProductReorder(
+                                                            platoBundleRows,
+                                                            'entrante'
+                                                        )
+                                                    }
+                                                >
+                                                    {tPlatoMarbellaUi(lang).staffOrganizeMarbellaMenu}
+                                                </button>
+                                            ) : null}
+                                        </>
                                     ) : null}
                                 </div>
                             ) : null}
@@ -1305,7 +1102,7 @@ export function MenuAccordion({
                                         <span className="min-w-0">
                                             {reorderScope === 'subs'
                                                 ? '1) Pulsa la pestaña a mover. 2) Pulsa la posición destino. 3) Guardar orden.'
-                                                : modalProductSub && hasPlatoMarbellaBundle
+                                                : reorderPlatoMarbellaBundle
                                                   ? tPlatoMarbellaUi(lang).staffReorderHint
                                                   : '1) Pulsa el plato a mover. 2) Pulsa el destino (otra tarjeta). 3) Guardar orden.'}
                                         </span>
@@ -1332,7 +1129,7 @@ export function MenuAccordion({
                                         </button>
                                     </div>
                                     </div>
-                                {reorderScope === 'products' && modalProductSub && hasPlatoMarbellaBundle ? (
+                                {reorderScope === 'products' && reorderPlatoMarbellaBundle && platoBundleRows ? (
                                     <div className="mt-2 space-y-1.5 border-t border-amber-200/80 pt-2">
                                         <p className="text-center text-[10px] font-black uppercase tracking-wide text-amber-900">
                                             {tPlatoMarbellaUi(lang).staffReorderPickSection}
@@ -1349,10 +1146,7 @@ export function MenuAccordion({
                                                             : 'bg-white text-[#36606F] active:bg-zinc-100'
                                                     )}
                                                     onClick={() =>
-                                                        startPlatoMarbellaProductReorder(
-                                                            modalProductSub.rows,
-                                                            slot
-                                                        )
+                                                        startPlatoMarbellaProductReorder(platoBundleRows, slot)
                                                     }
                                                 >
                                                     {platoMarbellaSlotsForLang(lang)[slot]}
@@ -1368,7 +1162,7 @@ export function MenuAccordion({
                                                 )}
                                                 onClick={() =>
                                                     startPlatoMarbellaProductReorder(
-                                                        modalProductSub.rows,
+                                                        platoBundleRows,
                                                         'unassigned'
                                                     )
                                                 }
@@ -1454,10 +1248,11 @@ export function MenuAccordion({
                                 </div>
                             ) : openPlatoMarbella && platoBundleRows ? (
                                 <div className="flex min-h-0 flex-1 flex-col">
-                                    {reorderScope === 'products' ? (
-                                        <PlatoMarbellaStaffEditor
+                                    {reorderScope === 'products' && reorderPlatoMarbellaBundle ? (
+                                        <PlatoMarbellaStaffGridView
                                             rows={platoBundleRows}
                                             lang={lang}
+                                            launcherArticuloId={platoLauncherArticuloId ?? null}
                                             reorderMode
                                             reorderSection={platoMarbellaReorderSection}
                                             reorderPick={reorderPick}
@@ -1465,16 +1260,13 @@ export function MenuAccordion({
                                             orderedIds={productIdsDraft}
                                         />
                                     ) : editMode ? (
-                                        <PlatoMarbellaStaffEditor
+                                        <PlatoMarbellaStaffGridView
                                             rows={platoBundleRows}
                                             lang={lang}
+                                            launcherArticuloId={platoLauncherArticuloId ?? null}
                                             onEditProduct={onEditProduct}
-                                            onSlotChange={onPlatoMarbellaSlotChange}
-                                            onToggleVisible={onToggleProductActive}
-                                            onToggleHideName={onPlatoMarbellaHideNameChange}
-                                            toggleBusyId={productToggleBusyId}
-                                            hideNameToggleBusyId={platoMarbellaHideNameBusyId}
-                                            savingSlotId={platoMarbellaSlotSavingId}
+                                            onToggleProductActive={onToggleProductActive}
+                                            productToggleBusyId={productToggleBusyId}
                                         />
                                     ) : (
                                         <PlatoMarbellaMenuView
@@ -1497,7 +1289,9 @@ export function MenuAccordion({
                                     ).map((sub) => (
                                         <section key={sub.key} className="space-y-3">
                                             {reorderScope === 'products' &&
-                                            sub.key === activeSubKeyForOpen ? (
+                                            !reorderPlatoMarbellaBundle &&
+                                            sub.key ===
+                                                (activeSubKeyForOpen ?? openGroup._platoMarbellaHostSubKey) ? (
                                                 <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                                                     {chunkCartaProductGridRows(sub.rows, 3).map((chunk, chunkIdx) => {
                                                         const rowDensity = cartaProductGridRowDensity(chunk)
@@ -1540,12 +1334,13 @@ export function MenuAccordion({
                                                                     handleProductReorderTap(row.articulo_id)
                                                                 }}
                                                             >
-                                                                <MenuCard
+                                                                <CartaStaffMenuProductCard
                                                                     row={row}
                                                                     lang={lang}
                                                                     editMode={editMode}
                                                                     productReorderMode={
-                                                                        reorderScope === 'products'
+                                                                        reorderScope === 'products' &&
+                                                                        !reorderPlatoMarbellaBundle
                                                                     }
                                                                     onEditProduct={onEditProduct}
                                                                     onToggleProductActive={
@@ -1601,7 +1396,7 @@ export function MenuAccordion({
                                                             >
                                                                 {chunk.map((row) => (
                                                         <div key={row.articulo_id} className="h-full">
-                                                            <MenuCard
+                                                            <CartaStaffMenuProductCard
                                                                 row={row}
                                                                 lang={lang}
                                                                 editMode={editMode}

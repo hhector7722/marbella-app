@@ -186,11 +186,16 @@ export function PlatoMarbellaMenuView({
 
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
-      <div className="shrink-0 space-y-0 bg-white px-2 pb-0 pt-0 sm:px-3">
+      <div className="shrink-0 bg-white px-2 pb-0 pt-0 sm:px-3">
         <p className="text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-[13px]">
           {ui.plateExploreHint}
         </p>
-        <PlatoMarbellaPlateVisual lang={lang} activeSlot={activeSlot} onSlotChange={onSlotChange} />
+        <PlatoMarbellaPlateVisual
+          lang={lang}
+          activeSlot={activeSlot}
+          onSlotChange={onSlotChange}
+          className="mt-4 sm:mt-5"
+        />
       </div>
 
       <div

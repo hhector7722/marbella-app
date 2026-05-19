@@ -108,6 +108,8 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       plateTapZone: 'Pulsa',
       plateExploreHint: 'Toca cada parte del plato para ver sus opciones',
       staffOpenConfig: 'Config. Plat Marbella',
+      staffReorderPlatos: 'Reordenar platos',
+      staffOrganizeMarbellaMenu: 'Organizar menú Marbella',
     },
     ca: {
       plateTagline: 'Tria un entrant, un principal i una guarnició',
@@ -150,6 +152,8 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       plateTapZone: 'Prem',
       plateExploreHint: 'Toca cada part del plat per veure les opcions',
       staffOpenConfig: 'Config. Plat Marbella',
+      staffReorderPlatos: 'Reordenar plats',
+      staffOrganizeMarbellaMenu: 'Organitzar menú Marbella',
     },
     en: {
       plateTagline: 'Pick a starter, a main and a side',
@@ -191,6 +195,8 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       plateTapZone: 'Tap',
       plateExploreHint: 'Tap each part of the plate to see its options',
       staffOpenConfig: 'Marbella plate setup',
+      staffReorderPlatos: 'Reorder dishes',
+      staffOrganizeMarbellaMenu: 'Organize Marbella menu',
     },
   } as const
   return dict[lang]
