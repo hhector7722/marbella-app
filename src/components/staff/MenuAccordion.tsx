@@ -1184,6 +1184,15 @@ export function MenuAccordion({
                                         })}
                                     </div>
                                 </div>
+                            ) : openPlatoMarbella ? (
+                                <button
+                                    type="button"
+                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                    aria-label={tPlatoMarbellaUi(lang).backToPlatos}
+                                    onClick={() => setPlatoMarbellaDetailOpen(false)}
+                                >
+                                    <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
+                                </button>
                             ) : (
                                 <h2
                                     id="staff-carta-section-modal-title"
@@ -1408,16 +1417,6 @@ export function MenuAccordion({
                                 </div>
                             ) : openPlatoMarbella && platoBundleRows ? (
                                 <div className="flex min-h-0 flex-1 flex-col">
-                                    <div className="shrink-0 border-b border-zinc-100 bg-white px-2 py-1 sm:px-3 sm:py-1.5">
-                                        <button
-                                            type="button"
-                                            className="flex min-h-[48px] w-full items-center gap-2 rounded-xl bg-zinc-50 px-3 text-left text-xs font-black uppercase tracking-wide text-[#36606F] active:bg-zinc-100"
-                                            onClick={() => setPlatoMarbellaDetailOpen(false)}
-                                        >
-                                            <ChevronLeft className="h-5 w-5 shrink-0" strokeWidth={2.5} aria-hidden />
-                                            {tPlatoMarbellaUi(lang).backToList}
-                                        </button>
-                                    </div>
                                     {reorderScope === 'products' ? (
                                         <PlatoMarbellaStaffEditor
                                             rows={platoBundleRows}

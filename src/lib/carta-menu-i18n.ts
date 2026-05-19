@@ -103,7 +103,10 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       staffMarkMenuPrice: 'Precio conjunto',
       staffEditItem: 'Editar',
       menuModalTitle: 'Plat Marbella',
-      backToList: 'Volver a la lista',
+      backToPlatos: 'Volver a platos',
+      plateActiveHere: 'Aquí',
+      plateTapZone: 'Pulsa',
+      plateExploreHint: 'Toca cada parte del plato para ver sus opciones',
     },
     ca: {
       plateTagline: 'Tria un entrant, un principal i una guarnició',
@@ -141,7 +144,10 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       staffMarkMenuPrice: 'Preu conjunt',
       staffEditItem: 'Editar',
       menuModalTitle: 'Plat Marbella',
-      backToList: 'Tornar a la llista',
+      backToPlatos: 'Tornar a plats',
+      plateActiveHere: 'Aquí',
+      plateTapZone: 'Prem',
+      plateExploreHint: 'Toca cada part del plat per veure les opcions',
     },
     en: {
       plateTagline: 'Pick a starter, a main and a side',
@@ -178,7 +184,10 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       staffMarkMenuPrice: 'Set price',
       staffEditItem: 'Edit',
       menuModalTitle: 'Marbella plate',
-      backToList: 'Back to list',
+      backToPlatos: 'Back to mains',
+      plateActiveHere: 'Here',
+      plateTapZone: 'Tap',
+      plateExploreHint: 'Tap each part of the plate to see its options',
     },
   } as const
   return dict[lang]

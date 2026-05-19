@@ -1,31 +1,28 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { CartaLang } from '@/lib/carta-menu-i18n'
+import { tPlatoMarbellaUi, type CartaLang } from '@/lib/carta-menu-i18n'
 import { platoMarbellaPlateSlotLabels, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
 
-const SLOT_REGION: Record<
-  PlatoMarbellaSlot,
-  { className: string; labelClass: string }
-> = {
+const SLOT_REGION: Record<PlatoMarbellaSlot, { className: string }> = {
   entrante: {
     className: 'left-[7%] right-[7%] top-[6%] h-[30%] rounded-t-[999px] rounded-b-md',
-    labelClass: 'top-1/2 -translate-y-[55%]',
   },
   principal: {
     className: 'bottom-[6%] left-[7%] h-[52%] w-[42%] rounded-bl-[1.25rem] rounded-br-md rounded-tl-md',
-    labelClass: 'top-1/2 -translate-y-1/2',
   },
   guarnicion: {
     className: 'bottom-[6%] right-[7%] h-[52%] w-[42%] rounded-br-[1.25rem] rounded-bl-md rounded-tr-md',
-    labelClass: 'top-1/2 -translate-y-1/2',
   },
 }
 
-const PLATE_LABEL_CLASS =
-  'pointer-events-none absolute inset-x-0.5 text-center font-sans text-[8.5px] font-semibold leading-[1.2] tracking-[0.03em] antialiased sm:text-[9.5px]'
+const SLOT_LABEL_CLASS =
+  'pointer-events-none text-center font-sans text-[8.5px] font-semibold leading-tight tracking-[0.03em] antialiased sm:text-[9.5px]'
+
+const SLOT_HINT_CLASS =
+  'pointer-events-none mt-0.5 text-center font-sans text-[7px] font-bold uppercase leading-none tracking-[0.08em] antialiased sm:text-[7.5px]'
 
 export function PlatoMarbellaPlateVisual({
   lang,
@@ -38,6 +35,7 @@ export function PlatoMarbellaPlateVisual({
   onSlotChange: (slot: PlatoMarbellaSlot) => void
   className?: string
 }) {
+  const ui = tPlatoMarbellaUi(lang)
   const slotLabels = platoMarbellaPlateSlotLabels(lang)
 
   return (
@@ -70,24 +68,35 @@ export function PlatoMarbellaPlateVisual({
               type="button"
               role="tab"
               aria-selected={isActive}
-              aria-label={slotLabels[slot]}
+              aria-label={
+                isActive
+                  ? `${slotLabels[slot]} — ${ui.plateActiveHere}`
+                  : `${slotLabels[slot]} — ${ui.plateTapZone}`
+              }
               className={cn(
-                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 transition-all duration-200 ease-out',
+                'absolute z-10 flex min-h-[40px] touch-manipulation flex-col items-center justify-center border-0 px-1 transition-all duration-200 ease-out',
                 region.className,
                 isActive
-                  ? 'z-20 bg-[#36606F]/16'
-                  : 'bg-transparent hover:bg-[#36606F]/8 active:bg-[#36606F]/12'
+                  ? 'z-20 bg-[#36606F]/20 ring-2 ring-inset ring-[#36606F]/45'
+                  : 'bg-white/55 ring-1 ring-inset ring-[#36606F]/20 hover:bg-[#36606F]/12 hover:ring-[#36606F]/35 active:bg-[#36606F]/16'
               )}
               onClick={() => onSlotChange(slot)}
             >
               <span
                 className={cn(
-                  PLATE_LABEL_CLASS,
-                  region.labelClass,
-                  isActive ? 'font-bold text-[#36606F]' : 'text-zinc-500/85'
+                  SLOT_LABEL_CLASS,
+                  isActive ? 'font-black text-[#36606F]' : 'font-semibold text-zinc-600'
                 )}
               >
                 {slotLabels[slot]}
+              </span>
+              <span
+                className={cn(
+                  SLOT_HINT_CLASS,
+                  isActive ? 'text-[#36606F]/90' : 'text-[#36606F]/55'
+                )}
+              >
+                {isActive ? ui.plateActiveHere : ui.plateTapZone}
               </span>
             </button>
           )
