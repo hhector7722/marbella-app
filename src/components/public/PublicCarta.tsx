@@ -34,9 +34,10 @@ import {
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
 import {
-  PlatoMarbellaModalScheduleFooter,
-  PlatoMarbellaModalSubheader,
+    PlatoMarbellaModalScheduleFooter,
+    PlatoMarbellaModalSubheader,
 } from '@/components/carta/PlatoMarbellaModalChrome'
+import { PlatoMarbellaModalHeaderBar } from '@/components/carta/PlatoMarbellaModalHeaderBar'
 import {
   applyPlatoMarbellaMergeIntoPlatosParentGroup,
   bucketMenuRowForPlatoMarbella,
@@ -369,16 +370,11 @@ export function PublicCarta({
           >
             {!openShowSubPicker ? (
             openPlatoMarbella && !openShowSubTabs ? (
-              <div className="flex w-full shrink-0 items-center justify-end bg-white px-3 py-2.5 sm:px-3.5 sm:py-3">
-                <button
-                  type="button"
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                  aria-label={tPlatoMarbellaUi(lang).backToPlatos}
-                  onClick={() => setPlatoMarbellaDetailOpen(false)}
-                >
-                  <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                </button>
-              </div>
+              <PlatoMarbellaModalHeaderBar
+                backLabel={tPlatoMarbellaUi(lang).backToPlatos}
+                onBackToPlatos={() => setPlatoMarbellaDetailOpen(false)}
+                onClose={() => setOpenKey(null)}
+              />
             ) : (
             <div
               className={cn(

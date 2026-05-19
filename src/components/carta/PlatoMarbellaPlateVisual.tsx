@@ -3,6 +3,7 @@
 import { useId } from 'react'
 import { cn } from '@/lib/utils'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
+import { PLATO_MARBELLA_BRAND } from '@/components/carta/PlatoMarbellaModalHeaderBar'
 import { platoMarbellaPlateSlotLabels, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
@@ -28,9 +29,11 @@ const SLOT_RECT: Record<PlatoMarbellaSlot, string> = {
 
 const SLOT_LABEL_POS: Record<PlatoMarbellaSlot, { x: number; y: number }> = {
   entrante: { x: PLATE_G.cx, y: 44 },
-  principal: { x: 52, y: 132 },
-  guarnicion: { x: 148, y: 132 },
+  principal: { x: 52, y: 122 },
+  guarnicion: { x: 148, y: 122 },
 }
+
+const PM_STROKE_INACTIVE = 'rgba(54, 96, 111, 0.2)'
 
 export function PlatoMarbellaPlateVisual({
   lang,
@@ -99,9 +102,9 @@ export function PlatoMarbellaPlateVisual({
                 aria-selected={isActive}
                 aria-label={slotLabels[slot]}
                 d={SLOT_RECT[slot]}
-                fill={isActive ? 'rgba(54, 96, 111, 0.14)' : 'transparent'}
-                stroke={isActive ? 'rgba(54, 96, 111, 0.55)' : 'rgba(54, 96, 111, 0.18)'}
-                strokeWidth={isActive ? 2 : 1}
+                fill={isActive ? 'rgba(54, 96, 111, 0.12)' : 'transparent'}
+                stroke={isActive ? PLATO_MARBELLA_BRAND : PM_STROKE_INACTIVE}
+                strokeWidth={isActive ? 2.5 : 1}
                 className="cursor-pointer touch-manipulation outline-none transition-[fill,stroke] duration-200 ease-out hover:fill-[rgba(54,96,111,0.08)]"
                 onClick={() => onSlotChange(slot)}
                 onKeyDown={(e) => {
@@ -148,7 +151,7 @@ export function PlatoMarbellaPlateVisual({
               dominantBaseline="middle"
               pointerEvents="none"
               className={cn(
-                'select-none font-sans text-[8.5px] tracking-[0.03em] antialiased sm:text-[9.5px]',
+                'select-none font-sans text-[10.5px] tracking-[0.03em] antialiased sm:text-[12px]',
                 isActive ? 'fill-[#36606F] font-black' : 'fill-zinc-600 font-semibold'
               )}
             >

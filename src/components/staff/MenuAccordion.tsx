@@ -23,6 +23,7 @@ import {
     PlatoMarbellaModalScheduleFooter,
     PlatoMarbellaModalSubheader,
 } from '@/components/carta/PlatoMarbellaModalChrome'
+import { PlatoMarbellaModalHeaderBar } from '@/components/carta/PlatoMarbellaModalHeaderBar'
 import { PlatoMarbellaStaffGridView } from '@/components/carta/PlatoMarbellaStaffGridView'
 import {
     applyPlatoMarbellaMergeIntoPlatosParentGroup,
@@ -829,6 +830,13 @@ export function MenuAccordion({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {!openShowSubPicker ? (
+                        openPlatoMarbella && !openShowSubTabs ? (
+                            <PlatoMarbellaModalHeaderBar
+                                backLabel={tPlatoMarbellaUi(lang).backToPlatos}
+                                onBackToPlatos={() => setPlatoMarbellaDetailOpen(false)}
+                                onClose={() => setOpenKey(null)}
+                            />
+                        ) : (
                         <div
                             className={cn(
                                 'flex shrink-0 bg-white px-2 sm:px-3',
@@ -1075,30 +1083,17 @@ export function MenuAccordion({
                                 </button>
                             ) : null}
                             {!openShowSubTabs ? (
-                                <div className="flex shrink-0 items-center gap-1">
-                                    {openPlatoMarbella ? (
-                                        <button
-                                            type="button"
-                                            className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                            aria-label={tPlatoMarbellaUi(lang).backToPlatos}
-                                            onClick={() => setPlatoMarbellaDetailOpen(false)}
-                                        >
-                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                        </button>
-                                    ) : null}
-                                    {!openPlatoMarbella ? (
-                                        <button
-                                            type="button"
-                                            className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                            aria-label="Cerrar"
-                                            onClick={() => setOpenKey(null)}
-                                        >
-                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                        </button>
-                                    ) : null}
-                                </div>
+                                <button
+                                    type="button"
+                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                    aria-label="Cerrar"
+                                    onClick={() => setOpenKey(null)}
+                                >
+                                    <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                </button>
                             ) : null}
                         </div>
+                        )
                         ) : null}
 
                         {reorderScope === 'subs' || reorderScope === 'products' ? (
