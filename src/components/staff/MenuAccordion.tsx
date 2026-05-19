@@ -28,6 +28,7 @@ import { PlatoMarbellaStaffEditor } from '@/components/carta/PlatoMarbellaStaffE
 import {
     applyPlatoMarbellaMergeIntoPlatosParentGroup,
     bucketMenuRowForPlatoMarbella,
+    formatPlatoMarbellaMenuPrice,
     groupPlatoMarbellaItems,
     platoMarbellaRowsForReorderSection,
     platoMarbellaCategoryIdFromCatalog,
@@ -243,6 +244,8 @@ function MenuCard({
     photoFrameStyle,
     isPlatoMarbellaLauncher = false,
     onOpenPlatoMarbella,
+    platoLauncherTitle,
+    platoLauncherPriceLabel,
 }: {
     row: DigitalMenuRow
     lang: CartaLang
@@ -261,9 +264,14 @@ function MenuCard({
     /** Producto «Plat Marbella» en Platos: abre el modal del menú del día. */
     isPlatoMarbellaLauncher?: boolean
     onOpenPlatoMarbella?: () => void
+    platoLauncherTitle?: string
+    platoLauncherPriceLabel?: string
 }) {
     const [lightboxOpen, setLightboxOpen] = useState(false)
-    const displayName = getCartaDisplayName(row, lang)
+    const displayName =
+        isPlatoMarbellaLauncher && platoLauncherTitle?.trim()
+            ? platoLauncherTitle.trim()
+            : getCartaDisplayName(row, lang)
     const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
     const busy = editMode && productToggleBusyId === row.articulo_id
 
@@ -424,12 +432,16 @@ function MenuCard({
                 >
                     {displayName}
                 </p>
-                <CartaDualRacionPrices
-                    {...resolveCartaDualRacionLabels(row, lang)}
-                    precio={row.precio}
-                    precioMedio={row.precio_medio_display}
-                    variant="staff"
-                />
+                {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
+                    <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>
+                ) : (
+                    <CartaDualRacionPrices
+                        {...resolveCartaDualRacionLabels(row, lang)}
+                        precio={row.precio}
+                        precioMedio={row.precio_medio_display}
+                        variant="staff"
+                    />
+                )}
             </div>
 
             <CartaImageLightbox
@@ -691,6 +703,14 @@ export function MenuAccordion({
     const platoBundleRows = openGroup?._platoMarbellaBundleRows ?? null
     const platoLauncherArticuloId = openGroup?._platoMarbellaLauncherArticuloId
     const hasPlatoMarbellaBundle = (platoBundleRows?.length ?? 0) > 0
+    const platoMarbellaGrouped = useMemo(
+        () => (platoBundleRows ? groupPlatoMarbellaItems(platoBundleRows) : null),
+        [platoBundleRows]
+    )
+    const platoGridMenuPrice = platoMarbellaGrouped?.menuPrice ?? null
+    const platoLauncherTitle = tPlatoMarbellaUi(lang).menuModalTitle
+    const platoLauncherPriceLabel =
+        platoGridMenuPrice != null ? formatPlatoMarbellaMenuPrice(platoGridMenuPrice) : undefined
     const platosParentId = platosParentCategoryIdForPlatoMarbella(menuCategories ?? [])
     const isOpenPlatosParent = Boolean(openGroup && platosParentId && openGroup.key === platosParentId)
 
@@ -1461,6 +1481,7 @@ export function MenuAccordion({
                                             rows={platoBundleRows}
                                             lang={lang}
                                             showUnassigned
+                                            launcherArticuloId={platoLauncherArticuloId ?? null}
                                             className="min-h-0 flex-1"
                                             onPhotoClick={(src, alt) =>
                                                 setPlatoLightbox({ src, alt })
@@ -1544,6 +1565,8 @@ export function MenuAccordion({
                                                                     onOpenPlatoMarbella={() =>
                                                                         setPlatoMarbellaDetailOpen(true)
                                                                     }
+                                                                    platoLauncherTitle={platoLauncherTitle}
+                                                                    platoLauncherPriceLabel={platoLauncherPriceLabel}
                                                                 />
                                                             </div>
                                                         )
@@ -1599,6 +1622,8 @@ export function MenuAccordion({
                                                                 onOpenPlatoMarbella={() =>
                                                                     setPlatoMarbellaDetailOpen(true)
                                                                 }
+                                                                platoLauncherTitle={platoLauncherTitle}
+                                                                platoLauncherPriceLabel={platoLauncherPriceLabel}
                                                             />
                                                         </div>
                                                     ))}

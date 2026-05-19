@@ -40,6 +40,7 @@ import {
 import {
   applyPlatoMarbellaMergeIntoPlatosParentGroup,
   bucketMenuRowForPlatoMarbella,
+  formatPlatoMarbellaMenuPrice,
   groupPlatoMarbellaItems,
   platoMarbellaCategoryIdFromCatalog,
   type MenuCategoryCatalogEntry,
@@ -240,10 +241,17 @@ export function PublicCarta({
   const openPlatoMarbella =
     Boolean(platoMarbellaDetailOpen && platoBundleRows && platoBundleRows.length > 0)
 
+  const platoMarbellaGrouped = useMemo(
+    () => (platoBundleRows ? groupPlatoMarbellaItems(platoBundleRows) : null),
+    [platoBundleRows]
+  )
+
   const openPlatoMenuPrice = useMemo(() => {
-    if (!openPlatoMarbella || !platoBundleRows) return null
-    return groupPlatoMarbellaItems(platoBundleRows).menuPrice
-  }, [openPlatoMarbella, platoBundleRows])
+    if (!openPlatoMarbella || !platoMarbellaGrouped) return null
+    return platoMarbellaGrouped.menuPrice
+  }, [openPlatoMarbella, platoMarbellaGrouped])
+
+  const platoGridMenuPrice = platoMarbellaGrouped?.menuPrice ?? null
 
   const subCategoryButtonLabel = (
     sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
@@ -482,6 +490,7 @@ export function PublicCarta({
                       <PlatoMarbellaMenuView
                         rows={platoBundleRows}
                         lang={lang}
+                        launcherArticuloId={platoLauncherArticuloId ?? null}
                         className="min-h-0 flex-1"
                         onPhotoClick={(src, alt) => setLightbox({ src, alt })}
                       />
@@ -616,16 +625,28 @@ export function PublicCarta({
                             >
                                 <p
                                   className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
-                                  title={getCartaDisplayName(row, lang)}
+                                  title={
+                                    isPlatoLauncher
+                                      ? tPlatoMarbellaUi(lang).menuModalTitle
+                                      : getCartaDisplayName(row, lang)
+                                  }
                                 >
-                                  {getCartaDisplayName(row, lang)}
+                                  {isPlatoLauncher
+                                    ? tPlatoMarbellaUi(lang).menuModalTitle
+                                    : getCartaDisplayName(row, lang)}
                                 </p>
-                                <CartaDualRacionPrices
-                                  {...resolveCartaDualRacionLabels(row, lang)}
-                                  precio={row.precio}
-                                  precioMedio={row.precio_medio_display}
-                                  variant="public"
-                                />
+                                {isPlatoLauncher && platoGridMenuPrice != null ? (
+                                  <p className="text-center text-sm font-black text-[#36606F]">
+                                    {formatPlatoMarbellaMenuPrice(platoGridMenuPrice)}
+                                  </p>
+                                ) : (
+                                  <CartaDualRacionPrices
+                                    {...resolveCartaDualRacionLabels(row, lang)}
+                                    precio={row.precio}
+                                    precioMedio={row.precio_medio_display}
+                                    variant="public"
+                                  />
+                                )}
                               </div>
                             </div>
                           )

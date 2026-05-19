@@ -143,17 +143,24 @@ export function PlatoMarbellaMenuView({
   rows,
   lang,
   showUnassigned = false,
+  launcherArticuloId = null,
   onPhotoClick,
   className,
 }: {
   rows: OptionRow[]
   lang: CartaLang
   showUnassigned?: boolean
+  /** No listar el lanzador en «sin tramo» (ya está en Platos). */
+  launcherArticuloId?: number | null
   onPhotoClick?: (src: string, alt: string) => void
   className?: string
 }) {
   const ui = tPlatoMarbellaUi(lang)
   const grouped = groupPlatoMarbellaItems(rows)
+  const unassignedRows =
+    launcherArticuloId != null
+      ? grouped.unassigned.filter((r) => r.articulo_id !== launcherArticuloId)
+      : grouped.unassigned
   const [activeSlot, setActiveSlot] = useState<PlatoMarbellaSlot>('entrante')
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -206,14 +213,14 @@ export function PlatoMarbellaMenuView({
           </div>
         )}
 
-        {showUnassigned && grouped.unassigned.length > 0 ? (
+        {showUnassigned && unassignedRows.length > 0 ? (
           <section className="mt-4 space-y-2 rounded-xl border border-amber-200 bg-amber-50/80 p-2">
             <h3 className="text-center text-xs font-black uppercase tracking-wide text-amber-900">
               {ui.unassigned}
             </h3>
             <p className="text-center text-[11px] font-semibold text-amber-800">{ui.unassignedHint}</p>
             <div className="flex flex-col gap-y-2">
-              {chunkCartaProductGridRows(grouped.unassigned as OptionRow[], 3).map((chunk, chunkIdx) => (
+              {chunkCartaProductGridRows(unassignedRows as OptionRow[], 3).map((chunk, chunkIdx) => (
                 <CenteredProductRow
                   key={chunkIdx}
                   chunk={chunk as OptionRow[]}

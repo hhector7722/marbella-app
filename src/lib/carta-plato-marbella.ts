@@ -160,7 +160,6 @@ export function isPlatoMarbellaAffiliatedRow(
   if (isPlatoMarbellaSubcategory(row)) return true
   if (platoMarbellaCategoryId && row.category_child_id === platoMarbellaCategoryId) return true
   if (platoMarbellaCategoryId && row.category_id === platoMarbellaCategoryId) return true
-  if (row.plato_marbella_hide_name) return true
   return false
 }
 
@@ -224,16 +223,78 @@ function sortMenuRowsByCartaOrder<T extends { sort_order?: number | null; articu
   })
 }
 
-/** Tarjeta «entrada» al modal: artículo marcado precio menú, o el primero por orden. */
-export function pickPlatoMarbellaLauncherRow<
-  T extends PlatoMarbellaMenuRow & { articulo_id: number; sort_order?: number | null },
->(bundle: T[]): T {
+export function hasPlatoMarbellaAssignedSlot(
+  row: Pick<PlatoMarbellaMenuRow, 'plato_marbella_slot'>
+): boolean {
+  const s = (row.plato_marbella_slot as string | null | undefined)?.trim()
+  return Boolean(s && SLOT_ORDER.includes(s as PlatoMarbellaSlot))
+}
+
+type PlatoMarbellaLauncherPickRow = PlatoMarbellaMenuRow & {
+  articulo_id: number
+  sort_order?: number | null
+  carta_nombre?: string | null
+  carta_nombre_es?: string | null
+  carta_nombre_ca?: string | null
+  carta_nombre_en?: string | null
+  articulo_nombre?: string | null
+}
+
+function platoMarbellaLauncherNameHaystack(row: PlatoMarbellaLauncherPickRow): string {
+  return [
+    row.carta_nombre_es,
+    row.carta_nombre_ca,
+    row.carta_nombre_en,
+    row.carta_nombre,
+    row.articulo_nombre,
+  ]
+    .filter((s): s is string => Boolean(s?.trim()))
+    .join(' ')
+    .toLowerCase()
+}
+
+/** El lanzador nunca es una opción de tramo (entrante/principal/guarnición). */
+export function isPlatoMarbellaLauncherCandidate(
+  row: Pick<PlatoMarbellaMenuRow, 'plato_marbella_is_menu_price' | 'plato_marbella_slot'>
+): boolean {
+  if (row.plato_marbella_is_menu_price) return true
+  return !hasPlatoMarbellaAssignedSlot(row)
+}
+
+export function rowNameLooksLikePlatoMarbella(row: PlatoMarbellaLauncherPickRow): boolean {
+  const n = platoMarbellaLauncherNameHaystack(row)
+  return (
+    n.includes('marbella') ||
+    n.includes('mediodía') ||
+    n.includes('mediodia') ||
+    n.includes('plat del dia') ||
+    n.includes('plato del día') ||
+    n.includes('menú del día') ||
+    n.includes('menu del dia')
+  )
+}
+
+/**
+ * Tarjeta visible en Platos: precio menú, o fila sin tramo cuyo nombre encaja con Plat Marbella.
+ * Nunca una opción con tramo (p. ej. revuelto como entrante).
+ */
+export function pickPlatoMarbellaLauncherRow<T extends PlatoMarbellaLauncherPickRow>(bundle: T[]): T {
   if (!bundle.length) throw new Error('pickPlatoMarbellaLauncherRow: bundle vacío')
+
   const priced = bundle.filter((r) => r.plato_marbella_is_menu_price)
   if (priced.length) return sortMenuRowsByCartaOrder(priced)[0]!
-  const hideName = bundle.filter((r) => r.plato_marbella_hide_name)
+
+  const candidates = bundle.filter(isPlatoMarbellaLauncherCandidate)
+  const pool = candidates.length > 0 ? candidates : bundle.filter((r) => !hasPlatoMarbellaAssignedSlot(r))
+  const pickFrom = pool.length > 0 ? pool : bundle
+
+  const byName = pickFrom.filter(rowNameLooksLikePlatoMarbella)
+  if (byName.length) return sortMenuRowsByCartaOrder(byName)[0]!
+
+  const hideName = pickFrom.filter((r) => r.plato_marbella_hide_name)
   if (hideName.length) return sortMenuRowsByCartaOrder(hideName)[0]!
-  return sortMenuRowsByCartaOrder(bundle)[0]!
+
+  return sortMenuRowsByCartaOrder(pickFrom)[0]!
 }
 
 type PlatoMarbellaSubBucket<T> = { title: string; sortOrder: number; rows: T[] }
