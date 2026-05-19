@@ -22,6 +22,7 @@ export type MenuOverrideUpsertInput = {
   override_photo_url: string | null
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
+  plato_marbella_hide_name: boolean
   carta_photo_scale: CartaPhotoScale
   carta_dual_racion_enabled: boolean
   override_precio_medio: number | null
@@ -71,6 +72,7 @@ type OverrideRow = {
   override_photo_url: string | null
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
+  plato_marbella_hide_name: boolean
   carta_photo_scale: CartaPhotoScale
   carta_dual_racion_enabled: boolean
   override_precio_medio: number | null
@@ -154,6 +156,10 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     override_photo_url: 'override_photo_url' in input ? input.override_photo_url! : (ex?.override_photo_url ?? null),
     plato_marbella_slot: nextSlot,
     plato_marbella_is_menu_price: nextMenuPrice,
+    plato_marbella_hide_name:
+      'plato_marbella_hide_name' in input
+        ? Boolean(input.plato_marbella_hide_name)
+        : (ex?.plato_marbella_hide_name ?? false),
     carta_photo_scale:
       'carta_photo_scale' in input
         ? input.carta_photo_scale!
@@ -203,7 +209,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
       ;({ error } = await supabase
         .from('digital_menu_overrides')
         .upsert(withoutScale, { onConflict: 'articulo_id', ignoreDuplicates: false }))
-    } else if (/carta_dual_racion|override_precio_medio|carta_racion_/i.test(msg)) {
+    } else if (/carta_dual_racion|override_precio_medio|carta_racion_|plato_marbella_hide_name/i.test(msg)) {
       const {
         carta_dual_racion_enabled: _d,
         override_precio_medio: _pm,
@@ -213,6 +219,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
         carta_racion_medio_es: _mes,
         carta_racion_medio_ca: _mca,
         carta_racion_medio_en: _men,
+        plato_marbella_hide_name: _hn,
         ...withoutDual
       } = merged
       ;({ error } = await supabase

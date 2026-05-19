@@ -79,6 +79,7 @@ export type DigitalMenuRow = {
     category_child_slug?: string | null
     plato_marbella_slot?: string | null
     plato_marbella_is_menu_price?: boolean | null
+    plato_marbella_hide_name?: boolean | null
     recipe_id: string
     recipe_name: string
     descripcion: string | null
@@ -439,6 +440,8 @@ export function MenuAccordion({
     platoMarbellaCategoryId,
     onPlatoMarbellaSlotChange,
     platoMarbellaSlotSavingId,
+    onPlatoMarbellaHideNameChange,
+    platoMarbellaHideNameBusyId,
     menuCategories,
     showEmptyMenuChildCategories = false,
     categoryCoverById = {},
@@ -465,6 +468,8 @@ export function MenuAccordion({
         isMenuPrice: boolean
     ) => void | Promise<void>
     platoMarbellaSlotSavingId?: number | null
+    onPlatoMarbellaHideNameChange?: (articuloId: number, hideName: boolean) => void | Promise<void>
+    platoMarbellaHideNameBusyId?: number | null
     /** Catálogo menu (scope=menu) para pestañas vacías y reagrupar Plato Marbella. */
     menuCategories?: MenuCategoryCatalogEntry[]
     showEmptyMenuChildCategories?: boolean
@@ -973,10 +978,12 @@ export function MenuAccordion({
                         {!openShowSubPicker ? (
                         <div
                             className={cn(
-                                'flex shrink-0 bg-white px-2 py-2 sm:px-3 sm:py-2.5',
-                                openShowSubTabs
-                                    ? 'flex-col gap-1 sm:gap-1.5'
-                                    : 'items-center gap-1.5 sm:gap-2'
+                                'flex shrink-0 bg-white px-2 sm:px-3',
+                                showPlatoModalChrome && openShowSubTabs
+                                    ? 'flex-col gap-0 py-1 sm:py-1.5'
+                                    : openShowSubTabs
+                                      ? 'flex-col gap-1 py-2 sm:gap-1.5 sm:py-2.5'
+                                      : 'items-center gap-1.5 py-2 sm:gap-2 sm:py-2.5'
                             )}
                         >
                             {openShowSubTabs ? (
@@ -1473,7 +1480,9 @@ export function MenuAccordion({
                                                         onEditProduct={onEditProduct}
                                                         onSlotChange={onPlatoMarbellaSlotChange}
                                                         onToggleVisible={onToggleProductActive}
+                                                        onToggleHideName={onPlatoMarbellaHideNameChange}
                                                         toggleBusyId={productToggleBusyId}
+                                                        hideNameToggleBusyId={platoMarbellaHideNameBusyId}
                                                         savingSlotId={platoMarbellaSlotSavingId}
                                                     />
                                                 ) : (

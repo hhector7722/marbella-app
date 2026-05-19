@@ -28,15 +28,15 @@ type OptionRow = PlatoMarbellaMenuRow & CartaNameRow
 function OptionGridCard({
   row,
   lang,
+  hideName,
   onPhotoClick,
   rowFrameStyle,
-  rowDensity,
 }: {
   row: OptionRow
   lang: CartaLang
+  hideName: boolean
   onPhotoClick?: (src: string, alt: string) => void
   rowFrameStyle: CSSProperties
-  rowDensity: 'compact' | 'cozy' | 'normal'
 }) {
   const name = getCartaDisplayName(row, lang)
   const photo = row.photo_url?.trim() || null
@@ -44,22 +44,8 @@ function OptionGridCard({
   const frameStyle = getCartaProductPhotoFrameStyle(false, layoutFactor)
 
   return (
-    <div
-      className={cn(
-        'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
-        rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
-        rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
-        rowDensity === 'normal' && 'gap-1 sm:gap-1.5'
-      )}
-    >
-      <div
-        className={cn(
-          'w-full shrink-0',
-          rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
-          rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
-          rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
-        )}
-      >
+    <div className="flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white">
+      <div className={cn('w-full shrink-0 px-0.5 pt-0.5 sm:px-1')}>
         {photo ? (
           <button
             type="button"
@@ -68,7 +54,7 @@ function OptionGridCard({
               'min-h-[48px] w-full touch-manipulation active:bg-zinc-50'
             )}
             style={frameStyle}
-            aria-label="Ver foto ampliada"
+            aria-label={hideName ? name : 'Ver foto ampliada'}
             onClick={() => onPhotoClick?.(photo, name)}
           >
             <CartaMenuProductPhoto src={photo} scale={row.carta_photo_scale} isDrink={false} />
@@ -81,21 +67,16 @@ function OptionGridCard({
           />
         )}
       </div>
-      <div
-        className={cn(
-          'flex min-h-[48px] w-full min-w-0 shrink-0 flex-col items-center justify-center',
-          rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
-          rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:pb-2',
-          rowDensity === 'normal' && 'gap-1 px-2 pb-2'
-        )}
-      >
-        <p
-          className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
-          title={name}
-        >
-          {name}
-        </p>
-      </div>
+      {!hideName ? (
+        <div className="flex w-full min-w-0 shrink-0 flex-col items-center justify-center px-1 pb-0.5 pt-0">
+          <p
+            className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
+            title={name}
+          >
+            {name}
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -110,7 +91,6 @@ function CenteredProductRow({
   onPhotoClick?: (src: string, alt: string) => void
 }) {
   const count = chunk.length
-  const rowDensity = 'compact' as const
   const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
   const widthClass = count === 1 ? 'w-1/3' : count === 2 ? 'w-2/3' : 'w-full'
   const gridColsClass =
@@ -130,9 +110,9 @@ function CenteredProductRow({
             key={row.articulo_id}
             row={row}
             lang={lang}
+            hideName={Boolean(row.plato_marbella_hide_name)}
             onPhotoClick={onPhotoClick}
             rowFrameStyle={rowFrameStyle}
-            rowDensity={rowDensity}
           />
         ))}
       </div>
@@ -170,7 +150,7 @@ export function PlatoMarbellaMenuView({
 
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
-      <div className="shrink-0 space-y-1 bg-white px-2 pb-2 pt-0.5 sm:px-3">
+      <div className="shrink-0 space-y-0 bg-white px-2 pb-0 pt-0 sm:px-3">
         <p className="text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-[13px]">
           {ui.plateTagline}
         </p>
@@ -179,12 +159,12 @@ export function PlatoMarbellaMenuView({
 
       <div
         ref={listRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 custom-scrollbar sm:px-3"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2 pt-0 custom-scrollbar sm:px-3"
       >
         {activeRows.length === 0 ? (
-          <p className="py-8 text-center text-sm font-medium text-zinc-500">{ui.emptySection}</p>
+          <p className="py-6 text-center text-sm font-medium text-zinc-500">{ui.emptySection}</p>
         ) : (
-          <div className="flex flex-col gap-y-1">
+          <div className="flex flex-col gap-y-0.5">
             {chunkCartaProductGridRows(activeRows as OptionRow[], 3).map((chunk, chunkIdx) => (
               <CenteredProductRow
                 key={chunkIdx}

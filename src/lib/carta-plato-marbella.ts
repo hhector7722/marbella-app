@@ -13,6 +13,11 @@ export type PlatoMarbellaMenuRow = {
   category_child_slug?: string | null
   plato_marbella_slot?: string | null
   plato_marbella_is_menu_price?: boolean | null
+  plato_marbella_hide_name?: boolean | null
+}
+
+export function isPlatoMarbellaHideNameColumnError(message: string | undefined): boolean {
+  return (message ?? '').toLowerCase().includes('plato_marbella_hide_name')
 }
 
 export const PLATO_MARBELLA_SLOTS: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']

@@ -12,13 +12,13 @@ export function PlatoMarbellaModalSubheader({
   menuPrice: number | null
 }) {
   return (
-    <div className="shrink-0 space-y-0.5 px-3 pb-1.5 pt-0.5 text-center">
+    <div className="shrink-0 space-y-0 px-3 pb-0 pt-0 text-center">
       {subTitle ? (
-        <p className="text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-xs">
+        <p className="text-[11px] font-black uppercase leading-none tracking-wide text-[#36606F] sm:text-xs">
           {subTitle}
         </p>
       ) : null}
-      <p className="text-xl font-black tabular-nums leading-none text-[#36606F] sm:text-2xl">
+      <p className="text-xl font-black tabular-nums leading-none text-[#36606F] sm:text-2xl -mt-px">
         {formatPlatoMarbellaMenuPrice(menuPrice)}
       </p>
     </div>

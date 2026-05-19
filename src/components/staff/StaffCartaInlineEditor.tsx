@@ -37,6 +37,7 @@ type OverrideRow = {
   override_photo_url: string | null
   plato_marbella_slot?: string | null
   plato_marbella_is_menu_price?: boolean | null
+  plato_marbella_hide_name?: boolean | null
   carta_photo_scale?: string | null
   carta_dual_racion_enabled?: boolean | null
   override_precio_medio?: number | string | null
@@ -95,6 +96,7 @@ export function StaffCartaInlineEditor({
   const [, startTransition] = useTransition()
   const [savingArticuloId, setSavingArticuloId] = useState<number | null>(null)
   const [platoMarbellaSlotSavingId, setPlatoMarbellaSlotSavingId] = useState<number | null>(null)
+  const [platoMarbellaHideNameBusyId, setPlatoMarbellaHideNameBusyId] = useState<number | null>(null)
 
   const [digitalRows, setDigitalRows] = useState<DigitalMenuRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
@@ -360,6 +362,7 @@ export function StaffCartaInlineEditor({
           category_child_slug,
           plato_marbella_slot: o?.plato_marbella_slot ?? null,
           plato_marbella_is_menu_price: o?.plato_marbella_is_menu_price ?? false,
+          plato_marbella_hide_name: o?.plato_marbella_hide_name ?? false,
           recipe_id: r.id,
           recipe_name: r.name,
           descripcion: buildDescripcion(o, r),
@@ -496,6 +499,28 @@ export function StaffCartaInlineEditor({
     })
   }
 
+  const onPlatoMarbellaHideNameChange = (articulo_id: number, hideName: boolean) => {
+    setDigitalRows((rows) =>
+      rows.map((r) =>
+        r.articulo_id === articulo_id ? { ...r, plato_marbella_hide_name: hideName } : r
+      )
+    )
+    startTransition(async () => {
+      setPlatoMarbellaHideNameBusyId(articulo_id)
+      try {
+        const res = await upsertMenuOverride({ articulo_id, plato_marbella_hide_name: hideName })
+        if (!res.success) {
+          toast.error(res.error ?? 'No se pudo guardar')
+          await load({ silent: true })
+          return
+        }
+        await load({ silent: true })
+      } finally {
+        setPlatoMarbellaHideNameBusyId(null)
+      }
+    })
+  }
+
   const onToggleVisible = (articulo_id: number) => {
     const row = digitalRows.find((x) => x.articulo_id === articulo_id)
     const nextHidden = !(row?.editor_is_hidden ?? false)
@@ -553,6 +578,8 @@ export function StaffCartaInlineEditor({
           platoMarbellaCategoryId={platoMarbellaCategoryId}
           onPlatoMarbellaSlotChange={onPlatoMarbellaSlotChange}
           platoMarbellaSlotSavingId={platoMarbellaSlotSavingId}
+          onPlatoMarbellaHideNameChange={onPlatoMarbellaHideNameChange}
+          platoMarbellaHideNameBusyId={platoMarbellaHideNameBusyId}
           menuCategories={categories.map((c) => ({
             id: c.id,
             name: c.name,

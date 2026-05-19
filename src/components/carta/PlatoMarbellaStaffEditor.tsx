@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Check, Circle, GripVertical, Loader2, Pencil, Star } from 'lucide-react'
+import { Check, Circle, Eye, EyeOff, GripVertical, Loader2, Pencil, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   type CartaLang,
@@ -21,6 +21,7 @@ import {
 type StaffRow = PlatoMarbellaMenuRow &
   CartaNameRow & {
     editor_is_hidden?: boolean
+    plato_marbella_hide_name?: boolean | null
   }
 
 function formatMenuPrice(precio: number | null) {
@@ -44,8 +45,10 @@ function StaffItemRow({
   onEditProduct,
   onSlotChange,
   onToggleVisible,
+  onToggleHideName,
   busyArticuloId,
   toggleBusyId,
+  hideNameToggleBusyId,
   savingSlotId,
 }: {
   row: StaffRow
@@ -60,17 +63,21 @@ function StaffItemRow({
     isMenuPrice: boolean
   ) => void | Promise<void>
   onToggleVisible?: (articuloId: number) => void
+  onToggleHideName?: (articuloId: number, hideName: boolean) => void | Promise<void>
   busyArticuloId?: number | null
   toggleBusyId?: number | null
+  hideNameToggleBusyId?: number | null
   savingSlotId?: number | null
 }) {
   const name = getCartaDisplayName(row, lang)
   const isActive = !(row.editor_is_hidden ?? false)
+  const hideName = Boolean(row.plato_marbella_hide_name)
   const picked = reorderPick === String(row.articulo_id)
   const isMenuPrice = Boolean(row.plato_marbella_is_menu_price)
   const currentSlot = row.plato_marbella_slot as PlatoMarbellaSlot | null | undefined
   const saving = savingSlotId === row.articulo_id
   const toggleBusy = toggleBusyId === row.articulo_id
+  const hideNameBusy = hideNameToggleBusyId === row.articulo_id
 
   return (
     <div
@@ -143,6 +150,23 @@ function StaffItemRow({
         {saving ? (
           <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" aria-hidden />
         ) : null}
+        {!reorderMode && onToggleHideName && !isMenuPrice ? (
+          <button
+            type="button"
+            className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-lg text-[#36606F] active:bg-zinc-50"
+            aria-label={hideName ? tPlatoMarbellaUi(lang).staffShowName : tPlatoMarbellaUi(lang).staffToggleHideName}
+            title={hideName ? tPlatoMarbellaUi(lang).staffShowName : tPlatoMarbellaUi(lang).staffToggleHideName}
+            onClick={() => void onToggleHideName(row.articulo_id, !hideName)}
+          >
+            {hideNameBusy ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : hideName ? (
+              <EyeOff className="h-5 w-5" strokeWidth={2.5} />
+            ) : (
+              <Eye className="h-5 w-5" strokeWidth={2.5} />
+            )}
+          </button>
+        ) : null}
         {!reorderMode && onToggleVisible ? (
           <button
             type="button"
@@ -185,7 +209,9 @@ export function PlatoMarbellaStaffEditor({
   onEditProduct,
   onSlotChange,
   onToggleVisible,
+  onToggleHideName,
   toggleBusyId,
+  hideNameToggleBusyId,
   savingSlotId,
 }: {
   rows: StaffRow[]
@@ -203,7 +229,9 @@ export function PlatoMarbellaStaffEditor({
     isMenuPrice: boolean
   ) => void | Promise<void>
   onToggleVisible?: (articuloId: number) => void
+  onToggleHideName?: (articuloId: number, hideName: boolean) => void | Promise<void>
   toggleBusyId?: number | null
+  hideNameToggleBusyId?: number | null
   savingSlotId?: number | null
 }) {
   const ui = tPlatoMarbellaUi(lang)
@@ -267,7 +295,9 @@ export function PlatoMarbellaStaffEditor({
               onEditProduct={onEditProduct}
               onSlotChange={onSlotChange}
               onToggleVisible={onToggleVisible}
+              onToggleHideName={onToggleHideName}
               toggleBusyId={toggleBusyId}
+              hideNameToggleBusyId={hideNameToggleBusyId}
               savingSlotId={savingSlotId}
             />
           ))}
@@ -290,7 +320,9 @@ export function PlatoMarbellaStaffEditor({
                 onEditProduct={onEditProduct}
                 onSlotChange={onSlotChange}
                 onToggleVisible={onToggleVisible}
+                onToggleHideName={onToggleHideName}
                 toggleBusyId={toggleBusyId}
+                hideNameToggleBusyId={hideNameToggleBusyId}
                 savingSlotId={savingSlotId}
               />
             ))}
@@ -312,7 +344,9 @@ export function PlatoMarbellaStaffEditor({
               onEditProduct={onEditProduct}
               onSlotChange={onSlotChange}
               onToggleVisible={onToggleVisible}
+              onToggleHideName={onToggleHideName}
               toggleBusyId={toggleBusyId}
+              hideNameToggleBusyId={hideNameToggleBusyId}
               savingSlotId={savingSlotId}
             />
           ))}

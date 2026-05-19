@@ -59,6 +59,7 @@ export function MenuItemEditModal({
   const [removeOverridePhoto, setRemoveOverridePhoto] = useState(false)
   const [platoSlot, setPlatoSlot] = useState<'' | PlatoMarbellaSlotValue>('')
   const [platoMenuPrice, setPlatoMenuPrice] = useState(false)
+  const [platoHideName, setPlatoHideName] = useState(false)
   const [photoScale, setPhotoScale] = useState<CartaPhotoScale>('m')
   const [dualRacionEnabled, setDualRacionEnabled] = useState(false)
   const [precioEntero, setPrecioEntero] = useState('')
@@ -171,6 +172,7 @@ export function MenuItemEditModal({
           slot === 'entrante' || slot === 'principal' || slot === 'guarnicion' ? slot : ''
         )
         setPlatoMenuPrice(Boolean((overrideRes.data as { plato_marbella_is_menu_price?: boolean } | null)?.plato_marbella_is_menu_price))
+        setPlatoHideName(Boolean((overrideRes.data as { plato_marbella_hide_name?: boolean } | null)?.plato_marbella_hide_name))
         setPhotoScale(
           normalizeCartaPhotoScale(
             (overrideRes.data as { carta_photo_scale?: string | null } | null)?.carta_photo_scale
@@ -552,6 +554,15 @@ export function MenuItemEditModal({
                     <span className="text-sm font-bold text-zinc-900">{platoUi.editorMenuPrice}</span>
                   </label>
                   <p className="text-[11px] font-semibold text-zinc-600">{platoUi.editorMenuPriceHint}</p>
+                  <label className="flex min-h-[48px] cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={platoHideName}
+                      onChange={(e) => setPlatoHideName(e.target.checked)}
+                      className="h-5 w-5 shrink-0 rounded border-zinc-300"
+                    />
+                    <span className="text-sm font-bold text-zinc-900">{platoUi.editorHideName}</span>
+                  </label>
                 </div>
               ) : null}
 
@@ -646,10 +657,12 @@ export function MenuItemEditModal({
                           ? {
                               plato_marbella_slot: platoMenuPrice ? null : platoSlot || null,
                               plato_marbella_is_menu_price: platoMenuPrice,
+                              plato_marbella_hide_name: platoHideName,
                             }
                           : {
                               plato_marbella_slot: null,
                               plato_marbella_is_menu_price: false,
+                              plato_marbella_hide_name: false,
                             }),
                         ...dualPayload,
                       })

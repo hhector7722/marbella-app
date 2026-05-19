@@ -82,6 +82,7 @@ export type PublicMenuRow = {
   tpv_factor_porcion?: number | null
   plato_marbella_slot?: string | null
   plato_marbella_is_menu_price?: boolean | null
+  plato_marbella_hide_name?: boolean | null
 }
 
 type Group = {
@@ -342,10 +343,12 @@ export function PublicCarta({
             {!openShowSubPicker ? (
             <div
               className={cn(
-                'flex shrink-0 bg-white px-3 py-2.5 sm:px-3.5 sm:py-3',
-                openShowSubTabs
-                  ? 'flex-col gap-1 sm:gap-1.5'
-                  : 'items-center justify-between gap-2 sm:gap-3'
+                'flex shrink-0 bg-white px-3 sm:px-3.5',
+                openPlatoMarbella && openShowSubTabs
+                  ? 'flex-col gap-0 py-1 sm:py-1.5'
+                  : openShowSubTabs
+                    ? 'flex-col gap-1 py-2.5 sm:gap-1.5 sm:py-3'
+                    : 'items-center justify-between gap-2 py-2.5 sm:gap-3 sm:py-3'
               )}
             >
               {openShowSubTabs ? (
@@ -361,7 +364,7 @@ export function PublicCarta({
                 </div>
               ) : null}
               {openShowSubTabs ? (
-                <div className="flex min-w-0 overflow-x-auto pb-0.5">
+                <div className="flex min-w-0 overflow-x-auto pb-0">
                   <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
                     {openGroup._subList.map((sub) => {
                       const isActive = openSelectedSubKey === sub.key
