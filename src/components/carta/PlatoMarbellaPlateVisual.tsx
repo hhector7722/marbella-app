@@ -19,12 +19,28 @@ const PLATE_G = {
 } as const
 
 const PLATE_BOTTOM = PLATE_G.cy + PLATE_G.r
+const PLATE_RIGHT = 200 - PLATE_G.inset
 
-/** Rectángulos recortados al círculo del plato → sectores circulares perfectos. */
+/** Rectángulos recortados al círculo del plato → sectores circulares (solo relleno / hit area). */
 const SLOT_RECT: Record<PlatoMarbellaSlot, string> = {
-  entrante: `M ${PLATE_G.inset} ${PLATE_G.inset} H ${200 - PLATE_G.inset} V ${PLATE_G.divY} H ${PLATE_G.inset} Z`,
+  entrante: `M ${PLATE_G.inset} ${PLATE_G.inset} H ${PLATE_RIGHT} V ${PLATE_G.divY} H ${PLATE_G.inset} Z`,
   principal: `M ${PLATE_G.inset} ${PLATE_G.divY} H ${PLATE_G.divX} V ${PLATE_BOTTOM} H ${PLATE_G.inset} Z`,
-  guarnicion: `M ${PLATE_G.divX} ${PLATE_G.divY} H ${200 - PLATE_G.inset} V ${PLATE_BOTTOM} H ${PLATE_G.divX} Z`,
+  guarnicion: `M ${PLATE_G.divX} ${PLATE_G.divY} H ${PLATE_RIGHT} V ${PLATE_BOTTOM} H ${PLATE_G.divX} Z`,
+}
+
+/** Lados interiores rectos (nunca el arco del círculo). */
+type InnerEdge = { x1: number; y1: number; x2: number; y2: number }
+
+const SLOT_INNER_EDGES: Record<PlatoMarbellaSlot, InnerEdge[]> = {
+  entrante: [{ x1: PLATE_G.inset, y1: PLATE_G.divY, x2: PLATE_RIGHT, y2: PLATE_G.divY }],
+  principal: [
+    { x1: PLATE_G.inset, y1: PLATE_G.divY, x2: PLATE_G.divX, y2: PLATE_G.divY },
+    { x1: PLATE_G.divX, y1: PLATE_G.divY, x2: PLATE_G.divX, y2: PLATE_BOTTOM },
+  ],
+  guarnicion: [
+    { x1: PLATE_G.divX, y1: PLATE_G.divY, x2: PLATE_RIGHT, y2: PLATE_G.divY },
+    { x1: PLATE_G.divX, y1: PLATE_G.divY, x2: PLATE_G.divX, y2: PLATE_BOTTOM },
+  ],
 }
 
 const SLOT_LABEL_POS: Record<PlatoMarbellaSlot, { x: number; y: number }> = {
@@ -33,7 +49,9 @@ const SLOT_LABEL_POS: Record<PlatoMarbellaSlot, { x: number; y: number }> = {
   guarnicion: { x: 148, y: 122 },
 }
 
-const PM_STROKE_INACTIVE = 'rgba(54, 96, 111, 0.2)'
+const PM_FILL_REST = 'rgba(54, 96, 111, 0.04)'
+const PM_FILL_ACTIVE_PEAK = 'rgba(54, 96, 111, 0.17)'
+const PM_DIVIDER_STROKE = '#e4e4e7'
 
 export function PlatoMarbellaPlateVisual({
   lang,
@@ -49,6 +67,8 @@ export function PlatoMarbellaPlateVisual({
   const uid = useId().replace(/:/g, '')
   const clipId = `pm-plate-clip-${uid}`
   const shineId = `pm-plate-shine-${uid}`
+  const fillAnim = `pm-zone-fill-${uid}`
+  const lineAnim = `pm-zone-line-${uid}`
   const slotLabels = platoMarbellaPlateSlotLabels(lang)
 
   return (
@@ -57,6 +77,33 @@ export function PlatoMarbellaPlateVisual({
       role="tablist"
       aria-label="Seleccionar tramo del plato"
     >
+      <style>{`
+        @keyframes ${fillAnim} {
+          0%, 100% { fill: ${PM_FILL_ACTIVE_PEAK}; }
+          50% { fill: ${PM_FILL_REST}; }
+        }
+        @keyframes ${lineAnim} {
+          0%, 100% { stroke: ${PLATO_MARBELLA_BRAND}; stroke-opacity: 1; }
+          50% { stroke: ${PLATO_MARBELLA_BRAND}; stroke-opacity: 0.22; }
+        }
+        .${fillAnim} {
+          animation: ${fillAnim} 2.6s ease-in-out infinite;
+        }
+        .${lineAnim} {
+          animation: ${lineAnim} 2.6s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .${fillAnim} {
+            animation: none;
+            fill: rgba(54, 96, 111, 0.12);
+          }
+          .${lineAnim} {
+            animation: none;
+            stroke-opacity: 0.85;
+          }
+        }
+      `}</style>
+
       <svg
         viewBox="0 0 200 200"
         className="mx-auto aspect-square w-full drop-shadow-sm"
@@ -72,13 +119,12 @@ export function PlatoMarbellaPlateVisual({
           </radialGradient>
         </defs>
 
-        {/* Plato base (círculo) */}
         <circle
           cx={PLATE_G.cx}
           cy={PLATE_G.cy}
           r={PLATE_G.r}
           fill={`url(#${shineId})`}
-          stroke="#e4e4e7"
+          stroke={PM_DIVIDER_STROKE}
           strokeWidth="2"
         />
         <circle
@@ -90,7 +136,6 @@ export function PlatoMarbellaPlateVisual({
           strokeWidth="1"
         />
 
-        {/* Zonas táctiles (misma geometría que las líneas, recortadas al círculo) */}
         <g clipPath={`url(#${clipId})`}>
           {SLOT_ORDER.map((slot) => {
             const isActive = activeSlot === slot
@@ -102,10 +147,12 @@ export function PlatoMarbellaPlateVisual({
                 aria-selected={isActive}
                 aria-label={slotLabels[slot]}
                 d={SLOT_RECT[slot]}
-                fill={isActive ? 'rgba(54, 96, 111, 0.12)' : 'transparent'}
-                stroke={isActive ? PLATO_MARBELLA_BRAND : PM_STROKE_INACTIVE}
-                strokeWidth={isActive ? 2.5 : 1}
-                className="cursor-pointer touch-manipulation outline-none transition-[fill,stroke] duration-200 ease-out hover:fill-[rgba(54,96,111,0.08)]"
+                fill={isActive ? PM_FILL_ACTIVE_PEAK : 'transparent'}
+                stroke="none"
+                className={cn(
+                  'cursor-pointer touch-manipulation outline-none',
+                  isActive ? fillAnim : 'transition-[fill] duration-200 hover:fill-[rgba(54,96,111,0.07)]'
+                )}
                 onClick={() => onSlotChange(slot)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -118,13 +165,13 @@ export function PlatoMarbellaPlateVisual({
           })}
         </g>
 
-        {/* Líneas de división (encima de las zonas) */}
+        {/* Divisores base del plato (neutros) */}
         <line
           x1={PLATE_G.inset}
           y1={PLATE_G.divY}
-          x2={200 - PLATE_G.inset}
+          x2={PLATE_RIGHT}
           y2={PLATE_G.divY}
-          stroke="#e4e4e7"
+          stroke={PM_DIVIDER_STROKE}
           strokeWidth="1.5"
           pointerEvents="none"
         />
@@ -133,12 +180,28 @@ export function PlatoMarbellaPlateVisual({
           y1={PLATE_G.divY}
           x2={PLATE_G.divX}
           y2={PLATE_BOTTOM}
-          stroke="#e4e4e7"
+          stroke={PM_DIVIDER_STROKE}
           strokeWidth="1.5"
           pointerEvents="none"
         />
 
-        {/* Etiquetas centradas en cada sector */}
+        {/* Contorno interior animado (solo lados rectos de la zona activa) */}
+        <g pointerEvents="none">
+          {SLOT_INNER_EDGES[activeSlot].map((edge, i) => (
+            <line
+              key={`${activeSlot}-edge-${i}`}
+              x1={edge.x1}
+              y1={edge.y1}
+              x2={edge.x2}
+              y2={edge.y2}
+              stroke={PLATO_MARBELLA_BRAND}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              className={lineAnim}
+            />
+          ))}
+        </g>
+
         {SLOT_ORDER.map((slot) => {
           const pos = SLOT_LABEL_POS[slot]
           const isActive = activeSlot === slot
@@ -151,7 +214,7 @@ export function PlatoMarbellaPlateVisual({
               dominantBaseline="middle"
               pointerEvents="none"
               className={cn(
-                'select-none font-sans text-[10.5px] tracking-[0.03em] antialiased sm:text-[12px]',
+                'select-none font-sans text-[12px] tracking-[0.03em] antialiased sm:text-[14px]',
                 isActive ? 'fill-[#36606F] font-black' : 'fill-zinc-600 font-semibold'
               )}
             >
