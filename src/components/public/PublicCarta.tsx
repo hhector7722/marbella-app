@@ -149,7 +149,10 @@ export function PublicCarta({
         coverPhotoScale: categoryCoverScaleById[parentKey] ?? 'm',
         subs: new Map(),
       }
-      const cov = row.category_parent_cover_photo_url?.trim()
+      const cov =
+        row.category_parent_cover_photo_url?.trim() ||
+        categoryCoverById[parentKey]?.trim() ||
+        null
       if (cov) g.coverPhotoUrl = cov
       if (categoryCoverScaleById[parentKey]) g.coverPhotoScale = categoryCoverScaleById[parentKey]
 
@@ -202,7 +205,14 @@ export function PublicCarta({
         }>
       }
     >
-  }, [items, lang, menuCategories, platoMarbellaCategoryId, categoryCoverById, categoryCoverScaleById])
+  }, [
+    items,
+    lang,
+    menuCategories,
+    platoMarbellaCategoryId,
+    categoryCoverById,
+    categoryCoverScaleById,
+  ])
 
   const openGroup = useMemo(
     () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
@@ -326,8 +336,8 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-0 min-h-0 flex-1 overflow-hidden pb-2 sm:mt-1">
-          <CartaCoversLoadingGate urls={homeCategoryCoverUrls} className="min-h-0 flex-1">
+        <section className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden pb-2 sm:mt-1">
+          <CartaCoversLoadingGate urls={homeCategoryCoverUrls} className="min-h-0 flex-1 w-full">
             <CartaCategoryGrid compact>
               {grouped.map((group) => (
                 <CartaCategoryCard

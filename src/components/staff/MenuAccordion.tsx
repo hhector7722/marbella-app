@@ -329,7 +329,10 @@ export function MenuAccordion({
                 coverPhotoScale: categoryCoverScaleById[parentKey] ?? 'm',
                 subs: new Map(),
             }
-            const cov = row.category_parent_cover_photo_url?.trim()
+            const cov =
+                row.category_parent_cover_photo_url?.trim() ||
+                categoryCoverById[parentKey]?.trim() ||
+                null
             if (cov) g.coverPhotoUrl = cov
             if (categoryCoverScaleById[parentKey]) {
                 g.coverPhotoScale = categoryCoverScaleById[parentKey]
@@ -692,7 +695,11 @@ export function MenuAccordion({
     const gridBlock = (
         <CartaCoversLoadingGate
             urls={homeCategoryCoverUrls}
-            className={cn(hideLangPicker && 'min-h-0 flex-1', !hideLangPicker && 'mt-4 sm:mt-5')}
+            className={cn(
+                'w-full',
+                hideLangPicker && 'min-h-0 flex-1',
+                !hideLangPicker && 'mt-4 sm:mt-5'
+            )}
         >
             <CartaCategoryGrid
                 compact={homeCompact}
