@@ -2,21 +2,20 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 
 export async function confirmarMapeoAction(formData: FormData) {
   const supabase = await createClient()
 
-  const lineId = formData.get('lineId') as string
-  const supplierIdRaw = formData.get('supplierId') as string | null
-  const originalName = formData.get('originalName') as string
-  const ingredientId = formData.get('ingredientId') as string
-  const conversionFactor = parseFloat(formData.get('conversionFactor') as string || '1')
-
-  // Novedad: Extraer tríada dimensional
-  const lineBillingUnit = formData.get('lineBillingUnit') as string | null
-  const lineContentQtyRaw = formData.get('lineContentQty') as string | null
-  const lineContentQty = lineContentQtyRaw ? parseFloat(lineContentQtyRaw) : null
-  const lineContentUnit = formData.get('lineContentUnit') as string | null
+  const lineId             = formData.get('lineId') as string
+  const supplierIdRaw      = formData.get('supplierId') as string | null
+  const originalName       = formData.get('originalName') as string
+  const ingredientId       = formData.get('ingredientId') as string
+  const conversionFactor   = parseFloat(formData.get('conversionFactor') as string || '1')
+  const lineBillingUnit    = formData.get('lineBillingUnit') as string | null
+  const lineContentQtyRaw  = formData.get('lineContentQty') as string | null
+  const lineContentQty     = lineContentQtyRaw ? parseFloat(lineContentQtyRaw) : null
+  const lineContentUnit    = formData.get('lineContentUnit') as string | null
 
   const supplierIdParsed = supplierIdRaw != null && supplierIdRaw.trim() !== ''
     ? parseInt(supplierIdRaw, 10)
@@ -25,51 +24,61 @@ export async function confirmarMapeoAction(formData: FormData) {
     throw new Error('ID de proveedor inválido')
   }
 
+  // Fetch línea y ingrediente — base_unit añadido al select
   const [lineRes, ingRes] = await Promise.all([
-    supabase.from('purchase_invoice_lines').select('unit_price, quantity').eq('id', lineId).single(),
-    supabase.from('ingredients').select('current_price, unit, purchase_unit, price_locked').eq('id', ingredientId).single(),
+    supabase
+      .from('purchase_invoice_lines')
+      .select('unit_price, quantity')
+      .eq('id', lineId)
+      .single(),
+    supabase
+      .from('ingredients')
+      .select('current_price, unit, purchase_unit, base_unit, price_locked')
+      .eq('id', ingredientId)
+      .single(),
   ])
   if (lineRes.error || !lineRes.data) throw new Error('Error obteniendo la línea del albarán')
-  if (ingRes.error || !ingRes.data) throw new Error('Error obteniendo el ingrediente base')
+  if (ingRes.error || !ingRes.data)   throw new Error('Error obteniendo el ingrediente base')
 
-  const unitPrice = lineRes.data.unit_price ?? 0
-  const lineQuantity = lineRes.data.quantity ?? 0
-  const oldPrice = ingRes.data.current_price ?? 0
-  const ingredientUnit = ingRes.data.unit || 'ud'
+  const unitPrice           = lineRes.data.unit_price  ?? 0
+  const lineQuantity        = lineRes.data.quantity    ?? 0
+  const oldPrice            = ingRes.data.current_price ?? 0
   const ingredientPurchaseUnit = ingRes.data.purchase_unit || 'ud'
-  const priceLocked = (ingRes.data as { price_locked?: boolean }).price_locked === true
+  const ingredientBaseUnit  = ingRes.data.base_unit    || 'ud'   // SSOT de stock
+  const priceLocked         = (ingRes.data as { price_locked?: boolean }).price_locked === true
 
-  // 1. Crear/actualizar mapeo permanente con la tríada
+  // ── 1. Crear / actualizar mapeo permanente ────────────────────────────────
   const { error: mapError } = await supabase
     .from('supplier_item_mappings')
     .upsert({
-      supplier_id: supplierIdParsed,
+      supplier_id:        supplierIdParsed,
       supplier_item_name: originalName,
-      ingredient_id: ingredientId,
-      conversion_factor: conversionFactor,
-      line_billing_unit: lineBillingUnit,
-      line_content_qty: lineContentQty,
-      line_content_unit: lineContentUnit,
+      ingredient_id:      ingredientId,
+      conversion_factor:  conversionFactor,
+      line_billing_unit:  lineBillingUnit,
+      line_content_qty:   lineContentQty,
+      line_content_unit:  lineContentUnit,
     }, { onConflict: 'supplier_id,supplier_item_name' })
   if (mapError) throw new Error(`Error en mapeo: ${mapError.message}`)
 
-  // 2. Cálculo de precio delegando en la nueva RPC dimensional (como hace el trigger)
+  // ── 2. Actualizar precio en purchase_unit (sin cambios respecto al original) ──
   if (!priceLocked) {
-    const { data: newPrice, error: rpcErr } = await supabase.rpc('invoice_line_price_to_purchase_unit', {
-      p_unit_price: unitPrice,
-      p_mapping_content_qty: lineContentQty,
-      p_mapping_content_unit: lineContentUnit,
-      p_ingredient_purchase_unit: ingredientPurchaseUnit,
-      p_fallback_factor: conversionFactor,
-    })
+    const { data: newPrice, error: rpcErr } = await supabase.rpc(
+      'invoice_line_price_to_purchase_unit',
+      {
+        p_unit_price:               unitPrice,
+        p_mapping_content_qty:      lineContentQty,
+        p_mapping_content_unit:     lineContentUnit,
+        p_ingredient_purchase_unit: ingredientPurchaseUnit,
+        p_fallback_factor:          conversionFactor,
+      }
+    )
+    if (rpcErr || newPrice == null)
+      throw new Error('Descuadre dimensional: No se puede convertir a la unidad base de la receta.')
 
-    if (rpcErr || newPrice == null) throw new Error('Descuadre dimensional: No se puede convertir a la unidad base de la receta.')
-
-    const { error: histError } = await supabase.from('ingredient_price_history').insert({
-      ingredient_id: ingredientId,
-      old_price: oldPrice,
-      new_price: newPrice,
-    })
+    const { error: histError } = await supabase
+      .from('ingredient_price_history')
+      .insert({ ingredient_id: ingredientId, old_price: oldPrice, new_price: newPrice })
     if (histError) throw new Error(`Error en historial de precios: ${histError.message}`)
 
     const { error: updIngError } = await supabase
@@ -87,11 +96,49 @@ export async function confirmarMapeoAction(formData: FormData) {
       .eq('supplier_item_name', originalName)
   }
 
-  // 3. Inyección en Ledger usando matemática dimensional si existe
-  const effectiveQtyPerUnit = lineContentQty != null && lineContentQty > 0 ? lineContentQty : conversionFactor
-  const quantityToAdd = lineQuantity * effectiveQtyPerUnit
+  // ── 3. Inyección en Ledger en base_unit ───────────────────────────────────
+  //
+  // Paso A: calcular cantidad en purchase_unit
+  //   · Modo tríada: lineQuantity × convert(lineContentQty, lineContentUnit → purchaseUnit)
+  //   · Modo factor: lineQuantity × conversionFactor  (factor ya está en purchase_unit)
+  //
+  // Paso B: convertir purchase_unit → base_unit
+  //   · Ej: 4.5 L → 4500 ml | 250 kg → 250000 g | 10 ud → 10 ud
 
-  if (quantityToAdd > 0) {
+  let qtyInPurchaseUnit: number | null = null
+
+  if (lineContentQty != null && lineContentQty > 0 && lineContentUnit) {
+    // Modo tríada dimensional
+    const contentConverted = convertToPurchaseUnitQuantity(
+      lineContentQty,
+      lineContentUnit,
+      ingredientPurchaseUnit
+    )
+    if (contentConverted != null) {
+      qtyInPurchaseUnit = lineQuantity * contentConverted
+    }
+  } else {
+    // Modo factor escalar
+    qtyInPurchaseUnit = lineQuantity * conversionFactor
+  }
+
+  if (qtyInPurchaseUnit != null && qtyInPurchaseUnit > 0) {
+    // Paso B: purchase_unit → base_unit
+    const qtyInBaseUnit = convertToPurchaseUnitQuantity(
+      qtyInPurchaseUnit,
+      ingredientPurchaseUnit,
+      ingredientBaseUnit
+    )
+
+    if (qtyInBaseUnit == null || qtyInBaseUnit <= 0) {
+      // Conversión imposible (dimensiones incompatibles sin pack bridge).
+      // El trigger de BD también lo ignoraría. Lanzar error descriptivo.
+      throw new Error(
+        `No se puede convertir ${ingredientPurchaseUnit} → ${ingredientBaseUnit} ` +
+        `para el ingrediente. Revisa la unidad de compra del ingrediente.`
+      )
+    }
+
     const ref = `ALB-LINE-${lineId}`
     const { data: existing, error: existingErr } = await supabase
       .from('stock_movements')
@@ -107,19 +154,21 @@ export async function confirmarMapeoAction(formData: FormData) {
       const descUnit = lineBillingUnit
         ? `${lineBillingUnit} de ${lineContentQty}${lineContentUnit}`
         : `Factor: ${conversionFactor}`
+
       const { error: ledgerError } = await supabase.from('stock_movements').insert({
-        movement_type: 'PURCHASE',
-        ingredient_id: ingredientId,
-        quantity: quantityToAdd,
-        unit: ingredientUnit,
-        reference_doc: ref,
+        movement_type:        'PURCHASE',
+        ingredient_id:        ingredientId,
+        quantity:             qtyInBaseUnit,      // ← en base_unit
+        unit:                 ingredientBaseUnit, // ← ml | g | ud
+        reference_doc:        ref,
         original_description: `Recepción: ${originalName} (${descUnit})`,
-        processed_by: 'Consolidación UI',
+        processed_by:         'Consolidación UI',
       })
       if (ledgerError) throw new Error(`Error inyectando stock: ${ledgerError.message}`)
     }
   }
 
+  // ── 4. Cerrar línea del albarán ───────────────────────────────────────────
   const { error: lineError } = await supabase
     .from('purchase_invoice_lines')
     .update({ mapped_ingredient_id: ingredientId, status: 'mapped' })
