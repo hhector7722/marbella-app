@@ -1,7 +1,6 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { CartaMenuCoverPhoto } from '@/components/carta/CartaMenuCoverPhoto'
 import { getCartaCoverPhotoScaleFactor, type CartaPhotoScale } from '@/lib/carta-product-photo'
@@ -64,13 +63,7 @@ export function CartaCategoryCard({
                 className="relative h-full w-full origin-center"
                 style={{ transform: `scale(${coverScale})` }}
               >
-                <Image
-                  src={coverPhotoUrl}
-                  alt=""
-                  fill
-                  sizes="(max-width: 640px) 38vw, 180px"
-                  className="object-contain object-center p-1"
-                />
+                <CartaMenuCoverPhoto src={coverPhotoUrl} scale={coverPhotoScale} className="p-1" />
               </div>
             )
           ) : (
