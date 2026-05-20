@@ -55,7 +55,7 @@ export function CartaSubcategoryPickerButton({
             {photo ? (
               <CartaMenuCoverPhoto src={photo} scale={coverPhotoScale} />
             ) : (
-              <span className="block h-[70%] w-[70%] rounded-lg bg-zinc-100/90" aria-hidden />
+              <span className="block h-[70%] w-[70%]" aria-hidden />
             )}
           </span>
         ) : null}

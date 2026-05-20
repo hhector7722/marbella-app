@@ -67,7 +67,7 @@ export function CartaCategoryCard({
               </div>
             )
           ) : (
-            <span className="block h-[65%] w-[65%] rounded-xl bg-zinc-100/90" aria-hidden />
+            <span className="block h-[65%] w-[65%]" aria-hidden />
           )}
         </span>
         <span

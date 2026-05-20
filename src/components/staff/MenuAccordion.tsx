@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
+import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
@@ -474,6 +475,16 @@ export function MenuAccordion({
     const openShowSubTabs =
         openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
 
+    const homeCategoryCoverUrls = useMemo(
+        () => displayGrouped.map((g) => g.coverPhotoUrl),
+        [displayGrouped]
+    )
+
+    const openSubCoverUrls = useMemo(
+        () => (openGroup?._subList ?? []).map((s) => s.coverPhotoUrl),
+        [openGroup]
+    )
+
     const platoBundleRows = openGroup?._platoMarbellaBundleRows ?? null
     const platoLauncherArticuloId = openGroup?._platoMarbellaLauncherArticuloId
     const hasPlatoMarbellaBundle = (platoBundleRows?.length ?? 0) > 0
@@ -679,10 +690,14 @@ export function MenuAccordion({
     }
 
     const gridBlock = (
-        <CartaCategoryGrid
-            compact={homeCompact}
-            className={cn(hideLangPicker && 'min-h-0 flex-1 pt-0', !hideLangPicker && 'mt-4 sm:mt-5')}
+        <CartaCoversLoadingGate
+            urls={homeCategoryCoverUrls}
+            className={cn(hideLangPicker && 'min-h-0 flex-1', !hideLangPicker && 'mt-4 sm:mt-5')}
         >
+            <CartaCategoryGrid
+                compact={homeCompact}
+                className={cn(hideLangPicker && 'min-h-0 flex-1 pt-0', !hideLangPicker && 'mt-0')}
+            >
             {displayGrouped.map((group) => {
                 const isOpen = openKey === group.key
 
@@ -751,7 +766,8 @@ export function MenuAccordion({
                     </div>
                 )
             })}
-        </CartaCategoryGrid>
+            </CartaCategoryGrid>
+        </CartaCoversLoadingGate>
     )
     return (
         <div className={hideLangPicker ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'}>
@@ -1224,30 +1240,36 @@ export function MenuAccordion({
                             )}
                         >
                             {openShowSubPicker ? (
-                                <div className="px-0.5 sm:px-1">
-                                    <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
-                                        {openGroup._subList.map((sub) => (
-                                            <CartaSubcategoryPickerButton
-                                                key={sub.key}
-                                                variant="grid"
-                                                label={subPickerButtonLabel(
-                                                    sub,
-                                                    lang,
-                                                    openGroup.parentTitleRaw,
-                                                    tPublicUi(lang).uncategorized
-                                                )}
-                                                coverPhotoUrl={sub.coverPhotoUrl}
-                                                coverPhotoScale={sub.coverPhotoScale}
-                                                onClick={() =>
-                                                    setSelectedSubKeyByGroup((p) => ({
-                                                        ...p,
-                                                        [openGroup.key]: sub.key,
-                                                    }))
-                                                }
-                                            />
-                                        ))}
+                                <CartaCoversLoadingGate
+                                    urls={openSubCoverUrls}
+                                    className="min-h-[140px] py-6"
+                                    spinnerClassName="h-8 w-8"
+                                >
+                                    <div className="px-0.5 sm:px-1">
+                                        <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
+                                            {openGroup._subList.map((sub) => (
+                                                <CartaSubcategoryPickerButton
+                                                    key={sub.key}
+                                                    variant="grid"
+                                                    label={subPickerButtonLabel(
+                                                        sub,
+                                                        lang,
+                                                        openGroup.parentTitleRaw,
+                                                        tPublicUi(lang).uncategorized
+                                                    )}
+                                                    coverPhotoUrl={sub.coverPhotoUrl}
+                                                    coverPhotoScale={sub.coverPhotoScale}
+                                                    onClick={() =>
+                                                        setSelectedSubKeyByGroup((p) => ({
+                                                            ...p,
+                                                            [openGroup.key]: sub.key,
+                                                        }))
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                </CartaCoversLoadingGate>
                             ) : openPlatoMarbella && platoBundleRows ? (
                                 <div className="flex min-h-0 flex-1 flex-col">
                                     {reorderScope === 'products' && reorderPlatoMarbellaBundle ? (

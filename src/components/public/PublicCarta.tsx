@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ChevronLeft, Pencil, X } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
+import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   type CartaLang,
@@ -254,6 +255,16 @@ export function PublicCarta({
 
   const platoGridMenuPrice = platoMarbellaGrouped?.menuPrice ?? null
 
+  const homeCategoryCoverUrls = useMemo(
+    () => grouped.map((g) => g.coverPhotoUrl),
+    [grouped]
+  )
+
+  const openSubCoverUrls = useMemo(
+    () => (openGroup?._subList ?? []).map((s) => s.coverPhotoUrl),
+    [openGroup]
+  )
+
   const subCategoryButtonLabel = (
     sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
     parentTitleRaw: string
@@ -316,26 +327,28 @@ export function PublicCarta({
         </header>
 
         <section className="mt-0 min-h-0 flex-1 overflow-hidden pb-2 sm:mt-1">
-          <CartaCategoryGrid compact>
-            {grouped.map((group) => (
-              <CartaCategoryCard
-                key={group.key}
-                compact
-                title={group.title}
-                coverPhotoUrl={group.coverPhotoUrl}
-                coverPhotoScale={group.coverPhotoScale}
-                ariaExpanded={openKey === group.key}
-                onClick={() => {
-                  setSelectedSubKeyByGroup((p) => {
-                    const n = { ...p }
-                    delete n[group.key]
-                    return n
-                  })
-                  setOpenKey((prev) => (prev === group.key ? null : group.key))
-                }}
-              />
-            ))}
-          </CartaCategoryGrid>
+          <CartaCoversLoadingGate urls={homeCategoryCoverUrls} className="min-h-0 flex-1">
+            <CartaCategoryGrid compact>
+              {grouped.map((group) => (
+                <CartaCategoryCard
+                  key={group.key}
+                  compact
+                  title={group.title}
+                  coverPhotoUrl={group.coverPhotoUrl}
+                  coverPhotoScale={group.coverPhotoScale}
+                  ariaExpanded={openKey === group.key}
+                  onClick={() => {
+                    setSelectedSubKeyByGroup((p) => {
+                      const n = { ...p }
+                      delete n[group.key]
+                      return n
+                    })
+                    setOpenKey((prev) => (prev === group.key ? null : group.key))
+                  }}
+                />
+              ))}
+            </CartaCategoryGrid>
+          </CartaCoversLoadingGate>
         </section>
       </div>
 
@@ -463,25 +476,31 @@ export function PublicCarta({
               )}
             >
               {openShowSubPicker ? (
-                <div className="px-0.5 sm:px-1">
-                  <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
-                    {openGroup._subList.map((sub) => (
-                      <CartaSubcategoryPickerButton
-                        key={sub.key}
-                        variant="grid"
-                        label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                        coverPhotoUrl={sub.coverPhotoUrl}
-                        coverPhotoScale={sub.coverPhotoScale}
-                        onClick={() =>
-                          setSelectedSubKeyByGroup((p) => ({
-                            ...p,
-                            [openGroup.key]: sub.key,
-                          }))
-                        }
-                      />
-                    ))}
+                <CartaCoversLoadingGate
+                  urls={openSubCoverUrls}
+                  className="min-h-[140px] py-6"
+                  spinnerClassName="h-8 w-8"
+                >
+                  <div className="px-0.5 sm:px-1">
+                    <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
+                      {openGroup._subList.map((sub) => (
+                        <CartaSubcategoryPickerButton
+                          key={sub.key}
+                          variant="grid"
+                          label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
+                          coverPhotoUrl={sub.coverPhotoUrl}
+                          coverPhotoScale={sub.coverPhotoScale}
+                          onClick={() =>
+                            setSelectedSubKeyByGroup((p) => ({
+                              ...p,
+                              [openGroup.key]: sub.key,
+                            }))
+                          }
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </CartaCoversLoadingGate>
               ) : (
                 <>
                   {openPlatoMarbella && platoBundleRows && platoBundleRows.length > 0 ? (
