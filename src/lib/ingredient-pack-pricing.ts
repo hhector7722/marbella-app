@@ -94,6 +94,116 @@ export function suggestedAlbaranConversionFactorFromIngredient(row: {
   return perPiece / packCount
 }
 
+/** Unidades de masa/volumen reconocidas en mapeo albarán (facturación vs almacén). */
+const MASS_VOLUME_CANON = new Set(['g', 'kg', 'ml', 'l', 'cl'])
+
+/**
+ * Si el texto normaliza a g/kg/ml/l/cl, devuelve esa unidad canónica; si no, null.
+ * Sirve para detectar facturación por masa/volumen frente a etiquetas libres ("caja", "garrafa").
+ */
+export function parseMassVolumeUnit(raw: string | null | undefined): string | null {
+  const n = norm(raw)
+  return MASS_VOLUME_CANON.has(n) ? n : null
+}
+
+export type MassVolumeFamily = 'mass' | 'volume'
+
+export function massVolumeFamily(u: string | null | undefined): MassVolumeFamily | null {
+  const n = norm(u)
+  if (n === 'g' || n === 'kg') return 'mass'
+  if (n === 'ml' || n === 'l' || n === 'cl') return 'volume'
+  return null
+}
+
+/**
+ * Unidad de compra homogénea del ingrediente para comparar con la línea del albarán
+ * (misma lógica que `resolveDeclaredPurchaseUnitWithPackContent` en escandallo).
+ */
+export function ingredientPurchaseUnitNormForMapping(row: IngredientDimensionalSource): string {
+  return norm(resolveDeclaredPurchaseUnitWithPackContent(row.purchase_unit, row.pack_unit_size_unit))
+}
+
+/**
+ * Primera unidad masa/volumen reconocible: texto de facturación del modal o unidad OCR de la línea.
+ */
+export function billingMassVolumeNormForAuto(
+  lineBillingUnitDraft: string | null | undefined,
+  lineUnitFromInvoice: string | null | undefined
+): string | null {
+  return (
+    parseMassVolumeUnit(lineBillingUnitDraft) ?? parseMassVolumeUnit(lineUnitFromInvoice) ?? null
+  )
+}
+
+/**
+ * Replica de `convert_pricing_qty` (Postgres) en TS para textos de UI y factores.
+ */
+export function convertPricingQtyNumeric(
+  pQty: number,
+  pFromUnit: string | null | undefined,
+  pToUnit: string | null | undefined
+): number | null {
+  if (!Number.isFinite(pQty)) return null
+  const fu = norm(pFromUnit)
+  const tu = norm(pToUnit)
+  if (fu === tu) return pQty
+
+  if (fu === 'g' && tu === 'kg') return pQty / 1000
+  if (fu === 'kg' && tu === 'g') return pQty * 1000
+
+  let qtyMl: number
+  if (fu === 'ml') qtyMl = pQty
+  else if (fu === 'l') qtyMl = pQty * 1000
+  else if (fu === 'cl') qtyMl = pQty * 10
+  else qtyMl = NaN
+
+  if (!Number.isFinite(qtyMl)) return null
+
+  if (tu === 'ml') return qtyMl
+  if (tu === 'l') return qtyMl / 1000
+  if (tu === 'cl') return qtyMl / 10
+  return null
+}
+
+/**
+ * Facturación (kg, g, l…) y base de compra del ingrediente en la misma familia (masa o volumen).
+ * No aplica a ud ni a unidades no reconocidas.
+ */
+export function sameMassVolumeFamilyBillingAndIngredient(
+  billingNorm: string | null | undefined,
+  row: IngredientDimensionalSource
+): boolean {
+  const b = billingNorm == null ? null : parseMassVolumeUnit(billingNorm)
+  const p = parseMassVolumeUnit(ingredientPurchaseUnitNormForMapping(row))
+  if (b == null || p == null) return false
+  return massVolumeFamily(b) === massVolumeFamily(p)
+}
+
+/** Texto tipo "Conversión automática: 1 kg = 1000 g" (1 unidad de facturación → unidad de almacén). */
+export function sameFamilyAutomaticConversionCaption(
+  billingNorm: string,
+  purchaseNorm: string
+): string | null {
+  const b = parseMassVolumeUnit(billingNorm)
+  const p = parseMassVolumeUnit(purchaseNorm)
+  if (b == null || p == null) return null
+  if (massVolumeFamily(b) !== massVolumeFamily(p)) return null
+
+  const qty = convertPricingQtyNumeric(1, b, p)
+  if (qty == null || !Number.isFinite(qty)) return null
+
+  const fmt = (n: number) => {
+    if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n))
+    const t = n.toFixed(6).replace(/\.?0+$/, '')
+    return t
+  }
+
+  if (Math.abs(qty - 1) < 1e-12) {
+    return `Conversión automática: 1 ${b} = 1 ${p}`
+  }
+  return `Conversión automática: 1 ${b} = ${fmt(qty)} ${p}`
+}
+
 /** Unidades operativas para `line_content_unit` en mapeos de albarán. */
 export const ALBARAN_LINE_CONTENT_UNITS = ['l', 'ml', 'cl', 'kg', 'g', 'ud'] as const
 
@@ -171,6 +281,30 @@ export function suggestedDimensionalMappingFromIngredient(
 }
 
 const BILLING_UNIT_UD_HINTS = new Set(['ud', 'u', 'un', 'unidad', 'pieza', 'piezas', 'unit', 'units'])
+
+/**
+ * Tríada + factor para mapeo automático misma familia masa/volumen (sin formulario manual).
+ * `line_content_*` expresa 1 unidad de facturación en la unidad de compra del ingrediente.
+ */
+export function buildAutomaticSameFamilyDimensional(
+  billingNorm: string,
+  row: IngredientDimensionalSource
+): { lineBillingUnit: string; lineContentQty: string; lineContentUnit: string; conversionFactor: number } | null {
+  const b = parseMassVolumeUnit(billingNorm)
+  const purchaseNorm = ingredientPurchaseUnitNormForMapping(row)
+  const p = parseMassVolumeUnit(purchaseNorm)
+  if (b == null || p == null || massVolumeFamily(b) !== massVolumeFamily(p)) return null
+
+  const factor = convertPricingQtyNumeric(1, b, p)
+  if (factor == null || !Number.isFinite(factor) || factor <= 0) return null
+
+  return {
+    lineBillingUnit: b,
+    lineContentQty: String(factor),
+    lineContentUnit: p,
+    conversionFactor: factor,
+  }
+}
 
 /** Valores por defecto cuando el albarán y el catálogo facturan por unidad suelta. */
 export const SIMPLE_ALBARAN_UNIT_DIMENSIONAL = {

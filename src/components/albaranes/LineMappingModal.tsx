@@ -6,7 +6,12 @@ import { Check, Loader2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ALBARAN_LINE_CONTENT_UNITS,
+  billingMassVolumeNormForAuto,
+  buildAutomaticSameFamilyDimensional,
+  ingredientPurchaseUnitNormForMapping,
   isSimpleAlbaranUnitMapping,
+  sameFamilyAutomaticConversionCaption,
+  sameMassVolumeFamilyBillingAndIngredient,
   SIMPLE_ALBARAN_UNIT_DIMENSIONAL,
   suggestedDimensionalMappingFromIngredient,
   type IngredientDimensionalSource,
@@ -128,8 +133,28 @@ export function LineMappingModal({
       let nextFactor =
         f != null && Number.isFinite(f) && f > 0 ? String(f) : '1'
 
-      const simple = isSimpleAlbaranUnitMapping(ing, nextDim, nextFactor)
-      if (simple && !opts?.forceAdvanced) {
+      const billingNorm = billingMassVolumeNormForAuto(
+        nextDim.lineBillingUnit,
+        opts?.lineUnitFromInvoice
+      )
+      const autoFamily =
+        !opts?.forceAdvanced &&
+        billingNorm != null &&
+        sameMassVolumeFamilyBillingAndIngredient(billingNorm, ing)
+      const autoDim = autoFamily ? buildAutomaticSameFamilyDimensional(billingNorm, ing) : null
+
+      const simple =
+        !autoFamily && isSimpleAlbaranUnitMapping(ing, nextDim, nextFactor)
+
+      if (autoDim && !opts?.forceAdvanced) {
+        nextDim = {
+          lineBillingUnit: autoDim.lineBillingUnit,
+          lineContentQty: autoDim.lineContentQty,
+          lineContentUnit: autoDim.lineContentUnit,
+        }
+        nextFactor = String(autoDim.conversionFactor)
+        setShowAdvancedCalibration(false)
+      } else if (simple && !opts?.forceAdvanced) {
         nextDim = { ...SIMPLE_ALBARAN_UNIT_DIMENSIONAL }
         nextFactor = '1'
         setShowAdvancedCalibration(false)
@@ -212,8 +237,16 @@ export function LineMappingModal({
         }
         setDimensional(storedDim)
         if (cand) {
-          const simpleStored = isSimpleAlbaranUnitMapping(cand, storedDim, nextFactor)
-          setShowAdvancedCalibration(!simpleStored)
+          const billingNorm = billingMassVolumeNormForAuto(
+            storedDim.lineBillingUnit,
+            line.line_unit
+          )
+          const autoStored =
+            billingNorm != null &&
+            sameMassVolumeFamilyBillingAndIngredient(billingNorm, cand)
+          const simpleStored =
+            !autoStored && isSimpleAlbaranUnitMapping(cand, storedDim, nextFactor)
+          setShowAdvancedCalibration(!(autoStored || simpleStored))
         } else {
           setShowAdvancedCalibration(true)
         }
@@ -261,14 +294,57 @@ export function LineMappingModal({
 
   const dimensionalParsed = useMemo(() => parseDimensionalPayload(dimensional), [dimensional])
 
+  const billingMassVolumeNorm = useMemo(
+    () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
+    [dimensional.lineBillingUnit, line?.line_unit]
+  )
+
+  const purchaseMassVolumeNorm = useMemo(
+    () =>
+      ingredientPurchaseUnitNormForMapping(
+        selectedIngredientMeta ?? { purchase_unit: ingredientPurchaseUnit }
+      ),
+    [selectedIngredientMeta, ingredientPurchaseUnit]
+  )
+
+  const isAutoSameFamilyMode = useMemo(() => {
+    if (!ingredientId || !selectedIngredientMeta || showAdvancedCalibration) return false
+    if (billingMassVolumeNorm == null) return false
+    return sameMassVolumeFamilyBillingAndIngredient(
+      billingMassVolumeNorm,
+      selectedIngredientMeta
+    )
+  }, [
+    ingredientId,
+    selectedIngredientMeta,
+    showAdvancedCalibration,
+    billingMassVolumeNorm,
+  ])
+
+  const autoSameFamilyCaption = useMemo(() => {
+    if (!isAutoSameFamilyMode || billingMassVolumeNorm == null) return null
+    return sameFamilyAutomaticConversionCaption(
+      billingMassVolumeNorm,
+      purchaseMassVolumeNorm
+    )
+  }, [isAutoSameFamilyMode, billingMassVolumeNorm, purchaseMassVolumeNorm])
+
   const isSimpleMode = useMemo(() => {
     if (!ingredientId || !selectedIngredientMeta || showAdvancedCalibration) return false
+    if (isAutoSameFamilyMode) return false
     return isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor)
-  }, [ingredientId, selectedIngredientMeta, showAdvancedCalibration, dimensional, factor])
+  }, [
+    ingredientId,
+    selectedIngredientMeta,
+    showAdvancedCalibration,
+    dimensional,
+    factor,
+    isAutoSameFamilyMode,
+  ])
 
   const canSave = useMemo(() => {
     if (!ingredientId || !invoiceId || supplierId == null) return false
-    if (isSimpleMode) return true
+    if (isSimpleMode || isAutoSameFamilyMode) return true
     const f = Number(String(factor).replace(',', '.'))
     if (!Number.isFinite(f) || f <= 0) return false
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
@@ -276,7 +352,15 @@ export function LineMappingModal({
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
     if (!lineContentUnit) return false
     return true
-  }, [ingredientId, invoiceId, supplierId, factor, dimensionalParsed, isSimpleMode])
+  }, [
+    ingredientId,
+    invoiceId,
+    supplierId,
+    factor,
+    dimensionalParsed,
+    isSimpleMode,
+    isAutoSameFamilyMode,
+  ])
 
   const alreadyMappedSameIngredient = useMemo(() => {
     if (!line || !ingredientId) return false
@@ -300,7 +384,18 @@ export function LineMappingModal({
     let factorNum = Number(String(factor).replace(',', '.'))
     let { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
 
-    if (isSimpleMode && selectedIngredientMeta) {
+    if (isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm) {
+      const auto = buildAutomaticSameFamilyDimensional(
+        billingMassVolumeNorm,
+        selectedIngredientMeta
+      )
+      if (auto) {
+        lineBillingUnit = auto.lineBillingUnit
+        lineContentQty = Number(auto.lineContentQty)
+        lineContentUnit = auto.lineContentUnit
+        factorNum = auto.conversionFactor
+      }
+    } else if (isSimpleMode && selectedIngredientMeta) {
       lineBillingUnit = SIMPLE_ALBARAN_UNIT_DIMENSIONAL.lineBillingUnit
       lineContentQty = 1
       lineContentUnit = SIMPLE_ALBARAN_UNIT_DIMENSIONAL.lineContentUnit
@@ -499,7 +594,30 @@ export function LineMappingModal({
 
               {ingredientId ? (
                 <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-3">
-                  {isSimpleMode ? (
+                  {isAutoSameFamilyMode ? (
+                    <>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+                        Unidades
+                      </p>
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-1">
+                        <p className="text-sm font-black text-emerald-950">
+                          {autoSameFamilyCaption ??
+                            `Conversión automática: 1 ${billingMassVolumeNorm} = 1 ${purchaseMassVolumeNorm}`}
+                        </p>
+                        <p className="text-xs font-medium text-emerald-900/80 leading-snug">
+                          Misma familia de medida (masa o volumen): no hace falta indicar garrafas ni
+                          cajas; el precio y el stock se ajustan con la equivalencia estándar.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAdvancedCalibration(true)}
+                        className="min-h-12 w-full rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 text-xs font-bold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
+                      >
+                        Caja, ud u otra conversión…
+                      </button>
+                    </>
+                  ) : isSimpleMode ? (
                     <>
                       <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
                         Unidades
@@ -587,7 +705,34 @@ export function LineMappingModal({
                   </label>
 
                       {selectedIngredientMeta &&
-                      isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor) ? (
+                      billingMassVolumeNorm != null &&
+                      sameMassVolumeFamilyBillingAndIngredient(
+                        billingMassVolumeNorm,
+                        selectedIngredientMeta
+                      ) ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const auto = buildAutomaticSameFamilyDimensional(
+                              billingMassVolumeNorm,
+                              selectedIngredientMeta
+                            )
+                            if (auto) {
+                              setDimensional({
+                                lineBillingUnit: auto.lineBillingUnit,
+                                lineContentQty: auto.lineContentQty,
+                                lineContentUnit: auto.lineContentUnit,
+                              })
+                              setFactor(String(auto.conversionFactor))
+                            }
+                            setShowAdvancedCalibration(false)
+                          }}
+                          className="min-h-12 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
+                        >
+                          Volver a conversión automática
+                        </button>
+                      ) : selectedIngredientMeta &&
+                        isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor) ? (
                         <button
                           type="button"
                           onClick={() => {
