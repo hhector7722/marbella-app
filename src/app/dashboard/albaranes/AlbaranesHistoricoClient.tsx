@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import {
   AlertCircle,
@@ -20,6 +20,8 @@ import {
   Truck,
   X,
   XCircle,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
@@ -143,6 +145,8 @@ export default function AlbaranesHistoricoClient({
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
   /** Visor carrusel (varias hojas), mismo patrón que el borrador del escáner. */
   const [invoiceImageViewerOpen, setInvoiceImageViewerOpen] = useState(false)
+  /** Zoom del visor de fotos (hojas del albarán). `zoom` CSS: buen comportamiento en WebKit móvil. */
+  const [invoiceViewerZoom, setInvoiceViewerZoom] = useState(1)
   const [invoiceCarouselIndex, setInvoiceCarouselIndex] = useState(0)
   const invoiceCarouselRef = useRef<HTMLDivElement>(null)
   const invoiceCarouselIndexRef = useRef(0)
@@ -163,7 +167,12 @@ export default function AlbaranesHistoricoClient({
   useEffect(() => {
     setInvoiceImageViewerOpen(false)
     setInvoiceCarouselIndex(0)
+    setInvoiceViewerZoom(1)
   }, [detail?.id])
+
+  useEffect(() => {
+    setInvoiceViewerZoom(1)
+  }, [invoiceCarouselIndex, invoiceImageViewerOpen])
 
   const invoiceImageSheetOptions = useMemo(() => {
     if (!detail) return [] as { key: string; label: string; url: string }[]
@@ -1125,18 +1134,7 @@ export default function AlbaranesHistoricoClient({
                         )}
                       </button>
                     ) : null}
-                    {invoiceImageSheetOptions.length === 1 ? (
-                      <a
-                        href={invoiceImageSheetOptions[0]!.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label="Ver imagen del albarán"
-                        title={invoiceImageSheetOptions[0]!.label}
-                        className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99] shrink-0"
-                      >
-                        <Eye className="h-4 w-4 md:h-5 md:w-5" />
-                      </a>
-                    ) : invoiceImageSheetOptions.length > 1 ? (
+                    {invoiceImageSheetOptions.length >= 1 ? (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1145,8 +1143,12 @@ export default function AlbaranesHistoricoClient({
                           invoiceCarouselIndexRef.current = 0
                           setInvoiceImageViewerOpen(true)
                         }}
-                        aria-label="Ver hojas del albarán (deslizar)"
-                        title="Ver todas las hojas: desliza o usa los puntos"
+                        aria-label="Ver imagen del albarán"
+                        title={
+                          invoiceImageSheetOptions.length > 1
+                            ? 'Ver todas las hojas: desliza o usa los puntos'
+                            : 'Ver fotografía del albarán'
+                        }
                         className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99] shrink-0"
                       >
                         <Eye className="h-4 w-4 md:h-5 md:w-5" />
@@ -1527,7 +1529,7 @@ export default function AlbaranesHistoricoClient({
           )
         : null}
 
-      {invoiceImageViewerOpen && modalContainer && invoiceImageSheetOptions.length > 1
+      {invoiceImageViewerOpen && modalContainer && invoiceImageSheetOptions.length >= 1
         ? createPortal(
             <div
               className="fixed inset-0 z-[10100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-in fade-in duration-150"
@@ -1538,18 +1540,10 @@ export default function AlbaranesHistoricoClient({
                 if (e.target === e.currentTarget) setInvoiceImageViewerOpen(false)
               }}
             >
-              <div className="flex shrink-0 items-center justify-between gap-3 bg-[#36606F] px-3 py-3 text-white md:px-5">
-                <p className="min-w-0 flex-1 truncate text-center text-[11px] font-black uppercase tracking-wide md:text-xs">
+              <div className="shrink-0 bg-[#36606F] pt-[max(6px,env(safe-area-inset-top))] pb-3 text-white md:pb-3.5">
+                <p className="min-w-0 truncate px-4 text-center text-[11px] font-black uppercase tracking-wide text-white md:px-6 md:text-xs">
                   {invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setInvoiceImageViewerOpen(false)}
-                  className="min-h-9 min-w-9 shrink-0 rounded-xl text-white hover:bg-white/10 active:scale-[0.99] md:min-h-[48px] md:min-w-[48px]"
-                  aria-label="Cerrar visor"
-                >
-                  <X className="h-5 w-5" strokeWidth={2.5} />
-                </button>
               </div>
 
               <div
@@ -1557,83 +1551,168 @@ export default function AlbaranesHistoricoClient({
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="relative min-h-0 shrink-0 overflow-visible">
-                  <button
-                    type="button"
-                    className={cn(
-                      'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
-                      invoiceCarouselIndex <= 0 && 'pointer-events-none opacity-35'
-                    )}
-                    aria-label="Hoja anterior"
-                    onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex - 1)}
-                  >
-                    <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
-                      invoiceCarouselIndex >= invoiceImageSheetOptions.length - 1 &&
-                        'pointer-events-none opacity-35'
-                    )}
-                    aria-label="Hoja siguiente"
-                    onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex + 1)}
-                  >
-                    <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
-                  </button>
+                  {invoiceImageSheetOptions.length > 1 ? (
+                    <>
+                      <button
+                        type="button"
+                        className={cn(
+                          'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                          invoiceCarouselIndex <= 0 && 'pointer-events-none opacity-35'
+                        )}
+                        aria-label="Hoja anterior"
+                        onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex - 1)}
+                      >
+                        <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                          invoiceCarouselIndex >= invoiceImageSheetOptions.length - 1 &&
+                            'pointer-events-none opacity-35'
+                        )}
+                        aria-label="Hoja siguiente"
+                        onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex + 1)}
+                      >
+                        <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
+                      </button>
+                    </>
+                  ) : null}
 
                   <div
                     ref={invoiceCarouselRef}
-                    onScroll={onInvoiceCarouselScroll}
+                    onScroll={invoiceImageSheetOptions.length > 1 ? onInvoiceCarouselScroll : undefined}
                     className={cn(
-                      'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-visible bg-transparent',
+                      'flex w-full bg-transparent',
                       'min-h-[10rem] h-[min(72dvh,calc(100svh-10rem))] md:h-[min(70vh,calc(100vh-12rem))]',
-                      '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+                      invoiceImageSheetOptions.length > 1
+                        ? 'touch-pan-x snap-x snap-mandatory overflow-x-auto overflow-y-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+                        : 'flex-col overflow-hidden'
                     )}
                   >
                     {invoiceImageSheetOptions.map((opt) => (
                       <div
                         key={opt.key}
-                        className="box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-2 pb-1 pt-4"
+                        className={cn(
+                          'box-border flex h-full min-h-0 shrink-0 flex-col items-stretch justify-stretch px-1 pb-1 pt-2 md:px-2',
+                          invoiceImageSheetOptions.length > 1
+                            ? 'min-w-full snap-center snap-always'
+                            : 'w-full min-w-0'
+                        )}
                       >
-                        <div className="relative max-h-full max-w-full">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={opt.url}
-                            alt={opt.label}
-                            className="block h-auto max-h-[min(62dvh,calc(100svh-14rem))] w-auto max-w-full rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(64vh,calc(100vh-14rem))]"
-                          />
+                        <div
+                          className="flex min-h-0 flex-1 overflow-auto overscroll-contain"
+                          style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
+                          onWheel={(e) => {
+                            if (!e.ctrlKey && !e.metaKey) return
+                            e.preventDefault()
+                            setInvoiceViewerZoom((z) => {
+                              const step = 0.2
+                              const next = e.deltaY > 0 ? z - step : z + step
+                              return Math.min(3, Math.max(1, Math.round(next * 20) / 20))
+                            })
+                          }}
+                        >
+                          <div className="flex min-h-full w-full min-w-0 flex-1 items-center justify-center p-1">
+                            <div
+                              className="inline-block max-w-full"
+                              style={
+                                {
+                                  zoom: invoiceViewerZoom,
+                                } as CSSProperties
+                              }
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={opt.url}
+                                alt={opt.label}
+                                className="block h-auto max-h-[min(58dvh,calc(100svh-18rem))] w-auto max-w-[min(100vw,100%)] rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(60vh,calc(100vh-18rem))]"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex shrink-0 justify-center gap-0 pb-1 pt-0">
-                  {invoiceImageSheetOptions.map((_, i) => (
+                {invoiceImageSheetOptions.length > 1 ? (
+                  <div className="flex shrink-0 justify-center gap-0 pb-1 pt-0">
+                    {invoiceImageSheetOptions.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => scrollInvoiceCarouselToIndex(i)}
+                        aria-label={`Ir a ${invoiceImageSheetOptions[i]?.label ?? `hoja ${i + 1}`}`}
+                        aria-current={i === invoiceCarouselIndex ? 'true' : undefined}
+                        className={cn(
+                          'inline-flex min-h-9 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
+                          i === invoiceCarouselIndex ? 'text-white' : 'text-zinc-500'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'block h-1.5 w-1.5 rounded-full transition-colors',
+                            i === invoiceCarouselIndex ? 'bg-white' : 'bg-current'
+                          )}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                <p className="shrink-0 pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                  {invoiceImageSheetOptions.length > 1
+                    ? 'Desliza para cambiar de hoja · Pellizca o usa + / − para zoom'
+                    : 'Pellizca o usa + / − para zoom'}
+                </p>
+              </div>
+
+              <div className="shrink-0 border-t border-white/10 bg-zinc-950 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 md:px-5">
+                <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 text-white">
                     <button
-                      key={i}
                       type="button"
-                      onClick={() => scrollInvoiceCarouselToIndex(i)}
-                      aria-label={`Ir a ${invoiceImageSheetOptions[i]?.label ?? `hoja ${i + 1}`}`}
-                      aria-current={i === invoiceCarouselIndex ? 'true' : undefined}
+                      aria-label="Alejar"
+                      disabled={invoiceViewerZoom <= 1}
+                      onClick={() =>
+                        setInvoiceViewerZoom((z) => Math.max(1, Math.round((z - 0.25) * 20) / 20))
+                      }
                       className={cn(
-                        'inline-flex min-h-9 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
-                        i === invoiceCarouselIndex ? 'text-white' : 'text-zinc-500'
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 active:scale-[0.99]',
+                        invoiceViewerZoom <= 1 && 'pointer-events-none opacity-40'
                       )}
                     >
-                      <span
-                        className={cn(
-                          'block h-1.5 w-1.5 rounded-full transition-colors',
-                          i === invoiceCarouselIndex ? 'bg-white' : 'bg-current'
-                        )}
-                      />
+                      <ZoomOut className="h-6 w-6" strokeWidth={2.25} />
                     </button>
-                  ))}
+                    <span className="min-w-[3.25rem] text-center text-xs font-black tabular-nums text-zinc-200">
+                      {Math.round(invoiceViewerZoom * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Acercar"
+                      disabled={invoiceViewerZoom >= 3}
+                      onClick={() =>
+                        setInvoiceViewerZoom((z) => Math.min(3, Math.round((z + 0.25) * 20) / 20))
+                      }
+                      className={cn(
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 active:scale-[0.99]',
+                        invoiceViewerZoom >= 3 && 'pointer-events-none opacity-40'
+                      )}
+                    >
+                      <ZoomIn className="h-6 w-6" strokeWidth={2.25} />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceImageViewerOpen(false)}
+                    className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-[#36606F] shadow-md transition hover:bg-zinc-100 active:scale-[0.99]"
+                    aria-label="Cerrar visor de imagen"
+                  >
+                    <X className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                    Cerrar
+                  </button>
                 </div>
-
-                <p className="shrink-0 pb-2 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
-                  Desliza para cambiar de hoja
-                </p>
               </div>
             </div>,
             modalContainer
