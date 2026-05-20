@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useTransition, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import {
   AlertCircle,
@@ -20,8 +20,6 @@ import {
   Truck,
   X,
   XCircle,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
@@ -29,6 +27,7 @@ import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
 import { LineEditModal } from '@/components/albaranes/LineEditModal'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
+import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
@@ -145,8 +144,6 @@ export default function AlbaranesHistoricoClient({
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
   /** Visor carrusel (varias hojas), mismo patrón que el borrador del escáner. */
   const [invoiceImageViewerOpen, setInvoiceImageViewerOpen] = useState(false)
-  /** Zoom del visor de fotos (hojas del albarán). `zoom` CSS: buen comportamiento en WebKit móvil. */
-  const [invoiceViewerZoom, setInvoiceViewerZoom] = useState(1)
   const [invoiceCarouselIndex, setInvoiceCarouselIndex] = useState(0)
   const invoiceCarouselRef = useRef<HTMLDivElement>(null)
   const invoiceCarouselIndexRef = useRef(0)
@@ -167,12 +164,7 @@ export default function AlbaranesHistoricoClient({
   useEffect(() => {
     setInvoiceImageViewerOpen(false)
     setInvoiceCarouselIndex(0)
-    setInvoiceViewerZoom(1)
   }, [detail?.id])
-
-  useEffect(() => {
-    setInvoiceViewerZoom(1)
-  }, [invoiceCarouselIndex, invoiceImageViewerOpen])
 
   const invoiceImageSheetOptions = useMemo(() => {
     if (!detail) return [] as { key: string; label: string; url: string }[]
@@ -1600,37 +1592,14 @@ export default function AlbaranesHistoricoClient({
                             : 'w-full min-w-0'
                         )}
                       >
-                        <div
-                          className="flex min-h-0 flex-1 overflow-auto overscroll-contain"
-                          style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
-                          onWheel={(e) => {
-                            if (!e.ctrlKey && !e.metaKey) return
-                            e.preventDefault()
-                            setInvoiceViewerZoom((z) => {
-                              const step = 0.2
-                              const next = e.deltaY > 0 ? z - step : z + step
-                              return Math.min(3, Math.max(1, Math.round(next * 20) / 20))
-                            })
-                          }}
-                        >
-                          <div className="flex min-h-full w-full min-w-0 flex-1 items-center justify-center p-1">
-                            <div
-                              className="inline-block max-w-full"
-                              style={
-                                {
-                                  zoom: invoiceViewerZoom,
-                                } as CSSProperties
-                              }
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={opt.url}
-                                alt={opt.label}
-                                className="block h-auto max-h-[min(58dvh,calc(100svh-18rem))] w-auto max-w-[min(100vw,100%)] rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(60vh,calc(100vh-18rem))]"
-                              />
-                            </div>
-                          </div>
-                        </div>
+                        <PinchZoomViewport resetKey={`${opt.key}-${invoiceCarouselIndex}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={opt.url}
+                            alt={opt.label}
+                            className="block h-auto max-h-[min(58dvh,calc(100svh-18rem))] w-auto max-w-[min(100vw,100%)] rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(60vh,calc(100vh-18rem))]"
+                          />
+                        </PinchZoomViewport>
                       </div>
                     ))}
                   </div>
@@ -1663,50 +1632,17 @@ export default function AlbaranesHistoricoClient({
 
                 <p className="shrink-0 pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
                   {invoiceImageSheetOptions.length > 1
-                    ? 'Desliza para cambiar de hoja · Pellizca o usa + / − para zoom'
-                    : 'Pellizca o usa + / − para zoom'}
+                    ? 'Desliza para cambiar de hoja · Pellizca con dos dedos para zoom'
+                    : 'Pellizca con dos dedos para zoom'}
                 </p>
               </div>
 
               <div className="shrink-0 border-t border-white/10 bg-zinc-950 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 md:px-5">
-                <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5 text-white">
-                    <button
-                      type="button"
-                      aria-label="Alejar"
-                      disabled={invoiceViewerZoom <= 1}
-                      onClick={() =>
-                        setInvoiceViewerZoom((z) => Math.max(1, Math.round((z - 0.25) * 20) / 20))
-                      }
-                      className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 active:scale-[0.99]',
-                        invoiceViewerZoom <= 1 && 'pointer-events-none opacity-40'
-                      )}
-                    >
-                      <ZoomOut className="h-6 w-6" strokeWidth={2.25} />
-                    </button>
-                    <span className="min-w-[3.25rem] text-center text-xs font-black tabular-nums text-zinc-200">
-                      {Math.round(invoiceViewerZoom * 100)}%
-                    </span>
-                    <button
-                      type="button"
-                      aria-label="Acercar"
-                      disabled={invoiceViewerZoom >= 3}
-                      onClick={() =>
-                        setInvoiceViewerZoom((z) => Math.min(3, Math.round((z + 0.25) * 20) / 20))
-                      }
-                      className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 active:scale-[0.99]',
-                        invoiceViewerZoom >= 3 && 'pointer-events-none opacity-40'
-                      )}
-                    >
-                      <ZoomIn className="h-6 w-6" strokeWidth={2.25} />
-                    </button>
-                  </div>
+                <div className="mx-auto flex max-w-lg justify-center">
                   <button
                     type="button"
                     onClick={() => setInvoiceImageViewerOpen(false)}
-                    className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-[#36606F] shadow-md transition hover:bg-zinc-100 active:scale-[0.99]"
+                    className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-[#36606F] shadow-md transition hover:bg-zinc-100 active:scale-[0.99] sm:w-auto"
                     aria-label="Cerrar visor de imagen"
                   >
                     <X className="h-5 w-5 shrink-0" strokeWidth={2.5} />
