@@ -11,11 +11,14 @@ export function CartaCoversLoadingGate({
   children,
   className,
   spinnerClassName,
+  /** Modal compacto (selector subcategorías): altura según contenido, sin relleno. */
+  fitContent = false,
 }: {
   urls: (string | null | undefined)[]
   children: ReactNode
   className?: string
   spinnerClassName?: string
+  fitContent?: boolean
 }) {
   const expected = useMemo(
     () => uniqueCartaCoverUrls(urls),
@@ -23,25 +26,37 @@ export function CartaCoversLoadingGate({
   )
   const ready = useCartaImagesPreloaded(expected)
 
+  if (!ready) {
+    return (
+      <div
+        className={cn(
+          'flex items-center justify-center bg-white',
+          fitContent ? 'px-6 py-5' : 'relative min-h-[12rem] flex-1',
+          className
+        )}
+        role="status"
+        aria-live="polite"
+        aria-label="Cargando imágenes"
+      >
+        <Loader2
+          className={cn(
+            'h-9 w-9 animate-spin text-[#36606F] sm:h-10 sm:w-10',
+            spinnerClassName
+          )}
+          strokeWidth={2.25}
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className={cn('relative min-h-[200px] flex-1', className)}>
-      {!ready ? (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center bg-white"
-          role="status"
-          aria-live="polite"
-          aria-label="Cargando imágenes"
-        >
-          <Loader2
-            className={cn(
-              'h-10 w-10 animate-spin text-[#36606F] sm:h-11 sm:w-11',
-              spinnerClassName
-            )}
-            strokeWidth={2.25}
-          />
-        </div>
-      ) : null}
-      {ready ? <div className="h-full w-full">{children}</div> : null}
+    <div
+      className={cn(
+        fitContent ? 'w-fit max-w-full' : 'relative min-h-[200px] flex-1',
+        className
+      )}
+    >
+      {children}
     </div>
   )
 }

@@ -27,7 +27,13 @@ export function CartaSubcategoryPickerButton({
   const photo = coverPhotoUrl?.trim() || null
   const showCover = variant === 'grid' || variant === 'tabs'
   return (
-    <div className={cn('relative min-w-0 flex-1 basis-0', className)}>
+    <div
+      className={cn(
+        'relative min-w-0',
+        variant === 'grid' ? 'w-[5.75rem] sm:w-[6.75rem]' : 'flex-1 basis-0',
+        className
+      )}
+    >
       {overlay}
       <button
         type="button"
@@ -35,7 +41,7 @@ export function CartaSubcategoryPickerButton({
         className={cn(
           'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center text-center',
           variant === 'grid'
-            ? 'rounded-xl bg-white px-2 py-2 active:bg-zinc-50 sm:min-h-[52px] sm:px-3'
+            ? 'rounded-xl bg-white px-1.5 py-1.5 active:bg-zinc-50 sm:px-2 sm:py-2'
             : 'rounded-lg px-0.5 py-1 sm:rounded-xl sm:px-1 sm:py-1.5',
           'border-0 shadow-none',
           (variant === 'tabs' || variant === 'label') &&

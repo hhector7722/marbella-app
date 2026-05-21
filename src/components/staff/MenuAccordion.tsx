@@ -11,6 +11,8 @@ import {
 import { uniqueCartaCoverUrls } from '@/lib/carta-cover-preload'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
+import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryPickerGrid'
+import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
@@ -851,11 +853,13 @@ export function MenuAccordion({
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby={
-                        openShowSubPicker || openShowSubTabs ? undefined : 'staff-carta-section-modal-title'
+                        openShowSubPicker
+                            ? 'carta-sub-picker-modal-title'
+                            : openShowSubTabs
+                              ? undefined
+                              : 'staff-carta-section-modal-title'
                     }
-                    aria-label={
-                        openShowSubPicker || openShowSubTabs ? openGroup.title : undefined
-                    }
+                    aria-label={openShowSubTabs ? openGroup.title : undefined}
                 >
                     <button
                         type="button"
@@ -863,19 +867,51 @@ export function MenuAccordion({
                         aria-label="Cerrar"
                         onClick={() => setOpenKey(null)}
                     />
+                    {openShowSubPicker ? (
+                        <CartaSubcategoryPickerModalShell
+                            title={openGroup.title}
+                            onClose={() => setOpenKey(null)}
+                        >
+                            <CartaCoversLoadingGate
+                                urls={openModalImageUrls}
+                                fitContent
+                                className="bg-white px-2.5 py-2 sm:px-3 sm:py-2.5"
+                            >
+                                <CartaSubcategoryPickerGrid count={openGroup._subList.length}>
+                                    {openGroup._subList.map((sub) => (
+                                        <CartaSubcategoryPickerButton
+                                            key={sub.key}
+                                            variant="grid"
+                                            label={subPickerButtonLabel(
+                                                sub,
+                                                lang,
+                                                openGroup.parentTitleRaw,
+                                                tPublicUi(lang).uncategorized
+                                            )}
+                                            coverPhotoUrl={sub.coverPhotoUrl}
+                                            coverPhotoScale={sub.coverPhotoScale}
+                                            onClick={() =>
+                                                setSelectedSubKeyByGroup((p) => ({
+                                                    ...p,
+                                                    [openGroup.key]: sub.key,
+                                                }))
+                                            }
+                                        />
+                                    ))}
+                                </CartaSubcategoryPickerGrid>
+                            </CartaCoversLoadingGate>
+                        </CartaSubcategoryPickerModalShell>
+                    ) : (
                     <div
                         className={cn(
                             'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
-                            openShowSubPicker
-                                ? 'h-auto'
-                                : showPlatoModalChrome
-                                  ? 'h-[82vh] min-h-0 sm:h-[78vh]'
-                                  : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
+                            showPlatoModalChrome
+                                ? 'h-[82vh] min-h-0 sm:h-[78vh]'
+                                : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {!openShowSubPicker ? (
-                        openPlatoMarbella && !openShowSubTabs ? (
+                        {openPlatoMarbella && !openShowSubTabs ? (
                             <PlatoMarbellaModalHeaderBar
                                 backLabel={tPlatoMarbellaUi(lang).backToPlatos}
                                 onBackToPlatos={() => setPlatoMarbellaDetailOpen(false)}
@@ -1138,8 +1174,7 @@ export function MenuAccordion({
                                 </button>
                             ) : null}
                         </div>
-                        )
-                        ) : null}
+                        )}
 
                         {reorderScope === 'subs' || reorderScope === 'products' ? (
                             <div className="shrink-0 bg-amber-50 px-2 py-2 sm:px-3 sm:py-2.5">
@@ -1258,43 +1293,13 @@ export function MenuAccordion({
                         <CartaCoversLoadingGate
                             urls={openModalImageUrls}
                             className={cn(
-                                'bg-white',
-                                openShowSubPicker
-                                    ? 'min-h-[220px] px-2.5 py-3 sm:px-3 sm:py-4'
-                                    : cn(
-                                          'flex min-h-[min(50vh,320px)] flex-1 flex-col',
-                                          showPlatoModalChrome
-                                              ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
-                                              : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
-                                      )
+                                'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
+                                showPlatoModalChrome
+                                    ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
+                                    : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
                             )}
                         >
-                            {openShowSubPicker ? (
-                                    <div className="px-0.5 sm:px-1">
-                                        <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
-                                            {openGroup._subList.map((sub) => (
-                                                <CartaSubcategoryPickerButton
-                                                    key={sub.key}
-                                                    variant="grid"
-                                                    label={subPickerButtonLabel(
-                                                        sub,
-                                                        lang,
-                                                        openGroup.parentTitleRaw,
-                                                        tPublicUi(lang).uncategorized
-                                                    )}
-                                                    coverPhotoUrl={sub.coverPhotoUrl}
-                                                    coverPhotoScale={sub.coverPhotoScale}
-                                                    onClick={() =>
-                                                        setSelectedSubKeyByGroup((p) => ({
-                                                            ...p,
-                                                            [openGroup.key]: sub.key,
-                                                        }))
-                                                    }
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                            ) : openPlatoMarbella && platoBundleRows ? (
+                            {openPlatoMarbella && platoBundleRows ? (
                                 <div className="flex min-h-0 flex-1 flex-col">
                                     {reorderScope === 'products' && reorderPlatoMarbellaBundle ? (
                                         <PlatoMarbellaStaffGridView
@@ -1484,6 +1489,7 @@ export function MenuAccordion({
                             <PlatoMarbellaModalScheduleFooter lang={lang} />
                         ) : null}
                     </div>
+                    )}
                 </div>
             ) : null}
 

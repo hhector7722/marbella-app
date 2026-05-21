@@ -16,6 +16,7 @@ import {
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import {
+  CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS,
   cartaProductGridRowDensity,
   chunkCartaProductGridRows,
   getCartaProductGridRowFrameStyle,
@@ -79,7 +80,8 @@ function ProductGrid({
                   key={row.articulo_id}
                   role={productReorderMode && onReorderTap ? 'presentation' : undefined}
                   className={cn(
-                    'h-full',
+                    CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS,
+                    'flex h-full min-w-0 flex-col',
                     productReorderMode && onReorderTap && 'cursor-pointer rounded-2xl touch-manipulation',
                     picked && 'bg-amber-100/90'
                   )}

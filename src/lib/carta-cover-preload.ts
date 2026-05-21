@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-export const CARTA_IMAGE_PRELOAD_TIMEOUT_MS = 12_000
+export const CARTA_IMAGE_PRELOAD_TIMEOUT_MS = 5_000
 
 export function uniqueCartaCoverUrls(urls: (string | null | undefined)[]): string[] {
   const seen = new Set<string>()

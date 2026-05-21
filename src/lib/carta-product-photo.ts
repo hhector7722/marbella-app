@@ -41,6 +41,9 @@ export const CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS = CARTA_PRODUCT_PHOTO_IMG_NEUTR
 export const CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS =
   'relative mx-auto flex w-full shrink-0 items-center justify-center overflow-hidden bg-white'
 
+/** Mismo ancho que 1/3 del grid de carta: evita que fotos crezcan en filas de 1–2 ítems. */
+export const CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS = 'mx-auto w-full max-w-[7.75rem]'
+
 /** @deprecated Usar CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS + getCartaProductPhotoFrameStyle */
 export const CARTA_DRINK_PHOTO_FRAME_CLASS =
   `${CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS} h-[min(26vw,96px)]`
