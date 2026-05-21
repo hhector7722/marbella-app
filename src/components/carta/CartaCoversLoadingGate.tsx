@@ -1,27 +1,10 @@
 'use client'
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
+import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { uniqueCartaCoverUrls, useCartaCoverUrlsKey } from '@/lib/carta-cover-preload'
-
-type CartaCoversLoadContextValue = {
-  reportLoaded: (url: string) => void
-}
-
-const CartaCoversLoadContext = createContext<CartaCoversLoadContextValue | null>(null)
-
-export function useCartaCoversLoadContext() {
-  return useContext(CartaCoversLoadContext)
-}
+import { uniqueCartaCoverUrls, useCartaImagesPreloaded } from '@/lib/carta-cover-preload'
 
 export function CartaCoversLoadingGate({
   urls,
@@ -38,59 +21,27 @@ export function CartaCoversLoadingGate({
     () => uniqueCartaCoverUrls(urls),
     [urls.map((u) => u?.trim() ?? '').filter(Boolean).sort().join('|')]
   )
-  const urlKey = useCartaCoverUrlsKey(expected)
-  const [loadedUrls, setLoadedUrls] = useState<Set<string>>(() => new Set())
-
-  useEffect(() => {
-    setLoadedUrls(new Set())
-  }, [urlKey])
-
-  const reportLoaded = useCallback((url: string) => {
-    const t = url.trim()
-    if (!t) return
-    setLoadedUrls((prev) => {
-      if (prev.has(t)) return prev
-      const next = new Set(prev)
-      next.add(t)
-      return next
-    })
-  }, [])
-
-  const ready =
-    expected.length === 0 || expected.every((url) => loadedUrls.has(url))
-
-  const ctx = useMemo(() => ({ reportLoaded }), [reportLoaded])
+  const ready = useCartaImagesPreloaded(expected)
 
   return (
-    <CartaCoversLoadContext.Provider value={ctx}>
-      <div className={cn('relative min-h-[200px] flex-1', className)}>
-        {!ready ? (
-          <div
-            className="absolute inset-0 z-10 flex items-center justify-center bg-white"
-            role="status"
-            aria-live="polite"
-            aria-label="Cargando imágenes"
-          >
-            <Loader2
-              className={cn(
-                'h-10 w-10 animate-spin text-[#36606F] sm:h-11 sm:w-11',
-                spinnerClassName
-              )}
-              strokeWidth={2.25}
-            />
-          </div>
-        ) : null}
+    <div className={cn('relative min-h-[200px] flex-1', className)}>
+      {!ready ? (
         <div
-          className={cn(
-            'h-full w-full',
-            !ready &&
-              'pointer-events-none absolute inset-0 overflow-hidden opacity-0'
-          )}
-          aria-hidden={!ready}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-white"
+          role="status"
+          aria-live="polite"
+          aria-label="Cargando imágenes"
         >
-          {children}
+          <Loader2
+            className={cn(
+              'h-10 w-10 animate-spin text-[#36606F] sm:h-11 sm:w-11',
+              spinnerClassName
+            )}
+            strokeWidth={2.25}
+          />
         </div>
-      </div>
-    </CartaCoversLoadContext.Provider>
+      ) : null}
+      {ready ? <div className="h-full w-full">{children}</div> : null}
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 import { cartaShowsProductPhoto } from '@/lib/carta-product-photo'
 import { uniqueCartaCoverUrls } from '@/lib/carta-cover-preload'
+import type { PlatoMarbellaMenuRow } from '@/lib/carta-plato-marbella'
 
 /** URLs de fotos de producto visibles en el grid de carta. */
 export function collectCartaProductPhotoUrls(
@@ -12,4 +13,9 @@ export function collectCartaProductPhotoUrls(
     }
   }
   return uniqueCartaCoverUrls(urls)
+}
+
+/** Plato Marbella: solo URLs con foto real (precarga vía Image, no depende del tramo montado en DOM). */
+export function collectPlatoMarbellaPhotoUrls(rows: PlatoMarbellaMenuRow[]): string[] {
+  return uniqueCartaCoverUrls(rows.map((r) => r.photo_url))
 }

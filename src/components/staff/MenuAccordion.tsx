@@ -4,7 +4,10 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
-import { collectCartaProductPhotoUrls } from '@/lib/carta-modal-images'
+import {
+  collectCartaProductPhotoUrls,
+  collectPlatoMarbellaPhotoUrls,
+} from '@/lib/carta-modal-images'
 import { uniqueCartaCoverUrls } from '@/lib/carta-cover-preload'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
@@ -517,7 +520,7 @@ export function MenuAccordion({
             return uniqueCartaCoverUrls(openGroup._subList.map((s) => s.coverPhotoUrl))
         }
         if (openPlatoMarbella && platoBundleRows && platoBundleRows.length > 0) {
-            return collectCartaProductPhotoUrls(platoBundleRows)
+            return collectPlatoMarbellaPhotoUrls(platoBundleRows)
         }
         const subs =
             openHasMultipleSubs && openSelectedSubKey

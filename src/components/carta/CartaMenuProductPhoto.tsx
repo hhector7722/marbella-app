@@ -6,7 +6,6 @@ import {
   type CartaPhotoScale,
 } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
-import { useCartaImageLoadReport } from '@/components/carta/useCartaImageLoadReport'
 
 export function CartaMenuProductPhoto({
   src,
@@ -25,18 +24,14 @@ export function CartaMenuProductPhoto({
   className?: string
 }) {
   const factor = getCartaProductPhotoScaleFactor(scale, isDrink, articuloId)
-  const { imgRef, notifyLoaded } = useCartaImageLoadReport(src)
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
     <img
-      ref={imgRef}
       src={src}
       alt={alt}
       loading="eager"
       decoding="async"
-      onLoad={notifyLoaded}
-      onError={notifyLoaded}
       className={cn(CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLASS, className)}
       style={{ transform: `scale(${factor})` }}
     />
