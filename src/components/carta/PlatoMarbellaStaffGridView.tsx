@@ -16,10 +16,12 @@ import {
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import {
-  CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS,
   cartaProductGridRowDensity,
   chunkCartaProductGridRows,
   getCartaProductGridRowFrameStyle,
+  getCartaProductPhotoCellMaxWidthClass,
+  getPlatoMarbellaProductRowGridClass,
+  PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS,
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaPlateVisual } from '@/components/carta/PlatoMarbellaPlateVisual'
 import {
@@ -63,52 +65,56 @@ function ProductGrid({
       {chunkCartaProductGridRows(rows, 3).map((chunk, chunkIdx) => {
         const rowDensity = cartaProductGridRowDensity(chunk)
         const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
+        const itemsInRow = chunk.length
         return (
-          <div
-            key={chunkIdx}
-            className={cn(
-              'grid grid-cols-3 items-stretch gap-x-2 md:gap-x-3',
-              rowDensity === 'compact' && 'gap-y-0',
-              rowDensity === 'cozy' && 'gap-y-1',
-              rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
-            )}
-          >
-            {chunk.map((row) => {
-              const picked = productReorderMode && reorderPick === String(row.articulo_id)
-              return (
-                <div
-                  key={row.articulo_id}
-                  role={productReorderMode && onReorderTap ? 'presentation' : undefined}
-                  className={cn(
-                    CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS,
-                    'flex h-full min-w-0 flex-col',
-                    productReorderMode && onReorderTap && 'cursor-pointer rounded-2xl touch-manipulation',
-                    picked && 'bg-amber-100/90'
-                  )}
-                  onClick={
-                    productReorderMode && onReorderTap
-                      ? (e) => {
-                          if ((e.target as HTMLElement).closest('button')) return
-                          onReorderTap(row.articulo_id)
-                        }
-                      : undefined
-                  }
-                >
-                  <CartaStaffMenuProductCard
-                    row={row}
-                    lang={lang}
-                    editMode={editMode}
-                    productReorderMode={productReorderMode}
-                    onEditProduct={onEditProduct}
-                    onToggleProductActive={onToggleProductActive}
-                    productToggleBusyId={productToggleBusyId}
-                    onReorderTap={onReorderTap}
-                    rowDensity={rowDensity}
-                    photoFrameStyle={rowFrameStyle}
-                  />
-                </div>
-              )
-            })}
+          <div key={chunkIdx} className={PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS}>
+            <div
+              className={cn(
+                getPlatoMarbellaProductRowGridClass(itemsInRow, 'stretch'),
+                rowDensity === 'compact' && 'gap-y-0',
+                rowDensity === 'cozy' && 'gap-y-1',
+                rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
+              )}
+            >
+              {chunk.map((row) => {
+                const picked = productReorderMode && reorderPick === String(row.articulo_id)
+                return (
+                  <div
+                    key={row.articulo_id}
+                    role={productReorderMode && onReorderTap ? 'presentation' : undefined}
+                    className={cn(
+                      getCartaProductPhotoCellMaxWidthClass(itemsInRow),
+                      'flex h-full min-w-0 flex-col',
+                      productReorderMode &&
+                        onReorderTap &&
+                        'cursor-pointer rounded-2xl touch-manipulation',
+                      picked && 'bg-amber-100/90'
+                    )}
+                    onClick={
+                      productReorderMode && onReorderTap
+                        ? (e) => {
+                            if ((e.target as HTMLElement).closest('button')) return
+                            onReorderTap(row.articulo_id)
+                          }
+                        : undefined
+                    }
+                  >
+                    <CartaStaffMenuProductCard
+                      row={row}
+                      lang={lang}
+                      editMode={editMode}
+                      productReorderMode={productReorderMode}
+                      onEditProduct={onEditProduct}
+                      onToggleProductActive={onToggleProductActive}
+                      productToggleBusyId={productToggleBusyId}
+                      onReorderTap={onReorderTap}
+                      rowDensity={rowDensity}
+                      photoFrameStyle={rowFrameStyle}
+                    />
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )
       })}

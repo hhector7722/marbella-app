@@ -18,12 +18,14 @@ import {
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import {
-  CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS,
   CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
   chunkCartaProductGridRows,
   getCartaProductGridRowFrameStyle,
+  getCartaProductPhotoCellMaxWidthClass,
   getCartaProductPhotoFrameStyle,
   getCartaProductPhotoScaleFactor,
+  getPlatoMarbellaProductRowGridClass,
+  PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS,
 } from '@/lib/carta-product-photo'
 
 const PRODUCT_ROW_MIN_REM = 5.25
@@ -36,12 +38,14 @@ function OptionGridCard({
   hideName,
   onPhotoClick,
   rowFrameStyle,
+  itemsInRow,
 }: {
   row: OptionRow
   lang: CartaLang
   hideName: boolean
   onPhotoClick?: (src: string, alt: string) => void
   rowFrameStyle: CSSProperties
+  itemsInRow: number
 }) {
   const name = getCartaDisplayName(row, lang)
   const priceLabel = formatCartaPrice(row.precio).trim()
@@ -52,7 +56,12 @@ function OptionGridCard({
 
   return (
     <div className="flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white">
-      <div className={cn(CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS, 'shrink-0 px-0.5 pt-0 sm:px-1')}>
+      <div
+        className={cn(
+          getCartaProductPhotoCellMaxWidthClass(itemsInRow),
+          'shrink-0 px-0.5 pt-0 sm:px-1'
+        )}
+      >
         {photo ? (
           <button
             type="button"
@@ -111,25 +120,21 @@ function CenteredProductRow({
   const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
 
   return (
-    <div
-      className={cn(
-        'grid w-full grid-cols-3 items-start gap-x-2 gap-y-0 sm:gap-x-2.5'
-      )}
-    >
-      {chunk.map((row) => (
-        <div
-          key={row.articulo_id}
-          className={cn('min-w-0', count === 1 && 'col-start-2')}
-        >
-          <OptionGridCard
-            row={row}
-            lang={lang}
-            hideName={Boolean(row.plato_marbella_hide_name)}
-            onPhotoClick={onPhotoClick}
-            rowFrameStyle={rowFrameStyle}
-          />
-        </div>
-      ))}
+    <div className={PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS}>
+      <div className={getPlatoMarbellaProductRowGridClass(count)}>
+        {chunk.map((row) => (
+          <div key={row.articulo_id} className="min-w-0">
+            <OptionGridCard
+              row={row}
+              lang={lang}
+              hideName={Boolean(row.plato_marbella_hide_name)}
+              onPhotoClick={onPhotoClick}
+              rowFrameStyle={rowFrameStyle}
+              itemsInRow={count}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
