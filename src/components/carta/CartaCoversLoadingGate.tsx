@@ -83,7 +83,8 @@ export function CartaCoversLoadingGate({
         <div
           className={cn(
             'h-full w-full',
-            !ready && 'pointer-events-none opacity-0'
+            !ready &&
+              'pointer-events-none absolute inset-0 overflow-hidden opacity-0'
           )}
           aria-hidden={!ready}
         >

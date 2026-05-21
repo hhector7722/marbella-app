@@ -31,16 +31,71 @@ const SLOT_RECT: Record<PlatoMarbellaSlot, string> = {
 /** Lados interiores rectos (nunca el arco del círculo). */
 type InnerEdge = { x1: number; y1: number; x2: number; y2: number }
 
-const SLOT_INNER_EDGES: Record<PlatoMarbellaSlot, InnerEdge[]> = {
-  entrante: [{ x1: PLATE_G.inset, y1: PLATE_G.divY, x2: PLATE_RIGHT, y2: PLATE_G.divY }],
-  principal: [
-    { x1: PLATE_G.inset, y1: PLATE_G.divY, x2: PLATE_G.divX, y2: PLATE_G.divY },
-    { x1: PLATE_G.divX, y1: PLATE_G.divY, x2: PLATE_G.divX, y2: PLATE_BOTTOM },
-  ],
-  guarnicion: [
-    { x1: PLATE_G.divX, y1: PLATE_G.divY, x2: PLATE_RIGHT, y2: PLATE_G.divY },
-    { x1: PLATE_G.divX, y1: PLATE_G.divY, x2: PLATE_G.divX, y2: PLATE_BOTTOM },
-  ],
+/** Intersección del círculo del plato con una horizontal en y. */
+function circleChordAtY(y: number): { xMin: number; xMax: number } {
+  const dy = y - PLATE_G.cy
+  const half = Math.sqrt(Math.max(0, PLATE_G.r * PLATE_G.r - dy * dy))
+  return { xMin: PLATE_G.cx - half, xMax: PLATE_G.cx + half }
+}
+
+/** Tramo vertical en x recortado al círculo entre yTop e yBottom. */
+function circleVerticalSpanAtX(
+  x: number,
+  yTop: number,
+  yBottom: number
+): { yMin: number; yMax: number } {
+  const dx = x - PLATE_G.cx
+  const half = Math.sqrt(Math.max(0, PLATE_G.r * PLATE_G.r - dx * dx))
+  const yCircleMin = PLATE_G.cy - half
+  const yCircleMax = PLATE_G.cy + half
+  return { yMin: Math.max(yTop, yCircleMin), yMax: Math.min(yBottom, yCircleMax) }
+}
+
+/** Contorno activo: extremos en el borde circular del plato, no en el cuadrado del viewBox. */
+function activeSlotInnerEdges(slot: PlatoMarbellaSlot): InnerEdge[] {
+  const chord = circleChordAtY(PLATE_G.divY)
+  const midVertical = circleVerticalSpanAtX(PLATE_G.divX, PLATE_G.divY, PLATE_BOTTOM)
+
+  if (slot === 'entrante') {
+    return [
+      {
+        x1: chord.xMin,
+        y1: PLATE_G.divY,
+        x2: chord.xMax,
+        y2: PLATE_G.divY,
+      },
+    ]
+  }
+  if (slot === 'principal') {
+    return [
+      {
+        x1: chord.xMin,
+        y1: PLATE_G.divY,
+        x2: PLATE_G.divX,
+        y2: PLATE_G.divY,
+      },
+      {
+        x1: PLATE_G.divX,
+        y1: midVertical.yMin,
+        x2: PLATE_G.divX,
+        y2: midVertical.yMax,
+      },
+    ]
+  }
+  return [
+    {
+      x1: PLATE_G.divX,
+      y1: PLATE_G.divY,
+      x2: chord.xMax,
+      y2: PLATE_G.divY,
+    },
+    {
+      x1: PLATE_G.divX,
+      y1: midVertical.yMin,
+      x2: PLATE_G.divX,
+      y2: midVertical.yMax,
+    },
+  ]
 }
 
 const SLOT_LABEL_POS: Record<PlatoMarbellaSlot, { x: number; y: number }> = {
@@ -165,29 +220,37 @@ export function PlatoMarbellaPlateVisual({
           })}
         </g>
 
-        {/* Divisores base del plato (neutros) */}
-        <line
-          x1={PLATE_G.inset}
-          y1={PLATE_G.divY}
-          x2={PLATE_RIGHT}
-          y2={PLATE_G.divY}
-          stroke={PM_DIVIDER_STROKE}
-          strokeWidth="1.5"
-          pointerEvents="none"
-        />
-        <line
-          x1={PLATE_G.divX}
-          y1={PLATE_G.divY}
-          x2={PLATE_G.divX}
-          y2={PLATE_BOTTOM}
-          stroke={PM_DIVIDER_STROKE}
-          strokeWidth="1.5"
-          pointerEvents="none"
-        />
+        {/* Divisores base del plato (neutros, recortados al círculo) */}
+        {(() => {
+          const baseChord = circleChordAtY(PLATE_G.divY)
+          const baseMid = circleVerticalSpanAtX(PLATE_G.divX, PLATE_G.divY, PLATE_BOTTOM)
+          return (
+            <>
+              <line
+                x1={baseChord.xMin}
+                y1={PLATE_G.divY}
+                x2={baseChord.xMax}
+                y2={PLATE_G.divY}
+                stroke={PM_DIVIDER_STROKE}
+                strokeWidth="1.25"
+                pointerEvents="none"
+              />
+              <line
+                x1={PLATE_G.divX}
+                y1={baseMid.yMin}
+                x2={PLATE_G.divX}
+                y2={baseMid.yMax}
+                stroke={PM_DIVIDER_STROKE}
+                strokeWidth="1.25"
+                pointerEvents="none"
+              />
+            </>
+          )
+        })()}
 
         {/* Contorno interior animado (solo lados rectos de la zona activa) */}
         <g pointerEvents="none">
-          {SLOT_INNER_EDGES[activeSlot].map((edge, i) => (
+          {activeSlotInnerEdges(activeSlot).map((edge, i) => (
             <line
               key={`${activeSlot}-edge-${i}`}
               x1={edge.x1}
@@ -195,8 +258,8 @@ export function PlatoMarbellaPlateVisual({
               x2={edge.x2}
               y2={edge.y2}
               stroke={PLATO_MARBELLA_BRAND}
-              strokeWidth="1.5"
-              strokeLinecap="round"
+              strokeWidth="2"
+              strokeLinecap="butt"
               className={lineAnim}
             />
           ))}

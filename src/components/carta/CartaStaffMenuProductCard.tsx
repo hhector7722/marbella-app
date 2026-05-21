@@ -108,17 +108,21 @@ export function CartaStaffMenuProductCard({
                   'touch-manipulation active:bg-zinc-50',
                   productReorderMode && onReorderTap
                     ? 'cursor-pointer'
-                    : editMode
-                      ? 'cursor-default'
-                      : 'cursor-zoom-in'
+                    : editMode && onEditProduct && !productReorderMode
+                      ? 'cursor-pointer'
+                      : editMode
+                        ? 'cursor-default'
+                        : 'cursor-zoom-in'
                 )}
                 style={frameStyle}
                 aria-label={
                   productReorderMode && onReorderTap
                     ? 'Seleccionar para reordenar'
-                    : editMode
-                      ? 'Foto del producto'
-                      : 'Ver foto ampliada'
+                    : editMode && onEditProduct
+                      ? 'Editar producto'
+                      : editMode
+                        ? 'Foto del producto'
+                        : 'Ver foto ampliada'
                 }
                 onClick={(e) => {
                   if (productReorderMode && onReorderTap) {
@@ -133,9 +137,10 @@ export function CartaStaffMenuProductCard({
                     onOpenPlatoMarbella()
                     return
                   }
-                  if (editMode) {
+                  if (editMode && onEditProduct && !productReorderMode) {
                     e.preventDefault()
                     e.stopPropagation()
+                    onEditProduct(row.articulo_id)
                     return
                   }
                   setLightboxOpen(true)

@@ -5,8 +5,7 @@ import {
   type CartaPhotoScale,
 } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
-import { useCartaCoversLoadContext } from '@/components/carta/CartaCoversLoadingGate'
-import { useCallback, useLayoutEffect, useRef } from 'react'
+import { useCartaImageLoadReport } from '@/components/carta/useCartaImageLoadReport'
 
 export function CartaMenuCoverPhoto({
   src,
@@ -20,18 +19,7 @@ export function CartaMenuCoverPhoto({
   className?: string
 }) {
   const factor = getCartaCoverPhotoScaleFactor(scale)
-  const loadCtx = useCartaCoversLoadContext()
-  const imgRef = useRef<HTMLImageElement>(null)
-
-  const notifyLoaded = useCallback(() => {
-    loadCtx?.reportLoaded(src)
-  }, [loadCtx, src])
-
-  useLayoutEffect(() => {
-    const el = imgRef.current
-    if (!loadCtx || !el) return
-    if (el.complete) notifyLoaded()
-  }, [src, loadCtx, notifyLoaded])
+  const { imgRef, notifyLoaded } = useCartaImageLoadReport(src)
 
   return (
     <span className="relative block h-full w-full bg-white">

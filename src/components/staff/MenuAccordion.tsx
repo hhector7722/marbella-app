@@ -4,6 +4,8 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
+import { collectCartaProductPhotoUrls } from '@/lib/carta-modal-images'
+import { uniqueCartaCoverUrls } from '@/lib/carta-cover-preload'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
@@ -483,11 +485,6 @@ export function MenuAccordion({
         [displayGrouped]
     )
 
-    const openSubCoverUrls = useMemo(
-        () => (openGroup?._subList ?? []).map((s) => s.coverPhotoUrl),
-        [openGroup]
-    )
-
     const platoBundleRows = openGroup?._platoMarbellaBundleRows ?? null
     const platoLauncherArticuloId = openGroup?._platoMarbellaLauncherArticuloId
     const hasPlatoMarbellaBundle = (platoBundleRows?.length ?? 0) > 0
@@ -513,6 +510,28 @@ export function MenuAccordion({
     const openPlatoMarbella = Boolean(
         platoMarbellaDetailOpen && hasPlatoMarbellaBundle && !openShowSubPicker
     )
+
+    const openModalImageUrls = useMemo(() => {
+        if (!openGroup) return []
+        if (openShowSubPicker) {
+            return uniqueCartaCoverUrls(openGroup._subList.map((s) => s.coverPhotoUrl))
+        }
+        if (openPlatoMarbella && platoBundleRows && platoBundleRows.length > 0) {
+            return collectCartaProductPhotoUrls(platoBundleRows)
+        }
+        const subs =
+            openHasMultipleSubs && openSelectedSubKey
+                ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
+                : openGroup._subList
+        return collectCartaProductPhotoUrls(subs.flatMap((s) => s.rows))
+    }, [
+        openGroup,
+        openShowSubPicker,
+        openPlatoMarbella,
+        platoBundleRows,
+        openHasMultipleSubs,
+        openSelectedSubKey,
+    ])
 
     const openPlatoMenuPrice = useMemo(() => {
         if (!openPlatoMarbella || !platoBundleRows) return null
@@ -1233,25 +1252,21 @@ export function MenuAccordion({
                             />
                         ) : null}
 
-                        <div
+                        <CartaCoversLoadingGate
+                            urls={openModalImageUrls}
                             className={cn(
                                 'bg-white',
                                 openShowSubPicker
-                                    ? 'px-2.5 py-3 sm:px-3 sm:py-4'
+                                    ? 'min-h-[220px] px-2.5 py-3 sm:px-3 sm:py-4'
                                     : cn(
-                                          'min-h-0 flex-1 overflow-y-auto overscroll-contain custom-scrollbar',
+                                          'flex min-h-[min(50vh,320px)] flex-1 flex-col',
                                           showPlatoModalChrome
-                                              ? 'flex flex-col px-0 pb-0 pt-0 sm:px-0'
-                                              : 'px-2.5 pb-4 pt-2 sm:px-3 sm:pb-5 sm:pt-2.5'
+                                              ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
+                                              : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
                                       )
                             )}
                         >
                             {openShowSubPicker ? (
-                                <CartaCoversLoadingGate
-                                    urls={openSubCoverUrls}
-                                    className="min-h-[140px] py-6"
-                                    spinnerClassName="h-8 w-8"
-                                >
                                     <div className="px-0.5 sm:px-1">
                                         <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-0.5">
                                             {openGroup._subList.map((sub) => (
@@ -1276,7 +1291,6 @@ export function MenuAccordion({
                                             ))}
                                         </div>
                                     </div>
-                                </CartaCoversLoadingGate>
                             ) : openPlatoMarbella && platoBundleRows ? (
                                 <div className="flex min-h-0 flex-1 flex-col">
                                     {reorderScope === 'products' && reorderPlatoMarbellaBundle ? (
@@ -1462,7 +1476,7 @@ export function MenuAccordion({
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </CartaCoversLoadingGate>
                         {showPlatoModalChrome ? (
                             <PlatoMarbellaModalScheduleFooter lang={lang} />
                         ) : null}
