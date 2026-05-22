@@ -2090,7 +2090,7 @@ export async function autoMapKnownLinesAction(params?: {
   const dict = new Map<string, { ingredient_id: string; factor: number }>()
   for (const r of (mapRows ?? []) as any[]) {
     const sid = Number(r.supplier_id)
-    const name = String(r.supplier_item_name ?? '').trim()
+    const name = String(r.supplier_item_name ?? '').trim().toLowerCase()
     const ing = r.ingredient_id ? String(r.ingredient_id) : null
     const factor = Number(r.conversion_factor)
     if (!Number.isFinite(sid) || !name || !ing || !Number.isFinite(factor) || factor <= 0) continue
@@ -2104,7 +2104,7 @@ export async function autoMapKnownLinesAction(params?: {
       report.skippedNoSupplier++
       continue
     }
-    const name = String(line.original_name ?? '').trim()
+    const name = String(line.original_name ?? '').trim().toLowerCase()
     if (!name) {
       report.skippedNoMatch++
       continue
