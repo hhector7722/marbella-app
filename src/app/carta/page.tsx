@@ -1,7 +1,15 @@
 import { createClient } from '@/utils/supabase/server'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
 import { isCartaDualRacionColumnError } from '@/lib/carta-dual-racion'
-import { resolveMenuCategoryCoverById, splitMenuCategoryCovers } from '@/lib/carta-category-covers'
+import {
+  resolveMenuCategoryCoverById,
+  resolveMenuCategoryCoverForPublicCarta,
+  splitMenuCategoryCovers,
+} from '@/lib/carta-category-covers'
+import {
+  buildMenuCategoryCatalogFromItems,
+  mergeMenuCategoryCatalogs,
+} from '@/lib/carta-plato-marbella'
 import {
   CARTA_PUBLIC_MENU_COLUMNS,
   CARTA_PUBLIC_MENU_COLUMNS_BASE,
@@ -66,25 +74,6 @@ export default async function PublicCartaPage() {
     }
   }
 
-  let categoryCoverById: Record<string, string | null> = {}
-  let categoryCoverScaleById: Record<string, 's' | 'm' | 'l'> = {}
-  try {
-    const resolved = await resolveMenuCategoryCoverById(
-      supabase,
-      menuCategories.map((c) => ({
-        id: c.id,
-        cover_articulo_id: c.cover_articulo_id ?? null,
-        cover_photo_url: c.cover_photo_url ?? null,
-        cover_photo_scale: c.cover_photo_scale ?? null,
-      }))
-    )
-    const split = splitMenuCategoryCovers(resolved)
-    categoryCoverById = split.categoryCoverById
-    categoryCoverScaleById = split.categoryCoverScaleById
-  } catch (e) {
-    console.error('resolveMenuCategoryCoverById (carta):', e)
-  }
-
   const menuOrder = (cols: string) =>
     supabase
       .from('v_public_menu_items')
@@ -115,20 +104,69 @@ export default async function PublicCartaPage() {
     )
   }
 
-  return (
-      <PublicCarta
-        items={(data ?? []) as unknown as PublicMenuRow[]}
-        menuCategories={menuCategories.map((c) => ({
+  const menuRows = (data ?? []) as unknown as PublicMenuRow[]
+  const catalogFromDb = menuCategories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    parent_id: c.parent_id,
+    sort_order: c.sort_order,
+    slug: c.slug ?? null,
+  }))
+  const catalogFromItems = buildMenuCategoryCatalogFromItems(menuRows)
+  const menuCatalog = mergeMenuCategoryCatalogs(catalogFromDb, catalogFromItems)
+
+  let categoryCoverById: Record<string, string | null> = {}
+  let categoryCoverScaleById: Record<string, 's' | 'm' | 'l'> = {}
+  try {
+    let resolved: Record<string, { url: string | null; scale: 's' | 'm' | 'l' }>
+    if (user) {
+      resolved = await resolveMenuCategoryCoverById(
+        supabase,
+        menuCategories.map((c) => ({
           id: c.id,
-          name: c.name,
-          parent_id: c.parent_id,
-          sort_order: c.sort_order,
-          slug: c.slug ?? null,
-        }))}
-        categoryCoverById={categoryCoverById}
-        categoryCoverScaleById={categoryCoverScaleById}
-        backHref={backHref}
-        cartaEditHref={cartaEditHref}
-      />
+          cover_articulo_id: c.cover_articulo_id ?? null,
+          cover_photo_url: c.cover_photo_url ?? null,
+          cover_photo_scale: c.cover_photo_scale ?? null,
+        }))
+      )
+    } else {
+      resolved = resolveMenuCategoryCoverForPublicCarta(
+        menuCategories.map((c) => ({
+          id: c.id,
+          cover_articulo_id: c.cover_articulo_id ?? null,
+          cover_photo_url: c.cover_photo_url ?? null,
+          cover_photo_scale: c.cover_photo_scale ?? null,
+        })),
+        menuRows
+      )
+    }
+    const split = splitMenuCategoryCovers(resolved)
+    categoryCoverById = split.categoryCoverById
+    categoryCoverScaleById = split.categoryCoverScaleById
+  } catch (e) {
+    console.error('resolveMenuCategoryCover (carta):', e)
+    const fallback = resolveMenuCategoryCoverForPublicCarta(
+      menuCategories.map((c) => ({
+        id: c.id,
+        cover_articulo_id: c.cover_articulo_id ?? null,
+        cover_photo_url: c.cover_photo_url ?? null,
+        cover_photo_scale: c.cover_photo_scale ?? null,
+      })),
+      menuRows
+    )
+    const split = splitMenuCategoryCovers(fallback)
+    categoryCoverById = split.categoryCoverById
+    categoryCoverScaleById = split.categoryCoverScaleById
+  }
+
+  return (
+    <PublicCarta
+      items={menuRows}
+      menuCategories={menuCatalog}
+      categoryCoverById={categoryCoverById}
+      categoryCoverScaleById={categoryCoverScaleById}
+      backHref={backHref}
+      cartaEditHref={cartaEditHref}
+    />
   )
 }

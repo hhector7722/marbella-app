@@ -97,6 +97,45 @@ export async function resolveMenuCategoryCoverById(
   return out
 }
 
+/**
+ * Portadas para `/carta` (anon): sin `map_tpv_receta` / `digital_menu_overrides`.
+ * Usa `cover_photo_url` de categoría o la foto del artículo portada ya presente en la vista pública.
+ */
+export function resolveMenuCategoryCoverForPublicCarta(
+  categories: CategoryCoverRow[],
+  menuItems: {
+    articulo_id: number
+    photo_url?: string | null
+    carta_photo_scale?: string | null
+  }[]
+): Record<string, MenuCategoryCoverResolved> {
+  const photoByArticulo = new Map<number, MenuCategoryCoverResolved>()
+  for (const item of menuItems) {
+    const url = ntrim(item.photo_url)
+    if (!url) continue
+    photoByArticulo.set(item.articulo_id, {
+      url,
+      scale: normalizeCartaPhotoScale(item.carta_photo_scale),
+    })
+  }
+
+  const out: Record<string, MenuCategoryCoverResolved> = {}
+  for (const c of categories) {
+    const cu = ntrim(c.cover_photo_url)
+    if (cu) {
+      out[c.id] = { url: cu, scale: normalizeCartaPhotoScale(c.cover_photo_scale) }
+      continue
+    }
+    if (c.cover_articulo_id != null) {
+      out[c.id] =
+        photoByArticulo.get(c.cover_articulo_id) ?? { url: null, scale: 'm' as CartaPhotoScale }
+      continue
+    }
+    out[c.id] = { url: null, scale: 'm' }
+  }
+  return out
+}
+
 /** Mapas separados para props existentes de la carta. */
 export function splitMenuCategoryCovers(resolved: Record<string, MenuCategoryCoverResolved>): {
   categoryCoverById: Record<string, string | null>

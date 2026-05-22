@@ -1,59 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
-import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { ChevronLeft, Pencil, X } from 'lucide-react'
-import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
-import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
-import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
-import {
-  collectCartaProductPhotoUrls,
-  collectPlatoMarbellaPhotoUrls,
-} from '@/lib/carta-modal-images'
-import { uniqueCartaCoverUrls } from '@/lib/carta-cover-preload'
+import { ChevronLeft, Pencil } from 'lucide-react'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
-import {
-  type CartaLang,
-  DEFAULT_CARTA_LANG,
-  getCartaChildCategoryLabel,
-  getCartaDisplayName,
-  getCartaParentCategoryLabel,
-  getCartaSubcategoryPickerLabel,
-  tPublicUi,
-  tPlatoMarbellaUi,
-} from '@/lib/carta-menu-i18n'
-import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
-import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryPickerGrid'
-import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
-import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
-import { resolveCartaDualRacionLabels } from '@/lib/carta-dual-racion'
-import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
-import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
-import {
-  CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-  type CartaPhotoScale,
-  cartaProductGridRowDensity,
-  cartaShowsProductPhoto,
-  chunkCartaProductGridRows,
-  getCartaProductGridRowFrameStyle,
-  isCartaDrinksSection,
-} from '@/lib/carta-product-photo'
-import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
-import {
-    PlatoMarbellaModalScheduleFooter,
-    PlatoMarbellaModalSubheader,
-} from '@/components/carta/PlatoMarbellaModalChrome'
-import { PlatoMarbellaModalHeaderBar } from '@/components/carta/PlatoMarbellaModalHeaderBar'
-import {
-  applyPlatoMarbellaMergeIntoPlatosParentGroup,
-  bucketMenuRowForPlatoMarbella,
-  formatPlatoMarbellaMenuPrice,
-  groupPlatoMarbellaItems,
-  platoMarbellaCategoryIdFromCatalog,
-  type MenuCategoryCatalogEntry,
-} from '@/lib/carta-plato-marbella'
+import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
+import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
+import type { CartaPhotoScale } from '@/lib/carta-product-photo'
+import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
+import { resolvePlatoMarbellaCategoryId } from '@/lib/carta-plato-marbella'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -62,7 +18,6 @@ export type PublicMenuRow = {
   carta_nombre_ca: string | null
   carta_nombre_en: string | null
   precio: number | string | null
-  /** Par entero/medio fusionado (solo presentación). */
   precio_medio_display?: number | string | null
   carta_dual_racion_enabled?: boolean | null
   override_precio_medio?: number | string | null
@@ -96,17 +51,55 @@ export type PublicMenuRow = {
   plato_marbella_hide_name?: boolean | null
 }
 
-type Group = {
-  key: string
-  title: string
-  /** Nombre padre en BD (español base) para orden fijo */
-  parentTitleRaw: string
-  sortOrder: number
-  coverPhotoUrl: string | null
-  coverPhotoScale: CartaPhotoScale
-  subs: Map<string, { key: string; title: string; sortOrder: number; rows: PublicMenuRow[] }>
+export function publicMenuRowsToDigitalMenu(items: PublicMenuRow[]): DigitalMenuRow[] {
+  return items.map((row) => ({
+    articulo_id: row.articulo_id,
+    articulo_nombre: row.carta_nombre,
+    carta_nombre: row.carta_nombre,
+    carta_nombre_es: row.carta_nombre_es,
+    carta_nombre_ca: row.carta_nombre_ca,
+    carta_nombre_en: row.carta_nombre_en,
+    departamento_id: null,
+    departamento_nombre: null,
+    category_id: row.category_child_id ?? row.category_parent_id,
+    category_parent_id: row.category_parent_id,
+    category_parent_name: row.category_parent_name,
+    category_parent_name_es: row.category_parent_name_es,
+    category_parent_name_ca: row.category_parent_name_ca,
+    category_parent_name_en: row.category_parent_name_en,
+    category_parent_sort_order: row.category_parent_sort_order,
+    category_parent_cover_photo_url: row.category_parent_cover_photo_url,
+    category_child_id: row.category_child_id,
+    category_child_name: row.category_child_name,
+    category_child_name_es: row.category_child_name_es,
+    category_child_name_ca: row.category_child_name_ca,
+    category_child_name_en: row.category_child_name_en,
+    category_child_sort_order: row.category_child_sort_order,
+    category_child_slug: row.category_child_slug,
+    plato_marbella_slot: row.plato_marbella_slot,
+    plato_marbella_is_menu_price: row.plato_marbella_is_menu_price,
+    plato_marbella_hide_name: row.plato_marbella_hide_name,
+    recipe_id: row.recipe_id ?? '',
+    recipe_name: '',
+    descripcion: null,
+    precio: row.precio,
+    precio_medio_display: row.precio_medio_display,
+    carta_dual_racion_enabled: row.carta_dual_racion_enabled,
+    override_precio_medio: row.override_precio_medio,
+    carta_racion_entero_es: row.carta_racion_entero_es,
+    carta_racion_entero_ca: row.carta_racion_entero_ca,
+    carta_racion_entero_en: row.carta_racion_entero_en,
+    carta_racion_medio_es: row.carta_racion_medio_es,
+    carta_racion_medio_ca: row.carta_racion_medio_ca,
+    carta_racion_medio_en: row.carta_racion_medio_en,
+    photo_url: row.photo_url,
+    carta_photo_scale: row.carta_photo_scale,
+    sort_order: row.sort_order,
+    tpv_factor_porcion: row.tpv_factor_porcion,
+  }))
 }
 
+/** Misma UI que `/staff/carta` en modo lectura (MenuAccordion). */
 export function PublicCarta({
   items,
   menuCategories = [],
@@ -119,198 +112,12 @@ export function PublicCarta({
   menuCategories?: MenuCategoryCatalogEntry[]
   categoryCoverById?: Record<string, string | null>
   categoryCoverScaleById?: Record<string, CartaPhotoScale>
-  /** Solo usuarios autenticados: destino del botón volver (Inicio). */
   backHref: string | null
   cartaEditHref: string | null
 }) {
-  const platoMarbellaCategoryId = platoMarbellaCategoryIdFromCatalog(menuCategories)
-  const [openKey, setOpenKey] = useState<string | null>(null)
-  const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
-  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
-  const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
-
-  const grouped = useMemo(() => {
-    const groups = new Map<string, Group>()
-
-    const catalog = menuCategories
-    const pmId = platoMarbellaCategoryId
-
-    for (const raw of items) {
-      const row = bucketMenuRowForPlatoMarbella(raw, pmId, catalog)
-      const parentTitleRaw = (row.category_parent_name?.trim() || 'Sin categoría').trim()
-      const parentTitle = getCartaParentCategoryLabel(lang, row, tPublicUi(lang).uncategorized)
-      const parentSort = row.category_parent_sort_order ?? 9999
-      const parentKey = row.category_parent_id ?? `__no_parent__:${parentTitleRaw}`
-
-      const childTitle = (row.category_child_name?.trim() || '').trim()
-      const childSort = row.category_child_sort_order ?? 9999
-      const childKey = row.category_child_id ?? `__no_child__:${childTitle}`
-
-      const g = groups.get(parentKey) ?? {
-        key: parentKey,
-        title: parentTitle,
-        parentTitleRaw,
-        sortOrder: parentSort,
-        coverPhotoUrl: null as string | null,
-        coverPhotoScale: categoryCoverScaleById[parentKey] ?? 'm',
-        subs: new Map(),
-      }
-      const cov =
-        row.category_parent_cover_photo_url?.trim() ||
-        categoryCoverById[parentKey]?.trim() ||
-        null
-      if (cov) g.coverPhotoUrl = cov
-      if (categoryCoverScaleById[parentKey]) g.coverPhotoScale = categoryCoverScaleById[parentKey]
-
-      const sg =
-        g.subs.get(childKey) ?? {
-          key: childKey,
-          title: getCartaChildCategoryLabel(lang, row, parentTitleRaw, childTitle),
-          sortOrder: childSort,
-          rows: [] as PublicMenuRow[],
-        }
-      sg.rows.push(row)
-      g.subs.set(childKey, sg)
-      groups.set(parentKey, g)
-    }
-
-    const groupList = Array.from(groups.values()).sort((a, b) => {
-      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
-      return a.parentTitleRaw.localeCompare(b.parentTitleRaw, 'es', { sensitivity: 'base' })
-    })
-
-    for (const g of groupList) {
-      applyPlatoMarbellaMergeIntoPlatosParentGroup(g, pmId, catalog)
-      const subList = Array.from(g.subs.values()).sort((a, b) => {
-        if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
-        return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
-      })
-      for (const s of subList) {
-        s.rows.sort(
-          (a, b) =>
-            (a.sort_order ?? 9999) - (b.sort_order ?? 9999) ||
-            getCartaDisplayName(a, lang).localeCompare(getCartaDisplayName(b, lang), 'es', { sensitivity: 'base' })
-        )
-      }
-      ;(g as any)._subList = subList.map((s) => ({
-        ...s,
-        coverPhotoUrl: categoryCoverById[s.key] ?? null,
-        coverPhotoScale: categoryCoverScaleById[s.key] ?? 'm',
-      }))
-    }
-
-    return groupList as Array<
-      Group & {
-        _subList: Array<{
-          key: string
-          title: string
-          sortOrder: number
-          rows: PublicMenuRow[]
-          coverPhotoUrl: string | null
-          coverPhotoScale: CartaPhotoScale
-        }>
-      }
-    >
-  }, [
-    items,
-    lang,
-    menuCategories,
-    platoMarbellaCategoryId,
-    categoryCoverById,
-    categoryCoverScaleById,
-  ])
-
-  const openGroup = useMemo(
-    () => (openKey ? grouped.find((g) => g.key === openKey) ?? null : null),
-    [grouped, openKey]
-  )
-
-  const openHasMultipleSubs = (openGroup?._subList.length ?? 0) > 1
-  const openSelectedSubKey = openGroup
-    ? selectedSubKeyByGroup[openGroup.key]
-    : undefined
-  const openShowSubPicker = openHasMultipleSubs && !openSelectedSubKey
-  const openShowSubTabs = openHasMultipleSubs && Boolean(openSelectedSubKey)
-
-  useEffect(() => {
-    if (!openKey) setPlatoMarbellaDetailOpen(false)
-  }, [openKey])
-
-  useEffect(() => {
-    setPlatoMarbellaDetailOpen(false)
-  }, [openSelectedSubKey])
-
-  const openActiveSub = useMemo(() => {
-    if (!openGroup || openShowSubPicker) return null
-    if (openHasMultipleSubs) {
-      if (!openSelectedSubKey) return null
-      return openGroup._subList.find((s) => s.key === openSelectedSubKey) ?? null
-    }
-    return openGroup._subList[0] ?? null
-  }, [openGroup, openShowSubPicker, openHasMultipleSubs, openSelectedSubKey])
-
-  const platoBundleRows = openGroup
-    ? ((openGroup as Group & { _platoMarbellaBundleRows?: PublicMenuRow[] })._platoMarbellaBundleRows ?? null)
-    : null
-  const platoLauncherArticuloId = openGroup
-    ? (openGroup as Group & { _platoMarbellaLauncherArticuloId?: number })._platoMarbellaLauncherArticuloId
-    : undefined
-
-  const openPlatoMarbella =
-    Boolean(platoMarbellaDetailOpen && platoBundleRows && platoBundleRows.length > 0)
-
-  const platoMarbellaGrouped = useMemo(
-    () => (platoBundleRows ? groupPlatoMarbellaItems(platoBundleRows) : null),
-    [platoBundleRows]
-  )
-
-  const openPlatoMenuPrice = useMemo(() => {
-    if (!openPlatoMarbella || !platoMarbellaGrouped) return null
-    return platoMarbellaGrouped.menuPrice
-  }, [openPlatoMarbella, platoMarbellaGrouped])
-
-  const platoGridMenuPrice = platoMarbellaGrouped?.menuPrice ?? null
-
-  const homeCategoryCoverUrls = useMemo(
-    () => grouped.map((g) => g.coverPhotoUrl),
-    [grouped]
-  )
-
-  const openModalImageUrls = useMemo(() => {
-    if (!openGroup) return []
-    if (openShowSubPicker) {
-      return uniqueCartaCoverUrls(openGroup._subList.map((s) => s.coverPhotoUrl))
-    }
-    if (openPlatoMarbella && platoBundleRows && platoBundleRows.length > 0) {
-      return collectPlatoMarbellaPhotoUrls(platoBundleRows)
-    }
-    const subs =
-      openHasMultipleSubs && openSelectedSubKey
-        ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
-        : openGroup._subList
-    return collectCartaProductPhotoUrls(subs.flatMap((s) => s.rows))
-  }, [
-    openGroup,
-    openShowSubPicker,
-    openPlatoMarbella,
-    platoBundleRows,
-    openHasMultipleSubs,
-    openSelectedSubKey,
-  ])
-
-  const subCategoryButtonLabel = (
-    sub: { key: string; title: string; sortOrder: number; rows: PublicMenuRow[]; coverPhotoUrl?: string | null },
-    parentTitleRaw: string
-  ) => {
-    const row = sub.rows[0]
-    const childRaw = (row?.category_child_name ?? '').trim()
-    if (row) {
-      const only = getCartaSubcategoryPickerLabel(lang, row, parentTitleRaw, childRaw).trim()
-      if (only) return only
-    }
-    return sub.title.trim() || tPublicUi(lang).uncategorized
-  }
+  const digitalItems = publicMenuRowsToDigitalMenu(items)
+  const platoMarbellaCategoryId = resolvePlatoMarbellaCategoryId(menuCategories, items)
 
   return (
     <main className="flex h-[100dvh] flex-col bg-white text-zinc-900">
@@ -360,372 +167,21 @@ export function PublicCarta({
           </div>
         </header>
 
-        <section className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden pb-2 sm:mt-1">
-          <CartaCoversLoadingGate urls={homeCategoryCoverUrls} className="min-h-0 flex-1 w-full">
-            <CartaCategoryGrid compact>
-              {grouped.map((group) => (
-                <CartaCategoryCard
-                  key={group.key}
-                  compact
-                  title={group.title}
-                  coverPhotoUrl={group.coverPhotoUrl}
-                  coverPhotoScale={group.coverPhotoScale}
-                  ariaExpanded={openKey === group.key}
-                  onClick={() => {
-                    setSelectedSubKeyByGroup((p) => {
-                      const n = { ...p }
-                      delete n[group.key]
-                      return n
-                    })
-                    setOpenKey((prev) => (prev === group.key ? null : group.key))
-                  }}
-                />
-              ))}
-            </CartaCategoryGrid>
-          </CartaCoversLoadingGate>
-        </section>
-      </div>
-
-      {openGroup ? (
-        <div
-          className="fixed inset-0 z-[240] flex items-center justify-center p-4 pb-safe pt-4 animate-in fade-in duration-200"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={
-            openShowSubPicker
-              ? 'carta-sub-picker-modal-title'
-              : openShowSubTabs
-                ? undefined
-                : 'carta-section-modal-title'
-          }
-          aria-label={openShowSubTabs ? openGroup.title : undefined}
-        >
-          <button
-            type="button"
-            className="absolute inset-0 bg-zinc-900/30 backdrop-blur-[2px] transition-opacity"
-            aria-label="Cerrar"
-            onClick={() => setOpenKey(null)}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
+          <MenuAccordion
+            items={digitalItems}
+            lang={lang}
+            onLangChange={setLang}
+            hideLangPicker
+            menuCategories={menuCategories}
+            categoryCoverById={categoryCoverById}
+            categoryCoverScaleById={categoryCoverScaleById}
+            platoMarbellaCategoryId={platoMarbellaCategoryId}
+            showEmptyMenuChildCategories
+            homeCompact
           />
-          {openShowSubPicker ? (
-            <CartaSubcategoryPickerModalShell
-              title={openGroup.title}
-              onClose={() => setOpenKey(null)}
-            >
-              <CartaCoversLoadingGate
-                urls={openModalImageUrls}
-                fitContent
-                className="bg-white px-2.5 py-2 sm:px-3 sm:py-2.5"
-              >
-                <CartaSubcategoryPickerGrid count={openGroup._subList.length}>
-                  {openGroup._subList.map((sub) => (
-                    <CartaSubcategoryPickerButton
-                      key={sub.key}
-                      variant="grid"
-                      label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                      coverPhotoUrl={sub.coverPhotoUrl}
-                      coverPhotoScale={sub.coverPhotoScale}
-                      onClick={() =>
-                        setSelectedSubKeyByGroup((p) => ({
-                          ...p,
-                          [openGroup.key]: sub.key,
-                        }))
-                      }
-                    />
-                  ))}
-                </CartaSubcategoryPickerGrid>
-              </CartaCoversLoadingGate>
-            </CartaSubcategoryPickerModalShell>
-          ) : (
-          <div
-            className={cn(
-              'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
-              openPlatoMarbella
-                ? 'h-[82vh] min-h-0 sm:h-[78vh]'
-                : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {openPlatoMarbella && !openShowSubTabs ? (
-              <PlatoMarbellaModalHeaderBar
-                backLabel={tPlatoMarbellaUi(lang).backToPlatos}
-                onBackToPlatos={() => setPlatoMarbellaDetailOpen(false)}
-                onClose={() => setOpenKey(null)}
-              />
-            ) : (
-            <div
-              className={cn(
-                'flex shrink-0 bg-white px-3 sm:px-3.5',
-                openPlatoMarbella && openShowSubTabs
-                  ? 'flex-col gap-0 py-1 sm:py-1.5'
-                  : openShowSubTabs
-                    ? 'flex-col gap-1 py-2.5 sm:gap-1.5 sm:py-3'
-                    : 'items-center justify-between gap-2 py-2.5 sm:gap-3 sm:py-3'
-              )}
-            >
-              {openShowSubTabs ? (
-                <div className="flex items-center justify-end">
-                  <button
-                    type="button"
-                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                    aria-label="Cerrar"
-                    onClick={() => setOpenKey(null)}
-                  >
-                    <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                  </button>
-                </div>
-              ) : null}
-              {openShowSubTabs ? (
-                <div className="flex min-w-0 overflow-x-auto pb-0">
-                  <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
-                    {openGroup._subList.map((sub) => {
-                      const isActive = openSelectedSubKey === sub.key
-                      return (
-                        <CartaSubcategoryPickerButton
-                          key={sub.key}
-                          variant="label"
-                          label={subCategoryButtonLabel(sub, openGroup.parentTitleRaw)}
-                          isActive={isActive}
-                          onClick={() =>
-                            setSelectedSubKeyByGroup((p) => ({
-                              ...p,
-                              [openGroup.key]: sub.key,
-                            }))
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <h2
-                  id="carta-section-modal-title"
-                  className="min-w-0 flex-1 text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
-                >
-                  {openGroup.title}
-                </h2>
-              )}
-              {!openShowSubTabs ? (
-                <button
-                  type="button"
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                  aria-label="Cerrar"
-                  onClick={() => setOpenKey(null)}
-                >
-                  <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                </button>
-              ) : null}
-            </div>
-            )}
-
-            {openPlatoMarbella && openGroup ? (
-              <PlatoMarbellaModalSubheader
-                subTitle={tPlatoMarbellaUi(lang).menuModalTitle}
-                menuPrice={openPlatoMenuPrice}
-              />
-            ) : null}
-
-            <CartaCoversLoadingGate
-              urls={openModalImageUrls}
-              className={cn(
-                'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
-                openPlatoMarbella
-                  ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
-                  : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
-              )}
-            >
-                <>
-                  {openPlatoMarbella && platoBundleRows && platoBundleRows.length > 0 ? (
-                    <div className="flex min-h-0 flex-1 flex-col">
-                      <PlatoMarbellaMenuView
-                        rows={platoBundleRows}
-                        lang={lang}
-                        launcherArticuloId={platoLauncherArticuloId ?? null}
-                        className="min-h-0 flex-1"
-                        onPhotoClick={(src, alt) => setLightbox({ src, alt })}
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-3 sm:space-y-4">
-                  {(openHasMultipleSubs
-                    ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
-                    : openGroup._subList
-                  ).map((sub) => (
-                    <div key={sub.key} className="space-y-2">
-                      <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
-                        {chunkCartaProductGridRows(
-                          mergeEnteroMedioForCartaDisplay(sub.rows),
-                          3
-                        ).map((chunk, chunkIdx) => {
-                          const rowDensity = cartaProductGridRowDensity(chunk)
-                          const isDrinkRow = isCartaDrinksSection(
-                            chunk[0]?.category_parent_name
-                          )
-                          const rowFrameStyle = getCartaProductGridRowFrameStyle(
-                            chunk,
-                            isDrinkRow
-                          )
-                          return (
-                            <div
-                              key={chunkIdx}
-                              className={cn(
-                                'grid grid-cols-3 items-stretch gap-x-1.5 sm:gap-x-2',
-                                rowDensity === 'compact' && 'gap-y-0',
-                                rowDensity === 'cozy' && 'gap-y-1',
-                                rowDensity === 'normal' && 'gap-y-2 sm:gap-y-2.5'
-                              )}
-                            >
-                              {chunk.map((row) => {
-                          const isDrink = isCartaDrinksSection(row.category_parent_name)
-                          const showPhoto = cartaShowsProductPhoto(
-                            row.category_parent_name,
-                            row.photo_url
-                          )
-                          const isPlatoLauncher =
-                            platoLauncherArticuloId != null &&
-                            row.articulo_id === platoLauncherArticuloId &&
-                            (platoBundleRows?.length ?? 0) > 0
-                          return (
-                          <div
-                            key={row.articulo_id}
-                            className={cn(
-                              'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
-                              rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
-                              rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
-                              rowDensity === 'normal' && 'gap-1 sm:gap-1.5'
-                            )}
-                          >
-                            {showPhoto ? (
-                              <div
-                                className={cn(
-                                  'w-full shrink-0',
-                                  rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
-                                  rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
-                                  rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
-                                )}
-                              >
-                                {row.photo_url ? (
-                                  <button
-                                    type="button"
-                                    className={cn(
-                                      CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-                                      'touch-manipulation active:bg-zinc-50',
-                                      isPlatoLauncher ? 'cursor-pointer' : 'cursor-zoom-in'
-                                    )}
-                                    style={rowFrameStyle}
-                                    aria-label={
-                                      isPlatoLauncher
-                                        ? tPlatoMarbellaUi(lang).menuModalTitle
-                                        : 'Ver foto ampliada'
-                                    }
-                                    onClick={() => {
-                                      if (isPlatoLauncher) {
-                                        setPlatoMarbellaDetailOpen(true)
-                                        return
-                                      }
-                                      setLightbox({
-                                        src: row.photo_url!,
-                                        alt: getCartaDisplayName(row, lang),
-                                      })
-                                    }}
-                                  >
-                                    <CartaMenuProductPhoto
-                                      src={row.photo_url}
-                                      scale={row.carta_photo_scale}
-                                      isDrink={isDrink}
-                                      articuloId={row.articulo_id}
-                                    />
-                                  </button>
-                                ) : (
-                                  <div
-                                    className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS}
-                                    style={rowFrameStyle}
-                                    aria-hidden
-                                  >
-                                    <div className="h-full w-full bg-white" />
-                                  </div>
-                                )}
-                              </div>
-                            ) : null}
-                            <div
-                              className={cn(
-                                'flex w-full min-w-0 shrink-0 flex-col items-center',
-                                rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
-                                rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
-                                rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5',
-                                isPlatoLauncher && 'cursor-pointer touch-manipulation active:bg-zinc-50'
-                              )}
-                              role={isPlatoLauncher ? 'button' : undefined}
-                              tabIndex={isPlatoLauncher ? 0 : undefined}
-                              onClick={
-                                isPlatoLauncher
-                                  ? () => setPlatoMarbellaDetailOpen(true)
-                                  : undefined
-                              }
-                              onKeyDown={
-                                isPlatoLauncher
-                                  ? (e) => {
-                                      if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault()
-                                        setPlatoMarbellaDetailOpen(true)
-                                      }
-                                    }
-                                  : undefined
-                              }
-                            >
-                                <p
-                                  className="line-clamp-3 w-full max-w-full text-center text-[10px] font-bold leading-tight text-zinc-900 sm:text-[11px]"
-                                  title={
-                                    isPlatoLauncher
-                                      ? tPlatoMarbellaUi(lang).menuModalTitle
-                                      : getCartaDisplayName(row, lang)
-                                  }
-                                >
-                                  {isPlatoLauncher
-                                    ? tPlatoMarbellaUi(lang).menuModalTitle
-                                    : getCartaDisplayName(row, lang)}
-                                </p>
-                                {isPlatoLauncher && platoGridMenuPrice != null ? (
-                                  <p className="text-center text-sm font-black text-[#36606F]">
-                                    {formatPlatoMarbellaMenuPrice(platoGridMenuPrice)}
-                                  </p>
-                                ) : (
-                                  <CartaDualRacionPrices
-                                    {...resolveCartaDualRacionLabels(row, lang)}
-                                    precio={row.precio}
-                                    precioMedio={row.precio_medio_display}
-                                    variant="public"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                    </div>
-                  )}
-                </>
-            </CartaCoversLoadingGate>
-            {openPlatoMarbella ? (
-              <PlatoMarbellaModalScheduleFooter lang={lang} />
-            ) : null}
-          </div>
-          )}
         </div>
-      ) : null}
-
-      <CartaImageLightbox
-        src={lightbox?.src ?? null}
-        alt={lightbox?.alt ?? ''}
-        title={lightbox?.alt ?? ''}
-        open={lightbox != null}
-        onClose={() => setLightbox(null)}
-      />
+      </div>
     </main>
   )
 }
-

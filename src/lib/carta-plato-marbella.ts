@@ -142,6 +142,8 @@ export type MenuCategoryCatalogEntry = {
 type MenuRowWithCategory = PlatoMarbellaMenuRow & {
   category_id?: string | null
   category_parent_id?: string | null
+  category_parent_name?: string | null
+  category_parent_sort_order?: number | null
   category_child_id?: string | null
   category_child_name?: string | null
   category_child_slug?: string | null
@@ -194,6 +196,75 @@ export function platoMarbellaCategoryIdFromCatalog(
   catalog: MenuCategoryCatalogEntry[]
 ): string | null {
   return catalog.find((c) => (c.slug?.trim() ?? '') === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null
+}
+
+/** Catálogo mínimo desde filas de carta (QR anónimo si falla `categories`). */
+export function buildMenuCategoryCatalogFromItems(
+  items: MenuRowWithCategory[]
+): MenuCategoryCatalogEntry[] {
+  const byId = new Map<string, MenuCategoryCatalogEntry>()
+
+  for (const row of items) {
+    const parentId = row.category_parent_id?.trim()
+    if (parentId && !byId.has(parentId)) {
+      byId.set(parentId, {
+        id: parentId,
+        name: (row.category_parent_name ?? '').trim() || parentId,
+        parent_id: null,
+        sort_order: row.category_parent_sort_order ?? null,
+        slug: null,
+      })
+    }
+
+    const childId = row.category_child_id?.trim()
+    if (!childId) continue
+
+    const existing = byId.get(childId)
+    byId.set(childId, {
+      id: childId,
+      name: (row.category_child_name ?? '').trim() || childId,
+      parent_id: parentId ?? existing?.parent_id ?? null,
+      sort_order: row.category_child_sort_order ?? existing?.sort_order ?? null,
+      slug: row.category_child_slug?.trim() ?? existing?.slug ?? null,
+    })
+  }
+
+  return [...byId.values()]
+}
+
+/** Une catálogo BD + derivado de ítems (slugs e ids que anon no puede leer en `categories`). */
+export function mergeMenuCategoryCatalogs(
+  primary: MenuCategoryCatalogEntry[],
+  fallback: MenuCategoryCatalogEntry[]
+): MenuCategoryCatalogEntry[] {
+  const byId = new Map<string, MenuCategoryCatalogEntry>()
+  for (const c of primary) byId.set(c.id, c)
+  for (const c of fallback) {
+    const prev = byId.get(c.id)
+    if (!prev) {
+      byId.set(c.id, c)
+      continue
+    }
+    byId.set(c.id, {
+      ...prev,
+      parent_id: prev.parent_id ?? c.parent_id,
+      sort_order: prev.sort_order ?? c.sort_order,
+      slug: prev.slug?.trim() ? prev.slug : c.slug ?? null,
+      name: prev.name?.trim() ? prev.name : c.name,
+    })
+  }
+  return [...byId.values()]
+}
+
+/** Plato Marbella: catálogo BD o, si falta, `category_child_slug` en las filas de carta. */
+export function resolvePlatoMarbellaCategoryId(
+  catalog: MenuCategoryCatalogEntry[],
+  items: MenuRowWithCategory[]
+): string | null {
+  const fromCatalog = platoMarbellaCategoryIdFromCatalog(catalog)
+  if (fromCatalog) return fromCatalog
+  const row = items.find((r) => isPlatoMarbellaSubcategory(r))
+  return row?.category_child_id?.trim() ?? null
 }
 
 /** Padre «Platos» de la subcategoría Plato Marbella (por catálogo menú). */
