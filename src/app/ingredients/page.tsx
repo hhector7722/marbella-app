@@ -10,6 +10,7 @@ import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
+import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -155,6 +156,7 @@ export default function IngredientsPage() {
                 category: newIngredient.category || 'Alimentos',
                 waste_percentage: newIngredient.waste_percentage || 0,
                 order_unit: newIngredient.order_unit || 'unidad',
+                recipe_unit: resolveIngredientRecipeUnit(newIngredient.recipe_unit, unit),
                 recommended_stock: newIngredient.recommended_stock || null,
                 supplier_pricing_mode: mode,
                 price_locked: !!newIngredient.price_locked,
@@ -587,16 +589,26 @@ export default function IngredientsPage() {
                                     Precio fijo: no actualizar desde albaranes
                                 </span>
                             </label>
-                            <div className="flex gap-2">
-                                <div className="w-1/3">
+                            <div className="flex gap-2 flex-wrap">
+                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
                                     <input type="number" step="0.01" value={newIngredient.waste_percentage || ''} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Merma" />
                                 </div>
-                                <div className="w-1/3">
+                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">U. Pedido</label>
                                     <select value={newIngredient.order_unit || 'unidad'} onChange={e => setNewIngredient({ ...newIngredient, order_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{ORDER_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
                                 </div>
-                                <div className="w-1/3">
+                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2" title="Unidad al añadir a recetas">U. receta</label>
+                                    <select
+                                        value={newIngredient.recipe_unit || resolveIngredientRecipeUnit(null, newIngredient.purchase_unit || 'kg')}
+                                        onChange={e => setNewIngredient({ ...newIngredient, recipe_unit: e.target.value })}
+                                        className="w-full p-3 border rounded-2xl bg-white font-bold"
+                                    >
+                                        {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                    </select>
+                                </div>
+                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2" title="Stock Recomendado">Stock</label>
                                     <input type="number" step="1" value={newIngredient.recommended_stock || ''} onChange={e => setNewIngredient({ ...newIngredient, recommended_stock: parseFloat(e.target.value) || null })} className="w-full p-3 border rounded-2xl font-bold" placeholder="0" />
                                 </div>

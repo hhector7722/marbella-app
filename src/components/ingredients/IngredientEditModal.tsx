@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls';
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy';
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
+import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 
 export interface Ingredient {
     id: string;
@@ -28,6 +29,7 @@ export interface Ingredient {
     image_url: string | null;
     allergens: string[];
     order_unit?: string | null;
+    recipe_unit?: string | null;
     recommended_stock?: number | null;
     price_locked?: boolean;
 }
@@ -358,6 +360,10 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                 waste_percentage: editForm.waste_percentage || 0,
                 image_url: editForm.image_url,
                 order_unit: editForm.order_unit || 'unidad',
+                recipe_unit: resolveIngredientRecipeUnit(
+                    editForm.recipe_unit,
+                    String(pricingBuilt.payload.purchase_unit ?? editForm.purchase_unit ?? 'kg'),
+                ),
                 recommended_stock: editForm.recommended_stock || null,
                 price_locked: !!editForm.price_locked,
                 ...pricingBuilt.payload,
@@ -973,6 +979,25 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     {ORDER_UNITS.map((u) => (
                                         <option key={u} value={u}>
                                             {u}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="w-1/4">
+                                <label className="ml-2 text-[10px] font-bold uppercase text-gray-400" title="Unidad al añadir a recetas">
+                                    U. receta
+                                </label>
+                                <select
+                                    value={
+                                        editForm.recipe_unit ||
+                                        resolveIngredientRecipeUnit(null, editForm.purchase_unit ?? 'kg')
+                                    }
+                                    onChange={(e) => setEditForm({ ...editForm, recipe_unit: e.target.value })}
+                                    className="w-full rounded-2xl border bg-white p-3 font-bold"
+                                >
+                                    {RECIPE_UNIT_OPTIONS.map((o) => (
+                                        <option key={o.value} value={o.value}>
+                                            {o.label}
                                         </option>
                                     ))}
                                 </select>

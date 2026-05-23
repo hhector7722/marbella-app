@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Plus, Trash2, Save } from 'lucide-react';
+import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 
 interface CreateModalProps {
     showCreateModal: boolean;
@@ -109,7 +110,19 @@ export default function CreateModal({
                                     <div className="flex-1">
                                         <select
                                             value={row.ingredient_id}
-                                            onChange={e => updateRecipeIngredient(idx, 'ingredient_id', e.target.value)}
+                                            onChange={e => {
+                                                const id = e.target.value;
+                                                const catalog = allIngredients.find((ing: { id: string }) => ing.id === id);
+                                                const unit = catalog
+                                                    ? resolveIngredientRecipeUnit(catalog.recipe_unit, catalog.purchase_unit || 'kg')
+                                                    : row.unit || 'kg';
+                                                setNewRecipe({
+                                                    ...newRecipe,
+                                                    ingredients: (newRecipe.ingredients ?? []).map((r: typeof row, i: number) =>
+                                                        i === idx ? { ...r, ingredient_id: id, unit } : r,
+                                                    ),
+                                                });
+                                            }}
                                             className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#36606F] outline-none"
                                         >
                                             <option value="">Seleccionar...</option>
@@ -132,11 +145,9 @@ export default function CreateModal({
                                             onChange={e => updateRecipeIngredient(idx, 'unit', e.target.value)}
                                             className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#36606F] outline-none"
                                         >
-                                            <option value="g">g</option>
-                                            <option value="kg">kg</option>
-                                            <option value="ml">ml</option>
-                                            <option value="l">L</option>
-                                            <option value="ud">ud</option>
+                                            {RECIPE_UNIT_OPTIONS.map(o => (
+                                                <option key={o.value} value={o.value}>{o.label}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <button onClick={() => removeIngredientFromRecipe(idx)} className="mb-[3px] p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">

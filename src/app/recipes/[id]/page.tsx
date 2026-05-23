@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import {
     recipeLineCost,
     RECIPE_UNIT_OPTIONS,
+    resolveIngredientRecipeUnit,
     formatRecipeIngredientLineCostEur,
     getRecipeIngredientLineCostAnalysis,
     recipeLineCostStatusHint,
@@ -74,6 +75,7 @@ function RecipeDetailContent() {
 
     const [showIngredientModal, setShowIngredientModal] = useState(false);
     const [addIngredientUnit, setAddIngredientUnit] = useState<string>('kg');
+    const [forceAddIngredientUnit, setForceAddIngredientUnit] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -699,6 +701,7 @@ function RecipeDetailContent() {
         await fetchRecipe();
         fetchBackendCost();
         setShowIngredientModal(false);
+        setForceAddIngredientUnit(false);
     };
 
     const handleDeleteIngredient = async (id: string) => {
@@ -1164,7 +1167,17 @@ function RecipeDetailContent() {
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
                             {!isRestricted && (
                                 <div className="flex gap-1">
-                                    <button onClick={() => setShowIngredientModal(true)} className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600">+ Añadir</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setForceAddIngredientUnit(false);
+                                            setAddIngredientUnit('kg');
+                                            setShowIngredientModal(true);
+                                        }}
+                                        className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600 min-h-12"
+                                    >
+                                        + Añadir
+                                    </button>
                                     <button onClick={() => setIsModalOpen(true)} className="px-2 py-0.5 bg-purple-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-purple-600">+ Nuevo</button>
                                 </div>
                             )}
@@ -1511,15 +1524,23 @@ function RecipeDetailContent() {
 
             {/* MODALES */}
             {showIngredientModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowIngredientModal(false)}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { setShowIngredientModal(false); setForceAddIngredientUnit(false); }}>
                     <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button onClick={() => setShowIngredientModal(false)}><X size={16} /></button></div>
+                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button type="button" onClick={() => { setShowIngredientModal(false); setForceAddIngredientUnit(false); }}><X size={16} /></button></div>
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-bold text-gray-500 shrink-0">Unidad en receta:</span>
-                            <select value={addIngredientUnit} onChange={e => setAddIngredientUnit(e.target.value)} className="flex-1 p-2 border rounded text-xs font-medium focus:border-[#36606F] outline-none">
+                            <span className="text-xs font-bold text-gray-500 shrink-0">Forzar unidad:</span>
+                            <select
+                                value={addIngredientUnit}
+                                onChange={e => {
+                                    setForceAddIngredientUnit(true);
+                                    setAddIngredientUnit(e.target.value);
+                                }}
+                                className="flex-1 p-2 border rounded text-xs font-medium focus:border-[#36606F] outline-none min-h-12"
+                            >
                                 {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
+                        <p className="text-[10px] text-gray-400 mb-2 leading-snug">Por defecto se usa la unidad configurada en cada ingrediente. Puedes cambiarla después en la tabla.</p>
                         <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
                         <div className="flex-1 overflow-y-auto space-y-1">
                             {filteredIngredients.map(ing => {
@@ -1530,13 +1551,18 @@ function RecipeDetailContent() {
                                         ? `${Number(ing.pack_price || 0).toFixed(2)}€/pack`
                                         : null;
 
+                                const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
+                                const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
+
                                 return (
                                     <button
                                         key={ing.id}
-                                        onClick={() => handleAddIngredient(ing.id, addIngredientUnit)}
-                                        className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"
+                                        type="button"
+                                        onClick={() => handleAddIngredient(ing.id, unitToAdd)}
+                                        className="w-full text-left p-2 hover:bg-gray-50 flex justify-between items-center gap-2 rounded text-xs min-h-12"
                                     >
-                                        <span className="font-bold">{ing.name}</span>
+                                        <span className="font-bold min-w-0 truncate">{ing.name}</span>
+                                        <span className="shrink-0 font-mono text-[10px] text-gray-400">{configuredUnit}</span>
                                         <span className="text-right">
                                             <span className="font-bold text-gray-700">{effective}</span>
                                             {packInfo && <span className="block text-[10px] text-gray-400">{packInfo}</span>}

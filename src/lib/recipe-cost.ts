@@ -233,3 +233,21 @@ export function compatibleRecipeUnits(purchaseUnit: string): MassVolumeUnit[] {
   if (VOLUME_UNITS.includes(u)) return VOLUME_UNITS;
   return COUNT_UNITS;
 }
+
+/** Unidad en receta por defecto a partir de la unidad de compra. */
+export function defaultRecipeUnitFromPurchase(purchaseUnit: string): MassVolumeUnit {
+  const normalized = normalizeUnit(purchaseUnit || 'kg');
+  const compatible = compatibleRecipeUnits(purchaseUnit || 'kg');
+  if (compatible.includes(normalized)) return normalized;
+  return compatible[0] ?? 'kg';
+}
+
+/** Unidad configurada en catálogo o, si falta, derivada de purchase_unit. */
+export function resolveIngredientRecipeUnit(
+  recipeUnit: string | null | undefined,
+  purchaseUnit: string,
+): MassVolumeUnit {
+  const raw = String(recipeUnit ?? '').trim();
+  if (raw) return normalizeRecipeImportUnit(raw);
+  return defaultRecipeUnitFromPurchase(purchaseUnit || 'kg');
+}

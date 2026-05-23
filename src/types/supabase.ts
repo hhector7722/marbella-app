@@ -754,6 +754,7 @@ export type Database = {
           price_locked: boolean
           purchase_unit: string
           recommended_stock: number | null
+          recipe_unit: string
           stock_current: number | null
           supplier: string | null
           supplier_2: string | null
@@ -780,6 +781,7 @@ export type Database = {
           pack_units?: number | null
           price_locked?: boolean
           purchase_unit: string
+          recipe_unit?: string
           recommended_stock?: number | null
           stock_current?: number | null
           supplier?: string | null
@@ -807,6 +809,7 @@ export type Database = {
           pack_units?: number | null
           price_locked?: boolean
           purchase_unit?: string
+          recipe_unit?: string
           recommended_stock?: number | null
           stock_current?: number | null
           supplier?: string | null

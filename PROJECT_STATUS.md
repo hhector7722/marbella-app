@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-18 (Carta: portada categoría con imagen libre)
+**Última actualización:** 2026-05-23 (Ingredientes: unidad en receta)
+
+- [x] **Ingredientes: `recipe_unit` + alta en recetas con unidad por defecto (2026-05-23)**: Columna `ingredients.recipe_unit` (`g|kg|ml|cl|l|ud`, backfill desde `purchase_unit`). Editable en `/ingredients` (modal, wizard paso opcional, creación experta). En `/recipes/[id]` al añadir línea se usa la unidad del catálogo (badge en el modal); selector «Forzar unidad» opcional; la unidad sigue editable en la tabla de la receta. Migración [`20260523120000_ingredients_recipe_unit.sql`](supabase/migrations/20260523120000_ingredients_recipe_unit.sql); helpers `resolveIngredientRecipeUnit` / `defaultRecipeUnitFromPurchase` en [`recipe-cost.ts`](src/lib/recipe-cost.ts).
 
 - [x] **Carta: portada categoría/subcategoría con imagen libre (2026-05-18)**: Columnas `categories.cover_photo_url` y `cover_photo_scale` (S/M/L); si hay URL, prevalece sobre `cover_articulo_id`. Migración [`20260518140000_categories_cover_custom_photo.sql`](supabase/migrations/20260518140000_categories_cover_custom_photo.sql) recrea vistas carta. Subida normalizada a Storage `carta_items/category-covers/{category_id}/…` vía [`uploadNormalizedCategoryCoverPhoto`](src/app/dashboard/carta/photo-actions.ts); persistencia [`setMenuCategoryCover`](src/app/dashboard/carta/actions.ts). Modal [`MenuCategoryEditModal.tsx`](src/components/carta/MenuCategoryEditModal.tsx): pestañas Sin / Producto / Archivo + talla en modo archivo. Resolución [`resolveMenuCategoryCoverById`](src/lib/carta-category-covers.ts) y páginas `/carta` y `/staff/carta` con fallback si faltan columnas.
 

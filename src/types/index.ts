@@ -47,6 +47,8 @@ export interface Ingredient {
     current_price: number;
     unit_type: string;
     purchase_unit: string;
+    /** Unidad por defecto al añadir este ingrediente a una receta. */
+    recipe_unit?: string;
     allergens: string[]; // Array de textos
     /** Si true, los albaranes no actualizan `current_price` automáticamente. */
     price_locked?: boolean;

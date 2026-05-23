@@ -14,6 +14,7 @@ import {
 } from '@/components/ingredients/IngredientExpressPricePanel'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
+import { RECIPE_UNIT_OPTIONS, defaultRecipeUnitFromPurchase, resolveIngredientRecipeUnit } from '@/lib/recipe-cost'
 
 export type IngredientWizardCategory = 'Bebida' | 'Comida' | 'Packaging' | 'Limpieza' | 'Otros'
 export type IngredientWizardHowCharged = 'kilo' | 'litro' | 'pack' | 'unidad'
@@ -37,6 +38,7 @@ export type WizardDraft = {
   // Opcionales (último paso)
   wastePercentage: number | null
   orderUnit: string | null
+  recipeUnit: string | null
   recommendedStock: number | null
   supplier: string | null
   supplier2: string | null
@@ -352,6 +354,7 @@ export function IngredientWizard({
     baseUnit: initialCategory ? primaryBaseUnitForCategory(initialCategory) : 'l',
     wastePercentage: 0,
     orderUnit: 'unidad',
+    recipeUnit: 'kg',
     recommendedStock: null,
     supplier: null,
     supplier2: null,
@@ -399,7 +402,7 @@ export function IngredientWizard({
           supabase
             .from('ingredients')
             .select(
-              'id,name,category,supplier_pricing_mode,purchase_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2,price_locked'
+              'id,name,category,supplier_pricing_mode,purchase_unit,recipe_unit,current_price,pack_price,pack_units,pack_unit_size_qty,pack_unit_size_unit,waste_percentage,order_unit,recommended_stock,supplier,supplier_2,price_locked'
             )
             .eq('id', id)
             .maybeSingle(),
@@ -483,6 +486,7 @@ export function IngredientWizard({
           baseUnit,
           wastePercentage: (data as any).waste_percentage == null ? 0 : Number((data as any).waste_percentage),
           orderUnit: String((data as any).order_unit ?? 'unidad'),
+          recipeUnit: resolveIngredientRecipeUnit((data as any).recipe_unit, purchaseUnit),
           recommendedStock: (data as any).recommended_stock == null ? null : Number((data as any).recommended_stock),
           supplier: (data as any).supplier ?? null,
           supplier2: (data as any).supplier_2 ?? null,
@@ -557,6 +561,7 @@ export function IngredientWizard({
           waste_percentage: 0,
           supplier_pricing_mode: 'per_purchase_unit',
           order_unit: 'ud',
+          recipe_unit: 'kg',
           price_locked: false,
         })
         .select('id')
@@ -617,6 +622,10 @@ export function IngredientWizard({
     })
   }, [expressKind, expressPreviewDraft])
 
+  function recipeUnitForDraft(d: WizardDraft, purchaseUnit: string): string {
+    return resolveIngredientRecipeUnit(d.recipeUnit, purchaseUnit)
+  }
+
   async function persistPricingFromDraft(d: WizardDraft) {
     if (!d.pricingMode) throw new Error('Falta el modo de precio')
     if (d.pricingMode === 'per_purchase_unit') {
@@ -626,6 +635,7 @@ export function IngredientWizard({
         current_price: d.supplierPrice,
         purchase_unit: d.baseUnit,
         unit_type: d.baseUnit,
+        recipe_unit: recipeUnitForDraft(d, d.baseUnit),
         pack_price: null,
         pack_units: null,
         pack_unit_size_qty: null,
@@ -651,6 +661,7 @@ export function IngredientWizard({
       pack_unit_size_unit: unit,
       purchase_unit: storePurchase,
       unit_type: storePurchase,
+      recipe_unit: recipeUnitForDraft(d, storePurchase),
     })
   }
 
@@ -901,12 +912,14 @@ export function IngredientWizard({
               return Number.isFinite(n) ? n : null
             })()
       const order_unit = String(draft.orderUnit ?? '').trim() || null
+      const recipe_unit = resolveIngredientRecipeUnit(draft.recipeUnit, draft.baseUnit)
       const supplier = String(draft.supplier ?? '').trim() || null
       const supplier_2 = String(draft.supplier2 ?? '').trim() || null
 
       await savePatch({
         waste_percentage,
         order_unit,
+        recipe_unit,
         recommended_stock: rs,
         supplier,
         supplier_2,
@@ -1491,6 +1504,20 @@ export function IngredientWizard({
                   {ORDER_UNIT_OPTIONS.map((u) => (
                     <option key={u} value={u}>
                       {u}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block space-y-1 col-span-2">
+                <span className="text-[10px] font-bold uppercase text-zinc-400">U. en receta</span>
+                <select
+                  value={draft.recipeUnit ?? defaultRecipeUnitFromPurchase(draft.baseUnit)}
+                  onChange={(e) => setDraft((d) => ({ ...d, recipeUnit: e.target.value }))}
+                  className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm bg-white font-bold"
+                >
+                  {RECIPE_UNIT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
                     </option>
                   ))}
                 </select>

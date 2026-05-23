@@ -17,7 +17,7 @@ import {
     menuCategoryToUrlParam,
     sortMenuCategoriesForRecipes,
 } from '@/lib/recipe-menu-categories';
-import { recipeLineCost, type IngredientPackBridgeContext } from '@/lib/recipe-cost';
+import { recipeLineCost, resolveIngredientRecipeUnit, type IngredientPackBridgeContext } from '@/lib/recipe-cost';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
 interface Recipe {
@@ -284,7 +284,20 @@ function RecipesContent() {
                 .single();
             if (recipeError) throw recipeError;
             if (newRecipe.ingredients && newRecipe.ingredients.length > 0) {
-                const ingredientsToInsert = newRecipe.ingredients.map((ing: any) => ({ recipe_id: recipe.id, ingredient_id: ing.ingredient_id, quantity_gross: ing.quantity || 0, unit: ing.unit || 'kg' }));
+                const ingredientsToInsert = newRecipe.ingredients.map((ing: any) => {
+                    const catalog = allIngredients.find((a: { id: string }) => a.id === ing.ingredient_id);
+                    const unit = ing.unit
+                        ? ing.unit
+                        : catalog
+                          ? resolveIngredientRecipeUnit(catalog.recipe_unit, catalog.purchase_unit || 'kg')
+                          : 'kg';
+                    return {
+                        recipe_id: recipe.id,
+                        ingredient_id: ing.ingredient_id,
+                        quantity_gross: ing.quantity || 0,
+                        unit,
+                    };
+                });
                 await supabase.from('recipe_ingredients').insert(ingredientsToInsert);
             }
             toast.success('Receta creada');
