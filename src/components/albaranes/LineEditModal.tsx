@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link2, Loader2, Plus, Settings, X } from 'lucide-react'
+import { Link2, Loader2, MinusCircle, Plus, Settings, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { isInvoiceLineExcluded } from '@/lib/albaranes-line-status'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 
 export type LineEditDraft = {
@@ -36,6 +37,8 @@ export type LineEditModalProps = {
   onEditMapping: () => void
   onRemoveMapping: () => void
   onRepairStock: () => void
+  onExcludeFromMapping: () => void
+  onRestoreFromExcluded: () => void
 }
 
 function formatMaybeMoney(v: number | null | undefined) {
@@ -66,6 +69,8 @@ export function LineEditModal({
   onEditMapping,
   onRemoveMapping,
   onRepairStock,
+  onExcludeFromMapping,
+  onRestoreFromExcluded,
 }: LineEditModalProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -79,6 +84,7 @@ export function LineEditModal({
   if (!target) return null
 
   const displayName = line.ingredient_name?.trim() || line.original_name?.trim() || 'Sin nombre'
+  const excluded = isInvoiceLineExcluded(line)
   const linkedName =
     line.ingredient_name && line.original_name && line.ingredient_name !== line.original_name
       ? line.original_name
@@ -187,7 +193,27 @@ export function LineEditModal({
 
               <section className="rounded-xl border border-[#36606F]/20 bg-[#36606F]/[0.06] p-4 space-y-2">
                 <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">Almacén</p>
-                {line.ingredient_name ? (
+                {excluded ? (
+                  <>
+                    <p className="text-sm font-bold text-zinc-700">
+                      Marcada como <span className="text-[#36606F]">portes / ajuste / sin cargo</span>
+                    </p>
+                    <p className="text-xs font-medium text-zinc-600 leading-snug">
+                      No requiere vínculo con ingrediente ni entrada de stock. Cuenta como resuelta en el albarán.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void onRestoreFromExcluded()}
+                      disabled={busy}
+                      className={cn(
+                        'w-full min-h-12 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wide text-zinc-700',
+                        busy && 'opacity-60 pointer-events-none'
+                      )}
+                    >
+                      Volver a mapear
+                    </button>
+                  </>
+                ) : line.ingredient_name ? (
                   <p className="text-sm font-bold text-zinc-800">
                     Vinculado: <span className="text-[#36606F]">{line.ingredient_name}</span>
                   </p>
@@ -200,24 +226,42 @@ export function LineEditModal({
                     </p>
                   </>
                 )}
-                <button
-                  type="button"
-                  onClick={onOpenMapping}
-                  disabled={busy || supplierId == null}
-                  className={cn(
-                    'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wide',
-                    (busy || supplierId == null) && 'opacity-50 pointer-events-none'
-                  )}
-                >
-                  <Link2 className="h-4 w-4" />
-                  {line.ingredient_id ? 'Ajustar vínculo' : 'Vincular producto'}
-                </button>
-                {supplierId == null ? (
-                  <p className="text-[11px] font-bold text-rose-700">Asigna proveedor al albarán antes de vincular.</p>
+                {!excluded ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onOpenMapping}
+                      disabled={busy || supplierId == null}
+                      className={cn(
+                        'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wide',
+                        (busy || supplierId == null) && 'opacity-50 pointer-events-none'
+                      )}
+                    >
+                      <Link2 className="h-4 w-4" />
+                      {line.ingredient_id ? 'Ajustar vínculo' : 'Vincular producto'}
+                    </button>
+                    {supplierId == null ? (
+                      <p className="text-[11px] font-bold text-rose-700">Asigna proveedor al albarán antes de vincular.</p>
+                    ) : null}
+                    {!line.ingredient_id ? (
+                      <button
+                        type="button"
+                        onClick={() => void onExcludeFromMapping()}
+                        disabled={busy}
+                        className={cn(
+                          'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-100 text-zinc-700 text-xs font-black uppercase tracking-wide',
+                          busy && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        <MinusCircle className="h-4 w-4" />
+                        Portes / ajuste / sin cargo
+                      </button>
+                    ) : null}
+                  </>
                 ) : null}
               </section>
 
-              {needsRepair ? (
+              {needsRepair && !excluded ? (
                 <button
                   type="button"
                   onClick={() => void onRepairStock()}
@@ -231,6 +275,7 @@ export function LineEditModal({
                 </button>
               ) : null}
 
+              {!excluded ? (
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -292,6 +337,7 @@ export function LineEditModal({
                   </>
                 ) : null}
               </div>
+              ) : null}
             </>
           ) : (
             <div className="rounded-xl border border-zinc-100 bg-white p-4 space-y-2 text-sm">
@@ -311,6 +357,10 @@ export function LineEditModal({
               {line.ingredient_name ? (
                 <p>
                   <span className="font-black text-zinc-500">Catálogo:</span> {line.ingredient_name}
+                </p>
+              ) : isInvoiceLineExcluded(line) ? (
+                <p>
+                  <span className="font-black text-zinc-500">Tipo:</span> Portes / ajuste / sin cargo
                 </p>
               ) : null}
             </div>

@@ -11,6 +11,7 @@ import {
   FileText,
   Filter,
   Loader2,
+  MinusCircle,
   Pencil,
   RefreshCw,
   RotateCcw,
@@ -29,6 +30,11 @@ import { LineEditModal } from '@/components/albaranes/LineEditModal'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
 import { getSupplierLogo } from '@/lib/supplier-logos'
+import {
+  invoiceLineRequiresStock,
+  isInvoiceLineExcluded,
+  isInvoiceLineResolved,
+} from '@/lib/albaranes-line-status'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type {
@@ -42,6 +48,7 @@ import { ScannerClient } from '../scanner/ScannerClient'
 import {
   autoMapKnownLinesAction,
   deletePurchaseInvoiceAction,
+  excludeInvoiceLineFromMappingAction,
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
   listPurchaseInvoicesAction,
@@ -287,9 +294,11 @@ export default function AlbaranesHistoricoClient({
     if (!detail) return
     const lines = detail.lines
     if (lines.length === 0) return
-    const allMapped = lines.every((l) => Boolean(l.ingredient_id) && String(l.status ?? '') === 'mapped')
-    const allApplied = lines.every((l) => stockStatusByLineId[l.id]?.stockApplied === true)
-    const fully = allMapped && allApplied
+    const allResolved = lines.every((l) => isInvoiceLineResolved(l))
+    const allStockOk = lines.every(
+      (l) => !invoiceLineRequiresStock(l) || stockStatusByLineId[l.id]?.stockApplied === true
+    )
+    const fully = allResolved && allStockOk
     setItems((prev) => {
       const idx = prev.findIndex((it) => it.id === detail.id)
       if (idx < 0) return prev
@@ -301,6 +310,7 @@ export default function AlbaranesHistoricoClient({
   }, [detail, stockStatusByLineId])
 
   function lineNeedsStockRepair(l: PurchaseInvoiceDetail['lines'][number]) {
+    if (isInvoiceLineExcluded(l)) return false
     if (!l.ingredient_id || String(l.status ?? '') !== 'mapped') return false
     const st = stockStatusByLineId[l.id]
     return !st?.stockApplied
@@ -741,6 +751,35 @@ export default function AlbaranesHistoricoClient({
       if (repaired > 0 || alreadyOk > 0) await refreshDetailAndStock()
     } finally {
       setRepairingInvoiceStockBatch(false)
+    }
+  }
+
+  async function excludeLineFromMapping(lineId: string) {
+    setLineActionBusy(true)
+    try {
+      const res = await excludeInvoiceLineFromMappingAction({ lineId })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      toast.success('Línea marcada como portes/ajuste (sin ingrediente).')
+      await refreshDetailAndStock()
+    } finally {
+      setLineActionBusy(false)
+    }
+  }
+
+  async function restoreExcludedLine(lineId: string) {
+    setLineActionBusy(true)
+    try {
+      const res = await unmapInvoiceLineAction({ lineId })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      await refreshDetailAndStock()
+    } finally {
+      setLineActionBusy(false)
     }
   }
 
@@ -1251,7 +1290,8 @@ export default function AlbaranesHistoricoClient({
                               const stock = stockStatusByLineId[l.id]
                               const stockApplied = Boolean(stock?.stockApplied)
                               const rectified = (stock?.rectifiedCount ?? 0) > 0
-                              const noMatch = !l.ingredient_name
+                              const excluded = isInvoiceLineExcluded(l)
+                              const noMatch = !excluded && !l.ingredient_name
                               const needsRepair = lineNeedsStockRepair(l)
                               const stockBusy =
                                 repairingStockLineId !== null || repairingInvoiceStockBatch || lineActionBusy
@@ -1270,6 +1310,15 @@ export default function AlbaranesHistoricoClient({
                                         title="Sin match"
                                       >
                                         <X className="h-3 w-3" strokeWidth={3.5} />
+                                      </span>
+                                    ) : null}
+                                    {excluded ? (
+                                      <span
+                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-white"
+                                        aria-label="Portes o ajuste (sin ingrediente)"
+                                        title="Portes / ajuste / sin cargo"
+                                      >
+                                        <MinusCircle className="h-3 w-3" strokeWidth={2.5} />
                                       </span>
                                     ) : null}
                                     {needsRepair ? (
@@ -1374,6 +1423,12 @@ export default function AlbaranesHistoricoClient({
                   }}
                   onRepairStock={() => {
                     if (lineForEditModal) void repairStockForLine(lineForEditModal.id)
+                  }}
+                  onExcludeFromMapping={() => {
+                    if (lineForEditModal) void excludeLineFromMapping(lineForEditModal.id)
+                  }}
+                  onRestoreFromExcluded={() => {
+                    if (lineForEditModal) void restoreExcludedLine(lineForEditModal.id)
                   }}
                 />
 

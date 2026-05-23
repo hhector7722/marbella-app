@@ -2,6 +2,11 @@
 
 // SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 import { suggestedAlbaranConversionFactorFromIngredient } from '@/lib/ingredient-pack-pricing'
+import {
+  INVOICE_LINE_STATUS_EXCLUDED,
+  invoiceLineRequiresStock,
+  isInvoiceLineResolved,
+} from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
@@ -322,14 +327,15 @@ async function enrichInvoicesWithProcessingState(
     return baseItems.map((b) => ({ ...b, is_fully_processed: false }))
   }
 
-  const byInv = new Map<string, Array<{ id: string; mapped: boolean }>>()
+  const byInv = new Map<string, Array<{ id: string; resolved: boolean; needsStock: boolean }>>()
   for (const r of (lines as any[]) ?? []) {
     const invId = String(r.invoice_id ?? '')
     const id = String(r.id ?? '')
-    const mapped = Boolean(r.mapped_ingredient_id) && String(r.status ?? '') === 'mapped'
+    const resolved = isInvoiceLineResolved(r)
+    const needsStock = invoiceLineRequiresStock(r)
     if (!invId || !id) continue
     const arr = byInv.get(invId) ?? []
-    arr.push({ id, mapped })
+    arr.push({ id, resolved, needsStock })
     byInv.set(invId, arr)
   }
 
@@ -360,9 +366,9 @@ async function enrichInvoicesWithProcessingState(
   return baseItems.map((b) => {
     const arr = byInv.get(b.id) ?? []
     if (arr.length === 0) return { ...b, is_fully_processed: false }
-    const allMapped = arr.every((x) => x.mapped)
-    const allApplied = arr.every((x) => appliedSet.has(`ALB-LINE-${x.id}`))
-    return { ...b, is_fully_processed: allMapped && allApplied }
+    const allResolved = arr.every((x) => x.resolved)
+    const allStockOk = arr.every((x) => !x.needsStock || appliedSet.has(`ALB-LINE-${x.id}`))
+    return { ...b, is_fully_processed: allResolved && allStockOk }
   })
 }
 
@@ -1811,6 +1817,58 @@ export async function repairOrphanLinesInInvoiceAction(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Excluir línea del mapeo (portes, sin cargo, ajustes…)
+//
+// Marca status='excluded' sin ingrediente ni stock. Cuenta como resuelta para
+// el tick verde del albarán.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function excludeInvoiceLineFromMappingAction(params: {
+  lineId: string
+}): Promise<{ success: true } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!lineId) return { success: false, message: 'ID de línea inválido' }
+
+  const { data: line, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, mapped_ingredient_id, status')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  if (!line) return { success: false, message: 'Línea no encontrada' }
+
+  const hadMapping =
+    Boolean((line as any).mapped_ingredient_id) && String((line as any).status ?? '') === 'mapped'
+
+  if (hadMapping) {
+    const { error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_albaran_line', {
+      p_line_id: lineId,
+    })
+    if (rpcErr) {
+      const msg = String(rpcErr.message ?? '')
+      if (!/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
+        return { success: false, message: `Error borrando stock: ${msg}` }
+      }
+    }
+  }
+
+  const { error: updErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .update({ mapped_ingredient_id: null, status: INVOICE_LINE_STATUS_EXCLUDED })
+    .eq('id', lineId)
+  if (updErr) return { success: false, message: `Error actualizando línea: ${updErr.message}` }
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Deshacer match de una línea (con reversión de stock)
 //
 // Caso de uso: el operario detecta que el match fue erróneo. Necesitamos:
@@ -2048,6 +2106,7 @@ export async function autoMapKnownLinesAction(params?: {
     .select('id, invoice_id, original_name, status, mapped_ingredient_id')
     .in('invoice_id', invoiceIds)
     .is('mapped_ingredient_id', null)
+    .neq('status', INVOICE_LINE_STATUS_EXCLUDED)
     .limit(20000)
   if (linesErr) return { success: false, message: linesErr.message }
 
