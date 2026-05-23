@@ -1163,10 +1163,12 @@ function RecipeDetailContent() {
                         </div>
                     )}
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
+                        <div className="flex h-9 shrink-0 items-center gap-2 bg-[#36606F] px-4">
+                            <h2 className="min-w-0 flex-1 truncate text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                                Ingredientes <span className="opacity-50">({ingredients.length})</span>
+                            </h2>
                             {!isRestricted && (
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
+                                <div className="flex shrink-0 items-center gap-1.5">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -1176,7 +1178,7 @@ function RecipeDetailContent() {
                                         }}
                                         title="Añadir ingrediente"
                                         aria-label="Añadir ingrediente"
-                                        className="flex h-8 min-w-12 items-center justify-center rounded-lg bg-green-500 px-2 text-[8px] font-black uppercase tracking-wider text-white transition hover:bg-green-600 active:scale-95"
+                                        className="whitespace-nowrap rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white bg-green-500 transition hover:bg-green-600 active:scale-95"
                                     >
                                         + Añadir
                                     </button>
@@ -1185,7 +1187,7 @@ function RecipeDetailContent() {
                                         onClick={() => setIsModalOpen(true)}
                                         title="Nuevo ingrediente"
                                         aria-label="Nuevo ingrediente"
-                                        className="flex h-8 min-w-12 items-center justify-center rounded-lg bg-purple-500 px-2 text-[8px] font-black uppercase tracking-wider text-white transition hover:bg-purple-600 active:scale-95"
+                                        className="whitespace-nowrap rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white bg-purple-500 transition hover:bg-purple-600 active:scale-95"
                                     >
                                         + Nuevo
                                     </button>
