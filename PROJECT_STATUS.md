@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-23 (Horarios: ocultar bajas en selector)
+**Última actualización:** 2026-05-24 (Albaranes: líneas portes/ajuste excluidas del mapeo)
+
+- [x] **Albaranes: portes / sin cargo / ajustes sin ingrediente (2026-05-24)**: Nuevo estado `purchase_invoice_lines.status = 'excluded'` para líneas que no van a almacén (portes, sin cargo, ajustes). Cuentan como **resueltas** en el tick verde del albarán sin `mapped_ingredient_id` ni PURCHASE. UI: botón **Portes / ajuste / sin cargo** en [`LineEditModal.tsx`](src/components/albaranes/LineEditModal.tsx); icono gris en lista; **Volver a mapear** restaura a `pending`. Server action [`excludeInvoiceLineFromMappingAction`](src/app/dashboard/albaranes/actions.ts). Helpers [`albaranes-line-status.ts`](src/lib/albaranes-line-status.ts). Migración [`20260524120000_purchase_invoice_lines_excluded_status.sql`](supabase/migrations/20260524120000_purchase_invoice_lines_excluded_status.sql) (comentario + RPC auto-mapeo ignora excluidas).
+
+- [x] **Fichajes: «Eliminar día completo» no borraba en producción (2026-05-24)**: El calendario agrupa por `(clock_in AT TIME ZONE 'Europe/Madrid')::date`, pero `deleteManagerDayLogs` filtraba con `new Date(y,m-1,d)` en **UTC del servidor** (Vercel) → 0 filas borradas y toast de éxito. Fix: [`madridDayUtcRangeIso`](src/lib/madrid-date-bounds.ts) en [`overtime.ts`](src/app/actions/overtime.ts) + comprobación de filas borradas; mismo rango en [`AttendanceDetailModal.tsx`](src/components/modals/AttendanceDetailModal.tsx) y horas en Madrid vía `formatMadridHmFromIso`.
 
 - [x] **Horarios: selector «Añadir personal» unificado + sin bajas (2026-05-23)**: [`ScheduleDayEditor.tsx`](src/components/schedule/ScheduleDayEditor.tsx) usa [`StaffSelectionModal`](src/components/modals/StaffSelectionModal.tsx) (`variant="profile-list"`, como Plantilla/labor) en lugar del modal propio; solo activos (`end_date` NULL) y excluye quien ya está en el día. Avatares vía `avatar_url`. Turnos históricos de bajas siguen visibles en la rejilla si ya existían.
 
