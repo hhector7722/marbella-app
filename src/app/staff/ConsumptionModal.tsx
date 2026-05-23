@@ -124,6 +124,11 @@ export function ConsumptionModal({
   );
 
   const handleSubmit = async () => {
+    if (cart.length === 0) {
+      toast.warning('Debes apuntar tu consumo antes de fichar la salida.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = cart.map((c) => ({
@@ -132,16 +137,18 @@ export function ConsumptionModal({
         is_half: c.is_half,
       }));
       const res = await submitPersonalConsumption(payload);
-      if (!res?.success) {
-        const errorMsg = res?.message || 'Error al registrar consumo';
-        console.error('[ConsumptionModal] Submit failed:', res);
-        toast.error(errorMsg, { duration: 5000 });
+      if (!res.success) {
+        if (res.code === 'EMPTY_CART') {
+          toast.warning(res.message);
+        } else {
+          toast.error(res.message);
+        }
         setIsSubmitting(false);
         return;
       }
       await Promise.resolve(onConfirm());
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Error al registrar consumo';
+      const message = error instanceof Error ? error.message : 'Error al fichar la salida';
       toast.error(message);
       setIsSubmitting(false);
     }
@@ -265,10 +272,15 @@ export function ConsumptionModal({
               </div>
             </>
           )}
+          {cart.length === 0 && (
+            <p className="mb-2 text-center text-sm text-zinc-500">
+              Selecciona al menos un producto para fichar la salida
+            </p>
+          )}
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || cart.length === 0}
             className={cn(
               'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
               'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-70',

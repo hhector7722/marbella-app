@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-23 (Ingredientes: unidad en receta)
+**Última actualización:** 2026-05-23 (Horarios: ocultar bajas en selector)
+
+- [x] **Horarios: selector «Añadir Personal» sin trabajadores de baja (2026-05-23)**: [`ScheduleDayEditor.tsx`](src/components/schedule/ScheduleDayEditor.tsx) cargaba toda la plantilla sin filtrar `profiles.end_date`; los ex-empleados seguían apareciendo al asignar turnos. Ahora el modal de alta solo lista activos (`end_date` NULL). Quienes ya tenían turno ese día siguen visibles en la rejilla del día (histórico).
+
+- [x] **Staff: salida con consumo obligatorio y fallo RPC silenciado (2026-05-20)**: Al fichar salida, carrito vacío → aviso y sin `clock_out` ([`ConsumptionModal.tsx`](src/app/staff/ConsumptionModal.tsx), botón deshabilitado). Con ítems: [`submitPersonalConsumption`](src/app/staff/actions.ts) guarda vía `process_staff_consumption`; si la RPC falla (unidades, red, BD), se omite el consumo en silencio (`consumptionSkipped`, log servidor) y se permite `handleClockAction('out')`. Servidor rechaza `items.length === 0` (anti-bypass DevTools).
 
 - [x] **Ingredientes: `recipe_unit` + alta en recetas con unidad por defecto (2026-05-23)**: Columna `ingredients.recipe_unit` (`g|kg|ml|cl|l|ud`, backfill desde `purchase_unit`). Editable en `/ingredients` (modal, wizard paso opcional, creación experta). En `/recipes/[id]` al añadir línea se usa la unidad del catálogo (badge en el modal); selector «Forzar unidad» opcional; la unidad sigue editable en la tabla de la receta. Migración [`20260523120000_ingredients_recipe_unit.sql`](supabase/migrations/20260523120000_ingredients_recipe_unit.sql); helpers `resolveIngredientRecipeUnit` / `defaultRecipeUnitFromPurchase` en [`recipe-cost.ts`](src/lib/recipe-cost.ts).
 
