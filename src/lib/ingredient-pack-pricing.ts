@@ -60,6 +60,35 @@ export function convertPackUnitSizeToPurchaseUnit(
   return null
 }
 
+/** €/purchase_unit desde pack (misma fórmula que el trigger `compute_ingredient_current_price_from_pack`). */
+export function computeEffectivePriceFromPack(args: {
+  packPrice: number | null | undefined
+  packUnits: number | null | undefined
+  unitSizeQty: number | null | undefined
+  unitSizeUnit: string | null | undefined
+  purchaseUnit: string | null | undefined
+}): number | null {
+  const packPrice = Number(args.packPrice)
+  const packUnits = Number(args.packUnits)
+  if (!Number.isFinite(packPrice) || packPrice < 0) return null
+  if (!Number.isFinite(packUnits) || packUnits <= 0) return null
+  const sizeQty = args.unitSizeQty == null ? 1 : Number(args.unitSizeQty)
+  if (!Number.isFinite(sizeQty) || sizeQty <= 0) return null
+  const storePurchaseUnit = resolveDeclaredPurchaseUnitWithPackContent(
+    args.purchaseUnit ?? 'ud',
+    args.unitSizeUnit ?? 'ud',
+  )
+  const converted = convertPackUnitSizeToPurchaseUnit(
+    sizeQty,
+    args.unitSizeUnit,
+    storePurchaseUnit,
+  )
+  if (converted == null || converted <= 0) return null
+  const denom = packUnits * converted
+  if (!Number.isFinite(denom) || denom <= 0) return null
+  return packPrice / denom
+}
+
 /**
  * Litros (o kg) equivalentes por **una unidad de línea de albarán** cuando el proveedor
  * factura por botella/lata pero el catálogo costea en L/kg vía `per_pack`.

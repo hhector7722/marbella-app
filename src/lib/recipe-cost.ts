@@ -1,3 +1,5 @@
+import { computeEffectivePriceFromPack } from '@/lib/ingredient-pack-pricing'
+
 /**
  * Conversión de unidades y coste de línea de receta.
  * El precio del ingrediente (current_price) es el del albarán del proveedor,
@@ -88,12 +90,38 @@ export type IngredientPackBridgeContext = {
   supplier_pricing_mode?: string | null
   pack_unit_size_qty?: number | null
   pack_unit_size_unit?: string | null
+  pack_price?: number | null
+  pack_units?: number | null
+  purchase_unit?: string | null
 }
 
 function isPerPackMode(mode: string | null | undefined): boolean {
   return String(mode ?? '')
     .trim()
     .toLowerCase() === 'per_pack'
+}
+
+/**
+ * Precio unitario de compra para escandallo.
+ * Si `current_price` en BD es 0 por redondeo (numeric(10,2) con céntimos < 0,01),
+ * recalcula desde pack cuando el ingrediente es `per_pack`.
+ */
+export function resolveIngredientUnitPriceForRecipeCost(
+  currentPrice: number | null | undefined,
+  pack?: IngredientPackBridgeContext | null,
+): number | null {
+  const stored = Number(currentPrice)
+  if (Number.isFinite(stored) && stored > 0) return stored
+
+  if (!pack || !isPerPackMode(pack.supplier_pricing_mode)) return null
+
+  return computeEffectivePriceFromPack({
+    packPrice: pack.pack_price,
+    packUnits: pack.pack_units,
+    unitSizeQty: pack.pack_unit_size_qty,
+    unitSizeUnit: pack.pack_unit_size_unit,
+    purchaseUnit: pack.purchase_unit,
+  })
 }
 
 /**
@@ -175,8 +203,8 @@ export function getRecipeIngredientLineCostAnalysis(
     return { eur: 0, status: 'incompatible_units' };
   }
 
-  const price = Number(currentPrice);
-  if (!Number.isFinite(price) || price <= 0) {
+  const price = resolveIngredientUnitPriceForRecipeCost(currentPrice, pack);
+  if (price == null || price <= 0) {
     return { eur: 0, status: 'missing_price' };
   }
 
@@ -200,20 +228,24 @@ export function recipeLineCostStatusHint(status: RecipeLineCostStatus): string {
  * muestra decimales hasta el primer dígito distinto de cero (p. ej. 0.0045 → 0.004).
  * En caso contrario, dos decimales habituales.
  */
-export function formatRecipeIngredientLineCostEur(cost: number): string {
-  if (!Number.isFinite(cost)) return '0.00';
-  if (cost <= 0) return cost.toFixed(2);
-  const roundedToCent = parseFloat(cost.toFixed(2));
-  if (roundedToCent > 0) return cost.toFixed(2);
+const RECIPE_LINE_COST_MAX_SIGNIFICANT_DECIMALS = 8
 
-  const raw = cost.toFixed(12);
-  const parts = raw.split('.');
-  const dec = parts[1] ?? '';
-  let i = 0;
-  while (i < dec.length && dec[i] === '0') i++;
-  if (i >= dec.length) return cost.toFixed(2);
-  const frac = dec.slice(0, i + 1);
-  return `${parts[0]}.${frac}`;
+/** Importe en € con 2 decimales o, si redondearía a 0,00, hasta el primer dígito > 0. */
+export function formatRecipeIngredientLineCostEur(cost: number): string {
+  if (!Number.isFinite(cost)) return '0.00'
+  if (cost <= 0) return cost.toFixed(2)
+  const roundedToCent = parseFloat(cost.toFixed(2))
+  if (roundedToCent > 0) return cost.toFixed(2)
+
+  const raw = cost.toFixed(12)
+  const parts = raw.split('.')
+  const dec = parts[1] ?? ''
+  let i = 0
+  while (i < dec.length && dec[i] === '0') i++
+  if (i >= dec.length) return cost.toFixed(2)
+  const end = Math.min(i + 1, RECIPE_LINE_COST_MAX_SIGNIFICANT_DECIMALS)
+  const frac = dec.slice(0, end)
+  return `${parts[0]}.${frac}`
 }
 
 /** Unidades disponibles para selector en recetas (masa, volumen, unidades). */

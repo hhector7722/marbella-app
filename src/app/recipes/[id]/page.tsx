@@ -511,6 +511,9 @@ function RecipeDetailContent() {
             supplier_pricing_mode: i.supplier_pricing_mode,
             pack_unit_size_qty: i.pack_unit_size_qty,
             pack_unit_size_unit: i.pack_unit_size_unit,
+            pack_price: i.pack_price,
+            pack_units: i.pack_units,
+            purchase_unit: i.purchase_unit,
         };
     };
 
