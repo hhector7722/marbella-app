@@ -2,7 +2,7 @@
 
 **Última actualización:** 2026-05-23 (Horarios: ocultar bajas en selector)
 
-- [x] **Horarios: selector «Añadir Personal» sin trabajadores de baja (2026-05-23)**: [`ScheduleDayEditor.tsx`](src/components/schedule/ScheduleDayEditor.tsx) cargaba toda la plantilla sin filtrar `profiles.end_date`; los ex-empleados seguían apareciendo al asignar turnos. Ahora el modal de alta solo lista activos (`end_date` NULL). Quienes ya tenían turno ese día siguen visibles en la rejilla del día (histórico).
+- [x] **Horarios: selector «Añadir personal» unificado + sin bajas (2026-05-23)**: [`ScheduleDayEditor.tsx`](src/components/schedule/ScheduleDayEditor.tsx) usa [`StaffSelectionModal`](src/components/modals/StaffSelectionModal.tsx) (`variant="profile-list"`, como Plantilla/labor) en lugar del modal propio; solo activos (`end_date` NULL) y excluye quien ya está en el día. Avatares vía `avatar_url`. Turnos históricos de bajas siguen visibles en la rejilla si ya existían.
 
 - [x] **Staff: salida con consumo obligatorio y fallo RPC silenciado (2026-05-20)**: Al fichar salida, carrito vacío → aviso y sin `clock_out` ([`ConsumptionModal.tsx`](src/app/staff/ConsumptionModal.tsx), botón deshabilitado). Con ítems: [`submitPersonalConsumption`](src/app/staff/actions.ts) guarda vía `process_staff_consumption`; si la RPC falla (unidades, red, BD), se omite el consumo en silencio (`consumptionSkipped`, log servidor) y se permite `handleClockAction('out')`. Servidor rechaza `items.length === 0` (anti-bypass DevTools).
 

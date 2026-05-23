@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -10,7 +10,6 @@ import {
     Minus,
     ChevronLeft,
     ChevronRight,
-    UserPlus,
     Send,
     CheckCircle2,
     Share2,
@@ -23,6 +22,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
+import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 
 export interface ScheduleDayEditorProps {
     initialDate: string;
@@ -193,7 +193,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const [secondSlotExpanded, setSecondSlotExpanded] = useState(false);
 
     const [showCalendarModal, setShowCalendarModal] = useState(false);
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
 
@@ -242,7 +242,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         try {
             const { data: employees } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, end_date')
+                .select('id, first_name, last_name, end_date, avatar_url')
                 .order('first_name');
 
             const startOfDay = `${targetDate}T00:00:00.000Z`;
@@ -439,8 +439,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         setShifts([...shifts, newShift]);
         setHasUnsavedChanges(true);
         setEditingIndex(shifts.length);
-        setShowAddModal(false);
+        setShowAddEmployeeModal(false);
     };
+
+    const employeesForPicker = useMemo(
+        () => availableProfiles.filter((p) => !shifts.some((s) => s.employeeId === p.id)),
+        [availableProfiles, shifts],
+    );
 
     const handleRemoveEmployee = (index: number) => {
         const updated = shifts.filter((_, i) => i !== index);
@@ -729,7 +734,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                         <div className="flex items-center gap-1 mt-2">
                             {/* Movemos Botón Agregar Empleado a Cabecera */}
-                            <button onClick={() => setShowAddModal(true)} className="w-7 h-7 md:w-8 md:h-8 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
+                            <button onClick={() => setShowAddEmployeeModal(true)} className="w-7 h-7 md:w-8 md:h-8 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
                                 <Plus size={16} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
                             </button>
 
@@ -1222,24 +1227,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 </div>
             )}
 
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-                    <div className="bg-white rounded-[24px] w-full max-w-xs overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-5 flex justify-between items-center text-white border-b border-white/10">
-                            <h3 className="text-sm font-black uppercase tracking-widest">Añadir Personal</h3>
-                            <button onClick={() => setShowAddModal(false)} className="bg-white/10 hover:bg-rose-500 p-2 rounded-xl transition-all"><X size={18} /></button>
-                        </div>
-                        <div className="max-h-72 overflow-y-auto p-3 grid gap-1 custom-scrollbar">
-                            {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).map(profile => (
-                                <button key={profile.id} onClick={() => handleAddEmployee(profile.id)} className="flex items-center gap-4 p-3 hover:bg-emerald-50 rounded-2xl transition-all text-left group">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors"><UserPlus size={18} /></div>
-                                    <span className="font-bold text-gray-800 text-sm">{profile.first_name}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <StaffSelectionModal
+                isOpen={showAddEmployeeModal}
+                onClose={() => setShowAddEmployeeModal(false)}
+                employees={employeesForPicker}
+                title="Añadir personal"
+                variant="profile-list"
+                onSelect={(emp) => handleAddEmployee(emp.id)}
+            />
 
             {/* MODAL COMPARTIR */}
             {showShareModal && (
