@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Save, Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
-import { format, parseISO, startOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { updateWeeklyWorkerConfig, createManagerFichaje, deleteManagerDayLogs } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
+import { formatMadridHmFromIso, madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -217,25 +218,23 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             const { createClient } = await import('@/utils/supabase/client');
             const supabase = createClient();
 
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
 
             const { data, error } = await supabase
                 .from('time_logs')
                 .select('*')
                 .eq('user_id', userId)
-                .gte('clock_in', startOfDay.toISOString())
-                .lte('clock_in', endOfDay.toISOString())
+                .gte('clock_in', startIso)
+                .lte('clock_in', endIso)
                 .order('clock_in', { ascending: true });
 
             if (error) throw error;
 
             const rawLogs = data?.map(l => ({
                 id: l.id,
-                in_time: format(parseISO(l.clock_in), 'HH:mm'),
-                out_time: l.clock_out ? format(parseISO(l.clock_out), 'HH:mm') : '',
+                in_time: formatMadridHmFromIso(l.clock_in) ?? '',
+                out_time: l.clock_out ? (formatMadridHmFromIso(l.clock_out) ?? '') : '',
                 event_type: l.event_type || 'regular',
                 is_deleted: false,
                 clock_out_show_no_registrada: l.clock_out_show_no_registrada === true

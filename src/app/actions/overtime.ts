@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
+import { madridDayUtcRangeIso } from "@/lib/madrid-date-bounds";
 import { revalidatePath } from "next/cache";
 
 export interface StaffWeeklyStats {
@@ -450,18 +451,22 @@ export async function deleteManagerDayLogs(userId: string, dateStr: string): Pro
         const [y, m, d] = dateStr.split('-').map(Number);
         if (!y || !m || !d) return { success: false, error: 'Fecha inválida' };
 
-        // Definir el rango del día completo
-        const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
-        const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+        // Mismo criterio de día que get_monthly_timesheet / get_worker_weekly_log_grid (Europe/Madrid).
+        // En Vercel el servidor usa UTC; new Date(y,m-1,d) no coincide con el día civil de Madrid.
+        const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
 
-        const { error: deleteErr } = await supabase
+        const { data: deletedRows, error: deleteErr } = await supabase
             .from('time_logs')
             .delete()
             .eq('user_id', userId)
-            .gte('clock_in', startOfDay.toISOString())
-            .lte('clock_in', endOfDay.toISOString());
+            .gte('clock_in', startIso)
+            .lte('clock_in', endIso)
+            .select('id');
 
         if (deleteErr) throw deleteErr;
+        if (!deletedRows?.length) {
+            return { success: false, error: 'No se encontró ningún fichaje para ese día' };
+        }
 
         // Calcular el lunes de esa semana para la propagación
         const weekStart = (() => {

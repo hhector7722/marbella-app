@@ -272,11 +272,6 @@ export function ConsumptionModal({
               </div>
             </>
           )}
-          {cart.length === 0 && (
-            <p className="mb-2 text-center text-sm text-zinc-500">
-              Selecciona al menos un producto para fichar la salida
-            </p>
-          )}
           <button
             type="button"
             onClick={() => void handleSubmit()}
