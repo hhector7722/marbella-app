@@ -242,7 +242,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         try {
             const { data: employees } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name')
+                .select('id, first_name, last_name, end_date')
                 .order('first_name');
 
             const startOfDay = `${targetDate}T00:00:00.000Z`;
@@ -393,7 +393,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             setShifts(activeShifts);
             setAvailableProfiles((employees || []).filter((e: any) => {
                 const name = (e.first_name || '').trim().toLowerCase();
-                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+                if (name === 'ramon' || name === 'ramón' || name === 'empleado') return false;
+                if (e.end_date) return false;
+                return true;
             }));
             setHasUnsavedChanges(false);
             setIsDaySent(false); // Reinicia estado "enviado" al cambiar día
