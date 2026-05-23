@@ -94,6 +94,7 @@ export function ConsumptionModal({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [racionPicker, setRacionPicker] = useState<Recipe | null>(null);
+  const [showEmptyCartReminder, setShowEmptyCartReminder] = useState(false);
 
   useEffect(() => {
     getConsumptionRecipes().then((data) => {
@@ -125,7 +126,7 @@ export function ConsumptionModal({
 
   const handleSubmit = async () => {
     if (cart.length === 0) {
-      toast.warning('Debes apuntar tu consumo antes de fichar la salida.');
+      setShowEmptyCartReminder(true);
       return;
     }
 
@@ -139,7 +140,7 @@ export function ConsumptionModal({
       const res = await submitPersonalConsumption(payload);
       if (!res.success) {
         if (res.code === 'EMPTY_CART') {
-          toast.warning(res.message);
+          setShowEmptyCartReminder(true);
         } else {
           toast.error(res.message);
         }
@@ -275,7 +276,7 @@ export function ConsumptionModal({
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={isSubmitting || cart.length === 0}
+            disabled={isSubmitting}
             className={cn(
               'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
               'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-70',
@@ -285,6 +286,35 @@ export function ConsumptionModal({
           </button>
         </div>
       </div>
+
+      {showEmptyCartReminder && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="empty-cart-reminder-title"
+          onClick={() => setShowEmptyCartReminder(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-zinc-100 bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p id="empty-cart-reminder-title" className="mb-3 text-center text-base font-bold text-zinc-900">
+              Apunta tu consumo
+            </p>
+            <p className="mb-5 text-center text-sm text-zinc-600">
+              Debes seleccionar al menos un producto antes de fichar la salida.
+            </p>
+            <button
+              type="button"
+              className="min-h-12 w-full rounded-xl bg-[#36606F] py-3 text-sm font-bold text-white shadow-sm hover:opacity-95 active:scale-[0.98]"
+              onClick={() => setShowEmptyCartReminder(false)}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {racionPicker && (
         <div
