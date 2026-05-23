@@ -1163,10 +1163,10 @@ function RecipeDetailContent() {
                         </div>
                     )}
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
                             {!isRestricted && (
-                                <div className="flex gap-1">
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -1174,11 +1174,21 @@ function RecipeDetailContent() {
                                             setAddIngredientUnit('kg');
                                             setShowIngredientModal(true);
                                         }}
-                                        className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600 min-h-12"
+                                        title="Añadir ingrediente"
+                                        aria-label="Añadir ingrediente"
+                                        className="flex h-8 min-w-12 items-center justify-center rounded-lg bg-green-500 px-2 text-[8px] font-black uppercase tracking-wider text-white transition hover:bg-green-600 active:scale-95"
                                     >
                                         + Añadir
                                     </button>
-                                    <button onClick={() => setIsModalOpen(true)} className="px-2 py-0.5 bg-purple-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-purple-600">+ Nuevo</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(true)}
+                                        title="Nuevo ingrediente"
+                                        aria-label="Nuevo ingrediente"
+                                        className="flex h-8 min-w-12 items-center justify-center rounded-lg bg-purple-500 px-2 text-[8px] font-black uppercase tracking-wider text-white transition hover:bg-purple-600 active:scale-95"
+                                    >
+                                        + Nuevo
+                                    </button>
                                 </div>
                             )}
                         </div>
