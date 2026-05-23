@@ -2018,7 +2018,6 @@ export async function autoMapKnownLinesAction(params?: {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  const isManager = gate.role === 'manager' || gate.role === 'admin'
   const onlyInvoiceId = String(params?.invoiceId ?? '').trim() || null
 
   // 1) Cabeceras candidatas: tienen `supplier_id` y al menos una línea pendiente.
@@ -2041,11 +2040,6 @@ export async function autoMapKnownLinesAction(params?: {
       success: true,
       report: { invoicesScanned: 0, linesScanned: 0, autoMapped: 0, skippedNoSupplier: 0, skippedNoMatch: 0, errors: 0 },
     }
-  }
-
-  const supplierByInvoice = new Map<string, number>()
-  for (const r of invoiceList) {
-    if (r.supplier_id != null) supplierByInvoice.set(r.id, Number(r.supplier_id))
   }
 
   // 2) Líneas pendientes de esos albaranes.
@@ -2075,60 +2069,30 @@ export async function autoMapKnownLinesAction(params?: {
   }
   if (lines.length === 0) return { success: true, report }
 
-  // 3) Pre-cargar diccionario en un solo round-trip: todas las filas de los
-  //    proveedores implicados. Cabe en memoria para 2k albaranes; si crece,
-  //    paginar por proveedor.
-  const supplierIds = Array.from(new Set(Array.from(supplierByInvoice.values())))
-  const { data: mapRows, error: mapErr } = await gate.supabase
-    .from('supplier_item_mappings')
-    .select('supplier_id, supplier_item_name, ingredient_id, conversion_factor')
-    .in('supplier_id', supplierIds)
-    .limit(20000)
-  if (mapErr) return { success: false, message: mapErr.message }
+  const { data: result, error: rpcErr } = await gate.supabase.rpc('auto_map_invoice_lines_fuzzy', {
+    p_invoice_id: onlyInvoiceId ?? null,
+    p_similarity_threshold: 0.75,
+  })
+  if (rpcErr) return { success: false, message: rpcErr.message }
 
-  // Índice (supplier_id|supplier_item_name) -> { ingredient_id, factor }
-  const dict = new Map<string, { ingredient_id: string; factor: number }>()
-  for (const r of (mapRows ?? []) as any[]) {
-    const sid = Number(r.supplier_id)
-    const name = String(r.supplier_item_name ?? '').trim().toLowerCase()
-    const ing = r.ingredient_id ? String(r.ingredient_id) : null
-    const factor = Number(r.conversion_factor)
-    if (!Number.isFinite(sid) || !name || !ing || !Number.isFinite(factor) || factor <= 0) continue
-    dict.set(`${sid}|${name}`, { ingredient_id: ing, factor })
-  }
-
-  // 4) Recorrer líneas y aplicar `update` sólo a las que encajen exactas.
-  for (const line of lines) {
-    const supplierId = supplierByInvoice.get(line.invoice_id)
-    if (supplierId == null) {
-      report.skippedNoSupplier++
-      continue
-    }
-    const name = String(line.original_name ?? '').trim().toLowerCase()
-    if (!name) {
-      report.skippedNoMatch++
-      continue
-    }
-    const hit = dict.get(`${supplierId}|${name}`)
-    if (!hit) {
-      report.skippedNoMatch++
-      continue
-    }
-    const { error: upErr } = await gate.supabase
-      .from('purchase_invoice_lines')
-      .update({ mapped_ingredient_id: hit.ingredient_id, status: 'mapped' })
-      .eq('id', line.id)
-    if (upErr) {
-      report.errors++
-      continue
-    }
-    report.autoMapped++
-  }
+  const rpcResult = result as { mapped?: number; skipped?: number } | null
+  const mapped = rpcResult?.mapped ?? 0
+  const skipped = rpcResult?.skipped ?? 0
 
   try {
     revalidatePath('/dashboard/albaranes')
   } catch {}
 
-  return { success: true, report }
+  return {
+    success: true,
+    report: {
+      invoicesScanned: invoiceList.length,
+      linesScanned: lines.length,
+      autoMapped: mapped,
+      skippedNoSupplier: report.skippedNoSupplier,
+      skippedNoMatch: skipped,
+      errors: 0,
+    },
+  }
 }
 
