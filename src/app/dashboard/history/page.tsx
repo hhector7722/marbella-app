@@ -20,6 +20,7 @@ import {
     Share,
     Download,
     Filter,
+    Eye,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -33,6 +34,7 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
+import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -264,6 +266,10 @@ export default function HistoryPage() {
     const [closings, setClosings] = useState<any[]>([]);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
+    const [closingPhotoUrls, setClosingPhotoUrls] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
+    const [closingPhotosLoading, setClosingPhotosLoading] = useState(false);
+    const [closingPhotosError, setClosingPhotosError] = useState<string | null>(null);
+    const [lightboxImage, setLightboxImage] = useState<{ url: string; label: string } | null>(null);
 
     useEffect(() => {
         checkUserRole();
@@ -288,6 +294,52 @@ export default function HistoryPage() {
             document.removeEventListener('keydown', onKeyDown);
         };
     }, [shareMenuOpen]);
+
+    useEffect(() => {
+        if (!selectedClosing) {
+            setClosingPhotoUrls({ dataphoneUrl: null, bdpUrl: null });
+            setClosingPhotosError(null);
+            return;
+        }
+
+        const dataphonePath = selectedClosing.dataphone_totals_photo_path as string | null | undefined;
+        const bdpPath = selectedClosing.bdp_closing_ticket_photo_path as string | null | undefined;
+
+        if (!dataphonePath && !bdpPath) {
+            setClosingPhotoUrls({ dataphoneUrl: null, bdpUrl: null });
+            setClosingPhotosError(null);
+            return;
+        }
+
+        let cancelled = false;
+        setClosingPhotosLoading(true);
+        setClosingPhotosError(null);
+
+        getCashClosingPhotoUrlsAction({ dataphonePath, bdpPath })
+            .then((result) => {
+                if (cancelled) return;
+                if (!result.success) {
+                    setClosingPhotoUrls({ dataphoneUrl: null, bdpUrl: null });
+                    setClosingPhotosError(result.error);
+                    toast.error(result.error);
+                    return;
+                }
+                setClosingPhotoUrls({ dataphoneUrl: result.dataphoneUrl, bdpUrl: result.bdpUrl });
+            })
+            .catch((err: unknown) => {
+                if (cancelled) return;
+                const msg = err instanceof Error ? err.message : 'No se pudieron cargar las fotos del cierre';
+                setClosingPhotosError(msg);
+                toast.error(msg);
+            })
+            .finally(() => {
+                if (!cancelled) setClosingPhotosLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedClosing?.id, selectedClosing?.dataphone_totals_photo_path, selectedClosing?.bdp_closing_ticket_photo_path]);
 
     async function checkUserRole() {
         const { data: { user } } = await supabase.auth.getUser();
@@ -607,6 +659,18 @@ export default function HistoryPage() {
         if (!confirm("¿Estás seguro de eliminar este cierre?")) return;
         setLoading(true);
         try {
+            const paths = [
+                selectedClosing.dataphone_totals_photo_path,
+                selectedClosing.bdp_closing_ticket_photo_path,
+            ].filter((p): p is string => typeof p === 'string' && p.trim().length > 0);
+
+            if (paths.length > 0) {
+                const photoDelete = await deleteCashClosingPhotosAction(paths);
+                if (!photoDelete.success) {
+                    toast.error(`No se pudieron borrar las fotos: ${photoDelete.error}`);
+                }
+            }
+
             const { error } = await supabase.from('cash_closings').delete().eq('id', selectedClosing.id);
             if (error) throw error;
             toast.success("Cierre eliminado");
@@ -1194,6 +1258,49 @@ export default function HistoryPage() {
                                 );
                             })()}
 
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentación</p>
+                            {closingPhotosLoading ? (
+                                <div className="flex justify-center py-6">
+                                    <LoadingSpinner size="sm" className="text-[#36606F]" />
+                                </div>
+                            ) : null}
+                            {!closingPhotosLoading && !selectedClosing.dataphone_totals_photo_path && !selectedClosing.bdp_closing_ticket_photo_path ? (
+                                <p className="text-sm text-zinc-400 text-center py-2">Sin documentación</p>
+                            ) : null}
+                            {!closingPhotosLoading && (closingPhotoUrls.dataphoneUrl || closingPhotoUrls.bdpUrl) ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {closingPhotoUrls.dataphoneUrl ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setLightboxImage({ url: closingPhotoUrls.dataphoneUrl!, label: 'Totales datáfonos' })}
+                                            className="rounded-xl border border-zinc-100 shadow-sm overflow-hidden text-left hover:border-[#36606F]/30 transition-colors min-h-[48px]"
+                                        >
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50 flex items-center gap-1">
+                                                <Eye size={12} /> Datáfonos
+                                            </p>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={closingPhotoUrls.dataphoneUrl} alt="Totales datáfonos" className="w-full h-28 object-contain bg-white" />
+                                        </button>
+                                    ) : null}
+                                    {closingPhotoUrls.bdpUrl ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setLightboxImage({ url: closingPhotoUrls.bdpUrl!, label: 'Ticket cierre BDP' })}
+                                            className="rounded-xl border border-zinc-100 shadow-sm overflow-hidden text-left hover:border-[#36606F]/30 transition-colors min-h-[48px]"
+                                        >
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50 flex items-center gap-1">
+                                                <Eye size={12} /> Ticket BDP
+                                            </p>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={closingPhotoUrls.bdpUrl} alt="Ticket cierre BDP" className="w-full h-28 object-contain bg-white" />
+                                        </button>
+                                    ) : null}
+                                </div>
+                            ) : null}
+                            {!closingPhotosLoading && closingPhotosError && (selectedClosing.dataphone_totals_photo_path || selectedClosing.bdp_closing_ticket_photo_path) ? (
+                                <p className="text-sm text-rose-600 text-center py-2">{closingPhotosError}</p>
+                            ) : null}
+
                             {isEditing && (
                                 <button onClick={() => persistEditData({ exitEdit: true })} disabled={loading} className="w-full h-16 bg-[#36606F] text-white rounded-[2rem] shadow-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2">
                                     {loading ? <LoadingSpinner size="sm" /> : <><Save size={20} /> Guardar Cierre</>}
@@ -1327,6 +1434,21 @@ export default function HistoryPage() {
                                 })}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {lightboxImage && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={() => setLightboxImage(null)}>
+                    <div className="relative max-w-3xl w-full max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-4 py-3 bg-[#36606F] text-white">
+                            <span className="text-[11px] font-black uppercase tracking-widest">{lightboxImage.label}</span>
+                            <button type="button" onClick={() => setLightboxImage(null)} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={lightboxImage.url} alt={lightboxImage.label} className="w-full max-h-[calc(90vh-4rem)] object-contain bg-zinc-50" />
                     </div>
                 </div>
             )}

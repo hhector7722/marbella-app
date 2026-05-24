@@ -6,7 +6,7 @@ import {
     X, Save, Banknote, Coins, Calendar,
     CreditCard, UserMinus, ArchiveRestore, Store,
     AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
-    CheckCircle2, TrendingUp, RefreshCw, Minus, Plus
+    CheckCircle2, TrendingUp, RefreshCw, Minus, Plus, Camera
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { sendClosingNotification } from '@/app/actions/notifications';
+import { uploadCashClosingPhotoAction } from '@/app/actions/cash-closing-photos';
 
 // export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
 export const BILLS = [100, 50, 20, 10, 5];
@@ -58,6 +59,101 @@ const CURRENCY_IMAGES: Record<number, string> = {
 };
 
 type ClosingStep = 'tpv_data' | 'count' | 'summary';
+
+function ClosingPhotoSlot({
+    label,
+    previewUrl,
+    inputId,
+    onSelect,
+    onClear,
+    hasPhoto,
+}: {
+    label: string;
+    previewUrl: string | null;
+    inputId: string;
+    onSelect: (file: File) => void;
+    onClear: () => void;
+    hasPhoto: boolean;
+}) {
+    return <MotionlessPhotoSlotInner label={label} previewUrl={previewUrl} inputId={inputId} onSelect={onSelect} onClear={onClear} hasPhoto={hasPhoto} />;
+}
+
+function MotionlessPhotoSlotInner({
+    label,
+    previewUrl,
+    inputId,
+    onSelect,
+    onClear,
+    hasPhoto,
+}: {
+    label: string;
+    previewUrl: string | null;
+    inputId: string;
+    onSelect: (file: File) => void;
+    onClear: () => void;
+    hasPhoto: boolean;
+}) {
+    return (
+        <div className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">{label}</p>
+            {previewUrl ? (
+                <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={previewUrl} alt={label} className="w-full h-28 object-contain rounded-lg bg-zinc-50 border border-zinc-100 mb-2" />
+                </>
+            ) : null}
+            <PhotoSlotActions inputId={inputId} onSelect={onSelect} onClear={onClear} hasPhoto={hasPhoto} />
+        </div>
+    );
+}
+
+function PhotoSlotActions({
+    inputId,
+    onSelect,
+    onClear,
+    hasPhoto,
+}: {
+    inputId: string;
+    onSelect: (file: File) => void;
+    onClear: () => void;
+    hasPhoto: boolean;
+}) {
+    return (
+        <div className="flex gap-2 shrink-0">
+            <label
+                htmlFor={inputId}
+                className={cn(
+                    'flex-1 min-h-[48px] flex items-center justify-center gap-2 rounded-xl px-3 text-[10px] font-black uppercase tracking-widest text-[#36606F] cursor-pointer',
+                    hasPhoto ? 'border border-zinc-200 bg-white hover:bg-zinc-50' : 'border border-dashed border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
+                )}
+            >
+                <Camera size={16} />
+                {hasPhoto ? 'Cambiar' : 'Hacer foto'}
+                <input
+                    id={inputId}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                        const next = e.target.files?.[0];
+                        if (next) onSelect(next);
+                        e.target.value = '';
+                    }}
+                />
+            </label>
+            {hasPhoto ? (
+                <button
+                    type="button"
+                    onClick={onClear}
+                    className="min-h-[48px] min-w-[48px] shrink-0 rounded-xl border border-rose-200 bg-rose-50 px-3 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-100"
+                >
+                    Quitar
+                </button>
+            ) : null}
+        </div>
+    );
+}
 
 interface CashClosingModalProps {
     isOpen: boolean;
@@ -102,6 +198,52 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const datePickerRef = useRef<HTMLInputElement>(null);
     const isInitialized = useRef(false);
     const lastDate = useRef<string | null>(null);
+
+    // 5. STATE: CLOSING PHOTOS (no se persisten en localStorage draft)
+    const [dataphonePhotoFile, setDataphonePhotoFile] = useState<File | null>(null);
+    const [bdpTicketPhotoFile, setBdpTicketPhotoFile] = useState<File | null>(null);
+    const [dataphonePreviewUrl, setDataphonePreviewUrl] = useState<string | null>(null);
+    const [bdpTicketPreviewUrl, setBdpTicketPreviewUrl] = useState<string | null>(null);
+
+    const revokePreviewUrl = (url: string | null) => {
+        if (url) URL.revokeObjectURL(url);
+    };
+
+    const setDataphonePhoto = (file: File | null) => {
+        setDataphonePreviewUrl((prev) => {
+            revokePreviewUrl(prev);
+            return file ? URL.createObjectURL(file) : null;
+        });
+        setDataphonePhotoFile(file);
+    };
+
+    const setBdpTicketPhoto = (file: File | null) => {
+        setBdpTicketPreviewUrl((prev) => {
+            revokePreviewUrl(prev);
+            return file ? URL.createObjectURL(file) : null;
+        });
+        setBdpTicketPhotoFile(file);
+    };
+
+    const resetClosingPhotos = () => {
+        setDataphonePhoto(null);
+        setBdpTicketPhoto(null);
+    };
+
+    const photosReady = Boolean(dataphonePhotoFile && bdpTicketPhotoFile);
+
+    useEffect(() => {
+        return () => {
+            revokePreviewUrl(dataphonePreviewUrl);
+            revokePreviewUrl(bdpTicketPreviewUrl);
+        };
+    }, [dataphonePreviewUrl, bdpTicketPreviewUrl]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            resetClosingPhotos();
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -229,11 +371,55 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }));
     };
 
+    const ensurePhotosAttached = () => {
+        if (!dataphonePhotoFile) {
+            toast.error('Adjunta la foto de totales de datáfonos');
+            return false;
+        }
+        if (!bdpTicketPhotoFile) {
+            toast.error('Adjunta la foto del ticket de cierre BDP');
+            return false;
+        }
+        return true;
+    };
+
+    const handleAdvanceStep = () => {
+        if (step === 'tpv_data') {
+            if (!ensurePhotosAttached()) return;
+            setStep('count');
+            return;
+        }
+        if (step === 'count') {
+            setStep('summary');
+            return;
+        }
+        void handleFinalizeClose();
+    };
+
     const handleFinalizeClose = async () => {
+        if (!ensurePhotosAttached()) return;
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             const chosenDate = parseDateTimeLocal(selectedDateTime);
+            const closingDateStr = format(chosenDate, "yyyy-MM-dd");
+            const closingBatchId = crypto.randomUUID();
+
+            const uploadOne = async (file: File, kind: 'dataphone' | 'bdp-ticket') => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('closing_date', closingDateStr);
+                formData.append('closing_id', closingBatchId);
+                formData.append('kind', kind);
+                const result = await uploadCashClosingPhotoAction(formData);
+                if (!result.success) throw new Error(result.error);
+                return result.path;
+            };
+
+            const [dataphonePath, bdpTicketPath] = await Promise.all([
+                uploadOne(dataphonePhotoFile!, 'dataphone'),
+                uploadOne(bdpTicketPhotoFile!, 'bdp-ticket'),
+            ]);
 
             // Format movement name for treasury: "Cierre Sab 14 Feb"
             const movementName = `Cierre ${format(chosenDate, "EEE d MMM", { locale: es })}`;
@@ -272,7 +458,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     tickets_count: tpvData.ticketsCount,
                     notes: movementName, // This will be the name in treasury log
                     status: 'closed',
-                    breakdown: breakdownJson
+                    breakdown: breakdownJson,
+                    dataphone_totals_photo_path: dataphonePath,
+                    bdp_closing_ticket_photo_path: bdpTicketPath,
                 })
                 .select()
                 .single();
@@ -286,9 +474,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
             // Enviar notificación a los managers
             const avgTicket = tpvData.ticketsCount > 0 ? (totalSalesGross / tpvData.ticketsCount) : 0;
-            const closingDateStr = format(chosenDate, "EEEE dd/MM", { locale: es });
+            const closingNotifyDateStr = format(chosenDate, "EEEE dd/MM", { locale: es });
             sendClosingNotification({
-                dateStr: closingDateStr,
+                dateStr: closingNotifyDateStr,
                 totalSales: totalSalesGross,
                 netSales: netSalesCalculated,
                 avgTicket: avgTicket
@@ -305,6 +493,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 debtRecovered: 0, ticketsCount: 0, weather: 'Soleado'
             });
             setCounts({});
+            resetClosingPhotos();
             setStep('tpv_data');
 
             onClose();
@@ -483,6 +672,28 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentación obligatoria</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <ClosingPhotoSlot
+                                        label="Totales datáfonos"
+                                        previewUrl={dataphonePreviewUrl}
+                                        inputId="closing-photo-dataphone"
+                                        hasPhoto={Boolean(dataphonePhotoFile)}
+                                        onSelect={setDataphonePhoto}
+                                        onClear={() => setDataphonePhoto(null)}
+                                    />
+                                    <ClosingPhotoSlot
+                                        label="Ticket cierre BDP"
+                                        previewUrl={bdpTicketPreviewUrl}
+                                        inputId="closing-photo-bdp-ticket"
+                                        hasPhoto={Boolean(bdpTicketPhotoFile)}
+                                        onSelect={setBdpTicketPhoto}
+                                        onClear={() => setBdpTicketPhoto(null)}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -576,6 +787,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 </span>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-3">
+                                {dataphonePreviewUrl ? (
+                                    <div className="rounded-xl border border-zinc-100 overflow-hidden">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Datáfonos</p>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={dataphonePreviewUrl} alt="Totales datáfonos" className="w-full h-24 object-contain bg-white" />
+                                    </div>
+                                ) : null}
+                                {bdpTicketPreviewUrl ? (
+                                    <div className="rounded-xl border border-zinc-100 overflow-hidden">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Ticket BDP</p>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={bdpTicketPreviewUrl} alt="Ticket cierre BDP" className="w-full h-24 object-contain bg-white" />
+                                    </div>
+                                ) : null}
+                            </div>
 
                         </div>
                     )}
@@ -592,12 +819,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                         </button>
                     )}
                     <button
-                        onClick={() => {
-                            if (step === 'tpv_data') setStep('count');
-                            else if (step === 'count') setStep('summary');
-                            else handleFinalizeClose();
-                        }}
-                        disabled={loading}
+                        onClick={handleAdvanceStep}
+                        disabled={loading || (step === 'summary' && !photosReady)}
                         className={cn(
                             "flex-1 min-h-[48px] h-14 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
                             step === 'summary' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-[#5B8FB9] shadow-blue-900/20'

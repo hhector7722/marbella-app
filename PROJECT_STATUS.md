@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-24 (Albaranes: líneas portes/ajuste excluidas del mapeo)
+**Última actualización:** 2026-05-24 (Cierres de caja: fotos datáfonos + ticket BDP)
+
+- [x] **Cierres de caja: fotos obligatorias datáfonos + ticket BDP (2026-05-24)**: Columnas `cash_closings.dataphone_totals_photo_path` y `bdp_closing_ticket_photo_path` (rutas en bucket privado `cash_closings`). Migración [`20260524180000_cash_closing_photos.sql`](supabase/migrations/20260524180000_cash_closing_photos.sql). **Cierre**: [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx) exige ambas fotos en paso 1, preview en resumen, subida vía [`uploadCashClosingPhotoAction`](src/app/actions/cash-closing-photos.ts) antes del INSERT. **Historial**: [`history/page.tsx`](src/app/dashboard/history/page.tsx) muestra thumbnails + lightbox con URLs firmadas; al borrar cierre se eliminan objetos del Storage.
 
 - [x] **Albaranes: portes / sin cargo / ajustes sin ingrediente (2026-05-24)**: Nuevo estado `purchase_invoice_lines.status = 'excluded'` para líneas que no van a almacén (portes, sin cargo, ajustes). Cuentan como **resueltas** en el tick verde del albarán sin `mapped_ingredient_id` ni PURCHASE. UI: botón **Portes / ajuste / sin cargo** en [`LineEditModal.tsx`](src/components/albaranes/LineEditModal.tsx); icono gris en lista; **Volver a mapear** restaura a `pending`. Server action [`excludeInvoiceLineFromMappingAction`](src/app/dashboard/albaranes/actions.ts). Helpers [`albaranes-line-status.ts`](src/lib/albaranes-line-status.ts). Migración [`20260524120000_purchase_invoice_lines_excluded_status.sql`](supabase/migrations/20260524120000_purchase_invoice_lines_excluded_status.sql) (comentario + RPC auto-mapeo ignora excluidas).
 

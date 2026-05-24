@@ -247,6 +247,7 @@ export type Database = {
       }
       cash_closings: {
         Row: {
+          bdp_closing_ticket_photo_path: string | null
           breakdown: Json | null
           card_payments: number | null
           cash_counted: number | null
@@ -258,6 +259,7 @@ export type Database = {
           closing_date: string
           collections: number | null
           created_at: string | null
+          dataphone_totals_photo_path: string | null
           debt_recovered: number | null
           difference: number | null
           id: string
@@ -277,6 +279,7 @@ export type Database = {
           weather: string | null
         }
         Insert: {
+          bdp_closing_ticket_photo_path?: string | null
           breakdown?: Json | null
           card_payments?: number | null
           cash_counted?: number | null
@@ -288,6 +291,7 @@ export type Database = {
           closing_date: string
           collections?: number | null
           created_at?: string | null
+          dataphone_totals_photo_path?: string | null
           debt_recovered?: number | null
           difference?: number | null
           id?: string
@@ -307,6 +311,7 @@ export type Database = {
           weather?: string | null
         }
         Update: {
+          bdp_closing_ticket_photo_path?: string | null
           breakdown?: Json | null
           card_payments?: number | null
           cash_counted?: number | null
@@ -318,6 +323,7 @@ export type Database = {
           closing_date?: string
           collections?: number | null
           created_at?: string | null
+          dataphone_totals_photo_path?: string | null
           debt_recovered?: number | null
           difference?: number | null
           id?: string
@@ -2592,6 +2598,7 @@ export type Database = {
         Row: {
           amount: number | null
           box_id: string | null
+          bdp_closing_ticket_photo_path: string | null
           breakdown: Json | null
           closing_id: string | null
           created_at: string | null
