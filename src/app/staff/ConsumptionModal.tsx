@@ -164,18 +164,11 @@ export function ConsumptionModal({
     [recipes],
   );
 
-  const quickIds = useMemo(() => new Set(quickRecipes.map((r) => r.id)), [quickRecipes]);
-
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
-    return recipes.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) &&
-        !quickIds.has(r.id) &&
-        !isExcludedFromQuick(r),
-    );
-  }, [search, recipes, quickIds]);
+    return recipes.filter((r) => r.name.toLowerCase().includes(q));
+  }, [search, recipes]);
 
   const gridRecipes = search.trim() ? searchResults : quickRecipes;
 
