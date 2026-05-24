@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     X, Save, Banknote, Coins, Calendar,
@@ -60,97 +60,113 @@ const CURRENCY_IMAGES: Record<number, string> = {
 
 type ClosingStep = 'tpv_data' | 'count' | 'summary';
 
-function ClosingPhotoSlot({
-    label,
+function ClosingInlinePhotoControl({
     previewUrl,
     inputId,
     onSelect,
     onClear,
-    hasPhoto,
+    ariaLabel,
 }: {
-    label: string;
     previewUrl: string | null;
     inputId: string;
     onSelect: (file: File) => void;
     onClear: () => void;
-    hasPhoto: boolean;
+    ariaLabel: string;
 }) {
-    return <MotionlessPhotoSlotInner label={label} previewUrl={previewUrl} inputId={inputId} onSelect={onSelect} onClear={onClear} hasPhoto={hasPhoto} />;
-}
-
-function MotionlessPhotoSlotInner({
-    label,
-    previewUrl,
-    inputId,
-    onSelect,
-    onClear,
-    hasPhoto,
-}: {
-    label: string;
-    previewUrl: string | null;
-    inputId: string;
-    onSelect: (file: File) => void;
-    onClear: () => void;
-    hasPhoto: boolean;
-}) {
-    return (
-        <div className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">{label}</p>
-            {previewUrl ? (
-                <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={previewUrl} alt={label} className="w-full h-28 object-contain rounded-lg bg-zinc-50 border border-zinc-100 mb-2" />
-                </>
-            ) : null}
-            <PhotoSlotActions inputId={inputId} onSelect={onSelect} onClear={onClear} hasPhoto={hasPhoto} />
-        </div>
-    );
-}
-
-function PhotoSlotActions({
-    inputId,
-    onSelect,
-    onClear,
-    hasPhoto,
-}: {
-    inputId: string;
-    onSelect: (file: File) => void;
-    onClear: () => void;
-    hasPhoto: boolean;
-}) {
-    return (
-        <div className="flex gap-2 shrink-0">
-            <label
-                htmlFor={inputId}
-                className={cn(
-                    'flex-1 min-h-[48px] flex items-center justify-center gap-2 rounded-xl px-3 text-[10px] font-black uppercase tracking-widest text-[#36606F] cursor-pointer',
-                    hasPhoto ? 'border border-zinc-200 bg-white hover:bg-zinc-50' : 'border border-dashed border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
-                )}
-            >
-                <Camera size={16} />
-                {hasPhoto ? 'Cambiar' : 'Hacer foto'}
-                <input
-                    id={inputId}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => {
-                        const next = e.target.files?.[0];
-                        if (next) onSelect(next);
-                        e.target.value = '';
-                    }}
+    if (previewUrl) {
+        return (
+            <div className="relative shrink-0 h-14 w-14">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src={previewUrl}
+                    alt={ariaLabel}
+                    className="h-14 w-14 object-cover rounded-xl"
                 />
-            </label>
-            {hasPhoto ? (
                 <button
                     type="button"
                     onClick={onClear}
-                    className="min-h-[48px] min-w-[48px] shrink-0 rounded-xl border border-rose-200 bg-rose-50 px-3 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-100"
+                    className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm hover:bg-rose-600 active:scale-95 transition-all min-h-[20px] min-w-[20px]"
+                    aria-label={`Eliminar ${ariaLabel}`}
                 >
-                    Quitar
+                    <X size={12} strokeWidth={3} />
                 </button>
-            ) : null}
+            </div>
+        );
+    }
+
+    return (
+        <label
+            htmlFor={inputId}
+            className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-dashed border-zinc-200 text-[#36606F] transition-all hover:bg-zinc-50 active:scale-95 min-h-[48px] min-w-[48px]"
+            aria-label={ariaLabel}
+            title="Añadir foto"
+        >
+            <Camera size={20} />
+            <input
+                id={inputId}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                    const next = e.target.files?.[0];
+                    if (next) onSelect(next);
+                    e.target.value = '';
+                }}
+            />
+        </label>
+    );
+}
+
+function TpvNumericField({
+    label,
+    icon: Icon,
+    value,
+    onChange,
+    onAdjust,
+    parseValue,
+    trailing,
+}: {
+    label: string;
+    icon: ComponentType<{ size?: number }>;
+    value: number;
+    onChange: (next: number) => void;
+    onAdjust: (delta: number) => void;
+    parseValue?: (raw: string) => number;
+    trailing?: ReactNode;
+}) {
+    const parse = parseValue ?? ((raw: string) => parseFloat(raw) || 0);
+
+    return (
+        <div>
+            <label className="mb-1 flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+                <Icon size={12} /> {label}
+            </label>
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 flex-1 items-center justify-between overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
+                    <button
+                        type="button"
+                        onClick={() => onAdjust(-1)}
+                        className="flex h-full w-8 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
+                    >
+                        <Minus size={14} strokeWidth={3} />
+                    </button>
+                    <input
+                        type="number"
+                        className="h-full w-0 flex-1 bg-transparent p-0 text-center text-[10px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
+                        value={value || ''}
+                        onChange={(e) => onChange(parse(e.target.value))}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => onAdjust(1)}
+                        className="flex h-full w-8 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
+                    >
+                        <Plus size={14} strokeWidth={3} />
+                    </button>
+                </div>
+                {trailing}
+            </div>
         </div>
     );
 }
@@ -373,11 +389,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     const ensurePhotosAttached = () => {
         if (!dataphonePhotoFile) {
-            toast.error('Adjunta la foto de totales de datáfonos');
+            toast.error('Adjunta la foto de totales del datáfono en la fila Tarjeta');
             return false;
         }
         if (!bdpTicketPhotoFile) {
-            toast.error('Adjunta la foto del ticket de cierre BDP');
+            toast.error('Adjunta la foto del software de ventas en la fila Ventas');
             return false;
         }
         return true;
@@ -573,9 +589,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
                         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                            <div className="p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-100 transition-all">
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas</label>
-                                <div className="flex items-center gap-4">
+                            <div>
+                                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">Ventas</label>
+                                <div className="flex items-center gap-3">
                                     <div className="flex-1 flex items-center justify-between h-14 bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
                                         <button
                                             type="button"
@@ -604,16 +620,24 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                         </button>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={() => fetchTodayVentas()}
-                                        className="p-3 hover:bg-white/80 rounded-2xl transition-all active:scale-95 text-[#36606F]/60 hover:text-[#36606F] shadow-sm bg-white"
+                                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-[#36606F]/60 shadow-sm transition-all hover:text-[#36606F] active:scale-95 min-h-[48px] min-w-[48px]"
                                         title="Sincronizar con TPV"
                                     >
                                         <RefreshCw size={24} className={cn(loading && "animate-spin")} />
                                     </button>
+                                    <ClosingInlinePhotoControl
+                                        previewUrl={bdpTicketPreviewUrl}
+                                        inputId="closing-photo-bdp-ticket"
+                                        ariaLabel="Totales software de ventas"
+                                        onSelect={setBdpTicketPhoto}
+                                        onClear={() => setBdpTicketPhoto(null)}
+                                    />
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between">
+                            <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <CloudSun className="text-blue-500" size={20} />
                                     <span className="text-[10px] font-black text-blue-900 uppercase">Clima</span>
@@ -629,70 +653,45 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 sm:gap-6 bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><CreditCard size={12} /> Tarjeta</label>
-                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
-                                            <button onClick={() => handleAdjustTpv('cardSales', -1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 w-0 h-full p-0 text-[10px] tracking-tighter tabular-nums font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
-                                                value={tpvData.cardSales || ''} onChange={e => setTpvData({ ...tpvData, cardSales: parseFloat(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('cardSales', 1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><UserMinus size={12} /> Pendiente</label>
-                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
-                                            <button onClick={() => handleAdjustTpv('pendingSales', -1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 w-0 h-full p-0 text-[10px] tracking-tighter tabular-nums font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
-                                                value={tpvData.pendingSales || ''} onChange={e => setTpvData({ ...tpvData, pendingSales: parseFloat(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('pendingSales', 1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><ArchiveRestore size={12} /> Cobros</label>
-                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
-                                            <button onClick={() => handleAdjustTpv('debtRecovered', -1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 w-0 h-full p-0 text-[10px] tracking-tighter tabular-nums font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
-                                                value={tpvData.debtRecovered || ''} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('debtRecovered', 1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><Receipt size={12} /> Nº Tickets</label>
-                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
-                                            <button onClick={() => handleAdjustTpv('ticketsCount', -1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 w-0 h-full p-0 text-[10px] tracking-tighter tabular-nums font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
-                                                value={tpvData.ticketsCount || ''} onChange={e => setTpvData({ ...tpvData, ticketsCount: parseInt(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('ticketsCount', 1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentación obligatoria</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <ClosingPhotoSlot
-                                        label="Totales datáfonos"
-                                        previewUrl={dataphonePreviewUrl}
-                                        inputId="closing-photo-dataphone"
-                                        hasPhoto={Boolean(dataphonePhotoFile)}
-                                        onSelect={setDataphonePhoto}
-                                        onClear={() => setDataphonePhoto(null)}
-                                    />
-                                    <ClosingPhotoSlot
-                                        label="Ticket cierre BDP"
-                                        previewUrl={bdpTicketPreviewUrl}
-                                        inputId="closing-photo-bdp-ticket"
-                                        hasPhoto={Boolean(bdpTicketPhotoFile)}
-                                        onSelect={setBdpTicketPhoto}
-                                        onClear={() => setBdpTicketPhoto(null)}
-                                    />
-                                </div>
+                            <div className="space-y-4">
+                                <TpvNumericField
+                                    label="Tarjeta"
+                                    icon={CreditCard}
+                                    value={tpvData.cardSales}
+                                    onChange={(next) => setTpvData({ ...tpvData, cardSales: next })}
+                                    onAdjust={(delta) => handleAdjustTpv('cardSales', delta)}
+                                    trailing={
+                                        <ClosingInlinePhotoControl
+                                            previewUrl={dataphonePreviewUrl}
+                                            inputId="closing-photo-dataphone"
+                                            ariaLabel="Totales datáfonos"
+                                            onSelect={setDataphonePhoto}
+                                            onClear={() => setDataphonePhoto(null)}
+                                        />
+                                    }
+                                />
+                                <TpvNumericField
+                                    label="Cobros"
+                                    icon={ArchiveRestore}
+                                    value={tpvData.debtRecovered}
+                                    onChange={(next) => setTpvData({ ...tpvData, debtRecovered: next })}
+                                    onAdjust={(delta) => handleAdjustTpv('debtRecovered', delta)}
+                                />
+                                <TpvNumericField
+                                    label="Pendiente"
+                                    icon={UserMinus}
+                                    value={tpvData.pendingSales}
+                                    onChange={(next) => setTpvData({ ...tpvData, pendingSales: next })}
+                                    onAdjust={(delta) => handleAdjustTpv('pendingSales', delta)}
+                                />
+                                <TpvNumericField
+                                    label="Nº Tickets"
+                                    icon={Receipt}
+                                    value={tpvData.ticketsCount}
+                                    onChange={(next) => setTpvData({ ...tpvData, ticketsCount: next })}
+                                    onAdjust={(delta) => handleAdjustTpv('ticketsCount', delta)}
+                                    parseValue={(raw) => parseInt(raw, 10) || 0}
+                                />
                             </div>
                         </div>
                     )}
@@ -792,14 +791,14 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     <div className="rounded-xl border border-zinc-100 overflow-hidden">
                                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Datáfonos</p>
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={dataphonePreviewUrl} alt="Totales datáfonos" className="w-full h-24 object-contain bg-white" />
+                                        <img src={dataphonePreviewUrl} alt="Totales datáfonos" className="w-full h-24 object-cover rounded-xl" />
                                     </div>
                                 ) : null}
                                 {bdpTicketPreviewUrl ? (
                                     <div className="rounded-xl border border-zinc-100 overflow-hidden">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Ticket BDP</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Software ventas</p>
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={bdpTicketPreviewUrl} alt="Ticket cierre BDP" className="w-full h-24 object-contain bg-white" />
+                                        <img src={bdpTicketPreviewUrl} alt="Totales software de ventas" className="w-full h-24 object-cover rounded-xl" />
                                     </div>
                                 ) : null}
                             </div>
