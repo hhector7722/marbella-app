@@ -19,6 +19,8 @@ import {
 } from '@/lib/cash-closing-weather';
 import {
     ClosingStepRow,
+    ClosingSummaryRow,
+    ClosingReadonlyValue,
     ClosingPetrolInput,
     ClosingPetrolInputWithAdjust,
     ClosingWeatherPicker,
@@ -674,23 +676,30 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
                     {/* STEP 3: SUMMARY */}
                     {step === 'summary' && (
-                        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-4 duration-300">
-                            <div className="grid grid-cols-2 gap-6 sm:gap-8 py-6 sm:py-8 border-y border-gray-50">
-                                <div className="flex flex-col items-center justify-center text-center col-span-2">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Efectivo Contado (Total Retirado)</span>
-                                    <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted > 0.005 ? `${totalCounted.toFixed(2)}€` : " "}</span>
-                                </div>
-                            </div>
+                        <div className="space-y-5 p-4 sm:p-6 animate-in slide-in-from-bottom-4 duration-300">
+                            <ClosingSummaryRow title="Ventas">
+                                <ClosingReadonlyValue value={tpvData.totalSales} showEuro />
+                            </ClosingSummaryRow>
 
-                            <div className="flex flex-col items-center justify-center pt-4 border-t border-gray-50/50">
-                                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Descuadre</span>
-                                <span className={cn(
-                                    "text-xl font-black",
-                                    difference === 0 ? "text-emerald-500" : "text-rose-500"
-                                )}>
-                                    {Math.abs(difference) < 0.005 ? " " : `${difference > 0 ? '+' : ''}${difference.toFixed(2)}€`}
-                                </span>
-                            </div>
+                            <ClosingSummaryRow title="Tarjeta">
+                                <ClosingReadonlyValue value={tpvData.cardSales} showEuro />
+                            </ClosingSummaryRow>
+
+                            <ClosingSummaryRow title="Cobros">
+                                <ClosingReadonlyValue value={tpvData.debtRecovered} showEuro />
+                            </ClosingSummaryRow>
+
+                            <ClosingSummaryRow title="Pendiente">
+                                <ClosingReadonlyValue value={tpvData.pendingSales} showEuro />
+                            </ClosingSummaryRow>
+
+                            <ClosingSummaryRow title="Efectivo">
+                                <ClosingReadonlyValue value={totalCounted} showEuro />
+                            </ClosingSummaryRow>
+
+                            <ClosingSummaryRow title="Descuadre">
+                                <ClosingReadonlyValue value={difference} variant="difference" />
+                            </ClosingSummaryRow>
                         </div>
                     )}
                 </div>

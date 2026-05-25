@@ -9,11 +9,19 @@ import {
   type ClosingWeatherId,
 } from '@/lib/cash-closing-weather';
 
-/** Ancho fijo de cajas numéricas; alineadas al inicio de la columna (referencia: fila Ventas) */
+/** Ancho fijo de cajas numéricas */
 export const CLOSING_FIELD_COL =
   'w-[8.75rem] sm:w-[9.5rem]';
 
 const CLOSING_INPUT_HEIGHT = 'h-9';
+
+const CLOSING_ROW_TITLE =
+  'text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs';
+
+function formatMoneyAmount(value: number): string {
+  if (Math.abs(value) < 0.005) return ' ';
+  return value.toFixed(2);
+}
 
 export function ClosingStepRow({
   title,
@@ -25,14 +33,83 @@ export function ClosingStepRow({
   trailing?: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[4.5rem_1fr_auto] items-center gap-x-2 sm:grid-cols-[5.25rem_1fr_auto] sm:gap-x-3">
-      <span className="text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs">
-        {title}
-      </span>
-      <div className="flex min-w-0 justify-start">
+    <div className="grid min-h-[40px] grid-cols-[4.5rem_1fr] items-center gap-x-2 sm:grid-cols-[5.25rem_1fr] sm:gap-x-3">
+      <span className={CLOSING_ROW_TITLE}>{title}</span>
+      <div className="flex min-w-0 justify-center">
+        <div className="inline-flex items-center gap-1.5 sm:gap-2">
+          <div className={CLOSING_FIELD_COL}>{children}</div>
+          {trailing ?? null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Paso 3: misma fila que paso 1, valor centrado y solo lectura */
+export function ClosingSummaryRow({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid min-h-[40px] grid-cols-[4.5rem_1fr] items-center gap-x-2 sm:grid-cols-[5.25rem_1fr] sm:gap-x-3">
+      <span className={CLOSING_ROW_TITLE}>{title}</span>
+      <div className="flex min-w-0 justify-center">
         <div className={CLOSING_FIELD_COL}>{children}</div>
       </div>
-      <div className="flex shrink-0 justify-end">{trailing ?? null}</div>
+    </div>
+  );
+}
+
+export function ClosingReadonlyValue({
+  value,
+  showEuro = false,
+  variant = 'money',
+  valueClassName,
+}: {
+  value: number;
+  showEuro?: boolean;
+  variant?: 'money' | 'difference';
+  valueClassName?: string;
+}) {
+  const hasValue = Math.abs(value) >= 0.005;
+  let text = ' ';
+  if (variant === 'difference' && hasValue) {
+    text = `${value > 0 ? '+' : ''}${value.toFixed(2)}`;
+  } else if (variant === 'money' && hasValue) {
+    text = formatMoneyAmount(value);
+  }
+
+  return (
+    <div
+      className={cn(
+        CLOSING_INPUT_HEIGHT,
+        'flex w-full items-center justify-center px-2',
+      )}
+    >
+      <div className="inline-flex max-w-full items-center justify-center gap-0.5">
+        <span
+          className={cn(
+            'text-center text-sm font-black tabular-nums',
+            variant === 'difference' && hasValue
+              ? value > 0
+                ? 'text-emerald-500'
+                : 'text-rose-500'
+              : 'text-zinc-800',
+            valueClassName,
+          )}
+        >
+          {text}
+        </span>
+        {showEuro && hasValue && variant === 'money' ? (
+          <span className="shrink-0 text-sm font-black text-zinc-600">€</span>
+        ) : null}
+        {variant === 'difference' && hasValue ? (
+          <span className="shrink-0 text-sm font-black text-zinc-600">€</span>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -134,7 +211,7 @@ export function ClosingWeatherPicker({
   onSelect: (id: ClosingWeatherId) => void;
 }) {
   return (
-    <div className="grid w-full grid-cols-7 items-center gap-0">
+    <div className="flex w-full items-center justify-between gap-0 px-0">
       {CLOSING_WEATHER_OPTIONS.map((option) => {
         const selected = selectedId === option.id;
         return (
@@ -145,16 +222,16 @@ export function ClosingWeatherPicker({
             aria-label={option.label}
             aria-pressed={selected}
             className={cn(
-              'mx-auto flex h-7 w-7 items-center justify-center rounded-full p-0 transition-transform active:scale-95 sm:h-8 sm:w-8',
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0 transition-transform active:scale-95 sm:h-11 sm:w-11',
               selected && 'ring-2 ring-[#36606F] ring-offset-1',
             )}
           >
             <Image
               src={option.icon}
               alt=""
-              width={24}
-              height={24}
-              className="h-5 w-5 object-contain sm:h-6 sm:w-6"
+              width={36}
+              height={36}
+              className="h-8 w-8 object-contain sm:h-9 sm:w-9"
             />
           </button>
         );
