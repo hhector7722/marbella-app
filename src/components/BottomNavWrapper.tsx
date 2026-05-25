@@ -2,15 +2,14 @@
 
 import { usePathname } from 'next/navigation';
 import BottomNavStaff from './BottomNavStaff';
+import { useNavigationFeedbackOptional } from '@/lib/navigation/navigation-context';
+import { shouldShowAppChrome } from '@/lib/app-chrome';
 
 export default function BottomNavWrapper() {
     const pathname = usePathname();
+    const { isLoading } = useNavigationFeedbackOptional();
 
-    if (pathname === '/login') return null;
-    if (pathname === '/carta') return null;
-    if (pathname === '/staff/carta') return null;
-    if (pathname === '/dashboard/carta') return null;
+    if (!shouldShowAppChrome(pathname, isLoading)) return null;
 
-    // Usamos el menú de Staff para todos (Staff y Admin)
     return <BottomNavStaff />;
 }

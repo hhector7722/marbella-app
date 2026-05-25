@@ -8,10 +8,13 @@ import { MessageSquare, ChevronLeft } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
+import { useNavigationFeedbackOptional } from '@/lib/navigation/navigation-context';
+import { shouldShowAppChrome } from '@/lib/app-chrome';
 
 export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
+    const { isLoading, notifyNavigationStart } = useNavigationFeedbackOptional();
     const supabase = createClient();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
 
@@ -53,10 +56,7 @@ export default function Navbar() {
         return () => subscription.unsubscribe();
     }, [supabase]);
 
-    if (pathname === '/login') return null;
-    if (pathname === '/carta') return null;
-    if (pathname === '/staff/carta') return null;
-    if (pathname === '/dashboard/carta') return null;
+    if (!shouldShowAppChrome(pathname, isLoading)) return null;
 
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
@@ -75,6 +75,7 @@ export default function Navbar() {
                         {!isDashboard && (
                             <button
                                 onClick={() => {
+                                    notifyNavigationStart();
                                     router.push(homePath);
                                 }}
                                 className={cn(
@@ -99,7 +100,10 @@ export default function Navbar() {
                     <div className="flex items-center gap-2 md:gap-3">
                         {userData?.role === 'manager' && (
                             <button
-                                onClick={() => router.push(isAdminMode ? '/staff/dashboard' : '/dashboard')}
+                                onClick={() => {
+                                    notifyNavigationStart();
+                                    router.push(isAdminMode ? '/staff/dashboard' : '/dashboard');
+                                }}
                                 className={`relative w-16 h-7 flex items-center rounded-full transition-all duration-300 shadow-inner border-2 border-white/30 p-1 ${isAdminMode ? 'bg-[#FF9800]' : 'bg-[#4CAF50]'
                                     }`}
                                 aria-label={isAdminMode ? 'Cambiar a vista Staff' : 'Cambiar a vista Admin'}
