@@ -694,6 +694,12 @@ function RecipeDetailContent() {
         router.push('/recipes');
     };
 
+    const closeAddIngredientModal = () => {
+        setShowIngredientModal(false);
+        setForceAddIngredientUnit(false);
+        setSearchTerm('');
+    };
+
     const handleAddIngredient = async (ingredientId: string, unit: string) => {
         await supabase.from('recipe_ingredients').insert({
             recipe_id: recipeId,
@@ -704,8 +710,7 @@ function RecipeDetailContent() {
         });
         await fetchRecipe();
         fetchBackendCost();
-        setShowIngredientModal(false);
-        setForceAddIngredientUnit(false);
+        closeAddIngredientModal();
     };
 
     const handleDeleteIngredient = async (id: string) => {
@@ -1540,9 +1545,9 @@ function RecipeDetailContent() {
 
             {/* MODALES */}
             {showIngredientModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { setShowIngredientModal(false); setForceAddIngredientUnit(false); }}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeAddIngredientModal}>
                     <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button type="button" onClick={() => { setShowIngredientModal(false); setForceAddIngredientUnit(false); }}><X size={16} /></button></div>
+                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button type="button" onClick={closeAddIngredientModal}><X size={16} /></button></div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs font-bold text-gray-500 shrink-0">Forzar unidad:</span>
                             <select
