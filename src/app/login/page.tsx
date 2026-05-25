@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Image from 'next/image';

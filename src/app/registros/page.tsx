@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**

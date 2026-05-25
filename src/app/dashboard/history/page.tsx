@@ -23,7 +23,7 @@ import {
     Eye,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';

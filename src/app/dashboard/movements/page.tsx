@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import {
     ArrowDownLeft,
     ArrowUpRight,
