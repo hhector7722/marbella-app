@@ -633,7 +633,7 @@ export default function StaffDashboard() {
                 />
             )}
             {showModal && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
                     onClick={() => setShowModal(false)}
                 >
@@ -653,6 +653,7 @@ export default function StaffDashboard() {
             {/* Overlay vídeo solo tras confirmar fichaje (marbellaremote@gmail.com); se cierra al terminar el vídeo */}
             {showGiffOverlay && (
                 <div
+                    data-marbella-modal-root
                     role="dialog"
                     aria-label="Fichaje registrado"
                     className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none"
@@ -674,7 +675,7 @@ export default function StaffDashboard() {
             )}
 
             {activeMenu && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
                     onClick={closeMenus}
                 >

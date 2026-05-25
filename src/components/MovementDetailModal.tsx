@@ -109,6 +109,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         if (!canEdit) {
             return (
                 <div
+                    data-marbella-modal-root
                     className={backdropClass}
                     onClick={handleBackdropClick}
                     role="presentation"
@@ -139,7 +140,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         }
 
         return (
-            <div className={backdropClass} onClick={handleBackdropClick} role="presentation">
+            <div data-marbella-modal-root className={backdropClass} onClick={handleBackdropClick} role="presentation">
                 <div
                     className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
                     onClick={e => e.stopPropagation()}
@@ -207,6 +208,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
 
     return (
         <div
+            data-marbella-modal-root
             className={backdropClass}
             onClick={handleBackdropClick}
             role="presentation"

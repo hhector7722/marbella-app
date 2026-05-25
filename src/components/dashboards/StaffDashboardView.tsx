@@ -954,7 +954,7 @@ export default function StaffDashboardView() {
                 />
             )}
             {showModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
                     <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -967,6 +967,7 @@ export default function StaffDashboardView() {
 
             {showGiffOverlay && (
                 <div
+                    data-marbella-modal-root
                     role="dialog"
                     aria-label="Fichaje registrado"
                     className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none"
@@ -989,7 +990,7 @@ export default function StaffDashboardView() {
 
             {
                 activeMenu && (
-                    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
+                    <div data-marbella-modal-root className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
                         <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
                             {/* Header Petrol - Estilo Modal Marbella */}
                             <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
@@ -1139,7 +1140,7 @@ export default function StaffDashboardView() {
             }
 
             {isManualsModalOpen && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 bg-black/60 z-[115] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
                     onClick={closeManualsModal}
                 >
@@ -1196,7 +1197,7 @@ export default function StaffDashboardView() {
             )}
 
             {isManualsModalOpen && isTpvManualModalOpen && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
                     onClick={closeTpvManualModal}
                 >
@@ -1253,7 +1254,7 @@ export default function StaffDashboardView() {
             )}
 
             {isManualsModalOpen && isHornoManualModalOpen && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in"
                     onClick={closeHornoManualModal}
                 >
@@ -1313,7 +1314,7 @@ export default function StaffDashboardView() {
             )}
 
             {manualMediaViewer && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in"
                     onClick={() => setManualMediaViewer(null)}
                     role="dialog"
@@ -1396,7 +1397,7 @@ export default function StaffDashboardView() {
             {/* MODAL: Opciones de Caja */}
             {
                 isCashOptionsModalOpen && (
-                    <div
+                    <div data-marbella-modal-root
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-in fade-in duration-200"
                         onClick={() => setIsCashOptionsModalOpen(false)}
                     >
@@ -1541,7 +1542,7 @@ export default function StaffDashboardView() {
             }
 
             {showPurchaseMultiSourceModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                         <PurchaseMultiSourceForm
                             paymentSources={buildPaymentSources()}
@@ -1556,7 +1557,7 @@ export default function StaffDashboardView() {
             {/* Legacy single-box compra modal (mantener por si se abre Salida desde otra ruta) */}
             {
                 cashModalMode === 'out' && !showPurchaseMultiSourceModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+                    <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
                         <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                             <CashDenominationForm
                                 key={'out' + (selectedBox?.id || '')}

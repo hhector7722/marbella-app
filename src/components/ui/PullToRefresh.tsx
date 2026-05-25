@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useModalLockState } from '@/lib/modal-lock/modal-lock-context';
 
 const PULL_THRESHOLD_PX = 56;
 const MAX_PULL_PX = 80;
@@ -18,6 +19,8 @@ interface PullToRefreshProps {
 
 export function PullToRefresh({ children, className, enabled = true }: PullToRefreshProps) {
     const router = useRouter();
+    const { isLocked: isModalOpen } = useModalLockState();
+    const pullEnabled = enabled && !isModalOpen;
     const [pullY, setPullY] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const startY = useRef(0);
@@ -25,11 +28,11 @@ export function PullToRefresh({ children, className, enabled = true }: PullToRef
 
     const handleTouchStart = useCallback(
         (e: React.TouchEvent) => {
-            if (!enabled) return;
+            if (!pullEnabled) return;
             startY.current = e.touches[0].clientY;
             startScrollTop.current = window.scrollY ?? document.documentElement.scrollTop;
         },
-        [enabled]
+        [pullEnabled]
     );
 
     const handleTouchMove = useCallback(
@@ -49,7 +52,7 @@ export function PullToRefresh({ children, className, enabled = true }: PullToRef
                 setPullY(0);
             }
         },
-        [enabled, isRefreshing]
+        [pullEnabled, isRefreshing]
     );
 
     const handleTouchEnd = useCallback(() => {
@@ -62,9 +65,9 @@ export function PullToRefresh({ children, className, enabled = true }: PullToRef
         } else {
             setPullY(0);
         }
-    }, [enabled, pullY, isRefreshing, router]);
+    }, [pullEnabled, pullY, isRefreshing, router]);
 
-    if (!enabled) {
+    if (!pullEnabled) {
         return <>{children}</>;
     }
 

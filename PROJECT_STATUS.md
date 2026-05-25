@@ -6,6 +6,8 @@
 
 - [x] **Inicio `/`: redirect a dashboard por rol (2026-05-25)**: [`proxy.ts`](src/proxy.ts) redirige sesión activa en `/` o tras login → `manager` → `/dashboard`, resto → `/staff/dashboard`. [`page.tsx`](src/app/page.tsx) usa `getSession()`.
 
+- [x] **UX: bloqueo de gestos con modal abierto (2026-05-25)**: [`ModalLockProvider`](src/lib/modal-lock/modal-lock-context.tsx) — con `data-marbella-modal-root` en overlays, el fondo no recibe scroll/swipe (body lock + `touchmove`/`wheel` bloqueados fuera del modal). Desactiva pull-to-refresh y swipe del dashboard manager. Clic fuera del panel sigue cerrando el modal.
+
 - [x] **UX: carga unificada pantalla completa (2026-05-25)**: [`PageContentLoading`](src/components/ui/PageContentLoading.tsx) — fondo `#5B8FB9` sólido, spinner blanco, **sin blur**, entre navbar y barra inferior ([`app-chrome.ts`](src/lib/app-chrome.ts)). Misma UI en navegación cliente ([`MainWrapper`](src/components/MainWrapper.tsx)) y SSR ([`loading.tsx`](src/app/loading.tsx)). Al salir de carta fullscreen, barras visibles durante la carga. Modales sin cambios.
 
 - [x] **Dashboard manager swipe: layout colgado (2026-05-25)**: [`DashboardSwitcher.tsx`](src/components/dashboards/DashboardSwitcher.tsx) — al soltar el dedo resetea `offsetX` antes de `router.replace`; sin `setView` duplicado que desincronizaba el carril 200%.

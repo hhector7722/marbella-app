@@ -125,8 +125,8 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
     const getLogo = (supplier: Supplier) => supplier.image_url || SUPPLIER_LOGOS[supplier.name] || null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] overscroll-y-contain touch-pan-y" onClick={e => e.stopPropagation()}>
 
                 {/* Header Marbella Premium */}
                 <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">

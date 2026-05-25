@@ -614,7 +614,7 @@ export default function KDSView() {
 
             {/* Modal Resumen completo */}
             {isSummaryOpen && (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) setIsSummaryOpen(false);
