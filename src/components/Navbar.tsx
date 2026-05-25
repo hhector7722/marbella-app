@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import Image from 'next/image';
 import { MessageSquare, ChevronLeft } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";

@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
 import { AlertCircle, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
