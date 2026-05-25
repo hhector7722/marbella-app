@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { submitPersonalConsumption, getConsumptionRecipes } from './actions';
 import { toast } from 'sonner';
-import { X, Search, Loader2, Package } from 'lucide-react';
+import { X, Search, Loader2, Package, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Subcadenas para el grid de acceso rápido (coincidencia en nombre de receta). */
@@ -113,6 +113,33 @@ export function ConsumptionModal({
     });
   }, []);
 
+  const handleDecrement = useCallback((recipeId: string, is_half: boolean) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.recipe.id === recipeId && item.is_half === is_half);
+      if (!existing) return prev;
+      if (existing.quantity > 1) {
+        return prev.map((i) =>
+          i === existing ? { ...i, quantity: i.quantity - 1 } : i,
+        );
+      }
+      return prev.filter((i) => i !== existing);
+    });
+  }, []);
+
+  const cartQuantityByRecipe = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of cart) {
+      const key = `${item.recipe.id}:${item.is_half ? 'half' : 'full'}`;
+      map.set(key, (map.get(key) ?? 0) + item.quantity);
+    }
+    return map;
+  }, [cart]);
+
+  const getCartBadgeCount = useCallback(
+    (recipeId: string, isHalf: boolean) => cartQuantityByRecipe.get(`${recipeId}:${isHalf ? 'half' : 'full'}`) ?? 0,
+    [cartQuantityByRecipe],
+  );
+
   const onRecipeActivate = useCallback(
     (recipe: Recipe) => {
       if (requiresRacionChoice(recipe)) {
@@ -213,13 +240,21 @@ export function ConsumptionModal({
               </div>
 
               <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                {gridRecipes.map((recipe) => (
+                {gridRecipes.map((recipe) => {
+                  const badgeCount =
+                    getCartBadgeCount(recipe.id, false) + getCartBadgeCount(recipe.id, true);
+                  return (
                   <button
                     key={recipe.id}
                     type="button"
                     onClick={() => onRecipeActivate(recipe)}
-                    className="flex min-h-0 flex-col items-center gap-0.5 bg-transparent p-1.5 text-center transition-transform active:scale-[0.98]"
+                    className="relative flex min-h-0 flex-col items-center gap-0.5 bg-transparent p-1.5 text-center transition-transform active:scale-[0.98]"
                   >
+                    {badgeCount > 0 ? (
+                      <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
+                        ×{badgeCount}
+                      </span>
+                    ) : null}
                     <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
                       {recipe.photo_url ? (
                         <img
@@ -238,7 +273,8 @@ export function ConsumptionModal({
                       {recipe.name}
                     </span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -248,23 +284,38 @@ export function ConsumptionModal({
           {cart.length > 0 && (
             <>
               <h3 className="mb-2 font-bold text-zinc-900">Has consumido:</h3>
-              <div className="mb-3 flex flex-wrap gap-2">
+              <div className="mb-3 flex flex-col gap-2">
                 {cart.map((c, i) => (
-                  <span
+                  <div
                     key={`${c.recipe.id}-${c.is_half}-${i}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-sm font-medium text-emerald-900"
+                    className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-2"
                   >
-                    {c.quantity}× {c.recipe.name}
-                    {c.is_half ? ' (Mitad)' : ''}
                     <button
                       type="button"
-                      onClick={() => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-emerald-800 hover:text-red-600"
-                      aria-label="Quitar"
+                      onClick={() => handleDecrement(c.recipe.id, c.is_half)}
+                      className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-900 shadow-sm hover:bg-emerald-100 active:scale-[0.98]"
+                      aria-label={`Quitar una unidad de ${c.recipe.name}`}
                     >
-                      <X className="h-4 w-4" />
+                      <Minus className="h-5 w-5" strokeWidth={2.5} />
                     </button>
-                  </span>
+                    <div className="min-w-0 flex-1 text-center">
+                      <p className="truncate text-sm font-bold text-emerald-950">
+                        {c.recipe.name}
+                        {c.is_half ? ' (Mitad)' : ''}
+                      </p>
+                      <p className="text-lg font-black tabular-nums text-emerald-800">
+                        ×{c.quantity}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAdd(c.recipe, c.is_half)}
+                      className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-900 shadow-sm hover:bg-emerald-100 active:scale-[0.98]"
+                      aria-label={`Añadir una unidad de ${c.recipe.name}`}
+                    >
+                      <Plus className="h-5 w-5" strokeWidth={2.5} />
+                    </button>
+                  </div>
                 ))}
               </div>
             </>

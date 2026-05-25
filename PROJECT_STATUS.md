@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-25 (Feedback instantáneo de navegación)
+**Última actualización:** 2026-05-26 (Consumo staff: cantidad en carrito y dashboard)
+
+- [x] **Consumo personal: cantidad visible en modal y dashboard (2026-05-26)**: [`ConsumptionModal.tsx`](src/app/staff/ConsumptionModal.tsx) — filas táctiles `−` / `×N` / `+`, badge `×N` en grid, `handleDecrement` (a 0 elimina línea). [`20260526120000_staff_consumption_day_detail_quantity.sql`](supabase/migrations/20260526120000_staff_consumption_day_detail_quantity.sql) — RPC `get_staff_consumption_day_detail` devuelve `quantity` (suma por `reference_doc` de `SUM(quantity movimientos) / COUNT(ingredientes receta)`). [`consumo-personal/page.tsx`](src/app/dashboard/consumo-personal/page.tsx) — desglose `Nombre ×4 — 1,44 €`. Desplegar migración en Supabase.
 
 - [x] **UX: feedback de navegación sin bloquear acciones rápidas (2026-05-25)**: [`NavigationProvider`](src/lib/navigation/navigation-context.tsx) — overlay solo tras **180 ms** si la ruta sigue cargando; se cancela en rutas instantáneas. Listener en **bubble** (respeta `preventDefault` de modales). Limpieza a **600 ms** si la URL no cambia (evita spinner infinito). [`useAppRouter`](src/lib/navigation/use-app-router.ts) no dispara feedback si el destino es la misma ruta. Pedidos/Horarios en barra: `data-no-nav-feedback`.
 

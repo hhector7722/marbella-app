@@ -41,11 +41,17 @@ type ProfileOption = {
   avatar_url?: string | null;
 };
 
+type DayDetailItem = {
+  name: string;
+  amount: number;
+  quantity: number;
+};
+
 type DayDetailWorker = {
   id: string;
   name: string | null;
   total: number;
-  items: { name: string; amount: number }[];
+  items: DayDetailItem[];
 };
 
 type DayDetailPayload = {
@@ -321,6 +327,7 @@ export default function ConsumoPersonalDashboardPage() {
                 ? (w as any).items.map((it: any) => ({
                     name: consumptionProductDisplayName(String(it?.name ?? '')),
                     amount: Number(it?.amount) || 0,
+                    quantity: Math.max(0, Math.round(Number(it?.quantity) || 0)),
                   }))
                 : [],
             }))
@@ -667,13 +674,17 @@ export default function ConsumoPersonalDashboardPage() {
                             <div className="px-3 py-2">
                               <div className="flex flex-col gap-1">
                                 {w.items.map((it, idx) => (
-                                  <div key={`${it.name}-${idx}`} className="flex items-center justify-between gap-2 py-1 border-b border-zinc-100 last:border-0">
-                                    <div className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
-                                      {it.name}
-                                    </div>
-                                    <div className="shrink-0 text-[12px] font-black tabular-nums text-zinc-900">
-                                      {formatEuroRead(it.amount)}
-                                    </div>
+                                  <div
+                                    key={`${it.name}-${idx}`}
+                                    className="py-1 border-b border-zinc-100 last:border-0"
+                                  >
+                                    <p className="truncate text-[12px] font-bold text-zinc-700">
+                                      {it.quantity > 1 ? `${it.name} ×${it.quantity}` : it.name}
+                                      {' — '}
+                                      <span className="font-black tabular-nums text-zinc-900">
+                                        {formatEuroRead(it.amount)}
+                                      </span>
+                                    </p>
                                   </div>
                                 ))}
                               </div>
