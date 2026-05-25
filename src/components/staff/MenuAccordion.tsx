@@ -848,7 +848,7 @@ export function MenuAccordion({
             {gridBlock}
 
             {openGroup ? (
-                <div data-marbella-modal-root
+                <div
                     className="fixed inset-0 z-[250] flex items-center justify-center p-4 pb-safe pt-4 animate-in fade-in duration-200"
                     role="dialog"
                     aria-modal="true"

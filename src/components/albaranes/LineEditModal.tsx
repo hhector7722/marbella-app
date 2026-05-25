@@ -91,7 +91,7 @@ export function LineEditModal({
       : null
 
   return createPortal(
-    <div data-marbella-modal-root
+    <div
       className="fixed inset-0 z-[10065] flex flex-col justify-end sm:justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"

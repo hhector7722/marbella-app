@@ -203,7 +203,7 @@ export function ConsumptionModal({
   const emptyCartMessageVisible = showEmptyCartError && cart.length === 0;
 
   return (
-    <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-end justify-center bg-gray-900/80 p-4 backdrop-blur-sm sm:items-center">
+    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-gray-900/80 p-4 backdrop-blur-sm sm:items-center">
       <div className="flex h-[90vh] max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between bg-[#36606F] p-5 text-white">
           <div>
@@ -343,7 +343,7 @@ export function ConsumptionModal({
       </div>
 
       {racionPicker && (
-        <div data-marbella-modal-root
+        <div
           className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"

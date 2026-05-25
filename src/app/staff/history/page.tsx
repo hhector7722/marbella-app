@@ -572,7 +572,7 @@ export default function HistoryPage() {
             />
 
             {showMonthPicker && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={() => setShowMonthPicker(false)}>
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={() => setShowMonthPicker(false)}>
                     <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
                         {/* Header Estilo Marbella (como Plantilla) */}
                         <div className="bg-[#36606F] px-8 py-6 flex justify-between items-center text-white shrink-0">

@@ -62,7 +62,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
     if (!isOpen || !date) return null;
 
     return (
-        <div data-marbella-modal-root className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[140] p-6 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[140] p-6 animate-in fade-in duration-200" onClick={onClose}>
             <div className="w-full max-w-[400px] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 h-fit max-h-[80vh]" onClick={e => e.stopPropagation()}>
 
                 {/* Header */}

@@ -325,7 +325,7 @@ function ModalShell({
   onClose: () => void;
 }) {
   return (
-    <div data-marbella-modal-root
+    <div
       className="fixed inset-0 z-[10050] bg-black/60 backdrop-blur-md p-4 flex items-center justify-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();

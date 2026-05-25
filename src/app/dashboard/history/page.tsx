@@ -139,7 +139,7 @@ const CashBreakdownModal = ({
     } : breakdown;
 
     return (
-        <div data-marbella-modal-root className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] p-8 text-white text-center relative">
                     <div className="absolute top-6 right-6 flex items-center gap-1">
@@ -1040,7 +1040,7 @@ export default function HistoryPage() {
             </div>
 
             {selectedClosing && (
-                <div data-marbella-modal-root className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-4 md:p-5 text-white relative shrink-0 text-center">
@@ -1343,7 +1343,7 @@ export default function HistoryPage() {
             />
 
             {showCalendar && (
-                <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
@@ -1387,7 +1387,7 @@ export default function HistoryPage() {
             )}
 
             {showMonthPicker && (
-                <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
@@ -1439,7 +1439,7 @@ export default function HistoryPage() {
             )}
 
             {lightboxImage && (
-                <div data-marbella-modal-root className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={() => setLightboxImage(null)}>
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={() => setLightboxImage(null)}>
                     <div className="relative max-w-3xl w-full max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-4 py-3 bg-[#36606F] text-white">
                             <span className="text-[11px] font-black uppercase tracking-widest">{lightboxImage.label}</span>

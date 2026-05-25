@@ -111,7 +111,7 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
         : '';
 
     return (
-        <div data-marbella-modal-root className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[160] p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[160] p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="w-full max-w-[320px] bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] h-[44px] flex items-center justify-center px-4 relative shrink-0">
                     <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em]">
@@ -391,7 +391,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     if (!isOpen) return null;
 
     return (
-        <div data-marbella-modal-root className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="w-full max-w-[300px] bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 h-fit max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 <div className="bg-gradient-to-b from-red-500 to-red-600 h-[44px] flex items-center justify-center px-4 relative shrink-0">
                     <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em] drop-shadow-sm">

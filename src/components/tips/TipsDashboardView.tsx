@@ -447,7 +447,7 @@ export default function TipsDashboardView({
       </div>
 
       {cashModal?.open && (
-        <div data-marbella-modal-root
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[220] p-2 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setCashModal(null)}
         >

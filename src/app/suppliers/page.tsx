@@ -536,7 +536,7 @@ export default function SuppliersPage() {
                             </button>
                             {showCategoryPopup && (
                                 <>
-                                    <div data-marbella-modal-root className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
+                                    <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
                                     <div className="absolute top-full right-0 mt-2 w-40 md:w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto">
                                         <div className="px-4 py-2 border-b border-gray-50 mb-1">
                                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
@@ -628,7 +628,7 @@ export default function SuppliersPage() {
 
             {/* MODAL DETALLE / CONTACTO PROVEEDOR */}
             {detailSupplier && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setDetailSupplier(null)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setDetailSupplier(null)}>
                     <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end -mt-4 -mr-4 mb-2">
                             <button onClick={() => setDetailSupplier(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -704,7 +704,7 @@ export default function SuppliersPage() {
 
             {/* MODAL EDICIÓN PROVEEDOR */}
             {editSupplier && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[230] p-4" onClick={closeEditModal}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[230] p-4" onClick={closeEditModal}>
                     <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-5">
                             <div className="flex flex-col">
@@ -868,7 +868,7 @@ export default function SuppliersPage() {
 
             {/* MODAL CREACIÓN PROVEEDOR - ESTILO INGREDIENTES */}
             {showCreateModal && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setShowCreateModal(false)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setShowCreateModal(false)}>
                     <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-[#3F51B5]">Nuevo Proveedor</h2>

@@ -681,7 +681,7 @@ function ProfileContent() {
 
             {/* Confirmación cerrar sesión */}
             {logoutConfirm && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4" onClick={() => setLogoutConfirm(false)}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4" onClick={() => setLogoutConfirm(false)}>
                     <div className="bg-white w-full max-w-sm rounded-3xl shadow-xl p-6 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <h3 className="text-lg font-black text-zinc-800 uppercase tracking-wider mb-2">Cerrar sesión</h3>
                         <p className="text-zinc-500 text-sm mb-6">¿Seguro que quieres cerrar sesión?</p>

@@ -1151,7 +1151,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const step = SNAP_MINUTES;
                 return createPortal(
                     <>
-                        <div data-marbella-modal-root className="fixed inset-0 z-[9998]" onClick={() => setEditingIndex(null)} aria-hidden />
+                        <div className="fixed inset-0 z-[9998]" onClick={() => setEditingIndex(null)} aria-hidden />
                         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none" onClick={(e) => e.stopPropagation()}>
                             <div className="pointer-events-auto flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
                                 {/* Controles de Tiempo */}
@@ -1205,7 +1205,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
             {/* MODALES */}
             {showCalendarModal && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
                     <div className="bg-white rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-5 flex items-center justify-between border-b border-white/10">
                             <div className="flex items-center gap-3">
@@ -1238,7 +1238,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
             {/* MODAL COMPARTIR */}
             {showShareModal && (
-                <div data-marbella-modal-root className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowShareModal(false)}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowShareModal(false)}>
                     <div className="bg-white rounded-[24px] w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-4 flex items-center justify-center text-white relative">
                             <h3 className="text-sm font-black uppercase tracking-widest">Compartir</h3>

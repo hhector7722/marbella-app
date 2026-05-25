@@ -56,7 +56,7 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
   }, [imageSrc, croppedAreaPixels, onSave]);
 
   return (
-    <div data-marbella-modal-root className="fixed inset-0 z-50 flex flex-col bg-[#36606F]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#36606F]">
       {/* Título único: un solo paso (encuadrar + zoom y listo) */}
       <div className="shrink-0 py-3 text-center text-white border-b border-white/20">
         <span className="text-sm font-bold uppercase tracking-widest">Ajusta el encuadre y guarda</span>

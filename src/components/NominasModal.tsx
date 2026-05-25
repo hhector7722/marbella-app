@@ -149,7 +149,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     if (!isOpen) return null;
 
     return (
-        <div data-marbella-modal-root className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
                 <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
                     <h2 className="text-base font-black uppercase tracking-wider">

@@ -35,7 +35,7 @@ export default function CreateModal({
     if (!showCreateModal) return null;
 
     return (
-        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="bg-[#36606F] p-6 flex justify-between items-center text-white">
                     <h2 className="text-xl font-black uppercase tracking-wide">Nueva Receta</h2>

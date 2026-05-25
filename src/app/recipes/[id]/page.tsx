@@ -1545,7 +1545,7 @@ function RecipeDetailContent() {
 
             {/* MODALES */}
             {showIngredientModal && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeAddIngredientModal}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeAddIngredientModal}>
                     <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button type="button" onClick={closeAddIngredientModal}><X size={16} /></button></div>
                         <div className="flex items-center gap-2 mb-2">
@@ -1596,7 +1596,7 @@ function RecipeDetailContent() {
                 </div>
             )}
             {isModalOpen && (
-                <div data-marbella-modal-root className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
+                <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
                     <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                         <IngredientWizard
                             onClose={() => {
@@ -1609,7 +1609,7 @@ function RecipeDetailContent() {
                 </div>
             )}
             {showCategoryModal && (
-                <div data-marbella-modal-root className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
                     <div className="bg-white rounded-xl p-4 max-w-xs w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="grid max-h-[min(60vh,24rem)] grid-cols-2 gap-2 overflow-y-auto">
                             {sortedMenuCategoryRows.map((row) => (

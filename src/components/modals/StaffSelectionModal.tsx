@@ -59,7 +59,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     });
 
     return (
-        <div data-marbella-modal-root
+        <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >

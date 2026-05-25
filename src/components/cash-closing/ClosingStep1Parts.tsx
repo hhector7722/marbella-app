@@ -234,7 +234,7 @@ export function ClosingPhotoCaptureModal({
   };
 
   return (
-    <div data-marbella-modal-root
+    <div
       className="fixed inset-0 z-[160] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={handleClose}
     >

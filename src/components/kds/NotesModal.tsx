@@ -103,7 +103,7 @@ export function NotesModal(props: {
   if (!isOpen || !mounted) return null;
 
   const modal = (
-    <div data-marbella-modal-root
+    <div
       className="fixed inset-0 z-[2147483647] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-1 sm:p-2"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();

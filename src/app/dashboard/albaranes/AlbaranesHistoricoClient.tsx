@@ -1092,7 +1092,7 @@ export default function AlbaranesHistoricoClient({
 
       {selectedId && modalContainer
         ? createPortal(
-            <div data-marbella-modal-root
+            <div
               className="fixed inset-0 z-[10050] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
               onClick={(e) => {
                 if (e.target === e.currentTarget) closeModal()
@@ -1443,7 +1443,7 @@ export default function AlbaranesHistoricoClient({
                 />
 
                 {supplierPickerOpen ? (
-                  <div data-marbella-modal-root
+                  <div
                     className="fixed inset-0 z-[10060] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
                     onClick={(e) => {
                       if (e.target === e.currentTarget && !supplierSaving) setSupplierPickerOpen(false)
@@ -1527,7 +1527,7 @@ export default function AlbaranesHistoricoClient({
                 ) : null}
 
                 {wizardOpen ? (
-                  <div data-marbella-modal-root
+                  <div
                     className="fixed inset-0 z-[10070] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
                     onClick={(e) => {
                       if (e.target === e.currentTarget) setWizardOpen(false)
@@ -1578,7 +1578,7 @@ export default function AlbaranesHistoricoClient({
 
       {invoiceImageViewerOpen && modalContainer && invoiceImageSheetOptions.length >= 1
         ? createPortal(
-            <div data-marbella-modal-root
+            <div
               className="fixed inset-0 z-[10100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-in fade-in duration-150"
               role="dialog"
               aria-modal="true"
@@ -1711,7 +1711,7 @@ export default function AlbaranesHistoricoClient({
         : null}
 
       {filterOpen ? (
-        <div data-marbella-modal-root
+        <div
           className="fixed inset-0 z-[10040] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
           onClick={(e) => {
             if (e.target === e.currentTarget) setFilterOpen(false)
