@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useLayoutEffect, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from 'next/navigation';
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';

@@ -27,7 +27,7 @@ interface DraftItem {
     unit: string;
 }
 
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { OrderSummaryModal } from "@/components/orders/OrderSummaryModal";
 import { OrderSuccessModal } from "@/components/orders/OrderSuccessModal";
 import { generateOrderPDF } from "@/utils/orders/pdf-generator";

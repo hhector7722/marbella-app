@@ -2,7 +2,7 @@
 
 
 
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 
 import { Monitor } from 'lucide-react';
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Upload, AlertTriangle, CheckCircle, Save, Database } from 'lucide-react';
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
 
 export default function BulkImportPage() {
