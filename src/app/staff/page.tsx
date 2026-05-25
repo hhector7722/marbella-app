@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { addDays } from 'date-fns';
 import {
     Play, Square, CheckCircle2, CalendarDays, AlertCircle, MapPin, ShieldAlert,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition, useEffect } from 'react';
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRightLeft, TrendingDown, TrendingUp, Landmark, Receipt, Wallet, X, Info } from 'lucide-react';
 import { cn, formatDisplayValue } from '@/lib/utils';

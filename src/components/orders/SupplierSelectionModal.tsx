@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 
 interface Supplier {
     id: string;
