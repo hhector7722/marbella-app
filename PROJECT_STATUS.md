@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-24 (Cierres de caja: fotos datáfonos + ticket BDP)
+**Última actualización:** 2026-05-25 (Cron recálculo balances horas)
+
+- [x] **Horas: cron recálculo global semanal + DST Madrid (2026-05-25)**: Dos jobs pg_cron con guarda CET/CEST: `weekly_recalculate_balances_winter` (`0 3 * * 1`, offset Madrid=1) y `weekly_recalculate_balances_summer` (`0 2 * * 1`, offset=2); wrappers `cron_weekly_recalculate_balances_if_madrid_*`. Migración [`20260525120000_cron_weekly_recalculate_all_balances.sql`](supabase/migrations/20260525120000_cron_weekly_recalculate_all_balances.sql). Sin `CREATE EXTENSION pg_cron`.
 
 - [x] **Cierres de caja: fotos obligatorias datáfonos + ticket BDP (2026-05-24)**: Columnas `cash_closings.dataphone_totals_photo_path` y `bdp_closing_ticket_photo_path` (rutas en bucket privado `cash_closings`). Migración [`20260524180000_cash_closing_photos.sql`](supabase/migrations/20260524180000_cash_closing_photos.sql). **Cierre**: [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx) exige ambas fotos en paso 1, preview en resumen, subida vía [`uploadCashClosingPhotoAction`](src/app/actions/cash-closing-photos.ts) antes del INSERT. **Historial**: [`history/page.tsx`](src/app/dashboard/history/page.tsx) muestra thumbnails + lightbox con URLs firmadas; al borrar cierre se eliminan objetos del Storage.
 

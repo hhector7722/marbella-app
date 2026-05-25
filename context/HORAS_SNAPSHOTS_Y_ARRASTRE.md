@@ -69,6 +69,8 @@ Cruzar con fichajes por Madrid y `profiles.joining_date`.
 | `rpc_recalculate_all_balances_from_week(p_week_start date)` | **Todos** los `profiles.id` (costoso; solo si necesitas reescribir también filas sin actividad reciente). |
 | `rpc_recalculate_all_balances()` | Recálculo global desde el primer fichaje (histórico completo). |
 
+**Cron (producción):** dos jobs pg_cron con guarda DST (`weekly_recalculate_balances_winter` 03:00 UTC / `weekly_recalculate_balances_summer` 02:00 UTC, lunes); solo el que coincide con offset Madrid 1h o 2h llama a `rpc_recalculate_all_balances()`. Migración `20260525120000_cron_weekly_recalculate_all_balances.sql`.
+
 Si una RPC “no existe” en el error de Postgres, la migración correspondiente **no está aplicada** en ese proyecto Supabase: aplicar migraciones o ejecutar el SQL de la migración en el editor.
 
 ## Diagrama
