@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-25 (Rediseño paso 1 cierre de caja)
+**Última actualización:** 2026-05-25 (Feedback instantáneo de navegación)
+
+- [x] **UX: feedback instantáneo en navegación (2026-05-25)**: [`NavigationProvider`](src/lib/navigation/navigation-context.tsx) envuelve la app en [`layout.tsx`](src/app/layout.tsx) — overlay con spinner al pulsar cualquier enlace interno (`<a>`/`<Link>`) o al usar [`useAppRouter`](src/lib/navigation/use-app-router.ts) (`push`/`replace`/`back`). Elimina la sensación de “no ha respondido el toque” en barra inferior, flechas volver ([`DashboardDetailLayout`](src/components/dashboard/DashboardDetailLayout.tsx)), carta, dashboards, etc. Timeout de seguridad 30s.
 
 - [x] **Cierre de caja: rediseño paso 1 Datos (2026-05-25)**: [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx) — 6 filas (Clima→Ventas→Tickets→Tarjeta→Cobros→Pendiente), títulos petróleo `#36606F`, inputs borde petróleo. Clima: selector por iconos [`/public/icons/clima/`](public/icons/clima/) sin selección por defecto ([`cash-closing-weather.ts`](src/lib/cash-closing-weather.ts)). Fotos: botones verdes «Añadir informe» / «Añadir totales» + submodal cámara ([`ClosingStep1Parts.tsx`](src/components/cash-closing/ClosingStep1Parts.tsx)). Siguiente verde; sync TPV automático sin botón Refresh.
 

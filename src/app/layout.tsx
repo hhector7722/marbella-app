@@ -9,6 +9,7 @@ import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbella from "@/components/chat/ChatMarbella";
+import { AppProviders } from "@/components/navigation/AppProviders";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -103,17 +104,19 @@ export default async function RootLayout({
   return (
     <html lang="es" className="light">
       <body className={`${inter.className} bg-[#5B8FB9] touch-manipulation`}>
-        <SileoProvider />
-        <ServiceWorkerRegistration />
-        <Navbar />
-        <MainWrapper>
-          <OnboardingOverlay needsOnboarding={needsOnboarding} />
-          {children}
-        </MainWrapper>
-        <BottomNavWrapper />
-        
-        {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
-        <ChatMarbella />
+        <AppProviders>
+          <SileoProvider />
+          <ServiceWorkerRegistration />
+          <Navbar />
+          <MainWrapper>
+            <OnboardingOverlay needsOnboarding={needsOnboarding} />
+            {children}
+          </MainWrapper>
+          <BottomNavWrapper />
+
+          {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
+          <ChatMarbella />
+        </AppProviders>
       </body>
     </html>
   );

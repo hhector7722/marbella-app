@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Clock, Home, Settings, LogOut, Calendar, User, Mic, MessageSquare, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import { createClient } from "@/utils/supabase/client";
 import { Toaster } from 'sonner';
 

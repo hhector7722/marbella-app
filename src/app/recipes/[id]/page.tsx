@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
