@@ -450,10 +450,50 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }
     };
 
+    const renderDenominationItem = (value: number) => (
+        <div key={value} className="flex flex-col items-center gap-1.5 group transition-all">
+            <div className="h-11 sm:h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                <Image
+                    src={CURRENCY_IMAGES[value]}
+                    alt={value + "€"}
+                    width={140}
+                    height={140}
+                    className={cn(
+                        "h-full w-auto object-contain",
+                        value >= 1 ? "drop-shadow-lg" : "drop-shadow-md",
+                    )}
+                />
+            </div>
+            <div className="text-center w-full">
+                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                    {value < 1 ? (value * 100).toFixed(0) + "c" : value + "€"}
+                </span>
+                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                    <button type="button" onClick={() => handleAdjustCount(value, -1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
+                    <input type="number" placeholder=""
+                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                        value={counts[value] || ''} onChange={(e) => updateCount(value, e.target.value)} />
+                    <button type="button" onClick={() => handleAdjustCount(value, 1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const lastCoin = COINS[COINS.length - 1];
+
     if (!isOpen) return null;
 
+    const blockDashboardSwipe = (e: React.TouchEvent) => {
+        e.stopPropagation();
+    };
+
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+            className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onTouchStart={blockDashboardSwipe}
+            onTouchMove={blockDashboardSwipe}
+            onTouchEnd={blockDashboardSwipe}
+        >
             <div
                 className={cn(
                     "bg-white w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 rounded-2xl",
@@ -461,6 +501,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     "shadow-2xl shadow-black/20 border border-white/10"
                 )}
                 onClick={e => e.stopPropagation()}
+                onTouchStart={blockDashboardSwipe}
+                onTouchMove={blockDashboardSwipe}
+                onTouchEnd={blockDashboardSwipe}
             >
 
                 {/* Header: fecha sin tarjeta/marco, flota sobre cabecera */}
@@ -518,12 +561,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
                         <div className="space-y-5 p-4 sm:p-6">
-                            <ClosingStepRow title="Clima" fullWidthField>
-                                <ClosingWeatherPicker
-                                    selectedId={weatherId}
-                                    onSelect={setWeatherId}
-                                />
-                            </ClosingStepRow>
+                            <ClosingWeatherPicker
+                                selectedId={weatherId}
+                                onSelect={setWeatherId}
+                            />
 
                             <ClosingStepRow
                                 title="Ventas"
@@ -600,54 +641,28 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     <div className="text-lg font-bold text-gray-500">{expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : " "}</div>
                                 </div>
                             </div>
-                            <div className="p-3 sm:p-4 flex flex-col gap-4">
+                            <div className="p-3 sm:p-4 flex flex-col gap-4 pb-4">
                                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-5 sm:gap-y-6 gap-x-3 sm:gap-x-4">
-                                    {BILLS.map(bill => (
-                                        <div key={bill} className="flex flex-col items-center gap-1.5 group transition-all">
-                                            <div className="h-11 sm:h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
-                                                <Image
-                                                    src={CURRENCY_IMAGES[bill]}
-                                                    alt={bill + "€"}
-                                                    width={140}
-                                                    height={140}
-                                                    className="h-full w-auto object-contain drop-shadow-lg"
-                                                />
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">{bill}€</span>
-                                                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                    <button onClick={() => handleAdjustCount(bill, -1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                                                    <input type="number" placeholder=""
-                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                                                        value={counts[bill] || ''} onChange={(e) => updateCount(bill, e.target.value)} />
-                                                    <button onClick={() => handleAdjustCount(bill, 1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {COINS.map(coin => (
-                                        <div key={coin} className="flex flex-col items-center gap-1.5 group transition-all">
-                                            <div className="h-11 sm:h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
-                                                <Image
-                                                    src={CURRENCY_IMAGES[coin]}
-                                                    alt={coin + "€"}
-                                                    width={140}
-                                                    height={140}
-                                                    className="h-full w-auto object-contain drop-shadow-md"
-                                                />
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
-                                                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                    <button onClick={() => handleAdjustCount(coin, -1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                                                    <input type="number" placeholder=""
-                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                                                        value={counts[coin] || ''} onChange={(e) => updateCount(coin, e.target.value)} />
-                                                    <button onClick={() => handleAdjustCount(coin, 1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {BILLS.map((bill) => renderDenominationItem(bill))}
+                                    {COINS.slice(0, -1).map((coin) => renderDenominationItem(coin))}
+                                    {renderDenominationItem(lastCoin)}
+                                    <div className="col-span-3 sm:col-span-5 lg:col-span-7 flex items-end gap-2 self-end pb-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setStep('tpv_data')}
+                                            className="h-10 shrink-0 rounded-xl px-3 font-black text-[9px] uppercase tracking-widest text-gray-400 transition-colors hover:bg-white hover:text-gray-600 active:bg-white/80 sm:px-4 sm:text-[10px]"
+                                        >
+                                            Atrás
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleAdvanceStep}
+                                            disabled={loading}
+                                            className="flex h-10 min-w-0 flex-1 items-center justify-center rounded-xl bg-emerald-500 px-2 text-[9px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98] sm:text-[10px]"
+                                        >
+                                            {loading ? <LoadingSpinner size="sm" className="text-white" /> : 'Ver Resumen'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -656,10 +671,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     {/* STEP 3: SUMMARY */}
                     {step === 'summary' && (
                         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-4 duration-300">
-                            <div className="text-center">
-                                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Cierre de Caja</h3>
-                            </div>
-
                             <div className="grid grid-cols-2 gap-6 sm:gap-8 py-6 sm:py-8 border-y border-gray-50">
                                 <div className="flex flex-col items-center justify-center text-center col-span-2">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Efectivo Contado (Total Retirado)</span>
@@ -676,56 +687,39 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     {Math.abs(difference) < 0.005 ? " " : `${difference > 0 ? '+' : ''}${difference.toFixed(2)}€`}
                                 </span>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                {dataphonePreviewUrl ? (
-                                    <div className="rounded-xl border border-zinc-100 overflow-hidden">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Datáfonos</p>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={dataphonePreviewUrl} alt="Totales datáfonos" className="w-full h-24 object-cover rounded-xl" />
-                                    </div>
-                                ) : null}
-                                {bdpTicketPreviewUrl ? (
-                                    <div className="rounded-xl border border-zinc-100 overflow-hidden">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50">Software ventas</p>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={bdpTicketPreviewUrl} alt="Totales software de ventas" className="w-full h-24 object-cover rounded-xl" />
-                                    </div>
-                                ) : null}
-                            </div>
-
                         </div>
                     )}
                 </div>
 
-                {/* Footer Controls */}
-                <div className="p-3 sm:p-4 bg-gray-50 border-t flex gap-3 sm:gap-4 shrink-0">
-                    {step !== 'tpv_data' && (
+                {/* Footer: paso 2 integra botones en la fila del 1c */}
+                {step !== 'count' && (
+                    <div className="p-3 sm:p-4 bg-gray-50 border-t flex gap-3 sm:gap-4 shrink-0">
+                        {step === 'summary' && (
+                            <button
+                                type="button"
+                                onClick={() => setStep('count')}
+                                className="px-4 sm:px-6 min-h-[48px] font-black text-gray-400 uppercase tracking-widest text-xs hover:text-gray-600 transition-colors rounded-xl hover:bg-white/60 active:bg-white/80"
+                            >
+                                Atrás
+                            </button>
+                        )}
                         <button
-                            onClick={() => setStep(step === 'summary' ? 'count' : 'tpv_data')}
-                            className="px-4 sm:px-6 min-h-[48px] font-black text-gray-400 uppercase tracking-widest text-xs hover:text-gray-600 transition-colors rounded-xl hover:bg-white/60 active:bg-white/80"
+                            type="button"
+                            onClick={handleAdvanceStep}
+                            disabled={loading || (step === 'summary' && !photosReady)}
+                            className={cn(
+                                "flex-1 min-h-[48px] h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
+                                step === 'summary' || step === 'tpv_data'
+                                    ? 'bg-emerald-500'
+                                    : 'bg-[#5B8FB9]'
+                            )}
                         >
-                            Atrás
+                            {loading ? <LoadingSpinner size="sm" className="text-white" /> : (
+                                step === 'summary' ? 'Confirmar Cierre' : 'Siguiente'
+                            )}
                         </button>
-                    )}
-                    <button
-                        onClick={handleAdvanceStep}
-                        disabled={loading || (step === 'summary' && !photosReady)}
-                        className={cn(
-                            "flex-1 min-h-[48px] h-14 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
-                            step === 'summary' || step === 'tpv_data' || step === 'count'
-                                ? 'bg-emerald-500 shadow-emerald-200'
-                                : 'bg-[#5B8FB9] shadow-blue-900/20'
-                        )}
-                    >
-                        {loading ? <LoadingSpinner size="sm" className="text-white" /> : (
-                            <>
-                                {step === 'summary' ? '' : ''}
-                                {step === 'summary' ? 'Confirmar Cierre' : (step === 'count' ? 'Ver Resumen' : 'Siguiente')}
-                            </>
-                        )}
-                    </button>
-                </div>
+                    </div>
+                )}
             </div>
 
         </div >
