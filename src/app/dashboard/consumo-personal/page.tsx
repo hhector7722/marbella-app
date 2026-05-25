@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
 import { ChevronLeft, ChevronRight, User, X } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   addMonths,
   eachDayOfInterval,
