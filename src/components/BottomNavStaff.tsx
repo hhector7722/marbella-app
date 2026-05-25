@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useNavigation } from '@/lib/navigation/navigation-context';
 import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -16,6 +17,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 export default function BottomNavStaff() {
     const pathname = usePathname();
     const router = useRouter();
+    const { isNavigating } = useNavigation();
     const supabase = createClient();
 
     const [userData, setUserData] = useState<{ id: string; name: string; role: string; avatar_url: string | null } | null>(null);
@@ -126,16 +128,16 @@ export default function BottomNavStaff() {
     return (
         <>
             {/* UNIVERSAL: Bottom Bar (Scaled for Desktop) */}
-            <nav className="fixed bottom-0 left-0 right-0 h-20 md:h-16 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md print:hidden">
+            <nav
+                className={cn(
+                    "fixed bottom-0 left-0 right-0 h-20 md:h-16 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md print:hidden transition-opacity duration-150",
+                    isNavigating && "opacity-85"
+                )}
+            >
                 {staffItems.map((item) => (
                     <Link
                         key={item.href}
                         href={item.href}
-                        data-no-nav-feedback={
-                            item.name.toLowerCase() === 'pedidos' || item.name.toLowerCase() === 'horarios'
-                                ? 'true'
-                                : undefined
-                        }
                         className={cn(
                             "flex flex-col items-center transition-all duration-150 active:scale-95 flex-1",
                             getClass(item.href)

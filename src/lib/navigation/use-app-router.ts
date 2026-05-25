@@ -1,65 +1,46 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useRouter as useNextRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo, useTransition } from 'react';
+import { useRouter as useNextRouter } from 'next/navigation';
 import { useNavigation } from '@/lib/navigation/navigation-context';
 
 type NextRouter = ReturnType<typeof useNextRouter>;
 type RouterOptions = Parameters<NextRouter['push']>[1];
 
-function buildRouteKey(pathname: string, search: string): string {
-  return search ? `${pathname}?${search}` : pathname;
-}
-
-function isSameRoute(pathname: string, search: string, href: string): boolean {
-  try {
-    const url = new URL(href, window.location.origin);
-    const target = buildRouteKey(url.pathname, url.search.slice(1));
-    const current = buildRouteKey(pathname, search);
-    return target === current;
-  } catch {
-    return false;
-  }
-}
-
 /**
- * Router con feedback solo cuando la ruta destino es distinta y la carga tarda.
+ * Router de la app con feedback visual inmediato en push/replace/back.
+ * Sustituye `useRouter` de next/navigation en handlers programáticos.
  */
-export function useAppRouter(): NextRouter {
+export function useAppRouter(): NextRouter & { isPending: boolean } {
   const router = useNextRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const search = searchParams.toString();
   const { startNavigation } = useNavigation();
-
-  const navigate = useCallback(
-    (fn: () => void, href?: string) => {
-      if (href && isSameRoute(pathname, search, href)) {
-        return;
-      }
-      startNavigation();
-      fn();
-    },
-    [pathname, search, startNavigation],
-  );
+  const [isPending, startTransition] = useTransition();
 
   const push = useCallback(
     (href: string, options?: RouterOptions) => {
-      navigate(() => router.push(href, options), href);
+      startNavigation();
+      startTransition(() => {
+        router.push(href, options);
+      });
     },
-    [router, navigate],
+    [router, startNavigation],
   );
 
   const replace = useCallback(
     (href: string, options?: RouterOptions) => {
-      navigate(() => router.replace(href, options), href);
+      startNavigation();
+      startTransition(() => {
+        router.replace(href, options);
+      });
     },
-    [router, navigate],
+    [router, startNavigation],
   );
 
   const back = useCallback(() => {
     startNavigation();
-    router.back();
+    startTransition(() => {
+      router.back();
+    });
   }, [router, startNavigation]);
 
   return useMemo(
@@ -68,7 +49,8 @@ export function useAppRouter(): NextRouter {
         push,
         replace,
         back,
+        isPending,
       }),
-    [router, push, replace, back],
+    [router, push, replace, back, isPending],
   );
 }
