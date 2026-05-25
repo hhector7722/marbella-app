@@ -23,8 +23,6 @@ import {
     ClosingPetrolInputWithAdjust,
     ClosingWeatherPicker,
     ClosingPhotoAttach,
-    ClosingPhotoCaptureModal,
-    type ClosingPhotoModalKind,
 } from '@/components/cash-closing/ClosingStep1Parts';
 
 // export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
@@ -101,7 +99,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     });
 
     const [weatherId, setWeatherId] = useState<ClosingWeatherId | null>(null);
-    const [photoModalKind, setPhotoModalKind] = useState<ClosingPhotoModalKind | null>(null);
 
     // 2. STATE: COUNT
     const [counts, setCounts] = useState<Record<string, number>>({});
@@ -159,7 +156,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         if (!isOpen) {
             resetClosingPhotos();
             setWeatherId(null);
-            setPhotoModalKind(null);
         }
     }, [isOpen]);
 
@@ -522,25 +518,29 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
                         <div className="space-y-5 p-4 sm:p-6">
-                            <ClosingStepRow title="Clima">
+                            <ClosingStepRow title="Clima" fullWidthField>
                                 <ClosingWeatherPicker
                                     selectedId={weatherId}
                                     onSelect={setWeatherId}
                                 />
                             </ClosingStepRow>
 
-                            <ClosingStepRow title="Ventas">
+                            <ClosingStepRow
+                                title="Ventas"
+                                trailing={
+                                    <ClosingPhotoAttach
+                                        inputId="closing-photo-bdp-ticket"
+                                        previewUrl={bdpTicketPreviewUrl}
+                                        ariaLabel="Informe TPV"
+                                        onSelect={setBdpTicketPhoto}
+                                        onClear={() => setBdpTicketPhoto(null)}
+                                    />
+                                }
+                            >
                                 <ClosingPetrolInput
                                     value={tpvData.totalSales}
                                     onChange={(next) => setTpvData({ ...tpvData, totalSales: next })}
                                     inputClassName="text-base"
-                                />
-                                <ClosingPhotoAttach
-                                    buttonLabel="Añadir informe"
-                                    previewUrl={bdpTicketPreviewUrl}
-                                    ariaLabel="Informe TPV"
-                                    onOpenModal={() => setPhotoModalKind('bdp-ticket')}
-                                    onClear={() => setBdpTicketPhoto(null)}
                                 />
                             </ClosingStepRow>
 
@@ -553,17 +553,21 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 />
                             </ClosingStepRow>
 
-                            <ClosingStepRow title="Tarjeta">
+                            <ClosingStepRow
+                                title="Tarjeta"
+                                trailing={
+                                    <ClosingPhotoAttach
+                                        inputId="closing-photo-dataphone"
+                                        previewUrl={dataphonePreviewUrl}
+                                        ariaLabel="Totales datáfono"
+                                        onSelect={setDataphonePhoto}
+                                        onClear={() => setDataphonePhoto(null)}
+                                    />
+                                }
+                            >
                                 <ClosingPetrolInput
                                     value={tpvData.cardSales}
                                     onChange={(next) => setTpvData({ ...tpvData, cardSales: next })}
-                                />
-                                <ClosingPhotoAttach
-                                    buttonLabel="Añadir totales"
-                                    previewUrl={dataphonePreviewUrl}
-                                    ariaLabel="Totales datáfono"
-                                    onOpenModal={() => setPhotoModalKind('dataphone')}
-                                    onClear={() => setDataphonePhoto(null)}
                                 />
                             </ClosingStepRow>
 
@@ -724,16 +728,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 </div>
             </div>
 
-            {photoModalKind ? (
-                <ClosingPhotoCaptureModal
-                    kind={photoModalKind}
-                    onClose={() => setPhotoModalKind(null)}
-                    onConfirm={(file) => {
-                        if (photoModalKind === 'bdp-ticket') setBdpTicketPhoto(file);
-                        else setDataphonePhoto(file);
-                    }}
-                />
-            ) : null}
         </div >
     );
 }
