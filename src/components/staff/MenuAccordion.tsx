@@ -14,6 +14,7 @@ import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategor
 import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryPickerGrid'
 import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
+import { StaffCartaModalEditToggle } from '@/components/carta/StaffCartaModalEditToggle'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
@@ -485,6 +486,22 @@ export function MenuAccordion({
     const openShowSubTabs =
         openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
 
+    const canModalEdit = Boolean(onEditProduct)
+    const [modalEditActive, setModalEditActive] = useState(false)
+    const modalEditMode = editMode || modalEditActive
+
+    useEffect(() => {
+        setModalEditActive(false)
+    }, [openKey])
+
+    const modalEditToggle =
+        canModalEdit && openGroup && !openShowSubPicker ? (
+            <StaffCartaModalEditToggle
+                active={modalEditActive}
+                onClick={() => setModalEditActive((v) => !v)}
+            />
+        ) : null
+
     const homeCategoryCoverUrls = useMemo(
         () => displayGrouped.map((g) => g.coverPhotoUrl),
         [displayGrouped]
@@ -916,6 +933,7 @@ export function MenuAccordion({
                                 backLabel={tPlatoMarbellaUi(lang).backToPlatos}
                                 onBackToPlatos={() => setPlatoMarbellaDetailOpen(false)}
                                 onClose={() => setOpenKey(null)}
+                                trailingActions={modalEditToggle}
                             />
                         ) : (
                         <div
@@ -930,7 +948,7 @@ export function MenuAccordion({
                         >
                             {openShowSubTabs ? (
                                 <div className="flex min-w-0 items-center justify-between gap-1.5">
-                                    {editMode &&
+                                    {modalEditMode &&
                                     !reorderScope &&
                                     ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
                                         (onPersistProductOrder &&
@@ -983,14 +1001,17 @@ export function MenuAccordion({
                                     ) : (
                                         <span className="min-w-0 flex-1" aria-hidden />
                                     )}
-                                    <button
-                                        type="button"
-                                        className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                        aria-label="Cerrar"
-                                        onClick={() => setOpenKey(null)}
-                                    >
-                                        <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                    </button>
+                                    <div className="flex shrink-0 items-center gap-0.5">
+                                        {modalEditToggle}
+                                        <button
+                                            type="button"
+                                            className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                            aria-label="Cerrar"
+                                            onClick={() => setOpenKey(null)}
+                                        >
+                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                        </button>
+                                    </div>
                                 </div>
                             ) : null}
                             {openShowSubTabs ? (
@@ -1044,7 +1065,7 @@ export function MenuAccordion({
                                                     )}
                                                     isActive={isActive}
                                                     className={
-                                                        editMode &&
+                                                        modalEditMode &&
                                                         onEditChildCategory &&
                                                         isUuidLike(sub.key)
                                                             ? 'pr-5 sm:pr-6'
@@ -1057,7 +1078,7 @@ export function MenuAccordion({
                                                         }))
                                                     }
                                                     overlay={
-                                                        editMode &&
+                                                        modalEditMode &&
                                                         onEditChildCategory &&
                                                         isUuidLike(sub.key) ? (
                                                             <span
@@ -1100,7 +1121,7 @@ export function MenuAccordion({
                                 </h2>
                             )}
                             {!openShowSubTabs &&
-                            editMode &&
+                            modalEditMode &&
                             !reorderScope &&
                             ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
                                 (onPersistProductOrder &&
@@ -1149,7 +1170,7 @@ export function MenuAccordion({
                                     ) : null}
                                 </div>
                             ) : null}
-                            {editMode &&
+                            {modalEditMode &&
                             isOpenPlatosParent &&
                             hasPlatoMarbellaBundle &&
                             !openPlatoMarbella &&
@@ -1164,14 +1185,17 @@ export function MenuAccordion({
                                 </button>
                             ) : null}
                             {!openShowSubTabs ? (
-                                <button
-                                    type="button"
-                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                    aria-label="Cerrar"
-                                    onClick={() => setOpenKey(null)}
-                                >
-                                    <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                </button>
+                                <div className="flex shrink-0 items-center gap-0.5">
+                                    {modalEditToggle}
+                                    <button
+                                        type="button"
+                                        className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                        aria-label="Cerrar"
+                                        onClick={() => setOpenKey(null)}
+                                    >
+                                        <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                    </button>
+                                </div>
                             ) : null}
                         </div>
                         )}
@@ -1257,7 +1281,7 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        {editMode &&
+                        {modalEditMode &&
                         !reorderScope &&
                         openGroup._subList.length === 1 &&
                         onEditChildCategory &&
@@ -1312,7 +1336,7 @@ export function MenuAccordion({
                                             onReorderTap={handleProductReorderTap}
                                             orderedIds={productIdsDraft}
                                         />
-                                    ) : editMode ? (
+                                    ) : modalEditMode ? (
                                         <PlatoMarbellaStaffGridView
                                             rows={platoBundleRows}
                                             lang={lang}
@@ -1390,7 +1414,7 @@ export function MenuAccordion({
                                                                 <CartaStaffMenuProductCard
                                                                     row={row}
                                                                     lang={lang}
-                                                                    editMode={editMode}
+                                                                    editMode={modalEditMode}
                                                                     productReorderMode={
                                                                         reorderScope === 'products' &&
                                                                         !reorderPlatoMarbellaBundle
@@ -1452,7 +1476,7 @@ export function MenuAccordion({
                                                             <CartaStaffMenuProductCard
                                                                 row={row}
                                                                 lang={lang}
-                                                                editMode={editMode}
+                                                                editMode={modalEditMode}
                                                                 onEditProduct={onEditProduct}
                                                                 onToggleProductActive={
                                                                     onToggleProductActive

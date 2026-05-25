@@ -93,8 +93,14 @@ export function StaffCartaView({
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
-          {editing && canEditMenu ? (
-            <StaffCartaInlineEditor canEdit={canEditMenu} lang={lang} onLangChange={setLang} />
+          {canEditMenu ? (
+            <StaffCartaInlineEditor
+              canEdit={canEditMenu}
+              globalEditMode={editing}
+              homeCompact={!editing}
+              lang={lang}
+              onLangChange={setLang}
+            />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <MenuAccordion
