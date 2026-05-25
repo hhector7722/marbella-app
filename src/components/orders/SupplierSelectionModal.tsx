@@ -3,8 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
-import { useNavigationFeedback } from '@/lib/navigation/navigation-context';
+import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
 
 interface Supplier {
     id: string;
@@ -44,7 +43,6 @@ interface Props {
 export function SupplierSelectionModal({ isOpen, onClose }: Props) {
     const [supabase] = useState(() => createClient());
     const router = useRouter();
-    const { notifyNavigationStart } = useNavigationFeedback();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -117,9 +115,8 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
     );
 
     const handleSelectSupplier = (supplierName: string) => {
-        onClose();
-        notifyNavigationStart();
         router.push(`/orders/new?supplier=${encodeURIComponent(supplierName)}`);
+        onClose();
     };
 
     const getLogo = (supplier: Supplier) => supplier.image_url || SUPPLIER_LOGOS[supplier.name] || null;

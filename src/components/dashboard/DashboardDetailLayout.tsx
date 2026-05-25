@@ -1,8 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
-import { useNavigationFeedback } from '@/lib/navigation/navigation-context'
+import { useAppRouter } from '@/lib/navigation/use-app-router'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,8 +25,7 @@ export function DashboardDetailLayout({
   className?: string
   children: ReactNode
 }) {
-  const router = useRouter()
-  const { notifyNavigationStart } = useNavigationFeedback()
+  const router = useAppRouter()
 
   return (
     <div className={cn('min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24', className)}>
@@ -38,10 +36,7 @@ export function DashboardDetailLayout({
               {showBackButton ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    notifyNavigationStart()
-                    router.push(backHref)
-                  }}
+                  onClick={() => router.push(backHref)}
                   className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center shrink-0 active:scale-95"
                   aria-label="Volver"
                 >

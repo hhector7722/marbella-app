@@ -1,26 +1,31 @@
-import { createClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 
 export default async function HomePage() {
   const supabase = await createClient();
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
-    redirect('/login');
+  if (!user) {
+    redirect("/login");
   }
 
+  // Obtener rol del usuario
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
-    .maybeSingle();
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
 
-  if (profile?.role === 'manager') {
-    redirect('/dashboard');
+  const role = profile?.role;
+
+  // Redirección basada en rol
+  if (role === "manager") {
+    redirect("/dashboard");
+  } else {
+    // Por defecto redirigir a staff dashboard (para staff, supervisor y otros roles)
+    redirect("/staff/dashboard");
   }
-
-  redirect('/staff/dashboard');
 }
