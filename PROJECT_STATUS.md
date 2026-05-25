@@ -6,7 +6,7 @@
 
 - [x] **Inicio `/`: redirect a dashboard por rol (2026-05-25)**: [`proxy.ts`](src/proxy.ts) redirige sesión activa en `/` o tras login → `manager` → `/dashboard`, resto → `/staff/dashboard`. [`page.tsx`](src/app/page.tsx) usa `getSession()`.
 
-- [x] **UX: carga unificada pantalla completa (2026-05-25)**: [`PageContentLoading`](src/components/ui/PageContentLoading.tsx) — fondo `#5B8FB9` sólido, spinner blanco, **sin blur**, entre navbar y barra inferior ([`app-chrome.ts`](src/lib/app-chrome.ts)). Misma UI en navegación cliente ([`MainWrapper`](src/components/MainWrapper.tsx)) y SSR ([`loading.tsx`](src/app/loading.tsx)). Al salir de carta fullscreen, barras visibles durante la carga. Modales sin cambios.
+- [x] **UX: pantalla de carga solo si la navegación tarda (2026-05-25)**: [`NavigationProvider`](src/lib/navigation/navigation-context.tsx) — overlay «Cargando…» tras **280 ms** si la ruta sigue pendiente; se oculta al cambiar `pathname` o a los 550 ms si no hubo navegación (modales Pedidos/Horarios con `data-no-nav-feedback`). **No** intercepta `router.push`. Enlaces (`Inicio`, volver carta) + `notifyNavigationStart()` en flechas programáticas.
 
 - [x] **Dashboard manager swipe: layout colgado (2026-05-25)**: [`DashboardSwitcher.tsx`](src/components/dashboards/DashboardSwitcher.tsx) — al soltar el dedo resetea `offsetX` antes de `router.replace`; sin `setView` duplicado que desincronizaba el carril 200%.
 

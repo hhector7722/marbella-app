@@ -10,15 +10,20 @@ import {
   type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 type NavigationContextValue = {
+  /** true solo cuando la pantalla de carga retrasada está visible */
   isLoading: boolean;
+  /** Llamar antes de router.push/replace/back programático (no bloquea la navegación) */
   notifyNavigationStart: () => void;
 };
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
+/** Esperar antes de mostrar la pantalla de carga (rutas rápidas no parpadean). */
 const LOADING_DELAY_MS = 280;
+/** Si la URL no cambia, ocultar (clic en modal, misma ruta, etc.). */
 const NO_ROUTE_CHANGE_MS = 550;
 const MAX_LOADING_MS = 12_000;
 
@@ -50,7 +55,7 @@ function currentRouteKey(): string {
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noChangeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,7 +74,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const endLoading = useCallback(() => {
     pendingRef.current = 0;
     clearTimers();
-    setIsLoading(false);
+    setShowLoading(false);
   }, [clearTimers]);
 
   const notifyNavigationStart = useCallback(() => {
@@ -78,7 +83,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     clearTimers();
 
     delayRef.current = setTimeout(() => {
-      if (pendingRef.current > 0) setIsLoading(true);
+      if (pendingRef.current > 0) setShowLoading(true);
     }, LOADING_DELAY_MS);
 
     noChangeRef.current = setTimeout(() => {
@@ -112,8 +117,22 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   useEffect(() => () => endLoading(), [endLoading]);
 
   return (
-    <NavigationContext.Provider value={{ isLoading, notifyNavigationStart }}>
+    <NavigationContext.Provider value={{ isLoading: showLoading, notifyNavigationStart }}>
       {children}
+      {showLoading ? (
+        <div
+          className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-4 bg-[#5B8FB9]/92 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+          aria-label="Cargando"
+        >
+          <LoadingSpinner size="xl" className="text-white" />
+          <p className="text-sm font-bold uppercase tracking-widest text-white/90">
+            Cargando…
+          </p>
+        </div>
+      ) : null}
     </NavigationContext.Provider>
   );
 }
@@ -124,14 +143,4 @@ export function useNavigationFeedback(): NavigationContextValue {
     throw new Error('useNavigationFeedback debe usarse dentro de NavigationProvider');
   }
   return ctx;
-}
-
-export function useNavigationFeedbackOptional(): NavigationContextValue {
-  const ctx = useContext(NavigationContext);
-  return (
-    ctx ?? {
-      isLoading: false,
-      notifyNavigationStart: () => {},
-    }
-  );
 }
