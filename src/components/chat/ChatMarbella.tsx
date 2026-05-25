@@ -34,7 +34,7 @@ export default function ChatMarbella() {
   if (!isOpen) return null;
 
   return (
-    <div
+    <div data-marbella-modal-root
       className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-safe"
       onClick={closeChat}
     >

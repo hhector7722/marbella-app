@@ -214,7 +214,7 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
     );
 
     return (
-        <div
+        <div data-marbella-modal-root
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={onClose}
             role="dialog"

@@ -121,7 +121,7 @@ export function RecipeNamePhotoEditModal({
     if (!open) return null;
 
     return (
-        <div
+        <div data-marbella-modal-root
             className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
             role="presentation"
             onClick={onClose}

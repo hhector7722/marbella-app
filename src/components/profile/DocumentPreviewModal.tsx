@@ -41,7 +41,7 @@ export default function DocumentPreviewModal({
     if (!isOpen || !fileUrl) return null;
 
     return (
-        <div 
+        <div data-marbella-modal-root 
             className="fixed inset-0 z-[205] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300"
             onClick={onClose}
         >

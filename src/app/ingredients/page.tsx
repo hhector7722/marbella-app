@@ -236,7 +236,7 @@ export default function IngredientsPage() {
 
                                 {showSupplierPopup && (
                                     <>
-                                        <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)} />
+                                        <div data-marbella-modal-root className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)} />
                                         <div className="absolute right-0 top-full z-40 mt-2 w-40 animate-in fade-in slide-in-from-top-2 rounded-2xl border border-gray-100 bg-white py-2 shadow-xl duration-200 md:w-48 pointer-events-auto">
                                             <div className="mb-1 border-b border-gray-50 px-4 py-2">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Seleccionar</span>
@@ -345,7 +345,7 @@ export default function IngredientsPage() {
             )}
 
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowCreateModal(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowCreateModal(false)}>
                     <div className="bg-white rounded-[20px] max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 md:px-6 py-4 shrink-0 flex justify-between items-center gap-3 relative">
                             <h2 className="text-lg font-black text-white uppercase tracking-widest">Nuevo</h2>
@@ -364,7 +364,7 @@ export default function IngredientsPage() {
                                     </button>
                                     {createSettingsOpen && (
                                         <>
-                                            <div className="fixed inset-0 z-[70]" onClick={() => setCreateSettingsOpen(false)} />
+                                            <div data-marbella-modal-root className="fixed inset-0 z-[70]" onClick={() => setCreateSettingsOpen(false)} />
                                             <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-xl border border-zinc-100 p-3 z-[80] text-left">
                                                 <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Modo de creación</div>
                                                 <button

@@ -544,7 +544,7 @@ export default function ConsumoPersonalDashboardPage() {
       {detailOpen &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div
+          <div data-marbella-modal-root
             className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
             onClick={(e) => {
               if (e.target === e.currentTarget) closeDetail();

@@ -302,7 +302,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
       </button>
 
       {open ? (
-        <div
+        <div data-marbella-modal-root
           className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm p-3 md:p-6"
           onClick={() => setOpen(false)}
           role="dialog"

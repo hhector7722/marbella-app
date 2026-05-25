@@ -388,7 +388,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
     const packBaseUnit = resolvedPackPurchaseUnit(editForm);
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+        <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
             <div
                 className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
                 onClick={(e) => e.stopPropagation()}

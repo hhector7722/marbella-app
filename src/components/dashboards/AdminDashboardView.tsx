@@ -1368,7 +1368,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             {cashModalMode !== 'none' && (
                 <>
                     {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit' || cashModalMode === 'inventory') && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+                        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
                             <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                                 {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
                                     <CashDenominationForm
@@ -1403,7 +1403,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             )}
 
             {showPurchaseMultiSourceModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                         <PurchaseMultiSourceForm
                             paymentSources={buildPaymentSources()}
@@ -1442,7 +1442,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             />
 
             {isNewWorkerModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                             <div>
@@ -1529,7 +1529,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
                 const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
                 return (
-                <div
+                <div data-marbella-modal-root
                     className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
                     onClick={() => setWeekDetailModal(null)}
                 >
@@ -1604,7 +1604,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
             {/* Modal selección fecha y rango horario ventas */}
             {isSalesDateModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setIsSalesDateModalOpen(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setIsSalesDateModalOpen(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar fecha</h3>

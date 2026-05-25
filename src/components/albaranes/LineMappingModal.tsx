@@ -472,7 +472,7 @@ export function LineMappingModal({
   const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(line.total_price)}`
 
   return createPortal(
-    <div
+    <div data-marbella-modal-root
       className="fixed inset-0 z-[10070] flex flex-col justify-end sm:justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"

@@ -17,7 +17,7 @@ export function CartaImageLightbox({
   if (!open || !src) return null
 
   return (
-    <div
+    <div data-marbella-modal-root
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 p-4 sm:p-6 md:p-8"
       onClick={onClose}
       role="dialog"

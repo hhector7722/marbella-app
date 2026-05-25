@@ -442,7 +442,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       {showSupplierModal && (
-        <div
+        <div data-marbella-modal-root
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => closeModal()}
         >

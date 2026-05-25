@@ -82,7 +82,7 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[220] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[220] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                     <div>

@@ -242,7 +242,7 @@ export function MenuItemEditModal({
   const hasPhoto = Boolean(displayPhotoSrc?.trim())
 
   return (
-    <div
+    <div data-marbella-modal-root
       className="fixed inset-0 z-[360] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={isPending ? undefined : onClose}
       role="dialog"

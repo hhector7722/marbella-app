@@ -115,7 +115,7 @@ export function MenuCategoryEditModal({
   if (!open || !category) return null
 
   return (
-    <div
+    <div data-marbella-modal-root
       className="fixed inset-0 z-[350] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={isPending ? undefined : onClose}
       role="dialog"

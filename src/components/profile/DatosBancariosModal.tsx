@@ -25,7 +25,7 @@ export default function DatosBancariosModal({ isOpen, onClose, iban }: DatosBanc
     if (!isOpen) return null;
 
     return (
-        <div
+        <div data-marbella-modal-root
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >

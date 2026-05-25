@@ -647,7 +647,7 @@ function IngredientEscandalloModal({
   if (!open) return null
 
   return (
-    <div
+    <div data-marbella-modal-root
       className="fixed inset-0 z-[100] overflow-y-auto bg-black/40 p-3"
       role="presentation"
       onClick={onClose}

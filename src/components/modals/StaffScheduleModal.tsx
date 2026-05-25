@@ -247,7 +247,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 backdrop-blur-sm animate-in fade-in" onClick={handleClose}>
+        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 backdrop-blur-sm animate-in fade-in" onClick={handleClose}>
             <div className={cn('bg-white w-full rounded-3xl shadow-2xl relative flex flex-col overflow-hidden max-h-[92vh]', editModeForDate ? 'max-w-4xl' : 'max-w-lg')} onClick={e => e.stopPropagation()}>
 
                 {/* ── MODO EDICIÓN: editor embebido (reutiliza su cabecera, sin cabecera extra) ── */}

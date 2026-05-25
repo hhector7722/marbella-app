@@ -181,7 +181,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     if (typeof document === 'undefined') return null;
 
     return createPortal((
-        <div className="fixed inset-0 bg-black/60 z-[220] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 z-[220] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col w-fit max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
                 {/* Header */}

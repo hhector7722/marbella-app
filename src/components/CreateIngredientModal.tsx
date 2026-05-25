@@ -46,7 +46,7 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
+        <div data-marbella-modal-root className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-black text-gray-800">Nuevo Ingrediente</h3>

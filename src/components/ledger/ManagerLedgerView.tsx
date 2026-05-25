@@ -529,7 +529,7 @@ export default function ManagerLedgerView() {
 
             {/* Modal Nuevo/Editar */}
             {(modalOpen || editModalOpen) && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => { setModalOpen(false); setEditModalOpen(false); }}>
+                <div data-marbella-modal-root className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => { setModalOpen(false); setEditModalOpen(false); }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md animate-in fade-in duration-200" />
                     <div className="relative bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-6 pt-8 text-white relative shrink-0 text-center">
@@ -579,7 +579,7 @@ export default function ManagerLedgerView() {
 
             {/* Modal Borrado */}
             {deleteModalOpen && selectedLog && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setDeleteModalOpen(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setDeleteModalOpen(false)}>
                     <div className="absolute inset-0 bg-red-900/40 backdrop-blur-md animate-in fade-in duration-200" />
                     <div className="relative bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col p-6 text-center" onClick={e => e.stopPropagation()}>
                         <div className="mx-auto w-16 h-16 bg-red-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-inner">

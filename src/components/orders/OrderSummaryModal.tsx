@@ -28,7 +28,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div
+        <div data-marbella-modal-root
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300"
             onClick={onClose}
         >

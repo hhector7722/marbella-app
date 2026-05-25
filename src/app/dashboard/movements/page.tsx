@@ -1087,7 +1087,7 @@ export default function MovementsPage() {
 
             {/* MODALES EXTERNOS */}
             {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
+                <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
@@ -1128,7 +1128,7 @@ export default function MovementsPage() {
             )}
 
             {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
+                <div data-marbella-modal-root className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
@@ -1212,7 +1212,7 @@ export default function MovementsPage() {
             />
 
             {cashModalMode !== 'none' && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300" onClick={() => setCashModalMode('none')}>
+                <div data-marbella-modal-root className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300" onClick={() => setCashModalMode('none')}>
                     <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
                         {cashModalMode === 'inventory' ? (
                             <BoxInventoryView boxName={boxData?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />
