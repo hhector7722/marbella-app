@@ -581,6 +581,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <ClosingPetrolInput
                                     value={tpvData.totalSales}
                                     onChange={(next) => setTpvData({ ...tpvData, totalSales: next })}
+                                    showEuro
                                     inputClassName="text-base"
                                 />
                             </ClosingStepRow>
@@ -609,6 +610,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <ClosingPetrolInput
                                     value={tpvData.cardSales}
                                     onChange={(next) => setTpvData({ ...tpvData, cardSales: next })}
+                                    showEuro
                                 />
                             </ClosingStepRow>
 
@@ -616,6 +618,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <ClosingPetrolInput
                                     value={tpvData.debtRecovered}
                                     onChange={(next) => setTpvData({ ...tpvData, debtRecovered: next })}
+                                    showEuro
                                 />
                             </ClosingStepRow>
 
@@ -623,6 +626,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <ClosingPetrolInput
                                     value={tpvData.pendingSales}
                                     onChange={(next) => setTpvData({ ...tpvData, pendingSales: next })}
+                                    showEuro
                                 />
                             </ClosingStepRow>
                         </div>

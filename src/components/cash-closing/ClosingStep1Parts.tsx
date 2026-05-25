@@ -9,7 +9,7 @@ import {
   type ClosingWeatherId,
 } from '@/lib/cash-closing-weather';
 
-/** Ancho fijo de cajas numéricas, centradas en el modal */
+/** Ancho fijo de cajas numéricas; alineadas al inicio de la columna (referencia: fila Ventas) */
 export const CLOSING_FIELD_COL =
   'w-[8.75rem] sm:w-[9.5rem]';
 
@@ -29,7 +29,7 @@ export function ClosingStepRow({
       <span className="text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs">
         {title}
       </span>
-      <div className="flex min-w-0 justify-center">
+      <div className="flex min-w-0 justify-start">
         <div className={CLOSING_FIELD_COL}>{children}</div>
       </div>
       <div className="flex shrink-0 justify-end">{trailing ?? null}</div>
@@ -41,28 +41,44 @@ export function ClosingPetrolInput({
   value,
   onChange,
   step,
+  showEuro = false,
   className,
   inputClassName,
 }: {
   value: number;
   onChange: (next: number) => void;
   step?: string;
+  /** Muestra «€» a la derecha del valor cuando hay cantidad (ventas, tarjeta, cobros, pendiente) */
+  showEuro?: boolean;
   className?: string;
   inputClassName?: string;
 }) {
+  const hasValue = value !== 0 && !Number.isNaN(value);
+
   return (
-    <input
-      type="number"
-      step={step ?? '0.01'}
+    <div
       className={cn(
         CLOSING_INPUT_HEIGHT,
-        'w-full rounded-xl border-2 border-[#36606F] bg-white px-3 text-right text-sm font-black tabular-nums text-zinc-800 outline-none transition-colors focus:bg-[#36606F]/5',
+        'flex w-full items-center justify-center rounded-xl border-2 border-[#36606F] bg-white px-2 transition-colors focus-within:bg-[#36606F]/5',
         className,
-        inputClassName,
       )}
-      value={value || ''}
-      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-    />
+    >
+      <div className="inline-flex max-w-full items-center justify-center gap-0.5">
+        <input
+          type="number"
+          step={step ?? '0.01'}
+          className={cn(
+            'min-w-[2.5ch] max-w-full bg-transparent text-center text-sm font-black tabular-nums text-zinc-800 outline-none',
+            inputClassName,
+          )}
+          value={value || ''}
+          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        />
+        {showEuro && hasValue ? (
+          <span className="shrink-0 text-sm font-black text-zinc-600">€</span>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -118,7 +134,7 @@ export function ClosingWeatherPicker({
   onSelect: (id: ClosingWeatherId) => void;
 }) {
   return (
-    <div className="grid w-full grid-cols-10 items-center gap-0">
+    <div className="grid w-full grid-cols-7 items-center gap-0">
       {CLOSING_WEATHER_OPTIONS.map((option) => {
         const selected = selectedId === option.id;
         return (

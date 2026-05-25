@@ -4,11 +4,8 @@ export const CLOSING_WEATHER_OPTIONS = [
   { id: 'lluvioso', label: 'Lluvioso', icon: '/icons/clima/lluvioso.png' },
   { id: 'sol-nubes', label: 'Sol y nubes', icon: '/icons/clima/sol-nubes.png' },
   { id: 'viento', label: 'Viento', icon: '/icons/clima/viento.png' },
-  { id: 'calor', label: 'Calor', icon: '/icons/clima/calor.png' },
-  { id: 'frio', label: 'Frío', icon: '/icons/clima/frio.png' },
   { id: 'sol-lluvia', label: 'Sol y lluvia', icon: '/icons/clima/sol-lluvia.png' },
   { id: 'tormenta', label: 'Tormenta', icon: '/icons/clima/tormenta.png' },
-  { id: 'nieve', label: 'Nieve', icon: '/icons/clima/nieve.png' },
 ] as const;
 
 export type ClosingWeatherId = (typeof CLOSING_WEATHER_OPTIONS)[number]['id'];
@@ -22,8 +19,6 @@ const legacyLabelMap: Record<string, ClosingWeatherId> = {
   Soleado: 'soleado',
   Nublado: 'nublado',
   Lluvia: 'lluvioso',
-  Frio: 'frio',
-  Calor: 'calor',
   Evento: 'tormenta',
 };
 
