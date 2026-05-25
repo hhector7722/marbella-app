@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -132,7 +132,8 @@ export default function BottomNavStaff() {
                         key={item.href}
                         href={item.href}
                         data-no-nav-feedback={
-                            item.name.toLowerCase() === 'pedidos' || item.name.toLowerCase() === 'horarios'
+                            item.name.toLowerCase() === 'pedidos' ||
+                            item.name.toLowerCase() === 'horarios'
                                 ? 'true'
                                 : undefined
                         }

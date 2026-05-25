@@ -9,23 +9,23 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 type NavigationContextValue = {
-  isNavigating: boolean;
-  startNavigation: () => void;
-  endNavigation: () => void;
+  /** true solo cuando la pantalla de carga retrasada está visible */
+  isLoading: boolean;
+  /** Llamar antes de router.push/replace/back programático (no bloquea la navegación) */
+  notifyNavigationStart: () => void;
 };
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
-/** Solo mostrar overlay si la navegación supera este umbral (evita flash en rutas rápidas). */
-const OVERLAY_DELAY_MS = 180;
-/** Si la URL no cambia tras un intento de navegación, quitar overlay. */
-const NO_ROUTE_CHANGE_MS = 600;
-/** Tope absoluto por si algo falla. */
-const NAVIGATION_STUCK_MS = 8_000;
+/** Esperar antes de mostrar la pantalla de carga (rutas rápidas no parpadean). */
+const LOADING_DELAY_MS = 280;
+/** Si la URL no cambia, ocultar (clic en modal, misma ruta, etc.). */
+const NO_ROUTE_CHANGE_MS = 550;
+const MAX_LOADING_MS = 12_000;
 
 function isInternalNavigationAnchor(anchor: HTMLAnchorElement): boolean {
   if (anchor.dataset.noNavFeedback === 'true') return false;
@@ -40,9 +40,9 @@ function isInternalNavigationAnchor(anchor: HTMLAnchorElement): boolean {
   try {
     const url = new URL(href, window.location.origin);
     if (url.origin !== window.location.origin) return false;
-    const nextPath = `${url.pathname}${url.search}`;
-    const currentPath = `${window.location.pathname}${window.location.search}`;
-    return nextPath !== currentPath;
+    const next = `${url.pathname}${url.search}`;
+    const current = `${window.location.pathname}${window.location.search}`;
+    return next !== current;
   } catch {
     return false;
   }
@@ -55,63 +55,49 @@ function currentRouteKey(): string {
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const routeKey = `${pathname}?${searchParams.toString()}`;
-
-  const [showOverlay, setShowOverlay] = useState(false);
-  const overlayDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showLoading, setShowLoading] = useState(false);
+  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noChangeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const stuckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const routeAtStartRef = useRef(routeKey);
-  const pendingCountRef = useRef(0);
+  const maxRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const routeAtStartRef = useRef(pathname);
+  const pendingRef = useRef(0);
 
   const clearTimers = useCallback(() => {
-    if (overlayDelayRef.current) {
-      clearTimeout(overlayDelayRef.current);
-      overlayDelayRef.current = null;
-    }
-    if (noChangeRef.current) {
-      clearTimeout(noChangeRef.current);
-      noChangeRef.current = null;
-    }
-    if (stuckRef.current) {
-      clearTimeout(stuckRef.current);
-      stuckRef.current = null;
-    }
+    if (delayRef.current) clearTimeout(delayRef.current);
+    if (noChangeRef.current) clearTimeout(noChangeRef.current);
+    if (maxRef.current) clearTimeout(maxRef.current);
+    delayRef.current = null;
+    noChangeRef.current = null;
+    maxRef.current = null;
   }, []);
 
-  const endNavigation = useCallback(() => {
-    pendingCountRef.current = 0;
+  const endLoading = useCallback(() => {
+    pendingRef.current = 0;
     clearTimers();
-    setShowOverlay(false);
+    setShowLoading(false);
   }, [clearTimers]);
 
-  const startNavigation = useCallback(() => {
+  const notifyNavigationStart = useCallback(() => {
     routeAtStartRef.current = currentRouteKey();
-    pendingCountRef.current += 1;
-
+    pendingRef.current += 1;
     clearTimers();
 
-    overlayDelayRef.current = setTimeout(() => {
-      if (pendingCountRef.current > 0) {
-        setShowOverlay(true);
-      }
-    }, OVERLAY_DELAY_MS);
+    delayRef.current = setTimeout(() => {
+      if (pendingRef.current > 0) setShowLoading(true);
+    }, LOADING_DELAY_MS);
 
     noChangeRef.current = setTimeout(() => {
-      if (pendingCountRef.current > 0 && currentRouteKey() === routeAtStartRef.current) {
-        endNavigation();
+      if (pendingRef.current > 0 && currentRouteKey() === routeAtStartRef.current) {
+        endLoading();
       }
     }, NO_ROUTE_CHANGE_MS);
 
-    stuckRef.current = setTimeout(endNavigation, NAVIGATION_STUCK_MS);
-  }, [clearTimers, endNavigation]);
+    maxRef.current = setTimeout(endLoading, MAX_LOADING_MS);
+  }, [clearTimers, endLoading]);
 
   useEffect(() => {
-    if (pendingCountRef.current > 0) {
-      endNavigation();
-    }
-  }, [routeKey, endNavigation]);
+    if (pendingRef.current > 0) endLoading();
+  }, [pathname, endLoading]);
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -121,40 +107,40 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       const anchor = (event.target as Element | null)?.closest('a');
       if (!anchor || !isInternalNavigationAnchor(anchor)) return;
 
-      startNavigation();
+      notifyNavigationStart();
     };
 
-    // Bubble (no capture): respeta preventDefault de modales / CTAs en la barra inferior.
     document.addEventListener('click', onClick, false);
     return () => document.removeEventListener('click', onClick, false);
-  }, [startNavigation]);
+  }, [notifyNavigationStart]);
 
-  useEffect(() => () => endNavigation(), [endNavigation]);
+  useEffect(() => () => endLoading(), [endLoading]);
 
   return (
-    <NavigationContext.Provider
-      value={{ isNavigating: showOverlay, startNavigation, endNavigation }}
-    >
+    <NavigationContext.Provider value={{ isLoading: showLoading, notifyNavigationStart }}>
       {children}
-      {showOverlay ? (
+      {showLoading ? (
         <div
-          className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-3 bg-white/55 backdrop-blur-[2px] pointer-events-none"
+          className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-4 bg-[#5B8FB9]/92 backdrop-blur-sm"
           role="status"
           aria-live="polite"
           aria-busy="true"
-          aria-label="Cargando página"
+          aria-label="Cargando"
         >
-          <LoadingSpinner size="xl" className="text-[#5B8FB9]" />
+          <LoadingSpinner size="xl" className="text-white" />
+          <p className="text-sm font-bold uppercase tracking-widest text-white/90">
+            Cargando…
+          </p>
         </div>
       ) : null}
     </NavigationContext.Provider>
   );
 }
 
-export function useNavigation(): NavigationContextValue {
+export function useNavigationFeedback(): NavigationContextValue {
   const ctx = useContext(NavigationContext);
   if (!ctx) {
-    throw new Error('useNavigation debe usarse dentro de NavigationProvider');
+    throw new Error('useNavigationFeedback debe usarse dentro de NavigationProvider');
   }
   return ctx;
 }

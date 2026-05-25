@@ -94,8 +94,15 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/staff/dashboard", request.url));
     }
 
+    const homeDashboard =
+      role === "manager" ? "/dashboard" : "/staff/dashboard";
+
+    if (path === "/" || path === "") {
+      return NextResponse.redirect(new URL(homeDashboard, request.url));
+    }
+
     if (path.startsWith("/login")) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL(homeDashboard, request.url));
     }
   }
 

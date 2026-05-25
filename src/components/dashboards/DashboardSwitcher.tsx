@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAppRouter as useRouter } from '@/lib/navigation/use-app-router';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 import AdminDashboardView from './AdminDashboardView';
@@ -84,23 +84,22 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
 
     const handleTouchEnd = () => {
         if (!dragActivated.current) return;
-        setIsDragging(false);
-        dragActivated.current = false;
 
         const threshold = containerWidth.current / 4;
+        const snapOffset = offsetX;
 
-        if (Math.abs(offsetX) > threshold) {
-            if (offsetX < 0 && view === 'admin') {
-                setView('staff');
-                router.replace('/staff/dashboard');
-            } else if (offsetX > 0 && view === 'staff') {
-                setView('admin');
-                router.replace('/dashboard');
-            }
-        }
-
+        setIsDragging(false);
+        dragActivated.current = false;
         setOffsetX(0);
         isHorizontalDrag.current = null;
+
+        if (Math.abs(snapOffset) <= threshold) return;
+
+        if (snapOffset < 0 && view === 'admin') {
+            router.replace('/staff/dashboard');
+        } else if (snapOffset > 0 && view === 'staff') {
+            router.replace('/dashboard');
+        }
     };
 
     // Estilos dinámicos
