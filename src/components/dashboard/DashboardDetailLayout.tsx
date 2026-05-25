@@ -2,8 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useAppRouter } from '@/lib/navigation/use-app-router'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { useNavigation } from '@/lib/navigation/navigation-context'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function DashboardDetailLayout({
@@ -27,7 +26,6 @@ export function DashboardDetailLayout({
   children: ReactNode
 }) {
   const router = useAppRouter()
-  const { isNavigating } = useNavigation()
 
   return (
     <div className={cn('min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24', className)}>
@@ -39,16 +37,10 @@ export function DashboardDetailLayout({
                 <button
                   type="button"
                   onClick={() => router.push(backHref)}
-                  disabled={isNavigating}
-                  className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center shrink-0 disabled:opacity-80"
+                  className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center shrink-0 active:scale-95"
                   aria-label="Volver"
-                  aria-busy={isNavigating}
                 >
-                  {isNavigating ? (
-                    <Loader2 size={20} strokeWidth={2.5} className="animate-spin" />
-                  ) : (
-                    <ArrowLeft size={20} strokeWidth={2.5} />
-                  )}
+                  <ArrowLeft size={20} strokeWidth={2.5} />
                 </button>
               ) : null}
               <div className="min-w-0">

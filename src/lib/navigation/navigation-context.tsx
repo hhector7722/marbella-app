@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 type NavigationContextValue = {
@@ -20,9 +20,16 @@ type NavigationContextValue = {
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
-const NAVIGATION_STUCK_MS = 30_000;
+/** Solo mostrar overlay si la navegación supera este umbral (evita flash en rutas rápidas). */
+const OVERLAY_DELAY_MS = 180;
+/** Si la URL no cambia tras un intento de navegación, quitar overlay. */
+const NO_ROUTE_CHANGE_MS = 600;
+/** Tope absoluto por si algo falla. */
+const NAVIGATION_STUCK_MS = 8_000;
 
 function isInternalNavigationAnchor(anchor: HTMLAnchorElement): boolean {
+  if (anchor.dataset.noNavFeedback === 'true') return false;
+
   const href = anchor.getAttribute('href');
   if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
     return false;
@@ -41,31 +48,73 @@ function isInternalNavigationAnchor(anchor: HTMLAnchorElement): boolean {
   }
 }
 
+function currentRouteKey(): string {
+  if (typeof window === 'undefined') return '';
+  return `${window.location.pathname}${window.location.search}`;
+}
+
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [isNavigating, setIsNavigating] = useState(false);
-  const stuckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchParams = useSearchParams();
+  const routeKey = `${pathname}?${searchParams.toString()}`;
 
-  const endNavigation = useCallback(() => {
-    setIsNavigating(false);
-    if (stuckTimeoutRef.current) {
-      clearTimeout(stuckTimeoutRef.current);
-      stuckTimeoutRef.current = null;
+  const [showOverlay, setShowOverlay] = useState(false);
+  const overlayDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noChangeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stuckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const routeAtStartRef = useRef(routeKey);
+  const pendingCountRef = useRef(0);
+
+  const clearTimers = useCallback(() => {
+    if (overlayDelayRef.current) {
+      clearTimeout(overlayDelayRef.current);
+      overlayDelayRef.current = null;
+    }
+    if (noChangeRef.current) {
+      clearTimeout(noChangeRef.current);
+      noChangeRef.current = null;
+    }
+    if (stuckRef.current) {
+      clearTimeout(stuckRef.current);
+      stuckRef.current = null;
     }
   }, []);
 
+  const endNavigation = useCallback(() => {
+    pendingCountRef.current = 0;
+    clearTimers();
+    setShowOverlay(false);
+  }, [clearTimers]);
+
   const startNavigation = useCallback(() => {
-    setIsNavigating(true);
-    if (stuckTimeoutRef.current) clearTimeout(stuckTimeoutRef.current);
-    stuckTimeoutRef.current = setTimeout(endNavigation, NAVIGATION_STUCK_MS);
-  }, [endNavigation]);
+    routeAtStartRef.current = currentRouteKey();
+    pendingCountRef.current += 1;
+
+    clearTimers();
+
+    overlayDelayRef.current = setTimeout(() => {
+      if (pendingCountRef.current > 0) {
+        setShowOverlay(true);
+      }
+    }, OVERLAY_DELAY_MS);
+
+    noChangeRef.current = setTimeout(() => {
+      if (pendingCountRef.current > 0 && currentRouteKey() === routeAtStartRef.current) {
+        endNavigation();
+      }
+    }, NO_ROUTE_CHANGE_MS);
+
+    stuckRef.current = setTimeout(endNavigation, NAVIGATION_STUCK_MS);
+  }, [clearTimers, endNavigation]);
 
   useEffect(() => {
-    endNavigation();
-  }, [pathname, endNavigation]);
+    if (pendingCountRef.current > 0) {
+      endNavigation();
+    }
+  }, [routeKey, endNavigation]);
 
   useEffect(() => {
-    const onClickCapture = (event: MouseEvent) => {
+    const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
@@ -75,16 +124,19 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       startNavigation();
     };
 
-    document.addEventListener('click', onClickCapture, true);
-    return () => document.removeEventListener('click', onClickCapture, true);
+    // Bubble (no capture): respeta preventDefault de modales / CTAs en la barra inferior.
+    document.addEventListener('click', onClick, false);
+    return () => document.removeEventListener('click', onClick, false);
   }, [startNavigation]);
 
   useEffect(() => () => endNavigation(), [endNavigation]);
 
   return (
-    <NavigationContext.Provider value={{ isNavigating, startNavigation, endNavigation }}>
+    <NavigationContext.Provider
+      value={{ isNavigating: showOverlay, startNavigation, endNavigation }}
+    >
       {children}
-      {isNavigating ? (
+      {showOverlay ? (
         <div
           className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-3 bg-white/55 backdrop-blur-[2px] pointer-events-none"
           role="status"
