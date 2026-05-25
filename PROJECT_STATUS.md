@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-25 (Cron recálculo balances horas)
+**Última actualización:** 2026-05-25 (Rediseño paso 1 cierre de caja)
+
+- [x] **Cierre de caja: rediseño paso 1 Datos (2026-05-25)**: [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx) — 6 filas (Clima→Ventas→Tickets→Tarjeta→Cobros→Pendiente), títulos petróleo `#36606F`, inputs borde petróleo. Clima: selector por iconos [`/public/icons/clima/`](public/icons/clima/) sin selección por defecto ([`cash-closing-weather.ts`](src/lib/cash-closing-weather.ts)). Fotos: botones verdes «Añadir informe» / «Añadir totales» + submodal cámara ([`ClosingStep1Parts.tsx`](src/components/cash-closing/ClosingStep1Parts.tsx)). Siguiente verde; sync TPV automático sin botón Refresh.
 
 - [x] **Horas: cron recálculo global semanal + DST Madrid (2026-05-25)**: Dos jobs pg_cron con guarda CET/CEST: `weekly_recalculate_balances_winter` (`0 3 * * 1`, offset Madrid=1) y `weekly_recalculate_balances_summer` (`0 2 * * 1`, offset=2); wrappers `cron_weekly_recalculate_balances_if_madrid_*`. Migración [`20260525120000_cron_weekly_recalculate_all_balances.sql`](supabase/migrations/20260525120000_cron_weekly_recalculate_all_balances.sql). Sin `CREATE EXTENSION pg_cron`.
 

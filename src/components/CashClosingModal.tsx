@@ -1,13 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import {
-    X, Save, Banknote, Coins, Calendar,
-    CreditCard, UserMinus, ArchiveRestore, Store,
-    AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
-    CheckCircle2, TrendingUp, RefreshCw, Minus, Plus, Camera
-} from 'lucide-react';
+import { X, Calendar, Minus, Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
@@ -17,6 +12,20 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { sendClosingNotification } from '@/app/actions/notifications';
 import { uploadCashClosingPhotoAction } from '@/app/actions/cash-closing-photos';
+import {
+    weatherLabelFromId,
+    weatherIdFromLabel,
+    type ClosingWeatherId,
+} from '@/lib/cash-closing-weather';
+import {
+    ClosingStepRow,
+    ClosingPetrolInput,
+    ClosingPetrolInputWithAdjust,
+    ClosingWeatherPicker,
+    ClosingPhotoAttach,
+    ClosingPhotoCaptureModal,
+    type ClosingPhotoModalKind,
+} from '@/components/cash-closing/ClosingStep1Parts';
 
 // export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
 export const BILLS = [100, 50, 20, 10, 5];
@@ -60,117 +69,6 @@ const CURRENCY_IMAGES: Record<number, string> = {
 
 type ClosingStep = 'tpv_data' | 'count' | 'summary';
 
-function ClosingInlinePhotoControl({
-    previewUrl,
-    inputId,
-    onSelect,
-    onClear,
-    ariaLabel,
-}: {
-    previewUrl: string | null;
-    inputId: string;
-    onSelect: (file: File) => void;
-    onClear: () => void;
-    ariaLabel: string;
-}) {
-    if (previewUrl) {
-        return (
-            <div className="relative shrink-0 h-14 w-14">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src={previewUrl}
-                    alt={ariaLabel}
-                    className="h-14 w-14 object-cover rounded-xl"
-                />
-                <button
-                    type="button"
-                    onClick={onClear}
-                    className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm hover:bg-rose-600 active:scale-95 transition-all min-h-[20px] min-w-[20px]"
-                    aria-label={`Eliminar ${ariaLabel}`}
-                >
-                    <X size={12} strokeWidth={3} />
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <label
-            htmlFor={inputId}
-            className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-dashed border-zinc-200 text-[#36606F] transition-all hover:bg-zinc-50 active:scale-95 min-h-[48px] min-w-[48px]"
-            aria-label={ariaLabel}
-            title="Añadir foto"
-        >
-            <Camera size={20} />
-            <input
-                id={inputId}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                    const next = e.target.files?.[0];
-                    if (next) onSelect(next);
-                    e.target.value = '';
-                }}
-            />
-        </label>
-    );
-}
-
-function TpvNumericField({
-    label,
-    icon: Icon,
-    value,
-    onChange,
-    onAdjust,
-    parseValue,
-    trailing,
-}: {
-    label: string;
-    icon: ComponentType<{ size?: number }>;
-    value: number;
-    onChange: (next: number) => void;
-    onAdjust: (delta: number) => void;
-    parseValue?: (raw: string) => number;
-    trailing?: ReactNode;
-}) {
-    const parse = parseValue ?? ((raw: string) => parseFloat(raw) || 0);
-
-    return (
-        <div>
-            <label className="mb-1 flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-                <Icon size={12} /> {label}
-            </label>
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 flex-1 items-center justify-between overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
-                    <button
-                        type="button"
-                        onClick={() => onAdjust(-1)}
-                        className="flex h-full w-8 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
-                    >
-                        <Minus size={14} strokeWidth={3} />
-                    </button>
-                    <input
-                        type="number"
-                        className="h-full w-0 flex-1 bg-transparent p-0 text-center text-[10px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
-                        value={value || ''}
-                        onChange={(e) => onChange(parse(e.target.value))}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => onAdjust(1)}
-                        className="flex h-full w-8 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
-                    >
-                        <Plus size={14} strokeWidth={3} />
-                    </button>
-                </div>
-                {trailing}
-            </div>
-        </div>
-    );
-}
-
 interface CashClosingModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -200,8 +98,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         pendingSales: 0,
         debtRecovered: 0,
         ticketsCount: initialTicketsCount || 0,
-        weather: 'Soleado'
     });
+
+    const [weatherId, setWeatherId] = useState<ClosingWeatherId | null>(null);
+    const [photoModalKind, setPhotoModalKind] = useState<ClosingPhotoModalKind | null>(null);
 
     // 2. STATE: COUNT
     const [counts, setCounts] = useState<Record<string, number>>({});
@@ -258,6 +158,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     useEffect(() => {
         if (!isOpen) {
             resetClosingPhotos();
+            setWeatherId(null);
+            setPhotoModalKind(null);
         }
     }, [isOpen]);
 
@@ -282,7 +184,28 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     const draft = localStorage.getItem(`cash_closing_draft_${userId}`);
                     if (draft) {
                         const parsed = JSON.parse(draft);
-                        if (parsed.tpvData) setTpvData(parsed.tpvData);
+                        if (parsed.tpvData) {
+                            const { weather: legacyWeather, ...rest } = parsed.tpvData as {
+                                weather?: string;
+                                totalSales?: number;
+                                cardSales?: number;
+                                pendingSales?: number;
+                                debtRecovered?: number;
+                                ticketsCount?: number;
+                            };
+                            setTpvData({
+                                totalSales: rest.totalSales ?? 0,
+                                cardSales: rest.cardSales ?? 0,
+                                pendingSales: rest.pendingSales ?? 0,
+                                debtRecovered: rest.debtRecovered ?? 0,
+                                ticketsCount: rest.ticketsCount ?? 0,
+                            });
+                            if (parsed.weatherId) {
+                                setWeatherId(parsed.weatherId as ClosingWeatherId);
+                            } else if (legacyWeather) {
+                                setWeatherId(weatherIdFromLabel(legacyWeather));
+                            }
+                        }
                         if (parsed.counts) setCounts(parsed.counts);
                         return; // Successfully loaded draft
                     }
@@ -314,9 +237,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     useEffect(() => {
         if (isInitialized.current && userId && (Object.keys(counts).length > 0 || tpvData.cardSales > 0 || tpvData.pendingSales > 0 || tpvData.debtRecovered > 0)) {
             const draftKey = `cash_closing_draft_${userId}`;
-            localStorage.setItem(draftKey, JSON.stringify({ tpvData, counts }));
+            localStorage.setItem(draftKey, JSON.stringify({ tpvData, counts, weatherId }));
         }
-    }, [tpvData, counts, userId]);
+    }, [tpvData, counts, weatherId, userId]);
 
     // Consolidado en el efecto de inicialización
 
@@ -387,13 +310,21 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }));
     };
 
-    const ensurePhotosAttached = () => {
-        if (!dataphonePhotoFile) {
-            toast.error('Adjunta la foto de totales del datáfono en la fila Tarjeta');
+    const ensureWeatherSelected = () => {
+        if (!weatherId) {
+            toast.error('Selecciona el clima');
             return false;
         }
+        return true;
+    };
+
+    const ensurePhotosAttached = () => {
         if (!bdpTicketPhotoFile) {
-            toast.error('Adjunta la foto del software de ventas en la fila Ventas');
+            toast.error('Adjunta el informe TPV en la fila Ventas');
+            return false;
+        }
+        if (!dataphonePhotoFile) {
+            toast.error('Adjunta los totales del datáfono en la fila Tarjeta');
             return false;
         }
         return true;
@@ -401,6 +332,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     const handleAdvanceStep = () => {
         if (step === 'tpv_data') {
+            if (!ensureWeatherSelected()) return;
             if (!ensurePhotosAttached()) return;
             setStep('count');
             return;
@@ -470,7 +402,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     difference: difference,
                     cash_withdrawn: cashToWithdraw,
                     cash_left: cashLeft,
-                    weather: tpvData.weather,
+                    weather: weatherId ? weatherLabelFromId(weatherId) : null,
                     tickets_count: tpvData.ticketsCount,
                     notes: movementName, // This will be the name in treasury log
                     status: 'closed',
@@ -506,8 +438,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             }
             setTpvData({
                 totalSales: 0, cardSales: 0, pendingSales: 0,
-                debtRecovered: 0, ticketsCount: 0, weather: 'Soleado'
+                debtRecovered: 0, ticketsCount: 0,
             });
+            setWeatherId(null);
             setCounts({});
             resetClosingPhotos();
             setStep('tpv_data');
@@ -588,111 +521,65 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
-                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                            <div>
-                                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">Ventas</label>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex-1 flex items-center justify-between h-14 bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAdjustTpv('totalSales', -1)}
-                                            className="w-12 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                        >
-                                            <Minus size={20} strokeWidth={3} />
-                                        </button>
-                                        <div className="flex-1 h-full relative flex items-center">
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                className="w-full h-full text-xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0 text-center p-0 focus:bg-blue-50/20 transition-colors"
-                                                placeholder="0.00"
-                                                value={tpvData.totalSales || ''}
-                                                onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
-                                            />
-                                            <span className="text-xl font-black text-[#5B8FB9]/40 absolute right-4 pointer-events-none">€</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAdjustTpv('totalSales', 1)}
-                                            className="w-12 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                        >
-                                            <Plus size={20} strokeWidth={3} />
-                                        </button>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => fetchTodayVentas()}
-                                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-[#36606F]/60 shadow-sm transition-all hover:text-[#36606F] active:scale-95 min-h-[48px] min-w-[48px]"
-                                        title="Sincronizar con TPV"
-                                    >
-                                        <RefreshCw size={24} className={cn(loading && "animate-spin")} />
-                                    </button>
-                                    <ClosingInlinePhotoControl
-                                        previewUrl={bdpTicketPreviewUrl}
-                                        inputId="closing-photo-bdp-ticket"
-                                        ariaLabel="Totales software de ventas"
-                                        onSelect={setBdpTicketPhoto}
-                                        onClear={() => setBdpTicketPhoto(null)}
-                                    />
-                                </div>
-                            </div>
+                        <div className="space-y-5 p-4 sm:p-6">
+                            <ClosingStepRow title="Clima">
+                                <ClosingWeatherPicker
+                                    selectedId={weatherId}
+                                    onSelect={setWeatherId}
+                                />
+                            </ClosingStepRow>
 
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <CloudSun className="text-blue-500" size={20} />
-                                    <span className="text-[10px] font-black text-blue-900 uppercase">Clima</span>
-                                </div>
-                                <select
-                                    className="bg-white border border-blue-200 rounded-lg px-3 py-1.5 text-xs font-bold text-blue-900 outline-none"
-                                    value={tpvData.weather}
-                                    onChange={e => setTpvData({ ...tpvData, weather: e.target.value })}
-                                >
-                                    {['Soleado', 'Nublado', 'Lluvia', 'Frio', 'Calor', 'Evento'].map(w => (
-                                        <option key={w} value={w}>{w}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <ClosingStepRow title="Ventas">
+                                <ClosingPetrolInput
+                                    value={tpvData.totalSales}
+                                    onChange={(next) => setTpvData({ ...tpvData, totalSales: next })}
+                                    inputClassName="text-base"
+                                />
+                                <ClosingPhotoAttach
+                                    buttonLabel="Añadir informe"
+                                    previewUrl={bdpTicketPreviewUrl}
+                                    ariaLabel="Informe TPV"
+                                    onOpenModal={() => setPhotoModalKind('bdp-ticket')}
+                                    onClear={() => setBdpTicketPhoto(null)}
+                                />
+                            </ClosingStepRow>
 
-                            <div className="space-y-4">
-                                <TpvNumericField
-                                    label="Tarjeta"
-                                    icon={CreditCard}
-                                    value={tpvData.cardSales}
-                                    onChange={(next) => setTpvData({ ...tpvData, cardSales: next })}
-                                    onAdjust={(delta) => handleAdjustTpv('cardSales', delta)}
-                                    trailing={
-                                        <ClosingInlinePhotoControl
-                                            previewUrl={dataphonePreviewUrl}
-                                            inputId="closing-photo-dataphone"
-                                            ariaLabel="Totales datáfonos"
-                                            onSelect={setDataphonePhoto}
-                                            onClear={() => setDataphonePhoto(null)}
-                                        />
-                                    }
-                                />
-                                <TpvNumericField
-                                    label="Cobros"
-                                    icon={ArchiveRestore}
-                                    value={tpvData.debtRecovered}
-                                    onChange={(next) => setTpvData({ ...tpvData, debtRecovered: next })}
-                                    onAdjust={(delta) => handleAdjustTpv('debtRecovered', delta)}
-                                />
-                                <TpvNumericField
-                                    label="Pendiente"
-                                    icon={UserMinus}
-                                    value={tpvData.pendingSales}
-                                    onChange={(next) => setTpvData({ ...tpvData, pendingSales: next })}
-                                    onAdjust={(delta) => handleAdjustTpv('pendingSales', delta)}
-                                />
-                                <TpvNumericField
-                                    label="Nº Tickets"
-                                    icon={Receipt}
+                            <ClosingStepRow title="Nº tickets">
+                                <ClosingPetrolInputWithAdjust
                                     value={tpvData.ticketsCount}
                                     onChange={(next) => setTpvData({ ...tpvData, ticketsCount: next })}
                                     onAdjust={(delta) => handleAdjustTpv('ticketsCount', delta)}
                                     parseValue={(raw) => parseInt(raw, 10) || 0}
                                 />
-                            </div>
+                            </ClosingStepRow>
+
+                            <ClosingStepRow title="Tarjeta">
+                                <ClosingPetrolInput
+                                    value={tpvData.cardSales}
+                                    onChange={(next) => setTpvData({ ...tpvData, cardSales: next })}
+                                />
+                                <ClosingPhotoAttach
+                                    buttonLabel="Añadir totales"
+                                    previewUrl={dataphonePreviewUrl}
+                                    ariaLabel="Totales datáfono"
+                                    onOpenModal={() => setPhotoModalKind('dataphone')}
+                                    onClear={() => setDataphonePhoto(null)}
+                                />
+                            </ClosingStepRow>
+
+                            <ClosingStepRow title="Cobros">
+                                <ClosingPetrolInput
+                                    value={tpvData.debtRecovered}
+                                    onChange={(next) => setTpvData({ ...tpvData, debtRecovered: next })}
+                                />
+                            </ClosingStepRow>
+
+                            <ClosingStepRow title="Pendiente">
+                                <ClosingPetrolInput
+                                    value={tpvData.pendingSales}
+                                    onChange={(next) => setTpvData({ ...tpvData, pendingSales: next })}
+                                />
+                            </ClosingStepRow>
                         </div>
                     )}
 
@@ -822,7 +709,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                         disabled={loading || (step === 'summary' && !photosReady)}
                         className={cn(
                             "flex-1 min-h-[48px] h-14 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
-                            step === 'summary' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-[#5B8FB9] shadow-blue-900/20'
+                            step === 'summary' || step === 'tpv_data' || step === 'count'
+                                ? 'bg-emerald-500 shadow-emerald-200'
+                                : 'bg-[#5B8FB9] shadow-blue-900/20'
                         )}
                     >
                         {loading ? <LoadingSpinner size="sm" className="text-white" /> : (
@@ -834,6 +723,17 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     </button>
                 </div>
             </div>
+
+            {photoModalKind ? (
+                <ClosingPhotoCaptureModal
+                    kind={photoModalKind}
+                    onClose={() => setPhotoModalKind(null)}
+                    onConfirm={(file) => {
+                        if (photoModalKind === 'bdp-ticket') setBdpTicketPhoto(file);
+                        else setDataphonePhoto(file);
+                    }}
+                />
+            ) : null}
         </div >
     );
 }
