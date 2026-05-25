@@ -23,6 +23,10 @@ function formatMoneyAmount(value: number): string {
   return value.toFixed(2);
 }
 
+/** Mitad del ancho de caja + separación hasta el botón foto (el «+» no entra en el centrado) */
+const CLOSING_PHOTO_OFFSET =
+  'left-[calc(50%+4.375rem+0.25rem)] sm:left-[calc(50%+4.75rem+0.25rem)]';
+
 export function ClosingStepRow({
   title,
   children,
@@ -35,11 +39,18 @@ export function ClosingStepRow({
   return (
     <div className="grid min-h-[40px] grid-cols-[4.5rem_1fr] items-center gap-x-2 sm:grid-cols-[5.25rem_1fr] sm:gap-x-3">
       <span className={CLOSING_ROW_TITLE}>{title}</span>
-      <div className="flex min-w-0 justify-center">
-        <div className="inline-flex items-center gap-1.5 sm:gap-2">
-          <div className={CLOSING_FIELD_COL}>{children}</div>
-          {trailing ?? null}
-        </div>
+      <div className="relative flex min-w-0 items-center justify-center">
+        <div className={CLOSING_FIELD_COL}>{children}</div>
+        {trailing ? (
+          <div
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 shrink-0',
+              CLOSING_PHOTO_OFFSET,
+            )}
+          >
+            {trailing}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -257,20 +268,20 @@ export function ClosingPhotoAttach({
 
   if (previewUrl) {
     return (
-      <div className="relative h-8 w-8 shrink-0">
+      <div className="relative h-6 w-6 shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={previewUrl}
           alt={ariaLabel}
-          className="h-8 w-8 rounded-lg object-cover"
+          className="h-6 w-6 rounded-md object-cover"
         />
         <button
           type="button"
           onClick={onClear}
-          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
+          className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
           aria-label={`Eliminar ${ariaLabel}`}
         >
-          <X size={10} strokeWidth={3} />
+          <X size={8} strokeWidth={3} />
         </button>
       </div>
     );
@@ -294,10 +305,10 @@ export function ClosingPhotoAttach({
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all hover:bg-emerald-600 active:scale-95"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all hover:bg-emerald-600 active:scale-95"
         aria-label={ariaLabel}
       >
-        <Plus size={16} strokeWidth={3} />
+        <Plus size={12} strokeWidth={3} />
       </button>
     </>
   );
