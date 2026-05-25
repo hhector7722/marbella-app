@@ -21,7 +21,6 @@ export function ImageLightbox({
 
   return (
     <div
-      data-marbella-modal-root
       role="dialog"
       aria-modal="true"
       aria-label="Imagen ampliada"

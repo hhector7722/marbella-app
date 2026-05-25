@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useModalLockState } from '@/lib/modal-lock/modal-lock-context';
 
 import AdminDashboardView from './AdminDashboardView';
 import StaffDashboardView from './StaffDashboardView';
@@ -27,7 +26,6 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
     const containerRef = useRef<HTMLDivElement>(null);
 
     const DRAG_DEAD_ZONE = 10; // px de movimiento mínimo antes de activar el drag
-    const { isLocked: isModalOpen } = useModalLockState();
 
     // Sync with initialView if it changes (e.g. on direct navigation)
     useEffect(() => {
@@ -35,7 +33,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
     }, [initialView]);
 
     const handleTouchStart = (e: React.TouchEvent) => {
-        if (userRole !== 'manager' || isModalOpen) return;
+        if (userRole !== 'manager') return;
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
         isHorizontalDrag.current = null;
@@ -47,7 +45,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (userRole !== 'manager' || isModalOpen) return;
+        if (userRole !== 'manager') return;
 
         const currentX = e.touches[0].clientX;
         const currentY = e.touches[0].clientY;
@@ -85,7 +83,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
     };
 
     const handleTouchEnd = () => {
-        if (!dragActivated.current || isModalOpen) return;
+        if (!dragActivated.current) return;
 
         const threshold = containerWidth.current / 4;
         const snapOffset = offsetX;
