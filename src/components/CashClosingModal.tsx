@@ -120,39 +120,41 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const [dataphonePreviewUrl, setDataphonePreviewUrl] = useState<string | null>(null);
     const [bdpTicketPreviewUrl, setBdpTicketPreviewUrl] = useState<string | null>(null);
 
-    const revokePreviewUrl = (url: string | null) => {
-        if (url) URL.revokeObjectURL(url);
-    };
-
     const setDataphonePhoto = (file: File | null) => {
-        setDataphonePreviewUrl((prev) => {
-            revokePreviewUrl(prev);
-            return file ? URL.createObjectURL(file) : null;
-        });
         setDataphonePhotoFile(file);
     };
 
     const setBdpTicketPhoto = (file: File | null) => {
-        setBdpTicketPreviewUrl((prev) => {
-            revokePreviewUrl(prev);
-            return file ? URL.createObjectURL(file) : null;
-        });
         setBdpTicketPhotoFile(file);
     };
 
     const resetClosingPhotos = () => {
-        setDataphonePhoto(null);
-        setBdpTicketPhoto(null);
+        setDataphonePhotoFile(null);
+        setBdpTicketPhotoFile(null);
     };
 
     const photosReady = Boolean(dataphonePhotoFile && bdpTicketPhotoFile);
 
+    // Una URL blob por archivo; al revocar solo la que creó este efecto (evita romper la otra miniatura)
     useEffect(() => {
-        return () => {
-            revokePreviewUrl(dataphonePreviewUrl);
-            revokePreviewUrl(bdpTicketPreviewUrl);
-        };
-    }, [dataphonePreviewUrl, bdpTicketPreviewUrl]);
+        if (!dataphonePhotoFile) {
+            setDataphonePreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(dataphonePhotoFile);
+        setDataphonePreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [dataphonePhotoFile]);
+
+    useEffect(() => {
+        if (!bdpTicketPhotoFile) {
+            setBdpTicketPreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(bdpTicketPhotoFile);
+        setBdpTicketPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [bdpTicketPhotoFile]);
 
     useEffect(() => {
         if (!isOpen) {
