@@ -3,21 +3,30 @@ const axios = require('axios');
 
 // ✨ CONEXIÓN DIRECTA POR RED LOCAL ✨
 // En el PC TPV, si DuckDNS falla en LAN: set BDP_GATEWAY_URL=http://192.168.1.205:3000
-const DOMINIO = process.env.BDP_GATEWAY_URL || "http://erp-marbella.duckdns.org:3000";
+const DOMINIO = process.env.BDP_GATEWAY_URL || 'http://erp-marbella.duckdns.org:3000';
 const URL_VENTAS = `${DOMINIO}/api/ventas`;
 const URL_TELEMETRIA = `${DOMINIO}/api/telemetria`;
+const URL_CAJA =
+    process.env.BDP_CAJA_WEBHOOK_URL ||
+    (process.env.BDP_APP_WEBHOOK_URL
+        ? `${String(process.env.BDP_APP_WEBHOOK_URL).replace(/\/$/, '')}/api/webhooks/bdp/caja`
+        : `${DOMINIO}/api/caja`);
 
 const config = {
     user: 'proxmox_reader',
     password: 'heyJUDE5!',
     server: 'localhost',
     database: 'Bdp-Net_NetHos_38',
-    options: { encrypt: false, trustServerCertificate: true, instanceName: 'BDPSOFTWARECF', enableArithAbort: true }
+    options: {
+        encrypt: false,
+        trustServerCertificate: true,
+        instanceName: 'BDPSOFTWARECF',
+        enableArithAbort: true,
+    },
 };
 
 /**
  * Ventana de negocio BDP (Data Sistema). Funciona aunque Fecha (día TPV) vaya desfasada.
- * El filtro solo por Hora_Cierre 3h devolvía 0 filas en producción (reloj/Hora_Cierre NULL).
  */
 const VENTAS_WHERE = `
   WHERE (
@@ -29,24 +38,40 @@ const VENTAS_WHERE = `
 const CABECERA_SELECT = `
   Numero_Documento, Serie, Numero, Total_Documento,
   Fecha, Fecha_Sistema, Hora_Cierre,
-  ISNULL(Mesa, 0) AS Mesa
+  ISNULL(Mesa, 0) AS Mesa,
+  ISNULL(Pendiente, 0) AS Pendiente
 `;
 
 const CATCHUP_PAGE_SIZE = 100;
 const POLL_INTERVAL_MS = 5000;
+const CAJA_POLL_INTERVAL_MS = 12000;
 const AXIOS_TIMEOUT_MS = 45000;
 const POLL_TOP = 50;
 
 /** Solo historial al arrancar si BDP_RUN_CATCHUP=1. Por defecto OFF → solo poll (cobros nuevos). */
 const RUN_CATCHUP = process.env.BDP_RUN_CATCHUP === '1';
 
-let memoriaTickets = new Set();
-let ultimoEstadoSala = "";
+/** key → firma de cobros (re-upsert si cambian pagos en Documentos_Pagos). */
+let memoriaTickets = new Map();
+let ultimoEstadoSala = '';
 let ventasPollBusy = false;
+let cajaPollBusy = false;
 let pollTick = 0;
+
+function webhookHeaders() {
+    const headers = {};
+    if (process.env.WEBHOOK_SECRET) {
+        headers.Authorization = `Bearer ${process.env.WEBHOOK_SECRET}`;
+    }
+    return headers;
+}
 
 function ticketKey(numeroDocumento) {
     return String(numeroDocumento ?? '').trim();
+}
+
+function roundMoney(n) {
+    return Math.round((Number(n) || 0) * 100) / 100;
 }
 
 function toIso(val) {
@@ -54,54 +79,125 @@ function toIso(val) {
     const d = new Date(val);
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
-    
+
+function toYmdLocal(val) {
+    if (val == null) return null;
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function ticketPaymentSignature(payload) {
+    return [
+        payload.cobro_efectivo,
+        payload.cobro_tarjeta,
+        payload.cobro_pendiente,
+        payload.total_documento,
+    ].join('|');
+}
+
 async function buildPayloadVenta(pool, t) {
-    const lRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
-        .query("SELECT PLU, Descripcion, Unidades, Precio, Hora FROM Documentos_Lineas WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
-    const mRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
-        .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Menus WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
-    const pRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
-        .query("SELECT PLU, Descripcion, Unidades FROM Documentos_Packs WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
+    const pagosRes = await pool
+        .request()
+        .input('s', t.Serie)
+        .input('n', t.Numero)
+        .query(`
+            SELECT
+                ISNULL(SUM(CASE WHEN Forma_Pago = 1 THEN Importe_Pago ELSE 0 END), 0) AS efectivo,
+                ISNULL(SUM(CASE WHEN Forma_Pago IN (2, 3) THEN Importe_Pago ELSE 0 END), 0) AS tarjeta
+            FROM Documentos_Pagos WITH (NOLOCK)
+            WHERE Serie = @s AND Numero = @n
+        `);
+
+    const lRes = await pool
+        .request()
+        .input('s', t.Serie)
+        .input('n', t.Numero)
+        .query(
+            'SELECT PLU, Descripcion, Unidades, Precio, Hora FROM Documentos_Lineas WITH (NOLOCK) WHERE Serie = @s AND Numero = @n'
+        );
+    const mRes = await pool
+        .request()
+        .input('s', t.Serie)
+        .input('n', t.Numero)
+        .query(
+            'SELECT PLU, Descripcion, Unidades FROM Documentos_Menus WITH (NOLOCK) WHERE Serie = @s AND Numero = @n'
+        );
+    const pRes = await pool
+        .request()
+        .input('s', t.Serie)
+        .input('n', t.Numero)
+        .query(
+            'SELECT PLU, Descripcion, Unidades FROM Documentos_Packs WITH (NOLOCK) WHERE Serie = @s AND Numero = @n'
+        );
 
     const horaLinea = lRes.recordset[0]?.Hora;
+    const total = parseFloat(t.Total_Documento) || 0;
+    const cobro_efectivo = roundMoney(parseFloat(pagosRes.recordset[0]?.efectivo) || 0);
+    const cobro_tarjeta = roundMoney(parseFloat(pagosRes.recordset[0]?.tarjeta) || 0);
+    const pendienteBit = t.Pendiente === true || t.Pendiente === 1;
+
+    let cobro_pendiente = roundMoney(Math.max(0, total - cobro_efectivo - cobro_tarjeta));
+    if (pendienteBit && cobro_efectivo === 0 && cobro_tarjeta === 0) {
+        cobro_pendiente = roundMoney(total);
+    }
 
     return {
         numero_documento: ticketKey(t.Numero_Documento),
         mesa: t.Mesa,
-        total_documento: parseFloat(t.Total_Documento) || 0,
+        total_documento: total,
+        cobro_efectivo,
+        cobro_tarjeta,
+        cobro_pendiente,
         fecha_sistema: toIso(t.Fecha_Sistema),
         hora_cierre: toIso(t.Hora_Cierre),
         fecha_bdp: toIso(t.Fecha),
-        fecha: horaLinea ? new Date(horaLinea).toISOString() : (toIso(t.Hora_Cierre) || new Date().toISOString()),
+        fecha: horaLinea ? new Date(horaLinea).toISOString() : toIso(t.Hora_Cierre) || new Date().toISOString(),
         lineas: [
-            ...lRes.recordset.map(l => ({
+            ...lRes.recordset.map((l) => ({
                 articulo_id: l.PLU,
-                nombre: l.Descripcion?.trim() || "Sin Nombre",
+                nombre: l.Descripcion?.trim() || 'Sin Nombre',
                 unidades: parseFloat(l.Unidades) || 0,
-                precio: parseFloat(l.Precio) || 0
+                precio: parseFloat(l.Precio) || 0,
             })),
-            ...mRes.recordset.map(m => ({
+            ...mRes.recordset.map((m) => ({
                 articulo_id: m.PLU,
-                nombre: '↳ ' + (m.Descripcion?.trim() || "Sin Nombre"),
+                nombre: '↳ ' + (m.Descripcion?.trim() || 'Sin Nombre'),
                 unidades: parseFloat(m.Unidades) || 0,
-                precio: 0
+                precio: 0,
             })),
-            ...pRes.recordset.map(p => ({
+            ...pRes.recordset.map((p) => ({
                 articulo_id: p.PLU,
-                nombre: '↳ ' + (p.Descripcion?.trim() || "Sin Nombre"),
+                nombre: '↳ ' + (p.Descripcion?.trim() || 'Sin Nombre'),
                 unidades: parseFloat(p.Unidades) || 0,
-                precio: 0
-            }))
-        ]
+                precio: 0,
+            })),
+        ],
     };
 }
 
 async function enviarTicket(pool, t) {
     const key = ticketKey(t.Numero_Documento);
     const payload = await buildPayloadVenta(pool, t);
-    await axios.post(URL_VENTAS, { ventas: [payload] }, { timeout: AXIOS_TIMEOUT_MS });
-    memoriaTickets.add(key);
-    console.log(`✅ Venta enviada -> Ticket: ${key} | Mesa: ${t.Mesa} | Fecha_Sistema: ${payload.fecha_sistema || '—'}`);
+    const sig = ticketPaymentSignature(payload);
+
+    if (memoriaTickets.has(key) && memoriaTickets.get(key) === sig) {
+        return false;
+    }
+
+    await axios.post(
+        URL_VENTAS,
+        { ventas: [payload] },
+        { timeout: AXIOS_TIMEOUT_MS, headers: webhookHeaders() }
+    );
+    memoriaTickets.set(key, sig);
+    console.log(
+        `✅ Venta enviada -> Ticket: ${key} | ef=${payload.cobro_efectivo} | tj=${payload.cobro_tarjeta} | pend=${payload.cobro_pendiente}`
+    );
+    return true;
 }
 
 async function catchUpVentas(pool) {
@@ -111,7 +207,8 @@ async function catchUpVentas(pool) {
     let escaneados = 0;
 
     while (true) {
-        const res = await pool.request()
+        const res = await pool
+            .request()
             .input('off', sql.Int, offset)
             .input('lim', sql.Int, CATCHUP_PAGE_SIZE)
             .query(`
@@ -127,14 +224,13 @@ async function catchUpVentas(pool) {
 
         for (const t of batch) {
             escaneados++;
-            if (memoriaTickets.has(ticketKey(t.Numero_Documento))) continue;
-            await new Promise((r) => setTimeout(r, 50));
             try {
-                await enviarTicket(pool, t);
-                enviados++;
+                const sent = await enviarTicket(pool, t);
+                if (sent) enviados++;
             } catch (e) {
                 console.error(`❌ Catch-up ticket ${t.Numero_Documento}:`, e.message);
             }
+            await new Promise((r) => setTimeout(r, 50));
         }
 
         offset += CATCHUP_PAGE_SIZE;
@@ -179,47 +275,116 @@ async function pollVentasRecientes(pool) {
 
         const candidatos = res.recordset || [];
         let nuevos = 0;
+        let actualizados = 0;
 
         for (const t of candidatos) {
-            const key = ticketKey(t.Numero_Documento);
-            if (memoriaTickets.has(key)) continue;
             try {
-                await enviarTicket(pool, t);
-                nuevos++;
+                const sent = await enviarTicket(pool, t);
+                if (sent) nuevos++;
+                else actualizados++;
             } catch (e) {
-                console.error(`❌ ERROR ticket ${key}:`, e.message);
+                console.error(`❌ ERROR ticket ${ticketKey(t.Numero_Documento)}:`, e.message);
             }
         }
 
         pollTick++;
-        const ts = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const ts = new Date().toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
         if (nuevos > 0) {
-            console.log(`🔄 [${ts}] Poll: ${nuevos} enviado(s) | candidatos=${candidatos.length} | memoria=${memoriaTickets.size}`);
+            console.log(
+                `🔄 [${ts}] Poll ventas: ${nuevos} nuevo(s)/actualizado(s) | sin cambio=${actualizados} | candidatos=${candidatos.length} | memoria=${memoriaTickets.size}`
+            );
         } else if (pollTick % 12 === 0) {
-            console.log(`⏱ [${ts}] Poll: 0 nuevos | candidatos=${candidatos.length} | memoria=${memoriaTickets.size}`);
+            console.log(
+                `⏱ [${ts}] Poll ventas: 0 cambios | candidatos=${candidatos.length} | memoria=${memoriaTickets.size}`
+            );
         }
     } finally {
         ventasPollBusy = false;
     }
 }
 
+async function pollCajaMovimientos(pool) {
+    if (cajaPollBusy) return;
+    cajaPollBusy = true;
+    try {
+        const res = await pool.request().query(`
+            SELECT Fecha, Num_Concepto, Importe_Entrada
+            FROM Caja_Lineas WITH (NOLOCK)
+            WHERE Num_Concepto IN (107)
+              AND Fecha >= DATEADD(hour, -24, GETDATE())
+              AND ISNULL(Importe_Entrada, 0) <> 0
+        `);
+
+        const movimientos = (res.recordset || [])
+            .map((row) => {
+                const amount = roundMoney(row.Importe_Entrada);
+                const movementDate = toIso(row.Fecha);
+                const fechaNegocio = toYmdLocal(row.Fecha);
+                const conceptCode = Number(row.Num_Concepto);
+                if (!movementDate || !fechaNegocio || !Number.isFinite(conceptCode) || amount <= 0) {
+                    return null;
+                }
+                return {
+                    fecha_negocio: fechaNegocio,
+                    movement_date: movementDate,
+                    concept_code: conceptCode,
+                    amount,
+                    raw_json: {
+                        Fecha: row.Fecha,
+                        Num_Concepto: row.Num_Concepto,
+                        Importe_Entrada: row.Importe_Entrada,
+                    },
+                };
+            })
+            .filter(Boolean);
+
+        if (!movimientos.length) return;
+
+        await axios.post(
+            URL_CAJA,
+            { movimientos },
+            { timeout: AXIOS_TIMEOUT_MS, headers: webhookHeaders() }
+        );
+        console.log(`💶 Caja: ${movimientos.length} movimiento(s) concepto 107 enviados.`);
+    } catch (e) {
+        console.error('❌ Poll caja:', e.message);
+    } finally {
+        cajaPollBusy = false;
+    }
+}
+
 async function start() {
     try {
-        let pool = await sql.connect(config);
+        const pool = await sql.connect(config);
         console.log(`✅ Sistema Activado → ${DOMINIO}`);
-        console.log(`📋 Poll cada ${POLL_INTERVAL_MS / 1000}s (Fecha_Sistema) | catch-up arranque: ${RUN_CATCHUP ? 'SÍ' : 'NO'}`);
+        console.log(`📋 Poll ventas cada ${POLL_INTERVAL_MS / 1000}s | Poll caja cada ${CAJA_POLL_INTERVAL_MS / 1000}s`);
+        console.log(`📋 Catch-up arranque: ${RUN_CATCHUP ? 'SÍ' : 'NO'}`);
+        console.log(`📋 Caja → ${URL_CAJA}`);
 
         await logDiagnosticoSql(pool);
 
         void pollVentasRecientes(pool);
+        void pollCajaMovimientos(pool);
 
         setInterval(async () => {
             try {
                 await pollVentasRecientes(pool);
             } catch (e) {
-                console.error("❌ ERROR EN VENTAS:", e.message);
+                console.error('❌ ERROR EN VENTAS:', e.message);
             }
         }, POLL_INTERVAL_MS);
+
+        setInterval(async () => {
+            try {
+                await pollCajaMovimientos(pool);
+            } catch (e) {
+                console.error('❌ ERROR EN CAJA:', e.message);
+            }
+        }, CAJA_POLL_INTERVAL_MS);
 
         if (RUN_CATCHUP) {
             void catchUpVentas(pool).catch((e) => {
@@ -227,24 +392,19 @@ async function start() {
             });
         }
 
-        // 2. TELEMETRÍA / MONITOR COCINA (CON CEREBRO MATEMÁTICO ANTIFRAUDE)
-        //    Contrato JSON → Supabase `estado_sala.radiografia_completa` (Radar / KDS):
-        //    - `timestamp_tpv`: ISO UTC de la **apertura más temprana** con `row.Hora` no nulo
-        //    - Cada `producto` incluye `hora` (misma semántica) para que el dashboard pueda fallback.
-        //    Ventas directas: filtro por Fecha_Sistema (alineado con ventas cobradas).
+        // TELEMETRÍA / MONITOR COCINA
         setInterval(async () => {
             try {
                 const resVivas = await pool.request().query(`
-                    -- 1. MESAS VIVAS (Las normales de la sala)
-                    SELECT 
-                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
-                        ISNULL(C.Mesa, 0) AS Mesa, 
-                        C.Nota_Cabecera1, 
+                    SELECT
+                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia,
+                        ISNULL(C.Mesa, 0) AS Mesa,
+                        C.Nota_Cabecera1,
                         LTRIM(RTRIM(ISNULL(C.Nombre_Cliente, ''))) AS Nombre_Cliente,
-                        L.PLU as articulo_id, 
-                        L.Descripcion as nombre, 
-                        L.Unidades as unidades, 
-                        L.Precio as precio, 
+                        L.PLU as articulo_id,
+                        L.Descripcion as nombre,
+                        L.Unidades as unidades,
+                        L.Precio as precio,
                         L.Hora,
                         LTRIM(RTRIM(ISNULL(L.Descripcion_Auxiliar, '') + ISNULL((SELECT ' [' + CC.Descripcion + ']' FROM Comandas_Comentarios CC WITH (NOLOCK) WHERE CC.Numero_Referencia = L.Numero_Referencia AND CC.Terminal = L.Terminal AND CC.Linea_Comandas = L.Linea FOR XML PATH('')), ''))) as notas
                     FROM Comandas_Cabecera C WITH (NOLOCK)
@@ -253,37 +413,35 @@ async function start() {
 
                     UNION ALL
 
-                    -- 2. VENTAS DIRECTAS NINJA (Cobradas al instante)
-                    SELECT 
-                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia, 
-                        ISNULL(D.Mesa, 0) AS Mesa, 
-                        D.Nota_Cabecera1, 
+                    SELECT
+                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia,
+                        ISNULL(D.Mesa, 0) AS Mesa,
+                        D.Nota_Cabecera1,
                         LTRIM(RTRIM(ISNULL(D.Nombre_Cliente, ''))) AS Nombre_Cliente,
-                        L.PLU as articulo_id, 
-                        L.Descripcion as nombre, 
-                        L.Unidades as unidades, 
-                        L.Precio as precio, 
+                        L.PLU as articulo_id,
+                        L.Descripcion as nombre,
+                        L.Unidades as unidades,
+                        L.Precio as precio,
                         L.Hora,
                         ISNULL(L.Descripcion_Auxiliar, '') as notas
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Lineas L WITH (NOLOCK) ON D.Serie = L.Serie AND D.Numero = L.Numero
-                    WHERE L.Unidades <> 0 
+                    WHERE L.Unidades <> 0
                     AND CAST(D.Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
-                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
+                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE())
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
 
                     UNION ALL
 
-                    -- 3. MENÚS (COMPONENTES)
-                    SELECT 
-                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
-                        ISNULL(C.Mesa, 0) AS Mesa, 
-                        C.Nota_Cabecera1, 
+                    SELECT
+                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia,
+                        ISNULL(C.Mesa, 0) AS Mesa,
+                        C.Nota_Cabecera1,
                         LTRIM(RTRIM(ISNULL(C.Nombre_Cliente, ''))) AS Nombre_Cliente,
-                        M.PLU as articulo_id, 
-                        '↳ ' + LTRIM(RTRIM(M.Descripcion)) as nombre, 
-                        M.Unidades as unidades, 
-                        0 as precio, 
+                        M.PLU as articulo_id,
+                        '↳ ' + LTRIM(RTRIM(M.Descripcion)) as nombre,
+                        M.Unidades as unidades,
+                        0 as precio,
                         NULL as Hora,
                         '' as notas
                     FROM Comandas_Cabecera C WITH (NOLOCK)
@@ -292,36 +450,35 @@ async function start() {
 
                     UNION ALL
 
-                    SELECT 
-                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia, 
-                        ISNULL(D.Mesa, 0) AS Mesa, 
-                        D.Nota_Cabecera1, 
+                    SELECT
+                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia,
+                        ISNULL(D.Mesa, 0) AS Mesa,
+                        D.Nota_Cabecera1,
                         LTRIM(RTRIM(ISNULL(D.Nombre_Cliente, ''))) AS Nombre_Cliente,
-                        M.PLU as articulo_id, 
-                        '↳ ' + LTRIM(RTRIM(M.Descripcion)) as nombre, 
-                        M.Unidades as unidades, 
-                        0 as precio, 
+                        M.PLU as articulo_id,
+                        '↳ ' + LTRIM(RTRIM(M.Descripcion)) as nombre,
+                        M.Unidades as unidades,
+                        0 as precio,
                         NULL as Hora,
                         '' as notas
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Menus M WITH (NOLOCK) ON D.Serie = M.Serie AND D.Numero = M.Numero
-                    WHERE M.Unidades <> 0 
+                    WHERE M.Unidades <> 0
                     AND CAST(D.Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
-                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
+                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE())
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
 
                     UNION ALL
 
-                    -- 4. PACKS (COMPONENTES)
-                    SELECT 
-                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
-                        ISNULL(C.Mesa, 0) AS Mesa, 
-                        C.Nota_Cabecera1, 
+                    SELECT
+                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia,
+                        ISNULL(C.Mesa, 0) AS Mesa,
+                        C.Nota_Cabecera1,
                         LTRIM(RTRIM(ISNULL(C.Nombre_Cliente, ''))) AS Nombre_Cliente,
-                        P.PLU as articulo_id, 
-                        '↳ ' + LTRIM(RTRIM(P.Descripcion)) as nombre, 
-                        P.Unidades as unidades, 
-                        0 as precio, 
+                        P.PLU as articulo_id,
+                        '↳ ' + LTRIM(RTRIM(P.Descripcion)) as nombre,
+                        P.Unidades as unidades,
+                        0 as precio,
                         NULL as Hora,
                         '' as notas
                     FROM Comandas_Cabecera C WITH (NOLOCK)
@@ -330,28 +487,28 @@ async function start() {
 
                     UNION ALL
 
-                    SELECT 
-                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia, 
-                        ISNULL(D.Mesa, 0) AS Mesa, 
-                        D.Nota_Cabecera1, 
+                    SELECT
+                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia,
+                        ISNULL(D.Mesa, 0) AS Mesa,
+                        D.Nota_Cabecera1,
                         LTRIM(RTRIM(ISNULL(D.Nombre_Cliente, ''))) AS Nombre_Cliente,
-                        P.PLU as articulo_id, 
-                        '↳ ' + LTRIM(RTRIM(P.Descripcion)) as nombre, 
-                        P.Unidades as unidades, 
-                        0 as precio, 
+                        P.PLU as articulo_id,
+                        '↳ ' + LTRIM(RTRIM(P.Descripcion)) as nombre,
+                        P.Unidades as unidades,
+                        0 as precio,
                         NULL as Hora,
                         '' as notas
                     FROM Documentos_Cabecera D WITH (NOLOCK)
                     INNER JOIN Documentos_Packs P WITH (NOLOCK) ON D.Serie = P.Serie AND D.Numero = P.Numero
-                    WHERE P.Unidades <> 0 
+                    WHERE P.Unidades <> 0
                     AND CAST(D.Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE))
-                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
+                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE())
                     AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
                 `);
 
-                let mapa = new Map();
+                const mapa = new Map();
 
-                resVivas.recordset.forEach(row => {
+                resVivas.recordset.forEach((row) => {
                     const idMesa = row.Numero_Referencia.toString();
 
                     if (!mapa.has(idMesa)) {
@@ -361,7 +518,7 @@ async function start() {
                             notas_comanda: row.Nota_Cabecera1 || '',
                             nombre_cliente: '',
                             aperturaMs: null,
-                            productosMap: new Map()
+                            productosMap: new Map(),
                         });
                     }
 
@@ -370,9 +527,9 @@ async function start() {
                     if (nc && !mesa.nombre_cliente) mesa.nombre_cliente = nc;
 
                     if (row.Hora) {
-                        const t = new Date(row.Hora).getTime();
-                        if (!Number.isNaN(t)) {
-                            if (mesa.aperturaMs == null || t < mesa.aperturaMs) mesa.aperturaMs = t;
+                        const tm = new Date(row.Hora).getTime();
+                        if (!Number.isNaN(tm)) {
+                            if (mesa.aperturaMs == null || tm < mesa.aperturaMs) mesa.aperturaMs = tm;
                         }
                     }
 
@@ -385,51 +542,64 @@ async function start() {
                             unidades: 0,
                             precio: parseFloat(row.precio),
                             notas: row.notas.trim(),
-                            hora: null
+                            hora: null,
                         });
                     }
 
                     const p = mesa.productosMap.get(idPlato);
                     p.unidades += parseFloat(row.unidades);
                     if (row.Hora) {
-                        const t = new Date(row.Hora).getTime();
-                        if (!Number.isNaN(t)) {
-                            if (!p.hora || t < new Date(p.hora).getTime()) p.hora = new Date(row.Hora).toISOString();
+                        const tm = new Date(row.Hora).getTime();
+                        if (!Number.isNaN(tm)) {
+                            if (!p.hora || tm < new Date(p.hora).getTime()) {
+                                p.hora = new Date(row.Hora).toISOString();
+                            }
                         }
                     }
                 });
 
-                const sala = Array.from(mapa.values()).map(mesa => {
-                    const productosReales = Array.from(mesa.productosMap.values()).map(p => ({
-                        ...p,
-                        numero_documento: mesa.numero_documento
-                    }));
+                const sala = Array.from(mapa.values())
+                    .map((mesa) => {
+                        const productosReales = Array.from(mesa.productosMap.values()).map((p) => ({
+                            ...p,
+                            numero_documento: mesa.numero_documento,
+                        }));
 
-                    return {
-                        numero_documento: mesa.numero_documento,
-                        id_ticket: mesa.numero_documento,
-                        mesa: mesa.mesa,
-                        notas_comanda: mesa.notas_comanda,
-                        nombre_cliente: mesa.nombre_cliente || '',
-                        timestamp_tpv: mesa.aperturaMs != null
-                            ? new Date(mesa.aperturaMs).toISOString()
-                            : new Date().toISOString(),
-                        productos: productosReales
-                    };
-                }).filter(mesa => mesa.productos.some(p => p.unidades > 0));
+                        return {
+                            numero_documento: mesa.numero_documento,
+                            id_ticket: mesa.numero_documento,
+                            mesa: mesa.mesa,
+                            notas_comanda: mesa.notas_comanda,
+                            nombre_cliente: mesa.nombre_cliente || '',
+                            timestamp_tpv:
+                                mesa.aperturaMs != null
+                                    ? new Date(mesa.aperturaMs).toISOString()
+                                    : new Date().toISOString(),
+                            productos: productosReales,
+                        };
+                    })
+                    .filter((mesa) => mesa.productos.some((p) => p.unidades > 0));
 
                 const estadoActual = JSON.stringify(sala);
 
                 if (estadoActual !== ultimoEstadoSala) {
-                    await axios.post(URL_TELEMETRIA, { sala, total_mesas_vivas: sala.length });
-                    process.stdout.write(`\r[${new Date().toLocaleTimeString()}] 📡 Enviando a Cocina: ${sala.length} mesas vivas en curso.  `);
+                    await axios.post(
+                        URL_TELEMETRIA,
+                        { sala, total_mesas_vivas: sala.length },
+                        { timeout: AXIOS_TIMEOUT_MS }
+                    );
+                    process.stdout.write(
+                        `\r[${new Date().toLocaleTimeString()}] 📡 Enviando a Cocina: ${sala.length} mesas vivas en curso.  `
+                    );
                     ultimoEstadoSala = estadoActual;
                 }
-
-            } catch (e) { console.error('\nError Telemetría:', e.message);
+            } catch (e) {
+                console.error('\nError Telemetría:', e.message);
             }
         }, 5000);
-
-    } catch (err) { console.error('Error Crítico:', err.message); }
+    } catch (err) {
+        console.error('Error Crítico:', err.message);
+    }
 }
+
 start();
