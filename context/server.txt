@@ -204,7 +204,10 @@ app.post('/api/caja', async (req, res) => {
 
         const { error } = await supabase
             .from('bdp_cash_movements')
-            .insert(rows, { ignoreDuplicates: true });
+            .upsert(rows, {
+                onConflict: 'movement_date,concept_code,amount',
+                ignoreDuplicates: true,
+            });
 
         if (error) {
             console.error('[CAJA] Error upsert:', error.message);

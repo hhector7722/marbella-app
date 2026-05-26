@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import type { Json } from '@/types/supabase'
 
 type CajaMovementPayload = {
   fecha_negocio?: string
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
           movement_date: movementDate,
           concept_code: conceptCode,
           amount,
-          raw_json: m.raw_json ?? m,
+          raw_json: (m.raw_json ?? m) as Json,
         }
       })
       .filter((r): r is NonNullable<typeof r> => r !== null)
@@ -57,12 +58,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Sin filas válidas' }, { status: 400 })
     }
 
-    const { error } = await supabase.from('bdp_cash_movements').insert(rows, {
+    const { error } = await supabase.from('bdp_cash_movements').upsert(rows, {
+      onConflict: 'movement_date,concept_code,amount',
       ignoreDuplicates: true,
     })
 
     if (error) {
-      console.error('[BDP Webhook Caja] Error upsert:', error.message)
+      console.error('[BDP Webhook Caja] Error insert:', error.message)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
