@@ -77,10 +77,13 @@ function roundMoney(n) {
     return Math.round((Number(n) || 0) * 100) / 100;
 }
 
+/** Verdad única UTC: siempre ISO-8601 terminado en Z (nunca Date crudo en JSON). */
 function toIso(val) {
     if (val == null) return null;
     const d = new Date(val);
-    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    if (Number.isNaN(d.getTime())) return null;
+    const iso = d.toISOString();
+    return iso.endsWith('Z') ? iso : `${iso}Z`;
 }
 
 function toYmdLocal(val) {
@@ -150,8 +153,7 @@ async function buildPayloadVenta(pool, t) {
 
     const horaCierreIso =
         toIso(t.Hora_Cierre) || (pendienteBit ? toIso(t.Fecha_Sistema) || toIso(t.Fecha) : null);
-    const fechaTicketIso =
-        horaLinea ? new Date(horaLinea).toISOString() : horaCierreIso || new Date().toISOString();
+    const fechaTicketIso = horaLinea ? toIso(horaLinea) : horaCierreIso || toIso(new Date());
 
     return {
         numero_documento: ticketKey(t.Numero_Documento),
@@ -568,7 +570,7 @@ async function start() {
                         const tm = new Date(row.Hora).getTime();
                         if (!Number.isNaN(tm)) {
                             if (!p.hora || tm < new Date(p.hora).getTime()) {
-                                p.hora = new Date(row.Hora).toISOString();
+                                p.hora = toIso(row.Hora);
                             }
                         }
                     }
@@ -589,8 +591,8 @@ async function start() {
                             nombre_cliente: mesa.nombre_cliente || '',
                             timestamp_tpv:
                                 mesa.aperturaMs != null
-                                    ? new Date(mesa.aperturaMs).toISOString()
-                                    : new Date().toISOString(),
+                                    ? toIso(mesa.aperturaMs)
+                                    : toIso(new Date()),
                             productos: productosReales,
                         };
                     })

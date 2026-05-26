@@ -49,35 +49,16 @@ function webhookAuthorized(req) {
 }
 
 /**
- * Día contable desde Fecha_Sistema (Data Sistema BDP), no Fecha de negocio desfasada.
- * Body ventas: fecha_sistema, hora_cierre, fecha_bdp (auditoría), fecha (Hora línea, fallback).
+ * Verdad única UTC en BD. diaNegocio es la única proyección a Europe/Madrid (día contable).
+ * Body ventas: fecha_sistema, hora_cierre, fecha_bdp, fecha — todos ISO-8601 con Z desde el bridge.
  */
 function resolveVentaTimestamps(v) {
-    const receivedAt = new Date();
-
-    if (VENTAS_FECHA_MODO === 'tpv') {
-        const base = parseIso(v.fecha) || receivedAt;
-        const cierre = parseIso(v.hora_cierre) || base;
-        return {
-            fecha: base.toISOString(),
-            hora_cierre: cierre.toISOString(),
-            fecha_real: receivedAt.toISOString(),
-            diaNegocio: ymdMadrid(base),
-        };
-    }
-
-    const instant =
-        parseIso(v.fecha_sistema) ||
-        parseIso(v.hora_cierre) ||
-        parseIso(v.fecha) ||
-        receivedAt;
-
-    const horaCierre = parseIso(v.hora_cierre) || parseIso(v.fecha) || instant;
+    const instant = parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date();
 
     return {
         fecha: instant.toISOString(),
-        hora_cierre: horaCierre.toISOString(),
-        fecha_real: receivedAt.toISOString(),
+        hora_cierre: new Date().toISOString(),
+        fecha_real: new Date().toISOString(),
         diaNegocio: ymdMadrid(instant),
     };
 }
@@ -234,14 +215,22 @@ app.post('/api/telemetria', async (req, res) => {
         const { total_mesas_vivas, sala } = req.body;
         if (!sala) return res.status(200).send();
 
-        const salaDisfrazada = sala.map(mesa => ({
-            ...mesa,
-            id_ticket: mesa.numero_documento,
-            nombre_cliente:
-                mesa.nombre_cliente != null && String(mesa.nombre_cliente).trim() !== ''
-                    ? String(mesa.nombre_cliente).trim()
-                    : '',
-        }));
+        const salaDisfrazada = sala.map((mesa) => {
+            let timestamp_tpv = mesa.timestamp_tpv;
+            if (timestamp_tpv != null && timestamp_tpv !== '') {
+                const d = new Date(timestamp_tpv);
+                if (!Number.isNaN(d.getTime())) timestamp_tpv = d.toISOString();
+            }
+            return {
+                ...mesa,
+                ...(timestamp_tpv ? { timestamp_tpv } : {}),
+                id_ticket: mesa.numero_documento,
+                nombre_cliente:
+                    mesa.nombre_cliente != null && String(mesa.nombre_cliente).trim() !== ''
+                        ? String(mesa.nombre_cliente).trim()
+                        : '',
+            };
+        });
 
         const { error } = await supabase.from('estado_sala').upsert([{
             id: 1,

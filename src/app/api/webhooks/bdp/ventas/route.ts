@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 const TZ_MADRID = 'Europe/Madrid'
-const VENTAS_FECHA_MODO = (process.env.VENTAS_FECHA_MODO || 'fecha_sistema').toLowerCase()
 
 function parseIso(value: unknown): Date | null {
   if (value == null || value === '') return null
@@ -23,35 +22,19 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
+/** UTC puro en Supabase; diaNegocio solo para logs (Madrid). */
 function resolveVentaTimestamps(v: {
   fecha?: string
   fecha_sistema?: string
   hora_cierre?: string
 }) {
-  const receivedAt = new Date()
-
-  if (VENTAS_FECHA_MODO === 'tpv') {
-    const base = parseIso(v.fecha) || receivedAt
-    const cierre = parseIso(v.hora_cierre) || base
-    return {
-      fecha: base.toISOString(),
-      hora_cierre: cierre.toISOString(),
-      fecha_real: receivedAt.toISOString(),
-    }
-  }
-
-  const instant =
-    parseIso(v.fecha_sistema) ||
-    parseIso(v.hora_cierre) ||
-    parseIso(v.fecha) ||
-    receivedAt
-
-  const horaCierre = parseIso(v.hora_cierre) || parseIso(v.fecha) || instant
+  const instant = parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date()
 
   return {
     fecha: instant.toISOString(),
-    hora_cierre: horaCierre.toISOString(),
-    fecha_real: receivedAt.toISOString(),
+    hora_cierre: new Date().toISOString(),
+    fecha_real: new Date().toISOString(),
+    diaNegocio: ymdMadrid(instant),
   }
 }
 

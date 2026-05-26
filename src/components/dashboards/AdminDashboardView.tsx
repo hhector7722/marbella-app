@@ -24,6 +24,7 @@ import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMon
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours, getBusinessHourFromTicket } from '@/lib/utils';
+import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import Image from 'next/image';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
@@ -914,17 +915,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </tr>
                                             ) : displayTickets.map((ticket, idx) => {
                                                 const cleanDoc = ticket.numero_documento?.replace(/0+/, '') || '';
-                                                let hora = '---';
-                                                {
-                                                    const rawTime = ticket.hora_cierre;
-                                                    if (rawTime && typeof rawTime === 'string') {
-                                                        const t = rawTime.includes('T') ? rawTime.split('T')[1] : rawTime;
-                                                        if (t && t !== '00:00:00' && t.length >= 5) hora = t.substring(0, 5);
-                                                    } else if (ticket.fecha?.includes?.('T')) {
-                                                        const f = ticket.fecha.split('T')[1];
-                                                        if (f && f !== '00:00:00') hora = f.substring(0, 5);
-                                                    }
-                                                }
+                                                const hora = formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha);
                                                 return (
                                                     <React.Fragment key={ticket.numero_documento || idx}>
                                                         <tr

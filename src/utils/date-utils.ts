@@ -1,6 +1,11 @@
 /**
  * Utilidades para el manejo de fechas y zonas horarias en Bar Marbella.
+ * Contrato: datos en tránsito/BD en UTC (ISO-8601 con Z). Presentación en Europe/Madrid.
  */
+
+import { formatInTimeZone } from 'date-fns-tz';
+
+const MADRID_TZ = 'Europe/Madrid';
 
 /**
  * Parsea una fecha proveniente de la base de datos (Supabase timestamptz).
@@ -99,20 +104,43 @@ export function parseRadiografiaTimestamp(raw: string | number | null | undefine
 }
 
 /**
- * Formatea una fecha para mostrarla como HH:mm (local).
+ * Convierte un instante UTC (Date o ISO) a cadena en Europe/Madrid.
+ */
+export function formatUtcInstantInMadrid(
+  date: Date | string | null | undefined,
+  pattern = 'HH:mm'
+): string {
+  if (!date) return '---';
+  let d: Date;
+  if (date instanceof Date) {
+    d = date;
+  } else {
+    d = parseRadiografiaTimestamp(date) ?? parseDBDate(date);
+    if (Number.isNaN(d.getTime())) {
+      d = parseTPVDate(date);
+    }
+  }
+  if (Number.isNaN(d.getTime())) return '---';
+  return formatInTimeZone(d, MADRID_TZ, pattern);
+}
+
+/**
+ * Formatea una fecha para mostrarla como HH:mm en Europe/Madrid.
  */
 export function formatLocalTime(date: Date | string | null | undefined): string {
   if (!date) return '--:--';
-  const d =
-    date instanceof Date
-      ? date
-      : parseRadiografiaTimestamp(date) ?? parseTPVDate(date);
-  
-  return d.toLocaleTimeString('es-ES', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false
-  });
+  const formatted = formatUtcInstantInMadrid(date, 'HH:mm');
+  return formatted === '---' ? '--:--' : formatted;
+}
+
+/** Hora de ticket (hora_cierre o fecha) en Madrid — sustituye split manual de ISO. */
+export function formatTicketTimeMadrid(
+  horaCierre?: string | null,
+  fechaFallback?: string | null
+): string {
+  const raw = horaCierre ?? fechaFallback;
+  if (!raw) return '---';
+  return formatUtcInstantInMadrid(raw, 'HH:mm');
 }
 
 /**
@@ -132,8 +160,6 @@ export function getStartOfLocalToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 }
-
-const MADRID_TZ = 'Europe/Madrid';
 
 function madridDatePartsFromInstant(d: Date): { y: number; m: number; day: number } {
   const fmt = new Intl.DateTimeFormat('en-CA', {

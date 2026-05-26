@@ -5,25 +5,22 @@ function trimStr(v: unknown): string {
   return typeof v === 'string' ? v.trim() : ''
 }
 
-/** Convierte instante UTC (ms) a componentes calendario-reloj en Europe/Madrid (misma semántica que parseTPVDate en cliente). */
-function formatMarbellaMysqlStyleFromMs(ms: number): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(new Date(ms))
-  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? '00'
-  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`
+function toUtcIso(value: unknown): string {
+  if (value == null || value === '') return ''
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    const ms = value < 1e12 ? value * 1000 : value
+    const d = new Date(ms)
+    return Number.isNaN(d.getTime()) ? '' : d.toISOString()
+  }
+  const s = trimStr(value)
+  if (!s) return ''
+  const d = new Date(s)
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString()
 }
 
-/** Si el extractor no envía `timestamp_tpv`, unificamos desde alias típicos (SQL / legacy). */
+/** Verdad única UTC en radiografia_completa (ISO-8601 con Z). */
 function resolveTimestampTpv(mesa: Record<string, unknown>): string {
-  const canonical = trimStr(mesa.timestamp_tpv)
+  const canonical = toUtcIso(mesa.timestamp_tpv)
   if (canonical) return canonical
 
   const candidates: unknown[] = [
@@ -39,12 +36,8 @@ function resolveTimestampTpv(mesa: Record<string, unknown>): string {
     mesa.FechaHora,
   ]
   for (const c of candidates) {
-    if (typeof c === 'number' && Number.isFinite(c) && c > 0) {
-      const ms = c < 1e12 ? c * 1000 : c
-      return formatMarbellaMysqlStyleFromMs(ms)
-    }
-    const s = trimStr(c)
-    if (s) return s
+    const iso = toUtcIso(c)
+    if (iso) return iso
   }
   return ''
 }

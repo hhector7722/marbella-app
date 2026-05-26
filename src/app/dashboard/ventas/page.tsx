@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
+import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
@@ -805,20 +806,7 @@ export default function VentasPage() {
                                                                 )}
                                                             >
                                                                 <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
-                                                                    {(() => {
-                                                                        try {
-                                                                            let rawTime = ticket.hora_cierre;
-                                                                            if (rawTime && typeof rawTime === 'string') {
-                                                                                if (rawTime.includes('T')) rawTime = rawTime.split('T')[1];
-                                                                                if (rawTime !== '00:00:00' && rawTime.length >= 5) return rawTime.substring(0, 5);
-                                                                            }
-                                                                            if (ticket.fecha && ticket.fecha.includes('T')) {
-                                                                                const fTime = ticket.fecha.split('T')[1];
-                                                                                if (fTime !== '00:00:00') return fTime.substring(0, 5);
-                                                                            }
-                                                                            return '---';
-                                                                        } catch (e) { return '---'; }
-                                                                    })()}
+                                                                    {formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}
                                                                 </td>
                                                                 <td className="py-3 px-2 md:px-4 font-mono text-[10px] md:text-xs text-zinc-700">
                                                                     {cleanDocNumber}
