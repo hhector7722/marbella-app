@@ -262,7 +262,7 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 
 ## 11) Estado actual (snapshot operativo)
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización prompt: 2026-05-15** (ver `PROJECT_STATUS.md` para entradas hasta 2026-05-17).
+**Fuente**: `PROJECT_STATUS.md` — **última actualización prompt: 2026-05-26** (ver `PROJECT_STATUS.md` para entradas hasta 2026-05-26).
 
 Hitos recientes (evitar drift al copiar este prompt):
 
@@ -278,6 +278,14 @@ Hitos recientes (evitar drift al copiar este prompt):
   - Acceso amplio `authenticated`; delete albarán solo manager/admin.
   - RPCs `delete_stock_movements_for_purchase_invoice` / `_albaran_line` (migración repo `20260517140000` — confirmar en Dashboard si no aparece en lista reciente).
   - Stock automático al mapear; `price_locked` bloquea actualización de precio desde albarán.
+- **Albaranes: “portes / ajuste / sin cargo” (2026-05-24)**: líneas con `purchase_invoice_lines.status='excluded'` para conceptos que no van a almacén; cuentan como resueltas sin `mapped_ingredient_id` ni `PURCHASE`.
+- **Cierres de caja: fotos obligatorias datáfonos + ticket BDP (2026-05-24)**: obligatorias en paso 1 (`dataphone_totals_photo_path`, `bdp_closing_ticket_photo_path`) y se muestran en historial con URLs firmadas.
+- **Cierre de caja: rediseño paso 1 (Datos) (2026-05-25)**: UI/flujo del paso 1 reestructurado (clima por iconos, botones de fotos “Añadir informe/totales”, sin refresh manual; sync TPV automático).
+- **Horas: cron recálculo global semanal + DST Madrid (2026-05-25)**: dos jobs `pg_cron` con guardas CET/CEST (invierno/verano) para recalcular balances semanales sin drift de horario.
+- **Consumo personal (staff y dashboard): quantity visible + RPC actualizada (2026-05-26)**:
+  - UI staff: en el carrito se ve cantidad (`−` / `×N` / `+`) y badges `×N` en grid ([`ConsumptionModal.tsx`](src/app/staff/ConsumptionModal.tsx)).
+  - Dashboard: el desglose por día muestra `Nombre ×4 — 1,44 €` ([`/dashboard/consumo-personal/page.tsx`](src/app/dashboard/consumo-personal/page.tsx)).
+  - DB: `get_staff_consumption_day_detail` devuelve `quantity` (agregación por `reference_doc`) en migración `20260526120000_staff_consumption_day_detail_quantity.sql` (pendiente desplegar si no está aplicada).
 - **Proxy/auth (2026-05-13)**: `src/proxy.ts` con `getSession()`; staff puede `/dashboard/albaranes` y `/dashboard/scanner`; timeouts SSR en layout/albaranes.
 - **Mapeo TPV (2026-05-14)**: `/dashboard/recetas-tpv` — factor TPV + mappings albarán por ingrediente.
 - **Recetas (2026-05-14)**: `recipes.menu_category_id` alineado al menú BD; coste escandallo con puente pack (`get_recipe_cost`).
