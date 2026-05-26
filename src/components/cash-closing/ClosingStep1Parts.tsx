@@ -23,40 +23,24 @@ function formatMoneyAmount(value: number): string {
   return value.toFixed(2);
 }
 
-/** Mitad del ancho de caja + separación hasta el botón foto (el «+» no entra en el centrado) */
-const CLOSING_PHOTO_OFFSET =
-  'left-[calc(50%+4.375rem+0.25rem)] sm:left-[calc(50%+4.75rem+0.25rem)]';
-
 export function ClosingStepRow({
   title,
   children,
-  trailing,
 }: {
   title: string;
   children: React.ReactNode;
-  trailing?: React.ReactNode;
 }) {
   return (
     <div className="grid min-h-[40px] grid-cols-[4.5rem_1fr] items-center gap-x-2 sm:grid-cols-[5.25rem_1fr] sm:gap-x-3">
       <span className={CLOSING_ROW_TITLE}>{title}</span>
-      <div className="relative flex min-w-0 items-center justify-center">
+      <div className="flex min-w-0 items-center justify-center">
         <div className={CLOSING_FIELD_COL}>{children}</div>
-        {trailing ? (
-          <div
-            className={cn(
-              'absolute top-1/2 -translate-y-1/2 shrink-0',
-              CLOSING_PHOTO_OFFSET,
-            )}
-          >
-            {trailing}
-          </div>
-        ) : null}
       </div>
     </div>
   );
 }
 
-/** Paso 3: misma fila que paso 1, valor centrado y solo lectura */
+/** Paso 3: título flotante a la izquierda; valor centrado en todo el ancho del modal */
 export function ClosingSummaryRow({
   title,
   children,
@@ -65,9 +49,16 @@ export function ClosingSummaryRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[4.5rem_1fr] items-center gap-x-2 sm:grid-cols-[5.25rem_1fr] sm:gap-x-3">
-      <span className={CLOSING_ROW_TITLE}>{title}</span>
-      <div className="flex min-w-0 justify-center">
+    <div className="relative min-h-[40px] w-full">
+      <span
+        className={cn(
+          CLOSING_ROW_TITLE,
+          'absolute left-0 top-1/2 z-[1] max-w-[5.25rem] -translate-y-1/2 leading-tight',
+        )}
+      >
+        {title}
+      </span>
+      <div className="flex w-full items-center justify-center">
         <div className={CLOSING_FIELD_COL}>{children}</div>
       </div>
     </div>
@@ -93,34 +84,42 @@ export function ClosingReadonlyValue({
     text = formatMoneyAmount(value);
   }
 
+  const showEuroSuffix =
+    hasValue && (variant === 'difference' || (showEuro && variant === 'money'));
+
+  const differenceTone =
+    variant === 'difference' && hasValue
+      ? value > 0
+        ? 'text-emerald-500'
+        : 'text-rose-500'
+      : null;
+
   return (
     <div
       className={cn(
         CLOSING_INPUT_HEIGHT,
-        'flex w-full items-center justify-center px-2',
+        'relative flex w-full items-center justify-center px-2',
       )}
     >
-      <div className="inline-flex max-w-full items-center justify-center gap-0.5">
+      <span
+        className={cn(
+          'w-full text-center text-sm font-black tabular-nums',
+          differenceTone ?? 'text-zinc-800',
+          valueClassName,
+        )}
+      >
+        {text}
+      </span>
+      {showEuroSuffix ? (
         <span
           className={cn(
-            'text-center text-sm font-black tabular-nums',
-            variant === 'difference' && hasValue
-              ? value > 0
-                ? 'text-emerald-500'
-                : 'text-rose-500'
-              : 'text-zinc-800',
-            valueClassName,
+            'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black',
+            differenceTone ?? 'text-zinc-600',
           )}
         >
-          {text}
+          €
         </span>
-        {showEuro && hasValue && variant === 'money' ? (
-          <span className="shrink-0 text-sm font-black text-zinc-600">€</span>
-        ) : null}
-        {variant === 'difference' && hasValue ? (
-          <span className="shrink-0 text-sm font-black text-zinc-600">€</span>
-        ) : null}
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -147,25 +146,25 @@ export function ClosingPetrolInput({
     <div
       className={cn(
         CLOSING_INPUT_HEIGHT,
-        'flex w-full items-center justify-center rounded-xl border-2 border-[#36606F] bg-white px-2 transition-colors focus-within:bg-[#36606F]/5',
+        'relative w-full rounded-xl border-2 border-[#36606F] bg-white transition-colors focus-within:bg-[#36606F]/5',
         className,
       )}
     >
-      <div className="inline-flex max-w-full items-center justify-center gap-0.5">
-        <input
-          type="number"
-          step={step ?? '0.01'}
-          className={cn(
-            'min-w-[2.5ch] max-w-full bg-transparent text-center text-sm font-black tabular-nums text-zinc-800 outline-none',
-            inputClassName,
-          )}
-          value={value || ''}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        />
-        {showEuro && hasValue ? (
-          <span className="shrink-0 text-sm font-black text-zinc-600">€</span>
-        ) : null}
-      </div>
+      <input
+        type="number"
+        step={step ?? '0.01'}
+        className={cn(
+          'h-full w-full bg-transparent px-2 text-center text-sm font-black tabular-nums text-zinc-800 outline-none',
+          inputClassName,
+        )}
+        value={value || ''}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      />
+      {showEuro && hasValue ? (
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-600">
+          €
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -251,7 +250,8 @@ export function ClosingWeatherPicker({
   );
 }
 
-export function ClosingPhotoAttach({
+/** Caja estilo petróleo: «Añadir» abre cámara; con foto, miniatura y borrar */
+export function ClosingPhotoField({
   previewUrl,
   onSelect,
   onClear,
@@ -265,27 +265,6 @@ export function ClosingPhotoAttach({
   inputId: string;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  if (previewUrl) {
-    return (
-      <div className="relative h-6 w-6 shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={previewUrl}
-          alt={ariaLabel}
-          className="h-6 w-6 rounded-md object-cover"
-        />
-        <button
-          type="button"
-          onClick={onClear}
-          className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
-          aria-label={`Eliminar ${ariaLabel}`}
-        >
-          <X size={8} strokeWidth={3} />
-        </button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -302,14 +281,40 @@ export function ClosingPhotoAttach({
           e.target.value = '';
         }}
       />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all hover:bg-emerald-600 active:scale-95"
-        aria-label={ariaLabel}
+      <div
+        className={cn(
+          CLOSING_INPUT_HEIGHT,
+          'relative w-full overflow-hidden rounded-xl border-2 border-[#36606F] bg-white',
+        )}
       >
-        <Plus size={12} strokeWidth={3} />
-      </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex h-full w-full items-center justify-center transition-colors hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
+          aria-label={ariaLabel}
+        >
+          {previewUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={previewUrl}
+              alt={ariaLabel}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-sm font-black text-[#36606F]">Añadir</span>
+          )}
+        </button>
+        {previewUrl ? (
+          <button
+            type="button"
+            onClick={onClear}
+            className="absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
+            aria-label={`Eliminar ${ariaLabel}`}
+          >
+            <X size={10} strokeWidth={3} />
+          </button>
+        ) : null}
+      </div>
     </>
   );
 }

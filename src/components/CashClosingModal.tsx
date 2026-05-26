@@ -24,7 +24,7 @@ import {
     ClosingPetrolInput,
     ClosingPetrolInputWithAdjust,
     ClosingWeatherPicker,
-    ClosingPhotoAttach,
+    ClosingPhotoField,
 } from '@/components/cash-closing/ClosingStep1Parts';
 
 // export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
@@ -318,11 +318,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     const ensurePhotosAttached = () => {
         if (!bdpTicketPhotoFile) {
-            toast.error('Adjunta el informe TPV en la fila Ventas');
+            toast.error('Adjunta el informe TPV en la fila Informe TPV');
             return false;
         }
         if (!dataphonePhotoFile) {
-            toast.error('Adjunta los totales del datáfono en la fila Tarjeta');
+            toast.error('Adjunta los totales del datáfono en la fila Totales datáfono');
             return false;
         }
         return true;
@@ -568,23 +568,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 onSelect={setWeatherId}
                             />
 
-                            <ClosingStepRow
-                                title="Ventas"
-                                trailing={
-                                    <ClosingPhotoAttach
-                                        inputId="closing-photo-bdp-ticket"
-                                        previewUrl={bdpTicketPreviewUrl}
-                                        ariaLabel="Informe TPV"
-                                        onSelect={setBdpTicketPhoto}
-                                        onClear={() => setBdpTicketPhoto(null)}
-                                    />
-                                }
-                            >
+                            <ClosingStepRow title="Ventas">
                                 <ClosingPetrolInput
                                     value={tpvData.totalSales}
                                     onChange={(next) => setTpvData({ ...tpvData, totalSales: next })}
                                     showEuro
                                     inputClassName="text-base"
+                                />
+                            </ClosingStepRow>
+
+                            <ClosingStepRow title="Informe tpv">
+                                <ClosingPhotoField
+                                    inputId="closing-photo-bdp-ticket"
+                                    previewUrl={bdpTicketPreviewUrl}
+                                    ariaLabel="Informe TPV"
+                                    onSelect={setBdpTicketPhoto}
+                                    onClear={() => setBdpTicketPhoto(null)}
                                 />
                             </ClosingStepRow>
 
@@ -597,22 +596,21 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 />
                             </ClosingStepRow>
 
-                            <ClosingStepRow
-                                title="Tarjeta"
-                                trailing={
-                                    <ClosingPhotoAttach
-                                        inputId="closing-photo-dataphone"
-                                        previewUrl={dataphonePreviewUrl}
-                                        ariaLabel="Totales datáfono"
-                                        onSelect={setDataphonePhoto}
-                                        onClear={() => setDataphonePhoto(null)}
-                                    />
-                                }
-                            >
+                            <ClosingStepRow title="Tarjeta">
                                 <ClosingPetrolInput
                                     value={tpvData.cardSales}
                                     onChange={(next) => setTpvData({ ...tpvData, cardSales: next })}
                                     showEuro
+                                />
+                            </ClosingStepRow>
+
+                            <ClosingStepRow title="Totales datáfono">
+                                <ClosingPhotoField
+                                    inputId="closing-photo-dataphone"
+                                    previewUrl={dataphonePreviewUrl}
+                                    ariaLabel="Totales datáfono"
+                                    onSelect={setDataphonePhoto}
+                                    onClear={() => setDataphonePhoto(null)}
                                 />
                             </ClosingStepRow>
 
