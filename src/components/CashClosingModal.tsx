@@ -177,7 +177,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 isInitialized.current = true;
                 lastDate.current = dateStr;
 
-                // Priority: Try to load draft from localStorage
+                // Borrador: restaura campos manuales; ventas y tickets se sincronizan siempre después
                 try {
                     const draft = localStorage.getItem(`cash_closing_draft_${userId}`);
                     if (draft) {
@@ -185,19 +185,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                         if (parsed.tpvData) {
                             const { weather: legacyWeather, ...rest } = parsed.tpvData as {
                                 weather?: string;
-                                totalSales?: number;
                                 cardSales?: number;
                                 pendingSales?: number;
                                 debtRecovered?: number;
-                                ticketsCount?: number;
                             };
-                            setTpvData({
-                                totalSales: rest.totalSales ?? 0,
+                            setTpvData((prev) => ({
+                                ...prev,
                                 cardSales: rest.cardSales ?? 0,
                                 pendingSales: rest.pendingSales ?? 0,
                                 debtRecovered: rest.debtRecovered ?? 0,
-                                ticketsCount: rest.ticketsCount ?? 0,
-                            });
+                            }));
                             if (parsed.weatherId) {
                                 setWeatherId(parsed.weatherId as ClosingWeatherId);
                             } else if (legacyWeather) {
@@ -205,28 +202,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             }
                         }
                         if (parsed.counts) setCounts(parsed.counts);
-                        return; // Successfully loaded draft
                     }
                 } catch (e) {
                     console.error("Error reading draft from localStorage", e);
                 }
 
-                // If no draft, decide between props or fetch
-                const now = new Date();
-                const todayStr = format(now, 'yyyy-MM-dd');
-                if (dateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
-                    setTpvData(prev => ({
-                        ...prev,
-                        totalSales: initialTotalSales,
-                        ticketsCount: initialTicketsCount
-                    }));
-                } else {
-                    fetchTodayVentas();
-                }
+                void applyVentasAndTicketsAutoFill();
             } else if (dateStr !== lastDate.current) {
                 // 2. DATE CHANGED MANUALLY (Subsequent triggers)
                 lastDate.current = dateStr;
-                fetchTodayVentas();
+                void applyVentasAndTicketsAutoFill();
             }
         }
     }, [isOpen, userId, selectedDateTime]);
@@ -239,16 +224,23 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }
     }, [tpvData, counts, weatherId, userId]);
 
-    // Consolidado en el efecto de inicialización
+    /** Autorellena ventas y nº tickets: props del dashboard si es hoy, si no consulta tickets_marbella */
+    async function applyVentasAndTicketsAutoFill() {
+        const dateObj = parseDateTimeLocal(selectedDateTime);
+        const dateStr = format(dateObj, 'yyyy-MM-dd');
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
 
+        if (dateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
+            setTpvData((prev) => ({
+                ...prev,
+                totalSales: initialTotalSales,
+                ticketsCount: initialTicketsCount,
+            }));
+            return;
+        }
 
-    async function fetchTodayVentas() {
         setLoading(true);
         try {
-            const dateObj = parseDateTimeLocal(selectedDateTime);
-            const dateStr = format(dateObj, 'yyyy-MM-dd');
-
-            // Robust fetch: Aggregated sum directly from the table to avoid RPC dependency issues
             const { data: tickets, error: salesError } = await supabase
                 .from('tickets_marbella')
                 .select('total_documento')
@@ -258,22 +250,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
             let total = 0;
             let count = 0;
-            tickets?.forEach(t => {
+            tickets?.forEach((t) => {
                 const val = Number(t.total_documento) || 0;
                 if (val !== 0) {
                     total += val;
-                    count += (val > 0 ? 1 : -1);
+                    count += val > 0 ? 1 : -1;
                 }
             });
 
-            setTpvData(prev => ({
+            setTpvData((prev) => ({
                 ...prev,
                 totalSales: Math.max(0, Math.round(total * 100) / 100),
-                ticketsCount: Math.max(0, count)
+                ticketsCount: Math.max(0, count),
             }));
         } catch (error) {
-            console.error("Error fetching sales data:", error);
-            toast.error("Error al sincronizar datos de ventas");
+            console.error('Error fetching sales data:', error);
+            toast.error('Error al sincronizar datos de ventas');
         } finally {
             setLoading(false);
         }
