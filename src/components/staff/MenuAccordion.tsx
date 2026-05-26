@@ -303,6 +303,22 @@ export function MenuAccordion({
     const lang = controlled ? controlledLang : internalLang
     const setLang = controlled ? onLangChange : setInternalLang
 
+    const [openKey, setOpenKey] = useState<string | null>(null)
+    const [modalEditActive, setModalEditActive] = useState(false)
+
+    useEffect(() => {
+        setModalEditActive(false)
+    }, [openKey])
+
+    const showHiddenProducts = editMode || modalEditActive
+    const visibleItems = useMemo(
+        () =>
+            showHiddenProducts
+                ? items
+                : items.filter((row) => !(row.editor_is_hidden ?? false)),
+        [items, showHiddenProducts]
+    )
+
     const grouped = useMemo(() => {
         type Group = {
             key: string
@@ -319,7 +335,7 @@ export function MenuAccordion({
             platoMarbellaCategoryId ?? platoMarbellaCategoryIdFromCatalog(catalog)
 
         const groups = new Map<string, Group>()
-        for (const raw of items) {
+        for (const raw of visibleItems) {
             const row = bucketMenuRowForPlatoMarbella(raw, pmCategoryId, catalog)
             const parentTitleRaw = (row.category_parent_name?.trim() || 'Sin categoría').trim()
             const parentTitle = getCartaParentCategoryLabel(lang, row, tPublicUi(lang).uncategorized)
@@ -411,7 +427,7 @@ export function MenuAccordion({
 
         return groupList as unknown as GroupedGroup[]
     }, [
-        items,
+        visibleItems,
         lang,
         menuCategories,
         platoMarbellaCategoryId,
@@ -423,7 +439,6 @@ export function MenuAccordion({
     const groupedRef = useRef<GroupedGroup[]>([])
     groupedRef.current = grouped as GroupedGroup[]
 
-    const [openKey, setOpenKey] = useState<string | null>(null)
     const [selectedSubKeyByGroup, setSelectedSubKeyByGroup] = useState<Record<string, string>>({})
 
     const [reorderScope, setReorderScope] = useState<ReorderScope>(null)
@@ -489,12 +504,7 @@ export function MenuAccordion({
         openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
 
     const canModalEdit = Boolean(onEditProduct)
-    const [modalEditActive, setModalEditActive] = useState(false)
     const modalEditMode = editMode || modalEditActive
-
-    useEffect(() => {
-        setModalEditActive(false)
-    }, [openKey])
 
     const modalEditToggle =
         canModalEdit && openGroup && !openShowSubPicker ? (

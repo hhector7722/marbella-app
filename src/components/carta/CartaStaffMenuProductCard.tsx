@@ -168,16 +168,12 @@ export function CartaStaffMenuProductCard({
                   }}
                 >
                   {busy ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]" />
+                    <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
                   ) : isActive ? (
-                    <Check
-                      className="h-7 w-7 text-emerald-500 drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]"
-                      strokeWidth={3.25}
-                      aria-hidden
-                    />
+                    <Check className="h-7 w-7 text-emerald-500" strokeWidth={3.25} aria-hidden />
                   ) : (
                     <span
-                      className="block h-6 w-6 rounded-full bg-red-500 shadow-[0_1px_4px_rgba(0,0,0,0.45)] ring-2 ring-white"
+                      className="block h-4 w-4 rounded-full bg-red-500 ring-2 ring-white"
                       aria-hidden
                     />
                   )}
