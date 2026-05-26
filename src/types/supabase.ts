@@ -2155,6 +2155,9 @@ export type Database = {
       }
       tickets_marbella: {
         Row: {
+          cobro_efectivo: number
+          cobro_pendiente: number
+          cobro_tarjeta: number
           created_at: string
           fecha: string
           fecha_real: string | null
@@ -2164,6 +2167,9 @@ export type Database = {
           total_documento: number
         }
         Insert: {
+          cobro_efectivo?: number
+          cobro_pendiente?: number
+          cobro_tarjeta?: number
           created_at?: string
           fecha: string
           fecha_real?: string | null
@@ -2173,6 +2179,9 @@ export type Database = {
           total_documento: number
         }
         Update: {
+          cobro_efectivo?: number
+          cobro_pendiente?: number
+          cobro_tarjeta?: number
           created_at?: string
           fecha?: string
           fecha_real?: string | null
@@ -2180,6 +2189,36 @@ export type Database = {
           mesa?: number | null
           numero_documento?: string
           total_documento?: number
+        }
+        Relationships: []
+      }
+      bdp_cash_movements: {
+        Row: {
+          amount: number
+          concept_code: number
+          created_at: string
+          fecha_negocio: string
+          id: string
+          movement_date: string
+          raw_json: Json
+        }
+        Insert: {
+          amount: number
+          concept_code: number
+          created_at?: string
+          fecha_negocio: string
+          id?: string
+          movement_date: string
+          raw_json?: Json
+        }
+        Update: {
+          amount?: number
+          concept_code?: number
+          created_at?: string
+          fecha_negocio?: string
+          id?: string
+          movement_date?: string
+          raw_json?: Json
         }
         Relationships: []
       }

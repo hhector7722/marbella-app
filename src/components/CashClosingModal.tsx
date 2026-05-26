@@ -224,48 +224,54 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }
     }, [tpvData, counts, weatherId, userId]);
 
-    /** Autorellena ventas y nº tickets: props del dashboard si es hoy, si no consulta tickets_marbella */
+    function roundMoney(n: number): number {
+        return Math.round(n * 100) / 100;
+    }
+
+    /** Autorellena desde RPC get_closing_sales_breakdown (tickets + cobros deuda 107). */
     async function applyVentasAndTicketsAutoFill() {
         const dateObj = parseDateTimeLocal(selectedDateTime);
         const dateStr = format(dateObj, 'yyyy-MM-dd');
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-        if (dateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
-            setTpvData((prev) => ({
-                ...prev,
-                totalSales: initialTotalSales,
-                ticketsCount: initialTicketsCount,
-            }));
-            return;
-        }
 
         setLoading(true);
         try {
-            const { data: tickets, error: salesError } = await supabase
-                .from('tickets_marbella')
-                .select('total_documento')
-                .eq('fecha', dateStr);
-
-            if (salesError) throw salesError;
-
-            let total = 0;
-            let count = 0;
-            tickets?.forEach((t) => {
-                const val = Number(t.total_documento) || 0;
-                if (val !== 0) {
-                    total += val;
-                    count += val > 0 ? 1 : -1;
-                }
+            const { data, error } = await supabase.rpc('get_closing_sales_breakdown', {
+                p_date: dateStr,
             });
+
+            if (error) throw error;
+
+            const row = (data ?? {}) as {
+                total_bruto?: number
+                total_efectivo?: number
+                total_tarjeta?: number
+                total_pendiente?: number
+                total_cobros_deuda?: number
+                recuento_tickets?: number
+            };
+
+            const totalBruto = Math.max(0, roundMoney(Number(row.total_bruto) || 0));
+            const totalEfectivo = Math.max(0, roundMoney(Number(row.total_efectivo) || 0));
+            const totalTarjeta = Math.max(0, roundMoney(Number(row.total_tarjeta) || 0));
+            const totalPendiente = Math.max(0, roundMoney(Number(row.total_pendiente) || 0));
+            const totalCobrosDeuda = Math.max(0, roundMoney(Number(row.total_cobros_deuda) || 0));
+            const recuento = Math.max(0, Number(row.recuento_tickets) || 0);
 
             setTpvData((prev) => ({
                 ...prev,
-                totalSales: Math.max(0, Math.round(total * 100) / 100),
-                ticketsCount: Math.max(0, count),
+                totalSales: totalBruto,
+                ticketsCount: recuento,
+                cardSales: totalTarjeta,
+                pendingSales: totalPendiente,
+                debtRecovered: totalCobrosDeuda,
             }));
+
+            if (totalBruto === 0 && totalEfectivo === 0 && totalTarjeta === 0 && recuento === 0) {
+                toast.message('Sin tickets BDP para esta fecha en Supabase');
+            }
         } catch (error) {
-            console.error('Error fetching sales data:', error);
-            toast.error('Error al sincronizar datos de ventas');
+            console.error('Error fetching closing breakdown:', error);
+            toast.error('Error al sincronizar datos de cierre desde BDP');
         } finally {
             setLoading(false);
         }
@@ -273,8 +279,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     // --- CALCULATIONS ---
     const totalSalesGross = tpvData.totalSales;
-    const cashSalesToday = totalSalesGross - tpvData.cardSales - tpvData.pendingSales;
-    const expectedCash = cashSalesToday + tpvData.debtRecovered;
+    const cashSalesToday = Math.max(0, roundMoney(tpvData.totalSales - tpvData.cardSales - tpvData.pendingSales));
+    const expectedCash = roundMoney(cashSalesToday + tpvData.debtRecovered);
     const totalCounted = Object.entries(counts).reduce((sum, [val, qty]) => sum + (parseFloat(val) * qty), 0);
     const difference = totalCounted - expectedCash;
     const cashToWithdraw = totalCounted; // Se retira TODO el efectivo contado
