@@ -20,8 +20,8 @@ import {
     Share,
     Download,
     Filter,
-    Eye,
 } from 'lucide-react';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -1258,41 +1258,45 @@ export default function HistoryPage() {
                                 );
                             })()}
 
-                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentación</p>
                             {closingPhotosLoading ? (
                                 <div className="flex justify-center py-6">
                                     <LoadingSpinner size="sm" className="text-[#36606F]" />
                                 </div>
                             ) : null}
-                            {!closingPhotosLoading && !selectedClosing.dataphone_totals_photo_path && !selectedClosing.bdp_closing_ticket_photo_path ? (
-                                <p className="text-sm text-zinc-400 text-center py-2">Sin documentación</p>
-                            ) : null}
                             {!closingPhotosLoading && (closingPhotoUrls.dataphoneUrl || closingPhotoUrls.bdpUrl) ? (
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-4">
                                     {closingPhotoUrls.dataphoneUrl ? (
                                         <button
                                             type="button"
                                             onClick={() => setLightboxImage({ url: closingPhotoUrls.dataphoneUrl!, label: 'Totales datáfonos' })}
-                                            className="rounded-xl border border-zinc-100 shadow-sm overflow-hidden text-left hover:border-[#36606F]/30 transition-colors min-h-[48px]"
+                                            className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50 flex items-center gap-1">
-                                                <Eye size={12} /> Datáfonos
-                                            </p>
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={closingPhotoUrls.dataphoneUrl} alt="Totales datáfonos" className="w-full h-28 object-contain bg-white" />
+                                            <img
+                                                src={closingPhotoUrls.dataphoneUrl}
+                                                alt="Totales datáfonos"
+                                                className="h-28 w-auto max-w-full rounded-xl object-contain"
+                                            />
+                                            <span className="max-w-full text-center text-[9px] font-black uppercase leading-tight tracking-widest text-gray-400">
+                                                Totales datáfonos
+                                            </span>
                                         </button>
                                     ) : null}
                                     {closingPhotoUrls.bdpUrl ? (
                                         <button
                                             type="button"
-                                            onClick={() => setLightboxImage({ url: closingPhotoUrls.bdpUrl!, label: 'Ticket cierre BDP' })}
-                                            className="rounded-xl border border-zinc-100 shadow-sm overflow-hidden text-left hover:border-[#36606F]/30 transition-colors min-h-[48px]"
+                                            onClick={() => setLightboxImage({ url: closingPhotoUrls.bdpUrl!, label: 'Informe TPV' })}
+                                            className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-zinc-50 flex items-center gap-1">
-                                                <Eye size={12} /> Ticket BDP
-                                            </p>
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={closingPhotoUrls.bdpUrl} alt="Ticket cierre BDP" className="w-full h-28 object-contain bg-white" />
+                                            <img
+                                                src={closingPhotoUrls.bdpUrl}
+                                                alt="Informe TPV"
+                                                className="h-28 w-auto max-w-full rounded-xl object-contain"
+                                            />
+                                            <span className="max-w-full text-center text-[9px] font-black uppercase leading-tight tracking-widest text-gray-400">
+                                                Informe TPV
+                                            </span>
                                         </button>
                                     ) : null}
                                 </div>
@@ -1438,20 +1442,12 @@ export default function HistoryPage() {
                 </div>
             )}
 
-            {lightboxImage && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={() => setLightboxImage(null)}>
-                    <div className="relative max-w-3xl w-full max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-4 py-3 bg-[#36606F] text-white">
-                            <span className="text-[11px] font-black uppercase tracking-widest">{lightboxImage.label}</span>
-                            <button type="button" onClick={() => setLightboxImage(null)} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={lightboxImage.url} alt={lightboxImage.label} className="w-full max-h-[calc(90vh-4rem)] object-contain bg-zinc-50" />
-                    </div>
-                </div>
-            )}
+            <ImageLightbox
+                open={Boolean(lightboxImage)}
+                src={lightboxImage?.url}
+                alt={lightboxImage?.label}
+                onClose={() => setLightboxImage(null)}
+            />
 
             <TimeFilterModal
                 isOpen={isTimeFilterOpen}
