@@ -291,15 +291,15 @@ export function ClosingPhotoField({
             <img
               src={previewUrl}
               alt={ariaLabel}
-              className="h-7 w-auto max-w-full rounded-md object-contain sm:h-8"
+              className="h-9 w-auto max-w-full rounded-md object-contain sm:h-10"
             />
             <button
               type="button"
               onClick={onClear}
-              className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
+              className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
               aria-label={`Eliminar ${ariaLabel}`}
             >
-              <X size={9} strokeWidth={3} />
+              <X size={7} strokeWidth={3} />
             </button>
           </div>
         </div>
