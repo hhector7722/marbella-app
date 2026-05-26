@@ -54,6 +54,8 @@ import {
     type CartaProductGridRowDensity,
     cartaProductGridRowDensity,
     chunkCartaProductGridRows,
+    getCartaProductGridRowCellClass,
+    getCartaProductGridRowClass,
     getCartaProductGridRowFrameStyle,
     isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
@@ -1372,6 +1374,7 @@ export function MenuAccordion({
                                                 <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                                                     {chunkCartaProductGridRows(sub.rows, 3).map((chunk, chunkIdx) => {
                                                         const rowDensity = cartaProductGridRowDensity(chunk)
+                                                        const itemsInRow = chunk.length
                                                         const isDrinkRow = isCartaDrinksSection(
                                                             chunk[0]?.category_parent_name
                                                         )
@@ -1383,13 +1386,14 @@ export function MenuAccordion({
                                                             <div
                                                                 key={chunkIdx}
                                                                 className={cn(
-                                                                    'grid grid-cols-3 items-stretch gap-x-2 md:gap-x-3',
+                                                                    getCartaProductGridRowClass('stretch'),
+                                                                    'gap-x-2 md:gap-x-3',
                                                                     rowDensity === 'compact' && 'gap-y-0',
                                                                     rowDensity === 'cozy' && 'gap-y-1',
                                                                     rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
                                                                 )}
                                                             >
-                                                                {chunk.map((row) => {
+                                                                {chunk.map((row, cellIndex) => {
                                                         const picked =
                                                             reorderPick === String(row.articulo_id)
                                                         return (
@@ -1397,6 +1401,10 @@ export function MenuAccordion({
                                                                 key={row.articulo_id}
                                                                 role="presentation"
                                                                 className={cn(
+                                                                    getCartaProductGridRowCellClass(
+                                                                        cellIndex,
+                                                                        itemsInRow
+                                                                    ),
                                                                     'h-full cursor-pointer rounded-2xl transition-colors',
                                                                     picked && 'bg-amber-100/90'
                                                                 )}
@@ -1454,6 +1462,7 @@ export function MenuAccordion({
                                                         3
                                                     ).map((chunk, chunkIdx) => {
                                                         const rowDensity = cartaProductGridRowDensity(chunk)
+                                                        const itemsInRow = chunk.length
                                                         const isDrinkRow = isCartaDrinksSection(
                                                             chunk[0]?.category_parent_name
                                                         )
@@ -1465,14 +1474,24 @@ export function MenuAccordion({
                                                             <div
                                                                 key={chunkIdx}
                                                                 className={cn(
-                                                                    'grid grid-cols-3 items-stretch gap-x-2 md:gap-x-3',
+                                                                    getCartaProductGridRowClass('stretch'),
+                                                                    'gap-x-2 md:gap-x-3',
                                                                     rowDensity === 'compact' && 'gap-y-0',
                                                                     rowDensity === 'cozy' && 'gap-y-1',
                                                                     rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
                                                                 )}
                                                             >
-                                                                {chunk.map((row) => (
-                                                        <div key={row.articulo_id} className="h-full">
+                                                                {chunk.map((row, cellIndex) => (
+                                                        <div
+                                                            key={row.articulo_id}
+                                                            className={cn(
+                                                                getCartaProductGridRowCellClass(
+                                                                    cellIndex,
+                                                                    itemsInRow
+                                                                ),
+                                                                'h-full'
+                                                            )}
+                                                        >
                                                             <CartaStaffMenuProductCard
                                                                 row={row}
                                                                 lang={lang}

@@ -18,10 +18,9 @@ import {
 import {
   cartaProductGridRowDensity,
   chunkCartaProductGridRows,
+  getCartaProductGridRowCellClass,
+  getCartaProductGridRowClass,
   getCartaProductGridRowFrameStyle,
-  getCartaProductPhotoCellMaxWidthClass,
-  getPlatoMarbellaProductRowGridClass,
-  PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS,
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaPlateVisual } from '@/components/carta/PlatoMarbellaPlateVisual'
 import {
@@ -67,24 +66,24 @@ function ProductGrid({
         const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
         const itemsInRow = chunk.length
         return (
-          <div key={chunkIdx} className={PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS}>
-            <div
-              className={cn(
-                getPlatoMarbellaProductRowGridClass(itemsInRow, 'stretch'),
-                rowDensity === 'compact' && 'gap-y-0',
-                rowDensity === 'cozy' && 'gap-y-1',
-                rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
-              )}
-            >
-              {chunk.map((row) => {
+          <div
+            key={chunkIdx}
+            className={cn(
+              getCartaProductGridRowClass('stretch'),
+              rowDensity === 'compact' && 'gap-y-0',
+              rowDensity === 'cozy' && 'gap-y-1',
+              rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
+            )}
+          >
+              {chunk.map((row, cellIndex) => {
                 const picked = productReorderMode && reorderPick === String(row.articulo_id)
                 return (
                   <div
                     key={row.articulo_id}
                     role={productReorderMode && onReorderTap ? 'presentation' : undefined}
                     className={cn(
-                      getCartaProductPhotoCellMaxWidthClass(itemsInRow),
-                      'flex h-full min-w-0 flex-col',
+                      getCartaProductGridRowCellClass(cellIndex, itemsInRow),
+                      'h-full',
                       productReorderMode &&
                         onReorderTap &&
                         'cursor-pointer rounded-2xl touch-manipulation',
@@ -114,7 +113,6 @@ function ProductGrid({
                   </div>
                 )
               })}
-            </div>
           </div>
         )
       })}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Check, Circle, Loader2 } from 'lucide-react'
+import { Check, Loader2 } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
@@ -11,7 +11,8 @@ import {
 } from '@/lib/carta-dual-racion'
 import { getCartaDisplayName, type CartaLang, type CartaNameRow } from '@/lib/carta-menu-i18n'
 import {
-  CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+  CARTA_PRODUCT_PHOTO_CELL_CLASS,
+  CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
   type CartaPhotoScale,
   type CartaProductGridRowDensity,
   getCartaProductPhotoFrameStyle,
@@ -92,11 +93,12 @@ export function CartaStaffMenuProductCard({
       {photoFrameStyle || row.photo_url ? (
         <div
           className={cn(
-            'w-full shrink-0',
+            CARTA_PRODUCT_PHOTO_CELL_CLASS,
+            'shrink-0',
             row.photo_url && 'relative',
-            rowDensity === 'compact' && 'px-0.5 pt-0.5 sm:px-1 sm:pt-1',
-            rowDensity === 'cozy' && 'px-1 pt-0.5 sm:px-1.5 sm:pt-1',
-            rowDensity === 'normal' && 'px-1 pt-1 sm:px-1.5 sm:pt-1.5'
+            rowDensity === 'compact' && 'pt-0.5',
+            rowDensity === 'cozy' && 'pt-0.5',
+            rowDensity === 'normal' && 'pt-1'
           )}
         >
           {row.photo_url ? (
@@ -104,7 +106,7 @@ export function CartaStaffMenuProductCard({
               <button
                 type="button"
                 className={cn(
-                  CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+                  CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
                   'touch-manipulation active:bg-zinc-50',
                   productReorderMode && onReorderTap
                     ? 'cursor-pointer'
@@ -168,11 +170,14 @@ export function CartaStaffMenuProductCard({
                   {busy ? (
                     <Loader2 className="h-5 w-5 animate-spin text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]" />
                   ) : isActive ? (
-                    <Check className="h-7 w-7 text-emerald-400" strokeWidth={3.25} aria-hidden />
+                    <Check
+                      className="h-7 w-7 text-emerald-500 drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]"
+                      strokeWidth={3.25}
+                      aria-hidden
+                    />
                   ) : (
-                    <Circle
-                      className="h-6 w-6 text-white/35 drop-shadow-[0_2px_4px_rgba(0,0,0,0.75)]"
-                      strokeWidth={2.5}
+                    <span
+                      className="block h-6 w-6 rounded-full bg-red-500 shadow-[0_1px_4px_rgba(0,0,0,0.45)] ring-2 ring-white"
                       aria-hidden
                     />
                   )}
@@ -180,7 +185,11 @@ export function CartaStaffMenuProductCard({
               ) : null}
             </>
           ) : (
-            <div className={CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS} style={frameStyle} aria-hidden />
+            <div
+              className={CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS}
+              style={frameStyle}
+              aria-hidden
+            />
           )}
         </div>
       ) : null}

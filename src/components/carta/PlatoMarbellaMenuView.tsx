@@ -18,14 +18,14 @@ import {
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import {
-  CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
+  CARTA_PRODUCT_PHOTO_CELL_CLASS,
+  CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
   chunkCartaProductGridRows,
+  getCartaProductGridRowCellClass,
+  getCartaProductGridRowClass,
   getCartaProductGridRowFrameStyle,
-  getCartaProductPhotoCellMaxWidthClass,
   getCartaProductPhotoFrameStyle,
   getCartaProductPhotoScaleFactor,
-  getPlatoMarbellaProductRowGridClass,
-  PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS,
 } from '@/lib/carta-product-photo'
 
 const PRODUCT_ROW_MIN_REM = 5.25
@@ -38,14 +38,12 @@ function OptionGridCard({
   hideName,
   onPhotoClick,
   rowFrameStyle,
-  itemsInRow,
 }: {
   row: OptionRow
   lang: CartaLang
   hideName: boolean
   onPhotoClick?: (src: string, alt: string) => void
   rowFrameStyle: CSSProperties
-  itemsInRow: number
 }) {
   const name = getCartaDisplayName(row, lang)
   const priceLabel = formatCartaPrice(row.precio).trim()
@@ -56,18 +54,13 @@ function OptionGridCard({
 
   return (
     <div className="flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white">
-      <div
-        className={cn(
-          getCartaProductPhotoCellMaxWidthClass(itemsInRow),
-          'shrink-0 px-0.5 pt-0 sm:px-1'
-        )}
-      >
+      <div className={cn(CARTA_PRODUCT_PHOTO_CELL_CLASS, 'shrink-0')}>
         {photo ? (
           <button
             type="button"
             className={cn(
-              CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS,
-              'min-h-[48px] w-full touch-manipulation active:bg-zinc-50'
+              CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
+              'min-h-[48px] touch-manipulation active:bg-zinc-50'
             )}
             style={frameStyle}
             aria-label={hideName ? name : 'Ver foto ampliada'}
@@ -77,7 +70,7 @@ function OptionGridCard({
           </button>
         ) : (
           <div
-            className={cn(CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS, 'w-full bg-zinc-50')}
+            className={cn(CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS, 'bg-zinc-50')}
             style={rowFrameStyle}
             aria-hidden
           />
@@ -120,21 +113,18 @@ function CenteredProductRow({
   const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
 
   return (
-    <div className={PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS}>
-      <div className={getPlatoMarbellaProductRowGridClass(count)}>
-        {chunk.map((row) => (
-          <div key={row.articulo_id} className="min-w-0">
-            <OptionGridCard
-              row={row}
-              lang={lang}
-              hideName={Boolean(row.plato_marbella_hide_name)}
-              onPhotoClick={onPhotoClick}
-              rowFrameStyle={rowFrameStyle}
-              itemsInRow={count}
-            />
-          </div>
-        ))}
-      </div>
+    <div className={getCartaProductGridRowClass()}>
+      {chunk.map((row, cellIndex) => (
+        <div key={row.articulo_id} className={getCartaProductGridRowCellClass(cellIndex, count)}>
+          <OptionGridCard
+            row={row}
+            lang={lang}
+            hideName={Boolean(row.plato_marbella_hide_name)}
+            onPhotoClick={onPhotoClick}
+            rowFrameStyle={rowFrameStyle}
+          />
+        </div>
+      ))}
     </div>
   )
 }

@@ -43,33 +43,36 @@ export const CARTA_PRODUCT_PHOTO_IMG_DRINK_CLASS = CARTA_PRODUCT_PHOTO_IMG_NEUTR
 export const CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS =
   'relative mx-auto flex w-full shrink-0 items-center justify-center overflow-hidden bg-white'
 
-/** Mismo ancho que 1/3 del grid de carta: evita que fotos crezcan en filas de 1–2 ítems. */
-export const CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS = 'mx-auto w-full max-w-[7.75rem]'
+/** Ancho fijo del marco en grid de productos (no crece con columnas vacías en la fila). */
+export const CARTA_PRODUCT_PHOTO_FIXED_WIDTH_REM = '7.75rem'
 
-/** Ancho por celda en filas de 2 (equivalente a 3 celdas de 7.75rem repartidas en 2). */
-export const CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_2COL_CLASS =
-  'mx-auto w-full max-w-[11.625rem]'
+export const CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS =
+  'relative mx-auto flex w-[7.75rem] max-w-[7.75rem] shrink-0 items-center justify-center overflow-hidden bg-white'
 
-export function getCartaProductPhotoCellMaxWidthClass(itemsInRow: number): string {
-  if (itemsInRow === 2) return CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_2COL_CLASS
-  return CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS
-}
+/** Contenedor de foto+nombre en celda de carta. */
+export const CARTA_PRODUCT_PHOTO_CELL_CLASS =
+  'mx-auto flex w-[7.75rem] max-w-[7.75rem] shrink-0 flex-col items-center'
 
-/** Fila Plato Marbella: el bloque de 1–3 productos queda centrado en el modal. */
-export function getPlatoMarbellaProductRowGridClass(
-  itemCount: number,
-  itemsAlign: 'start' | 'stretch' = 'start'
-): string {
-  const n = Math.min(3, Math.max(1, itemCount))
-  const align = itemsAlign === 'stretch' ? 'items-stretch' : 'items-start'
+/** @deprecated Usar CARTA_PRODUCT_PHOTO_CELL_CLASS */
+export const CARTA_PRODUCT_PHOTO_CELL_MAX_WIDTH_CLASS = CARTA_PRODUCT_PHOTO_CELL_CLASS
+
+/** Fila de productos: siempre 3 columnas; 1–2 ítems se reparten simétricamente sin cambiar tamaño de foto. */
+export function getCartaProductGridRowClass(itemsAlign: 'start' | 'stretch' = 'start'): string {
   return cn(
-    'grid gap-x-2 gap-y-0 sm:gap-x-2.5',
-    align,
-    n === 3 ? 'w-full grid-cols-3' : n === 2 ? 'w-fit grid-cols-2' : 'w-fit grid-cols-1'
+    'grid w-full grid-cols-3 gap-x-2 gap-y-0 sm:gap-x-2.5',
+    itemsAlign === 'stretch' ? 'items-stretch' : 'items-start'
   )
 }
 
-export const PLATO_MARBELLA_PRODUCT_ROW_CENTER_CLASS = 'flex w-full justify-center'
+export function getCartaProductGridRowCellClass(cellIndex: number, itemCount: number): string {
+  const n = Math.min(3, Math.max(1, itemCount))
+  const base = 'flex min-w-0 flex-col items-center'
+  if (n === 3) return cn(base, 'col-span-1')
+  if (n === 2) {
+    return cn(base, 'col-span-1', cellIndex === 0 ? 'col-start-1' : 'col-start-3')
+  }
+  return cn(base, 'col-span-1 col-start-2')
+}
 
 /** @deprecated Usar CARTA_PRODUCT_PHOTO_FRAME_SHELL_CLASS + getCartaProductPhotoFrameStyle */
 export const CARTA_DRINK_PHOTO_FRAME_CLASS =
