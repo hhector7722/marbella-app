@@ -285,37 +285,33 @@ export function ClosingPhotoField({
         }}
       />
       {previewUrl ? (
-        <div className="relative flex h-9 w-full items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt={ariaLabel}
-            className="h-9 w-auto max-w-full rounded-md object-contain"
-          />
-          <button
-            type="button"
-            onClick={onClear}
-            className="absolute right-0 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
-            aria-label={`Eliminar ${ariaLabel}`}
-          >
-            <X size={10} strokeWidth={3} />
-          </button>
+        <div className={cn(CLOSING_INPUT_HEIGHT, 'flex w-full items-center justify-center')}>
+          <div className="relative inline-block max-w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt={ariaLabel}
+              className="h-7 w-auto max-w-full rounded-md object-contain sm:h-8"
+            />
+            <button
+              type="button"
+              onClick={onClear}
+              className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
+              aria-label={`Eliminar ${ariaLabel}`}
+            >
+              <X size={9} strokeWidth={3} />
+            </button>
+          </div>
         </div>
       ) : (
-        <div
-          className={cn(
-            CLOSING_INPUT_HEIGHT,
-            CLOSING_PETROL_BORDER,
-            'relative w-full overflow-hidden rounded-xl border-[#36606F] bg-white',
-          )}
-        >
+        <div className={cn(CLOSING_INPUT_HEIGHT, 'flex w-full items-center justify-center')}>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-full w-full items-center justify-center transition-colors hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
+            className="flex h-7 min-w-[4.25rem] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-2.5 text-[10px] font-black text-white transition-all hover:bg-emerald-600 active:scale-95 sm:min-w-[4.5rem] sm:px-3 sm:text-xs"
             aria-label={ariaLabel}
           >
-            <span className="text-[10px] font-black text-[#36606F] sm:text-xs">Añadir</span>
+            Añadir
           </button>
         </div>
       )}
