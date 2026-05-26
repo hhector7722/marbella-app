@@ -21,7 +21,7 @@ import {
     Download,
     Filter,
 } from 'lucide-react';
-import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -269,7 +269,24 @@ export default function HistoryPage() {
     const [closingPhotoUrls, setClosingPhotoUrls] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [closingPhotosLoading, setClosingPhotosLoading] = useState(false);
     const [closingPhotosError, setClosingPhotosError] = useState<string | null>(null);
-    const [lightboxImage, setLightboxImage] = useState<{ url: string; label: string } | null>(null);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [closingCalculatorOpen, setClosingCalculatorOpen] = useState(false);
+
+    const closingPhotoSlides = useMemo((): ImageLightboxSlide[] => {
+        const slides: ImageLightboxSlide[] = [];
+        if (closingPhotoUrls.dataphoneUrl) {
+            slides.push({ src: closingPhotoUrls.dataphoneUrl, alt: 'Totales datáfonos' });
+        }
+        if (closingPhotoUrls.bdpUrl) {
+            slides.push({ src: closingPhotoUrls.bdpUrl, alt: 'Informe TPV' });
+        }
+        return slides;
+    }, [closingPhotoUrls]);
+
+    const openClosingPhotoLightbox = (alt: string) => {
+        const idx = closingPhotoSlides.findIndex((s) => s.alt === alt);
+        if (idx >= 0) setLightboxIndex(idx);
+    };
 
     useEffect(() => {
         checkUserRole();
@@ -675,6 +692,8 @@ export default function HistoryPage() {
             if (error) throw error;
             toast.success("Cierre eliminado");
             setSelectedClosing(null);
+            setLightboxIndex(null);
+            setClosingCalculatorOpen(false);
             fetchHistory();
         } catch (err: any) {
             toast.error("Error al eliminar: " + err.message);
@@ -690,6 +709,7 @@ export default function HistoryPage() {
         if (nextIndex >= 0 && nextIndex < closings.length) {
             setSelectedClosing(closings[nextIndex]);
             setIsEditing(false);
+            setLightboxIndex(null);
         }
     };
 
@@ -1040,7 +1060,28 @@ export default function HistoryPage() {
             </div>
 
             {selectedClosing && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
+                <>
+                    <QuickCalculatorModal
+                        isOpen={closingCalculatorOpen}
+                        onClose={() => setClosingCalculatorOpen(false)}
+                        overlayClassName="z-[320]"
+                    />
+                    <FloatingCalculatorFab
+                        isOpen={closingCalculatorOpen}
+                        onToggle={() => setClosingCalculatorOpen(true)}
+                        className="z-[310]"
+                    />
+                </>
+            )}
+
+            {selectedClosing && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => {
+                    if (!isEditing) {
+                        setSelectedClosing(null);
+                        setLightboxIndex(null);
+                        setClosingCalculatorOpen(false);
+                    }
+                }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-4 md:p-5 text-white relative shrink-0 text-center">
@@ -1070,7 +1111,12 @@ export default function HistoryPage() {
 
                                 <div className="flex-1 flex items-center justify-end gap-1 min-w-[32px]">
                                     <button
-                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            setSelectedClosing(null);
+                                            setLightboxIndex(null);
+                                            setClosingCalculatorOpen(false);
+                                        }}
                                         className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
                                     >
                                         <X size={20} strokeWidth={2.5} />
@@ -1268,7 +1314,7 @@ export default function HistoryPage() {
                                     {closingPhotoUrls.dataphoneUrl ? (
                                         <button
                                             type="button"
-                                            onClick={() => setLightboxImage({ url: closingPhotoUrls.dataphoneUrl!, label: 'Totales datáfonos' })}
+                                            onClick={() => openClosingPhotoLightbox('Totales datáfonos')}
                                             className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1285,7 +1331,7 @@ export default function HistoryPage() {
                                     {closingPhotoUrls.bdpUrl ? (
                                         <button
                                             type="button"
-                                            onClick={() => setLightboxImage({ url: closingPhotoUrls.bdpUrl!, label: 'Informe TPV' })}
+                                            onClick={() => openClosingPhotoLightbox('Informe TPV')}
                                             className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1443,10 +1489,11 @@ export default function HistoryPage() {
             )}
 
             <ImageLightbox
-                open={Boolean(lightboxImage)}
-                src={lightboxImage?.url}
-                alt={lightboxImage?.label}
-                onClose={() => setLightboxImage(null)}
+                open={lightboxIndex !== null && closingPhotoSlides.length > 0}
+                slides={closingPhotoSlides}
+                activeIndex={lightboxIndex ?? 0}
+                onActiveIndexChange={setLightboxIndex}
+                onClose={() => setLightboxIndex(null)}
             />
 
             <TimeFilterModal

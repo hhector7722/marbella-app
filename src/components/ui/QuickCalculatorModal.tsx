@@ -25,6 +25,8 @@ function safeEval(expr: string): number | null {
 interface QuickCalculatorModalProps {
     isOpen: boolean;
     onClose: () => void;
+    /** p. ej. z-[320] cuando hay otro overlay encima (lightbox) */
+    overlayClassName?: string;
 }
 
 const BTN_VALUES: (string | 'back')[][] = [
@@ -304,7 +306,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+            className={cn(
+                'fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200',
+                overlayClassName,
+            )}
             onClick={onClose}
         >
             <div
