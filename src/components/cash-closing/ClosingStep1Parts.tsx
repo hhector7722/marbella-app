@@ -14,6 +14,7 @@ export const CLOSING_FIELD_COL =
   'w-[8.75rem] sm:w-[9.5rem]';
 
 const CLOSING_INPUT_HEIGHT = 'h-9';
+const CLOSING_PETROL_BORDER = 'border';
 
 const CLOSING_ROW_TITLE =
   'text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs';
@@ -146,7 +147,8 @@ export function ClosingPetrolInput({
     <div
       className={cn(
         CLOSING_INPUT_HEIGHT,
-        'relative w-full rounded-xl border-2 border-[#36606F] bg-white transition-colors focus-within:bg-[#36606F]/5',
+        CLOSING_PETROL_BORDER,
+        'relative w-full rounded-xl border-[#36606F] bg-white transition-colors focus-within:bg-[#36606F]/5',
         className,
       )}
     >
@@ -186,7 +188,8 @@ export function ClosingPetrolInputWithAdjust({
     <div
       className={cn(
         CLOSING_INPUT_HEIGHT,
-        'flex w-full items-center justify-between overflow-hidden rounded-xl border-2 border-[#36606F] bg-white',
+        CLOSING_PETROL_BORDER,
+        'flex w-full items-center justify-between overflow-hidden rounded-xl border-[#36606F] bg-white',
       )}
     >
       <button
@@ -281,40 +284,41 @@ export function ClosingPhotoField({
           e.target.value = '';
         }}
       />
-      <div
-        className={cn(
-          CLOSING_INPUT_HEIGHT,
-          'relative w-full overflow-hidden rounded-xl border-2 border-[#36606F] bg-white',
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="flex h-full w-full items-center justify-center transition-colors hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
-          aria-label={ariaLabel}
-        >
-          {previewUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={previewUrl}
-              alt={ariaLabel}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="text-sm font-black text-[#36606F]">Añadir</span>
-          )}
-        </button>
-        {previewUrl ? (
+      {previewUrl ? (
+        <div className="relative flex h-9 w-full items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewUrl}
+            alt={ariaLabel}
+            className="h-9 w-auto max-w-full rounded-md object-contain"
+          />
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
+            className="absolute right-0 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
             aria-label={`Eliminar ${ariaLabel}`}
           >
             <X size={10} strokeWidth={3} />
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            CLOSING_INPUT_HEIGHT,
+            CLOSING_PETROL_BORDER,
+            'relative w-full overflow-hidden rounded-xl border-[#36606F] bg-white',
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex h-full w-full items-center justify-center transition-colors hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
+            aria-label={ariaLabel}
+          >
+            <span className="text-[10px] font-black text-[#36606F] sm:text-xs">Añadir</span>
+          </button>
+        </div>
+      )}
     </>
   );
 }

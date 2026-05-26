@@ -1243,18 +1243,16 @@ export default function MovementsPage() {
                     document.body
                 )}
 
-            {isClosingModalOpen && (
-                <CashClosingModal
-                    isOpen={isClosingModalOpen}
-                    onClose={() => setIsClosingModalOpen(false)}
-                    onSuccess={async () => {
-                        setIsClosingModalOpen(false);
-                        await fetchCurrentBoxStatus();
-                        await fetchFilteredMovements();
-                        toast.success("Cierre realizado correctamente");
-                    }}
-                />
-            )}
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={async () => {
+                    setIsClosingModalOpen(false);
+                    await fetchCurrentBoxStatus();
+                    await fetchFilteredMovements();
+                    toast.success("Cierre realizado correctamente");
+                }}
+            />
         </div>
     );
 }

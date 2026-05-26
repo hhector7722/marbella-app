@@ -156,9 +156,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     useEffect(() => {
         if (!isOpen) {
-            resetClosingPhotos();
-            setWeatherId(null);
+            // No borramos fotos al salir: deben persistir si reabres el proceso.
+            return;
         }
+        // Clima: siempre sin selección por defecto al abrir
+        setWeatherId(null);
     }, [isOpen]);
 
     useEffect(() => {
@@ -183,7 +185,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     if (draft) {
                         const parsed = JSON.parse(draft);
                         if (parsed.tpvData) {
-                            const { weather: legacyWeather, ...rest } = parsed.tpvData as {
+                            const { weather: _legacyWeather, ...rest } = parsed.tpvData as {
                                 weather?: string;
                                 cardSales?: number;
                                 pendingSales?: number;
@@ -195,11 +197,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 pendingSales: rest.pendingSales ?? 0,
                                 debtRecovered: rest.debtRecovered ?? 0,
                             }));
-                            if (parsed.weatherId) {
-                                setWeatherId(parsed.weatherId as ClosingWeatherId);
-                            } else if (legacyWeather) {
-                                setWeatherId(weatherIdFromLabel(legacyWeather));
-                            }
+                            // Clima: siempre sin selección por defecto (no restaurar desde draft)
                         }
                         if (parsed.counts) setCounts(parsed.counts);
                     }
@@ -575,6 +573,15 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 />
                             </ClosingStepRow>
 
+                            <ClosingStepRow title="Nº tickets">
+                                <ClosingPetrolInputWithAdjust
+                                    value={tpvData.ticketsCount}
+                                    onChange={(next) => setTpvData({ ...tpvData, ticketsCount: next })}
+                                    onAdjust={(delta) => handleAdjustTpv('ticketsCount', delta)}
+                                    parseValue={(raw) => parseInt(raw, 10) || 0}
+                                />
+                            </ClosingStepRow>
+
                             <ClosingStepRow title="Informe tpv">
                                 <ClosingPhotoField
                                     inputId="closing-photo-bdp-ticket"
@@ -582,15 +589,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     ariaLabel="Informe TPV"
                                     onSelect={setBdpTicketPhoto}
                                     onClear={() => setBdpTicketPhoto(null)}
-                                />
-                            </ClosingStepRow>
-
-                            <ClosingStepRow title="Nº tickets">
-                                <ClosingPetrolInputWithAdjust
-                                    value={tpvData.ticketsCount}
-                                    onChange={(next) => setTpvData({ ...tpvData, ticketsCount: next })}
-                                    onAdjust={(delta) => handleAdjustTpv('ticketsCount', delta)}
-                                    parseValue={(raw) => parseInt(raw, 10) || 0}
                                 />
                             </ClosingStepRow>
 
@@ -609,22 +607,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     ariaLabel="Totales datáfono"
                                     onSelect={setDataphonePhoto}
                                     onClear={() => setDataphonePhoto(null)}
-                                />
-                            </ClosingStepRow>
-
-                            <ClosingStepRow title="Cobros">
-                                <ClosingPetrolInput
-                                    value={tpvData.debtRecovered}
-                                    onChange={(next) => setTpvData({ ...tpvData, debtRecovered: next })}
-                                    showEuro
-                                />
-                            </ClosingStepRow>
-
-                            <ClosingStepRow title="Pendiente">
-                                <ClosingPetrolInput
-                                    value={tpvData.pendingSales}
-                                    onChange={(next) => setTpvData({ ...tpvData, pendingSales: next })}
-                                    showEuro
                                 />
                             </ClosingStepRow>
                         </div>
@@ -681,16 +663,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <ClosingReadonlyValue value={tpvData.cardSales} showEuro />
                             </ClosingSummaryRow>
 
-                            <ClosingSummaryRow title="Cobros">
-                                <ClosingReadonlyValue value={tpvData.debtRecovered} showEuro />
+                            <ClosingSummaryRow title="Efectivo">
+                                <ClosingReadonlyValue value={totalCounted} showEuro />
                             </ClosingSummaryRow>
 
                             <ClosingSummaryRow title="Pendiente">
                                 <ClosingReadonlyValue value={tpvData.pendingSales} showEuro />
                             </ClosingSummaryRow>
 
-                            <ClosingSummaryRow title="Efectivo">
-                                <ClosingReadonlyValue value={totalCounted} showEuro />
+                            <ClosingSummaryRow title="Cobros">
+                                <ClosingReadonlyValue value={tpvData.debtRecovered} showEuro />
                             </ClosingSummaryRow>
 
                             <ClosingSummaryRow title="Descuadre">
