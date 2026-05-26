@@ -31,9 +31,14 @@ pm2 restart receptor
 pm2 logs receptor --lines 20
 
 ## Verificación
-- TPV: 🔎 Docs en ventana > 0 | ✅ Venta enviada | 🔄 Poll: N enviado(s)
-- Gateway: [VENTAS] ... | dia=YYYY-MM-DD (hoy)
-- App: /dashboard/ventas filtro hoy
+- TPV: 🔎 Docs en ventana > 0 | 🔎 A cuenta sin cierre >= 0 | ✅ Venta enviada (tag | A-CUENTA si aplica) | 🔄 Poll: N enviado(s)
+- Gateway: [VENTAS] ... | pend=... | dia=YYYY-MM-DD (hoy)
+- App: /dashboard/ventas filtro hoy (total = SUM total_documento, incluye a cuenta)
+
+## Tickets a cuenta (Pendiente=1 sin Hora_Cierre)
+- VENTAS_WHERE: `(Hora_Cierre IS NOT NULL OR Pendiente = 1)` — no entran mesas abiertas sin pendiente.
+- Al cobrar: cambia Documentos_Pagos → firma distinta → re-upsert en Supabase (mismo numero_documento).
+- pm2: `pm2 restart PuenteBDP` y `pm2 logs PuenteBDP --lines 30`
 
 ## Variables opcionales
 - BDP_GATEWAY_URL=http://192.168.1.205:3000

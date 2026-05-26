@@ -27,12 +27,15 @@ const config = {
 
 /**
  * Ventana de negocio BDP (Data Sistema). Funciona aunque Fecha (día TPV) vaya desfasada.
+ * Ventas: tickets con Hora_Cierre (finalizados) o Pendiente=1 (a cuenta, sin cierre).
+ * Tickets abiertos sin pendiente quedan fuera (radar sala sigue por Comandas / DIRECTO reciente).
  */
 const VENTAS_WHERE = `
   WHERE (
     (Fecha_Sistema IS NOT NULL AND CAST(Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
     OR (Fecha_Sistema IS NULL AND CAST(Fecha AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
   )
+  AND (Hora_Cierre IS NOT NULL OR Pendiente = 1)
 `;
 
 const CABECERA_SELECT = `
@@ -145,6 +148,11 @@ async function buildPayloadVenta(pool, t) {
         cobro_pendiente = roundMoney(total);
     }
 
+    const horaCierreIso =
+        toIso(t.Hora_Cierre) || (pendienteBit ? toIso(t.Fecha_Sistema) || toIso(t.Fecha) : null);
+    const fechaTicketIso =
+        horaLinea ? new Date(horaLinea).toISOString() : horaCierreIso || new Date().toISOString();
+
     return {
         numero_documento: ticketKey(t.Numero_Documento),
         mesa: t.Mesa,
@@ -153,9 +161,9 @@ async function buildPayloadVenta(pool, t) {
         cobro_tarjeta,
         cobro_pendiente,
         fecha_sistema: toIso(t.Fecha_Sistema),
-        hora_cierre: toIso(t.Hora_Cierre),
+        hora_cierre: horaCierreIso,
         fecha_bdp: toIso(t.Fecha),
-        fecha: horaLinea ? new Date(horaLinea).toISOString() : toIso(t.Hora_Cierre) || new Date().toISOString(),
+        fecha: fechaTicketIso,
         lineas: [
             ...lRes.recordset.map((l) => ({
                 articulo_id: l.PLU,
@@ -194,8 +202,10 @@ async function enviarTicket(pool, t) {
         { timeout: AXIOS_TIMEOUT_MS, headers: webhookHeaders() }
     );
     memoriaTickets.set(key, sig);
+    const tagCuenta =
+        !payload.hora_cierre && payload.cobro_pendiente > 0 ? ' | A-CUENTA' : '';
     console.log(
-        `✅ Venta enviada -> Ticket: ${key} | ef=${payload.cobro_efectivo} | tj=${payload.cobro_tarjeta} | pend=${payload.cobro_pendiente}`
+        `✅ Venta enviada -> Ticket: ${key} | ef=${payload.cobro_efectivo} | tj=${payload.cobro_tarjeta} | pend=${payload.cobro_pendiente}${tagCuenta}`
     );
     return true;
 }
@@ -215,7 +225,7 @@ async function catchUpVentas(pool) {
                 SELECT ${CABECERA_SELECT}
                 FROM Documentos_Cabecera WITH (NOLOCK)
                 ${VENTAS_WHERE}
-                ORDER BY Hora_Cierre DESC
+                ORDER BY COALESCE(Hora_Cierre, Fecha_Sistema, Fecha) DESC
                 OFFSET @off ROWS FETCH NEXT @lim ROWS ONLY
             `);
 
@@ -246,6 +256,8 @@ async function logDiagnosticoSql(pool) {
             SELECT
                 GETDATE() AS sql_ahora,
                 (SELECT COUNT(*) FROM Documentos_Cabecera WITH (NOLOCK) ${VENTAS_WHERE}) AS en_ventana,
+                (SELECT COUNT(*) FROM Documentos_Cabecera WITH (NOLOCK) ${VENTAS_WHERE}
+                    AND Pendiente = 1 AND Hora_Cierre IS NULL) AS pendiente_sin_cierre,
                 (SELECT COUNT(*) FROM Documentos_Cabecera WITH (NOLOCK)
                     WHERE Hora_Cierre IS NOT NULL AND Hora_Cierre >= DATEADD(hour, -3, GETDATE())) AS hora_cierre_3h,
                 (SELECT MAX(Hora_Cierre) FROM Documentos_Cabecera WITH (NOLOCK)) AS max_hora_cierre,
@@ -253,7 +265,8 @@ async function logDiagnosticoSql(pool) {
         `);
         const d = diag.recordset[0] || {};
         console.log('🔎 SQL GETDATE()      =', d.sql_ahora);
-        console.log('🔎 Docs en ventana    =', d.en_ventana, '(Fecha_Sistema ayer/hoy)');
+        console.log('🔎 Docs en ventana    =', d.en_ventana, '(cerrados o a cuenta)');
+        console.log('🔎 A cuenta sin cierre =', d.pendiente_sin_cierre);
         console.log('🔎 Docs Hora_Cierre 3h =', d.hora_cierre_3h);
         console.log('🔎 MAX Hora_Cierre    =', d.max_hora_cierre);
         console.log('🔎 MAX Num.Documento  =', d.max_doc_ventana);
@@ -270,7 +283,10 @@ async function pollVentasRecientes(pool) {
             SELECT TOP (${POLL_TOP}) ${CABECERA_SELECT}
             FROM Documentos_Cabecera WITH (NOLOCK)
             ${VENTAS_WHERE}
-            ORDER BY Hora_Cierre DESC, Numero_Documento DESC
+            ORDER BY
+              CASE WHEN ISNULL(Pendiente, 0) = 1 AND Hora_Cierre IS NULL THEN 0 ELSE 1 END,
+              COALESCE(Hora_Cierre, Fecha_Sistema, Fecha) DESC,
+              Numero_Documento DESC
         `);
 
         const candidatos = res.recordset || [];
