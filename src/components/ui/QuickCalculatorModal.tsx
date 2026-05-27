@@ -37,7 +37,7 @@ const BTN_VALUES: (string | 'back')[][] = [
     ['.', '0', '=', ''],
 ];
 
-export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalProps) {
+export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: QuickCalculatorModalProps) {
     const [tab, setTab] = useState<ModalTab>('calculator');
     const [display, setDisplay] = useState('');
     const [result, setResult] = useState<number | null>(null);
