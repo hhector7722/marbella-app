@@ -260,14 +260,7 @@ export function ConsumptionModal({
       <div className="flex h-[90vh] max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between bg-[#36606F] p-5 text-white">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">
-              {step === 'drinks' ? 'Consumo personal · Bebidas' : 'Consumo personal · Comida'}
-            </h2>
-            <p className="mt-0.5 text-sm text-white/80">
-              {step === 'drinks'
-                ? 'Selecciona al menos 1 bebida'
-                : 'Selecciona al menos 1 producto de comida'}
-            </p>
+            <h2 className="text-xl font-bold tracking-tight">Consumo personal</h2>
           </div>
           <button
             type="button"
@@ -353,8 +346,8 @@ export function ConsumptionModal({
                       type="button"
                       onClick={() => handleDecrement(c.recipe.id, c.is_half)}
                       className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 shadow-sm',
-                        'hover:bg-zinc-100 active:scale-[0.98] transition-colors',
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                        'hover:text-zinc-600 active:scale-[0.98] transition-colors',
                       )}
                       aria-label={`Quitar una unidad de ${c.recipe.name}`}
                     >
@@ -373,8 +366,8 @@ export function ConsumptionModal({
                       type="button"
                       onClick={() => handleAdd(c.recipe, c.is_half)}
                       className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 shadow-sm',
-                        'hover:bg-zinc-100 active:scale-[0.98] transition-colors',
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                        'hover:text-zinc-600 active:scale-[0.98] transition-colors',
                       )}
                       aria-label={`Añadir una unidad de ${c.recipe.name}`}
                     >
@@ -449,7 +442,7 @@ export function ConsumptionModal({
                 {isSubmitting ? (
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                 ) : (
-                  'Confirmar y fichar salida'
+                  'Confirmar y fichar'
                 )}
               </button>
             </div>
