@@ -206,6 +206,9 @@ export function PlatoMarbellaStaffGridView({
         <p className="text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-[13px]">
           {ui.plateExploreHint}
         </p>
+        <p className="mt-1 text-center text-[11px] font-semibold leading-snug text-zinc-600 sm:text-xs">
+          {(ui as any).plateExploreHint2}
+        </p>
         <PlatoMarbellaPlateVisual
           lang={lang}
           activeSlot={activeSlot}
