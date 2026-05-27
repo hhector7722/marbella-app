@@ -247,7 +247,9 @@ export function ConsumptionModal({
     return stepRecipes.filter((r) => r.name.toLowerCase().includes(q));
   }, [search, stepRecipes]);
 
-  const gridRecipes = search.trim() ? searchResults : quickRecipes;
+  // En cada paso deben verse TODOS los productos del paso.
+  // La búsqueda solo reduce el conjunto (nunca "esconde" items por diseño).
+  const gridRecipes = search.trim() ? searchResults : stepRecipes;
 
   /** Tras intento sin productos: aviso rojo solo mientras el carrito sigue vacío. */
   const emptyCartMessageVisible =
@@ -345,29 +347,35 @@ export function ConsumptionModal({
                 {cart.map((c, i) => (
                   <div
                     key={`${c.recipe.id}-${c.is_half}-${i}`}
-                    className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-2"
+                    className="flex min-h-12 items-center gap-2"
                   >
                     <button
                       type="button"
                       onClick={() => handleDecrement(c.recipe.id, c.is_half)}
-                      className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-900 shadow-sm hover:bg-emerald-100 active:scale-[0.98]"
+                      className={cn(
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 shadow-sm',
+                        'hover:bg-zinc-100 active:scale-[0.98] transition-colors',
+                      )}
                       aria-label={`Quitar una unidad de ${c.recipe.name}`}
                     >
                       <Minus className="h-5 w-5" strokeWidth={2.5} />
                     </button>
-                    <div className="min-w-0 flex-1 text-center">
-                      <p className="truncate text-sm font-bold text-emerald-950">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-zinc-900" title={c.recipe.name}>
                         {c.recipe.name}
                         {c.is_half ? ' (Mitad)' : ''}
                       </p>
-                      <p className="text-lg font-black tabular-nums text-emerald-800">
-                        ×{c.quantity}
-                      </p>
+                    </div>
+                    <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
+                      ×{c.quantity}
                     </div>
                     <button
                       type="button"
                       onClick={() => handleAdd(c.recipe, c.is_half)}
-                      className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-900 shadow-sm hover:bg-emerald-100 active:scale-[0.98]"
+                      className={cn(
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 shadow-sm',
+                        'hover:bg-zinc-100 active:scale-[0.98] transition-colors',
+                      )}
                       aria-label={`Añadir una unidad de ${c.recipe.name}`}
                     >
                       <Plus className="h-5 w-5" strokeWidth={2.5} />
