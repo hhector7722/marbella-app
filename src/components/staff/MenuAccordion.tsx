@@ -754,79 +754,94 @@ export function MenuAccordion({
                 !hideLangPicker && 'mt-4 sm:mt-5'
             )}
         >
-            <CartaCategoryGrid
-                compact={homeCompact}
-                className={cn(hideLangPicker && 'min-h-0 flex-1 pt-0', !hideLangPicker && 'mt-0')}
+            <div
+                className={cn(
+                    'min-h-0 flex-1',
+                    hideLangPicker && homeCompact && !reorderScope
+                        ? 'flex items-center justify-center'
+                        : ''
+                )}
             >
-            {displayGrouped.map((group) => {
-                const isOpen = openKey === group.key
+                <div className={cn('w-full', hideLangPicker && homeCompact && !reorderScope && 'max-h-full overflow-y-auto')}>
+                    <CartaCategoryGrid
+                        compact={homeCompact}
+                        className={cn(
+                            hideLangPicker && 'min-h-0 flex-1 pt-0',
+                            hideLangPicker && homeCompact && !reorderScope && 'pb-2',
+                            !hideLangPicker && 'mt-0'
+                        )}
+                    >
+                    {displayGrouped.map((group) => {
+                        const isOpen = openKey === group.key
 
-                if (reorderScope === 'parents') {
-                    return (
-                        <CartaCategoryCard
-                            key={group.key}
-                            title={group.title}
-                            coverPhotoUrl={group.coverPhotoUrl}
-                            coverPhotoScale={group.coverPhotoScale}
-                            nativeImg
-                            highlighted={reorderPick === group.key && isUuidLike(group.key)}
-                            disabled={!isUuidLike(group.key)}
-                            onClick={() => handleParentReorderTap(group.key)}
-                        />
-                    )
-                }
+                        if (reorderScope === 'parents') {
+                            return (
+                                <CartaCategoryCard
+                                    key={group.key}
+                                    title={group.title}
+                                    coverPhotoUrl={group.coverPhotoUrl}
+                                    coverPhotoScale={group.coverPhotoScale}
+                                    nativeImg
+                                    highlighted={reorderPick === group.key && isUuidLike(group.key)}
+                                    disabled={!isUuidLike(group.key)}
+                                    onClick={() => handleParentReorderTap(group.key)}
+                                />
+                            )
+                        }
 
-                return (
-                    <div key={group.key} className="flex min-w-0 w-full items-stretch">
-                        {editMode && onPersistParentCategoryOrder && !reorderScope ? (
-                            <button
-                                type="button"
-                                className="flex w-10 shrink-0 touch-manipulation items-center justify-center self-stretch bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-11"
-                                aria-label="Cambiar posición de secciones"
-                                title="Cambiar posición de secciones"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    setOpenKey(null)
-                                    setReorderPick(null)
-                                    setParentKeysDraft(groupedRef.current.map((g) => g.key))
-                                    setReorderScope('parents')
-                                }}
-                            >
-                                <GripVertical className="h-5 w-5" strokeWidth={2.5} />
-                            </button>
-                        ) : null}
-                        <CartaCategoryCard
-                            className="min-w-0 flex-1"
-                            compact={homeCompact}
-                            title={group.title}
-                            coverPhotoUrl={group.coverPhotoUrl}
-                            coverPhotoScale={group.coverPhotoScale}
-                            nativeImg
-                            ariaExpanded={isOpen}
-                            onClick={() => headerToggle(group.key)}
-                            overlay={
-                                editMode && isUuidLike(group.key) && onEditParentCategory ? (
+                        return (
+                            <div key={group.key} className="flex min-w-0 w-full items-stretch">
+                                {editMode && onPersistParentCategoryOrder && !reorderScope ? (
                                     <button
                                         type="button"
+                                        className="flex w-10 shrink-0 touch-manipulation items-center justify-center self-stretch bg-zinc-50/80 text-[#36606F] active:bg-zinc-100 sm:w-11"
+                                        aria-label="Cambiar posición de secciones"
+                                        title="Cambiar posición de secciones"
                                         onClick={(e) => {
                                             e.preventDefault()
                                             e.stopPropagation()
-                                            onEditParentCategory(group.key)
+                                            setOpenKey(null)
+                                            setReorderPick(null)
+                                            setParentKeysDraft(groupedRef.current.map((g) => g.key))
+                                            setReorderScope('parents')
                                         }}
-                                        className="absolute right-0 top-0 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#36606F] active:opacity-70 sm:min-h-[48px] sm:min-w-[48px]"
-                                        aria-label="Editar categoría"
-                                        title="Editar categoría"
                                     >
-                                        <Pencil className="h-5 w-5" strokeWidth={2.5} />
+                                        <GripVertical className="h-5 w-5" strokeWidth={2.5} />
                                     </button>
-                                ) : null
-                            }
-                        />
-                    </div>
-                )
-            })}
-            </CartaCategoryGrid>
+                                ) : null}
+                                <CartaCategoryCard
+                                    className="min-w-0 flex-1"
+                                    compact={homeCompact}
+                                    title={group.title}
+                                    coverPhotoUrl={group.coverPhotoUrl}
+                                    coverPhotoScale={group.coverPhotoScale}
+                                    nativeImg
+                                    ariaExpanded={isOpen}
+                                    onClick={() => headerToggle(group.key)}
+                                    overlay={
+                                        editMode && isUuidLike(group.key) && onEditParentCategory ? (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    onEditParentCategory(group.key)
+                                                }}
+                                                className="absolute right-0 top-0 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#36606F] active:opacity-70 sm:min-h-[48px] sm:min-w-[48px]"
+                                                aria-label="Editar categoría"
+                                                title="Editar categoría"
+                                            >
+                                                <Pencil className="h-5 w-5" strokeWidth={2.5} />
+                                            </button>
+                                        ) : null
+                                    }
+                                />
+                            </div>
+                        )
+                    })}
+                    </CartaCategoryGrid>
+                </div>
+            </div>
         </CartaCoversLoadingGate>
     )
     return (
