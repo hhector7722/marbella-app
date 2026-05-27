@@ -1125,11 +1125,15 @@ export default function StaffDashboardView() {
                                         </div>
                                         <div className="text-center">
                                             <p className="text-base font-black text-gray-800 mb-1">Reservas</p>
-                                            <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
+                                            <p className="text-xs text-gray-400 font-medium">Gestión de reservas</p>
                                         </div>
-                                        <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
-                                            <span className="text-sm">En desarrollo</span>
-                                        </div>
+                                        <Link
+                                            href="/staff/reservas"
+                                            onClick={closeMenus}
+                                            className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                        >
+                                            <span className="text-sm">Abrir Reservas</span>
+                                        </Link>
                                     </div>
                                 )}
                             </div>

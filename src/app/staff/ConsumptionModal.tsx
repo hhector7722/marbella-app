@@ -7,23 +7,30 @@ import { X, Search, Loader2, Package, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Subcadenas para el grid de acceso rápido (coincidencia en nombre de receta). */
-const QUICK_ITEMS = [
+const QUICK_DRINK_ITEMS = [
   'agua',
   'café',
+  'cafe',
   'cortado',
   'café con leche',
+  'cafe con leche',
   'coca cola',
   'coca cola zero',
   'nestea',
   'red bull',
+];
+
+const QUICK_FOOD_ITEMS = [
   'croissant',
   'croissant chocolate',
   'bacon con queso',
   'bikini',
   'jamón serrano',
+  'jamon serrano',
   'longaniza',
   'tortilla de patatas',
   'jamón dulce',
+  'jamon dulce',
   'chips ahoy',
   'kinder bueno',
   'oreo',
@@ -62,6 +69,40 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+type ConsumptionStep = 'drinks' | 'food';
+
+function isDrinkRecipe(recipe: { name: string; category: string | null }): boolean {
+  const name = normalizeName(recipe.name);
+  const cat = recipe.category?.toLowerCase() ?? '';
+
+  // Primario: categorías típicas
+  if (cat.includes('bebid')) return true;
+  if (cat.includes('refresc')) return true;
+  if (cat.includes('cervez')) return true;
+  if (cat.includes('vino')) return true;
+  if (cat.includes('café') || cat.includes('cafe')) return true;
+
+  // Fallback por nombre (cuando la categoría viene vacía o inconsistente)
+  const drinkNeedles = [
+    'agua',
+    'café',
+    'cafe',
+    'cortado',
+    'coca cola',
+    'nestea',
+    'red bull',
+    'zumo',
+    'cerveza',
+    'vino',
+    'tónica',
+    'tonica',
+    'fanta',
+    'sprite',
+    'kas',
+  ];
+  return drinkNeedles.some((n) => name.includes(n));
+}
+
 function isExcludedFromQuick(recipe: { name: string }): boolean {
   return EXCLUDED_QUICK_NAMES.has(normalizeName(recipe.name));
 }
@@ -95,6 +136,7 @@ export function ConsumptionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [racionPicker, setRacionPicker] = useState<Recipe | null>(null);
   const [showEmptyCartError, setShowEmptyCartError] = useState(false);
+  const [step, setStep] = useState<ConsumptionStep>('drinks');
 
   useEffect(() => {
     getConsumptionRecipes().then((data) => {
@@ -152,6 +194,8 @@ export function ConsumptionModal({
   );
 
   const handleSubmit = async () => {
+    // Defensa: este botón solo debería existir en el paso Comida,
+    // pero mantenemos el guard por si se llama desde DevTools.
     if (cart.length === 0) {
       setShowEmptyCartError(true);
       return;
@@ -182,33 +226,46 @@ export function ConsumptionModal({
     }
   };
 
-  const quickRecipes = useMemo(
-    () =>
-      recipes.filter((r) => {
-        if (isExcludedFromQuick(r)) return false;
-        return QUICK_ITEMS.some((q) => r.name.toLowerCase().includes(q.toLowerCase()));
-      }),
-    [recipes],
-  );
+  const stepRecipes = useMemo(() => {
+    return recipes.filter((r) => (step === 'drinks' ? isDrinkRecipe(r) : !isDrinkRecipe(r)));
+  }, [recipes, step]);
+
+  const cartHasDrink = useMemo(() => cart.some((c) => isDrinkRecipe(c.recipe)), [cart]);
+  const cartHasFood = useMemo(() => cart.some((c) => !isDrinkRecipe(c.recipe)), [cart]);
+
+  const quickRecipes = useMemo(() => {
+    const needles = step === 'drinks' ? QUICK_DRINK_ITEMS : QUICK_FOOD_ITEMS;
+    return stepRecipes.filter((r) => {
+      if (isExcludedFromQuick(r)) return false;
+      return needles.some((q) => r.name.toLowerCase().includes(q.toLowerCase()));
+    });
+  }, [step, stepRecipes]);
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
-    return recipes.filter((r) => r.name.toLowerCase().includes(q));
-  }, [search, recipes]);
+    return stepRecipes.filter((r) => r.name.toLowerCase().includes(q));
+  }, [search, stepRecipes]);
 
   const gridRecipes = search.trim() ? searchResults : quickRecipes;
 
   /** Tras intento sin productos: aviso rojo solo mientras el carrito sigue vacío. */
-  const emptyCartMessageVisible = showEmptyCartError && cart.length === 0;
+  const emptyCartMessageVisible =
+    showEmptyCartError && (step === 'drinks' ? !cartHasDrink : !cartHasFood);
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end justify-center bg-gray-900/80 p-4 backdrop-blur-sm sm:items-center">
       <div className="flex h-[90vh] max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between bg-[#36606F] p-5 text-white">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Consumo personal</h2>
-            <p className="mt-0.5 text-sm text-white/80">Apunta los productos consumidos</p>
+            <h2 className="text-xl font-bold tracking-tight">
+              {step === 'drinks' ? 'Consumo personal · Bebidas' : 'Consumo personal · Comida'}
+            </h2>
+            <p className="mt-0.5 text-sm text-white/80">
+              {step === 'drinks'
+                ? 'Selecciona al menos 1 bebida'
+                : 'Selecciona al menos 1 producto de comida'}
+            </p>
           </div>
           <button
             type="button"
@@ -232,7 +289,7 @@ export function ConsumptionModal({
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="search"
-                  placeholder="Buscar otros productos..."
+                  placeholder={step === 'drinks' ? 'Buscar bebidas...' : 'Buscar comida...'}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-[#36606F]/40"
@@ -325,20 +382,70 @@ export function ConsumptionModal({
               className="mb-2 text-center text-sm font-semibold text-red-600"
               role="alert"
             >
-              Apunta el consumo antes de fichar la salida.
+              Registra tu consumo antes de continuar.
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => void handleSubmit()}
-            disabled={isSubmitting}
-            className={cn(
-              'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
-              'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-70',
-            )}
-          >
-            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Confirmar y fichar salida'}
-          </button>
+
+          {step === 'drinks' ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (!cartHasDrink) {
+                  setShowEmptyCartError(true);
+                  return;
+                }
+                setShowEmptyCartError(false);
+                setSearch('');
+                setStep('food');
+              }}
+              disabled={isSubmitting}
+              className={cn(
+                'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
+                'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-70',
+              )}
+            >
+              Siguiente
+            </button>
+          ) : (
+            <div className="flex items-stretch gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEmptyCartError(false);
+                  setSearch('');
+                  setStep('drinks');
+                }}
+                disabled={isSubmitting}
+                className={cn(
+                  'min-h-12 flex-1 shrink-0 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-bold text-zinc-800 shadow-sm transition-all',
+                  'hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-70',
+                )}
+              >
+                Atrás
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!cartHasFood) {
+                    setShowEmptyCartError(true);
+                    return;
+                  }
+                  void handleSubmit();
+                }}
+                disabled={isSubmitting}
+                className={cn(
+                  'min-h-12 flex-1 shrink-0 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-md transition-all',
+                  'hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-70',
+                )}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                ) : (
+                  'Confirmar y fichar salida'
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
