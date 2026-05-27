@@ -1,6 +1,14 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+    Fragment,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type RefObject,
+} from 'react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
@@ -267,6 +275,7 @@ export function MenuAccordion({
     categoryCoverById = {},
     categoryCoverScaleById = {},
     homeCompact = false,
+    homeGridAnchorRef,
 }: {
     items: DigitalMenuRow[]
     lang?: CartaLang
@@ -297,6 +306,8 @@ export function MenuAccordion({
     categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
+    /** Referencia al comienzo del grid en portada (para overlays externos). */
+    homeGridAnchorRef?: RefObject<HTMLDivElement | null>
 }) {
     const [internalLang, setInternalLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
     const controlled = controlledLang !== undefined && onLangChange !== undefined
@@ -748,29 +759,30 @@ export function MenuAccordion({
     const homeGridCentered = hideLangPicker && homeCompact && !reorderScope
 
     const gridBlock = (
-        <CartaCoversLoadingGate
-            urls={homeCategoryCoverUrls}
-            className={cn(
-                'w-full min-h-0 flex-1',
-                !hideLangPicker && 'mt-4 sm:mt-5'
-            )}
-        >
-            <div
+        <div ref={homeGridAnchorRef} className="w-full">
+            <CartaCoversLoadingGate
+                urls={homeCategoryCoverUrls}
                 className={cn(
-                    'min-h-0 w-full flex-1',
-                    homeGridCentered
-                        ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar'
-                        : 'flex flex-col'
+                    'w-full min-h-0 flex-1',
+                    !hideLangPicker && 'mt-4 sm:mt-5'
                 )}
             >
-                <CartaCategoryGrid
-                    compact={homeCompact}
+                <div
                     className={cn(
-                        'w-full shrink-0',
-                        hideLangPicker && !homeGridCentered && 'min-h-0 flex-1 pt-0',
-                        !hideLangPicker && 'mt-0'
+                        'min-h-0 w-full flex-1',
+                        homeGridCentered
+                            ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar'
+                            : 'flex flex-col'
                     )}
                 >
+                    <CartaCategoryGrid
+                        compact={homeCompact}
+                        className={cn(
+                            'w-full shrink-0',
+                            hideLangPicker && !homeGridCentered && 'min-h-0 flex-1 pt-0',
+                            !hideLangPicker && 'mt-0'
+                        )}
+                    >
                     {displayGrouped.map((group) => {
                         const isOpen = openKey === group.key
 
@@ -839,9 +851,10 @@ export function MenuAccordion({
                             </div>
                         )
                     })}
-                </CartaCategoryGrid>
-            </div>
-        </CartaCoversLoadingGate>
+                    </CartaCategoryGrid>
+                </div>
+            </CartaCoversLoadingGate>
+        </div>
     )
     return (
         <div className={hideLangPicker ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'}>

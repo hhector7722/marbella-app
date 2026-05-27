@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronLeft, Pencil } from 'lucide-react'
@@ -119,11 +119,62 @@ export function PublicCarta({
   const digitalItems = publicMenuRowsToDigitalMenu(items)
   const platoMarbellaCategoryId = resolvePlatoMarbellaCategoryId(menuCategories, items)
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const logoRowRef = useRef<HTMLDivElement>(null)
+  const homeGridAnchorRef = useRef<HTMLDivElement>(null)
+  const langRowRef = useRef<HTMLDivElement>(null)
+  const [langTop, setLangTop] = useState<number | null>(null)
+
+  const recomputeLangTop = useMemo(() => {
+    return () => {
+      const container = containerRef.current
+      const logoRow = logoRowRef.current
+      const gridTop = homeGridAnchorRef.current
+      const langRow = langRowRef.current
+      if (!container || !logoRow || !gridTop || !langRow) return
+
+      const cRect = container.getBoundingClientRect()
+      const logoRect = logoRow.getBoundingClientRect()
+      const gridRect = gridTop.getBoundingClientRect()
+      const langRect = langRow.getBoundingClientRect()
+
+      const mid = (logoRect.bottom + gridRect.top) / 2
+      const top = mid - cRect.top - langRect.height / 2
+      setLangTop(Math.max(0, top))
+    }
+  }, [])
+
+  useEffect(() => {
+    recomputeLangTop()
+    const onResize = () => recomputeLangTop()
+    window.addEventListener('resize', onResize)
+
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => recomputeLangTop()) : null
+    if (ro) {
+      if (logoRowRef.current) ro.observe(logoRowRef.current)
+      if (homeGridAnchorRef.current) ro.observe(homeGridAnchorRef.current)
+      if (langRowRef.current) ro.observe(langRowRef.current)
+    }
+
+    const t = window.setTimeout(() => recomputeLangTop(), 0)
+    return () => {
+      window.clearTimeout(t)
+      window.removeEventListener('resize', onResize)
+      ro?.disconnect()
+    }
+  }, [recomputeLangTop])
+
   return (
     <main className="flex h-[100dvh] flex-col bg-white text-zinc-900">
-      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
+      <div
+        ref={containerRef}
+        className="relative mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8"
+      >
         <header className="shrink-0 bg-white pb-1 pt-1">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-0.5">
+          <div
+            ref={logoRowRef}
+            className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-0.5"
+          >
             <div className="flex min-h-[52px] items-center justify-start">
               {backHref ? (
                 <Link
@@ -161,11 +212,15 @@ export function PublicCarta({
               ) : null}
             </div>
           </div>
-
-          <div className="mt-1 w-full px-0 sm:mt-1.5">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
-          </div>
         </header>
+
+        <div
+          ref={langRowRef}
+          className="absolute left-5 right-5 z-20 md:left-8 md:right-8"
+          style={langTop != null ? { top: langTop } : undefined}
+        >
+          <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
+        </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
           <MenuAccordion
@@ -173,6 +228,7 @@ export function PublicCarta({
             lang={lang}
             onLangChange={setLang}
             hideLangPicker
+            homeGridAnchorRef={homeGridAnchorRef}
             menuCategories={menuCategories}
             categoryCoverById={categoryCoverById}
             categoryCoverScaleById={categoryCoverScaleById}
