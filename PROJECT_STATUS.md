@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-26 (Normalización UTC ventas/sala + presentación Madrid)
+**Última actualización:** 2026-05-28 (Fichajes especiales: horas por entrada/salida)
+
+- [x] **Fichajes especiales: horas desde entrada/salida (2026-05-28)**: Al guardar tipos distintos de `regular` (Festivo, Baja, Enfermedad, Personal, etc.) [`updateWeeklyWorkerConfig`](src/app/actions/overtime.ts) ya no fuerza `total_hours = 8`; calcula con redondeo Marbella entre `clock_in` y `clock_out` (o respeta `total_hours_override` del manager). Fichajes históricos con 8h fijas requieren re-guardar el día o recálculo manual para corregir `time_logs.total_hours`.
 
 - [x] **UTC verdad única en ingesta BDP + render Madrid (2026-05-26)**: Bridge [`context/index.txt`](context/index.txt) — `toIso()` obligatorio (Z) en ventas y telemetría. Gateway [`context/server.txt`](context/server.txt) — `resolveVentaTimestamps` UTC puro; `diaNegocio` solo Madrid; telemetría normaliza `timestamp_tpv` a ISO. Webhooks Next [`ventas/route.ts`](src/app/api/webhooks/bdp/ventas/route.ts), [`telemetria/route.ts`](src/app/api/webhooks/bdp/telemetria/route.ts). Frontend: [`date-utils.ts`](src/utils/date-utils.ts) (`formatInTimeZone`), [`formatTicketTimeMadrid`](src/utils/date-utils.ts) en ventas/admin, [`getHourFromTicketTime`](src/lib/utils.ts) por hora Madrid. Sin migración BD ni backfill histórico. Desplegar: copiar `index.txt` + `server.txt` y reiniciar PuenteBDP/receptor.
 

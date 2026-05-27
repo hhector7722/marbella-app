@@ -2,7 +2,69 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { madridDayUtcRangeIso } from "@/lib/madrid-date-bounds";
+import { calculateRoundedHours } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+
+/** Horas Marbella entre dos instantes ISO (misma regla que fn_round_marbella_hours en BD). */
+function marbellaHoursBetweenClockIso(clockInIso: string, clockOutIso: string): number {
+    const clockIn = new Date(clockInIso);
+    const clockOut = new Date(clockOutIso);
+    if (Number.isNaN(clockIn.getTime()) || Number.isNaN(clockOut.getTime())) return 0;
+    const diffHours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
+    if (diffHours <= 0) return 0;
+    return calculateRoundedHours(diffHours);
+}
+
+function resolveClockInIso(log: {
+    date: string;
+    inTimeIso?: string;
+    in_time?: string;
+    event_type?: string;
+}): string {
+    if (log.inTimeIso) return log.inTimeIso;
+    if (log.in_time) {
+        const [inH, inM] = log.in_time.split(':').map(Number);
+        const d = new Date(log.date + 'T00:00:00');
+        d.setHours(inH, inM, 0, 0);
+        return d.toISOString();
+    }
+    if (log.event_type && log.event_type !== 'regular') {
+        const d = new Date(log.date + 'T00:00:00');
+        d.setHours(9, 0, 0, 0);
+        return d.toISOString();
+    }
+    return '';
+}
+
+function resolveClockOutIso(
+    log: {
+        date: string;
+        outTimeIso?: string;
+        out_time?: string;
+        in_time?: string;
+        event_type?: string;
+    },
+    clockInIso: string
+): string | null {
+    if (log.outTimeIso) return log.outTimeIso;
+    if (log.out_time) {
+        const [outH, outM] = log.out_time.split(':').map(Number);
+        const d = new Date(log.date + 'T00:00:00');
+        d.setHours(outH, outM, 0, 0);
+        if (log.in_time) {
+            const [inH] = log.in_time.split(':').map(Number);
+            if (outH < inH) d.setDate(d.getDate() + 1);
+        }
+        return d.toISOString();
+    }
+    // Solo tipos especiales sin salida explícita: conservar ventana por defecto 09–17 para persistir en BD
+    if (log.event_type && log.event_type !== 'regular' && clockInIso) {
+        const d = new Date(clockInIso);
+        d.setHours(d.getHours() + 8);
+        return d.toISOString();
+    }
+    return null;
+}
 
 export interface StaffWeeklyStats {
     id: string;
@@ -282,63 +344,14 @@ export async function updateWeeklyWorkerConfig(
             const payloads = logs
                 .filter((log) => !log.is_deleted)
                 .map((log) => {
-                    let clockInStr = '';
-                    let clockOutStr: string | null = null;
+                    const clockInStr = resolveClockInIso(log);
+                    const clockOutStr = resolveClockOutIso(log, clockInStr);
+
                     let totalHours = 0;
-
-                    if (log.inTimeIso) {
-                        clockInStr = log.inTimeIso;
-                    } else if (log.in_time) {
-                        const [inH, inM] = log.in_time.split(':').map(Number);
-                        const clockInFallback = new Date(log.date + "T00:00:00");
-                        clockInFallback.setHours(inH, inM, 0, 0);
-                        clockInStr = clockInFallback.toISOString();
-                    } else if (log.event_type !== 'regular') {
-                        const clockInFallback = new Date(log.date + "T00:00:00");
-                        clockInFallback.setHours(9, 0, 0, 0);
-                        clockInStr = clockInFallback.toISOString();
-                    }
-
-                    if (log.event_type !== 'regular') {
-                        totalHours = 8;
-                        if (log.outTimeIso) clockOutStr = log.outTimeIso;
-                        else if (log.out_time) {
-                            const [outH, outM] = log.out_time.split(':').map(Number);
-                            const dOutFallback = new Date(log.date + "T00:00:00");
-                            dOutFallback.setHours(outH, outM, 0, 0);
-                            clockOutStr = dOutFallback.toISOString();
-                        } else {
-                            const dOutFallback = new Date(clockInStr);
-                            dOutFallback.setHours(dOutFallback.getHours() + 8);
-                            clockOutStr = dOutFallback.toISOString();
-                        }
-                    } else if (log.total_hours_override !== undefined) {
+                    if (log.total_hours_override !== undefined && log.total_hours_override !== null) {
                         totalHours = log.total_hours_override;
-                        if (log.outTimeIso) clockOutStr = log.outTimeIso;
-                        else if (log.out_time) {
-                            const [outH, outM] = log.out_time.split(':').map(Number);
-                            const dOutFallback = new Date(log.date + "T00:00:00");
-                            dOutFallback.setHours(outH, outM, 0, 0);
-                            clockOutStr = dOutFallback.toISOString();
-                        }
-                    } else if (log.outTimeIso || log.out_time) {
-                        if (log.outTimeIso) {
-                            clockOutStr = log.outTimeIso;
-                        } else {
-                            const [outH, outM] = log.out_time.split(':').map(Number);
-                            const dOutFallback = new Date(log.date + "T00:00:00");
-                            dOutFallback.setHours(outH, outM, 0, 0);
-                            clockOutStr = dOutFallback.toISOString();
-                        }
-                        const clockIn = new Date(clockInStr);
-                        const dOut = new Date(clockOutStr!);
-                        const diff = (dOut.getTime() - clockIn.getTime()) / (1000 * 60);
-                        const hTotal = Math.floor(diff / 60);
-                        const mTotal = diff % 60;
-                        let fraction = 0;
-                        if (mTotal > 20) fraction = 0.5;
-                        if (mTotal > 50) fraction = 1.0;
-                        totalHours = Math.max(0, hTotal + fraction);
+                    } else if (clockInStr && clockOutStr) {
+                        totalHours = marbellaHoursBetweenClockIso(clockInStr, clockOutStr);
                     }
 
                     const payload: Record<string, unknown> = {
