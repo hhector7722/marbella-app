@@ -745,32 +745,32 @@ export function MenuAccordion({
         setOpenKey((prev) => (prev === groupKey ? null : groupKey))
     }
 
+    const homeGridCentered = hideLangPicker && homeCompact && !reorderScope
+
     const gridBlock = (
         <CartaCoversLoadingGate
             urls={homeCategoryCoverUrls}
             className={cn(
-                'w-full',
-                hideLangPicker && 'min-h-0 flex-1',
+                'w-full min-h-0 flex-1',
                 !hideLangPicker && 'mt-4 sm:mt-5'
             )}
         >
             <div
                 className={cn(
-                    'min-h-0 flex-1',
-                    hideLangPicker && homeCompact && !reorderScope
-                        ? 'flex items-center justify-center'
-                        : ''
+                    'min-h-0 w-full flex-1',
+                    homeGridCentered
+                        ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar'
+                        : 'flex flex-col'
                 )}
             >
-                <div className={cn('w-full', hideLangPicker && homeCompact && !reorderScope && 'max-h-full overflow-y-auto')}>
-                    <CartaCategoryGrid
-                        compact={homeCompact}
-                        className={cn(
-                            hideLangPicker && 'min-h-0 flex-1 pt-0',
-                            hideLangPicker && homeCompact && !reorderScope && 'pb-2',
-                            !hideLangPicker && 'mt-0'
-                        )}
-                    >
+                <CartaCategoryGrid
+                    compact={homeCompact}
+                    className={cn(
+                        'w-full shrink-0',
+                        hideLangPicker && !homeGridCentered && 'min-h-0 flex-1 pt-0',
+                        !hideLangPicker && 'mt-0'
+                    )}
+                >
                     {displayGrouped.map((group) => {
                         const isOpen = openKey === group.key
 
@@ -839,8 +839,7 @@ export function MenuAccordion({
                             </div>
                         )
                     })}
-                    </CartaCategoryGrid>
-                </div>
+                </CartaCategoryGrid>
             </div>
         </CartaCoversLoadingGate>
     )
@@ -889,7 +888,9 @@ export function MenuAccordion({
                 </div>
             ) : null}
 
-            {gridBlock}
+            <div className={cn('min-h-0 flex-1', hideLangPicker && 'flex flex-col')}>
+                {gridBlock}
+            </div>
 
             {openGroup ? (
                 <div

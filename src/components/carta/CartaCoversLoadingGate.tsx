@@ -31,7 +31,7 @@ export function CartaCoversLoadingGate({
       <div
         className={cn(
           'flex items-center justify-center bg-white',
-          fitContent ? 'px-6 py-5' : 'relative min-h-[12rem] flex-1',
+          fitContent ? 'px-6 py-5' : 'min-h-0 flex-1',
           className
         )}
         role="status"
@@ -52,7 +52,7 @@ export function CartaCoversLoadingGate({
   return (
     <div
       className={cn(
-        fitContent ? 'w-fit max-w-full' : 'relative min-h-[200px] flex-1',
+        fitContent ? 'w-fit max-w-full' : 'flex min-h-0 flex-1 flex-col',
         className
       )}
     >
