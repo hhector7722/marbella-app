@@ -154,8 +154,8 @@ export default async function EventosAdminPage() {
 
   return (
     <DashboardDetailLayout
-      title="Eventos"
-      subtitle="Pedidos por grupos (formulario público + panel manager)"
+      title="Encargos"
+      subtitle="Crea eventos, comparte el enlace y revisa pedidos"
       maxWidthClass="max-w-7xl"
     >
       <EventosAdminClient products={products} defaultPack={defaultPack} events={adminEvents} canManage={canManage} />
