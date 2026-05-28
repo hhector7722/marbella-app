@@ -28,11 +28,7 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
-import {
-    PlatoMarbellaModalScheduleFooter,
-    PlatoMarbellaModalSubheader,
-} from '@/components/carta/PlatoMarbellaModalChrome'
-import { PlatoMarbellaModalHeaderBar } from '@/components/carta/PlatoMarbellaModalHeaderBar'
+import { PlatoMarbellaModalScheduleFooter, PlatoMarbellaModalSubheader } from '@/components/carta/PlatoMarbellaModalChrome'
 import { PlatoMarbellaStaffGridView } from '@/components/carta/PlatoMarbellaStaffGridView'
 import {
     applyPlatoMarbellaMergeIntoPlatosParentGroup,
@@ -957,12 +953,41 @@ export function MenuAccordion({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {openPlatoMarbella && !openShowSubTabs ? (
-                            <PlatoMarbellaModalHeaderBar
-                                backLabel={tPlatoMarbellaUi(lang).backToPlatos}
-                                onBackToPlatos={() => setPlatoMarbellaDetailOpen(false)}
-                                onClose={() => setOpenKey(null)}
-                                trailingActions={modalEditToggle}
-                            />
+                            <div className="flex w-full shrink-0 items-center gap-1 bg-white px-3 py-2.5 sm:px-3.5 sm:py-3">
+                                <button
+                                    type="button"
+                                    className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                    aria-label={tPlatoMarbellaUi(lang).backToPlatos}
+                                    onClick={() => setPlatoMarbellaDetailOpen(false)}
+                                >
+                                    <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
+                                </button>
+
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex min-w-0 items-baseline justify-center gap-2">
+                                        <p className="min-w-0 max-w-[70%] truncate text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-xs">
+                                            {platoLauncherTitle}
+                                        </p>
+                                        {platoLauncherPriceLabel ? (
+                                            <p className="shrink-0 text-[13px] font-black tabular-nums leading-none text-[#36606F] sm:text-[15px]">
+                                                {platoLauncherPriceLabel}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                </div>
+
+                                <div className="flex shrink-0 items-center gap-0.5">
+                                    {modalEditToggle}
+                                    <button
+                                        type="button"
+                                        className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                        aria-label="Cerrar"
+                                        onClick={() => setOpenKey(null)}
+                                    >
+                                        <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
                         <div
                             className={cn(
@@ -1335,7 +1360,7 @@ export function MenuAccordion({
                             </div>
                         ) : null}
 
-                        {showPlatoModalChrome && openGroup ? (
+                        {showPlatoModalChrome && openGroup && !openPlatoMarbella ? (
                             <PlatoMarbellaModalSubheader
                                 subTitle={tPlatoMarbellaUi(lang).menuModalTitle}
                                 menuPrice={openPlatoMenuPrice}
