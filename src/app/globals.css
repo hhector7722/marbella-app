@@ -55,6 +55,14 @@
   }
 }
 
+/* --- MODALES: difuminar barras fijas cuando hay overlay --- */
+html[data-modal-open="true"] .marbella-fixed-topbar,
+html[data-modal-open="true"] .marbella-fixed-bottombar {
+  filter: blur(6px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 /* --- CONFIGURACIÓN DE IMPRESIÓN --- */
 @page {
   size: auto;
