@@ -109,7 +109,7 @@ export default function StaffDashboardView() {
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
     const [showConsumptionModal, setShowConsumptionModal] = useState(false);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
-    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | null>(null);
+    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'web' | 'reservas' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
     const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
@@ -1006,6 +1006,8 @@ export default function StaffDashboardView() {
                                                 ? 'Convenio'
                                                 : infoSubMenu === 'conducta'
                                                     ? 'Código Conducta'
+                                                    : infoSubMenu === 'web'
+                                                        ? 'Página web'
                                                     : infoSubMenu === 'reservas'
                                                         ? 'Reservas'
                                                         : 'Información'}
@@ -1039,6 +1041,24 @@ export default function StaffDashboardView() {
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
                                         </button>
+
+                                        <a
+                                            href="https://marbella-web.vercel.app"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                                        >
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image
+                                                    src="/icons/web.png"
+                                                    alt="Página web"
+                                                    width={36}
+                                                    height={36}
+                                                    className="rounded-xl object-contain transition-transform group-hover:scale-110"
+                                                />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Página web</span>
+                                        </a>
 
                                         <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">

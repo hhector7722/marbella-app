@@ -71,6 +71,17 @@ function statusTone(status: ReservationStatus) {
   }
 }
 
+function formatPhone(phone: string) {
+  const cleaned = phone.replace(/\D/g, '')
+  return cleaned.length === 9 ? '34' + cleaned : cleaned
+}
+
+function getMessage(name: string, time: string) {
+  return encodeURIComponent(
+    `Hola ${name}, te confirmamos tu reserva en Bar La Marbella para las ${time.slice(0, 5)}. ¡Te esperamos!`
+  )
+}
+
 export default function ReservasClient() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -117,7 +128,8 @@ export default function ReservasClient() {
     }
   }
 
-  async function mutateReservation(id: string, action: ActionKind) {
+  async function mutateReservation(reserva: Reservation, action: ActionKind) {
+    const { id } = reserva
     setActionBusy((s) => ({ ...s, [id]: action }))
     try {
       const { data, error } = await supabase.rpc('gestionar_reservas', {
@@ -126,8 +138,17 @@ export default function ReservasClient() {
       })
       if (error) throw error
       if (data?.error) {
-        throw new Error(data.error)
+        throw new Error(typeof data.error === 'string' ? data.error : 'Error actualizando reserva')
       }
+
+      if (action === 'confirm') {
+        toast.success('Reserva confirmada')
+        window.open(
+          `https://wa.me/${formatPhone(reserva.customer_phone)}?text=${getMessage(reserva.customer_name, reserva.reservation_time)}`,
+          '_blank'
+        )
+      }
+
       await fetchReservations(selectedDayYmd)
     } catch (e) {
       const msg =
@@ -268,10 +289,11 @@ export default function ReservasClient() {
 
                       <div className="flex items-center justify-between gap-3">
                         <a
-                          href={`tel:${r.customer_phone}`}
+                          href={`sms:+${formatPhone(r.customer_phone)}?body=${getMessage(r.customer_name, r.reservation_time)}`}
                           className={cn(
                             'min-h-12 flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3',
-                            'text-zinc-700 font-bold text-[12px] active:scale-95 transition min-w-0 flex-1'
+                            'text-zinc-700 font-bold text-[12px] transition min-w-0 flex-1',
+                            'hover:text-zinc-900 active:scale-95'
                           )}
                         >
                           <Phone className="h-5 w-5 shrink-0 text-emerald-600" strokeWidth={2.5} />
@@ -293,7 +315,7 @@ export default function ReservasClient() {
                       <div className="mt-auto grid grid-cols-3 gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => void mutateReservation(r.id, 'confirm')}
+                          onClick={() => void mutateReservation(r, 'confirm')}
                           disabled={isBusy}
                           className={cn(
                             'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
@@ -314,7 +336,7 @@ export default function ReservasClient() {
 
                         <button
                           type="button"
-                          onClick={() => void mutateReservation(r.id, 'reject')}
+                          onClick={() => void mutateReservation(r, 'reject')}
                           disabled={isBusy}
                           className={cn(
                             'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
@@ -335,7 +357,7 @@ export default function ReservasClient() {
 
                         <button
                           type="button"
-                          onClick={() => void mutateReservation(r.id, 'cancel')}
+                          onClick={() => void mutateReservation(r, 'cancel')}
                           disabled={isBusy}
                           className={cn(
                             'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
