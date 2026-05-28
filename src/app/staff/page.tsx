@@ -695,7 +695,15 @@ export default function StaffDashboard() {
                         <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
                             {activeMenu === 'info' ? <Info size={24} className="text-blue-500" /> : <Package size={24} className="text-[#8B5E3C]" />}
                             {activeMenu === 'info'
-                                ? (infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : 'Información')
+                                ? (infoSubMenu === 'contactos'
+                                    ? 'Contactos'
+                                    : infoSubMenu === 'convenio'
+                                        ? 'Convenio'
+                                        : infoSubMenu === 'conducta'
+                                            ? 'Código Conducta'
+                                            : infoSubMenu === 'reservas'
+                                                ? 'Reservas'
+                                                : 'Información')
                                 : 'Gestión Stock'}
                         </h3>
 
@@ -723,16 +731,15 @@ export default function StaffDashboard() {
                                         <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
                                     </button>
 
-                                    <Link
-                                        href="/staff/reservas"
-                                        onClick={closeMenus}
+                                    <button
+                                        onClick={() => setInfoSubMenu('reservas')}
                                         className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
                                     >
                                         <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                             <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                         </div>
                                         <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
-                                    </Link>
+                                    </button>
 
                                     <Link
                                         href="/staff/carta"
@@ -785,6 +792,44 @@ export default function StaffDashboard() {
                                             Descargar PDF si no visualiza
                                         </a>
                                     </div>
+                                </div>
+                            )}
+
+                            {infoSubMenu === 'reservas' && (
+                                <div className="space-y-2">
+                                    <Link
+                                        href="/staff/reservas"
+                                        onClick={closeMenus}
+                                        className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                                    >
+                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                            <Image
+                                                src="/icons/reservas.png"
+                                                alt="Reservas"
+                                                width={36}
+                                                height={36}
+                                                className="object-contain transition-transform group-hover:scale-110"
+                                            />
+                                        </div>
+                                        <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
+                                    </Link>
+
+                                    <Link
+                                        href="/dashboard/eventos"
+                                        onClick={closeMenus}
+                                        className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                                    >
+                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                            <Image
+                                                src="/icons/suppliers.png"
+                                                alt="Encargos"
+                                                width={36}
+                                                height={36}
+                                                className="object-contain transition-transform group-hover:scale-110"
+                                            />
+                                        </div>
+                                        <span className="font-bold text-sm tracking-tight text-left">Encargos</span>
+                                    </Link>
                                 </div>
                             )}
 
