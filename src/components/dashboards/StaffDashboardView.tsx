@@ -1139,20 +1139,47 @@ export default function StaffDashboardView() {
                                     </div>
                                 )}
                                 {infoSubMenu === 'reservas' && (
-                                    <div className="flex flex-col items-center gap-6 py-4">
-                                        <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
-                                            <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-base font-black text-gray-800 mb-1">Reservas</p>
-                                            <p className="text-xs text-gray-400 font-medium">Gestión de reservas</p>
-                                        </div>
+                                    <div className="space-y-3">
                                         <Link
                                             href="/staff/reservas"
                                             onClick={closeMenus}
-                                            className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                            className="flex items-center gap-4 w-full p-4 rounded-xl border border-zinc-100 bg-white shadow-sm text-gray-600 hover:text-blue-600 hover:bg-zinc-50 transition-all group active:scale-95 min-h-[56px]"
                                         >
-                                            <span className="text-sm">Abrir Reservas</span>
+                                            <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-50 flex items-center justify-center p-1">
+                                                <Image
+                                                    src="/icons/reservas.png"
+                                                    alt="Reservas"
+                                                    width={36}
+                                                    height={36}
+                                                    className="object-contain transition-transform group-hover:scale-110"
+                                                />
+                                            </div>
+                                            <div className="min-w-0 flex-1 text-left">
+                                                <p className="text-sm font-black text-gray-800">Reservas</p>
+                                                <p className="text-xs font-medium text-gray-400">Gestión de reservas</p>
+                                            </div>
+                                            <ArrowRight size={20} className="shrink-0 text-gray-400 group-hover:text-blue-600" strokeWidth={2.5} />
+                                        </Link>
+
+                                        <Link
+                                            href="/dashboard/eventos"
+                                            onClick={closeMenus}
+                                            className="flex items-center gap-4 w-full p-4 rounded-xl border border-zinc-100 bg-white shadow-sm text-gray-600 hover:text-blue-600 hover:bg-zinc-50 transition-all group active:scale-95 min-h-[56px]"
+                                        >
+                                            <div className="w-12 h-12 shrink-0 rounded-xl bg-[#36606F]/10 flex items-center justify-center p-1">
+                                                <Image
+                                                    src="/icons/suppliers.png"
+                                                    alt="Encargos"
+                                                    width={36}
+                                                    height={36}
+                                                    className="object-contain transition-transform group-hover:scale-110"
+                                                />
+                                            </div>
+                                            <div className="min-w-0 flex-1 text-left">
+                                                <p className="text-sm font-black text-gray-800">Encargos</p>
+                                                <p className="text-xs font-medium text-gray-400">Pedidos por eventos</p>
+                                            </div>
+                                            <ArrowRight size={20} className="shrink-0 text-gray-400 group-hover:text-blue-600" strokeWidth={2.5} />
                                         </Link>
                                     </div>
                                 )}

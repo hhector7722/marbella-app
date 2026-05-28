@@ -1,10 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import PedidosEventoClient, { type EventOrderRow, type EventRow } from './PedidosEventoClient'
-
-function isManagerRole(role: string | null): boolean {
-  return role === 'manager' || role === 'admin'
-}
+import { canManageEventos, canViewEventos } from '../../roles'
 
 export default async function PedidosEventoPage(props: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await props.params
@@ -52,15 +49,17 @@ export default async function PedidosEventoPage(props: { params: Promise<{ event
   }
 
   const role = (profile as any)?.role ?? null
-  if (!isManagerRole(role)) {
+  if (!canViewEventos(role)) {
     return (
       <DashboardDetailLayout title="Pedidos" subtitle="Acceso restringido">
         <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Sin permiso. Solo manager/admin.</p>
+          <p className="text-sm font-bold text-red-700">Sin permiso para ver pedidos del evento.</p>
         </div>
       </DashboardDetailLayout>
     )
   }
+
+  const canManage = canManageEventos(role)
 
   const id = String(eventId ?? '').trim()
   if (!id) {
@@ -123,7 +122,7 @@ export default async function PedidosEventoPage(props: { params: Promise<{ event
       maxWidthClass="max-w-7xl"
       backHref="/dashboard/eventos"
     >
-      <PedidosEventoClient event={ev} orders={rows} />
+      <PedidosEventoClient event={ev} orders={rows} canManage={canManage} />
     </DashboardDetailLayout>
   )
 }

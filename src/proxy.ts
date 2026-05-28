@@ -89,7 +89,8 @@ export async function proxy(request: NextRequest) {
       path.startsWith("/dashboard/propinas") ||
       path.startsWith("/dashboard/kds") ||
       path.startsWith("/dashboard/albaranes") ||
-      path.startsWith("/dashboard/scanner");
+      path.startsWith("/dashboard/scanner") ||
+      path.startsWith("/dashboard/eventos");
 
     if (
       (role === "staff" || role === "supervisor") &&

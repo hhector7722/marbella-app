@@ -56,7 +56,21 @@ function countItems(items: EventOrderItem[]): number {
   return n
 }
 
-export default function PedidosEventoClient({ event, orders }: { event: EventRow; orders: EventOrderRow[] }) {
+const STATUS_LABEL: Record<EventOrderRow['status'], string> = {
+  pending: 'Pendiente',
+  confirmed: 'Confirmado',
+  cancelled: 'Cancelado',
+}
+
+export default function PedidosEventoClient({
+  event,
+  orders,
+  canManage = true,
+}: {
+  event: EventRow
+  orders: EventOrderRow[]
+  canManage?: boolean
+}) {
   const [isPending, startTransition] = useTransition()
   const [changing, setChanging] = useState<Record<string, boolean>>({})
 
@@ -121,34 +135,40 @@ export default function PedidosEventoClient({ event, orders }: { event: EventRow
                     <td className="px-3 py-3 text-sm font-black text-zinc-900">{formatEur(o.total_amount)}</td>
                     <td className="px-3 py-3 text-xs text-zinc-600">{o.created_at}</td>
                     <td className="px-3 py-3">
-                      <div className="flex items-center gap-2 shrink-0">
-                        <select
-                          className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-800 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-                          value={o.status}
-                          disabled={isPending || isChanging}
-                          onChange={(e) => {
-                            const status = e.target.value as 'pending' | 'confirmed' | 'cancelled'
-                            setChanging((curr) => ({ ...curr, [o.id]: true }))
-                            startTransition(async () => {
-                              const res = await setEventOrderStatusAction({ orderId: o.id, status })
-                              setChanging((curr) => ({ ...curr, [o.id]: false }))
-                              if (!res.success) {
-                                toast.error(res.message)
-                                return
-                              }
-                              toast.success('Estado actualizado')
-                            })
-                          }}
-                          aria-label="Cambiar estado"
-                        >
-                          <option value="pending">Pendiente</option>
-                          <option value="confirmed">Confirmado</option>
-                          <option value="cancelled">Cancelado</option>
-                        </select>
-                        {isPending || isChanging ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                        ) : null}
-                      </div>
+                      {canManage ? (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <select
+                            className="min-h-12 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-800 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+                            value={o.status}
+                            disabled={isPending || isChanging}
+                            onChange={(e) => {
+                              const status = e.target.value as 'pending' | 'confirmed' | 'cancelled'
+                              setChanging((curr) => ({ ...curr, [o.id]: true }))
+                              startTransition(async () => {
+                                const res = await setEventOrderStatusAction({ orderId: o.id, status })
+                                setChanging((curr) => ({ ...curr, [o.id]: false }))
+                                if (!res.success) {
+                                  toast.error(res.message)
+                                  return
+                                }
+                                toast.success('Estado actualizado')
+                              })
+                            }}
+                            aria-label="Cambiar estado"
+                          >
+                            <option value="pending">Pendiente</option>
+                            <option value="confirmed">Confirmado</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                          {isPending || isChanging ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="inline-flex min-h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-bold text-zinc-800">
+                          {STATUS_LABEL[o.status]}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 )

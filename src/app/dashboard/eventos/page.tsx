@@ -1,12 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import EventosAdminClient, { type AdminEventRow, type AdminMenuProductRow } from './EventosAdminClient'
+import { canManageEventos, canViewEventos } from './roles'
 
 type DefaultPackRow = { id: string; label: string; items: any }
-
-function isManagerRole(role: string | null): boolean {
-  return role === 'manager' || role === 'admin'
-}
 
 export default async function EventosAdminPage() {
   const supabase = await createClient()
@@ -54,15 +51,17 @@ export default async function EventosAdminPage() {
   }
 
   const role = (profile as any)?.role ?? null
-  if (!isManagerRole(role)) {
+  if (!canViewEventos(role)) {
     return (
       <DashboardDetailLayout title="Eventos" subtitle="Acceso restringido">
         <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Sin permiso. Solo manager/admin.</p>
+          <p className="text-sm font-bold text-red-700">Sin permiso para ver encargos.</p>
         </div>
       </DashboardDetailLayout>
     )
   }
+
+  const canManage = canManageEventos(role)
 
   const [{ data: menuRows, error: menuErr }, { data: epRows, error: epErr }, { data: events, error: evErr }, { data: packRow, error: packErr }] =
     await Promise.all([
@@ -159,7 +158,7 @@ export default async function EventosAdminPage() {
       subtitle="Pedidos por grupos (formulario público + panel manager)"
       maxWidthClass="max-w-7xl"
     >
-      <EventosAdminClient products={products} defaultPack={defaultPack} events={adminEvents} />
+      <EventosAdminClient products={products} defaultPack={defaultPack} events={adminEvents} canManage={canManage} />
     </DashboardDetailLayout>
   )
 }

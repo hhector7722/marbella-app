@@ -79,10 +79,12 @@ export default function EventosAdminClient({
   products,
   defaultPack,
   events,
+  canManage = true,
 }: {
   products: AdminMenuProductRow[]
   defaultPack: DefaultPackRow | null
   events: AdminEventRow[]
+  canManage?: boolean
 }) {
   const [tab, setTab] = useState<'productos' | 'pack' | 'crear' | 'lista'>('lista')
   const [isPending, startTransition] = useTransition()
@@ -147,40 +149,42 @@ export default function EventosAdminClient({
               Productos: {products.length} · Activos: {activeProducts.length} · Eventos: {events.length}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setTab('lista')}
-              className={cn(btnBase, tab === 'lista' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-            >
-              Eventos
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('crear')}
-              className={cn(btnBase, tab === 'crear' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-            >
-              Crear
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('productos')}
-              className={cn(btnBase, tab === 'productos' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-            >
-              Productos
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('pack')}
-              className={cn(btnBase, tab === 'pack' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-            >
-              Pack
-            </button>
-          </div>
+          {canManage ? (
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setTab('lista')}
+                className={cn(btnBase, tab === 'lista' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+              >
+                Eventos
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('crear')}
+                className={cn(btnBase, tab === 'crear' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+              >
+                Crear
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('productos')}
+                className={cn(btnBase, tab === 'productos' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+              >
+                Productos
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('pack')}
+                className={cn(btnBase, tab === 'pack' ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+              >
+                Pack
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      {tab === 'productos' ? (
+      {canManage && tab === 'productos' ? (
         <div className={cn(cardClass, 'p-4')}>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -232,7 +236,7 @@ export default function EventosAdminClient({
         </div>
       ) : null}
 
-      {tab === 'pack' ? (
+      {canManage && tab === 'pack' ? (
         <div className={cn(cardClass, 'p-4')}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -324,7 +328,7 @@ export default function EventosAdminClient({
         </div>
       ) : null}
 
-      {tab === 'crear' ? (
+      {canManage && tab === 'crear' ? (
         <div className={cn(cardClass, 'p-4')}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -559,7 +563,7 @@ export default function EventosAdminClient({
         </div>
       ) : null}
 
-      {tab === 'lista' ? (
+      {(tab === 'lista' || !canManage) ? (
         <div className={cn(cardClass, 'p-4')}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -583,24 +587,35 @@ export default function EventosAdminClient({
                         Pedidos: <span className="font-black">{e.orders_count === 0 ? ' ' : e.orders_count}</span>
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      className={cn(
-                        'min-h-12 min-w-[48px] shrink-0 rounded-xl border px-3 flex items-center justify-center transition-colors',
-                        e.is_active
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                          : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-                      )}
-                      aria-label={e.is_active ? 'Desactivar evento' : 'Activar evento'}
-                      onClick={() => {
-                        startTransition(async () => {
-                          const res = await setEventActiveAction({ eventId: e.id, isActive: !e.is_active })
-                          if (!res.success) toast.error(res.message)
-                        })
-                      }}
-                    >
-                      {e.is_active ? <ToggleRight className="h-6 w-6" strokeWidth={2.5} /> : <ToggleLeft className="h-6 w-6" strokeWidth={2.5} />}
-                    </button>
+                    {canManage ? (
+                      <button
+                        type="button"
+                        className={cn(
+                          'min-h-12 min-w-[48px] shrink-0 rounded-xl border px-3 flex items-center justify-center transition-colors',
+                          e.is_active
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                        )}
+                        aria-label={e.is_active ? 'Desactivar evento' : 'Activar evento'}
+                        onClick={() => {
+                          startTransition(async () => {
+                            const res = await setEventActiveAction({ eventId: e.id, isActive: !e.is_active })
+                            if (!res.success) toast.error(res.message)
+                          })
+                        }}
+                      >
+                        {e.is_active ? <ToggleRight className="h-6 w-6" strokeWidth={2.5} /> : <ToggleLeft className="h-6 w-6" strokeWidth={2.5} />}
+                      </button>
+                    ) : (
+                      <span
+                        className={cn(
+                          'min-h-12 shrink-0 rounded-xl border px-3 flex items-center justify-center text-[11px] font-black uppercase tracking-wider',
+                          e.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-zinc-200 bg-zinc-50 text-zinc-500'
+                        )}
+                      >
+                        {e.is_active ? 'Activo' : 'Inactivo'}
+                      </span>
+                    )}
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-2">
