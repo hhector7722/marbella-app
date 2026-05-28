@@ -18,8 +18,6 @@ import {
 import {
   cartaProductGridRowDensity,
   chunkCartaProductGridRows,
-  getCartaProductGridRowCellClass,
-  getCartaProductGridRowClass,
   getCartaProductGridRowFrameStyle,
 } from '@/lib/carta-product-photo'
 import { PlatoMarbellaPlateVisual } from '@/components/carta/PlatoMarbellaPlateVisual'
@@ -29,6 +27,8 @@ import {
 } from '@/components/carta/CartaStaffMenuProductCard'
 
 type StaffRow = PlatoMarbellaMenuRow & CartaNameRow & CartaStaffMenuProductRow
+const PRODUCT_FLEX_CELL_BASIS_CLASS =
+  'basis-[calc((100%-1rem)/3)] sm:basis-[calc((100%-1.25rem)/3)]'
 
 function ProductGrid({
   rows,
@@ -64,12 +64,12 @@ function ProductGrid({
       {chunkCartaProductGridRows(rows, 3).map((chunk, chunkIdx) => {
         const rowDensity = cartaProductGridRowDensity(chunk)
         const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
-        const itemsInRow = chunk.length
         return (
           <div
             key={chunkIdx}
             className={cn(
-              getCartaProductGridRowClass('stretch'),
+              'flex w-full flex-wrap justify-center gap-x-2 sm:gap-x-2.5',
+              'items-stretch',
               rowDensity === 'compact' && 'gap-y-0',
               rowDensity === 'cozy' && 'gap-y-1',
               rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
@@ -82,7 +82,8 @@ function ProductGrid({
                     key={row.articulo_id}
                     role={productReorderMode && onReorderTap ? 'presentation' : undefined}
                     className={cn(
-                      getCartaProductGridRowCellClass(cellIndex, itemsInRow),
+                      'flex min-w-0 flex-col items-center',
+                      PRODUCT_FLEX_CELL_BASIS_CLASS,
                       'h-full',
                       productReorderMode &&
                         onReorderTap &&

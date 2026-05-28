@@ -21,14 +21,14 @@ import {
   CARTA_PRODUCT_PHOTO_CELL_CLASS,
   CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
   chunkCartaProductGridRows,
-  getCartaProductGridRowCellClass,
-  getCartaProductGridRowClass,
   getCartaProductGridRowFrameStyle,
   getCartaProductPhotoFrameStyle,
   getCartaProductPhotoScaleFactor,
 } from '@/lib/carta-product-photo'
 
 const PRODUCT_ROW_MIN_REM = 5.25
+const PRODUCT_FLEX_CELL_BASIS_CLASS =
+  'basis-[calc((100%-1rem)/3)] sm:basis-[calc((100%-1.25rem)/3)]'
 
 type OptionRow = PlatoMarbellaMenuRow & CartaNameRow
 
@@ -109,13 +109,15 @@ function CenteredProductRow({
   lang: CartaLang
   onPhotoClick?: (src: string, alt: string) => void
 }) {
-  const count = chunk.length
   const rowFrameStyle = getCartaProductGridRowFrameStyle(chunk, false)
 
   return (
-    <div className={getCartaProductGridRowClass()}>
-      {chunk.map((row, cellIndex) => (
-        <div key={row.articulo_id} className={getCartaProductGridRowCellClass(cellIndex, count)}>
+    <div className="flex w-full flex-wrap justify-center gap-x-2 gap-y-0 sm:gap-x-2.5">
+      {chunk.map((row) => (
+        <div
+          key={row.articulo_id}
+          className={cn('flex min-w-0 flex-col items-center', PRODUCT_FLEX_CELL_BASIS_CLASS)}
+        >
           <OptionGridCard
             row={row}
             lang={lang}
