@@ -27,6 +27,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Formulario público de pedidos por eventos (sin login), igual que `/carta`.
+  if (path === "/eventos" || path.startsWith("/eventos/")) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
