@@ -15,6 +15,7 @@ import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryP
 import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
 import { StaffCartaModalEditToggle } from '@/components/carta/StaffCartaModalEditToggle'
+import { type EventOrderCartaControl } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
@@ -263,6 +264,7 @@ export function MenuAccordion({
     categoryCoverById = {},
     categoryCoverScaleById = {},
     homeCompact = false,
+    eventOrder,
 }: {
     items: DigitalMenuRow[]
     lang?: CartaLang
@@ -293,6 +295,8 @@ export function MenuAccordion({
     categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
+    /** Pedido por evento: misma carta con +/− por producto */
+    eventOrder?: EventOrderCartaControl
 }) {
     const [internalLang, setInternalLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
     const controlled = controlledLang !== undefined && onLangChange !== undefined
@@ -1397,6 +1401,14 @@ export function MenuAccordion({
                                             onEditProduct={onEditProduct}
                                             onToggleProductActive={onToggleProductActive}
                                             productToggleBusyId={productToggleBusyId}
+                                            eventOrder={eventOrder}
+                                        />
+                                    ) : eventOrder ? (
+                                        <PlatoMarbellaStaffGridView
+                                            rows={platoBundleRows}
+                                            lang={lang}
+                                            launcherArticuloId={platoLauncherArticuloId ?? null}
+                                            eventOrder={eventOrder}
                                         />
                                     ) : (
                                         <PlatoMarbellaMenuView
@@ -1498,6 +1510,7 @@ export function MenuAccordion({
                                                                     }
                                                                     platoLauncherTitle={platoLauncherTitle}
                                                                     platoLauncherPriceLabel={platoLauncherPriceLabel}
+                                                                    eventOrder={eventOrder}
                                                                 />
                                                             </div>
                                                         )
@@ -1566,6 +1579,7 @@ export function MenuAccordion({
                                                                 }
                                                                 platoLauncherTitle={platoLauncherTitle}
                                                                 platoLauncherPriceLabel={platoLauncherPriceLabel}
+                                                                eventOrder={eventOrder}
                                                             />
                                                         </div>
                                                     ))}

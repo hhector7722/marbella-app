@@ -1,9 +1,22 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
+import {
+  publicMenuRowsToDigitalMenu,
+  type PublicMenuRow,
+} from '@/components/public/PublicCarta'
+import { MenuAccordion } from '@/components/staff/MenuAccordion'
+import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
+import {
+  eventOrderProductId,
+  type EventOrderCartaControl,
+} from '@/lib/event-order-carta'
+import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
+import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
-import { CheckCircle2, Loader2, Minus, Plus } from 'lucide-react'
 import { submitEventOrderAction } from './actions'
 
 export type PublicEventRow = {
@@ -13,13 +26,6 @@ export type PublicEventRow = {
   event_date: string
   event_time: string
   description: string | null
-}
-
-export type PublicEventProductRow = {
-  product_id: string
-  name: string
-  price: number
-  category: string | null
 }
 
 type PackItem = { product_id: string; quantity: number }
@@ -46,8 +52,8 @@ function sumItems(qtyById: Record<string, number>): number {
   return n
 }
 
-function sumTotal(products: PublicEventProductRow[], qtyById: Record<string, number>): number {
-  const priceById = new Map(products.map((p) => [p.product_id, Number(p.price) || 0]))
+function sumTotal(menuItems: PublicMenuRow[], qtyById: Record<string, number>): number {
+  const priceById = new Map(menuItems.map((p) => [eventOrderProductId(p.articulo_id), Number(p.precio) || 0]))
   let total = 0
   for (const [pid, qtyRaw] of Object.entries(qtyById)) {
     const qty = Math.max(0, Number(qtyRaw) || 0)
@@ -59,15 +65,22 @@ function sumTotal(products: PublicEventProductRow[], qtyById: Record<string, num
 
 export default function EventOrderFormClient({
   event,
-  products,
+  menuItems,
+  menuCategories,
+  categoryCoverById,
+  categoryCoverScaleById,
   startingPackItems,
 }: {
   event: PublicEventRow
-  products: PublicEventProductRow[]
+  menuItems: PublicMenuRow[]
+  menuCategories: MenuCategoryCatalogEntry[]
+  categoryCoverById: Record<string, string | null>
+  categoryCoverScaleById: Record<string, CartaPhotoScale>
   startingPackItems: PackItem[]
 }) {
   const [isPending, startTransition] = useTransition()
   const [step, setStep] = useState<'form' | 'success'>('form')
+  const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const [responsibleName, setResponsibleName] = useState('')
   const [qtyById, setQtyById] = useState<Record<string, number>>(() => {
     const out: Record<string, number> = {}
@@ -81,9 +94,30 @@ export default function EventOrderFormClient({
   })
   const [createdOrder, setCreatedOrder] = useState<SuccessOrder | null>(null)
 
+  const digitalItems = useMemo(() => publicMenuRowsToDigitalMenu(menuItems), [menuItems])
   const totalItems = useMemo(() => sumItems(qtyById), [qtyById])
-  const totalAmount = useMemo(() => sumTotal(products, qtyById), [products, qtyById])
+  const totalAmount = useMemo(() => sumTotal(menuItems, qtyById), [menuItems, qtyById])
   const canSubmit = responsibleName.trim().length >= 2 && totalItems > 0 && !isPending
+
+  const onQuantityChange = useCallback((articuloId: number, quantity: number) => {
+    const pid = eventOrderProductId(articuloId)
+    setQtyById((curr) => {
+      const next = Math.max(0, Math.min(999, Number(quantity) || 0))
+      if (next <= 0) {
+        const { [pid]: _removed, ...rest } = curr
+        return rest
+      }
+      return { ...curr, [pid]: next }
+    })
+  }, [])
+
+  const eventOrder: EventOrderCartaControl = useMemo(
+    () => ({
+      qtyByProductId: qtyById,
+      onQuantityChange,
+    }),
+    [qtyById, onQuantityChange]
+  )
 
   const cardClass = 'rounded-xl border border-zinc-100 bg-white shadow-sm'
   const headerPill = 'text-[11px] font-black uppercase tracking-widest text-[#36606F]'
@@ -92,9 +126,7 @@ export default function EventOrderFormClient({
     return (
       <div className={cn(cardClass, 'p-5')}>
         <div className="flex items-start gap-3">
-          <div className="shrink-0">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" strokeWidth={2.25} />
-          </div>
+          <CheckCircle2 className="h-8 w-8 shrink-0 text-emerald-600" strokeWidth={2.25} />
           <div className="min-w-0 flex-1">
             <p className={headerPill}>Pedido confirmado</p>
             <p className="mt-1 text-lg font-black text-zinc-900">Gracias, {createdOrder.responsible_name}.</p>
@@ -118,12 +150,9 @@ export default function EventOrderFormClient({
   }
 
   return (
-    <div className="pb-28">
-      <div className={cn(cardClass, 'p-4')}>
-        <p className={headerPill}>Identificación</p>
-        <label className="mt-2 block text-xs font-black uppercase tracking-wider text-zinc-700">
-          Nombre del responsable del pedido
-        </label>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className={cn(cardClass, 'shrink-0 p-4')}>
+        <p className={headerPill}>Responsable del pedido</p>
         <input
           value={responsibleName}
           onChange={(e) => setResponsibleName(e.target.value)}
@@ -133,75 +162,47 @@ export default function EventOrderFormClient({
         />
       </div>
 
-      <div className="mt-4 space-y-2">
-        <div className={cn(cardClass, 'p-4')}>
-          <p className={headerPill}>Productos</p>
-          <p className="mt-1 text-xs text-zinc-600">Ajusta cantidades con +/−.</p>
+      <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
+        <div className="shrink-0 border-b border-zinc-100 px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className={headerPill}>Carta del evento</p>
+            <CartaLangPicker lang={lang} onChange={setLang} layout="spread" compact />
+          </div>
+          <p className="mt-1 text-xs font-medium text-zinc-500">
+            Misma carta que en el local. Ajusta cantidades con +/− en cada producto.
+          </p>
         </div>
 
-        {products.map((p) => {
-          const qty = qtyById[p.product_id] ?? 0
-          return (
-            <div key={p.product_id} className={cn(cardClass, 'p-4')}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-zinc-900">{p.name}</p>
-                  <p className="mt-0.5 text-xs text-zinc-600">
-                    {p.category ? `${p.category} · ` : ''}
-                    {formatEur(Number(p.price) || 0)}
-                  </p>
-                </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="min-h-12 min-w-[48px] shrink-0 rounded-xl border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 active:opacity-80 flex items-center justify-center"
-                    aria-label="Restar"
-                    onClick={() =>
-                      setQtyById((curr) => ({
-                        ...curr,
-                        [p.product_id]: Math.max(0, (curr[p.product_id] ?? 0) - 1),
-                      }))
-                    }
-                  >
-                    <Minus className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
-                  <div className="min-h-12 min-w-[56px] shrink-0 rounded-xl border border-zinc-200 bg-zinc-50 flex items-center justify-center text-sm font-black text-zinc-900">
-                    {qty === 0 ? ' ' : qty}
-                  </div>
-                  <button
-                    type="button"
-                    className="min-h-12 min-w-[48px] shrink-0 rounded-xl border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 active:opacity-80 flex items-center justify-center"
-                    aria-label="Sumar"
-                    onClick={() =>
-                      setQtyById((curr) => ({
-                        ...curr,
-                        [p.product_id]: Math.min(999, (curr[p.product_id] ?? 0) + 1),
-                      }))
-                    }
-                  >
-                    <Plus className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        <div className="min-h-0 flex-1 overflow-hidden pb-2">
+          <MenuAccordion
+            items={digitalItems}
+            lang={lang}
+            onLangChange={setLang}
+            hideLangPicker
+            menuCategories={menuCategories}
+            categoryCoverById={categoryCoverById}
+            categoryCoverScaleById={categoryCoverScaleById}
+            homeCompact
+            eventOrder={eventOrder}
+          />
+        </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-zinc-200 pb-safe">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 pb-safe backdrop-blur">
         <div className="mx-auto w-full max-w-2xl px-5 md:px-8">
           <div className="py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-black text-zinc-900">
-                  {totalItems === 0 ? ' ' : `${totalItems} items`} · {totalItems === 0 ? ' ' : formatEur(totalAmount)}
+                  {totalItems === 0 ? ' ' : `${totalItems} items`} ·{' '}
+                  {totalItems === 0 ? ' ' : formatEur(totalAmount)}
                 </p>
-                <p className="text-[11px] font-bold text-zinc-600 truncate">{event.name}</p>
+                <p className="truncate text-[11px] font-bold text-zinc-600">{event.name}</p>
               </div>
               <button
                 type="button"
                 className={cn(
-                  'min-h-14 shrink-0 rounded-xl px-5 text-[12px] font-black uppercase tracking-wider transition-colors flex items-center gap-2',
+                  'flex min-h-14 shrink-0 items-center gap-2 rounded-xl px-5 text-[12px] font-black uppercase tracking-wider transition-colors',
                   canSubmit ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-zinc-200 text-zinc-600'
                 )}
                 disabled={!canSubmit}
@@ -244,4 +245,3 @@ export default function EventOrderFormClient({
     </div>
   )
 }
-

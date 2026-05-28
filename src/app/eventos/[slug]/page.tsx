@@ -1,10 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
-import EventOrderFormClient, {
-  type PublicEventRow,
-  type PublicEventProductRow,
-} from './EventOrderFormClient'
-import { cn } from '@/lib/utils'
+import EventOrderFormClient, { type PublicEventRow } from './EventOrderFormClient'
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
+import { loadEventCartaMenu } from '@/lib/load-event-carta-menu'
 
 function parseYmd(ymd: string): { y: number; m: number; d: number } | null {
   const m = String(ymd ?? '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -120,30 +117,26 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
     description: (event as any).description ? String((event as any).description) : null,
   }
 
-  const enabledIds = (event as any).enabled_product_ids as string[] | null
+  const enabledIds = ((event as any).enabled_product_ids as string[] | null) ?? []
 
-  // Products for event
   const productsQuery = supabase
     .from('event_products')
-    .select('product_id, name, price, category, is_active')
+    .select('product_id')
     .eq('is_active', true)
-    .order('category', { ascending: true, nullsFirst: false })
-    .order('name', { ascending: true })
     .limit(5000)
 
-  const { data: baseProducts, error: pErr } = enabledIds?.length
+  const { data: baseProducts, error: pErr } = enabledIds.length
     ? await productsQuery.in('product_id', enabledIds)
     : await productsQuery
   if (pErr) return <ErrorView title="Evento" message={`Error cargando productos: ${pErr.message}`} />
 
-  const products: PublicEventProductRow[] = ((baseProducts ?? []) as any[]).map((p) => ({
-    product_id: String(p.product_id ?? ''),
-    name: String(p.name ?? ''),
-    price: Number(p.price) || 0,
-    category: p.category ? String(p.category) : null,
-  }))
+  const enabledProductIds = ((baseProducts ?? []) as any[])
+    .map((p) => String(p.product_id ?? '').trim())
+    .filter(Boolean)
 
-  // Pack (event override or default pack singleton)
+  const carta = await loadEventCartaMenu(supabase, enabledProductIds)
+  if (!carta.ok) return <ErrorView title="Evento" message={carta.message} />
+
   const packOverride = (event as any).pack_items as any[] | null
   let packItems: Array<{ product_id: string; quantity: number }> = []
 
@@ -162,26 +155,33 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
     }
   }
 
-  // Keep only products that exist in this event's available list.
-  const productIdSet = new Set(products.map((p) => p.product_id))
+  const productIdSet = new Set(enabledProductIds)
   const startingPack = packItems.filter((it) => productIdSet.has(it.product_id))
 
   return (
-    <main className="flex min-h-[100dvh] flex-col bg-white text-zinc-900">
-      <div className="mx-auto w-full max-w-2xl px-5 pb-safe pt-safe md:px-8">
-        <div className="mt-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Evento</p>
-          <p className="mt-1 text-lg font-black text-zinc-900">{eventRow.name}</p>
-          <p className={cn('mt-1 text-sm font-bold text-zinc-700')}>
+    <main className="flex h-[100dvh] flex-col bg-white text-zinc-900">
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
+        <header className="shrink-0 pb-2 pt-1">
+          <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Encargo · {eventRow.name}</p>
+          <p className="mt-1 text-sm font-bold text-zinc-700">
             {formatHumanDateEs(eventRow.event_date)} · {toHm(eventRow.event_time)}h
           </p>
-        </div>
+          {eventRow.description ? (
+            <p className="mt-1 text-xs font-medium text-zinc-500">{eventRow.description}</p>
+          ) : null}
+        </header>
 
-        <div className="mt-4">
-          <EventOrderFormClient event={eventRow} products={products} startingPackItems={startingPack} />
+        <div className="flex min-h-0 flex-1 flex-col pb-28">
+          <EventOrderFormClient
+            event={eventRow}
+            menuItems={carta.data.items}
+            menuCategories={carta.data.menuCategories}
+            categoryCoverById={carta.data.categoryCoverById}
+            categoryCoverScaleById={carta.data.categoryCoverScaleById}
+            startingPackItems={startingPack}
+          />
         </div>
       </div>
     </main>
   )
 }
-

@@ -19,6 +19,12 @@ import {
   getCartaProductPhotoScaleFactor,
   isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
+import { EventCartaOrderControls } from '@/components/carta/EventCartaOrderControls'
+import {
+  eventOrderProductId,
+  eventOrderQtyFor,
+  type EventOrderCartaControl,
+} from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
 
 export type CartaStaffMenuProductRow = CartaNameRow &
@@ -48,6 +54,7 @@ export function CartaStaffMenuProductCard({
   onOpenPlatoMarbella,
   platoLauncherTitle,
   platoLauncherPriceLabel,
+  eventOrder,
 }: {
   row: CartaStaffMenuProductRow
   lang: CartaLang
@@ -63,6 +70,7 @@ export function CartaStaffMenuProductCard({
   onOpenPlatoMarbella?: () => void
   platoLauncherTitle?: string
   platoLauncherPriceLabel?: string
+  eventOrder?: EventOrderCartaControl
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const displayName =
@@ -71,6 +79,9 @@ export function CartaStaffMenuProductCard({
       : getCartaDisplayName(row, lang)
   const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
   const busy = editMode && productToggleBusyId === row.articulo_id
+  const eventOrderActive = Boolean(eventOrder) && !editMode && !productReorderMode
+  const eventQty = eventOrderQtyFor(eventOrder, row.articulo_id)
+  const productId = eventOrderProductId(row.articulo_id)
 
   useEffect(() => {
     if (editMode) setLightboxOpen(false)
@@ -251,6 +262,24 @@ export function CartaStaffMenuProductCard({
             variant="staff"
           />
         )}
+        {eventOrderActive && eventOrder ? (
+          <EventCartaOrderControls
+            className="mt-1"
+            quantity={eventQty}
+            onDecrement={() =>
+              eventOrder.onQuantityChange(
+                row.articulo_id,
+                Math.max(0, (eventOrder.qtyByProductId[productId] ?? 0) - 1)
+              )
+            }
+            onIncrement={() =>
+              eventOrder.onQuantityChange(
+                row.articulo_id,
+                Math.min(999, (eventOrder.qtyByProductId[productId] ?? 0) + 1)
+              )
+            }
+          />
+        ) : null}
       </div>
 
       <CartaImageLightbox

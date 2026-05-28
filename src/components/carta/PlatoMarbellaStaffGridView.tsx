@@ -25,6 +25,7 @@ import {
   CartaStaffMenuProductCard,
   type CartaStaffMenuProductRow,
 } from '@/components/carta/CartaStaffMenuProductCard'
+import { type EventOrderCartaControl } from '@/lib/event-order-carta'
 
 type StaffRow = PlatoMarbellaMenuRow & CartaNameRow & CartaStaffMenuProductRow
 const PRODUCT_FLEX_CELL_BASIS_CLASS =
@@ -40,6 +41,7 @@ function ProductGrid({
   onToggleProductActive,
   productToggleBusyId,
   onReorderTap,
+  eventOrder,
 }: {
   rows: StaffRow[]
   lang: CartaLang
@@ -50,6 +52,7 @@ function ProductGrid({
   onToggleProductActive?: (articuloId: number) => void
   productToggleBusyId?: number | null
   onReorderTap?: (articuloId: number) => void
+  eventOrder?: EventOrderCartaControl
 }) {
   if (rows.length === 0) {
     return (
@@ -110,6 +113,7 @@ function ProductGrid({
                       onReorderTap={onReorderTap}
                       rowDensity={rowDensity}
                       photoFrameStyle={rowFrameStyle}
+                      eventOrder={eventOrder}
                     />
                   </div>
                 )
@@ -133,6 +137,7 @@ export function PlatoMarbellaStaffGridView({
   onEditProduct,
   onToggleProductActive,
   productToggleBusyId,
+  eventOrder,
   className,
 }: {
   rows: StaffRow[]
@@ -146,6 +151,7 @@ export function PlatoMarbellaStaffGridView({
   onEditProduct?: (articuloId: number) => void
   onToggleProductActive?: (articuloId: number) => void
   productToggleBusyId?: number | null
+  eventOrder?: EventOrderCartaControl
   className?: string
 }) {
   const ui = tPlatoMarbellaUi(lang)
@@ -181,13 +187,14 @@ export function PlatoMarbellaStaffGridView({
 
   const gridProps = {
     lang,
-    editMode: !reorderMode,
+    editMode: !reorderMode && !eventOrder,
     productReorderMode: reorderMode,
     reorderPick,
     onEditProduct,
     onToggleProductActive,
     productToggleBusyId,
     onReorderTap,
+    eventOrder: reorderMode ? undefined : eventOrder,
   }
 
   if (reorderMode) {
