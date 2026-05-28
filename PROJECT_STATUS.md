@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-28 (Fichajes especiales: horas por entrada/salida)
+**Última actualización:** 2026-05-28 (Sincronización automática LLM_PROMPT)
+
+- [x] **Docs: `LLM_PROMPT.md` sincronizado automáticamente con este archivo (2026-05-28)**: La §11 de [`context/LLM_PROMPT.md`](context/LLM_PROMPT.md) se regenera desde el changelog superior de `PROJECT_STATUS.md` vía `npm run sync:llm-prompt`, hook Git (`.githooks/pre-commit` tras `npm run setup:githooks`) y hook Cursor (`.cursor/hooks.json` → `afterFileEdit` al guardar este archivo).
 
 - [x] **Fichajes especiales: horas desde entrada/salida (2026-05-28)**: Al guardar tipos distintos de `regular` (Festivo, Baja, Enfermedad, Personal, etc.) [`updateWeeklyWorkerConfig`](src/app/actions/overtime.ts) ya no fuerza `total_hours = 8`; calcula con redondeo Marbella entre `clock_in` y `clock_out` (o respeta `total_hours_override` del manager). Fichajes históricos con 8h fijas requieren re-guardar el día o recálculo manual para corregir `time_logs.total_hours`.
 
