@@ -239,7 +239,10 @@ export async function appendScannerPageToInvoiceAction(params: {
       const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
       if (linesError) {
         console.error('appendScanner lines insert:', linesError)
-        return { success: false, message: 'Error guardando líneas de la hoja adicional' }
+        return {
+          success: false,
+          message: `Error guardando líneas de la hoja adicional: ${linesError.message}`,
+        }
       }
     }
 
