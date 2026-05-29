@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isMasterDashboardUser } from "@/lib/master-dashboard";
 
 function isPasswordRecoveryProfileRequest(request: NextRequest) {
   if (request.nextUrl.pathname !== "/profile") return false;
@@ -98,6 +99,13 @@ export async function proxy(request: NextRequest) {
       !staffDashboardAllowed
     ) {
       return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+    }
+
+    if (path.startsWith("/master")) {
+      const email = user.email ?? "";
+      if (!isMasterDashboardUser(email)) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
     }
 
     if (path.startsWith("/login")) {

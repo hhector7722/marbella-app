@@ -10,7 +10,9 @@ export default async function StaffDashboardPage() {
         redirect('/login');
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role, email').eq('id', user.id).single();
 
-    return <DashboardSwitcher userRole={profile?.role || 'staff'} initialView="staff" />;
+    const email = profile?.email ?? user.email ?? '';
+
+    return <DashboardSwitcher userRole={profile?.role || 'staff'} userEmail={email} initialView="staff" />;
 }

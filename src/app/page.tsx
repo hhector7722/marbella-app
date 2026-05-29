@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { isMasterDashboardUser } from "@/lib/master-dashboard";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -15,14 +16,18 @@ export default async function HomePage() {
   // Obtener rol del usuario
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, email")
     .eq("id", user.id)
     .single();
 
   const role = profile?.role;
+  const email = profile?.email ?? user.email ?? "";
 
   // Redirección basada en rol
   if (role === "manager") {
+    if (isMasterDashboardUser(email)) {
+      redirect("/master/dashboard");
+    }
     redirect("/dashboard");
   } else {
     // Por defecto redirigir a staff dashboard (para staff, supervisor y otros roles)

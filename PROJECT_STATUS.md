@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-28 (Sincronización automática LLM_PROMPT)
+**Última actualización:** 2026-05-29 (Master dashboard Hector)
+
+- [x] **Master dashboard personal Hector (2026-05-29)**: Nueva ruta `/master/dashboard` exclusiva para `hhector7722@gmail.com` — carrusel de 3 pantallas (Admin | Master | Staff) con indicadores iOS; sección de ventas dinámicas compartida (`DashboardVentasSection`) + rejilla de 19 accesos rápidos (`MasterShortcutGrid`) incluyendo Caja Inicial verde en tiempo real y cajas de cambio. Guards en [`proxy.ts`](src/proxy.ts), redirect `/` → master, Navbar y BottomNav apuntan a hub central.
 
 - [x] **Pedidos por eventos: formulario público = carta digital (2026-05-28)**: `/eventos/[slug]` carga `v_public_menu_items` filtrado por `event_products` ([`load-event-carta-menu.ts`](src/lib/load-event-carta-menu.ts)) y renderiza **`MenuAccordion`** (misma UI que `/carta` y `/staff/carta`) con controles +/− por producto ([`EventCartaOrderControls`](src/components/carta/EventCartaOrderControls.tsx), [`event-order-carta.ts`](src/lib/event-order-carta.ts)). Pack inicial del evento pre-rellena cantidades. Staff/supervisor acceden a `/dashboard/eventos` en lectura desde Info → Encargos ([`StaffDashboardView`](src/components/dashboards/StaffDashboardView.tsx), proxy).
 

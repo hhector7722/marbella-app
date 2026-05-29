@@ -3,19 +3,30 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
 import AdminDashboardView from './AdminDashboardView';
+import MasterDashboardView from './MasterDashboardView';
 import StaffDashboardView from './StaffDashboardView';
+
+export type DashboardView = 'admin' | 'master' | 'staff';
 
 interface DashboardSwitcherProps {
     userRole: string;
-    initialView?: 'staff' | 'admin';
+    userEmail?: string | null;
+    initialView?: DashboardView;
     initialData?: any;
 }
 
-export default function DashboardSwitcher({ userRole, initialView = 'staff', initialData }: DashboardSwitcherProps) {
+export default function DashboardSwitcher({
+    userRole,
+    userEmail,
+    initialView = 'staff',
+    initialData,
+}: DashboardSwitcherProps) {
     const router = useRouter();
-    const [view, setView] = useState<'staff' | 'admin'>(initialView);
+    const isTriple = userRole === 'manager' && isMasterDashboardUser(userEmail);
+    const [view, setView] = useState<DashboardView>(initialView);
     const [offsetX, setOffsetX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const startX = useRef(0);
@@ -25,39 +36,36 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
     const containerWidth = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const DRAG_DEAD_ZONE = 10; // px de movimiento mínimo antes de activar el drag
+    const DRAG_DEAD_ZONE = 10;
+    const isManager = userRole === 'manager';
 
-    // Sync with initialView if it changes (e.g. on direct navigation)
     useEffect(() => {
         setView(initialView);
     }, [initialView]);
 
     const handleTouchStart = (e: React.TouchEvent) => {
-        if (userRole !== 'manager') return;
+        if (!isManager) return;
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
         isHorizontalDrag.current = null;
         dragActivated.current = false;
-        // NO setIsDragging(true) aquí — dejamos que los taps pasen a los hijos
         if (containerRef.current) {
             containerWidth.current = containerRef.current.offsetWidth;
         }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (userRole !== 'manager') return;
+        if (!isManager) return;
 
         const currentX = e.touches[0].clientX;
         const currentY = e.touches[0].clientY;
         const diffX = currentX - startX.current;
         const diffY = currentY - startY.current;
 
-        // Dead zone: no activar drag hasta que haya movimiento significativo
         if (!dragActivated.current) {
             if (Math.abs(diffX) < DRAG_DEAD_ZONE && Math.abs(diffY) < DRAG_DEAD_ZONE) {
-                return; // Ignorar micro-movimientos (es un tap)
+                return;
             }
-            // Determinar si es horizontal o vertical
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 isHorizontalDrag.current = true;
                 dragActivated.current = true;
@@ -65,21 +73,31 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
             } else {
                 isHorizontalDrag.current = false;
                 dragActivated.current = true;
-                return; // Es scroll vertical, no interferir
+                return;
             }
         }
 
         if (isHorizontalDrag.current) {
-            // Evitar scroll vertical mientras se arrastra horizontalmente
             if (e.cancelable) e.preventDefault();
 
-            // Lógica de resistencia en los bordes
             let controlledDiff = diffX;
-            if (view === 'admin' && diffX > 0) controlledDiff = diffX * 0.2;
-            if (view === 'staff' && diffX < 0) controlledDiff = diffX * 0.2;
+            if (isTriple) {
+                if (view === 'admin' && diffX > 0) controlledDiff = diffX * 0.2;
+                if (view === 'staff' && diffX < 0) controlledDiff = diffX * 0.2;
+            } else {
+                if (view === 'admin' && diffX > 0) controlledDiff = diffX * 0.2;
+                if (view === 'staff' && diffX < 0) controlledDiff = diffX * 0.2;
+            }
 
             setOffsetX(controlledDiff);
         }
+    };
+
+    const navigateToView = (next: DashboardView) => {
+        setView(next);
+        if (next === 'admin') router.replace('/dashboard');
+        else if (next === 'master') router.replace('/master/dashboard');
+        else router.replace('/staff/dashboard');
     };
 
     const handleTouchEnd = () => {
@@ -90,12 +108,17 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
         const threshold = containerWidth.current / 4;
 
         if (Math.abs(offsetX) > threshold) {
-            if (offsetX < 0 && view === 'admin') {
-                setView('staff');
-                router.replace('/staff/dashboard');
-            } else if (offsetX > 0 && view === 'staff') {
-                setView('admin');
-                router.replace('/dashboard');
+            if (isTriple) {
+                if (offsetX < 0) {
+                    if (view === 'admin') navigateToView('master');
+                    else if (view === 'master') navigateToView('staff');
+                } else if (offsetX > 0) {
+                    if (view === 'staff') navigateToView('master');
+                    else if (view === 'master') navigateToView('admin');
+                }
+            } else {
+                if (offsetX < 0 && view === 'admin') navigateToView('staff');
+                else if (offsetX > 0 && view === 'staff') navigateToView('admin');
             }
         }
 
@@ -103,21 +126,24 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
         isHorizontalDrag.current = null;
     };
 
-    // Estilos dinámicos
-    const isManager = userRole === 'manager';
-    const currentTranslate = view === 'admin' ? 0 : -100; // -100% del parent (= 1 viewport de desplazamiento)
-    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 100 : 0;
+    const panelCount = isTriple ? 3 : isManager ? 2 : 1;
+    const panelWidthPercent = 100 / panelCount;
+    const viewIndex = view === 'admin' ? 0 : view === 'master' ? 1 : 2;
+    const currentTranslate = isManager ? -(isTriple ? viewIndex : view === 'staff' ? 1 : 0) * panelWidthPercent : 0;
+    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * panelWidthPercent : 0;
     const finalTranslate = isManager ? currentTranslate + dragTranslatePercent : 0;
+
+    const trackWidth = isTriple ? '300%' : isManager ? '200%' : '100%';
+    const panelClass = isTriple ? 'w-1/3' : isManager ? 'w-1/2' : 'w-full';
+
+    const shouldRenderPanel = (panel: DashboardView) => view === panel || isDragging;
 
     return (
         <div
             ref={containerRef}
             className={cn(
-                // iPad (>=md) entraba en layout "desktop" y el contenedor con `overflow-hidden`
-                // cortaba la parte inferior del dashboard. Mantenemos el swipe horizontal,
-                // pero permitimos scroll vertical.
-                "w-full min-h-full overflow-x-hidden overflow-y-auto relative",
-                isManager ? "touch-pan-y" : ""
+                'w-full min-h-full overflow-x-hidden overflow-y-auto relative',
+                isManager ? 'touch-pan-y' : ''
             )}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -125,19 +151,40 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
         >
             <div
                 className={cn(
-                    "flex min-h-full",
-                    isManager ? "w-[200%] transition-[margin-left] duration-300 ease-out" : "w-full",
-                    isDragging && isHorizontalDrag.current && "duration-0"
+                    'flex min-h-full',
+                    isManager ? 'transition-[margin-left] duration-300 ease-out' : 'w-full',
+                    isDragging && isHorizontalDrag.current && 'duration-0'
                 )}
-                style={isManager ? { marginLeft: `${finalTranslate}%` } : {}}
+                style={isManager ? { width: trackWidth, marginLeft: `${finalTranslate}%` } : {}}
             >
-                {isManager ? (
+                {isTriple ? (
                     <>
-                        <div className="w-1/2 min-h-full flex-shrink-0 -mt-0.5 md:mt-0">
-                            {(view === 'admin' || isDragging) && <AdminDashboardView initialData={initialData} />}
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
+                            {shouldRenderPanel('admin') && <AdminDashboardView initialData={initialData} />}
                         </div>
-                        <div className="w-1/2 min-h-full flex-shrink-0 mt-4 md:mt-0">
-                            {(view === 'staff' || isDragging) && <StaffDashboardView />}
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 mt-4 md:mt-0')}>
+                            {shouldRenderPanel('master') && (
+                                <MasterDashboardView
+                                    initialData={{
+                                        liveTickets: initialData?.liveTickets,
+                                        salesChartData: initialData?.salesChartData,
+                                        actualBalance: initialData?.actualBalance,
+                                        boxes: initialData?.boxes,
+                                    }}
+                                />
+                            )}
+                        </div>
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 mt-4 md:mt-0')}>
+                            {shouldRenderPanel('staff') && <StaffDashboardView />}
+                        </div>
+                    </>
+                ) : isManager ? (
+                    <>
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
+                            {shouldRenderPanel('admin') && <AdminDashboardView initialData={initialData} />}
+                        </div>
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 mt-4 md:mt-0')}>
+                            {shouldRenderPanel('staff') && <StaffDashboardView />}
                         </div>
                     </>
                 ) : (
@@ -147,21 +194,19 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
                 )}
             </div>
 
-            {/* Indicadores estilo iPhone */}
-            {
-                isManager && (
-                    <div className="fixed bottom-[88px] left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none">
-                        <div className={cn(
-                            "w-1 h-1 rounded-full transition-all duration-300",
-                            view === 'admin' ? "bg-white scale-110" : "bg-white/30"
-                        )} />
-                        <div className={cn(
-                            "w-1 h-1 rounded-full transition-all duration-300",
-                            view === 'staff' ? "bg-white scale-110" : "bg-white/30"
-                        )} />
-                    </div>
-                )
-            }
-        </div >
+            {isManager && (
+                <div className="fixed bottom-[88px] left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none">
+                    {(isTriple ? (['admin', 'master', 'staff'] as const) : (['admin', 'staff'] as const)).map((panel) => (
+                        <div
+                            key={panel}
+                            className={cn(
+                                'w-1 h-1 rounded-full transition-all duration-300',
+                                view === panel ? 'bg-white scale-110' : 'bg-white/30'
+                            )}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }

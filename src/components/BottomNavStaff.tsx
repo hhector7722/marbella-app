@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { Avatar } from '@/components/ui/Avatar';
 import { toast } from 'sonner';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
@@ -17,7 +18,7 @@ export default function BottomNavStaff() {
     const router = useRouter();
     const supabase = createClient();
 
-    const [userData, setUserData] = useState<{ id: string; name: string; role: string; avatar_url: string | null } | null>(null);
+    const [userData, setUserData] = useState<{ id: string; name: string; role: string; email: string; avatar_url: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -31,7 +32,7 @@ export default function BottomNavStaff() {
             if (user) {
                 const { data } = await supabase
                     .from('profiles')
-                    .select('first_name, role, avatar_url')
+                    .select('first_name, role, avatar_url, email')
                     .eq('id', user.id)
                     .single();
                 if (data) {
@@ -39,6 +40,7 @@ export default function BottomNavStaff() {
                         id: user.id,
                         name: data.first_name || 'Empleado',
                         role: data.role || 'staff',
+                        email: data.email || user.email || '',
                         avatar_url: data.avatar_url || null
                     });
                 }
@@ -109,11 +111,16 @@ export default function BottomNavStaff() {
 
     const isAdmin = userData?.role === 'manager' || userData?.role === 'supervisor';
     const userRole = (userData?.role as any) || 'staff';
+    const homeHref = isMasterDashboardUser(userData?.email)
+        ? '/master/dashboard'
+        : isAdmin
+          ? '/dashboard'
+          : '/staff/dashboard';
 
     const staffItems: { name: string; href: string; icon: any }[] = [
         { name: 'Horarios', href: '#horarios', icon: CalendarIcon },
         { name: 'Asistencia', href: '/staff/history', icon: Clock },
-        { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
+        { name: 'Inicio', href: homeHref, icon: Home },
         { name: 'Pedidos', href: '/orders/new', icon: Package },
         {
             name: 'Cuenta', href: '/profile', icon: () => (

@@ -7,6 +7,7 @@ import { MessageSquare, ChevronLeft } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -58,9 +59,10 @@ export default function Navbar() {
     if (pathname === '/dashboard/carta') return null;
     if (pathname.startsWith('/eventos')) return null;
 
-    const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
-    const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
-    const homePath = isAdminMode || userData?.role === 'manager' ? '/dashboard' : '/staff/dashboard';
+    const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients') || pathname.startsWith('/master');
+    const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
+    const isMasterUser = isMasterDashboardUser(userData?.email);
+    const homePath = isMasterUser ? '/master/dashboard' : isAdminMode || userData?.role === 'manager' ? '/dashboard' : '/staff/dashboard';
 
     return (
         <>

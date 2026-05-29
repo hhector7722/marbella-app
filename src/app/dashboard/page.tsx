@@ -12,7 +12,7 @@ export default async function AdminDashboardPage() {
         redirect('/login');
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role, email').eq('id', user.id).single();
 
     if (profile) {
         // Redirect logic moved to server side
@@ -21,8 +21,17 @@ export default async function AdminDashboardPage() {
         }
     }
 
+    const email = profile?.email ?? user.email ?? '';
+
     // Fetch dashboard data on the server
     const dashboardData = await getDashboardData();
 
-    return <DashboardSwitcher userRole={profile?.role || 'staff'} initialView="admin" initialData={dashboardData} />;
+    return (
+        <DashboardSwitcher
+            userRole={profile?.role || 'staff'}
+            userEmail={email}
+            initialView="admin"
+            initialData={dashboardData}
+        />
+    );
 }
