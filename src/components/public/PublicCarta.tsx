@@ -212,7 +212,7 @@ export function PublicCarta({
             eventEncargoEdit={eventEncargoEdit}
           />
         </div>
-        {footer ? <div className="shrink-0 border-t border-zinc-100 bg-white pb-safe">{footer}</div> : null}
+        {footer ? <div className="shrink-0">{footer}</div> : null}
       </div>
     </main>
   )

@@ -3,7 +3,12 @@
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { CheckCircle2, Loader2, X } from 'lucide-react'
+import {
+  EventEncargoCartFooter,
+  type EventEncargoCartLine,
+} from '@/components/eventos/EventEncargoCartFooter'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
+import { DEFAULT_CARTA_LANG, getCartaDisplayName } from '@/lib/carta-menu-i18n'
 import { eventOrderProductId } from '@/lib/event-order-carta'
 import type { EventEncargoEditControl, EventOrderCartaControl } from '@/lib/event-order-carta'
 import {
@@ -156,9 +161,46 @@ export default function EventEncargoCartaClient({
     () =>
       editMode
         ? undefined
-        : { qtyByProductId: qtyById, onQuantityChange },
+        : { qtyByProductId: qtyById, onQuantityChange, tapToAdd: true },
     [editMode, qtyById, onQuantityChange]
   )
+
+  const cartLines = useMemo((): EventEncargoCartLine[] => {
+    const lines: EventEncargoCartLine[] = []
+    for (const row of clientMenuItems) {
+      const pid = eventOrderProductId(row.articulo_id)
+      const quantity = Math.max(0, Number(qtyById[pid]) || 0)
+      if (quantity <= 0) continue
+      lines.push({
+        key: pid,
+        articuloId: row.articulo_id,
+        name: getCartaDisplayName(row, DEFAULT_CARTA_LANG),
+        quantity,
+      })
+    }
+    lines.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+    return lines
+  }, [clientMenuItems, qtyById])
+
+  const addOneToCart = useCallback((articuloId: number) => {
+    const pid = eventOrderProductId(articuloId)
+    setQtyById((curr) => ({
+      ...curr,
+      [pid]: Math.min(999, (curr[pid] ?? 0) + 1),
+    }))
+  }, [])
+
+  const removeOneFromCart = useCallback((articuloId: number) => {
+    const pid = eventOrderProductId(articuloId)
+    setQtyById((curr) => {
+      const nextQty = (curr[pid] ?? 0) - 1
+      if (nextQty <= 0) {
+        const { [pid]: _removed, ...rest } = curr
+        return rest
+      }
+      return { ...curr, [pid]: nextQty }
+    })
+  }, [])
 
   const toggleProductIds = useCallback((ids: string[], enable: boolean) => {
     setEnabledSet((prev) => {
@@ -308,26 +350,16 @@ export default function EventEncargoCartaClient({
       </button>
     </div>
   ) : (
-    <div className="px-0 py-3">
-      <div className="mb-2 flex items-center justify-between gap-2 px-1">
-        <p className="text-sm font-black text-zinc-900">
-          {totalItems === 0 ? ' ' : `${totalItems} uds.`}
-          {totalItems > 0 ? ` · ${formatEur(totalAmount)}` : ''}
-        </p>
-      </div>
-      <button
-        type="button"
-        className={cn(
-          btnBase,
-          'w-full',
-          totalItems > 0 ? 'bg-[#36606F] text-white hover:bg-[#2a4a56]' : 'bg-zinc-200 text-zinc-600'
-        )}
-        disabled={totalItems <= 0 || isPending}
-        onClick={openSaveModal}
-      >
-        Guardar
-      </button>
-    </div>
+    <EventEncargoCartFooter
+      lines={cartLines}
+      totalLabel={
+        totalItems > 0 ? `${totalItems} uds. · ${formatEur(totalAmount)}` : undefined
+      }
+      onIncrement={addOneToCart}
+      onDecrement={removeOneFromCart}
+      onSave={openSaveModal}
+      isPending={isPending}
+    />
   )
 
   return (

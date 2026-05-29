@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
@@ -80,8 +80,18 @@ export function CartaStaffMenuProductCard({
   const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
   const busy = editMode && productToggleBusyId === row.articulo_id
   const eventOrderActive = Boolean(eventOrder) && !editMode && !productReorderMode
+  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd)
+  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd
   const eventQty = eventOrderQtyFor(eventOrder, row.articulo_id)
   const productId = eventOrderProductId(row.articulo_id)
+
+  const handleTapAdd = (e: MouseEvent) => {
+    if (!eventOrder || !eventTapToAdd) return
+    e.preventDefault()
+    e.stopPropagation()
+    const next = Math.min(999, eventQty + 1)
+    eventOrder.onQuantityChange(row.articulo_id, next)
+  }
 
   useEffect(() => {
     if (editMode) setLightboxOpen(false)
@@ -119,25 +129,34 @@ export function CartaStaffMenuProductCard({
                 className={cn(
                   CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
                   'touch-manipulation active:bg-zinc-50',
+                  eventTapToAdd && 'cursor-pointer',
                   productReorderMode && onReorderTap
                     ? 'cursor-pointer'
                     : editMode && onEditProduct && !productReorderMode
                       ? 'cursor-pointer'
                       : editMode
                         ? 'cursor-default'
-                        : 'cursor-zoom-in'
+                        : eventTapToAdd
+                          ? 'cursor-pointer'
+                          : 'cursor-zoom-in'
                 )}
                 style={frameStyle}
                 aria-label={
-                  productReorderMode && onReorderTap
-                    ? 'Seleccionar para reordenar'
-                    : editMode && onEditProduct
-                      ? 'Editar producto'
-                      : editMode
-                        ? 'Foto del producto'
-                        : 'Ver foto ampliada'
+                  eventTapToAdd
+                    ? `Añadir ${displayName}`
+                    : productReorderMode && onReorderTap
+                      ? 'Seleccionar para reordenar'
+                      : editMode && onEditProduct
+                        ? 'Editar producto'
+                        : editMode
+                          ? 'Foto del producto'
+                          : 'Ver foto ampliada'
                 }
                 onClick={(e) => {
+                  if (eventTapToAdd) {
+                    handleTapAdd(e)
+                    return
+                  }
                   if (productReorderMode && onReorderTap) {
                     e.preventDefault()
                     e.stopPropagation()
@@ -166,6 +185,11 @@ export function CartaStaffMenuProductCard({
                   articuloId={row.articulo_id}
                 />
               </button>
+              {eventTapToAdd && eventQty > 0 ? (
+                <span className="absolute right-0 top-0 z-30 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm sm:right-0.5 sm:top-0.5">
+                  ×{eventQty}
+                </span>
+              ) : null}
               {editMode && onToggleProductActive ? (
                 <button
                   type="button"
@@ -207,6 +231,7 @@ export function CartaStaffMenuProductCard({
           rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
           rowDensity === 'cozy' && 'gap-0.5 px-2 pb-1.5 sm:gap-1 sm:pb-2',
           rowDensity === 'normal' && 'gap-1 px-2 pb-2 sm:gap-1.5',
+          eventTapToAdd && 'cursor-pointer touch-manipulation active:bg-zinc-50/80',
           editMode &&
             onEditProduct &&
             !productReorderMode &&
@@ -222,11 +247,13 @@ export function CartaStaffMenuProductCard({
           editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher ? 0 : undefined
         }
         onClick={
-          isPlatoMarbellaLauncher && onOpenPlatoMarbella
-            ? () => onOpenPlatoMarbella()
-            : editMode && onEditProduct && !productReorderMode
-              ? () => onEditProduct(row.articulo_id)
-              : undefined
+          eventTapToAdd
+            ? handleTapAdd
+            : isPlatoMarbellaLauncher && onOpenPlatoMarbella
+              ? () => onOpenPlatoMarbella()
+              : editMode && onEditProduct && !productReorderMode
+                ? () => onEditProduct(row.articulo_id)
+                : undefined
         }
         onKeyDown={
           isPlatoMarbellaLauncher && onOpenPlatoMarbella
@@ -262,7 +289,7 @@ export function CartaStaffMenuProductCard({
             variant="staff"
           />
         )}
-        {eventOrderActive && eventOrder ? (
+        {eventStepper && eventOrder ? (
           <EventCartaOrderControls
             className="mt-1"
             quantity={eventQty}
@@ -286,7 +313,13 @@ export function CartaStaffMenuProductCard({
         src={row.photo_url ?? null}
         alt={displayName}
         title={displayName}
-        open={lightboxOpen && !!row.photo_url && !(productReorderMode && onReorderTap) && !editMode}
+        open={
+          lightboxOpen &&
+          !!row.photo_url &&
+          !(productReorderMode && onReorderTap) &&
+          !editMode &&
+          !eventTapToAdd
+        }
         onClose={() => setLightboxOpen(false)}
       />
     </div>

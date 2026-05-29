@@ -1,9 +1,11 @@
 import type { EventCategoryLimits } from '@/lib/event-encargo-config'
 
-/** Controles de cantidad sobre la carta digital (misma UI que `/carta`). */
+/** Controles de pedido sobre la carta digital. */
 export type EventOrderCartaControl = {
   qtyByProductId: Record<string, number>
   onQuantityChange: (articuloId: number, quantity: number) => void
+  /** Pulsa el producto para sumar 1 (sin +/− en la tarjeta). */
+  tapToAdd?: boolean
 }
 
 /** Edición de encargo: activar productos/categorías y límites por categoría. */
