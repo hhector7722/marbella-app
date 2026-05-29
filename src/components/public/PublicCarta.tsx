@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronLeft, Pencil } from 'lucide-react'
@@ -10,6 +10,7 @@ import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import { resolvePlatoMarbellaCategoryId } from '@/lib/carta-plato-marbella'
+import type { EventOrderCartaControl } from '@/lib/event-order-carta'
 
 export type PublicMenuRow = {
   articulo_id: number
@@ -107,6 +108,8 @@ export function PublicCarta({
   categoryCoverScaleById = {},
   backHref,
   cartaEditHref,
+  eventOrder,
+  footer,
 }: {
   items: PublicMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
@@ -114,6 +117,10 @@ export function PublicCarta({
   categoryCoverScaleById?: Record<string, CartaPhotoScale>
   backHref: string | null
   cartaEditHref: string | null
+  /** Pedido encargo: +/− en cada producto (única diferencia con la carta pública). */
+  eventOrder?: EventOrderCartaControl
+  /** Barra inferior opcional (confirmar / guardar). */
+  footer?: ReactNode
 }) {
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const digitalItems = publicMenuRowsToDigitalMenu(items)
@@ -178,8 +185,10 @@ export function PublicCarta({
             platoMarbellaCategoryId={platoMarbellaCategoryId}
             showEmptyMenuChildCategories
             homeCompact
+            eventOrder={eventOrder}
           />
         </div>
+        {footer ? <div className="shrink-0 border-t border-zinc-100 bg-white pb-safe">{footer}</div> : null}
       </div>
     </main>
   )

@@ -1,27 +1,15 @@
 import { createClient } from '@/utils/supabase/server'
-import EventOrderFormClient, { type PublicEventRow } from './EventOrderFormClient'
+import EventEncargoCartaClient from './EventEncargoCartaClient'
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
 import { loadEventCartaMenu } from '@/lib/load-event-carta-menu'
-
-function parseYmd(ymd: string): { y: number; m: number; d: number } | null {
-  const m = String(ymd ?? '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!m) return null
-  const y = Number(m[1])
-  const mo = Number(m[2])
-  const d = Number(m[3])
-  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null
-  return { y, m: mo, d }
-}
+import { canManageEventos } from '@/app/dashboard/eventos/roles'
 
 function parseTimeHm(time: string): { hh: number; mm: number } | null {
   const m = String(time ?? '')
     .trim()
     .match(/^(\d{2}):(\d{2})/)
   if (!m) return null
-  const hh = Number(m[1])
-  const mm = Number(m[2])
-  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null
-  return { hh, mm }
+  return { hh: Number(m[1]), mm: Number(m[2]) }
 }
 
 function madridNowHm(): { hh: number; mm: number } {
@@ -49,34 +37,12 @@ function isPastInMadrid(eventDateYmd: string, eventTime: string): boolean {
   return evHm.mm < nowHm.mm
 }
 
-function formatHumanDateEs(ymd: string): string {
-  const p = parseYmd(ymd)
-  if (!p) return ymd
-  const dt = new Date(p.y, p.m - 1, p.d)
-  try {
-    return new Intl.DateTimeFormat('es-ES', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'short',
-    }).format(dt)
-  } catch {
-    return ymd
-  }
-}
-
-function toHm(time: string): string {
-  const t = String(time ?? '').trim()
-  const m = t.match(/^(\d{2}):(\d{2})/)
-  if (!m) return t
-  return `${m[1]}:${m[2]}`
-}
-
-function ErrorView({ title, message }: { title: string; message: string }) {
+function ErrorView({ message }: { message: string }) {
   return (
     <main className="flex min-h-[100dvh] flex-col bg-white text-zinc-900">
       <div className="mx-auto w-full max-w-2xl px-5 pb-safe pt-safe md:px-8">
         <div className="mt-6 rounded-xl border border-zinc-100 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">{title}</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Encargo</p>
           <p className="mt-2 text-sm font-bold text-zinc-900">{message}</p>
         </div>
       </div>
@@ -89,99 +55,105 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
   const supabase = await createClient()
 
   const s = String(slug ?? '').trim()
-  if (!s) return <ErrorView title="Evento" message="Evento inválido." />
+  if (!s) return <ErrorView message="Encargo no válido." />
 
   const { data: event, error: evErr } = await supabase
     .from('events')
-    .select('id, slug, name, event_date, event_time, description, pack_items, enabled_product_ids, is_active')
+    .select('id, slug, name, event_date, event_time, pack_items, enabled_product_ids, is_active')
     .eq('slug', s)
     .maybeSingle()
-  if (evErr) return <ErrorView title="Evento" message={`Error cargando evento: ${evErr.message}`} />
-  if (!event) return <ErrorView title="Evento" message="Evento no encontrado." />
+  if (evErr) return <ErrorView message={`Error: ${evErr.message}`} />
+  if (!event) return <ErrorView message="Encargo no encontrado." />
 
-  const isActive = Boolean((event as any).is_active)
-  if (!isActive) return <ErrorView title="Evento" message="Este evento está inactivo." />
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  let mode: 'manage' | 'order' = 'order'
 
-  const eventDateYmd = String((event as any).event_date ?? '').trim()
-  const eventTime = String((event as any).event_time ?? '').trim()
-  if (eventDateYmd && eventTime && isPastInMadrid(eventDateYmd, eventTime)) {
-    return <ErrorView title="Evento" message="Este evento ya pasó." />
+  if (session?.user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .maybeSingle()
+    if (canManageEventos((profile as { role?: string } | null)?.role ?? null)) {
+      mode = 'manage'
+    }
   }
 
-  const eventRow: PublicEventRow = {
-    id: String((event as any).id),
-    slug: String((event as any).slug),
-    name: String((event as any).name),
-    event_date: eventDateYmd,
-    event_time: eventTime,
-    description: (event as any).description ? String((event as any).description) : null,
+  const isActive = Boolean((event as { is_active?: boolean }).is_active)
+  if (!isActive && mode === 'order') {
+    return <ErrorView message="Este encargo no está activo." />
   }
 
-  const enabledIds = ((event as any).enabled_product_ids as string[] | null) ?? []
+  const eventDateYmd = String((event as { event_date?: string }).event_date ?? '').trim()
+  const eventTime = String((event as { event_time?: string }).event_time ?? '').trim()
+  if (mode === 'order' && eventDateYmd && eventTime && isPastInMadrid(eventDateYmd, eventTime)) {
+    return <ErrorView message="Este encargo ya pasó." />
+  }
 
-  const productsQuery = supabase
-    .from('event_products')
-    .select('product_id')
-    .eq('is_active', true)
-    .limit(5000)
+  const enabledIds = ((event as { enabled_product_ids?: string[] | null }).enabled_product_ids as string[] | null) ?? []
+
+  const productsQuery = supabase.from('event_products').select('product_id').eq('is_active', true).limit(5000)
 
   const { data: baseProducts, error: pErr } = enabledIds.length
     ? await productsQuery.in('product_id', enabledIds)
     : await productsQuery
-  if (pErr) return <ErrorView title="Evento" message={`Error cargando productos: ${pErr.message}`} />
 
-  const enabledProductIds = ((baseProducts ?? []) as any[])
+  if (pErr) return <ErrorView message={`Error cargando productos: ${pErr.message}`} />
+
+  const enabledProductIds = ((baseProducts ?? []) as { product_id?: string }[])
     .map((p) => String(p.product_id ?? '').trim())
     .filter(Boolean)
 
   const carta = await loadEventCartaMenu(supabase, enabledProductIds)
-  if (!carta.ok) return <ErrorView title="Evento" message={carta.message} />
+  if (!carta.ok) return <ErrorView message={carta.message} />
 
-  const packOverride = (event as any).pack_items as any[] | null
+  const packOverride = (event as { pack_items?: unknown }).pack_items
   let packItems: Array<{ product_id: string; quantity: number }> = []
 
   if (Array.isArray(packOverride)) {
     packItems = packOverride
-      .map((it: any) => ({ product_id: String(it?.product_id ?? ''), quantity: Number(it?.quantity ?? 0) || 0 }))
+      .map((it: { product_id?: string; quantity?: number }) => ({
+        product_id: String(it?.product_id ?? ''),
+        quantity: Number(it?.quantity ?? 0) || 0,
+      }))
       .filter((it) => it.product_id && it.quantity > 0)
-  } else {
-    const { data: dp, error: dpErr } = await supabase.from('event_default_pack').select('label, items').maybeSingle()
-    if (dpErr) return <ErrorView title="Evento" message={`Error cargando pack: ${dpErr.message}`} />
-    const items = (dp as any)?.items
+  } else if (mode === 'order') {
+    const { data: dp, error: dpErr } = await supabase.from('event_default_pack').select('items').maybeSingle()
+    if (dpErr) return <ErrorView message={`Error cargando pack: ${dpErr.message}`} />
+    const items = (dp as { items?: unknown })?.items
     if (Array.isArray(items)) {
       packItems = items
-        .map((it: any) => ({ product_id: String(it?.product_id ?? ''), quantity: Number(it?.quantity ?? 0) || 0 }))
+        .map((it: { product_id?: string; quantity?: number }) => ({
+          product_id: String(it?.product_id ?? ''),
+          quantity: Number(it?.quantity ?? 0) || 0,
+        }))
         .filter((it) => it.product_id && it.quantity > 0)
     }
   }
 
-  const productIdSet = new Set(enabledProductIds)
+  const productIdSet = new Set(enabledProductIds.length ? enabledProductIds : carta.data.items.map((r) => String(r.articulo_id)))
   const startingPack = packItems.filter((it) => productIdSet.has(it.product_id))
 
-  return (
-    <main className="flex h-[100dvh] flex-col bg-white text-zinc-900">
-      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 pb-2 pt-1">
-          <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Encargo · {eventRow.name}</p>
-          <p className="mt-1 text-sm font-bold text-zinc-700">
-            {formatHumanDateEs(eventRow.event_date)} · {toHm(eventRow.event_time)}h
-          </p>
-          {eventRow.description ? (
-            <p className="mt-1 text-xs font-medium text-zinc-500">{eventRow.description}</p>
-          ) : null}
-        </header>
+  const backHref = mode === 'manage' ? '/dashboard/eventos' : null
 
-        <div className="flex min-h-0 flex-1 flex-col pb-28">
-          <EventOrderFormClient
-            event={eventRow}
-            menuItems={carta.data.items}
-            menuCategories={carta.data.menuCategories}
-            categoryCoverById={carta.data.categoryCoverById}
-            categoryCoverScaleById={carta.data.categoryCoverScaleById}
-            startingPackItems={startingPack}
-          />
-        </div>
-      </div>
-    </main>
+  return (
+    <EventEncargoCartaClient
+      mode={mode}
+      event={{
+        id: String((event as { id: string }).id),
+        slug: String((event as { slug: string }).slug),
+        name: String((event as { name: string }).name),
+        event_date: eventDateYmd,
+        event_time: eventTime,
+      }}
+      menuItems={carta.data.items}
+      menuCategories={carta.data.menuCategories}
+      categoryCoverById={carta.data.categoryCoverById}
+      categoryCoverScaleById={carta.data.categoryCoverScaleById}
+      startingPackItems={startingPack}
+      backHref={backHref}
+    />
   )
 }

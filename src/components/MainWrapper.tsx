@@ -3,15 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
-
-/** Rutas con cabecera propia y sin Navbar/BottomNav: no reservar hueco de barra superior/inferior global. */
-function isFullscreenCartaPath(pathname: string) {
-    return (
-        pathname === '/carta' ||
-        pathname === '/staff/carta' ||
-        pathname === '/dashboard/carta'
-    )
-}
+import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 
 export default function MainWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();

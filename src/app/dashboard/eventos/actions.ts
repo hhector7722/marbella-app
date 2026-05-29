@@ -138,14 +138,19 @@ export async function updateDefaultPackAction(input: unknown): Promise<
 }
 
 const createEventSchema = z.object({
-  name: z.string().trim().min(2).max(120),
+  contact_name: z.string().trim().min(2).max(120),
   event_date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
   event_time: z.string().trim().regex(/^\d{2}:\d{2}$/),
-  description: z.string().trim().max(400).optional().nullable(),
-  pack_mode: z.enum(['default', 'custom']),
-  pack_items: z.array(defaultPackItemSchema).optional().nullable(),
-  products_mode: z.enum(['global', 'custom']),
-  enabled_product_ids: z.array(zProductId).optional().nullable(),
+  guest_count: z.coerce.number().int().min(1).max(9999),
+})
+
+const saveEventPackSchema = z.object({
+  eventId: z.string().uuid(),
+  items: z.array(defaultPackItemSchema).max(200),
+})
+
+const deleteEventSchema = z.object({
+  eventId: z.string().uuid(),
 })
 
 function slugifyBase(input: string): string {
@@ -179,7 +184,7 @@ export async function createEventAction(input: unknown): Promise<
   const data = parsed.data
   const ymd = data.event_date
 
-  const base = slugifyBase(data.name)
+  const base = slugifyBase(data.contact_name)
   let slug = `${base}-${ymd}-${randomSuffix4()}`
 
   for (let i = 0; i < 3; i++) {
@@ -191,26 +196,17 @@ export async function createEventAction(input: unknown): Promise<
 
   const time = `${data.event_time}:00`
 
-  const pack_items =
-    data.pack_mode === 'custom'
-      ? (data.pack_items ?? []).filter((x) => Number(x.quantity) > 0).map((x) => ({ product_id: x.product_id, quantity: Number(x.quantity) }))
-      : null
-
-  const enabled_product_ids =
-    data.products_mode === 'custom'
-      ? Array.from(new Set((data.enabled_product_ids ?? []).map((x) => String(x).trim()).filter(Boolean)))
-      : null
-
   const { data: inserted, error: insErr } = await gate.supabase
     .from('events')
     .insert({
       slug,
-      name: data.name,
+      name: data.contact_name,
       event_date: ymd,
       event_time: time,
-      description: data.description && data.description.trim() ? data.description.trim() : null,
-      pack_items,
-      enabled_product_ids,
+      description: null,
+      guest_count: data.guest_count,
+      pack_items: null,
+      enabled_product_ids: null,
       is_active: true,
       created_by: gate.userId,
     })
@@ -221,7 +217,49 @@ export async function createEventAction(input: unknown): Promise<
   if (!inserted) return { success: false, message: 'No se pudo crear el evento' }
 
   revalidatePath('/dashboard/eventos')
+  revalidatePath(`/eventos/${String((inserted as any).slug)}`)
   return { success: true, eventId: String((inserted as any).id), slug: String((inserted as any).slug) }
+}
+
+export async function saveEventPackAction(input: unknown): Promise<{ success: true } | { success: false; message: string }> {
+  const parsed = saveEventPackSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const items = parsed.data.items
+    .filter((it) => Number(it.quantity) > 0)
+    .map((it) => ({ product_id: it.product_id, quantity: Number(it.quantity) }))
+
+  const { data: updated, error } = await gate.supabase
+    .from('events')
+    .update({ pack_items: items })
+    .eq('id', parsed.data.eventId)
+    .select('slug')
+    .maybeSingle()
+
+  if (error) return { success: false, message: error.message }
+  if (!updated) return { success: false, message: 'Encargo no encontrado' }
+
+  const slug = String((updated as { slug?: string }).slug ?? '')
+  revalidatePath('/dashboard/eventos')
+  if (slug) revalidatePath(`/eventos/${slug}`)
+  return { success: true }
+}
+
+export async function deleteEventAction(input: unknown): Promise<{ success: true } | { success: false; message: string }> {
+  const parsed = deleteEventSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { error } = await gate.supabase.from('events').delete().eq('id', parsed.data.eventId)
+  if (error) return { success: false, message: error.message }
+
+  revalidatePath('/dashboard/eventos')
+  return { success: true }
 }
 
 const toggleEventSchema = z.object({

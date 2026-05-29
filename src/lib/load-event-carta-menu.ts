@@ -43,9 +43,7 @@ export async function loadEventCartaMenu(
   const enabledSet = new Set(
     enabledProductIds.map((id) => String(id ?? '').trim()).filter(Boolean)
   )
-  if (enabledSet.size === 0) {
-    return { ok: false, message: 'Este evento no tiene productos disponibles.' }
-  }
+  const filterByEnabled = enabledSet.size > 0
 
   let menuCategories: CartaMenuCategoryRow[] = []
   {
@@ -94,9 +92,11 @@ export async function loadEventCartaMenu(
   }
 
   const allRows = (data ?? []) as unknown as PublicMenuRow[]
-  const items = allRows.filter((row) => enabledSet.has(String(row.articulo_id)))
+  const items = filterByEnabled
+    ? allRows.filter((row) => enabledSet.has(String(row.articulo_id)))
+    : allRows
   if (items.length === 0) {
-    return { ok: false, message: 'No hay productos de carta activos para este evento.' }
+    return { ok: false, message: 'No hay productos en la carta para este encargo.' }
   }
 
   const catalogFromDb = menuCategories.map((c) => ({
