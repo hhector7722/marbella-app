@@ -10,10 +10,12 @@ import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import { resolvePlatoMarbellaCategoryId } from '@/lib/carta-plato-marbella'
-import type { EventOrderCartaControl } from '@/lib/event-order-carta'
+import type { EventEncargoEditControl, EventOrderCartaControl } from '@/lib/event-order-carta'
+import { cn } from '@/lib/utils'
 
 export type PublicMenuRow = {
   articulo_id: number
+  editor_is_hidden?: boolean
   carta_nombre: string
   carta_nombre_es: string | null
   carta_nombre_ca: string | null
@@ -55,6 +57,7 @@ export type PublicMenuRow = {
 export function publicMenuRowsToDigitalMenu(items: PublicMenuRow[]): DigitalMenuRow[] {
   return items.map((row) => ({
     articulo_id: row.articulo_id,
+    editor_is_hidden: row.editor_is_hidden,
     articulo_nombre: row.carta_nombre,
     carta_nombre: row.carta_nombre,
     carta_nombre_es: row.carta_nombre_es,
@@ -108,7 +111,10 @@ export function PublicCarta({
   categoryCoverScaleById = {},
   backHref,
   cartaEditHref,
+  onEnterEncargoEdit,
+  encargoEditActive = false,
   eventOrder,
+  eventEncargoEdit,
   footer,
 }: {
   items: PublicMenuRow[]
@@ -117,8 +123,12 @@ export function PublicCarta({
   categoryCoverScaleById?: Record<string, CartaPhotoScale>
   backHref: string | null
   cartaEditHref: string | null
+  /** Botón lápiz (esquina superior derecha) para entrar en edición del encargo. */
+  onEnterEncargoEdit?: () => void
+  encargoEditActive?: boolean
   /** Pedido encargo: +/− en cada producto (única diferencia con la carta pública). */
   eventOrder?: EventOrderCartaControl
+  eventEncargoEdit?: EventEncargoEditControl
   /** Barra inferior opcional (confirmar / guardar). */
   footer?: ReactNode
 }) {
@@ -156,7 +166,20 @@ export function PublicCarta({
             </div>
 
             <div className="flex min-h-[52px] items-center justify-end">
-              {cartaEditHref ? (
+              {onEnterEncargoEdit ? (
+                <button
+                  type="button"
+                  onClick={onEnterEncargoEdit}
+                  className={cn(
+                    'inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80 focus-visible:ring-2 focus-visible:ring-[#36606F]/25',
+                    encargoEditActive && 'opacity-50'
+                  )}
+                  aria-label={encargoEditActive ? 'Edición activa' : 'Editar encargo'}
+                  title={encargoEditActive ? 'Modo edición' : 'Editar encargo'}
+                >
+                  <Pencil className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                </button>
+              ) : cartaEditHref ? (
                 <Link
                   href={cartaEditHref}
                   className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80 focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
@@ -186,6 +209,7 @@ export function PublicCarta({
             showEmptyMenuChildCategories
             homeCompact
             eventOrder={eventOrder}
+            eventEncargoEdit={eventEncargoEdit}
           />
         </div>
         {footer ? <div className="shrink-0 border-t border-zinc-100 bg-white pb-safe">{footer}</div> : null}

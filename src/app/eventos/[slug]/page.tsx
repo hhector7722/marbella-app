@@ -3,6 +3,12 @@ import EventEncargoCartaClient from './EventEncargoCartaClient'
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
 import { loadEventCartaMenu } from '@/lib/load-event-carta-menu'
 import { canManageEventos } from '@/app/dashboard/eventos/roles'
+import {
+  isEventProductEnabled,
+  parseEnabledProductIds,
+  parseEventCategoryLimits,
+} from '@/lib/event-encargo-config'
+import { eventOrderProductId } from '@/lib/event-order-carta'
 
 function parseTimeHm(time: string): { hh: number; mm: number } | null {
   const m = String(time ?? '')
@@ -59,7 +65,9 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
 
   const { data: event, error: evErr } = await supabase
     .from('events')
-    .select('id, slug, name, event_date, event_time, pack_items, enabled_product_ids, is_active')
+    .select(
+      'id, slug, name, event_date, event_time, pack_items, enabled_product_ids, category_limits, is_active'
+    )
     .eq('slug', s)
     .maybeSingle()
   if (evErr) return <ErrorView message={`Error: ${evErr.message}`} />
@@ -68,7 +76,7 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
   const {
     data: { session },
   } = await supabase.auth.getSession()
-  let mode: 'manage' | 'order' = 'order'
+  let canManage = false
 
   if (session?.user) {
     const { data: profile } = await supabase
@@ -76,38 +84,33 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
       .select('role')
       .eq('id', session.user.id)
       .maybeSingle()
-    if (canManageEventos((profile as { role?: string } | null)?.role ?? null)) {
-      mode = 'manage'
-    }
+    canManage = canManageEventos((profile as { role?: string } | null)?.role ?? null)
   }
 
   const isActive = Boolean((event as { is_active?: boolean }).is_active)
-  if (!isActive && mode === 'order') {
+  if (!isActive && !canManage) {
     return <ErrorView message="Este encargo no está activo." />
   }
 
   const eventDateYmd = String((event as { event_date?: string }).event_date ?? '').trim()
   const eventTime = String((event as { event_time?: string }).event_time ?? '').trim()
-  if (mode === 'order' && eventDateYmd && eventTime && isPastInMadrid(eventDateYmd, eventTime)) {
+  if (!canManage && eventDateYmd && eventTime && isPastInMadrid(eventDateYmd, eventTime)) {
     return <ErrorView message="Este encargo ya pasó." />
   }
 
-  const enabledIds = ((event as { enabled_product_ids?: string[] | null }).enabled_product_ids as string[] | null) ?? []
+  const enabledIds = parseEnabledProductIds((event as { enabled_product_ids?: unknown }).enabled_product_ids)
+  const categoryLimits = parseEventCategoryLimits((event as { category_limits?: unknown }).category_limits)
 
-  const productsQuery = supabase.from('event_products').select('product_id').eq('is_active', true).limit(5000)
+  const cartaFull = await loadEventCartaMenu(supabase, [])
+  if (!cartaFull.ok) return <ErrorView message={cartaFull.message} />
 
-  const { data: baseProducts, error: pErr } = enabledIds.length
-    ? await productsQuery.in('product_id', enabledIds)
-    : await productsQuery
-
-  if (pErr) return <ErrorView message={`Error cargando productos: ${pErr.message}`} />
-
-  const enabledProductIds = ((baseProducts ?? []) as { product_id?: string }[])
-    .map((p) => String(p.product_id ?? '').trim())
-    .filter(Boolean)
-
-  const carta = await loadEventCartaMenu(supabase, enabledProductIds)
-  if (!carta.ok) return <ErrorView message={carta.message} />
+  const allMenuItems = cartaFull.data.items
+  const clientMenuItems = allMenuItems.filter((row) =>
+    isEventProductEnabled(eventOrderProductId(row.articulo_id), enabledIds)
+  )
+  if (clientMenuItems.length === 0) {
+    return <ErrorView message="No hay productos activos en este encargo." />
+  }
 
   const packOverride = (event as { pack_items?: unknown }).pack_items
   let packItems: Array<{ product_id: string; quantity: number }> = []
@@ -119,7 +122,7 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
         quantity: Number(it?.quantity ?? 0) || 0,
       }))
       .filter((it) => it.product_id && it.quantity > 0)
-  } else if (mode === 'order') {
+  } else {
     const { data: dp, error: dpErr } = await supabase.from('event_default_pack').select('items').maybeSingle()
     if (dpErr) return <ErrorView message={`Error cargando pack: ${dpErr.message}`} />
     const items = (dp as { items?: unknown })?.items
@@ -133,14 +136,13 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
     }
   }
 
-  const productIdSet = new Set(enabledProductIds.length ? enabledProductIds : carta.data.items.map((r) => String(r.articulo_id)))
-  const startingPack = packItems.filter((it) => productIdSet.has(it.product_id))
+  const clientIdSet = new Set(clientMenuItems.map((r) => eventOrderProductId(r.articulo_id)))
+  const startingPack = packItems.filter((it) => clientIdSet.has(it.product_id))
 
-  const backHref = mode === 'manage' ? '/dashboard/eventos' : null
+  const backHref = canManage ? '/dashboard/eventos' : null
 
   return (
     <EventEncargoCartaClient
-      mode={mode}
       event={{
         id: String((event as { id: string }).id),
         slug: String((event as { slug: string }).slug),
@@ -148,11 +150,15 @@ export default async function EventoPublicPage(props: { params: Promise<{ slug: 
         event_date: eventDateYmd,
         event_time: eventTime,
       }}
-      menuItems={carta.data.items}
-      menuCategories={carta.data.menuCategories}
-      categoryCoverById={carta.data.categoryCoverById}
-      categoryCoverScaleById={carta.data.categoryCoverScaleById}
+      allMenuItems={allMenuItems}
+      clientMenuItems={clientMenuItems}
+      menuCategories={cartaFull.data.menuCategories}
+      categoryCoverById={cartaFull.data.categoryCoverById}
+      categoryCoverScaleById={cartaFull.data.categoryCoverScaleById}
       startingPackItems={startingPack}
+      initialEnabledProductIds={enabledIds}
+      initialCategoryLimits={categoryLimits}
+      canManage={canManage}
       backHref={backHref}
     />
   )

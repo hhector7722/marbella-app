@@ -144,9 +144,16 @@ const createEventSchema = z.object({
   guest_count: z.coerce.number().int().min(1).max(9999),
 })
 
-const saveEventPackSchema = z.object({
+const categoryLimitsSchema = z.object({
+  parents: z.record(z.string(), z.coerce.number().int().min(1).max(9999)).optional(),
+  subs: z.record(z.string(), z.coerce.number().int().min(1).max(9999)).optional(),
+})
+
+const saveEventEncargoSchema = z.object({
   eventId: z.string().uuid(),
-  items: z.array(defaultPackItemSchema).max(200),
+  items: z.array(defaultPackItemSchema).max(200).optional(),
+  enabled_product_ids: z.array(zProductId).max(5000).nullable().optional(),
+  category_limits: categoryLimitsSchema.optional(),
 })
 
 const deleteEventSchema = z.object({
@@ -221,20 +228,42 @@ export async function createEventAction(input: unknown): Promise<
   return { success: true, eventId: String((inserted as any).id), slug: String((inserted as any).slug) }
 }
 
-export async function saveEventPackAction(input: unknown): Promise<{ success: true } | { success: false; message: string }> {
-  const parsed = saveEventPackSchema.safeParse(input)
+export async function saveEventEncargoConfigAction(
+  input: unknown
+): Promise<{ success: true } | { success: false; message: string }> {
+  const parsed = saveEventEncargoSchema.safeParse(input)
   if (!parsed.success) return { success: false, message: 'Datos inválidos' }
 
   const gate = await gateManager()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  const items = parsed.data.items
-    .filter((it) => Number(it.quantity) > 0)
-    .map((it) => ({ product_id: it.product_id, quantity: Number(it.quantity) }))
+  const patch: Record<string, unknown> = {}
+
+  if (parsed.data.items !== undefined) {
+    patch.pack_items = parsed.data.items
+      .filter((it) => Number(it.quantity) > 0)
+      .map((it) => ({ product_id: it.product_id, quantity: Number(it.quantity) }))
+  }
+
+  if (parsed.data.enabled_product_ids !== undefined) {
+    const ids = parsed.data.enabled_product_ids
+    patch.enabled_product_ids =
+      ids && ids.length > 0
+        ? Array.from(new Set(ids.map((x) => String(x).trim()).filter(Boolean)))
+        : []
+  }
+
+  if (parsed.data.category_limits !== undefined) {
+    const lim = parsed.data.category_limits
+    const parents = lim.parents ?? {}
+    const subs = lim.subs ?? {}
+    const hasAny = Object.keys(parents).length > 0 || Object.keys(subs).length > 0
+    patch.category_limits = hasAny ? { parents, subs } : null
+  }
 
   const { data: updated, error } = await gate.supabase
     .from('events')
-    .update({ pack_items: items })
+    .update(patch)
     .eq('id', parsed.data.eventId)
     .select('slug')
     .maybeSingle()
@@ -246,6 +275,21 @@ export async function saveEventPackAction(input: unknown): Promise<{ success: tr
   revalidatePath('/dashboard/eventos')
   if (slug) revalidatePath(`/eventos/${slug}`)
   return { success: true }
+}
+
+/** @deprecated Usar saveEventEncargoConfigAction */
+export async function saveEventPackAction(input: unknown): Promise<{ success: true } | { success: false; message: string }> {
+  const parsed = z
+    .object({
+      eventId: z.string().uuid(),
+      items: z.array(defaultPackItemSchema).max(200),
+    })
+    .safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+  return saveEventEncargoConfigAction({
+    eventId: parsed.data.eventId,
+    items: parsed.data.items,
+  })
 }
 
 export async function deleteEventAction(input: unknown): Promise<{ success: true } | { success: false; message: string }> {

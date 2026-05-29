@@ -2,16 +2,22 @@
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { CheckCircle2, Loader2, X } from 'lucide-react'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
+import { eventOrderProductId } from '@/lib/event-order-carta'
+import type { EventEncargoEditControl, EventOrderCartaControl } from '@/lib/event-order-carta'
 import {
-  eventOrderProductId,
-  type EventOrderCartaControl,
-} from '@/lib/event-order-carta'
+  enabledSetFromStored,
+  normalizeEnabledProductIdsForSave,
+  parseEventCategoryLimits,
+  productIdsFromMenuItems,
+  validateEventOrderLimits,
+  type EventCategoryLimits,
+} from '@/lib/event-encargo-config'
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
-import { saveEventPackAction } from '@/app/dashboard/eventos/actions'
+import { saveEventEncargoConfigAction } from '@/app/dashboard/eventos/actions'
 import { submitEventOrderAction } from './actions'
 
 export type EncargoCartaEvent = {
@@ -49,26 +55,57 @@ function sumTotal(menuItems: PublicMenuRow[], qtyById: Record<string, number>): 
   return total
 }
 
+function rowsForParent(items: PublicMenuRow[], parentKey: string): PublicMenuRow[] {
+  return items.filter((row) => {
+    const pk = row.category_parent_id ?? `__no_parent__:${(row.category_parent_name ?? '').trim()}`
+    return pk === parentKey
+  })
+}
+
+function rowsForSub(items: PublicMenuRow[], subKey: string): PublicMenuRow[] {
+  return items.filter((row) => {
+    const childTitleRaw = row.category_child_name?.trim() || ''
+    const sk = row.category_child_id ?? `__no_child__:${childTitleRaw}`
+    return sk === subKey
+  })
+}
+
 export default function EventEncargoCartaClient({
-  mode,
   event,
-  menuItems,
+  allMenuItems,
+  clientMenuItems,
   menuCategories,
   categoryCoverById,
   categoryCoverScaleById,
   startingPackItems,
+  initialEnabledProductIds,
+  initialCategoryLimits,
+  canManage = false,
   backHref = null,
 }: {
-  mode: 'manage' | 'order'
   event: EncargoCartaEvent
-  menuItems: PublicMenuRow[]
+  allMenuItems: PublicMenuRow[]
+  clientMenuItems: PublicMenuRow[]
   menuCategories: MenuCategoryCatalogEntry[]
   categoryCoverById: Record<string, string | null>
   categoryCoverScaleById: Record<string, CartaPhotoScale>
   startingPackItems: PackItem[]
+  initialEnabledProductIds: string[] | null
+  initialCategoryLimits: EventCategoryLimits
+  canManage?: boolean
   backHref?: string | null
 }) {
+  const allProductIds = useMemo(() => productIdsFromMenuItems(allMenuItems), [allMenuItems])
+
+  const [editMode, setEditMode] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [toggleBusyId, setToggleBusyId] = useState<number | null>(null)
+
+  const [enabledSet, setEnabledSet] = useState<Set<string>>(() =>
+    enabledSetFromStored(initialEnabledProductIds, allProductIds)
+  )
+  const [categoryLimits, setCategoryLimits] = useState<EventCategoryLimits>(initialCategoryLimits)
+
   const [qtyById, setQtyById] = useState<Record<string, number>>(() => {
     const out: Record<string, number> = {}
     for (const it of startingPackItems ?? []) {
@@ -79,12 +116,29 @@ export default function EventEncargoCartaClient({
     }
     return out
   })
-  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [responsibleName, setResponsibleName] = useState('')
+  const [limitWarnings, setLimitWarnings] = useState<string[]>([])
   const [orderDone, setOrderDone] = useState(false)
 
+  const enabledIdsForClient = useMemo(
+    () => normalizeEnabledProductIdsForSave(enabledSet, allProductIds),
+    [enabledSet, allProductIds]
+  )
+
+  const displayItems = useMemo(() => {
+    if (editMode) {
+      return allMenuItems.map((row) => ({
+        ...row,
+        editor_is_hidden: !enabledSet.has(eventOrderProductId(row.articulo_id)),
+      }))
+    }
+    return clientMenuItems
+  }, [editMode, allMenuItems, clientMenuItems, enabledSet])
+
   const totalItems = useMemo(() => sumItems(qtyById), [qtyById])
-  const totalAmount = useMemo(() => sumTotal(menuItems, qtyById), [menuItems, qtyById])
+  const totalAmount = useMemo(() => sumTotal(clientMenuItems, qtyById), [clientMenuItems, qtyById])
 
   const onQuantityChange = useCallback((articuloId: number, quantity: number) => {
     const pid = eventOrderProductId(articuloId)
@@ -98,13 +152,114 @@ export default function EventEncargoCartaClient({
     })
   }, [])
 
-  const eventOrder: EventOrderCartaControl = useMemo(
-    () => ({ qtyByProductId: qtyById, onQuantityChange }),
-    [qtyById, onQuantityChange]
+  const eventOrder: EventOrderCartaControl | undefined = useMemo(
+    () =>
+      editMode
+        ? undefined
+        : { qtyByProductId: qtyById, onQuantityChange },
+    [editMode, qtyById, onQuantityChange]
+  )
+
+  const toggleProductIds = useCallback((ids: string[], enable: boolean) => {
+    setEnabledSet((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) {
+        if (enable) next.add(id)
+        else next.delete(id)
+      }
+      return next
+    })
+  }, [])
+
+  const onToggleProduct = useCallback(
+    (articuloId: number) => {
+      const pid = eventOrderProductId(articuloId)
+      setToggleBusyId(articuloId)
+      setEnabledSet((prev) => {
+        const next = new Set(prev)
+        if (next.has(pid)) next.delete(pid)
+        else next.add(pid)
+        return next
+      })
+      setToggleBusyId(null)
+    },
+    []
+  )
+
+  const onToggleParentCategory = useCallback(
+    (parentKey: string) => {
+      const rows = rowsForParent(allMenuItems, parentKey)
+      const ids = rows.map((r) => eventOrderProductId(r.articulo_id))
+      const allOn = ids.length > 0 && ids.every((id) => enabledSet.has(id))
+      toggleProductIds(ids, !allOn)
+    },
+    [allMenuItems, enabledSet, toggleProductIds]
+  )
+
+  const onToggleSubCategory = useCallback(
+    (_parentKey: string, subKey: string) => {
+      const rows = rowsForSub(allMenuItems, subKey)
+      const ids = rows.map((r) => eventOrderProductId(r.articulo_id))
+      const allOn = ids.length > 0 && ids.every((id) => enabledSet.has(id))
+      toggleProductIds(ids, !allOn)
+    },
+    [allMenuItems, enabledSet, toggleProductIds]
+  )
+
+  const onSetParentLimit = useCallback((parentKey: string, max: number | null) => {
+    setCategoryLimits((prev) => {
+      const parents = { ...(prev.parents ?? {}) }
+      if (max == null) delete parents[parentKey]
+      else parents[parentKey] = max
+      return { ...prev, parents }
+    })
+  }, [])
+
+  const onSetSubLimit = useCallback((subKey: string, max: number | null) => {
+    setCategoryLimits((prev) => {
+      const subs = { ...(prev.subs ?? {}) }
+      if (max == null) delete subs[subKey]
+      else subs[subKey] = max
+      return { ...prev, subs }
+    })
+  }, [])
+
+  const eventEncargoEdit: EventEncargoEditControl | undefined = useMemo(
+    () =>
+      editMode
+        ? {
+            active: true,
+            enabledProductIds: enabledSet,
+            onToggleProduct,
+            onToggleParentCategory,
+            onToggleSubCategory,
+            categoryLimits,
+            onSetParentLimit,
+            onSetSubLimit,
+            productToggleBusyId: toggleBusyId,
+          }
+        : undefined,
+    [
+      editMode,
+      enabledSet,
+      onToggleProduct,
+      onToggleParentCategory,
+      onToggleSubCategory,
+      categoryLimits,
+      onSetParentLimit,
+      onSetSubLimit,
+      toggleBusyId,
+    ]
   )
 
   const btnBase =
     'min-h-12 rounded-xl px-5 text-[12px] font-black uppercase tracking-wider transition-colors disabled:opacity-50'
+
+  const openSaveModal = useCallback(() => {
+    const warnings = validateEventOrderLimits(qtyById, clientMenuItems, categoryLimits, enabledIdsForClient)
+    setLimitWarnings(warnings)
+    setSaveModalOpen(true)
+  }, [qtyById, clientMenuItems, categoryLimits, enabledIdsForClient])
 
   if (orderDone) {
     return (
@@ -120,122 +275,148 @@ export default function EventEncargoCartaClient({
     )
   }
 
-  const footer =
-    mode === 'manage' ? (
-      <div className="px-0 py-3">
-        <button
-          type="button"
-          className={cn(btnBase, 'w-full bg-[#36606F] text-white hover:bg-[#2a4a56]')}
-          disabled={isPending}
-          onClick={() => {
-            startTransition(async () => {
-              const items = Object.entries(qtyById)
-                .map(([product_id, quantity]) => ({ product_id, quantity }))
-                .filter((it) => Number(it.quantity) > 0)
-              const res = await saveEventPackAction({ eventId: event.id, items })
-              if (!res.success) {
-                toast.error(res.message)
-                return
-              }
-              toast.success('Encargo guardado')
+  const footer = editMode ? (
+    <div className="space-y-2 px-0 py-3">
+      <button
+        type="button"
+        className={cn(btnBase, 'w-full bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+        onClick={() => setEditMode(false)}
+      >
+        Listo
+      </button>
+      <button
+        type="button"
+        className={cn(btnBase, 'w-full bg-[#36606F] text-white hover:bg-[#2a4a56]')}
+        disabled={isPending}
+        onClick={() => {
+          startTransition(async () => {
+            const res = await saveEventEncargoConfigAction({
+              eventId: event.id,
+              enabled_product_ids: normalizeEnabledProductIdsForSave(enabledSet, allProductIds),
+              category_limits: categoryLimits,
             })
-          }}
-        >
-          {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Guardar encargo'}
-        </button>
+            if (!res.success) {
+              toast.error(res.message)
+              return
+            }
+            toast.success('Configuración guardada')
+            setEditMode(false)
+          })
+        }}
+      >
+        {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Guardar configuración'}
+      </button>
+    </div>
+  ) : (
+    <div className="px-0 py-3">
+      <div className="mb-2 flex items-center justify-between gap-2 px-1">
+        <p className="text-sm font-black text-zinc-900">
+          {totalItems === 0 ? ' ' : `${totalItems} uds.`}
+          {totalItems > 0 ? ` · ${formatEur(totalAmount)}` : ''}
+        </p>
       </div>
-    ) : (
-      <div className="px-0 py-3">
-        <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          <p className="text-sm font-black text-zinc-900">
-            {totalItems === 0 ? ' ' : `${totalItems} uds.`}
-            {totalItems > 0 ? ` · ${formatEur(totalAmount)}` : ''}
-          </p>
-        </div>
-        <button
-          type="button"
-          className={cn(
-            btnBase,
-            'w-full',
-            totalItems > 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-zinc-200 text-zinc-600'
-          )}
-          disabled={totalItems <= 0 || isPending}
-          onClick={() => setConfirmOpen(true)}
-        >
-          Confirmar pedido
-        </button>
-      </div>
-    )
+      <button
+        type="button"
+        className={cn(
+          btnBase,
+          'w-full',
+          totalItems > 0 ? 'bg-[#36606F] text-white hover:bg-[#2a4a56]' : 'bg-zinc-200 text-zinc-600'
+        )}
+        disabled={totalItems <= 0 || isPending}
+        onClick={openSaveModal}
+      >
+        Guardar
+      </button>
+    </div>
+  )
 
   return (
     <>
       <PublicCarta
-        items={menuItems}
+        items={displayItems}
         menuCategories={menuCategories}
         categoryCoverById={categoryCoverById}
         categoryCoverScaleById={categoryCoverScaleById}
         backHref={backHref}
         cartaEditHref={null}
+        onEnterEncargoEdit={canManage ? () => setEditMode((v) => !v) : undefined}
+        encargoEditActive={editMode}
         eventOrder={eventOrder}
+        eventEncargoEdit={eventEncargoEdit}
         footer={footer}
       />
 
-      {confirmOpen ? (
+      {saveModalOpen ? (
         <div
           className="fixed inset-0 z-[200] flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
           role="dialog"
-          aria-label="Confirmar pedido"
-          onClick={() => !isPending && setConfirmOpen(false)}
+          aria-label="Enviar pedido"
+          onClick={() => !isPending && setSaveModalOpen(false)}
         >
           <div
             className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Tu nombre</p>
-            <p className="mt-1 text-xs text-zinc-600">Responsable del pedido del grupo</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Nombre</p>
+              <button
+                type="button"
+                className="flex min-h-12 min-w-[48px] shrink-0 items-center justify-center text-zinc-500"
+                aria-label="Cerrar"
+                onClick={() => !isPending && setSaveModalOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <input
               value={responsibleName}
               onChange={(e) => setResponsibleName(e.target.value)}
               className="mt-3 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-              placeholder="Nombre y apellidos"
+              placeholder="Tu nombre"
               autoComplete="name"
             />
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                className={cn(btnBase, 'flex-1 bg-zinc-100 text-zinc-800')}
-                disabled={isPending}
-                onClick={() => setConfirmOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className={cn(btnBase, 'flex-1 bg-emerald-600 text-white')}
-                disabled={isPending || responsibleName.trim().length < 2}
-                onClick={() => {
-                  const name = responsibleName.trim()
-                  startTransition(async () => {
-                    const items = Object.entries(qtyById)
-                      .map(([product_id, quantity]) => ({ product_id, quantity }))
-                      .filter((it) => Number(it.quantity) > 0)
-                    const res = await submitEventOrderAction({
-                      slug: event.slug,
-                      responsible_name: name,
-                      items,
-                    })
-                    if (!res.success) {
-                      toast.error(res.message)
-                      return
-                    }
-                    setConfirmOpen(false)
-                    setOrderDone(true)
+            {limitWarnings.length > 0 ? (
+              <ul className="mt-3 space-y-1">
+                {limitWarnings.map((w) => (
+                  <li key={w} className="text-xs font-bold leading-snug text-red-600">
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <button
+              type="button"
+              className={cn(btnBase, 'mt-5 w-full bg-emerald-600 text-white hover:bg-emerald-700')}
+              disabled={isPending || responsibleName.trim().length < 2}
+              onClick={() => {
+                const name = responsibleName.trim()
+                const warnings = validateEventOrderLimits(
+                  qtyById,
+                  clientMenuItems,
+                  categoryLimits,
+                  enabledIdsForClient
+                )
+                setLimitWarnings(warnings)
+                startTransition(async () => {
+                  const items = Object.entries(qtyById)
+                    .map(([product_id, quantity]) => ({ product_id, quantity }))
+                    .filter((it) => Number(it.quantity) > 0)
+                  const res = await submitEventOrderAction({
+                    slug: event.slug,
+                    responsible_name: name,
+                    items,
                   })
-                }}
-              >
-                {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Enviar'}
-              </button>
-            </div>
+                  if (!res.success) {
+                    toast.error(res.message)
+                    return
+                  }
+                  setSaveModalOpen(false)
+                  setOrderDone(true)
+                })
+              }}
+            >
+              {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Enviar'}
+            </button>
           </div>
         </div>
       ) : null}

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
@@ -15,7 +15,9 @@ import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryP
 import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
 import { StaffCartaModalEditToggle } from '@/components/carta/StaffCartaModalEditToggle'
-import { type EventOrderCartaControl } from '@/lib/event-order-carta'
+import { CartaActiveToggleButton } from '@/components/carta/CartaActiveToggleButton'
+import { subsWithVisibleProducts } from '@/lib/event-encargo-config'
+import { type EventEncargoEditControl, type EventOrderCartaControl } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
@@ -240,6 +242,41 @@ function isUuidLike(s: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
 }
 
+function EncargoCategoryLimitField({
+    label,
+    value,
+    onChange,
+}: {
+    label: string
+    value?: number
+    onChange: (max: number | null) => void
+}) {
+    const display = value != null && value > 0 ? String(value) : ''
+    return (
+        <div className="flex w-full min-w-0 shrink-0 flex-col gap-1 sm:max-w-[200px]">
+            <label className="text-[10px] font-black uppercase tracking-wide text-zinc-600">{label}</label>
+            <input
+                type="number"
+                min={1}
+                max={9999}
+                value={display}
+                placeholder="Sin límite"
+                onChange={(e) => {
+                    const raw = e.target.value.trim()
+                    if (!raw) {
+                        onChange(null)
+                        return
+                    }
+                    const n = Number(raw)
+                    if (!Number.isFinite(n) || n < 1) onChange(null)
+                    else onChange(Math.floor(n))
+                }}
+                className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+            />
+        </div>
+    )
+}
+
 export function MenuAccordion({
     items,
     lang: controlledLang,
@@ -265,6 +302,7 @@ export function MenuAccordion({
     categoryCoverScaleById = {},
     homeCompact = false,
     eventOrder,
+    eventEncargoEdit,
 }: {
     items: DigitalMenuRow[]
     lang?: CartaLang
@@ -297,6 +335,8 @@ export function MenuAccordion({
     homeCompact?: boolean
     /** Pedido por evento: misma carta con +/− por producto */
     eventOrder?: EventOrderCartaControl
+    /** Configuración del encargo (productos/categorías/límites). */
+    eventEncargoEdit?: EventEncargoEditControl
 }) {
     const [internalLang, setInternalLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
     const controlled = controlledLang !== undefined && onLangChange !== undefined
@@ -310,7 +350,8 @@ export function MenuAccordion({
         setModalEditActive(false)
     }, [openKey])
 
-    const showHiddenProducts = editMode || modalEditActive
+    const encargoEditActive = Boolean(eventEncargoEdit?.active)
+    const showHiddenProducts = editMode || modalEditActive || encargoEditActive
     const visibleItems = useMemo(
         () =>
             showHiddenProducts
@@ -498,13 +539,19 @@ export function MenuAccordion({
 
     const openHasMultipleSubs = (openGroup?._subList.length ?? 0) > 1
     const openSelectedSubKey = openGroup ? selectedSubKeyByGroup[openGroup.key] : undefined
+    const openVisibleSubs = openGroup ? subsWithVisibleProducts(openGroup._subList) : []
     const openShowSubPicker =
-        openHasMultipleSubs && !openSelectedSubKey && reorderScope !== 'subs'
+        openHasMultipleSubs &&
+        openVisibleSubs.length > 1 &&
+        !openSelectedSubKey &&
+        reorderScope !== 'subs'
     const openShowSubTabs =
         openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
 
     const canModalEdit = Boolean(onEditProduct)
-    const modalEditMode = editMode || modalEditActive
+    const modalEditMode = editMode || modalEditActive || encargoEditActive
+    const encargoToggleProduct = encargoEditActive ? eventEncargoEdit?.onToggleProduct : undefined
+    const effectiveToggleProduct = encargoToggleProduct ?? onToggleProductActive
 
     const modalEditToggle =
         canModalEdit && openGroup && !openShowSubPicker ? (
@@ -737,13 +784,62 @@ export function MenuAccordion({
     }
 
     const headerToggle = (groupKey: string) => {
-        setSelectedSubKeyByGroup((p) => {
-            const n = { ...p }
-            delete n[groupKey]
-            return n
+        setOpenKey((prev) => {
+            if (prev === groupKey) {
+                setSelectedSubKeyByGroup((p) => {
+                    const n = { ...p }
+                    delete n[groupKey]
+                    return n
+                })
+                return null
+            }
+            const group = groupedRef.current.find((g) => g.key === groupKey)
+            if (group && group._subList.length > 1) {
+                const visible = subsWithVisibleProducts(group._subList)
+                if (visible.length === 1) {
+                    setSelectedSubKeyByGroup((p) => ({ ...p, [groupKey]: visible[0].key }))
+                } else {
+                    setSelectedSubKeyByGroup((p) => {
+                        const n = { ...p }
+                        delete n[groupKey]
+                        return n
+                    })
+                }
+            }
+            return groupKey
         })
-        setOpenKey((prev) => (prev === groupKey ? null : groupKey))
     }
+
+    const encargoParentIsActive = useCallback(
+        (group: GroupedGroup) => {
+            if (!eventEncargoEdit) return true
+            for (const sub of group._subList) {
+                for (const row of sub.rows) {
+                    if (eventEncargoEdit.enabledProductIds.has(String(row.articulo_id))) return true
+                }
+            }
+            return false
+        },
+        [eventEncargoEdit]
+    )
+
+    const encargoSubIsActive = useCallback(
+        (sub: GroupedSub) => {
+            if (!eventEncargoEdit) return true
+            return sub.rows.some((row) => eventEncargoEdit.enabledProductIds.has(String(row.articulo_id)))
+        },
+        [eventEncargoEdit]
+    )
+
+    const encargoCategoryToggleOverlay = (
+        active: boolean,
+        busy: boolean,
+        onToggle: (e: MouseEvent) => void
+    ) => (
+        <span className="absolute right-0 top-0 z-20 sm:right-0.5 sm:top-0.5">
+            <CartaActiveToggleButton active={active} busy={busy} onClick={onToggle} />
+        </span>
+    )
 
     const homeGridCentered = hideLangPicker && homeCompact && !reorderScope
 
@@ -819,7 +915,17 @@ export function MenuAccordion({
                                     ariaExpanded={isOpen}
                                     onClick={() => headerToggle(group.key)}
                                     overlay={
-                                        editMode && isUuidLike(group.key) && onEditParentCategory ? (
+                                        encargoEditActive && eventEncargoEdit ? (
+                                            encargoCategoryToggleOverlay(
+                                                encargoParentIsActive(group),
+                                                false,
+                                                (e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    eventEncargoEdit.onToggleParentCategory(group.key)
+                                                }
+                                            )
+                                        ) : editMode && isUuidLike(group.key) && onEditParentCategory ? (
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
@@ -940,6 +1046,22 @@ export function MenuAccordion({
                                                     ...p,
                                                     [openGroup.key]: sub.key,
                                                 }))
+                                            }
+                                            overlay={
+                                                encargoEditActive && eventEncargoEdit
+                                                    ? encargoCategoryToggleOverlay(
+                                                          encargoSubIsActive(sub),
+                                                          false,
+                                                          (e) => {
+                                                              e.preventDefault()
+                                                              e.stopPropagation()
+                                                              eventEncargoEdit.onToggleSubCategory(
+                                                                  openGroup.key,
+                                                                  sub.key
+                                                              )
+                                                          }
+                                                      )
+                                                    : undefined
                                             }
                                         />
                                     ))}
@@ -1135,9 +1257,23 @@ export function MenuAccordion({
                                                         }))
                                                     }
                                                     overlay={
-                                                        modalEditMode &&
-                                                        onEditChildCategory &&
-                                                        isUuidLike(sub.key) ? (
+                                                        encargoEditActive && eventEncargoEdit ? (
+                                                            <span className="absolute right-0 top-1/2 z-10 -translate-y-1/2">
+                                                                <CartaActiveToggleButton
+                                                                    active={encargoSubIsActive(sub)}
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault()
+                                                                        e.stopPropagation()
+                                                                        eventEncargoEdit.onToggleSubCategory(
+                                                                            openGroup.key,
+                                                                            sub.key
+                                                                        )
+                                                                    }}
+                                                                />
+                                                            </span>
+                                                        ) : modalEditMode &&
+                                                          onEditChildCategory &&
+                                                          isUuidLike(sub.key) ? (
                                                             <span
                                                                 className="absolute right-0 top-1/2 z-10 flex -translate-y-1/2 items-stretch pr-0.5"
                                                                 onClick={(e) => {
@@ -1178,7 +1314,29 @@ export function MenuAccordion({
                                 </h2>
                             )}
                             {!openShowSubTabs &&
+                            encargoEditActive &&
+                            eventEncargoEdit &&
+                            openGroup &&
+                            !reorderScope ? (
+                                <EncargoCategoryLimitField
+                                    label="Máx. unidades (categoría)"
+                                    value={
+                                        openSelectedSubKey
+                                            ? eventEncargoEdit.categoryLimits.subs?.[openSelectedSubKey]
+                                            : eventEncargoEdit.categoryLimits.parents?.[openGroup.key]
+                                    }
+                                    onChange={(n) => {
+                                        if (openSelectedSubKey) {
+                                            eventEncargoEdit.onSetSubLimit(openSelectedSubKey, n)
+                                        } else {
+                                            eventEncargoEdit.onSetParentLimit(openGroup.key, n)
+                                        }
+                                    }}
+                                />
+                            ) : null}
+                            {!openShowSubTabs &&
                             modalEditMode &&
+                            !encargoEditActive &&
                             !reorderScope &&
                             ((onPersistChildCategoryOrder && openGroup._subList.length > 1) ||
                                 (onPersistProductOrder &&
@@ -1399,11 +1557,15 @@ export function MenuAccordion({
                                             lang={lang}
                                             launcherArticuloId={platoLauncherArticuloId ?? null}
                                             onEditProduct={onEditProduct}
-                                            onToggleProductActive={onToggleProductActive}
-                                            productToggleBusyId={productToggleBusyId}
-                                            eventOrder={eventOrder}
+                                            onToggleProductActive={effectiveToggleProduct}
+                                            productToggleBusyId={
+                                                encargoEditActive
+                                                    ? eventEncargoEdit?.productToggleBusyId
+                                                    : productToggleBusyId
+                                            }
+                                            eventOrder={encargoEditActive ? undefined : eventOrder}
                                         />
-                                    ) : eventOrder ? (
+                                    ) : eventOrder && !encargoEditActive ? (
                                         <PlatoMarbellaStaffGridView
                                             rows={platoBundleRows}
                                             lang={lang}
@@ -1491,11 +1653,11 @@ export function MenuAccordion({
                                                                         !reorderPlatoMarbellaBundle
                                                                     }
                                                                     onEditProduct={onEditProduct}
-                                                                    onToggleProductActive={
-                                                                        onToggleProductActive
-                                                                    }
+                                                                    onToggleProductActive={effectiveToggleProduct}
                                                                     productToggleBusyId={
-                                                                        productToggleBusyId
+                                                                        encargoEditActive
+                                                                            ? eventEncargoEdit?.productToggleBusyId
+                                                                            : productToggleBusyId
                                                                     }
                                                                     onReorderTap={handleProductReorderTap}
                                                                     rowDensity={rowDensity}
@@ -1510,7 +1672,9 @@ export function MenuAccordion({
                                                                     }
                                                                     platoLauncherTitle={platoLauncherTitle}
                                                                     platoLauncherPriceLabel={platoLauncherPriceLabel}
-                                                                    eventOrder={eventOrder}
+                                                                    eventOrder={
+                                                                        encargoEditActive ? undefined : eventOrder
+                                                                    }
                                                                 />
                                                             </div>
                                                         )
@@ -1561,11 +1725,11 @@ export function MenuAccordion({
                                                                 lang={lang}
                                                                 editMode={modalEditMode}
                                                                 onEditProduct={onEditProduct}
-                                                                onToggleProductActive={
-                                                                    onToggleProductActive
-                                                                }
+                                                                onToggleProductActive={effectiveToggleProduct}
                                                                 productToggleBusyId={
-                                                                    productToggleBusyId
+                                                                    encargoEditActive
+                                                                        ? eventEncargoEdit?.productToggleBusyId
+                                                                        : productToggleBusyId
                                                                 }
                                                                 rowDensity={rowDensity}
                                                                 photoFrameStyle={rowFrameStyle}
@@ -1579,7 +1743,9 @@ export function MenuAccordion({
                                                                 }
                                                                 platoLauncherTitle={platoLauncherTitle}
                                                                 platoLauncherPriceLabel={platoLauncherPriceLabel}
-                                                                eventOrder={eventOrder}
+                                                                eventOrder={
+                                                                    encargoEditActive ? undefined : eventOrder
+                                                                }
                                                             />
                                                         </div>
                                                     ))}

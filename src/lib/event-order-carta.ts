@@ -1,7 +1,22 @@
+import type { EventCategoryLimits } from '@/lib/event-encargo-config'
+
 /** Controles de cantidad sobre la carta digital (misma UI que `/carta`). */
 export type EventOrderCartaControl = {
   qtyByProductId: Record<string, number>
   onQuantityChange: (articuloId: number, quantity: number) => void
+}
+
+/** Edición de encargo: activar productos/categorías y límites por categoría. */
+export type EventEncargoEditControl = {
+  active: boolean
+  enabledProductIds: Set<string>
+  onToggleProduct: (articuloId: number) => void
+  onToggleParentCategory: (parentKey: string) => void
+  onToggleSubCategory: (parentKey: string, subKey: string) => void
+  categoryLimits: EventCategoryLimits
+  onSetParentLimit: (parentKey: string, max: number | null) => void
+  onSetSubLimit: (subKey: string, max: number | null) => void
+  productToggleBusyId?: number | null
 }
 
 export function eventOrderProductId(articuloId: number): string {
