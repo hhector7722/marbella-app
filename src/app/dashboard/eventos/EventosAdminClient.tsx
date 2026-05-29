@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Copy, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ClipboardList, Copy, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { createEventAction, deleteEventAction } from './actions'
 
 export type AdminEventRow = {
@@ -72,8 +72,15 @@ export default function EventosAdminClient({
 
   return (
     <div className="space-y-4">
-      {canManage ? (
-        <div className="flex justify-end">
+      <div className={cn('flex flex-wrap gap-2', canManage ? 'justify-between' : 'justify-end')}>
+        <Link
+          href="/dashboard/eventos/pedidos"
+          className={cn(btnBase, 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+        >
+          <ClipboardList className="h-4 w-4" strokeWidth={2.5} />
+          Ver pedidos
+        </Link>
+        {canManage ? (
           <button
             type="button"
             className={cn(btnBase, 'bg-emerald-600 text-white hover:bg-emerald-700')}
@@ -82,8 +89,8 @@ export default function EventosAdminClient({
             <Plus className="h-4 w-4" strokeWidth={2.5} />
             Nuevo encargo
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       <div className={cn(cardClass, 'divide-y divide-zinc-100')}>
         {events.length === 0 ? (
@@ -114,6 +121,13 @@ export default function EventosAdminClient({
                     >
                       <Pencil className="h-4 w-4" strokeWidth={2.5} />
                       Editar
+                    </Link>
+                    <Link
+                      href={`/dashboard/eventos/${e.id}/pedidos`}
+                      className={cn(btnBase, 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+                    >
+                      <ClipboardList className="h-4 w-4" strokeWidth={2.5} />
+                      Pedidos
                     </Link>
                     <button
                       type="button"

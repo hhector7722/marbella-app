@@ -202,6 +202,19 @@ export function chunkCartaProductGridRows<T>(rows: T[], columns = 3): T[][] {
   return out
 }
 
+/** Grid de categorías padre en home carta/encargo: evita huecos con pocos ítems. */
+export function getCartaCategoryGridLayoutClass(count: number): string {
+  if (count <= 0) return 'grid-cols-1'
+  if (count === 1) return 'mx-auto w-full max-w-[200px] grid-cols-1'
+  if (count === 2) return 'mx-auto w-full max-w-md grid-cols-2'
+  if (count === 3) return 'mx-auto w-full max-w-[240px] grid-cols-1'
+  return 'grid-cols-2'
+}
+
+/** Celda flexible para grid de productos sin huecos (encargo tap-to-add). */
+export const CARTA_EVENT_PRODUCT_FLEX_CELL_CLASS =
+  'w-[calc(33.333%-0.45rem)] min-w-[92px] max-w-[148px] flex-[1_1_30%] sm:max-w-[160px]'
+
 /** Factor de marco compartido por fila del grid: el máximo de la fila para alinear nombre/precio. */
 export function getCartaProductGridRowPhotoSlotFactor(
   rows: Array<{

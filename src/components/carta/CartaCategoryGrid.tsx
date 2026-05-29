@@ -89,15 +89,19 @@ export function CartaCategoryGrid({
   className,
   children,
   compact = false,
+  layoutClassName,
 }: {
   className?: string
   children: ReactNode
   compact?: boolean
+  /** Clases de columnas adaptativas (p. ej. desde getCartaCategoryGridLayoutClass). */
+  layoutClassName?: string
 }) {
   return (
     <div
       className={cn(
-        'grid grid-cols-2 pb-2',
+        'grid pb-2',
+        layoutClassName ?? 'grid-cols-2',
         compact ? 'gap-x-1.5 gap-y-2 sm:gap-x-2 sm:gap-y-3' : 'gap-x-2 gap-y-4 sm:gap-x-3 sm:gap-y-5',
         className
       )}

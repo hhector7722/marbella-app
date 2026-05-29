@@ -35,29 +35,10 @@ export type EncargoCartaEvent = {
 
 type PackItem = { product_id: string; quantity: number }
 
-function formatEur(value: number): string {
-  try {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value)
-  } catch {
-    return `${value.toFixed(2)} €`
-  }
-}
-
 function sumItems(qtyById: Record<string, number>): number {
   let n = 0
   for (const k of Object.keys(qtyById)) n += Math.max(0, Number(qtyById[k]) || 0)
   return n
-}
-
-function sumTotal(menuItems: PublicMenuRow[], qtyById: Record<string, number>): number {
-  const priceById = new Map(menuItems.map((p) => [eventOrderProductId(p.articulo_id), Number(p.precio) || 0]))
-  let total = 0
-  for (const [pid, qtyRaw] of Object.entries(qtyById)) {
-    const qty = Math.max(0, Number(qtyRaw) || 0)
-    if (qty <= 0) continue
-    total += (priceById.get(pid) ?? 0) * qty
-  }
-  return total
 }
 
 function rowsForParent(items: PublicMenuRow[], parentKey: string): PublicMenuRow[] {
@@ -143,7 +124,6 @@ export default function EventEncargoCartaClient({
   }, [editMode, allMenuItems, clientMenuItems, enabledSet])
 
   const totalItems = useMemo(() => sumItems(qtyById), [qtyById])
-  const totalAmount = useMemo(() => sumTotal(clientMenuItems, qtyById), [clientMenuItems, qtyById])
 
   const onQuantityChange = useCallback((articuloId: number, quantity: number) => {
     const pid = eventOrderProductId(articuloId)
@@ -352,9 +332,7 @@ export default function EventEncargoCartaClient({
   ) : (
     <EventEncargoCartFooter
       lines={cartLines}
-      totalLabel={
-        totalItems > 0 ? `${totalItems} uds. · ${formatEur(totalAmount)}` : undefined
-      }
+      totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
       onIncrement={addOneToCart}
       onDecrement={removeOneFromCart}
       onSave={openSaveModal}
@@ -375,6 +353,7 @@ export default function EventEncargoCartaClient({
         encargoEditActive={editMode}
         eventOrder={eventOrder}
         eventEncargoEdit={eventEncargoEdit}
+        hideEmptyMenuCategories
         footer={footer}
       />
 
@@ -430,9 +409,17 @@ export default function EventEncargoCartaClient({
                 )
                 setLimitWarnings(warnings)
                 startTransition(async () => {
+                  if (warnings.length > 0) {
+                    toast.error('Revisa los límites del pedido antes de enviar.')
+                    return
+                  }
                   const items = Object.entries(qtyById)
                     .map(([product_id, quantity]) => ({ product_id, quantity }))
                     .filter((it) => Number(it.quantity) > 0)
+                  if (items.length === 0) {
+                    toast.error('Añade al menos un producto.')
+                    return
+                  }
                   const res = await submitEventOrderAction({
                     slug: event.slug,
                     responsible_name: name,
@@ -444,6 +431,7 @@ export default function EventEncargoCartaClient({
                   }
                   setSaveModalOpen(false)
                   setOrderDone(true)
+                  toast.success('Pedido enviado correctamente')
                 })
               }}
             >

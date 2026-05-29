@@ -51,8 +51,10 @@ import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
 import {
     type CartaPhotoScale,
     type CartaProductGridRowDensity,
+    CARTA_EVENT_PRODUCT_FLEX_CELL_CLASS,
     cartaProductGridRowDensity,
     chunkCartaProductGridRows,
+    getCartaCategoryGridLayoutClass,
     getCartaProductGridRowCellClass,
     getCartaProductGridRowClass,
     getCartaProductGridRowFrameStyle,
@@ -458,7 +460,11 @@ export function MenuAccordion({
                 })
             }
 
-            ;(g as any)._subList = subList.map((s) => ({
+            const subsForDisplay = showEmptyMenuChildCategories
+                ? subList
+                : subList.filter((s) => s.rows.length > 0)
+
+            ;(g as any)._subList = subsForDisplay.map((s) => ({
                 ...s,
                 title: s.title,
                 coverPhotoUrl: categoryCoverById[s.key] ?? null,
@@ -466,7 +472,11 @@ export function MenuAccordion({
             }))
         }
 
-        return groupList as unknown as GroupedGroup[]
+        const withSubs = groupList.filter((g) => {
+            const subs = (g as unknown as GroupedGroup)._subList
+            return Array.isArray(subs) && subs.length > 0
+        })
+        return withSubs as unknown as GroupedGroup[]
     }, [
         visibleItems,
         lang,
@@ -561,9 +571,24 @@ export function MenuAccordion({
             />
         ) : null
 
+    const homeCategoryGroups = useMemo(() => {
+        const groups = displayGrouped as GroupedGroup[]
+        if (encargoEditActive) {
+            return groups.filter((g) => g._subList.some((sub) => sub.rows.length > 0))
+        }
+        return groups.filter((g) => subsWithVisibleProducts(g._subList).length > 0)
+    }, [displayGrouped, encargoEditActive])
+
+    const homeCategoryGridLayoutClass = useMemo(
+        () => getCartaCategoryGridLayoutClass(homeCategoryGroups.length),
+        [homeCategoryGroups.length]
+    )
+
+    const eventOrderFlexGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
+
     const homeCategoryCoverUrls = useMemo(
-        () => displayGrouped.map((g) => g.coverPhotoUrl),
-        [displayGrouped]
+        () => homeCategoryGroups.map((g) => g.coverPhotoUrl),
+        [homeCategoryGroups]
     )
 
     const platoBundleRows = openGroup?._platoMarbellaBundleRows ?? null
@@ -861,13 +886,14 @@ export function MenuAccordion({
             >
                 <CartaCategoryGrid
                     compact={homeCompact}
+                    layoutClassName={homeCategoryGridLayoutClass}
                     className={cn(
                         'w-full shrink-0',
                         hideLangPicker && !homeGridCentered && 'min-h-0 flex-1 pt-0',
                         !hideLangPicker && 'mt-0'
                     )}
                 >
-                    {displayGrouped.map((group) => {
+                    {homeCategoryGroups.map((group) => {
                         const isOpen = openKey === group.key
 
                         if (reorderScope === 'parents') {
@@ -1679,6 +1705,54 @@ export function MenuAccordion({
                                                             </div>
                                                         )
                                                     })}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : eventOrderFlexGrid ? (
+                                                <div className="flex flex-wrap justify-center gap-x-2 gap-y-2 md:gap-x-3 md:gap-y-3">
+                                                    {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => {
+                                                        const rowDensity = cartaProductGridRowDensity([row])
+                                                        const isDrinkRow = isCartaDrinksSection(
+                                                            row.category_parent_name
+                                                        )
+                                                        const rowFrameStyle = getCartaProductGridRowFrameStyle(
+                                                            [row],
+                                                            isDrinkRow
+                                                        )
+                                                        return (
+                                                            <div
+                                                                key={row.articulo_id}
+                                                                className={cn(
+                                                                    CARTA_EVENT_PRODUCT_FLEX_CELL_CLASS,
+                                                                    'h-full'
+                                                                )}
+                                                            >
+                                                                <CartaStaffMenuProductCard
+                                                                    row={row}
+                                                                    lang={lang}
+                                                                    editMode={modalEditMode}
+                                                                    onEditProduct={onEditProduct}
+                                                                    onToggleProductActive={effectiveToggleProduct}
+                                                                    productToggleBusyId={
+                                                                        encargoEditActive
+                                                                            ? eventEncargoEdit?.productToggleBusyId
+                                                                            : productToggleBusyId
+                                                                    }
+                                                                    rowDensity={rowDensity}
+                                                                    photoFrameStyle={rowFrameStyle}
+                                                                    isPlatoMarbellaLauncher={
+                                                                        platoLauncherArticuloId != null &&
+                                                                        row.articulo_id === platoLauncherArticuloId &&
+                                                                        hasPlatoMarbellaBundle
+                                                                    }
+                                                                    onOpenPlatoMarbella={() =>
+                                                                        setPlatoMarbellaDetailOpen(true)
+                                                                    }
+                                                                    platoLauncherTitle={platoLauncherTitle}
+                                                                    platoLauncherPriceLabel={platoLauncherPriceLabel}
+                                                                    eventOrder={eventOrder}
+                                                                />
                                                             </div>
                                                         )
                                                     })}

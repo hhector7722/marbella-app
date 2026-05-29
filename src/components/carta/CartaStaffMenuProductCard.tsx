@@ -281,7 +281,7 @@ export function CartaStaffMenuProductCard({
         </p>
         {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
           <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>
-        ) : (
+        ) : eventTapToAdd ? null : (
           <CartaDualRacionPrices
             {...resolveCartaDualRacionLabels(row, lang)}
             precio={row.precio}
