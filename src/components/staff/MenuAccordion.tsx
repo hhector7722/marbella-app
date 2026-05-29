@@ -51,7 +51,6 @@ import { tPlatoMarbellaUi } from '@/lib/carta-menu-i18n'
 import {
     type CartaPhotoScale,
     type CartaProductGridRowDensity,
-    CARTA_EVENT_PRODUCT_FLEX_CELL_CLASS,
     cartaProductGridRowDensity,
     chunkCartaProductGridRows,
     getCartaCategoryGridLayoutClass,
@@ -584,7 +583,7 @@ export function MenuAccordion({
         [homeCategoryGroups.length]
     )
 
-    const eventOrderFlexGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
+    const eventOrderGaplessGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
 
     const homeCategoryCoverUrls = useMemo(
         () => homeCategoryGroups.map((g) => g.coverPhotoUrl),
@@ -1709,54 +1708,6 @@ export function MenuAccordion({
                                                         )
                                                     })}
                                                 </div>
-                                            ) : eventOrderFlexGrid ? (
-                                                <div className="flex flex-wrap justify-center gap-x-2 gap-y-2 md:gap-x-3 md:gap-y-3">
-                                                    {mergeEnteroMedioForCartaDisplay(sub.rows).map((row) => {
-                                                        const rowDensity = cartaProductGridRowDensity([row])
-                                                        const isDrinkRow = isCartaDrinksSection(
-                                                            row.category_parent_name
-                                                        )
-                                                        const rowFrameStyle = getCartaProductGridRowFrameStyle(
-                                                            [row],
-                                                            isDrinkRow
-                                                        )
-                                                        return (
-                                                            <div
-                                                                key={row.articulo_id}
-                                                                className={cn(
-                                                                    CARTA_EVENT_PRODUCT_FLEX_CELL_CLASS,
-                                                                    'h-full'
-                                                                )}
-                                                            >
-                                                                <CartaStaffMenuProductCard
-                                                                    row={row}
-                                                                    lang={lang}
-                                                                    editMode={modalEditMode}
-                                                                    onEditProduct={onEditProduct}
-                                                                    onToggleProductActive={effectiveToggleProduct}
-                                                                    productToggleBusyId={
-                                                                        encargoEditActive
-                                                                            ? eventEncargoEdit?.productToggleBusyId
-                                                                            : productToggleBusyId
-                                                                    }
-                                                                    rowDensity={rowDensity}
-                                                                    photoFrameStyle={rowFrameStyle}
-                                                                    isPlatoMarbellaLauncher={
-                                                                        platoLauncherArticuloId != null &&
-                                                                        row.articulo_id === platoLauncherArticuloId &&
-                                                                        hasPlatoMarbellaBundle
-                                                                    }
-                                                                    onOpenPlatoMarbella={() =>
-                                                                        setPlatoMarbellaDetailOpen(true)
-                                                                    }
-                                                                    platoLauncherTitle={platoLauncherTitle}
-                                                                    platoLauncherPriceLabel={platoLauncherPriceLabel}
-                                                                    eventOrder={eventOrder}
-                                                                />
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
                                             ) : (
                                                 <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                                                     {chunkCartaProductGridRows(
@@ -1789,7 +1740,8 @@ export function MenuAccordion({
                                                             className={cn(
                                                                 getCartaProductGridRowCellClass(
                                                                     cellIndex,
-                                                                    itemsInRow
+                                                                    itemsInRow,
+                                                                    { gaplessRow: eventOrderGaplessGrid }
                                                                 ),
                                                                 'h-full'
                                                             )}

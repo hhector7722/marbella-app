@@ -64,11 +64,18 @@ export function getCartaProductGridRowClass(itemsAlign: 'start' | 'stretch' = 's
   )
 }
 
-export function getCartaProductGridRowCellClass(cellIndex: number, itemCount: number): string {
+export function getCartaProductGridRowCellClass(
+  cellIndex: number,
+  itemCount: number,
+  options?: { gaplessRow?: boolean }
+): string {
   const n = Math.min(3, Math.max(1, itemCount))
   const base = 'flex min-w-0 flex-col items-center'
   if (n === 3) return cn(base, 'col-span-1')
   if (n === 2) {
+    if (options?.gaplessRow) {
+      return cn(base, 'col-span-1', cellIndex === 0 ? 'col-start-1' : 'col-start-2')
+    }
     return cn(base, 'col-span-1', cellIndex === 0 ? 'col-start-1' : 'col-start-3')
   }
   return cn(base, 'col-span-1 col-start-2')
@@ -210,10 +217,6 @@ export function getCartaCategoryGridLayoutClass(count: number): string {
   if (count === 3) return 'mx-auto w-full max-w-[240px] grid-cols-1'
   return 'grid-cols-2'
 }
-
-/** Celda flexible para grid de productos sin huecos (encargo tap-to-add). */
-export const CARTA_EVENT_PRODUCT_FLEX_CELL_CLASS =
-  'w-[calc(33.333%-0.45rem)] min-w-[92px] max-w-[148px] flex-[1_1_30%] sm:max-w-[160px]'
 
 /** Factor de marco compartido por fila del grid: el máximo de la fila para alinear nombre/precio. */
 export function getCartaProductGridRowPhotoSlotFactor(

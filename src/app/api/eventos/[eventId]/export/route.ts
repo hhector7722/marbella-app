@@ -1,23 +1,16 @@
 import { createClient } from '@/utils/supabase/server'
+import {
+  buildEventOrderProductColumns,
+  formatOrderQuantityCell,
+  quantityForProduct,
+  type EventOrderMatrixRow,
+} from '@/lib/event-orders-matrix'
 
 function csvEscape(value: unknown): string {
   const s = String(value ?? '')
   const needs = /[",\n\r]/.test(s)
   const v = s.replace(/"/g, '""')
   return needs ? `"${v}"` : v
-}
-
-function itemsToText(items: any): string {
-  const arr = Array.isArray(items) ? items : []
-  const parts: string[] = []
-  for (const it of arr) {
-    const name = String((it as any)?.name ?? '').trim()
-    const qty = Number((it as any)?.quantity ?? 0)
-    if (!name) continue
-    if (!Number.isFinite(qty) || qty <= 0) continue
-    parts.push(`${name} x${qty}`)
-  }
-  return parts.join(' | ')
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ eventId: string }> }) {
@@ -44,7 +37,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ eventId: strin
     .maybeSingle()
   if (pErr) return new Response(`Error: ${pErr.message}`, { status: 403 })
 
-  const role = (profile as any)?.role ?? null
+  const role = (profile as { role?: string } | null)?.role ?? null
   const isManager = role === 'manager' || role === 'admin'
   if (!isManager) return new Response('Sin permiso', { status: 403 })
 
@@ -57,35 +50,42 @@ export async function GET(_req: Request, ctx: { params: Promise<{ eventId: strin
 
   const { data: orders, error: oErr } = await supabase
     .from('event_orders')
-    .select('responsible_name, created_at, status, items, total_amount')
+    .select('id, responsible_name, items')
     .eq('event_id', id)
     .order('created_at', { ascending: true })
     .limit(20000)
 
   if (oErr) return new Response(`Error: ${oErr.message}`, { status: 500 })
 
-  const header = ['responsible_name', 'created_at', 'status', 'items', 'total_amount'].join(',')
-  const lines = (orders ?? []).map((o: any) => {
-    const row = [
+  const matrixRows: EventOrderMatrixRow[] = ((orders ?? []) as Array<Record<string, unknown>>).map((o) => ({
+    id: String(o.id),
+    responsible_name: String(o.responsible_name ?? ''),
+    items: (o.items ?? []) as EventOrderMatrixRow['items'],
+  }))
+
+  const productColumns = buildEventOrderProductColumns(matrixRows)
+  const header = ['nombre', ...productColumns.map((c) => c.name)].map(csvEscape).join(',')
+
+  const lines = matrixRows.map((o) => {
+    const cells = [
       csvEscape(o.responsible_name),
-      csvEscape(o.created_at),
-      csvEscape(o.status),
-      csvEscape(itemsToText(o.items)),
-      csvEscape(o.total_amount ?? ''),
+      ...productColumns.map((col) => {
+        const qty = quantityForProduct(o, col.productId)
+        const cell = formatOrderQuantityCell(qty)
+        return csvEscape(cell === ' ' ? '' : cell)
+      }),
     ]
-    return row.join(',')
+    return cells.join(',')
   })
 
   const csv = [header, ...lines].join('\n')
-  const slug = String((ev as any).slug ?? id)
-  const filename = `event-${slug}-orders.csv`
+  const slug = String((ev as { slug?: string }).slug ?? id)
 
   return new Response(csv, {
     status: 200,
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': `attachment; filename="pedidos-${slug}.csv"`,
     },
   })
 }
-
