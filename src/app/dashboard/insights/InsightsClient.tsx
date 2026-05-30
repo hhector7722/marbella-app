@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { RefreshCw } from 'lucide-react'
+import { ChevronDown, RefreshCw } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -107,42 +107,45 @@ function SectionErrorBanner({
   )
 }
 
-function KpiChip({
-  label,
-  value,
-  compact = false,
-}: {
-  label: string
-  value: string
-  compact?: boolean
-}) {
+function ProductStat({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      className={cn(
-        'rounded-lg lg:rounded-xl border border-zinc-100 bg-zinc-50/80 flex flex-col justify-center',
-        compact
-          ? 'px-1.5 py-1.5 min-h-0 lg:px-3 lg:py-2 lg:min-h-12'
-          : 'px-3 py-2 min-h-12'
-      )}
-    >
-      <span
-        className={cn(
-          'font-bold uppercase tracking-wider text-zinc-500 leading-tight',
-          compact ? 'text-[7px] lg:text-[10px]' : 'text-[10px]'
-        )}
-      >
+    <div className="min-w-0">
+      <span className="block text-[8px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500">
         {label}
       </span>
-      <span
-        className={cn(
-          'font-black text-zinc-800 tabular-nums leading-snug',
-          compact ? 'text-[9px] lg:text-sm mt-0.5 lg:mt-0' : 'text-sm'
-        )}
-      >
+      <span className="block font-black text-zinc-800 tabular-nums mt-0.5">{value}</span>
+    </div>
+  )
+}
+
+/** KPI sin marco ni relleno — flota sobre el fondo de la sección */
+function KpiFloat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col justify-center min-w-0 px-0 py-1">
+      <span className="text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+        {label}
+      </span>
+      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug mt-0.5 truncate">
         {value}
       </span>
     </div>
   )
+}
+
+const CHART_LEGEND_PROPS = {
+  layout: 'horizontal' as const,
+  align: 'center' as const,
+  verticalAlign: 'bottom' as const,
+  iconSize: 8,
+  wrapperStyle: {
+    fontSize: 10,
+    fontWeight: 700,
+    width: '100%',
+    paddingTop: 4,
+    display: 'flex',
+    justifyContent: 'center',
+    flexWrap: 'nowrap' as const,
+  },
 }
 
 export default function InsightsClient({
@@ -172,6 +175,7 @@ export default function InsightsClient({
     loading: false,
     error: initialErrors?.products ?? null,
   })
+  const [selectedProductIdx, setSelectedProductIdx] = useState(0)
 
   const fetchHourly = useCallback(async (from: string, to: string) => {
     setHourly((s) => ({ ...s, loading: true, error: null }))
@@ -321,6 +325,26 @@ export default function InsightsClient({
     })
   }, [products.data])
 
+  const bestProductIdx = useMemo(() => {
+    if (products.data.length === 0) return 0
+    return products.data.reduce(
+      (bestI, p, i, arr) =>
+        p.total_margin_contribution > arr[bestI].total_margin_contribution ? i : bestI,
+      0,
+    )
+  }, [products.data])
+
+  const selectedProduct = products.data[selectedProductIdx] ?? null
+
+  const syncSelectedProductToBest = useCallback(() => {
+    setSelectedProductIdx(bestProductIdx)
+  }, [bestProductIdx])
+
+  // Al recargar ranking, volver al producto con mejor margen
+  useEffect(() => {
+    syncSelectedProductToBest()
+  }, [products.data, syncSelectedProductToBest])
+
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto">
@@ -413,13 +437,13 @@ export default function InsightsClient({
                 ) : hourly.loading ? (
                   <SectionSkeleton rows={6} />
                 ) : (
-                  <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-1 lg:gap-0">
+                  <div className="flex flex-col gap-2">
                     <div className="min-w-0 overflow-x-auto -mx-0.5 px-0.5">
                       <div className="h-[150px] lg:h-[280px] w-full min-w-[140px] lg:min-w-[520px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={hourlyChartData}
-                            margin={{ top: 4, right: 2, left: -18, bottom: 0 }}
+                            margin={{ top: 4, right: 2, left: -18, bottom: 20 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis dataKey="label" tick={{ fontSize: 8, fontWeight: 700 }} />
@@ -444,7 +468,7 @@ export default function InsightsClient({
                                 )
                               }}
                             />
-                            <Legend wrapperStyle={{ fontSize: 10 }} />
+                            <Legend {...CHART_LEGEND_PROPS} />
                             <Bar dataKey="total_revenue" name="Ventas" fill={PETROLEO} radius={[2, 2, 0, 0]} />
                             <Bar dataKey="labor_cost" name="M. obra" fill={LABOR_RED} radius={[2, 2, 0, 0]} />
                             <Line
@@ -459,10 +483,10 @@ export default function InsightsClient({
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 lg:grid lg:grid-cols-3 lg:gap-2 lg:mt-3">
-                      <KpiChip compact label="Hora más rentable" value={hourlyKpis.best} />
-                      <KpiChip compact label="Hora de mayor pérdida" value={hourlyKpis.worst} />
-                      <KpiChip compact label="Franja óptima de apertura" value={hourlyKpis.optimal} />
+                    <div className="grid grid-cols-3 gap-1 lg:gap-3">
+                      <KpiFloat label="Hora más rentable" value={hourlyKpis.best} />
+                      <KpiFloat label="Hora de mayor pérdida" value={hourlyKpis.worst} />
+                      <KpiFloat label="Franja óptima de apertura" value={hourlyKpis.optimal} />
                     </div>
                   </div>
                 )}
@@ -516,9 +540,9 @@ export default function InsightsClient({
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-1 lg:gap-2">
-                      <KpiChip compact label="Mejor día" value={weekdayKpis.best} />
-                      <KpiChip compact label="Día más flojo" value={weekdayKpis.worst} />
+                    <div className="mt-2 grid grid-cols-2 gap-2 lg:gap-4">
+                      <KpiFloat label="Mejor día" value={weekdayKpis.best} />
+                      <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
                     </div>
                   </>
                 )}
@@ -546,67 +570,123 @@ export default function InsightsClient({
                     </Link>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto -mx-0.5 px-0.5">
-                    <div className="h-[180px] lg:h-[420px] w-full min-w-0 lg:min-w-[640px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart
-                          layout="vertical"
-                          data={productChartData}
-                          margin={{ top: 2, right: 8, left: 0, bottom: 2 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                          <XAxis
-                            type="number"
-                            xAxisId="margin"
-                            tick={{ fontSize: 7 }}
-                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
-                          />
-                          <XAxis type="number" xAxisId="units" orientation="top" hide />
-                          <YAxis
-                            type="category"
-                            dataKey="shortName"
-                            width={52}
-                            tick={{ fontSize: 7, fontWeight: 600 }}
-                          />
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (!active || !payload?.length) return null
-                              const row = payload[0]?.payload as ProductMarginRow & { marginPct: number }
-                              return (
-                                <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1 max-w-xs">
-                                  <p className="font-black text-[#36606F]">{row.product_name}</p>
-                                  <p>Unidades: {row.total_units_sold}</p>
-                                  <p>Precio venta: {formatEuroChart(row.avg_sale_price)}</p>
-                                  <p>Coste receta: {formatEuroChart(row.recipe_cost)}</p>
-                                  <p>Margen unitario: {formatEuroChart(row.margin_per_unit)}</p>
-                                  <p>Margen total: {formatEuroChart(row.total_margin_contribution)}</p>
-                                </div>
-                              )
-                            }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: 10 }} />
-                          <Bar
-                            xAxisId="margin"
-                            dataKey="total_margin_contribution"
-                            name="Margen total"
-                            radius={[0, 3, 3, 0]}
+                  <div className="flex flex-col gap-2">
+                    <div className="overflow-x-auto -mx-0.5 px-0.5">
+                      <div className="h-[180px] lg:h-[320px] w-full min-w-0 lg:min-w-[640px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart
+                            layout="vertical"
+                            data={productChartData}
+                            margin={{ top: 2, right: 8, left: 0, bottom: 20 }}
                           >
-                            {productChartData.map((entry, index) => (
-                              <Cell key={`prod-${index}`} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                          <Line
-                            xAxisId="units"
-                            type="monotone"
-                            dataKey="total_units_sold"
-                            name="Unidades"
-                            stroke="#9CA3AF"
-                            strokeWidth={1.5}
-                            dot={false}
-                          />
-                        </ComposedChart>
-                      </ResponsiveContainer>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                            <XAxis
+                              type="number"
+                              xAxisId="margin"
+                              tick={{ fontSize: 7 }}
+                              tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            />
+                            <XAxis type="number" xAxisId="units" orientation="top" hide />
+                            <YAxis
+                              type="category"
+                              dataKey="shortName"
+                              width={52}
+                              tick={{ fontSize: 7, fontWeight: 600 }}
+                            />
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null
+                                const row = payload[0]?.payload as ProductMarginRow & { marginPct: number }
+                                return (
+                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1 max-w-xs">
+                                    <p className="font-black text-[#36606F]">{row.product_name}</p>
+                                    <p>Unidades: {row.total_units_sold}</p>
+                                    <p>Precio venta: {formatEuroChart(row.avg_sale_price)}</p>
+                                    <p>Coste receta: {formatEuroChart(row.recipe_cost)}</p>
+                                    <p>Margen unitario: {formatEuroChart(row.margin_per_unit)}</p>
+                                    <p>Margen total: {formatEuroChart(row.total_margin_contribution)}</p>
+                                  </div>
+                                )
+                              }}
+                            />
+                            <Legend {...CHART_LEGEND_PROPS} />
+                            <Bar
+                              xAxisId="margin"
+                              dataKey="total_margin_contribution"
+                              name="Margen total"
+                              radius={[0, 3, 3, 0]}
+                            >
+                              {productChartData.map((entry, index) => (
+                                <Cell key={`prod-${index}`} fill={entry.fill} />
+                              ))}
+                            </Bar>
+                            <Line
+                              xAxisId="units"
+                              type="monotone"
+                              dataKey="total_units_sold"
+                              name="Unidades"
+                              stroke="#9CA3AF"
+                              strokeWidth={1.5}
+                              dot={false}
+                            />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
+
+                    {selectedProduct && (
+                      <div className="pt-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                          <p className="text-xs lg:text-sm font-black text-zinc-800 leading-tight min-w-0">
+                            {selectedProduct.product_name}
+                          </p>
+                          <label className="relative shrink-0 min-h-10 min-w-[5.5rem] inline-flex items-center justify-center gap-0.5 cursor-pointer">
+                            <span className="text-[10px] lg:text-xs font-black uppercase tracking-wide text-[#36606F] pointer-events-none">
+                              Cambiar
+                            </span>
+                            <ChevronDown className="h-3.5 w-3.5 text-[#36606F] pointer-events-none" aria-hidden />
+                            <select
+                              value={selectedProductIdx}
+                              onChange={(e) => setSelectedProductIdx(Number(e.target.value))}
+                              aria-label="Cambiar producto"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            >
+                              {products.data.map((p, i) => (
+                                <option key={`${p.product_name}-${i}`} value={i}>
+                                  {p.product_name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-1.5 text-[10px] lg:text-xs">
+                          <ProductStat
+                            label="Unidades"
+                            value={
+                              selectedProduct.total_units_sold === 0
+                                ? ' '
+                                : String(selectedProduct.total_units_sold)
+                            }
+                          />
+                          <ProductStat
+                            label="P. venta"
+                            value={formatEuroKpi(selectedProduct.avg_sale_price)}
+                          />
+                          <ProductStat
+                            label="Coste receta"
+                            value={formatEuroKpi(selectedProduct.recipe_cost)}
+                          />
+                          <ProductStat
+                            label="Margen / ud."
+                            value={formatEuroKpi(selectedProduct.margin_per_unit)}
+                          />
+                          <ProductStat
+                            label="Margen total"
+                            value={formatEuroKpi(selectedProduct.total_margin_contribution)}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </section>
