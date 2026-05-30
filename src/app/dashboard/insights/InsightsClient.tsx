@@ -27,8 +27,12 @@ import type {
   WeekdayAnalysisRow,
   ProductMarginRow,
 } from './schemas'
+import {
+  getEuropeMadridYmdToday,
+  subtractDaysFromEuropeMadridYmd,
+} from '@/utils/date-utils'
 
-type PresetDays = 7 | 30 | 90
+type DatePreset = 'today' | 'yesterday' | 7 | 30
 
 type SectionKey = 'hourly' | 'weekday' | 'products'
 
@@ -56,27 +60,6 @@ const WEEKDAY_ORANGE = '#FFA726'
 const MARGIN_BAR_HIGH = '#2E7D32'
 const MARGIN_BAR_MID = '#66BB6A'
 const MARGIN_BAR_LOW = '#FFA726'
-
-function formatLocalYmd(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function getMadridYmdToday(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date())
-}
-
-function subtractDaysFromYmd(ymd: string, days: number): string {
-  const [y, m, d] = ymd.split('-').map(Number)
-  return formatLocalYmd(new Date(y, m - 1, d - days))
-}
 
 function formatEuroChart(value: number, digits = 2): string {
   return new Intl.NumberFormat('es-ES', {
@@ -132,11 +115,40 @@ function SectionErrorBanner({
   )
 }
 
-function KpiChip({ label, value }: { label: string; value: string }) {
+function KpiChip({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string
+  value: string
+  compact?: boolean
+}) {
   return (
-    <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2 min-h-12 flex flex-col justify-center">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</span>
-      <span className="text-sm font-black text-zinc-800 tabular-nums">{value}</span>
+    <div
+      className={cn(
+        'rounded-lg lg:rounded-xl border border-zinc-100 bg-zinc-50/80 flex flex-col justify-center',
+        compact
+          ? 'px-1.5 py-1.5 min-h-0 lg:px-3 lg:py-2 lg:min-h-12'
+          : 'px-3 py-2 min-h-12'
+      )}
+    >
+      <span
+        className={cn(
+          'font-bold uppercase tracking-wider text-zinc-500 leading-tight',
+          compact ? 'text-[7px] lg:text-[10px]' : 'text-[10px]'
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          'font-black text-zinc-800 tabular-nums leading-snug',
+          compact ? 'text-[9px] lg:text-sm mt-0.5 lg:mt-0' : 'text-sm'
+        )}
+      >
+        {value}
+      </span>
     </div>
   )
 }
@@ -151,7 +163,7 @@ export default function InsightsClient({
 }: InsightsClientProps) {
   const [dateFrom, setDateFrom] = useState(initialDateFrom)
   const [dateTo, setDateTo] = useState(initialDateTo)
-  const [activePreset, setActivePreset] = useState<PresetDays | null>(30)
+  const [activePreset, setActivePreset] = useState<DatePreset | null>('today')
 
   const [hourly, setHourly] = useState<SectionState<HourlyProfitabilityRow[]>>({
     data: initialHourly,
@@ -208,17 +220,31 @@ export default function InsightsClient({
     [fetchHourly, fetchWeekday, fetchProducts]
   )
 
-  const applyPreset = (days: PresetDays) => {
-    const to = getMadridYmdToday()
-    const from = subtractDaysFromYmd(to, days)
-    setActivePreset(days)
+  const applyPreset = (preset: Exclude<DatePreset, 'today'>) => {
+    const today = getEuropeMadridYmdToday()
+
+    if (preset === 'yesterday') {
+      const yesterday = subtractDaysFromEuropeMadridYmd(today, 1)
+      setActivePreset('yesterday')
+      setDateFrom(yesterday)
+      setDateTo(yesterday)
+      refetchAll(yesterday, yesterday)
+      return
+    }
+
+    const from = subtractDaysFromEuropeMadridYmd(today, preset)
+    setActivePreset(preset)
     setDateFrom(from)
-    setDateTo(to)
-    refetchAll(from, to)
+    setDateTo(today)
+    refetchAll(from, today)
   }
 
   const applyCustomRange = () => {
-    setActivePreset(null)
+    const today = getEuropeMadridYmdToday()
+    const yesterday = subtractDaysFromEuropeMadridYmd(today, 1)
+    if (dateFrom === today && dateTo === today) setActivePreset('today')
+    else if (dateFrom === yesterday && dateTo === yesterday) setActivePreset('yesterday')
+    else setActivePreset(null)
     refetchAll(dateFrom, dateTo)
   }
 
@@ -328,30 +354,39 @@ export default function InsightsClient({
   }, [products.data])
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24">
-      <header className="sticky top-0 z-30 border-b border-zinc-100 bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="mx-auto max-w-6xl px-4 py-4 space-y-3">
-          <h1 className="text-xl font-black tracking-tight text-[#36606F]">Rentabilidad</h1>
-          <div className="flex flex-wrap gap-2">
-            {([7, 30, 90] as PresetDays[]).map((days) => (
-              <button
-                key={days}
-                type="button"
-                onClick={() => applyPreset(days)}
-                className={cn(
-                  'min-h-12 shrink-0 rounded-xl px-4 text-sm font-black uppercase tracking-wide border active:scale-95 transition-all',
-                  activePreset === days
-                    ? 'bg-[#36606F] text-white border-[#36606F]'
-                    : 'bg-white text-zinc-700 border-zinc-200'
-                )}
-              >
-                {days} días
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-            <label className="flex-1 text-xs font-bold text-zinc-500">
-              Desde
+    <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24 text-zinc-900">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-[#36606F] px-3 md:px-5 py-3 flex flex-nowrap items-center gap-2 md:gap-3 overflow-x-auto">
+            <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-wider shrink-0">
+              Rentabilidad
+            </h1>
+
+            <div className="flex items-center gap-1 shrink-0">
+              {(
+                [
+                  { id: 7 as const, label: '7d' },
+                  { id: 30 as const, label: '30d' },
+                  { id: 'yesterday' as const, label: 'Ayer' },
+                ] as const
+              ).map((preset) => (
+                <button
+                  key={String(preset.id)}
+                  type="button"
+                  onClick={() => applyPreset(preset.id)}
+                  className={cn(
+                    'min-h-12 shrink-0 rounded-xl px-2.5 md:px-3 text-[10px] md:text-[11px] font-black uppercase tracking-wide border active:scale-95 transition-all',
+                    activePreset === preset.id
+                      ? 'bg-white text-[#36606F] border-white'
+                      : 'bg-white/10 text-white border-white/20 hover:bg-white/15'
+                  )}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 md:gap-2 ml-auto shrink-0">
               <input
                 type="date"
                 value={dateFrom}
@@ -359,11 +394,16 @@ export default function InsightsClient({
                   setActivePreset(null)
                   setDateFrom(e.target.value)
                 }}
-                className="mt-1 block w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-800"
+                aria-label="Fecha desde"
+                className={cn(
+                  'min-h-12 w-[7.25rem] md:w-auto px-2 md:px-3 rounded-xl border border-white/15 bg-white/10 text-white shrink-0',
+                  'text-[11px] md:text-[12px] font-black tabular-nums',
+                  'focus:outline-none focus:ring-2 focus:ring-white/25'
+                )}
               />
-            </label>
-            <label className="flex-1 text-xs font-bold text-zinc-500">
-              Hasta
+              <span className="text-white/50 text-xs font-bold shrink-0" aria-hidden>
+                →
+              </span>
               <input
                 type="date"
                 value={dateTo}
@@ -371,249 +411,266 @@ export default function InsightsClient({
                   setActivePreset(null)
                   setDateTo(e.target.value)
                 }}
-                className="mt-1 block w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-800"
+                aria-label="Fecha hasta"
+                className={cn(
+                  'min-h-12 w-[7.25rem] md:w-auto px-2 md:px-3 rounded-xl border border-white/15 bg-white/10 text-white shrink-0',
+                  'text-[11px] md:text-[12px] font-black tabular-nums',
+                  'focus:outline-none focus:ring-2 focus:ring-white/25'
+                )}
               />
-            </label>
-            <button
-              type="button"
-              onClick={applyCustomRange}
-              className="min-h-12 shrink-0 rounded-xl bg-[#36606F] px-5 text-sm font-black uppercase tracking-wide text-white active:scale-95"
-            >
-              Aplicar
-            </button>
+              <button
+                type="button"
+                onClick={applyCustomRange}
+                className={cn(
+                  'min-h-12 shrink-0 rounded-xl px-3 md:px-4',
+                  'bg-white text-[#36606F] hover:bg-white/90',
+                  'text-[10px] md:text-[11px] font-black uppercase tracking-widest',
+                  'active:scale-[0.99] transition-transform'
+                )}
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+
+          <div className="p-2 md:p-6 space-y-2 md:space-y-4">
+            <div className="grid grid-cols-2 gap-2 lg:gap-4">
+              {/* Sección 1 — móvil: gráfico | KPIs; desktop: fila superior izquierda */}
+              <section className="col-span-2 lg:col-span-1 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
+                <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] mb-2 lg:mb-3">
+                  Venta vs. Coste por hora
+                </h2>
+                {hourly.error ? (
+                  <SectionErrorBanner message={hourly.error} onRetry={() => void fetchHourly(dateFrom, dateTo)} />
+                ) : hourly.loading ? (
+                  <SectionSkeleton rows={6} />
+                ) : (
+                  <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-1 lg:gap-0">
+                    <div className="min-w-0 overflow-x-auto -mx-0.5 px-0.5">
+                      <div className="h-[150px] lg:h-[280px] w-full min-w-[140px] lg:min-w-[520px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart
+                            data={hourlyChartData}
+                            margin={{ top: 4, right: 2, left: -18, bottom: 0 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="label" tick={{ fontSize: 8, fontWeight: 700 }} />
+                            <YAxis
+                              tick={{ fontSize: 7 }}
+                              width={32}
+                              tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            />
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null
+                                const row = payload[0]?.payload as HourlyProfitabilityRow & { label: string }
+                                return (
+                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs">
+                                    <p className="font-black text-[#36606F]">{row.label}</p>
+                                    <p>Ventas: {formatEuroChart(row.total_revenue)}</p>
+                                    <p>M. obra: {formatEuroChart(row.labor_cost)}</p>
+                                    <p>Margen: {formatEuroChart(row.margin)}</p>
+                                    <p>Tickets: {row.ticket_count}</p>
+                                    <p>Ticket medio: {formatEuroChart(row.avg_ticket)}</p>
+                                  </div>
+                                )
+                              }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: 10 }} />
+                            <Bar dataKey="total_revenue" name="Ventas" fill={PETROLEO} radius={[2, 2, 0, 0]} />
+                            <Bar dataKey="labor_cost" name="M. obra" fill={LABOR_RED} radius={[2, 2, 0, 0]} />
+                            <Line
+                              type="monotone"
+                              dataKey="margin"
+                              name="Margen"
+                              stroke={MARGIN_GREEN}
+                              strokeWidth={2}
+                              dot={{ r: 2 }}
+                            />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1 lg:grid lg:grid-cols-3 lg:gap-2 lg:mt-3">
+                      <KpiChip compact label="Hora más rentable" value={hourlyKpis.best} />
+                      <KpiChip compact label="Hora de mayor pérdida" value={hourlyKpis.worst} />
+                      <KpiChip compact label="Franja óptima de apertura" value={hourlyKpis.optimal} />
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Sección 2 — móvil: mitad izquierda; desktop: fila superior derecha */}
+              <section className="col-span-1 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
+                <h2 className="text-[9px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] mb-2 lg:mb-3 leading-tight">
+                  Rend. por día
+                </h2>
+                {weekday.error ? (
+                  <SectionErrorBanner message={weekday.error} onRetry={() => void fetchWeekday(dateFrom, dateTo)} />
+                ) : weekday.loading ? (
+                  <SectionSkeleton rows={5} />
+                ) : (
+                  <>
+                    <div className="h-[180px] lg:h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          layout="vertical"
+                          data={weekdayChartData}
+                          margin={{ top: 2, right: 4, left: 0, bottom: 2 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                          <XAxis
+                            type="number"
+                            tick={{ fontSize: 7 }}
+                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="shortName"
+                            width={28}
+                            tick={{ fontSize: 8, fontWeight: 700 }}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (!active || !payload?.length) return null
+                              const row = payload[0]?.payload as WeekdayAnalysisRow & {
+                                eventPct: number | null
+                              }
+                              return (
+                                <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
+                                  <p className="font-black text-[#36606F]">{row.weekday_name}</p>
+                                  <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
+                                  <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
+                                  <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
+                                  {row.days_with_events > 0 ? (
+                                    <>
+                                      <p>Con evento: {formatEuroChart(row.avg_revenue_with_event)}</p>
+                                      <p>Sin evento: {formatEuroChart(row.avg_revenue_without_event)}</p>
+                                    </>
+                                  ) : null}
+                                </div>
+                              )
+                            }}
+                          />
+                          <Bar dataKey="avg_revenue" name="Media ventas" radius={[0, 3, 3, 0]}>
+                            {weekdayChartData.map((entry, index) => (
+                              <Cell key={`weekday-${index}`} fill={entry.barColor} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="mt-2 hidden lg:flex flex-wrap gap-2">
+                      {weekdayChartData
+                        .filter((d) => d.days_with_events > 0 && d.eventPct !== null)
+                        .map((d) => (
+                          <span
+                            key={d.weekday}
+                            className="inline-flex min-h-8 items-center rounded-full bg-zinc-100 px-3 text-[10px] font-bold text-zinc-700"
+                          >
+                            {d.weekday_name}: Con evento: {formatPctKpi(d.eventPct!)}
+                          </span>
+                        ))}
+                    </div>
+                    <div className="mt-2 hidden lg:block">
+                      <KpiChip label="Impacto polideportivo" value={weekdayKpi} />
+                    </div>
+                    <p className="mt-1.5 lg:hidden text-[8px] font-semibold text-zinc-600 leading-tight line-clamp-3">
+                      {weekdayKpi}
+                    </p>
+                  </>
+                )}
+              </section>
+
+              {/* Sección 3 — móvil: mitad derecha; desktop: fila inferior ancho completo */}
+              <section className="col-span-1 lg:col-span-2 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
+                <h2 className="text-[9px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] mb-2 lg:mb-3 leading-tight">
+                  Margen producto
+                </h2>
+                {products.error ? (
+                  <SectionErrorBanner message={products.error} onRetry={() => void fetchProducts()} />
+                ) : products.loading ? (
+                  <SectionSkeleton rows={5} />
+                ) : products.data.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-3 lg:p-6 text-center space-y-3">
+                    <p className="text-[10px] lg:text-sm font-semibold text-zinc-600 leading-tight">
+                      Mapea recetas con coste en /recipes
+                    </p>
+                    <Link
+                      href="/recipes"
+                      className="inline-flex min-h-10 lg:min-h-12 items-center justify-center rounded-xl bg-[#36606F] px-4 lg:px-6 text-[10px] lg:text-sm font-black uppercase tracking-wide text-white active:scale-95"
+                    >
+                      Ir a recetas
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-0.5 px-0.5">
+                    <div className="h-[180px] lg:h-[420px] w-full min-w-0 lg:min-w-[640px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          layout="vertical"
+                          data={productChartData}
+                          margin={{ top: 2, right: 8, left: 0, bottom: 2 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                          <XAxis
+                            type="number"
+                            xAxisId="margin"
+                            tick={{ fontSize: 7 }}
+                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                          />
+                          <XAxis type="number" xAxisId="units" orientation="top" hide />
+                          <YAxis
+                            type="category"
+                            dataKey="shortName"
+                            width={52}
+                            tick={{ fontSize: 7, fontWeight: 600 }}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (!active || !payload?.length) return null
+                              const row = payload[0]?.payload as ProductMarginRow & { marginPct: number }
+                              return (
+                                <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1 max-w-xs">
+                                  <p className="font-black text-[#36606F]">{row.product_name}</p>
+                                  <p>Unidades: {row.total_units_sold}</p>
+                                  <p>Precio venta: {formatEuroChart(row.avg_sale_price)}</p>
+                                  <p>Coste receta: {formatEuroChart(row.recipe_cost)}</p>
+                                  <p>Margen unitario: {formatEuroChart(row.margin_per_unit)}</p>
+                                  <p>Margen total: {formatEuroChart(row.total_margin_contribution)}</p>
+                                </div>
+                              )
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 10 }} />
+                          <Bar
+                            xAxisId="margin"
+                            dataKey="total_margin_contribution"
+                            name="Margen total"
+                            radius={[0, 3, 3, 0]}
+                          >
+                            {productChartData.map((entry, index) => (
+                              <Cell key={`prod-${index}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                          <Line
+                            xAxisId="units"
+                            type="monotone"
+                            dataKey="total_units_sold"
+                            name="Unidades"
+                            stroke="#9CA3AF"
+                            strokeWidth={1.5}
+                            dot={false}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
           </div>
         </div>
-      </header>
-
-      <div className="mx-auto max-w-6xl px-4 py-4 space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Sección 1 */}
-          <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-[#36606F] mb-3">
-              Venta vs. Coste por hora
-            </h2>
-            {hourly.error ? (
-              <SectionErrorBanner message={hourly.error} onRetry={() => void fetchHourly(dateFrom, dateTo)} />
-            ) : hourly.loading ? (
-              <SectionSkeleton rows={6} />
-            ) : (
-              <>
-                <div className="overflow-x-auto -mx-1 px-1 pb-2">
-                  <div className="min-w-[520px] h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={hourlyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11, fontWeight: 700 }} />
-                        <YAxis
-                          tick={{ fontSize: 11 }}
-                          tickFormatter={(v) => formatEuroChart(Number(v), 0)}
-                        />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (!active || !payload?.length) return null
-                            const row = payload[0]?.payload as HourlyProfitabilityRow & { label: string }
-                            return (
-                              <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs">
-                                <p className="font-black text-[#36606F]">{row.label}</p>
-                                <p>Ventas: {formatEuroChart(row.total_revenue)}</p>
-                                <p>M. obra: {formatEuroChart(row.labor_cost)}</p>
-                                <p>Margen: {formatEuroChart(row.margin)}</p>
-                                <p>Tickets: {row.ticket_count}</p>
-                                <p>Ticket medio: {formatEuroChart(row.avg_ticket)}</p>
-                              </div>
-                            )
-                          }}
-                        />
-                        <Legend />
-                        <Bar dataKey="total_revenue" name="Ventas" fill={PETROLEO} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="labor_cost" name="M. obra" fill={LABOR_RED} radius={[4, 4, 0, 0]} />
-                        <Line
-                          type="monotone"
-                          dataKey="margin"
-                          name="Margen"
-                          stroke={MARGIN_GREEN}
-                          strokeWidth={2.5}
-                          dot={{ r: 3 }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
-                  <KpiChip label="Hora más rentable" value={hourlyKpis.best} />
-                  <KpiChip label="Hora de mayor pérdida" value={hourlyKpis.worst} />
-                  <KpiChip label="Franja óptima de apertura" value={hourlyKpis.optimal} />
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* Sección 2 */}
-          <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-[#36606F] mb-3">
-              Rendimiento por día de semana
-            </h2>
-            {weekday.error ? (
-              <SectionErrorBanner message={weekday.error} onRetry={() => void fetchWeekday(dateFrom, dateTo)} />
-            ) : weekday.loading ? (
-              <SectionSkeleton rows={7} />
-            ) : (
-              <>
-                <div className="h-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={weekdayChartData}
-                      margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                      <XAxis
-                        type="number"
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(v) => formatEuroChart(Number(v), 0)}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="weekday_name"
-                        width={88}
-                        tick={{ fontSize: 11, fontWeight: 700 }}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (!active || !payload?.length) return null
-                          const row = payload[0]?.payload as WeekdayAnalysisRow & {
-                            eventPct: number | null
-                          }
-                          return (
-                            <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
-                              <p className="font-black text-[#36606F]">{row.weekday_name}</p>
-                              <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
-                              <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
-                              <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
-                              {row.days_with_events > 0 ? (
-                                <>
-                                  <p>Con evento: {formatEuroChart(row.avg_revenue_with_event)}</p>
-                                  <p>Sin evento: {formatEuroChart(row.avg_revenue_without_event)}</p>
-                                </>
-                              ) : null}
-                            </div>
-                          )
-                        }}
-                      />
-                      <Bar dataKey="avg_revenue" name="Media ventas" radius={[0, 4, 4, 0]}>
-                        {weekdayChartData.map((entry, index) => (
-                          <Cell key={`weekday-${index}`} fill={entry.barColor} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {weekdayChartData
-                    .filter((d) => d.days_with_events > 0 && d.eventPct !== null)
-                    .map((d) => (
-                      <span
-                        key={d.weekday}
-                        className="inline-flex min-h-8 items-center rounded-full bg-zinc-100 px-3 text-[10px] font-bold text-zinc-700"
-                      >
-                        {d.weekday_name}: Con evento: {formatPctKpi(d.eventPct!)}
-                      </span>
-                    ))}
-                </div>
-                <div className="mt-3">
-                  <KpiChip label="Impacto polideportivo" value={weekdayKpi} />
-                </div>
-              </>
-            )}
-          </section>
-        </div>
-
-        {/* Sección 3 */}
-        <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4">
-          <h2 className="text-sm font-black uppercase tracking-wider text-[#36606F] mb-3">
-            Margen por producto
-          </h2>
-          {products.error ? (
-            <SectionErrorBanner message={products.error} onRetry={() => void fetchProducts()} />
-          ) : products.loading ? (
-            <SectionSkeleton rows={8} />
-          ) : products.data.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center space-y-4">
-              <p className="text-sm font-semibold text-zinc-600">
-                Para ver esta sección, mapea recetas con coste en /recipes
-              </p>
-              <Link
-                href="/recipes"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#36606F] px-6 text-sm font-black uppercase tracking-wide text-white active:scale-95"
-              >
-                Ir a recetas
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto -mx-1 px-1">
-              <div className="min-w-[640px] h-[420px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    layout="vertical"
-                    data={productChartData}
-                    margin={{ top: 4, right: 48, left: 8, bottom: 4 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      xAxisId="margin"
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={(v) => formatEuroChart(Number(v), 0)}
-                    />
-                    <XAxis type="number" xAxisId="units" orientation="top" hide />
-                    <YAxis
-                      type="category"
-                      dataKey="shortName"
-                      width={120}
-                      tick={{ fontSize: 10, fontWeight: 600 }}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload?.length) return null
-                        const row = payload[0]?.payload as ProductMarginRow & { marginPct: number }
-                        return (
-                          <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1 max-w-xs">
-                            <p className="font-black text-[#36606F]">{row.product_name}</p>
-                            <p>Unidades: {row.total_units_sold}</p>
-                            <p>Precio venta: {formatEuroChart(row.avg_sale_price)}</p>
-                            <p>Coste receta: {formatEuroChart(row.recipe_cost)}</p>
-                            <p>Margen unitario: {formatEuroChart(row.margin_per_unit)}</p>
-                            <p>Margen total: {formatEuroChart(row.total_margin_contribution)}</p>
-                          </div>
-                        )
-                      }}
-                    />
-                    <Legend />
-                    <Bar
-                      xAxisId="margin"
-                      dataKey="total_margin_contribution"
-                      name="Margen total"
-                      radius={[0, 4, 4, 0]}
-                    >
-                      {productChartData.map((entry, index) => (
-                        <Cell key={`prod-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                    <Line
-                      xAxisId="units"
-                      type="monotone"
-                      dataKey="total_units_sold"
-                      name="Unidades"
-                      stroke="#9CA3AF"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </section>
       </div>
     </div>
   )

@@ -11,6 +11,9 @@ import type {
   WeekdayAnalysisRow,
   ProductMarginRow,
 } from './schemas'
+import {
+  getEuropeMadridYmdToday,
+} from '@/utils/date-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,27 +35,6 @@ async function ssrWithTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promis
   }
 }
 
-function formatLocalYmd(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function getMadridYmdToday(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date())
-}
-
-function subtractDaysFromYmd(ymd: string, days: number): string {
-  const [y, m, d] = ymd.split('-').map(Number)
-  return formatLocalYmd(new Date(y, m - 1, d - days))
-}
-
 export default async function InsightsPage() {
   const supabase = await createClient()
   const {
@@ -72,8 +54,9 @@ export default async function InsightsPage() {
     redirect('/dashboard')
   }
 
-  const dateTo = getMadridYmdToday()
-  const dateFrom = subtractDaysFromYmd(dateTo, 30)
+  const today = getEuropeMadridYmdToday()
+  const dateFrom = today
+  const dateTo = today
 
   const timeoutMsg = 'Tiempo de espera agotado. Pulsa Reintentar en la sección afectada.'
 

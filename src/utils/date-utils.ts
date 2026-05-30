@@ -202,3 +202,16 @@ export function getNextEuropeMadridMidnight(now: Date = new Date()): Date {
   const startToday = getStartOfEuropeMadridToday(now);
   return new Date(startToday.getTime() + 24 * 60 * 60 * 1000);
 }
+
+/** Calendario YYYY-MM-DD en Europe/Madrid (sin `new Date('YYYY-MM-DD')`). */
+export function getEuropeMadridYmdToday(now: Date = new Date()): string {
+  const { y, m, day } = madridDatePartsFromInstant(now);
+  return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Resta días a un YYYY-MM-DD usando aritmética local (anti-shift). */
+export function subtractDaysFromEuropeMadridYmd(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const next = new Date(y, m - 1, d - days);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+}
