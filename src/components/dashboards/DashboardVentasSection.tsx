@@ -39,6 +39,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [loadingSalesTickets, setLoadingSalesTickets] = useState(false);
     const [salesViewDate, setSalesViewDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     const salesViewDateRef = useRef(salesViewDate);
+    const initialLoadDoneRef = useRef(false);
+    const hourlyFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false);
     const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
     const [selectedChartHour, setSelectedChartHour] = useState<number | null>(null);
@@ -125,7 +127,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         total: prev.total + newTotal,
                         count: prev.count + (newTotal > 0 ? 1 : newTotal < 0 ? -1 : 0),
                     }));
-                    fetchHourlySales(todayStr);
+                    if (hourlyFetchDebounceRef.current) {
+                        clearTimeout(hourlyFetchDebounceRef.current);
+                    }
+                    hourlyFetchDebounceRef.current = setTimeout(() => {
+                        void fetchHourlySales(todayStr);
+                        hourlyFetchDebounceRef.current = null;
+                    }, 300);
                 }
             )
             .subscribe();
@@ -133,13 +141,27 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         return () => {
             supabase.removeChannel(channel);
             clearInterval(dayCheckInterval);
+            if (hourlyFetchDebounceRef.current) {
+                clearTimeout(hourlyFetchDebounceRef.current);
+            }
         };
     }, [supabase]);
 
     salesViewDateRef.current = salesViewDate;
 
     useEffect(() => {
-        fetchSalesForDate(salesViewDate);
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const hasInitialTodayData =
+            salesViewDate === todayStr &&
+            initialData?.liveTickets != null &&
+            initialData?.salesChartData != null;
+
+        if (hasInitialTodayData && !initialLoadDoneRef.current) {
+            initialLoadDoneRef.current = true;
+            return;
+        }
+
+        void fetchSalesForDate(salesViewDate);
     }, [salesViewDate]);
 
     useEffect(() => {

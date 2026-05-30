@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Fotos de albarán pueden superar el límite por defecto (1 MB) de Server Actions
   experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns"],
     serverActions: {
       bodySizeLimit: "12mb",
     },

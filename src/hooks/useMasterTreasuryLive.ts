@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { getDashboardData } from '@/app/actions/get-dashboard-data';
+import { getTreasurySnapshot } from '@/app/actions/get-treasury-snapshot';
 
 export type MasterTreasuryState = {
     actualBalance: number;
@@ -17,7 +17,7 @@ export function useMasterTreasuryLive(initial?: { actualBalance?: number; boxes?
 
     const refresh = useCallback(async () => {
         try {
-            const data = await getDashboardData();
+            const data = await getTreasurySnapshot();
             if (data) {
                 setActualBalance(data.actualBalance ?? 0);
                 setBoxes(data.boxes ?? []);

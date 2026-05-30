@@ -8,8 +8,12 @@ import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import SileoProvider from "@/components/SileoProvider";
-import ChatMarbella from "@/components/chat/ChatMarbella";
+import dynamic from "next/dynamic";
 import ModalChromeWatcher from "@/components/ModalChromeWatcher";
+
+const ChatMarbella = dynamic(() => import("@/components/chat/ChatMarbella"), {
+  ssr: false,
+});
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -70,16 +70,13 @@ export default async function FinanzasPage({
 
   const supabase = await createClient();
 
-  const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr) {
-    redirect('/login');
-  }
-  if (!auth?.user) redirect('/login');
+  const { data: { session }, error: authErr } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', auth.user.id)
+    .eq('id', user.id)
     .single();
   if (profileErr) redirect('/dashboard');
   if (profile?.role !== 'manager') redirect('/dashboard');

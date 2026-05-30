@@ -1,15 +1,32 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
-import AdminDashboardView from './AdminDashboardView';
-import MasterDashboardView from './MasterDashboardView';
-import StaffDashboardView from './StaffDashboardView';
+function DashboardPanelSkeleton() {
+    return <div className="min-h-[480px] w-full animate-pulse bg-white/10 rounded-2xl" aria-hidden />;
+}
+
+const AdminDashboardView = dynamic(() => import('./AdminDashboardView'), {
+    loading: () => <DashboardPanelSkeleton />,
+});
+const MasterDashboardView = dynamic(() => import('./MasterDashboardView'), {
+    loading: () => <DashboardPanelSkeleton />,
+});
+const StaffDashboardView = dynamic(() => import('./StaffDashboardView'), {
+    loading: () => <DashboardPanelSkeleton />,
+});
 
 export type DashboardView = 'admin' | 'master' | 'staff';
+
+const PANEL_INDEX: Record<DashboardView, number> = {
+    admin: 0,
+    master: 1,
+    staff: 2,
+};
 
 interface DashboardSwitcherProps {
     userRole: string;
@@ -29,19 +46,46 @@ export default function DashboardSwitcher({
     const [view, setView] = useState<DashboardView>(initialView);
     const [offsetX, setOffsetX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
+    const [dragMountPanels, setDragMountPanels] = useState(false);
     const startX = useRef(0);
     const startY = useRef(0);
     const isHorizontalDrag = useRef<boolean | null>(null);
     const dragActivated = useRef(false);
     const containerWidth = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const dragMountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const DRAG_DEAD_ZONE = 10;
+    const DRAG_MOUNT_DELAY_MS = 150;
     const isManager = userRole === 'manager';
 
     useEffect(() => {
         setView(initialView);
     }, [initialView]);
+
+    useEffect(() => {
+        return () => {
+            if (dragMountTimerRef.current) {
+                clearTimeout(dragMountTimerRef.current);
+            }
+        };
+    }, []);
+
+    const startDragMountTimer = () => {
+        if (dragMountTimerRef.current) return;
+        dragMountTimerRef.current = setTimeout(() => {
+            setDragMountPanels(true);
+            dragMountTimerRef.current = null;
+        }, DRAG_MOUNT_DELAY_MS);
+    };
+
+    const clearDragMountTimer = () => {
+        if (dragMountTimerRef.current) {
+            clearTimeout(dragMountTimerRef.current);
+            dragMountTimerRef.current = null;
+        }
+        setDragMountPanels(false);
+    };
 
     const handleTouchStart = (e: React.TouchEvent) => {
         if (!isManager) return;
@@ -70,6 +114,7 @@ export default function DashboardSwitcher({
                 isHorizontalDrag.current = true;
                 dragActivated.current = true;
                 setIsDragging(true);
+                startDragMountTimer();
             } else {
                 isHorizontalDrag.current = false;
                 dragActivated.current = true;
@@ -102,6 +147,7 @@ export default function DashboardSwitcher({
 
     const handleTouchEnd = () => {
         if (!dragActivated.current) return;
+        clearDragMountTimer();
         setIsDragging(false);
         dragActivated.current = false;
 
@@ -129,8 +175,6 @@ export default function DashboardSwitcher({
     const viewIndex = isTriple
         ? view === 'admin' ? 0 : view === 'master' ? 1 : 2
         : view === 'admin' ? 0 : 1;
-    // margin-left % es relativo al ancho del contenedor (viewport), no al track.
-    // Cada panel ocupa 1 viewport: admin=0%, master=-100%, staff=-200% (triple) o -100% (dual).
     const currentTranslate = isManager ? -viewIndex * 100 : 0;
     const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 100 : 0;
     const finalTranslate = isManager ? currentTranslate + dragTranslatePercent : 0;
@@ -138,7 +182,14 @@ export default function DashboardSwitcher({
     const trackWidth = isTriple ? '300%' : isManager ? '200%' : '100%';
     const panelClass = isTriple ? 'w-1/3' : isManager ? 'w-1/2' : 'w-full';
 
-    const shouldRenderPanel = (panel: DashboardView) => view === panel || isDragging;
+    const shouldRenderPanel = (panel: DashboardView) => {
+        if (view === panel) return true;
+        if (!dragMountPanels) return false;
+        if (isTriple) {
+            return Math.abs(PANEL_INDEX[view] - PANEL_INDEX[panel]) === 1;
+        }
+        return panel === 'admin' || panel === 'staff';
+    };
 
     return (
         <div
