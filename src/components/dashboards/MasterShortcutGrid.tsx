@@ -2,16 +2,17 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check, TrendingUp } from 'lucide-react';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardIosIcon from '@/components/dashboards/DashboardIosIcon';
-
+import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 const WEB_URL = 'https://marbella-web.vercel.app';
 
 type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
-    onOpenPedidos: () => void;
-    onOpenCambio: () => void;
+    overtimeSnapshot: OvertimeWeekSnapshot | null;
+    onOpenPedidos: () => void;    onOpenCambio: () => void;
     onOpenReservas: () => void;
     onOpenHorarios: () => void;
     onOpenPlantilla: () => void;
@@ -28,6 +29,7 @@ function formatBoxEur(v: number) {
 export default function MasterShortcutGrid({
     actualBalance,
     changeBoxes,
+    overtimeSnapshot,
     onOpenPedidos,
     onOpenCambio,
     onOpenReservas,
@@ -46,14 +48,19 @@ export default function MasterShortcutGrid({
             key: 'caja-inicial',
             node: (
                 <DashboardIosIcon
-                    label="Caja Inicial"
+                    label="C INICIAL"
                     labelClassName="text-white/90"
+                    contentClassName="w-12 h-12 md:w-11 md:h-11 flex-none"
                     onClick={() => router.push('/dashboard/movements')}
-                    className="border-emerald-700/20 bg-emerald-600 shadow-md border-0"
+                    className="bg-emerald-600 shadow-md border-2 border-white"
                 >
-                    <PremiumCountUp value={actualBalance} suffix="€" decimals={2} className="text-sm md:text-[11px] font-black text-white leading-none tabular-nums text-center" />
-                </DashboardIosIcon>
-            ),
+                    <PremiumCountUp
+                        value={actualBalance}
+                        suffix="€"
+                        decimals={2}
+                        className="text-sm md:text-[11px] font-black text-white leading-none tabular-nums text-center w-full"
+                    />
+                </DashboardIosIcon>            ),
         },
         { key: 'asistencia', node: <DashboardIosIcon label="Asistencia" img="/icons/calendar.png" onClick={() => router.push('/staff/history')} /> },
         { key: 'recetas', node: <DashboardIosIcon label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes')} /> },
@@ -62,9 +69,51 @@ export default function MasterShortcutGrid({
         { key: 'pedidos', node: <DashboardIosIcon label="Pedidos" img="/icons/suppliers.png" onClick={onOpenPedidos} /> },
         { key: 'carta', node: <DashboardIosIcon label="Carta" img="/icons/menu.png" onClick={() => router.push('/staff/carta')} /> },
         { key: 'consumo', node: <DashboardIosIcon label="Consumo" img="/icons/consum.png" onClick={() => router.push('/dashboard/consumo-personal')} /> },
+        {
+            key: 'rentabilidad',
+            node: (
+                <DashboardIosIcon
+                    label="Rentabilidad"
+                    icon={TrendingUp}
+                    iconColor="bg-[#36606F]"
+                    onClick={() => router.push('/dashboard/insights')}
+                />
+            ),
+        },
         { key: 'horarios', node: <DashboardIosIcon label="Horarios" img="/icons/schedule.png" onClick={onOpenHorarios} /> },
-        { key: 'hextras', node: <DashboardIosIcon label="H. extras" img="/icons/overtime.png" onClick={() => router.push('/dashboard/overtime')} /> },
-        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
+        {
+            key: 'hextras',
+            node: (
+                <DashboardIosIcon
+                    label="H. extras"
+                    contentClassName="w-12 h-12 md:w-11 md:h-11 flex-none relative"
+                    onClick={() => router.push('/dashboard/overtime')}
+                >
+                    <div className="relative flex items-center justify-center w-full h-full">
+                        {overtimeSnapshot ? (
+                            <>
+                                <div className="absolute -top-0.5 -right-0.5 z-10">
+                                    {overtimeSnapshot.isFullyPaid ? (
+                                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                            <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
+                                        </div>
+                                    ) : (
+                                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                            <span className="text-white font-black text-[7px] leading-none">!</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">
+                                    {overtimeSnapshot.total > 0.05 ? `${overtimeSnapshot.total.toFixed(0)}€` : ' '}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-sm md:text-[11px] font-black text-zinc-300 leading-none"> </span>
+                        )}
+                    </div>
+                </DashboardIosIcon>
+            ),
+        },        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
         { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
         { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
         { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/web.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
