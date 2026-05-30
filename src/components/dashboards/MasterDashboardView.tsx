@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { addDays, format } from 'date-fns';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
+import { getOvertimeData } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import MasterReservasModal from '@/components/dashboards/MasterReservasModal';
@@ -14,6 +16,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
+import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 import { cn } from '@/lib/utils';
 
 type MasterDashboardViewProps = {
@@ -52,6 +55,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
     const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
     const [monthShifts, setMonthShifts] = useState<any[]>([]);
+    const [overtimeSnapshot, setOvertimeSnapshot] = useState<OvertimeWeekSnapshot | null>(null);
 
     const changeBoxes = useMemo(
         () => boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || '')),
@@ -103,6 +107,23 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
         void loadProfileAndShifts();
     }, [supabase]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const start = format(addDays(new Date(), -60), 'yyyy-MM-dd');
+        const end = format(new Date(), 'yyyy-MM-dd');
+        getOvertimeData(start, end)
+            .then((result) => {
+                if (cancelled) return;
+                setOvertimeSnapshot(pickLatestOvertimeWeekSnapshot(result?.weeksResult ?? []));
+            })
+            .catch(() => {
+                if (!cancelled) setOvertimeSnapshot(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const ensureAllEmployeesIncludingInactive = async () => {
         if (allEmployeesIncludingInactive) return allEmployeesIncludingInactive;
@@ -174,6 +195,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 <MasterShortcutGrid
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
+                    overtimeSnapshot={overtimeSnapshot}
                     onOpenPedidos={() => setIsSupplierModalOpen(true)}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => setIsReservasModalOpen(true)}

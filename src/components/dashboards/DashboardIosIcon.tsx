@@ -13,6 +13,7 @@ type DashboardIosIconProps = {
     iconColor?: string;
     className?: string;
     labelClassName?: string;
+    contentClassName?: string;
     children?: React.ReactNode;
 };
 
@@ -24,6 +25,7 @@ export default function DashboardIosIcon({
     iconColor = 'bg-white',
     className,
     labelClassName,
+    contentClassName,
     children,
 }: DashboardIosIconProps) {
     return (
@@ -37,7 +39,7 @@ export default function DashboardIosIcon({
                 className
             )}
         >
-            <div className="flex-1 flex items-center justify-center w-full min-h-0 min-w-0 md:flex-none md:h-11 md:w-11">
+            <div className={cn('flex-1 flex items-center justify-center w-full min-h-0 min-w-0 md:flex-none md:h-11 md:w-11', contentClassName)}>
                 {children ?? (
                     <div className="w-12 h-12 md:w-11 md:h-11 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
                         {img ? (
