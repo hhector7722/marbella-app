@@ -11,6 +11,7 @@ type DashboardIosIconProps = {
     img?: string;
     icon?: LucideIcon;
     iconColor?: string;
+    iconClassName?: string;
     className?: string;
     labelClassName?: string;
     contentClassName?: string;
@@ -23,6 +24,7 @@ export default function DashboardIosIcon({
     img,
     icon: Icon,
     iconColor = 'bg-white',
+    iconClassName,
     className,
     labelClassName,
     contentClassName,
@@ -51,8 +53,8 @@ export default function DashboardIosIcon({
                                 className="w-full h-full object-contain"
                             />
                         ) : Icon ? (
-                            <div className={cn('w-12 h-12 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-white shadow-sm', iconColor)}>
-                                <Icon size={28} strokeWidth={2.5} className="w-6 h-6 md:w-7 md:h-7" />
+                            <div className={cn('w-12 h-12 md:w-11 md:h-11 rounded-xl flex items-center justify-center shadow-sm', iconColor, !iconClassName && 'text-white')}>
+                                <Icon size={28} strokeWidth={2.5} className={cn('w-6 h-6 md:w-7 md:h-7', iconClassName)} />
                             </div>
                         ) : null}
                     </div>

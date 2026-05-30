@@ -12,7 +12,8 @@ type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
     overtimeSnapshot: OvertimeWeekSnapshot | null;
-    onOpenPedidos: () => void;    onOpenCambio: () => void;
+    onOpenPedidos: () => void;
+    onOpenCambio: () => void;
     onOpenReservas: () => void;
     onOpenHorarios: () => void;
     onOpenPlantilla: () => void;
@@ -60,7 +61,8 @@ export default function MasterShortcutGrid({
                         decimals={2}
                         className="text-sm md:text-[11px] font-black text-white leading-none tabular-nums text-center w-full"
                     />
-                </DashboardIosIcon>            ),
+                </DashboardIosIcon>
+            ),
         },
         { key: 'asistencia', node: <DashboardIosIcon label="Asistencia" img="/icons/calendar.png" onClick={() => router.push('/staff/history')} /> },
         { key: 'recetas', node: <DashboardIosIcon label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes')} /> },
@@ -75,7 +77,8 @@ export default function MasterShortcutGrid({
                 <DashboardIosIcon
                     label="Rentabilidad"
                     icon={TrendingUp}
-                    iconColor="bg-[#36606F]"
+                    iconColor="bg-white"
+                    iconClassName="text-[#36606F]"
                     onClick={() => router.push('/dashboard/insights')}
                 />
             ),
@@ -86,23 +89,21 @@ export default function MasterShortcutGrid({
             node: (
                 <DashboardIosIcon
                     label="H. extras"
-                    contentClassName="w-12 h-12 md:w-11 md:h-11 flex-none relative"
+                    contentClassName="w-12 h-12 md:w-11 md:h-11 flex-none"
                     onClick={() => router.push('/dashboard/overtime')}
                 >
-                    <div className="relative flex items-center justify-center w-full h-full">
+                    <div className="flex items-center justify-center gap-1 w-full h-full">
                         {overtimeSnapshot ? (
                             <>
-                                <div className="absolute -top-0.5 -right-0.5 z-10">
-                                    {overtimeSnapshot.isFullyPaid ? (
-                                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                            <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
-                                        </div>
-                                    ) : (
-                                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                            <span className="text-white font-black text-[7px] leading-none">!</span>
-                                        </div>
-                                    )}
-                                </div>
+                                {overtimeSnapshot.isFullyPaid ? (
+                                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm shrink-0">
+                                        <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
+                                    </div>
+                                ) : (
+                                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm shrink-0">
+                                        <span className="text-white font-black text-[7px] leading-none">!</span>
+                                    </div>
+                                )}
                                 <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">
                                     {overtimeSnapshot.total > 0.05 ? `${overtimeSnapshot.total.toFixed(0)}€` : ' '}
                                 </span>
@@ -113,7 +114,8 @@ export default function MasterShortcutGrid({
                     </div>
                 </DashboardIosIcon>
             ),
-        },        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
+        },
+        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
         { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
         { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
         { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/web.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
