@@ -1,16 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Save, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus, Wand2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
+import { getBoxInventoryForAutofill } from '@/app/actions/cash-box-inventory';
+import { greedyCashBreakdown, hasAnyInventoryStock } from '@/lib/greedy-cash-breakdown';
 
 interface CashDenominationFormProps {
     type: 'in' | 'out' | 'audit';
     boxName: string;
+    /** Caja operativa / cambio — inventario para autorrelleno */
+    boxId?: string;
     onSubmit: (total: number, breakdown: any, notes: string, date?: string) => void; // Updated signature
     onCancel: () => void;
     initialCounts?: any;
@@ -24,9 +29,14 @@ interface CashDenominationFormProps {
     variant?: 'default' | 'tipPool';
 }
 
+function inventoryFromStockMap(stock: Record<number, number>) {
+    return DENOMINATIONS.map((d) => ({ denomination: d, quantity: stock[d] || 0 })).filter((r) => r.quantity > 0);
+}
+
 export const CashDenominationForm = ({
     type,
     boxName,
+    boxId,
     onSubmit,
     onCancel,
     initialCounts = {},
@@ -69,8 +79,95 @@ export const CashDenominationForm = ({
     const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
+    const [outTargetAmount, setOutTargetAmount] = useState<number | ''>('');
+    const [autofillLoading, setAutofillLoading] = useState(false);
 
     const calculateTotal = (c: Record<number, number>) => DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
+    const isAudit = type === 'audit';
+    const isTipPool = variant === 'tipPool';
+
+    const showOutAutofill =
+        type === 'out' && !isAudit && variant === 'default' && !isEditing;
+
+    const autofillTargetAmount = isPurchaseMode
+        ? (typeof purchasePrice === 'number' ? purchasePrice : 0)
+        : (typeof outTargetAmount === 'number' ? outTargetAmount : 0);
+
+    const stockHasInventory = useMemo(
+        () => hasAnyInventoryStock(availableStock),
+        [availableStock],
+    );
+
+    const autofillDisabled =
+        autofillLoading ||
+        autofillTargetAmount <= 0 ||
+        !stockHasInventory;
+
+    const handleAutofillBreakdown = async () => {
+        const amount = autofillTargetAmount;
+        if (amount <= 0) return;
+
+        setAutofillLoading(true);
+        try {
+            let inventory = inventoryFromStockMap(availableStock);
+
+            if (boxId) {
+                const res = await getBoxInventoryForAutofill(boxId);
+                if (!res.ok) {
+                    toast.error(res.error);
+                    return;
+                }
+                inventory = res.inventory;
+            }
+
+            if (!hasAnyInventoryStock(inventory)) {
+                toast.error('El inventario de la caja está vacío.');
+                return;
+            }
+
+            const { breakdown, remaining } = greedyCashBreakdown(amount, inventory);
+            const nextCounts: Record<number, number> = {};
+            DENOMINATIONS.forEach((d) => {
+                const q = breakdown[d] ?? 0;
+                if (q > 0) nextCounts[d] = q;
+            });
+            setCounts(nextCounts);
+            if (isPurchaseMode) setPurchaseTab('given');
+
+            if (remaining > 0.005) {
+                toast.warning(
+                    `No se puede completar el desglose exacto con las existencias actuales. Faltan ${remaining.toFixed(2)}€ por asignar.`,
+                );
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al autorrellenar el desglose.');
+        } finally {
+            setAutofillLoading(false);
+        }
+    };
+
+    const renderAutofillButton = (className?: string) => (
+        <button
+            type="button"
+            onClick={() => void handleAutofillBreakdown()}
+            disabled={autofillDisabled}
+            className={cn(
+                'min-h-10 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95',
+                autofillDisabled
+                    ? 'bg-[#36606F]/40 opacity-50 cursor-not-allowed'
+                    : 'bg-[#36606F] hover:brightness-110 shadow-sm',
+                className,
+            )}
+        >
+            {autofillLoading ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden />
+            ) : (
+                <Wand2 size={14} strokeWidth={2.5} aria-hidden />
+            )}
+            Autorrellenar
+        </button>
+    );
 
     const handleCountChange = (val: number, qty: string) => {
         const numQty = parseInt(qty) || 0;
@@ -115,9 +212,7 @@ export const CashDenominationForm = ({
         }
     };
 
-    const isAudit = type === 'audit';
     const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
-    const isTipPool = variant === 'tipPool';
 
     return (
         <div className={cn('flex flex-col h-full overflow-hidden bg-white relative', !isTipPool && 'rounded-2xl')}>
@@ -215,24 +310,32 @@ export const CashDenominationForm = ({
                             </div>
                         </div>
 
-                        {/* ROW 2: Precio, Entregado, Cambio */}
+                        {/* ROW 2: Precio (+ autorrelleno), Entregado, Cambio */}
                         <div className="grid grid-cols-3 gap-2">
-                            {/* PRECIO */}
-                            <div className="flex flex-col p-1.5 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm justify-center">
-                                <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 text-center">Precio</label>
-                                <div className="flex items-center relative flex-1 max-w-[64px] justify-center mx-auto">
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={purchasePrice}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setPurchasePrice(val === '' ? '' : parseFloat(val));
-                                        }}
-                                        placeholder="0.00"
-                                        className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none focus:ring-0 text-center flex-1 min-w-0"
-                                    />
-                                    <span className="text-orange-400 font-black absolute right-0 text-[10px] pointer-events-none opacity-50">€</span>
+                            {/* PRECIO + autorrelleno desglose entregado */}
+                            <div className="col-span-3 sm:col-span-1 flex flex-col gap-2 sm:gap-1.5">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                                    <div className="flex flex-col flex-1 p-1.5 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm justify-center min-h-10">
+                                        <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 text-center sm:text-left sm:ml-1">
+                                            Importe total
+                                        </label>
+                                        <div className="flex items-center relative flex-1 sm:max-w-none max-w-[120px] justify-center sm:justify-start mx-auto sm:mx-0 sm:pl-1">
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={purchasePrice}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setPurchasePrice(val === '' ? '' : parseFloat(val));
+                                                }}
+                                                placeholder="0.00"
+                                                className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none focus:ring-0 text-center sm:text-left flex-1 min-w-0 min-h-10 tabular-nums"
+                                            />
+                                            <span className="text-orange-400 font-black sm:static absolute right-0 text-[10px] pointer-events-none opacity-50 sm:ml-0.5">€</span>
+                                        </div>
+                                    </div>
+                                    {showOutAutofill && renderAutofillButton('w-full sm:w-auto shrink-0')}
                                 </div>
                             </div>
 
@@ -262,7 +365,8 @@ export const CashDenominationForm = ({
                         </div>
                     </div>
                 ) : !isTipPool ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
+                    <div className="flex flex-col gap-2 px-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         <div className={cn(
                             "flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all",
                             isAudit && "col-span-full"
@@ -287,6 +391,29 @@ export const CashDenominationForm = ({
                                 />
                             </div>
                         )}
+                    </div>
+                    {showOutAutofill && (
+                        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                            <div className="flex flex-col flex-1 p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm min-h-12 justify-center">
+                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
+                                    Importe total (€)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={outTargetAmount}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setOutTargetAmount(val === '' ? '' : parseFloat(val));
+                                    }}
+                                    placeholder="0.00"
+                                    className="w-full bg-transparent border-none p-0 text-zinc-800 text-sm font-black outline-none focus:ring-0 tabular-nums min-h-10"
+                                />
+                            </div>
+                            {renderAutofillButton('w-full sm:w-auto')}
+                        </div>
+                    )}
                     </div>
                 ) : null}
 

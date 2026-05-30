@@ -1613,6 +1613,7 @@ export default function StaffDashboardView() {
                                 key={'out' + (selectedBox?.id || '')}
                                 type={'out'}
                                 boxName={selectedBox?.name || 'Caja Inicial'}
+                                boxId={selectedBox?.id}
                                 initialCounts={{}}
                                 availableStock={boxInventoryMap}
                                 onCancel={() => setCashModalMode('none')}

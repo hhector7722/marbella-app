@@ -1221,6 +1221,7 @@ export default function MovementsPage() {
                                 key={cashModalMode + (boxData?.id || '')}
                                 type={cashModalMode === 'audit' ? 'audit' : (cashModalMode === 'in' ? 'in' : 'out')}
                                 boxName={boxData?.name || 'Caja'}
+                                boxId={boxData?.id}
                                 onSubmit={handleCashTransaction}
                                 onCancel={() => setCashModalMode('none')}
                                 initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}

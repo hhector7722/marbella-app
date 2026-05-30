@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-30 (Tarifa extras semanal alineada globalmente)
+**Última actualización:** 2026-05-30 (Autorrelleno desglose salida caja inicial)
+
+- [x] **Tesorería: autorrelleno desglose en salida caja (2026-05-30)**: [`CashDenominationForm.tsx`](src/components/CashDenominationForm.tsx) — botón «Autorrellenar» (Wand2, petróleo `#36606F`) en salidas OUT con importe > 0; greedy sobre inventario real vía server action [`getBoxInventoryForAutofill`](src/app/actions/cash-box-inventory.ts) + [`greedy-cash-breakdown.ts`](src/lib/greedy-cash-breakdown.ts). Toast warning si no cuadra el importe exacto. Integrado en dashboard admin, movimientos y modal legacy staff.
+
+**Última actualización anterior:** 2026-05-30 (Tarifa extras semanal alineada globalmente)
 
 - [x] **Horas extras: tarifa €/h semanal alineada en todo el sistema (2026-05-30)**: Migraciones [`20260530160000_weekly_overtime_price_snapshot_ui.sql`](supabase/migrations/20260530160000_weekly_overtime_price_snapshot_ui.sql) + [`20260530170000_align_overtime_price_snapshot_globally.sql`](supabase/migrations/20260530170000_align_overtime_price_snapshot_globally.sql) — helper `fn_worker_effective_overtime_rate` (snapshot → término laboral → perfil). UI `/staff/history` edita `overtime_price_snapshot`. Consumidores unificados: `get_monthly_timesheet`, `get_weekly_worker_stats` (`/dashboard/overtime`, dashboard admin), `fn_labor_overtime_allocated_day` (`/dashboard/labor`), `fn_worker_hourly_rate` (Insights), prorrateo ventas, `fn_recalc` (`total_cost`).
 

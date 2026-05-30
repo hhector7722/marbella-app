@@ -859,6 +859,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         key={cashModalMode + (selectedBox?.id || '')}
                                         type={cashModalMode as 'in' | 'out' | 'audit'}
                                         boxName={selectedBox?.name || 'Caja'}
+                                        boxId={selectedBox?.id}
                                         initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
                                         availableStock={boxInventoryMap}
                                         onCancel={() => setCashModalMode('none')}
