@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-29 (Master dashboard Hector)
+**Última actualización:** 2026-05-30 (Fix auto-mapeo albaranes)
+
+- [x] **Albaranes: fix auto-mapeo RPC ambigua (2026-05-30)**: Migración [`20260530120000_fix_auto_map_invoice_lines_fuzzy_overload.sql`](supabase/migrations/20260530120000_fix_auto_map_invoice_lines_fuzzy_overload.sql) — elimina sobrecarga duplicada `auto_map_invoice_lines_fuzzy(uuid, double precision)` que provocaba error PostgREST al pulsar auto-mapeo; queda solo firma `(uuid, numeric)`.
 
 - [x] **Master dashboard personal Hector (2026-05-29)**: Nueva ruta `/master/dashboard` exclusiva para `hhector7722@gmail.com` — carrusel de 3 pantallas (Admin | Master | Staff) con indicadores iOS; sección de ventas dinámicas compartida (`DashboardVentasSection`) + rejilla de 19 accesos rápidos (`MasterShortcutGrid`) incluyendo Caja Inicial verde en tiempo real y cajas de cambio. Guards en [`proxy.ts`](src/proxy.ts), redirect `/` → master, Navbar y BottomNav apuntan a hub central.
 
