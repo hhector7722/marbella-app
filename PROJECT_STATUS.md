@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-30 (Fix auto-mapeo albaranes)
+**Última actualización:** 2026-05-30 (Eliminada página legacy `/staff`)
+
+- [x] **Staff: eliminada página legacy `/staff/page.tsx` (2026-05-30)**: El hub de sala vive en `/staff/dashboard` (`StaffDashboardView` vía `DashboardSwitcher`). Ruta `/staff` redirige en [`proxy.ts`](src/proxy.ts) → `/staff/dashboard`. Eliminado duplicado de ~850 líneas (fichaje, consumo, horarios) que coexistía con el dashboard unificado.
 
 - [x] **Albaranes: fix auto-mapeo RPC ambigua (2026-05-30)**: Migración [`20260530120000_fix_auto_map_invoice_lines_fuzzy_overload.sql`](supabase/migrations/20260530120000_fix_auto_map_invoice_lines_fuzzy_overload.sql) — elimina sobrecarga duplicada `auto_map_invoice_lines_fuzzy(uuid, double precision)` que provocaba error PostgREST al pulsar auto-mapeo; queda solo firma `(uuid, numeric)`.
 

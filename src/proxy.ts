@@ -33,6 +33,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (path === "/staff") {
+    return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
