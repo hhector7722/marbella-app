@@ -76,6 +76,8 @@ export default async function FinanzasPage({
     redirect('/login');
   }
   if (!user) redirect('/login');
+
+  const { data: profile, error: profileErr } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
