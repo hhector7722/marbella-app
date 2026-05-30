@@ -45,7 +45,7 @@ export default function MasterShortcutGrid({
                     onClick={() => router.push('/dashboard/movements')}
                     className="border-emerald-700/20 bg-emerald-600 shadow-md border-0"
                 >
-                    <PremiumCountUp value={actualBalance} suffix="€" decimals={2} className="text-sm md:text-base font-black text-white leading-none tabular-nums text-center" />
+                    <PremiumCountUp value={actualBalance} suffix="€" decimals={2} className="text-sm md:text-[11px] font-black text-white leading-none tabular-nums text-center" />
                 </DashboardIosIcon>
             ),
         },
@@ -71,7 +71,7 @@ export default function MasterShortcutGrid({
             key: 'cambio-1',
             node: (
                 <DashboardIosIcon label="Cambio 1" onClick={() => onOpenChangeBoxAudit(changeBox1)}>
-                    <span className="text-sm md:text-base font-black text-zinc-800 leading-none tabular-nums text-center">{formatBoxEur(Number(changeBox1.current_balance ?? 0))}</span>
+                    <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">{formatBoxEur(Number(changeBox1.current_balance ?? 0))}</span>
                 </DashboardIosIcon>
             ),
         });
@@ -82,7 +82,7 @@ export default function MasterShortcutGrid({
             key: 'cambio-2',
             node: (
                 <DashboardIosIcon label="Cambio 2" onClick={() => onOpenChangeBoxAudit(changeBox2)}>
-                    <span className="text-sm md:text-base font-black text-zinc-800 leading-none tabular-nums text-center">{formatBoxEur(Number(changeBox2.current_balance ?? 0))}</span>
+                    <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">{formatBoxEur(Number(changeBox2.current_balance ?? 0))}</span>
                 </DashboardIosIcon>
             ),
         });
@@ -94,9 +94,9 @@ export default function MasterShortcutGrid({
     });
 
     return (
-        <div className="grid grid-cols-4 gap-3 items-stretch">
+        <div className="grid grid-cols-4 gap-3 md:grid-cols-10 md:gap-x-2 md:gap-y-1.5 md:justify-items-center lg:grid-cols-[repeat(19,minmax(0,1fr))] lg:gap-x-1.5 lg:gap-y-1">
             {items.map(({ key, node }) => (
-                <div key={key} className="min-h-0 min-w-0">
+                <div key={key} className="min-h-0 min-w-0 w-full md:w-auto md:flex md:justify-center">
                     {node}
                 </div>
             ))}

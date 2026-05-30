@@ -80,8 +80,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     };
 
     return (
-        <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
-            <div className="px-4 w-full max-w-sm md:max-w-6xl mx-auto space-y-4">
+        <div className="pt-3 md:pt-2 animate-in fade-in duration-500 pb-8 md:pb-4">
+            <div className="px-4 w-full max-w-sm md:max-w-6xl mx-auto space-y-4 md:space-y-2">
                 <DashboardVentasSection
                     initialData={{
                         liveTickets: initialData?.liveTickets,
