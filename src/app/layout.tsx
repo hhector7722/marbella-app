@@ -8,12 +8,8 @@ import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import SileoProvider from "@/components/SileoProvider";
-import dynamic from "next/dynamic";
+import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import ModalChromeWatcher from "@/components/ModalChromeWatcher";
-
-const ChatMarbella = dynamic(() => import("@/components/chat/ChatMarbella"), {
-  ssr: false,
-});
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -119,7 +115,7 @@ export default async function RootLayout({
         <BottomNavWrapper />
         
         {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
-        <ChatMarbella />
+        <ChatMarbellaLazy />
       </body>
     </html>
   );
