@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
-  Legend,
   Line,
   ResponsiveContainer,
   Tooltip,
@@ -132,20 +131,51 @@ function KpiFloat({ label, value }: { label: string; value: string }) {
   )
 }
 
-const CHART_LEGEND_PROPS = {
-  layout: 'horizontal' as const,
-  align: 'center' as const,
-  verticalAlign: 'bottom' as const,
-  iconSize: 8,
-  wrapperStyle: {
-    fontSize: 10,
-    fontWeight: 700,
-    width: '100%',
-    paddingTop: 4,
-    display: 'flex',
-    justifyContent: 'center',
-    flexWrap: 'nowrap' as const,
-  },
+type LegendItem = {
+  label: string
+  color: string
+  variant?: 'bar' | 'line'
+}
+
+function SectionTitleRow({
+  title,
+  legend,
+}: {
+  title: string
+  legend?: LegendItem[]
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 mb-2 lg:mb-3 min-h-8">
+      <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] leading-tight shrink-0">
+        {title}
+      </h2>
+      {legend && legend.length > 0 && (
+        <div className="flex items-center gap-2 lg:gap-3 shrink-0 flex-nowrap ml-auto">
+          {legend.map((item) => (
+            <span
+              key={item.label}
+              className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-zinc-600 whitespace-nowrap"
+            >
+              {item.variant === 'line' ? (
+                <span
+                  className="w-3 h-0.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                  aria-hidden
+                />
+              ) : (
+                <span
+                  className="w-2 h-2 shrink-0 rounded-sm"
+                  style={{ backgroundColor: item.color }}
+                  aria-hidden
+                />
+              )}
+              {item.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function InsightsClient({
@@ -309,8 +339,10 @@ export default function InsightsClient({
     }
   }, [weekday.data])
 
+  const rankedProducts = useMemo(() => products.data.slice(0, 15), [products.data])
+
   const productChartData = useMemo(() => {
-    return products.data.slice(0, 15).map((p) => {
+    return rankedProducts.map((p) => {
       const marginPct =
         p.avg_sale_price > 0 ? (p.margin_per_unit / p.avg_sale_price) * 100 : 0
       let fill = MARGIN_BAR_MID
@@ -323,18 +355,18 @@ export default function InsightsClient({
         marginPct,
       }
     })
-  }, [products.data])
+  }, [rankedProducts])
 
   const bestProductIdx = useMemo(() => {
-    if (products.data.length === 0) return 0
-    return products.data.reduce(
+    if (rankedProducts.length === 0) return 0
+    return rankedProducts.reduce(
       (bestI, p, i, arr) =>
         p.total_margin_contribution > arr[bestI].total_margin_contribution ? i : bestI,
       0,
     )
-  }, [products.data])
+  }, [rankedProducts])
 
-  const selectedProduct = products.data[selectedProductIdx] ?? null
+  const selectedProduct = rankedProducts[selectedProductIdx] ?? null
 
   const syncSelectedProductToBest = useCallback(() => {
     setSelectedProductIdx(bestProductIdx)
@@ -426,12 +458,17 @@ export default function InsightsClient({
           </div>
 
           <div className="p-2 md:p-6 space-y-2 md:space-y-4">
-            <div className="grid grid-cols-2 gap-2 lg:gap-4">
-              {/* Sección 1 — móvil: gráfico | KPIs; desktop: fila superior izquierda */}
-              <section className="col-span-2 lg:col-span-1 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
-                <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] mb-2 lg:mb-3">
-                  Venta vs. Coste por hora
-                </h2>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 lg:gap-4">
+              {/* Sección 1 — ancho completo, gráfico protagonista */}
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
+                <SectionTitleRow
+                  title="Venta vs. Coste por hora"
+                  legend={[
+                    { label: 'Ventas', color: PETROLEO, variant: 'bar' },
+                    { label: 'M. obra', color: LABOR_RED, variant: 'bar' },
+                    { label: 'Margen', color: MARGIN_GREEN, variant: 'line' },
+                  ]}
+                />
                 {hourly.error ? (
                   <SectionErrorBanner message={hourly.error} onRetry={() => void fetchHourly(dateFrom, dateTo)} />
                 ) : hourly.loading ? (
@@ -439,17 +476,23 @@ export default function InsightsClient({
                 ) : (
                   <div className="flex flex-col gap-2">
                     <div className="min-w-0 overflow-x-auto -mx-0.5 px-0.5">
-                      <div className="h-[150px] lg:h-[280px] w-full min-w-[140px] lg:min-w-[520px]">
+                      <div className="h-[220px] sm:h-[280px] lg:h-[380px] w-full min-w-[280px] lg:min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={hourlyChartData}
-                            margin={{ top: 4, right: 2, left: -18, bottom: 20 }}
+                            margin={{ top: 8, right: 8, left: 4, bottom: 4 }}
+                            barCategoryGap="18%"
+                            barGap={4}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                            <XAxis dataKey="label" tick={{ fontSize: 8, fontWeight: 700 }} />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 10, fontWeight: 700 }}
+                              interval={0}
+                            />
                             <YAxis
-                              tick={{ fontSize: 7 }}
-                              width={32}
+                              tick={{ fontSize: 9 }}
+                              width={40}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
                             <Tooltip
@@ -468,16 +511,27 @@ export default function InsightsClient({
                                 )
                               }}
                             />
-                            <Legend {...CHART_LEGEND_PROPS} />
-                            <Bar dataKey="total_revenue" name="Ventas" fill={PETROLEO} radius={[2, 2, 0, 0]} />
-                            <Bar dataKey="labor_cost" name="M. obra" fill={LABOR_RED} radius={[2, 2, 0, 0]} />
+                            <Bar
+                              dataKey="total_revenue"
+                              name="Ventas"
+                              fill={PETROLEO}
+                              radius={[3, 3, 0, 0]}
+                              maxBarSize={28}
+                            />
+                            <Bar
+                              dataKey="labor_cost"
+                              name="M. obra"
+                              fill={LABOR_RED}
+                              radius={[3, 3, 0, 0]}
+                              maxBarSize={28}
+                            />
                             <Line
                               type="monotone"
                               dataKey="margin"
                               name="Margen"
                               stroke={MARGIN_GREEN}
-                              strokeWidth={2}
-                              dot={{ r: 2 }}
+                              strokeWidth={2.5}
+                              dot={{ r: 3 }}
                             />
                           </ComposedChart>
                         </ResponsiveContainer>
@@ -492,18 +546,16 @@ export default function InsightsClient({
                 )}
               </section>
 
-              {/* Sección 2 — móvil: mitad izquierda; desktop: fila superior derecha */}
-              <section className="col-span-1 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
-                <h2 className="text-[9px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] mb-2 lg:mb-3 leading-tight">
-                  Rend. por día
-                </h2>
+              {/* Sección 2 — columna estrecha */}
+              <section className="col-span-1 md:col-span-3 lg:col-span-3 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-3 min-w-0">
+                <SectionTitleRow title="Rend. por día" />
                 {weekday.error ? (
                   <SectionErrorBanner message={weekday.error} onRetry={() => void fetchWeekday(dateFrom, dateTo)} />
                 ) : weekday.loading ? (
                   <SectionSkeleton rows={5} />
                 ) : (
                   <>
-                    <div className="h-[180px] lg:h-[280px]">
+                    <div className="h-[160px] lg:h-[240px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           layout="vertical"
@@ -540,7 +592,7 @@ export default function InsightsClient({
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2 lg:gap-4">
+                    <div className="mt-2 flex flex-col gap-2">
                       <KpiFloat label="Mejor día" value={weekdayKpis.best} />
                       <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
                     </div>
@@ -548,11 +600,15 @@ export default function InsightsClient({
                 )}
               </section>
 
-              {/* Sección 3 — móvil: mitad derecha; desktop: fila inferior ancho completo */}
-              <section className="col-span-1 lg:col-span-2 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
-                <h2 className="text-[9px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] mb-2 lg:mb-3 leading-tight">
-                  Margen producto
-                </h2>
+              {/* Sección 3 — columna ancha */}
+              <section className="col-span-1 md:col-span-9 lg:col-span-9 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
+                <SectionTitleRow
+                  title="Margen producto"
+                  legend={[
+                    { label: 'Margen total', color: MARGIN_BAR_MID, variant: 'bar' },
+                    { label: 'Unidades', color: '#9CA3AF', variant: 'line' },
+                  ]}
+                />
                 {products.error ? (
                   <SectionErrorBanner message={products.error} onRetry={() => void fetchProducts()} />
                 ) : products.loading ? (
@@ -572,52 +628,46 @@ export default function InsightsClient({
                 ) : (
                   <div className="flex flex-col gap-2">
                     <div className="overflow-x-auto -mx-0.5 px-0.5">
-                      <div className="h-[180px] lg:h-[320px] w-full min-w-0 lg:min-w-[640px]">
+                      <div className="h-[200px] lg:h-[340px] w-full min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             layout="vertical"
                             data={productChartData}
-                            margin={{ top: 2, right: 8, left: 0, bottom: 20 }}
+                            margin={{ top: 2, right: 12, left: 4, bottom: 4 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis
                               type="number"
                               xAxisId="margin"
-                              tick={{ fontSize: 7 }}
+                              tick={{ fontSize: 8 }}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
                             <XAxis type="number" xAxisId="units" orientation="top" hide />
                             <YAxis
                               type="category"
                               dataKey="shortName"
-                              width={52}
-                              tick={{ fontSize: 7, fontWeight: 600 }}
+                              width={72}
+                              tick={{ fontSize: 8, fontWeight: 600 }}
                             />
-                            <Tooltip
-                              content={({ active, payload }) => {
-                                if (!active || !payload?.length) return null
-                                const row = payload[0]?.payload as ProductMarginRow & { marginPct: number }
-                                return (
-                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1 max-w-xs">
-                                    <p className="font-black text-[#36606F]">{row.product_name}</p>
-                                    <p>Unidades: {row.total_units_sold}</p>
-                                    <p>Precio venta: {formatEuroChart(row.avg_sale_price)}</p>
-                                    <p>Coste receta: {formatEuroChart(row.recipe_cost)}</p>
-                                    <p>Margen unitario: {formatEuroChart(row.margin_per_unit)}</p>
-                                    <p>Margen total: {formatEuroChart(row.total_margin_contribution)}</p>
-                                  </div>
-                                )
-                              }}
-                            />
-                            <Legend {...CHART_LEGEND_PROPS} />
+                            <Tooltip content={() => null} cursor={false} />
                             <Bar
                               xAxisId="margin"
                               dataKey="total_margin_contribution"
                               name="Margen total"
-                              radius={[0, 3, 3, 0]}
+                              radius={[0, 4, 4, 0]}
+                              cursor="pointer"
+                              onClick={(_data, index) => {
+                                if (typeof index === 'number') setSelectedProductIdx(index)
+                              }}
                             >
                               {productChartData.map((entry, index) => (
-                                <Cell key={`prod-${index}`} fill={entry.fill} />
+                                <Cell
+                                  key={`prod-${index}`}
+                                  fill={entry.fill}
+                                  stroke={index === selectedProductIdx ? PETROLEO : 'transparent'}
+                                  strokeWidth={index === selectedProductIdx ? 2 : 0}
+                                  opacity={index === selectedProductIdx ? 1 : 0.82}
+                                />
                               ))}
                             </Bar>
                             <Line
@@ -636,29 +686,27 @@ export default function InsightsClient({
 
                     {selectedProduct && (
                       <div className="pt-1 space-y-2">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                          <p className="text-xs lg:text-sm font-black text-zinc-800 leading-tight min-w-0">
+                        <label className="relative flex items-center gap-1 min-h-10 min-w-0 max-w-full cursor-pointer group">
+                          <span className="text-[9px] lg:text-[10px] font-bold text-zinc-700 leading-tight truncate flex-1 min-w-0">
                             {selectedProduct.product_name}
-                          </p>
-                          <label className="relative shrink-0 min-h-10 min-w-[5.5rem] inline-flex items-center justify-center gap-0.5 cursor-pointer">
-                            <span className="text-[10px] lg:text-xs font-black uppercase tracking-wide text-[#36606F] pointer-events-none">
-                              Cambiar
-                            </span>
-                            <ChevronDown className="h-3.5 w-3.5 text-[#36606F] pointer-events-none" aria-hidden />
-                            <select
-                              value={selectedProductIdx}
-                              onChange={(e) => setSelectedProductIdx(Number(e.target.value))}
-                              aria-label="Cambiar producto"
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            >
-                              {products.data.map((p, i) => (
-                                <option key={`${p.product_name}-${i}`} value={i}>
-                                  {p.product_name}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
+                          </span>
+                          <ChevronDown
+                            className="h-3.5 w-3.5 shrink-0 text-[#36606F] group-hover:text-[#2a4a56]"
+                            aria-hidden
+                          />
+                          <select
+                            value={selectedProductIdx}
+                            onChange={(e) => setSelectedProductIdx(Number(e.target.value))}
+                            aria-label="Seleccionar producto"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          >
+                            {rankedProducts.map((p, i) => (
+                              <option key={`${p.product_name}-${i}`} value={i}>
+                                {p.product_name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-1.5 text-[10px] lg:text-xs">
                           <ProductStat
                             label="Unidades"
