@@ -172,6 +172,7 @@ export default function DashboardSwitcher({
                                         salesChartData: initialData?.salesChartData,
                                         actualBalance: initialData?.actualBalance,
                                         boxes: initialData?.boxes,
+                                        allEmployees: initialData?.allEmployees,
                                     }}
                                 />
                             )}

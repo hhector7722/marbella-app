@@ -1,14 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import MasterReservasModal from '@/components/dashboards/MasterReservasModal';
+import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
+import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
 import { cn } from '@/lib/utils';
 
@@ -18,10 +22,12 @@ type MasterDashboardViewProps = {
         salesChartData?: { hora: number; total: number }[];
         actualBalance?: number;
         boxes?: any[];
+        allEmployees?: any[];
     };
 };
 
 export default function MasterDashboardView({ initialData }: MasterDashboardViewProps) {
+    const router = useRouter();
     const supabase = createClient();
     const { actualBalance, boxes, refresh } = useMasterTreasuryLive({
         actualBalance: initialData?.actualBalance,
@@ -31,13 +37,88 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
     const [isReservasModalOpen, setIsReservasModalOpen] = useState(false);
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
+
+    const [closingSalesSummary, setClosingSalesSummary] = useState(
+        initialData?.liveTickets || { total: 0, count: 0 }
+    );
+    const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
+    const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
+    const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
+
+    const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
+    const [monthShifts, setMonthShifts] = useState<any[]>([]);
 
     const changeBoxes = useMemo(
         () => boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || '')),
         [boxes]
     );
+
+    useEffect(() => {
+        async function loadProfileAndShifts() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data } = await supabase
+                .from('profiles')
+                .select('first_name, role')
+                .eq('id', user.id)
+                .single();
+
+            setUserData({
+                id: user.id,
+                name: data?.first_name || 'Empleado',
+                role: data?.role || 'manager',
+            });
+
+            const today = new Date();
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const { data: realShifts } = await supabase
+                .from('shifts')
+                .select('start_time, end_time, activity, activity_2')
+                .eq('user_id', user.id)
+                .eq('is_published', true)
+                .gte('start_time', startOfMonth.toISOString())
+                .order('start_time', { ascending: true });
+
+            if (realShifts && realShifts.length > 0) {
+                setMonthShifts(
+                    realShifts.map((s) => {
+                        const start = new Date(s.start_time);
+                        const end = new Date(s.end_time);
+                        return {
+                            date: start,
+                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            activity: s.activity || s.activity_2 || undefined,
+                        };
+                    })
+                );
+            }
+        }
+
+        void loadProfileAndShifts();
+    }, [supabase]);
+
+    const ensureAllEmployeesIncludingInactive = async () => {
+        if (allEmployeesIncludingInactive) return allEmployeesIncludingInactive;
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (error) {
+            console.error(error);
+            toast.error('Error al cargar plantilla completa');
+            return null;
+        }
+        const cleaned = (data || []).filter((p: any) => {
+            const name = (p.first_name || '').trim().toLowerCase();
+            return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+        });
+        setAllEmployeesIncludingInactive(cleaned);
+        return cleaned;
+    };
 
     const buildPaymentSources = (): BoxOption[] => {
         const list: BoxOption[] = [];
@@ -79,6 +160,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         }
     };
 
+    const userRole = (userData?.role as 'staff' | 'manager' | 'supervisor') || 'manager';
+
     return (
         <div className="pt-3 md:pt-2 animate-in fade-in duration-500 pb-8 md:pb-4">
             <div className="px-4 w-full max-w-sm md:max-w-6xl mx-auto space-y-4 md:space-y-2">
@@ -94,6 +177,9 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     onOpenPedidos={() => setIsSupplierModalOpen(true)}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => setIsReservasModalOpen(true)}
+                    onOpenHorarios={() => setIsScheduleModalOpen(true)}
+                    onOpenPlantilla={() => setIsStaffModalOpen(true)}
+                    onOpenCierre={() => setIsClosingModalOpen(true)}
                     onOpenChangeBoxAudit={openChangeBoxAudit}
                 />
             </div>
@@ -101,6 +187,51 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
 
             <MasterReservasModal isOpen={isReservasModalOpen} onClose={() => setIsReservasModalOpen(false)} />
+
+            <StaffScheduleModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                shifts={monthShifts}
+                userName={userData?.name}
+                userRole={userRole}
+                userId={userData?.id}
+            />
+
+            <StaffSelectionModal
+                isOpen={isStaffModalOpen}
+                onClose={() => setIsStaffModalOpen(false)}
+                employees={showAllEmployeesInPlantilla ? (allEmployeesIncludingInactive ?? allEmployees) : allEmployees}
+                onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
+                title="Plantilla"
+                variant="profile-list"
+                onOpenTips={() => {
+                    setIsStaffModalOpen(false);
+                    router.push('/dashboard/propinas');
+                }}
+                hideHeaderClose
+                includeInactive={showAllEmployeesInPlantilla}
+                headerTextAction={{
+                    label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',
+                    onClick: async () => {
+                        if (!showAllEmployeesInPlantilla) {
+                            await ensureAllEmployeesIncludingInactive();
+                            setShowAllEmployeesInPlantilla(true);
+                            return;
+                        }
+                        setShowAllEmployeesInPlantilla(false);
+                    },
+                }}
+            />
+
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={() => {
+                    void refresh();
+                }}
+                initialTotalSales={closingSalesSummary.total}
+                initialTicketsCount={closingSalesSummary.count}
+            />
 
             {isSwapModalOpen && (
                 <CashChangeModal

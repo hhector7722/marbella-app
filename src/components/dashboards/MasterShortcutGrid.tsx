@@ -13,6 +13,9 @@ type MasterShortcutGridProps = {
     onOpenPedidos: () => void;
     onOpenCambio: () => void;
     onOpenReservas: () => void;
+    onOpenHorarios: () => void;
+    onOpenPlantilla: () => void;
+    onOpenCierre: () => void;
     onOpenChangeBoxAudit: (box: any) => void;
 };
 
@@ -28,6 +31,9 @@ export default function MasterShortcutGrid({
     onOpenPedidos,
     onOpenCambio,
     onOpenReservas,
+    onOpenHorarios,
+    onOpenPlantilla,
+    onOpenCierre,
     onOpenChangeBoxAudit,
 }: MasterShortcutGridProps) {
     const router = useRouter();
@@ -54,12 +60,12 @@ export default function MasterShortcutGrid({
         { key: 'ingredientes', node: <DashboardIosIcon label="Ingredientes" img="/icons/ingrediente.png" onClick={() => router.push('/ingredients')} /> },
         { key: 'albaranes', node: <DashboardIosIcon label="Albaranes" img="/icons/scan.png" onClick={() => router.push('/dashboard/albaranes')} /> },
         { key: 'pedidos', node: <DashboardIosIcon label="Pedidos" img="/icons/suppliers.png" onClick={onOpenPedidos} /> },
-        { key: 'carta', node: <DashboardIosIcon label="Carta" img="/icons/menu.png" onClick={() => router.push('/dashboard/carta')} /> },
+        { key: 'carta', node: <DashboardIosIcon label="Carta" img="/icons/menu.png" onClick={() => router.push('/staff/carta')} /> },
         { key: 'consumo', node: <DashboardIosIcon label="Consumo" img="/icons/consum.png" onClick={() => router.push('/dashboard/consumo-personal')} /> },
-        { key: 'horarios', node: <DashboardIosIcon label="Horarios" img="/icons/schedule.png" onClick={() => router.push('/staff/schedule')} /> },
+        { key: 'horarios', node: <DashboardIosIcon label="Horarios" img="/icons/schedule.png" onClick={onOpenHorarios} /> },
         { key: 'hextras', node: <DashboardIosIcon label="H. extras" img="/icons/overtime.png" onClick={() => router.push('/dashboard/overtime')} /> },
-        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={() => router.push('/staff')} /> },
-        { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={() => router.push('/dashboard/history')} /> },
+        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
+        { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
         { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
         { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/web.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
         { key: 'reservas', node: <DashboardIosIcon label="Reservas" img="/icons/reservas.png" onClick={onOpenReservas} /> },
@@ -94,7 +100,7 @@ export default function MasterShortcutGrid({
     });
 
     return (
-        <div className="grid grid-cols-4 gap-3 md:grid-cols-10 md:gap-x-2 md:gap-y-1.5 md:justify-items-center lg:grid-cols-[repeat(19,minmax(0,1fr))] lg:gap-x-1.5 lg:gap-y-1">
+        <div className="grid grid-cols-4 gap-3 md:grid-cols-7 md:gap-x-3 md:gap-y-2.5 md:justify-items-center lg:grid-cols-8 lg:gap-x-4 lg:gap-y-3">
             {items.map(({ key, node }) => (
                 <div key={key} className="min-h-0 min-w-0 w-full md:w-auto md:flex md:justify-center">
                     {node}
