@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { isMasterDashboardUser } from "@/lib/master-dashboard";
+import { getHomeHrefForUser, isMasterDashboardUser } from "@/lib/master-dashboard";
 
 function isPasswordRecoveryProfileRequest(request: NextRequest) {
   if (request.nextUrl.pathname !== "/profile") return false;
@@ -77,11 +77,12 @@ export async function proxy(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, email")
       .eq("id", user.id)
       .maybeSingle();
 
     const role = profile?.role;
+    const email = profile?.email ?? user.email ?? "";
 
     // Staff/supervisor solo pueden un subconjunto de `/dashboard/*`.
     // IMPORTANTE: incluir albaranes + scanner (subida) — antes quedaban
@@ -102,14 +103,14 @@ export async function proxy(request: NextRequest) {
     }
 
     if (path.startsWith("/master")) {
-      const email = user.email ?? "";
       if (!isMasterDashboardUser(email)) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     }
 
     if (path.startsWith("/login")) {
-      return NextResponse.redirect(new URL("/", request.url));
+      const home = getHomeHrefForUser(email, role);
+      return NextResponse.redirect(new URL(home, request.url));
     }
   }
 

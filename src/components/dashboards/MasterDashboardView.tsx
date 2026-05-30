@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
+import MasterReservasModal from '@/components/dashboards/MasterReservasModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
@@ -29,6 +30,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+    const [isReservasModalOpen, setIsReservasModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
 
@@ -91,11 +93,14 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     changeBoxes={changeBoxes}
                     onOpenPedidos={() => setIsSupplierModalOpen(true)}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
+                    onOpenReservas={() => setIsReservasModalOpen(true)}
                     onOpenChangeBoxAudit={openChangeBoxAudit}
                 />
             </div>
 
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
+
+            <MasterReservasModal isOpen={isReservasModalOpen} onClose={() => setIsReservasModalOpen(false)} />
 
             {isSwapModalOpen && (
                 <CashChangeModal

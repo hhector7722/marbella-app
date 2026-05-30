@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
-import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { Avatar } from '@/components/ui/Avatar';
 import { toast } from 'sonner';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
@@ -19,6 +19,7 @@ export default function BottomNavStaff() {
     const supabase = createClient();
 
     const [userData, setUserData] = useState<{ id: string; name: string; role: string; email: string; avatar_url: string | null } | null>(null);
+    const [homeHref, setHomeHref] = useState('/staff/dashboard');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -30,19 +31,28 @@ export default function BottomNavStaff() {
         async function loadProfile() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                const authEmail = user.email ?? '';
+                const roleHint = (user.user_metadata?.role as string | undefined) ?? 'staff';
+                setHomeHref(getHomeHrefForUser(authEmail, roleHint));
+
                 const { data } = await supabase
                     .from('profiles')
                     .select('first_name, role, avatar_url, email')
                     .eq('id', user.id)
                     .single();
                 if (data) {
+                    const email = data.email || authEmail;
+                    const role = data.role || roleHint;
+                    setHomeHref(getHomeHrefForUser(email, role));
                     setUserData({
                         id: user.id,
                         name: data.first_name || 'Empleado',
-                        role: data.role || 'staff',
-                        email: data.email || user.email || '',
+                        role,
+                        email,
                         avatar_url: data.avatar_url || null
                     });
+                } else {
+                    setHomeHref(getHomeHrefForUser(authEmail, roleHint));
                 }
 
                 // Load shifts for the current month
@@ -98,7 +108,7 @@ export default function BottomNavStaff() {
 
     const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
     const getClass = (path: string, isDesktop = false) => {
-        const active = isActive(path);
+        const active = path === homeHref ? isHomeActive(path) : isActive(path);
         if (isDesktop) {
             return active
                 ? "bg-white/20 text-white"
@@ -111,11 +121,15 @@ export default function BottomNavStaff() {
 
     const isAdmin = userData?.role === 'manager' || userData?.role === 'supervisor';
     const userRole = (userData?.role as any) || 'staff';
-    const homeHref = isMasterDashboardUser(userData?.email)
-        ? '/master/dashboard'
-        : isAdmin
-          ? '/dashboard'
-          : '/staff/dashboard';
+    const isMasterUser = isMasterDashboardUser(userData?.email);
+
+    const isHomeActive = (href: string) => {
+        if (href !== homeHref) return false;
+        if (isMasterUser) {
+            return pathname === '/master/dashboard' || pathname === '/dashboard' || pathname === '/staff/dashboard';
+        }
+        return pathname === href || pathname.startsWith(href + '/');
+    };
 
     const staffItems: { name: string; href: string; icon: any }[] = [
         { name: 'Horarios', href: '#horarios', icon: CalendarIcon },
@@ -142,7 +156,10 @@ export default function BottomNavStaff() {
                             getClass(item.href)
                         )}
                         onClick={(e) => {
-                            if (item.name.toLowerCase() === 'pedidos') {
+                            if (item.name.toLowerCase() === 'inicio') {
+                                e.preventDefault();
+                                router.push(homeHref);
+                            } else if (item.name.toLowerCase() === 'pedidos') {
                                 e.preventDefault();
                                 setIsSupplierModalOpen(true);
                             } else if (item.name.toLowerCase() === 'horarios') {

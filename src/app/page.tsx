@@ -23,14 +23,13 @@ export default async function HomePage() {
   const role = profile?.role;
   const email = profile?.email ?? user.email ?? "";
 
-  // Redirección basada en rol
-  if (role === "manager") {
-    if (isMasterDashboardUser(email)) {
-      redirect("/master/dashboard");
-    }
-    redirect("/dashboard");
-  } else {
-    // Por defecto redirigir a staff dashboard (para staff, supervisor y otros roles)
-    redirect("/staff/dashboard");
+  if (isMasterDashboardUser(email)) {
+    redirect("/master/dashboard");
   }
+
+  if (role === "manager") {
+    redirect("/dashboard");
+  }
+
+  redirect("/staff/dashboard");
 }
