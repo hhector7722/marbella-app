@@ -54,9 +54,6 @@ type InsightsClientProps = {
 const PETROLEO = '#36606F'
 const LABOR_RED = '#E07070'
 const MARGIN_GREEN = '#4CAF50'
-const WEEKDAY_GREEN = '#2E7D32'
-const WEEKDAY_BLUE = '#5B8FB9'
-const WEEKDAY_ORANGE = '#FFA726'
 const MARGIN_BAR_HIGH = '#2E7D32'
 const MARGIN_BAR_MID = '#66BB6A'
 const MARGIN_BAR_LOW = '#FFA726'
@@ -76,11 +73,6 @@ function formatEuroKpi(value: number): string {
   )
   if (displayed === ' ') return ' '
   return formatEuroChart(Number(value))
-}
-
-function formatPctKpi(value: number): string {
-  if (value === 0 || !Number.isFinite(value)) return ' '
-  return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`
 }
 
 function SectionSkeleton({ rows = 4 }: { rows?: number }) {
@@ -294,47 +286,23 @@ export default function InsightsClient({
   const weekdayChartData = useMemo(() => {
     return [...weekday.data]
       .sort((a, b) => a.weekday - b.weekday)
-      .map((row) => {
-        const base = row.avg_revenue_without_event
-        const withEv = row.avg_revenue_with_event
-        let barColor = WEEKDAY_BLUE
-        if (row.days_with_events > 0 && base > 0) {
-          const lift = (withEv - base) / base
-          if (withEv > base * 1.2) barColor = WEEKDAY_GREEN
-          else if (withEv <= base || lift < 0) barColor = WEEKDAY_ORANGE
-          else if (Math.abs(lift) < 0.2) barColor = WEEKDAY_BLUE
-        }
-        const eventPct =
-          row.days_with_events > 0 && base > 0
-            ? ((withEv - base) / base) * 100
-            : null
-        return {
-          ...row,
-          barColor,
-          eventPct,
-          shortName: row.weekday_name.slice(0, 3),
-        }
-      })
+      .map((row) => ({
+        ...row,
+        shortName: row.weekday_name.slice(0, 3),
+      }))
   }, [weekday.data])
 
-  const weekdayKpi = useMemo(() => {
-    const withEvents = weekday.data.filter((d) => d.days_with_events > 0 && d.avg_revenue_without_event > 0)
-    if (withEvents.length === 0) {
-      return 'Los eventos no impactan significativamente'
+  const weekdayKpis = useMemo(() => {
+    const withRevenue = weekday.data.filter((d) => d.avg_revenue > 0)
+    if (withRevenue.length === 0) {
+      return { best: ' ', worst: ' ' }
     }
-    let best: WeekdayAnalysisRow | null = null
-    let bestLift = -Infinity
-    for (const d of withEvents) {
-      const lift = ((d.avg_revenue_with_event - d.avg_revenue_without_event) / d.avg_revenue_without_event) * 100
-      if (lift > bestLift) {
-        bestLift = lift
-        best = d
-      }
+    const best = withRevenue.reduce((a, b) => (b.avg_revenue > a.avg_revenue ? b : a))
+    const worst = withRevenue.reduce((a, b) => (b.avg_revenue < a.avg_revenue ? b : a))
+    return {
+      best: `${best.weekday_name} (${formatEuroKpi(best.avg_revenue)})`,
+      worst: `${worst.weekday_name} (${formatEuroKpi(worst.avg_revenue)})`,
     }
-    if (!best || bestLift < 5) {
-      return 'Los eventos no impactan significativamente'
-    }
-    return `El polideportivo sube el ticket un ${bestLift.toFixed(1)}% los ${best.weekday_name}`
   }, [weekday.data])
 
   const productChartData = useMemo(() => {
@@ -533,51 +501,25 @@ export default function InsightsClient({
                           <Tooltip
                             content={({ active, payload }) => {
                               if (!active || !payload?.length) return null
-                              const row = payload[0]?.payload as WeekdayAnalysisRow & {
-                                eventPct: number | null
-                              }
+                              const row = payload[0]?.payload as WeekdayAnalysisRow
                               return (
                                 <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
                                   <p className="font-black text-[#36606F]">{row.weekday_name}</p>
                                   <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
                                   <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
                                   <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
-                                  {row.days_with_events > 0 ? (
-                                    <>
-                                      <p>Con evento: {formatEuroChart(row.avg_revenue_with_event)}</p>
-                                      <p>Sin evento: {formatEuroChart(row.avg_revenue_without_event)}</p>
-                                    </>
-                                  ) : null}
                                 </div>
                               )
                             }}
                           />
-                          <Bar dataKey="avg_revenue" name="Media ventas" radius={[0, 3, 3, 0]}>
-                            {weekdayChartData.map((entry, index) => (
-                              <Cell key={`weekday-${index}`} fill={entry.barColor} />
-                            ))}
-                          </Bar>
+                          <Bar dataKey="avg_revenue" name="Media ventas" fill={PETROLEO} radius={[0, 3, 3, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="mt-2 hidden lg:flex flex-wrap gap-2">
-                      {weekdayChartData
-                        .filter((d) => d.days_with_events > 0 && d.eventPct !== null)
-                        .map((d) => (
-                          <span
-                            key={d.weekday}
-                            className="inline-flex min-h-8 items-center rounded-full bg-zinc-100 px-3 text-[10px] font-bold text-zinc-700"
-                          >
-                            {d.weekday_name}: Con evento: {formatPctKpi(d.eventPct!)}
-                          </span>
-                        ))}
+                    <div className="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-1 lg:gap-2">
+                      <KpiChip compact label="Mejor día" value={weekdayKpis.best} />
+                      <KpiChip compact label="Día más flojo" value={weekdayKpis.worst} />
                     </div>
-                    <div className="mt-2 hidden lg:block">
-                      <KpiChip label="Impacto polideportivo" value={weekdayKpi} />
-                    </div>
-                    <p className="mt-1.5 lg:hidden text-[8px] font-semibold text-zinc-600 leading-tight line-clamp-3">
-                      {weekdayKpi}
-                    </p>
                   </>
                 )}
               </section>

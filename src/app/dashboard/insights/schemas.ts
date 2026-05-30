@@ -15,9 +15,6 @@ export const weekdayAnalysisRowSchema = z.object({
   avg_revenue: z.coerce.number(),
   avg_tickets: z.coerce.number(),
   avg_ticket_value: z.coerce.number(),
-  days_with_events: z.coerce.number().int(),
-  avg_revenue_with_event: z.coerce.number(),
-  avg_revenue_without_event: z.coerce.number(),
 })
 
 export const productMarginRowSchema = z.object({
