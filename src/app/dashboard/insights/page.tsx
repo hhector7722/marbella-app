@@ -5,10 +5,12 @@ import {
   getHourlySalesVsLabor,
   getWeekdayAnalysis,
   getProductMarginRanking,
-  type HourlyProfitabilityRow,
-  type WeekdayAnalysisRow,
-  type ProductMarginRow,
 } from './actions'
+import type {
+  HourlyProfitabilityRow,
+  WeekdayAnalysisRow,
+  ProductMarginRow,
+} from './schemas'
 
 export const dynamic = 'force-dynamic'
 
