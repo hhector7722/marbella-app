@@ -1,6 +1,9 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-30 (Eliminada página legacy `/staff`)
+**Última actualización:** 2026-05-30 (Insights: panel rentabilidad UI)
+
+- [x] **Insights: capa datos rentabilidad horaria — backend (2026-05-30)**: Migración [`20260530143000_insights_hourly_profitability.sql`](supabase/migrations/20260530143000_insights_hourly_profitability.sql) — RPCs `get_hourly_sales_vs_labor(p_date_from,p_date_to)` (ventas vs coste laboral por franja 0–23 Europe/Madrid), `get_weekday_ticket_analysis(p_date_from,p_date_to)` (promedios por weekday + contraste con/sin `events.event_date`), `get_product_margin_ranking(p_limit)` (margen vía `map_tpv_receta` + `get_recipe_cost × factor_porcion`). Helpers `fn_parse_ticket_hora_cierre_ts`, `fn_worker_hourly_rate` (fallback 10 €/h). Server actions en [`src/app/dashboard/insights/actions.ts`](src/app/dashboard/insights/actions.ts) con Zod + anti-silent. Parche casts: [`20260530150000_fix_recipe_cost_casts_and_insights_rpc3.sql`](supabase/migrations/20260530150000_fix_recipe_cost_casts_and_insights_rpc3.sql).
+- [x] **Insights: panel `/dashboard/insights` — UI (2026-05-30)**: SSR [`page.tsx`](src/app/dashboard/insights/page.tsx) + client [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx) — 3 visualizaciones Recharts (venta vs coste hora, weekday + eventos, ranking margen producto), presets 7/30/90 días, refetch por sección, acceso master vía [`MasterShortcutGrid`](src/components/dashboards/MasterShortcutGrid.tsx), proxy manager/admin en [`src/proxy.ts`](src/proxy.ts).
 
 - [x] **Staff: eliminada página legacy `/staff/page.tsx` (2026-05-30)**: El hub de sala vive en `/staff/dashboard` (`StaffDashboardView` vía `DashboardSwitcher`). Ruta `/staff` redirige en [`proxy.ts`](src/proxy.ts) → `/staff/dashboard`. Eliminado duplicado de ~850 líneas (fichaje, consumo, horarios) que coexistía con el dashboard unificado.
 

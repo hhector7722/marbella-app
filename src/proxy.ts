@@ -98,6 +98,19 @@ export async function proxy(request: NextRequest) {
       path.startsWith("/dashboard/scanner") ||
       path.startsWith("/dashboard/eventos");
 
+    // Insights: solo manager/admin (supervisor excluido explícitamente).
+    if (
+      path.startsWith("/dashboard/insights") &&
+      role !== "manager" &&
+      role !== "admin"
+    ) {
+      const dest =
+        role === "staff" || role === "supervisor"
+          ? "/staff/dashboard"
+          : "/dashboard";
+      return NextResponse.redirect(new URL(dest, request.url));
+    }
+
     if (
       (role === "staff" || role === "supervisor") &&
       path.startsWith("/dashboard") &&
