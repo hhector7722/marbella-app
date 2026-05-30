@@ -289,6 +289,7 @@ export async function updateWeeklyWorkerConfig(
     updates: {
         contractedHours?: number;
         preferStock?: boolean;
+        overtimeCostPerHour?: number;
         logs?: Array<{ date: string; in_time: string; out_time: string; event_type: string; id?: string; is_deleted?: boolean }>;
     }
 ) {
@@ -318,6 +319,9 @@ export async function updateWeeklyWorkerConfig(
         }
         if (updates.preferStock !== undefined) {
             snapshotData.prefer_stock_hours_override = updates.preferStock;
+        }
+        if (updates.overtimeCostPerHour !== undefined) {
+            snapshotData.overtime_price_snapshot = updates.overtimeCostPerHour;
         }
 
         // 2. Perform upsert if there are overrides

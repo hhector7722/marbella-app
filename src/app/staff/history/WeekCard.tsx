@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Coins, Landmark, Save } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -57,6 +58,7 @@ interface WeekSummary {
     isPaid: boolean;
     preferStock?: boolean;
     limitHours?: number;
+    hourlyRate?: number;
 }
 
 interface WeekCardProps {
@@ -68,7 +70,11 @@ interface WeekCardProps {
     /** Solo manager con empleado seleccionado: muestra controles Bolsa/Pago y Contrato en el pie */
     showWeekOverrides?: boolean;
     userId?: string;
-    onApplyWeekOverrides?: (contractedHours: number, preferStock: boolean) => Promise<{ success: boolean; error?: string }>;
+    onApplyWeekOverrides?: (
+        contractedHours: number,
+        preferStock: boolean,
+        overtimeCostPerHour: number
+    ) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showWeekOverrides, userId, onApplyWeekOverrides }: WeekCardProps) {
@@ -79,6 +85,11 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
             : ""
     );
     const [localPreferStock, setLocalPreferStock] = useState<boolean>(week.summary.preferStock ?? false);
+    const [localHourlyRate, setLocalHourlyRate] = useState<string>(
+        week.summary.hourlyRate !== undefined && week.summary.hourlyRate !== null
+            ? String(week.summary.hourlyRate)
+            : ''
+    );
     const [savingOverrides, setSavingOverrides] = useState(false);
 
     React.useEffect(() => {
@@ -88,7 +99,12 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 ? String(week.summary.limitHours) 
                 : ""
         );
-    }, [week.summary.preferStock, week.summary.limitHours]);
+        setLocalHourlyRate(
+            week.summary.hourlyRate !== undefined && week.summary.hourlyRate !== null
+                ? String(week.summary.hourlyRate)
+                : ''
+        );
+    }, [week.summary.preferStock, week.summary.limitHours, week.summary.hourlyRate]);
 
     const weekStartKey = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
     React.useEffect(() => {
@@ -101,7 +117,13 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
         setSavingOverrides(true);
         try {
             const contractedValue = localContracted === "" ? 0 : Number(localContracted);
-            const result = await onApplyWeekOverrides(contractedValue, localPreferStock);
+            const hourlyRateValue = localHourlyRate === "" ? 0 : Number(localHourlyRate);
+            if (!Number.isFinite(hourlyRateValue) || hourlyRateValue < 0) {
+                toast.error('Indica un coste por hora válido (≥ 0)');
+                setSavingOverrides(false);
+                return;
+            }
+            const result = await onApplyWeekOverrides(contractedValue, localPreferStock, hourlyRateValue);
             if (!result.success && result.error) setSavingOverrides(false);
         } finally {
             setSavingOverrides(false);
@@ -346,11 +368,26 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Contrato</span>
                         <input
                             type="number"
+                            min={0}
+                            step={0.5}
                             value={localContracted}
                             onChange={(e) => setLocalContracted(e.target.value)}
                             className="w-10 h-6 text-center text-[10px] font-black bg-white border border-zinc-200 rounded focus:outline-none focus:ring-1 focus:ring-[#36606F]"
                         />
                         <span className="text-[8px] text-zinc-400 font-bold">H</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">€/H</span>
+                        <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            inputMode="decimal"
+                            value={localHourlyRate}
+                            onChange={(e) => setLocalHourlyRate(e.target.value)}
+                            className="w-12 h-6 text-center text-[10px] font-black bg-white border border-zinc-200 rounded focus:outline-none focus:ring-1 focus:ring-[#36606F]"
+                            aria-label="Coste por hora de extras"
+                        />
                     </div>
                     <button
                         type="button"

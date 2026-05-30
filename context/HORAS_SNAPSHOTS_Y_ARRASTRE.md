@@ -8,7 +8,7 @@ Este documento describe el flujo real del código en migraciones Supabase y cóm
 |------|-------------|-----|
 | Fichajes | `public.time_logs` | Horas por día (`total_hours`, `clock_in`, `event_type`). |
 | Perfil | `public.profiles` | `contracted_hours_weekly`, `prefer_stock_hours` (Bolsa vs Pago), `joining_date`, `hours_balance`, `role`, `is_fixed_salary`. |
-| Balances semanales (SSOT) | `public.weekly_snapshots` | `balance_hours` (semana sin arrastre), `pending_balance` (arrastre entrante), `final_balance` (resultado con arrastre), `contracted_hours_snapshot`, `prefer_stock_hours_override`, `is_paid`. |
+| Balances semanales (SSOT) | `public.weekly_snapshots` | `balance_hours`, `pending_balance`, `final_balance`, `contracted_hours_snapshot`, `overtime_price_snapshot` (€/h extras de la semana), `total_cost`, `prefer_stock_hours_override`, `is_paid`. |
 | Calendario mensual | `public.get_monthly_timesheet` | Grid de días + `summary` enriquecido con snapshots; **extras diarios** con regla de `joining_date`. |
 | Grid semanal | `public.get_worker_weekly_log_grid` | Misma filosofía de extras que el timesheet, por una semana. |
 | Horas extras / coste | `public.get_weekly_worker_stats` | Agregados manager; separa `startBalance` / `weeklyBalance` / `finalBalance`. |
@@ -43,7 +43,7 @@ Comprueba marcadores en el cuerpo de la función y lista RPCs de recálculo inst
 | Extras por **día** (celda “Ex”) | `get_monthly_timesheet` / `get_worker_weekly_log_grid` | Running semanal de horas **desde `joining_date`**; días previos a incorporación = todo extra. |
 | “Pendientes” en pie de semana | `weekly_snapshots.pending_balance` (vía `summary.startBalance` en timesheet) | **Arrastre** de semana anterior, no “extras del lunes”. |
 | “Extras” en pie de semana (staff) | `weekly_snapshots.balance_hours` o equivalente en RPC | Saldo **de la semana** sin arrastre (según migración que exponga el campo). |
-| Importe extras | Depende de `prefer_stock` / `is_paid` y RPC (`get_weekly_worker_stats`) | Bolsa suele implicar coste 0 en nómina inmediata. |
+| Importe extras | `final_balance × fn_worker_effective_overtime_rate` (snapshot semanal → término laboral → perfil) | Bolsa (`prefer_stock`) implica coste 0 en nómina inmediata. Editable en `/staff/history` → `weekly_snapshots.overtime_price_snapshot`. |
 
 Si un caso falla solo en calendario pero el snapshot es coherente, el bug está en la RPC de grid/timesheet. Si falla el arrastre entre semanas, el bug está en `fn_recalc` o en datos (`is_paid`, override bolsa, migraciones no aplicadas).
 

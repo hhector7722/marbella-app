@@ -67,6 +67,7 @@ interface WeekSummary {
     estimatedValue: number;
     isPaid: boolean;
     preferStock?: boolean;
+    hourlyRate?: number;
 }
 
 interface WeekData {
@@ -171,7 +172,7 @@ export default function HistoryPage() {
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
             // p_month es 1-indexed en PostgreSQL
-            const [rpcResult, logsResult, weeklyStatsResult] = await Promise.all([
+            const [rpcResult, logsResult, weeklyStatsResult, profileResult] = await Promise.all([
                 supabase.rpc('get_monthly_timesheet', {
                     p_user_id: targetUserId,
                     p_year: filterYear,
@@ -202,6 +203,11 @@ export default function HistoryPage() {
                         p_only_completed_weeks: false,
                     });
                 })(),
+                supabase
+                    .from('profiles')
+                    .select('overtime_cost_per_hour')
+                    .eq('id', targetUserId)
+                    .maybeSingle(),
             ]);
 
             const { data, error } = rpcResult;
@@ -240,17 +246,25 @@ export default function HistoryPage() {
                 if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
             });
 
+            const profileHourlyRate = Number(profileResult.data?.overtime_cost_per_hour ?? 0);
+
             const formattedWeeks: WeekData[] = (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => {
                 const startDateKey = typeof (week as any).startDate === 'string'
                     ? (week as any).startDate.split('T')[0]
                     : String((week as any).startDate);
                 const preferStockForWeek = preferStockByWeekStart[startDateKey];
+                const rpcHourlyRate = (week.summary as WeekSummary | undefined)?.hourlyRate;
+                const hourlyRate =
+                    typeof rpcHourlyRate === 'number' && Number.isFinite(rpcHourlyRate)
+                        ? rpcHourlyRate
+                        : profileHourlyRate;
 
                 return {
                     ...week,
                     summary: {
                         ...week.summary,
                         preferStock: preferStockForWeek,
+                        hourlyRate,
                     },
                     days: week.days.map((day) => ({
                         ...day,
@@ -519,10 +533,14 @@ export default function HistoryPage() {
                                         showWeekOverrides={isManager}
                                         userId={selectedEmployeeId || currentUserId}
 
-                                        onApplyWeekOverrides={async (contractedHours, preferStock) => {
+                                        onApplyWeekOverrides={async (contractedHours, preferStock, overtimeCostPerHour) => {
                                             const uid = selectedEmployeeId || currentUserId;
                                             const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
-                                            const result = await updateWeeklyWorkerConfig(uid, weekStart, { contractedHours, preferStock });
+                                            const result = await updateWeeklyWorkerConfig(uid, weekStart, {
+                                                contractedHours,
+                                                preferStock,
+                                                overtimeCostPerHour,
+                                            });
                                             if (result.success) {
                                                 toast.success('Semana actualizada');
                                                 fetchCalendar();
