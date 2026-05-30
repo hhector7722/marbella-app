@@ -72,8 +72,10 @@ export default async function FinanzasPage({
 
   const { data: { session }, error: authErr } = await supabase.auth.getSession();
   const user = session?.user ?? null;
-
-  const { data: profile, error: profileErr } = await supabase
+  if (authErr) {
+    redirect('/login');
+  }
+  if (!user) redirect('/login');
     .from('profiles')
     .select('role')
     .eq('id', user.id)

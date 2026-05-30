@@ -157,16 +157,16 @@ export default function ConsumoPersonalDashboardPage() {
   useEffect(() => {
     let cancelledAuth = false;
     void (async () => {
-      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      const { data: sessionRes, error: sessionErr } = await supabase.auth.getSession();
       if (cancelledAuth) return;
-      if (userErr) {
-        console.error(userErr);
+      if (sessionErr) {
+        console.error(sessionErr);
         setAuthState({ status: 'unauthenticated' });
         toast.error('Sesión caducada. Vuelve a iniciar sesión.');
         router.replace('/login');
         return;
       }
-      const user = userRes?.user ?? null;
+      const user = sessionRes?.session?.user ?? null;
       if (!user) {
         setAuthState({ status: 'unauthenticated' });
         toast.error('Sesión caducada. Vuelve a iniciar sesión.');

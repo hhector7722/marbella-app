@@ -31,10 +31,10 @@ export default async function StaffCartaPage() {
     const supabase = await createClient();
 
     const {
+        data: { session },
+    } = await supabase.auth.getSession();
 
-        data: { user },
-
-    } = await supabase.auth.getUser();
+    const user = session?.user ?? null;
 
 
 

@@ -4,7 +4,8 @@ import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
 
 export default async function StaffDashboardPage() {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
 
     if (!user) {
         redirect('/login');

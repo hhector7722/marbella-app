@@ -359,7 +359,8 @@ export default function HistoryPage() {
     }, [selectedClosing?.id, selectedClosing?.dataphone_totals_photo_path, selectedClosing?.bdp_closing_ticket_photo_path]);
 
     async function checkUserRole() {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         if (user) {
             const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             setIsManager(profile?.role === 'manager');

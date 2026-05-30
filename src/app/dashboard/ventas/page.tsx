@@ -75,8 +75,8 @@ export default function VentasPage() {
     useEffect(() => {
         let cancelled = false;
         void (async () => {
-            const { data } = await supabase.auth.getUser();
-            const email = data?.user?.email ?? '';
+            const { data: { session } } = await supabase.auth.getSession();
+            const email = session?.user?.email ?? '';
             if (!cancelled) setIsHector(String(email).toLowerCase() === 'hhector7722@gmail.com');
         })();
         return () => {
