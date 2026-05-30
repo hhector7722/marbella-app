@@ -126,11 +126,13 @@ export default function DashboardSwitcher({
         isHorizontalDrag.current = null;
     };
 
-    const panelCount = isTriple ? 3 : isManager ? 2 : 1;
-    const panelWidthPercent = 100 / panelCount;
-    const viewIndex = view === 'admin' ? 0 : view === 'master' ? 1 : 2;
-    const currentTranslate = isManager ? -(isTriple ? viewIndex : view === 'staff' ? 1 : 0) * panelWidthPercent : 0;
-    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * panelWidthPercent : 0;
+    const viewIndex = isTriple
+        ? view === 'admin' ? 0 : view === 'master' ? 1 : 2
+        : view === 'admin' ? 0 : 1;
+    // margin-left % es relativo al ancho del contenedor (viewport), no al track.
+    // Cada panel ocupa 1 viewport: admin=0%, master=-100%, staff=-200% (triple) o -100% (dual).
+    const currentTranslate = isManager ? -viewIndex * 100 : 0;
+    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 100 : 0;
     const finalTranslate = isManager ? currentTranslate + dragTranslatePercent : 0;
 
     const trackWidth = isTriple ? '300%' : isManager ? '200%' : '100%';
