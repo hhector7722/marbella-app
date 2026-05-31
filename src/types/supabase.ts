@@ -150,6 +150,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bdp_cash_movements: {
+        Row: {
+          amount: number
+          concept_code: number
+          created_at: string
+          fecha_negocio: string
+          id: string
+          movement_date: string
+          raw_json: Json
+        }
+        Insert: {
+          amount: number
+          concept_code: number
+          created_at?: string
+          fecha_negocio: string
+          id?: string
+          movement_date: string
+          raw_json?: Json
+        }
+        Update: {
+          amount?: number
+          concept_code?: number
+          created_at?: string
+          fecha_negocio?: string
+          id?: string
+          movement_date?: string
+          raw_json?: Json
+        }
+        Relationships: []
+      }
       bdp_departamentos: {
         Row: {
           envia_a_kds: boolean | null
@@ -183,6 +213,45 @@ export type Database = {
           departamento_id?: number | null
           id?: number
           nombre?: string
+        }
+        Relationships: []
+      }
+      carta_ui_labels: {
+        Row: {
+          created_at: string
+          id: string
+          racion_entero_ca: string
+          racion_entero_en: string
+          racion_entero_es: string
+          racion_medio_ca: string
+          racion_medio_en: string
+          racion_medio_es: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          racion_entero_ca?: string
+          racion_entero_en?: string
+          racion_entero_es?: string
+          racion_medio_ca?: string
+          racion_medio_en?: string
+          racion_medio_es?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          racion_entero_ca?: string
+          racion_entero_en?: string
+          racion_entero_es?: string
+          racion_medio_ca?: string
+          racion_medio_en?: string
+          racion_medio_es?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -347,8 +416,8 @@ export type Database = {
       categories: {
         Row: {
           cover_articulo_id: number | null
-          cover_photo_url: string | null
           cover_photo_scale: string | null
+          cover_photo_url: string | null
           id: string
           name: string
           parent_id: string | null
@@ -358,8 +427,8 @@ export type Database = {
         }
         Insert: {
           cover_articulo_id?: number | null
-          cover_photo_url?: string | null
           cover_photo_scale?: string | null
+          cover_photo_url?: string | null
           id?: string
           name: string
           parent_id?: string | null
@@ -369,8 +438,8 @@ export type Database = {
         }
         Update: {
           cover_articulo_id?: number | null
-          cover_photo_url?: string | null
           cover_photo_scale?: string | null
+          cover_photo_url?: string | null
           id?: string
           name?: string
           parent_id?: string | null
@@ -492,6 +561,14 @@ export type Database = {
       digital_menu_overrides: {
         Row: {
           articulo_id: number
+          carta_dual_racion_enabled: boolean
+          carta_photo_scale: string
+          carta_racion_entero_ca: string | null
+          carta_racion_entero_en: string | null
+          carta_racion_entero_es: string | null
+          carta_racion_medio_ca: string | null
+          carta_racion_medio_en: string | null
+          carta_racion_medio_es: string | null
           category_id: string | null
           created_at: string
           created_by: string
@@ -503,6 +580,8 @@ export type Database = {
           override_nombre_es: string | null
           override_photo_url: string | null
           override_precio: number | null
+          override_precio_medio: number | null
+          plato_marbella_hide_name: boolean
           plato_marbella_is_menu_price: boolean
           plato_marbella_slot: string | null
           sort_order: number | null
@@ -510,6 +589,14 @@ export type Database = {
         }
         Insert: {
           articulo_id: number
+          carta_dual_racion_enabled?: boolean
+          carta_photo_scale?: string
+          carta_racion_entero_ca?: string | null
+          carta_racion_entero_en?: string | null
+          carta_racion_entero_es?: string | null
+          carta_racion_medio_ca?: string | null
+          carta_racion_medio_en?: string | null
+          carta_racion_medio_es?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string
@@ -521,6 +608,8 @@ export type Database = {
           override_nombre_es?: string | null
           override_photo_url?: string | null
           override_precio?: number | null
+          override_precio_medio?: number | null
+          plato_marbella_hide_name?: boolean
           plato_marbella_is_menu_price?: boolean
           plato_marbella_slot?: string | null
           sort_order?: number | null
@@ -528,6 +617,14 @@ export type Database = {
         }
         Update: {
           articulo_id?: number
+          carta_dual_racion_enabled?: boolean
+          carta_photo_scale?: string
+          carta_racion_entero_ca?: string | null
+          carta_racion_entero_en?: string | null
+          carta_racion_entero_es?: string | null
+          carta_racion_medio_ca?: string | null
+          carta_racion_medio_en?: string | null
+          carta_racion_medio_es?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string
@@ -539,6 +636,8 @@ export type Database = {
           override_nombre_es?: string | null
           override_photo_url?: string | null
           override_precio?: number | null
+          override_precio_medio?: number | null
+          plato_marbella_hide_name?: boolean
           plato_marbella_is_menu_price?: boolean
           plato_marbella_slot?: string | null
           sort_order?: number | null
@@ -638,6 +737,155 @@ export type Database = {
           radiografia_completa?: Json | null
           total_mesas?: number | null
           ultima_actualizacion?: string | null
+        }
+        Relationships: []
+      }
+      event_default_pack: {
+        Row: {
+          id: string
+          items: Json
+          label: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id: string
+          items: Json
+          label: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          items?: Json
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      event_orders: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          items: Json
+          notes: string | null
+          responsible_name: string
+          status: string
+          total_amount: number | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          items: Json
+          notes?: string | null
+          responsible_name: string
+          status?: string
+          total_amount?: number | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          responsible_name?: string
+          status?: string
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_products: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          category_limits: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enabled_product_ids: string[] | null
+          event_date: string
+          event_time: string
+          guest_count: number | null
+          id: string
+          is_active: boolean
+          name: string
+          pack_items: Json | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category_limits?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled_product_ids?: string[] | null
+          event_date: string
+          event_time: string
+          guest_count?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          pack_items?: Json | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category_limits?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled_product_ids?: string[] | null
+          event_date?: string
+          event_time?: string
+          guest_count?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          pack_items?: Json | null
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -745,6 +993,7 @@ export type Database = {
       ingredients: {
         Row: {
           allergens: string[] | null
+          base_unit: string
           category: string
           created_at: string | null
           current_price: number
@@ -759,8 +1008,8 @@ export type Database = {
           pack_units: number | null
           price_locked: boolean
           purchase_unit: string
-          recommended_stock: number | null
           recipe_unit: string
+          recommended_stock: number | null
           stock_current: number | null
           supplier: string | null
           supplier_2: string | null
@@ -773,6 +1022,7 @@ export type Database = {
         }
         Insert: {
           allergens?: string[] | null
+          base_unit?: string
           category?: string
           created_at?: string | null
           current_price: number
@@ -801,6 +1051,7 @@ export type Database = {
         }
         Update: {
           allergens?: string[] | null
+          base_unit?: string
           category?: string
           created_at?: string | null
           current_price?: number
@@ -1476,6 +1727,7 @@ export type Database = {
       }
       purchase_invoice_lines: {
         Row: {
+          base_price: number | null
           id: string
           invoice_id: string | null
           line_unit: string | null
@@ -1483,10 +1735,12 @@ export type Database = {
           original_name: string
           quantity: number | null
           status: string | null
+          tax_rate: number | null
           total_price: number | null
           unit_price: number | null
         }
         Insert: {
+          base_price?: number | null
           id?: string
           invoice_id?: string | null
           line_unit?: string | null
@@ -1494,10 +1748,12 @@ export type Database = {
           original_name: string
           quantity?: number | null
           status?: string | null
+          tax_rate?: number | null
           total_price?: number | null
           unit_price?: number | null
         }
         Update: {
+          base_price?: number | null
           id?: string
           invoice_id?: string | null
           line_unit?: string | null
@@ -1505,6 +1761,7 @@ export type Database = {
           original_name?: string
           quantity?: number | null
           status?: string | null
+          tax_rate?: number | null
           total_price?: number | null
           unit_price?: number | null
         }
@@ -1527,6 +1784,7 @@ export type Database = {
       }
       purchase_invoices: {
         Row: {
+          base_amount: number | null
           content_sha256: string | null
           created_at: string | null
           created_by: string | null
@@ -1538,9 +1796,12 @@ export type Database = {
           source: string
           status: string
           supplier_id: number | null
+          tax_amount: number | null
+          tax_rate: number | null
           total_amount: number | null
         }
         Insert: {
+          base_amount?: number | null
           content_sha256?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -1552,9 +1813,12 @@ export type Database = {
           source?: string
           status?: string
           supplier_id?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
           total_amount?: number | null
         }
         Update: {
+          base_amount?: number | null
           content_sha256?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -1566,6 +1830,8 @@ export type Database = {
           source?: string
           status?: string
           supplier_id?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
           total_amount?: number | null
         }
         Relationships: [
@@ -1872,6 +2138,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reservations: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          notes: string | null
+          pax: number
+          reservation_date: string
+          reservation_time: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          notes?: string | null
+          pax: number
+          reservation_date: string
+          reservation_time: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          notes?: string | null
+          pax?: number
+          reservation_date?: string
+          reservation_time?: string
+          status?: string
+        }
+        Relationships: []
       }
       shifts: {
         Row: {
@@ -2192,36 +2494,6 @@ export type Database = {
         }
         Relationships: []
       }
-      bdp_cash_movements: {
-        Row: {
-          amount: number
-          concept_code: number
-          created_at: string
-          fecha_negocio: string
-          id: string
-          movement_date: string
-          raw_json: Json
-        }
-        Insert: {
-          amount: number
-          concept_code: number
-          created_at?: string
-          fecha_negocio: string
-          id?: string
-          movement_date: string
-          raw_json?: Json
-        }
-        Update: {
-          amount?: number
-          concept_code?: number
-          created_at?: string
-          fecha_negocio?: string
-          id?: string
-          movement_date?: string
-          raw_json?: Json
-        }
-        Relationships: []
-      }
       time_logs: {
         Row: {
           clock_in: string
@@ -2486,42 +2758,6 @@ export type Database = {
         }
         Relationships: []
       }
-      reservations: {
-        Row: {
-          created_at: string
-          customer_name: string
-          customer_phone: string
-          id: string
-          notes: string | null
-          pax: number
-          reservation_date: string
-          reservation_time: string
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          customer_name: string
-          customer_phone: string
-          id?: string
-          notes?: string | null
-          pax: number
-          reservation_date: string
-          reservation_time: string
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          customer_name?: string
-          customer_phone?: string
-          id?: string
-          notes?: string | null
-          pax?: number
-          reservation_date?: string
-          reservation_time?: string
-          status?: string
-        }
-        Relationships: []
-      }
       weekly_snapshots: {
         Row: {
           balance_hours: number | null
@@ -2585,10 +2821,18 @@ export type Database = {
         Row: {
           articulo_id: number | null
           articulo_nombre: string | null
+          carta_dual_racion_enabled: boolean | null
           carta_nombre: string | null
           carta_nombre_ca: string | null
           carta_nombre_en: string | null
           carta_nombre_es: string | null
+          carta_photo_scale: string | null
+          carta_racion_entero_ca: string | null
+          carta_racion_entero_en: string | null
+          carta_racion_entero_es: string | null
+          carta_racion_medio_ca: string | null
+          carta_racion_medio_en: string | null
+          carta_racion_medio_es: string | null
           category_child_id: string | null
           category_child_name: string | null
           category_child_name_ca: string | null
@@ -2607,7 +2851,9 @@ export type Database = {
           departamento_id: number | null
           departamento_nombre: string | null
           descripcion: string | null
+          override_precio_medio: number | null
           photo_url: string | null
+          plato_marbella_hide_name: boolean | null
           plato_marbella_is_menu_price: boolean | null
           plato_marbella_slot: string | null
           precio: number | null
@@ -2641,10 +2887,18 @@ export type Database = {
       v_public_menu_items: {
         Row: {
           articulo_id: number | null
+          carta_dual_racion_enabled: boolean | null
           carta_nombre: string | null
           carta_nombre_ca: string | null
           carta_nombre_en: string | null
           carta_nombre_es: string | null
+          carta_photo_scale: string | null
+          carta_racion_entero_ca: string | null
+          carta_racion_entero_en: string | null
+          carta_racion_entero_es: string | null
+          carta_racion_medio_ca: string | null
+          carta_racion_medio_en: string | null
+          carta_racion_medio_es: string | null
           category_child_id: string | null
           category_child_name: string | null
           category_child_name_ca: string | null
@@ -2659,7 +2913,9 @@ export type Database = {
           category_parent_name_en: string | null
           category_parent_name_es: string | null
           category_parent_sort_order: number | null
+          override_precio_medio: number | null
           photo_url: string | null
+          plato_marbella_hide_name: boolean | null
           plato_marbella_is_menu_price: boolean | null
           plato_marbella_slot: string | null
           precio: number | null
@@ -2673,7 +2929,6 @@ export type Database = {
         Row: {
           amount: number | null
           box_id: string | null
-          bdp_closing_ticket_photo_path: string | null
           breakdown: Json | null
           closing_id: string | null
           created_at: string | null
@@ -2748,6 +3003,10 @@ export type Database = {
         Args: { p_role: string; p_user_id: string }
         Returns: Json
       }
+      auto_map_invoice_lines_fuzzy: {
+        Args: { p_invoice_id?: string; p_similarity_threshold?: number }
+        Returns: Json
+      }
       calcular_cierre_dia: { Args: { fecha_objetivo: string }; Returns: Json }
       cerrar_caja: { Args: { p_usuario_id: string }; Returns: Json }
       check_purchase_invoice_duplicate: {
@@ -2806,6 +3065,15 @@ export type Database = {
       }
       crear_pedido: { Args: { p_items: Json; p_mesa: string }; Returns: Json }
       crear_usuario: { Args: { p_datos: Json }; Returns: Json }
+      create_event_order: {
+        Args: {
+          p_items: Json
+          p_notes?: string
+          p_responsible_name: string
+          p_slug: string
+        }
+        Returns: Json
+      }
       create_worker_profile:
         | {
             Args: {
@@ -2832,6 +3100,14 @@ export type Database = {
             }
             Returns: string
           }
+      cron_weekly_recalculate_balances_if_madrid_summer: {
+        Args: never
+        Returns: undefined
+      }
+      cron_weekly_recalculate_balances_if_madrid_winter: {
+        Args: never
+        Returns: undefined
+      }
       current_employee_role: { Args: never; Returns: string }
       debug_me: {
         Args: never
@@ -2850,6 +3126,7 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: number
       }
+      derive_base_unit: { Args: { p_purchase_unit: string }; Returns: string }
       editar_usuario: {
         Args: { p_datos: Json; p_user_id: string }
         Returns: Json
@@ -2921,6 +3198,10 @@ export type Database = {
           overtime_cost_per_hour: number
         }[]
       }
+      fn_parse_ticket_hora_cierre_ts: {
+        Args: { p_fecha: string; p_fecha_real: string; p_hora_cierre: string }
+        Returns: string
+      }
       fn_recalc_and_propagate_snapshots: {
         Args: { p_start_date: string; p_user_id: string }
         Returns: undefined
@@ -2950,6 +3231,14 @@ export type Database = {
       fn_staff_can_read_nomina_legacy: {
         Args: { p_storage_path: string }
         Returns: boolean
+      }
+      fn_worker_effective_overtime_rate: {
+        Args: { p_on_date: string; p_user_id: string }
+        Returns: number
+      }
+      fn_worker_hourly_rate: {
+        Args: { p_event_type?: string; p_on_date: string; p_user_id: string }
+        Returns: number
       }
       fncalcdelta:
         | {
@@ -3022,12 +3311,20 @@ export type Database = {
         Args: { p_end_date: string; p_start_date: string }
         Returns: Json
       }
+      get_closing_sales_breakdown: { Args: { p_date: string }; Returns: Json }
       get_daily_labor_cost: { Args: { p_target_date: string }; Returns: number }
       get_daily_sales_chart: {
         Args: { p_days?: number }
         Returns: {
           fecha: string
           total: number
+        }[]
+      }
+      get_daily_sales_proration_weights_by_user: {
+        Args: { p_date: string }
+        Returns: {
+          user_id: string
+          weight: number
         }[]
       }
       get_daily_sales_stats: { Args: { target_date?: string }; Returns: Json }
@@ -3042,6 +3339,17 @@ export type Database = {
           fecha: string
           hora: number
           total: number
+        }[]
+      }
+      get_hourly_sales_vs_labor: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: {
+          avg_ticket: number
+          hour: number
+          labor_cost: number
+          margin: number
+          ticket_count: number
+          total_revenue: number
         }[]
       }
       get_iso_week_start: { Args: { d: string }; Returns: string }
@@ -3064,6 +3372,17 @@ export type Database = {
           difference: number
           physical_balance: number
           theoretical_balance: number
+        }[]
+      }
+      get_product_margin_ranking: {
+        Args: { p_limit?: number }
+        Returns: {
+          avg_sale_price: number
+          margin_per_unit: number
+          product_name: string
+          recipe_cost: number
+          total_margin_contribution: number
+          total_units_sold: number
         }[]
       }
       get_product_sales_ranking: {
@@ -3137,6 +3456,19 @@ export type Database = {
           income: number
         }[]
       }
+      get_weekday_ticket_analysis: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: {
+          avg_revenue: number
+          avg_revenue_with_event: number
+          avg_revenue_without_event: number
+          avg_ticket_value: number
+          avg_tickets: number
+          days_with_events: number
+          weekday: number
+          weekday_name: string
+        }[]
+      }
       get_weekly_worker_stats:
         | {
             Args: {
@@ -3189,6 +3521,7 @@ export type Database = {
         }
         Returns: string
       }
+      madrid_utc_offset_hours: { Args: { ts?: string }; Returns: number }
       manager_ledger_business_ts: {
         Args: { p_entry_date: string }
         Returns: string
@@ -3232,6 +3565,17 @@ export type Database = {
       process_ticket_stock_deduction: {
         Args: { p_numero_documento: string }
         Returns: undefined
+      }
+      recipe_qty_to_base_unit: {
+        Args: {
+          p_base_unit: string
+          p_mode?: string
+          p_pack_qty?: number
+          p_pack_unit?: string
+          p_qty: number
+          p_recipe_unit: string
+        }
+        Returns: number
       }
       recipe_qty_to_purchase_unit_for_cost: {
         Args: {
@@ -3302,6 +3646,14 @@ export type Database = {
             }
             Returns: number
           }
+      staff_consumption_recipe_serving_cost: {
+        Args: { p_recipe_id: string }
+        Returns: number
+      }
+      sync_purchase_invoice_status: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
       ticket_effective_reception_ts: {
         Args: { p_fecha: string; p_fecha_real: string; p_hora_cierre: string }
         Returns: string
