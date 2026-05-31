@@ -435,9 +435,9 @@ export default function InsightsClient({
     }
   }, [])
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (from: string, to: string) => {
     setProducts((s) => ({ ...s, loading: true, error: null }))
-    const res = await getProductMarginRanking(15)
+    const res = await getProductMarginRanking(15, from, to)
     if (res.success) {
       setProducts({ data: res.data, loading: false, error: null })
     } else {
@@ -454,8 +454,8 @@ export default function InsightsClient({
       setFinancial({
         data: null,
         loading: false,
-        error: res.forbidden ? null : res.error,
-        forbidden: res.forbidden === true,
+        error: res.error || 'No se pudo cargar el estado financiero',
+        forbidden: false,
       })
     }
   }, [])
@@ -464,7 +464,7 @@ export default function InsightsClient({
     (from: string, to: string) => {
       void fetchHourly(from, to)
       void fetchWeekday(from, to)
-      void fetchProducts()
+      void fetchProducts(from, to)
       void fetchFinancial(from, to)
     },
     [fetchHourly, fetchWeekday, fetchProducts, fetchFinancial]
@@ -625,15 +625,24 @@ export default function InsightsClient({
     return (financial.data.pyg.net / income) * 100
   }, [financial.data])
 
+  const isShortFinancialRange = useMemo(() => {
+    const [y1, m1, d1] = dateFrom.split('-').map(Number)
+    const [y2, m2, d2] = dateTo.split('-').map(Number)
+    const from = new Date(y1, m1 - 1, d1)
+    const to = new Date(y2, m2 - 1, d2)
+    const diffDays = Math.round((to.getTime() - from.getTime()) / 86400000) + 1
+    return diffDays < 28
+  }, [dateFrom, dateTo])
+
   const financialModalContent = useMemo(() => {
     if (!financial.data || !financialModal) return null
-    const { pyg, reconciliation, incomeLines, expenseLines, cashIn, cashOut } = financial.data
+    const { pyg, reconciliation, incomeLines, expenseLines, cashIn, cashOut, salesGross } = financial.data
 
     switch (financialModal) {
       case 'income':
         return {
-          title: 'Ventas brutas (c/IVA)',
-          footnote: 'Importes con IVA incluido. No es base imponible.',
+          title: 'Ventas (s/IVA)',
+          footnote: 'Base imponible (IVA 10% descontado). Coincide con el PyG de devengo.',
           body: (
             <table className="w-full">
               <tbody>
@@ -644,6 +653,10 @@ export default function InsightsClient({
                     amount={line.amount}
                   />
                 ))}
+                <FinancialDetailRow
+                  label="TPV bruto (c/IVA)"
+                  amount={salesGross}
+                />
               </tbody>
             </table>
           ),
@@ -975,7 +988,10 @@ export default function InsightsClient({
                   ]}
                 />
                 {products.error ? (
-                  <SectionErrorBanner message={products.error} onRetry={() => void fetchProducts()} />
+                  <SectionErrorBanner
+                    message={products.error}
+                    onRetry={() => void fetchProducts(dateFrom, dateTo)}
+                  />
                 ) : products.loading ? (
                   <SectionSkeleton rows={5} />
                 ) : products.data.length === 0 ? (
@@ -1115,17 +1131,23 @@ export default function InsightsClient({
                 />
               ) : financial.loading ? (
                 <SectionSkeleton rows={2} />
-              ) : financial.forbidden || !financial.data ? (
-                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center">
-                  <p className="text-[10px] lg:text-sm font-semibold text-zinc-600">
-                    Solo disponible para manager
-                  </p>
-                </div>
+              ) : !financial.data ? (
+                <SectionErrorBanner
+                  message={financial.error ?? 'No se pudo cargar el estado financiero'}
+                  onRetry={() => void fetchFinancial(dateFrom, dateTo)}
+                />
               ) : financialKpis ? (
                 <div className="space-y-3">
+                  {isShortFinancialRange && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm mb-4">
+                      ⚠️ Rango menor a un mes: nóminas, extras y alquiler se prorratean por días
+                      solapados. Los valores son estimaciones proporcionales, no importes reales del
+                      periodo.
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     <FinancialKpiChip
-                      label="Ventas brutas (c/IVA)"
+                      label="Ventas (s/IVA)"
                       value={financialKpis.income}
                       valueClassName={financialKpis.incomeTone}
                       onClick={() => setFinancialModal('income')}

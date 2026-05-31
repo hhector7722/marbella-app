@@ -71,6 +71,7 @@ export type FinancialSummaryData = {
   expenseLines: FinancialStatementLine[]
   cashIn: number
   cashOut: number
+  salesGross: number
 }
 
 type FinancialActionFailure = { success: false; error: string; forbidden?: boolean }
@@ -85,6 +86,8 @@ const financialStatementExtractSchema = z.object({
   pyg: z.object({
     income: z.object({
       total: z.coerce.number(),
+      gross_total: z.coerce.number(),
+      gross_net: z.coerce.number(),
       lines: z.array(financialStatementLineSchema),
     }),
     expenses: z.object({
@@ -214,7 +217,9 @@ export async function getWeekdayAnalysis(
 }
 
 export async function getProductMarginRanking(
-  limit?: number
+  limit?: number,
+  dateFrom?: string,
+  dateTo?: string
 ): Promise<ActionSuccess<ProductMarginRow[]> | ActionFailure> {
   const parsedLimit = limitSchema.safeParse(limit ?? 20)
   if (!parsedLimit.success) {
@@ -224,9 +229,27 @@ export async function getProductMarginRanking(
   const gate = await gateManager()
   if (!gate.ok) return { success: false, error: gate.error }
 
-  const { data, error } = await gate.supabase.rpc('get_product_margin_ranking', {
+  const rpcArgs: {
+    p_limit: number
+    p_date_from?: string
+    p_date_to?: string
+  } = {
     p_limit: parsedLimit.data ?? 20,
-  })
+  }
+
+  if (dateFrom !== undefined && dateTo !== undefined) {
+    const parsedRange = dateRangeSchema.safeParse({ dateFrom, dateTo })
+    if (!parsedRange.success) {
+      return {
+        success: false,
+        error: parsedRange.error.issues[0]?.message ?? 'Rango de fechas inválido',
+      }
+    }
+    rpcArgs.p_date_from = parsedRange.data.dateFrom
+    rpcArgs.p_date_to = parsedRange.data.dateTo
+  }
+
+  const { data, error } = await gate.supabase.rpc('get_product_margin_ranking', rpcArgs)
 
   if (error) {
     console.error('[insights] get_product_margin_ranking RPC error:', error.message)
@@ -284,6 +307,7 @@ export async function getFinancialSummary(
       expenseLines: row.pyg.expenses.lines,
       cashIn: row.cashFlow.inflows.total,
       cashOut: row.cashFlow.outflows.total,
+      salesGross: row.pyg.income.gross_net,
     },
   }
 }
