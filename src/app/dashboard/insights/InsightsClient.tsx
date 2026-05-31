@@ -30,11 +30,16 @@ import type {
   ProductMarginRow,
 } from './schemas'
 import {
-  getEuropeMadridYmdToday,
-  subtractDaysFromEuropeMadridYmd,
-} from '@/utils/date-utils'
-
-type DatePreset = 'today' | 'yesterday' | 7 | 30
+  FinancialMonthSelector,
+  InsightsMainDateFilter,
+} from './insights-date-filter'
+import {
+  mondayOfWeekContaining,
+  monthBounds,
+  type InsightsFilterMode,
+  type InsightsMonth,
+  weekBoundsFromMonday,
+} from './insights-date-utils'
 
 type SectionKey = 'hourly' | 'weekday' | 'products' | 'financial'
 
@@ -47,6 +52,7 @@ type SectionState<T> = {
 type InsightsClientProps = {
   initialDateFrom: string
   initialDateTo: string
+  initialFinancialMonth: InsightsMonth
   initialHourly: HourlyProfitabilityRow[]
   initialWeekday: WeekdayAnalysisRow[]
   initialProducts: ProductMarginRow[]
@@ -334,18 +340,21 @@ type LegendItem = {
 function SectionTitleRow({
   title,
   legend,
+  actions,
 }: {
   title: string
   legend?: LegendItem[]
+  actions?: ReactNode
 }) {
   return (
     <div className="flex items-center justify-between gap-2 mb-2 lg:mb-3 min-h-8">
       <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] leading-tight shrink-0">
         {title}
       </h2>
-      {legend && legend.length > 0 && (
+      {(actions || (legend && legend.length > 0)) && (
         <div className="flex items-center gap-2 lg:gap-3 shrink-0 flex-nowrap ml-auto">
-          {legend.map((item) => (
+          {actions}
+          {legend?.map((item) => (
             <span
               key={item.label}
               className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-zinc-600 whitespace-nowrap"
@@ -375,6 +384,7 @@ function SectionTitleRow({
 export default function InsightsClient({
   initialDateFrom,
   initialDateTo,
+  initialFinancialMonth,
   initialHourly,
   initialWeekday,
   initialProducts,
@@ -384,7 +394,18 @@ export default function InsightsClient({
 }: InsightsClientProps) {
   const [dateFrom, setDateFrom] = useState(initialDateFrom)
   const [dateTo, setDateTo] = useState(initialDateTo)
-  const [activePreset, setActivePreset] = useState<DatePreset | null>('today')
+  const [filterMode, setFilterMode] = useState<InsightsFilterMode>('mes')
+  const [openPicker, setOpenPicker] = useState<InsightsFilterMode | null>(null)
+  const [selectedWeekMonday, setSelectedWeekMonday] = useState(() =>
+    mondayOfWeekContaining(initialDateFrom)
+  )
+  const [selectedMonth, setSelectedMonth] = useState<InsightsMonth>(initialFinancialMonth)
+  const [selectedDay, setSelectedDay] = useState(initialDateTo)
+  const [periodFrom, setPeriodFrom] = useState(initialDateFrom)
+  const [periodTo, setPeriodTo] = useState(initialDateTo)
+  const [financialMonth, setFinancialMonth] = useState<InsightsMonth>(initialFinancialMonth)
+
+  const financialRange = useMemo(() => monthBounds(financialMonth), [financialMonth])
 
   const [hourly, setHourly] = useState<SectionState<HourlyProfitabilityRow[]>>({
     data: initialHourly,
@@ -460,43 +481,74 @@ export default function InsightsClient({
     }
   }, [])
 
-  const refetchAll = useCallback(
+  const refetchAnalytics = useCallback(
     (from: string, to: string) => {
+      setDateFrom(from)
+      setDateTo(to)
       void fetchHourly(from, to)
       void fetchWeekday(from, to)
       void fetchProducts(from, to)
-      void fetchFinancial(from, to)
     },
-    [fetchHourly, fetchWeekday, fetchProducts, fetchFinancial]
+    [fetchHourly, fetchWeekday, fetchProducts]
   )
 
-  const applyPreset = (preset: Exclude<DatePreset, 'today'>) => {
-    const today = getEuropeMadridYmdToday()
+  const handleOpenPicker = useCallback((m: InsightsFilterMode) => {
+    setOpenPicker((prev) => (prev === m ? null : m))
+  }, [])
 
-    if (preset === 'yesterday') {
-      const yesterday = subtractDaysFromEuropeMadridYmd(today, 1)
-      setActivePreset('yesterday')
-      setDateFrom(yesterday)
-      setDateTo(yesterday)
-      refetchAll(yesterday, yesterday)
-      return
-    }
+  const handleSelectWeek = useCallback(
+    (monday: string) => {
+      const { from, to } = weekBoundsFromMonday(monday)
+      setSelectedWeekMonday(monday)
+      setFilterMode('sem')
+      setOpenPicker(null)
+      refetchAnalytics(from, to)
+    },
+    [refetchAnalytics]
+  )
 
-    const from = subtractDaysFromEuropeMadridYmd(today, preset)
-    setActivePreset(preset)
-    setDateFrom(from)
-    setDateTo(today)
-    refetchAll(from, today)
-  }
+  const handleSelectMonth = useCallback(
+    (fm: InsightsMonth) => {
+      const { from, to } = monthBounds(fm)
+      setSelectedMonth(fm)
+      setFilterMode('mes')
+      setOpenPicker(null)
+      refetchAnalytics(from, to)
+    },
+    [refetchAnalytics]
+  )
 
-  const applyCustomRange = () => {
-    const today = getEuropeMadridYmdToday()
-    const yesterday = subtractDaysFromEuropeMadridYmd(today, 1)
-    if (dateFrom === today && dateTo === today) setActivePreset('today')
-    else if (dateFrom === yesterday && dateTo === yesterday) setActivePreset('yesterday')
-    else setActivePreset(null)
-    refetchAll(dateFrom, dateTo)
-  }
+  const handleSelectDay = useCallback(
+    (ymd: string) => {
+      setSelectedDay(ymd)
+      setFilterMode('dia')
+      setOpenPicker(null)
+      refetchAnalytics(ymd, ymd)
+    },
+    [refetchAnalytics]
+  )
+
+  const handleApplyPeriod = useCallback(
+    (from: string, to: string) => {
+      if (!from || !to) return
+      const [f, t] = from <= to ? [from, to] : [to, from]
+      setPeriodFrom(f)
+      setPeriodTo(t)
+      setFilterMode('periodo')
+      setOpenPicker(null)
+      refetchAnalytics(f, t)
+    },
+    [refetchAnalytics]
+  )
+
+  const handleFinancialMonthChange = useCallback(
+    (fm: InsightsMonth) => {
+      setFinancialMonth(fm)
+      const { from, to } = monthBounds(fm)
+      void fetchFinancial(from, to)
+    },
+    [fetchFinancial]
+  )
 
   const hourlyChartData = useMemo(() => {
     return hourly.data
@@ -625,15 +677,6 @@ export default function InsightsClient({
     return (financial.data.pyg.net / income) * 100
   }, [financial.data])
 
-  const isShortFinancialRange = useMemo(() => {
-    const [y1, m1, d1] = dateFrom.split('-').map(Number)
-    const [y2, m2, d2] = dateTo.split('-').map(Number)
-    const from = new Date(y1, m1 - 1, d1)
-    const to = new Date(y2, m2 - 1, d2)
-    const diffDays = Math.round((to.getTime() - from.getTime()) / 86400000) + 1
-    return diffDays < 28
-  }, [dateFrom, dateTo])
-
   const financialModalContent = useMemo(() => {
     if (!financial.data || !financialModal) return null
     const { pyg, reconciliation, incomeLines, expenseLines, cashIn, cashOut, salesGross } = financial.data
@@ -759,79 +802,28 @@ export default function InsightsClient({
     <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-[#36606F] px-3 md:px-5 py-3 flex flex-nowrap items-center gap-2 md:gap-3 overflow-x-auto">
-            <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-wider shrink-0">
-              Rentabilidad
-            </h1>
-
-            <div className="flex items-center gap-1 shrink-0">
-              {(
-                [
-                  { id: 7 as const, label: '7d' },
-                  { id: 30 as const, label: '30d' },
-                  { id: 'yesterday' as const, label: 'Ayer' },
-                ] as const
-              ).map((preset) => (
-                <button
-                  key={String(preset.id)}
-                  type="button"
-                  onClick={() => applyPreset(preset.id)}
-                  className={cn(
-                    'min-h-12 shrink-0 rounded-xl px-2.5 md:px-3 text-[10px] md:text-[11px] font-black uppercase tracking-wide border active:scale-95 transition-all',
-                    activePreset === preset.id
-                      ? 'bg-white text-[#36606F] border-white'
-                      : 'bg-white/10 text-white border-white/20 hover:bg-white/15'
-                  )}
-                >
-                  {preset.label}
-                </button>
-              ))}
+          <div className="sticky top-0 z-20 shadow-sm">
+            <div className="bg-[#36606F] px-3 md:px-5 py-3">
+              <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-wider">
+                Rentabilidad
+              </h1>
             </div>
-
-            <div className="flex items-center gap-1.5 md:gap-2 ml-auto shrink-0">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setActivePreset(null)
-                  setDateFrom(e.target.value)
-                }}
-                aria-label="Fecha desde"
-                className={cn(
-                  'min-h-12 w-[7.25rem] md:w-auto px-2 md:px-3 rounded-xl border border-white/15 bg-white/10 text-white shrink-0',
-                  'text-[11px] md:text-[12px] font-black tabular-nums',
-                  'focus:outline-none focus:ring-2 focus:ring-white/25'
-                )}
+            <div className="bg-white border-b border-zinc-100 px-3 md:px-5 py-2 overflow-x-auto">
+              <InsightsMainDateFilter
+                mode={filterMode}
+                openPicker={openPicker}
+                onOpenPicker={handleOpenPicker}
+                onClosePicker={() => setOpenPicker(null)}
+                selectedWeekMonday={selectedWeekMonday}
+                selectedMonth={selectedMonth}
+                selectedDay={selectedDay}
+                periodFrom={periodFrom}
+                periodTo={periodTo}
+                onSelectWeek={handleSelectWeek}
+                onSelectMonth={handleSelectMonth}
+                onSelectDay={handleSelectDay}
+                onApplyPeriod={handleApplyPeriod}
               />
-              <span className="text-white/50 text-xs font-bold shrink-0" aria-hidden>
-                →
-              </span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setActivePreset(null)
-                  setDateTo(e.target.value)
-                }}
-                aria-label="Fecha hasta"
-                className={cn(
-                  'min-h-12 w-[7.25rem] md:w-auto px-2 md:px-3 rounded-xl border border-white/15 bg-white/10 text-white shrink-0',
-                  'text-[11px] md:text-[12px] font-black tabular-nums',
-                  'focus:outline-none focus:ring-2 focus:ring-white/25'
-                )}
-              />
-              <button
-                type="button"
-                onClick={applyCustomRange}
-                className={cn(
-                  'min-h-12 shrink-0 rounded-xl px-3 md:px-4',
-                  'bg-white text-[#36606F] hover:bg-white/90',
-                  'text-[10px] md:text-[11px] font-black uppercase tracking-widest',
-                  'active:scale-[0.99] transition-transform'
-                )}
-              >
-                Aplicar
-              </button>
             </div>
           </div>
 
@@ -1123,28 +1115,29 @@ export default function InsightsClient({
 
             {/* Sección 4 — Resultado del periodo (ancho completo) */}
             <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
-              <SectionTitleRow title="Resultado del periodo" />
+              <SectionTitleRow
+                title="Resultado del periodo"
+                actions={
+                  <FinancialMonthSelector
+                    month={financialMonth}
+                    onChange={handleFinancialMonthChange}
+                  />
+                }
+              />
               {financial.error ? (
                 <SectionErrorBanner
                   message={financial.error}
-                  onRetry={() => void fetchFinancial(dateFrom, dateTo)}
+                  onRetry={() => void fetchFinancial(financialRange.from, financialRange.to)}
                 />
               ) : financial.loading ? (
                 <SectionSkeleton rows={2} />
               ) : !financial.data ? (
                 <SectionErrorBanner
                   message={financial.error ?? 'No se pudo cargar el estado financiero'}
-                  onRetry={() => void fetchFinancial(dateFrom, dateTo)}
+                  onRetry={() => void fetchFinancial(financialRange.from, financialRange.to)}
                 />
               ) : financialKpis ? (
                 <div className="space-y-3">
-                  {isShortFinancialRange && (
-                    <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm mb-4">
-                      ⚠️ Rango menor a un mes: nóminas, extras y alquiler se prorratean por días
-                      solapados. Los valores son estimaciones proporcionales, no importes reales del
-                      periodo.
-                    </div>
-                  )}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     <FinancialKpiChip
                       label="Ventas (s/IVA)"

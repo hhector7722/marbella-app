@@ -14,8 +14,9 @@ import type {
   ProductMarginRow,
 } from './schemas'
 import {
-  getEuropeMadridYmdToday,
-} from '@/utils/date-utils'
+  getPreviousInsightsMonth,
+  monthBounds,
+} from './insights-date-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,9 +57,8 @@ export default async function InsightsPage() {
     redirect('/dashboard')
   }
 
-  const today = getEuropeMadridYmdToday()
-  const dateFrom = today
-  const dateTo = today
+  const financialMonth = getPreviousInsightsMonth()
+  const { from: dateFrom, to: dateTo } = monthBounds(financialMonth)
 
   const timeoutMsg = 'Tiempo de espera agotado. Pulsa Reintentar en la sección afectada.'
 
@@ -85,6 +85,7 @@ export default async function InsightsPage() {
     <InsightsClient
       initialDateFrom={dateFrom}
       initialDateTo={dateTo}
+      initialFinancialMonth={financialMonth}
       initialHourly={hourlyRes.success ? hourlyRes.data : ([] as HourlyProfitabilityRow[])}
       initialWeekday={weekdayRes.success ? weekdayRes.data : ([] as WeekdayAnalysisRow[])}
       initialProducts={productsRes.success ? productsRes.data : ([] as ProductMarginRow[])}
