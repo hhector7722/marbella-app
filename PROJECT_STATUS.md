@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-30 (Autorrelleno desglose salida caja inicial)
+**Última actualización:** 2026-05-31 (Albaranes: sync cabecera mapped)
+
+- [x] **Albaranes: cabecera `purchase_invoices.status` sincronizada con líneas+stock (2026-05-31)**: Migración [`20260531100000_sync_purchase_invoice_status.sql`](supabase/migrations/20260531100000_sync_purchase_invoice_status.sql) — RPC `sync_purchase_invoice_status` + triggers en `purchase_invoice_lines` y `stock_movements`; cuando todas las líneas están resueltas (`mapped`|`excluded`) y existe `PURCHASE` `ALB-LINE-*`, la cabecera pasa a `mapped` (devengo en finanzas); al desmapear o faltar stock vuelve a `pending_mapping`. Backfill al aplicar. App: [`actions.ts`](src/app/dashboard/albaranes/actions.ts) invoca la RPC tras mapeo/reparar/excluir/desmapear/auto-mapear; lista actualiza `status` junto al tick verde.
+
+**Última actualización anterior:** 2026-05-30 (Autorrelleno desglose salida caja inicial)
 
 - [x] **Tesorería: autorrelleno desglose en salida caja (2026-05-30)**: [`CashDenominationForm.tsx`](src/components/CashDenominationForm.tsx) — botón «Autorrellenar» (Wand2, petróleo `#36606F`) en salidas OUT con importe > 0; greedy sobre inventario real vía server action [`getBoxInventoryForAutofill`](src/app/actions/cash-box-inventory.ts) + [`greedy-cash-breakdown.ts`](src/lib/greedy-cash-breakdown.ts). Toast warning si no cuadra el importe exacto. Integrado en dashboard admin, movimientos y modal legacy staff.
 

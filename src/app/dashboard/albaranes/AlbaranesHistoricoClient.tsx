@@ -302,9 +302,15 @@ export default function AlbaranesHistoricoClient({
     setItems((prev) => {
       const idx = prev.findIndex((it) => it.id === detail.id)
       if (idx < 0) return prev
-      if (prev[idx]!.is_fully_processed === fully) return prev
+      const prevRow = prev[idx]!
+      const nextStatus = fully
+        ? 'mapped'
+        : prevRow.status === 'mapped'
+          ? 'pending_mapping'
+          : prevRow.status
+      if (prevRow.is_fully_processed === fully && prevRow.status === nextStatus) return prev
       const next = prev.slice()
-      next[idx] = { ...prev[idx]!, is_fully_processed: fully }
+      next[idx] = { ...prevRow, is_fully_processed: fully, status: nextStatus }
       return next
     })
   }, [detail, stockStatusByLineId])

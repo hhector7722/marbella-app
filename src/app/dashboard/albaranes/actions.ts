@@ -58,6 +58,21 @@ async function ensureStockMovementsReferenceDocColumn(
   return { ok: true }
 }
 
+/** Alinea cabecera con líneas+stock (migración 20260531100000). Ignora si RPC aún no existe. */
+async function syncPurchaseInvoiceStatusRpc(
+  supabase: SupabaseServerClient,
+  invoiceId: string
+): Promise<void> {
+  const id = String(invoiceId ?? '').trim()
+  if (!id) return
+  const { error } = await supabase.rpc('sync_purchase_invoice_status', { p_invoice_id: id })
+  if (error) {
+    const m = String(error.message ?? '')
+    if (/could not find the function|PGRST202|function .* does not exist|schema cache/i.test(m)) return
+    console.error('sync_purchase_invoice_status:', m)
+  }
+}
+
 function isMissingReferenceDocColumnError(message: string | undefined): boolean {
   const m = String(message ?? '')
   return m.includes('reference_doc') && m.includes('does not exist')
@@ -1304,6 +1319,8 @@ export async function confirmInvoiceLineMappingAction(params: {
   })
   if (!priceRes.ok) return { success: false, message: priceRes.message }
 
+  await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
+
   // 3) Revalidaciones para refrescar UI
   try {
     revalidatePath('/dashboard/albaranes')
@@ -1422,6 +1439,8 @@ export async function updateMappedLineConversionFactorAction(params: {
       stockRectified = true
     }
   }
+
+  await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
 
   try {
     revalidatePath('/dashboard/albaranes')
@@ -1604,6 +1623,9 @@ export async function applyInvoiceLineStockAction(params: {
   if (String((line as any)?.status ?? '') !== 'mapped') {
     await gate.supabase.from('purchase_invoice_lines').update({ status: 'mapped' }).eq('id', lineId)
   }
+
+  const invoiceIdFromLine = String((line as any)?.invoice_id ?? invoiceId ?? '').trim()
+  if (invoiceIdFromLine) await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceIdFromLine)
 
   try {
     revalidatePath('/dashboard/albaranes')
@@ -1809,6 +1831,8 @@ export async function repairOrphanLinesInInvoiceAction(params: {
     else report.repaired += 1
   }
 
+  await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
+
   try {
     revalidatePath('/dashboard/albaranes')
   } catch {}
@@ -1834,11 +1858,13 @@ export async function excludeInvoiceLineFromMappingAction(params: {
 
   const { data: line, error: lineErr } = await gate.supabase
     .from('purchase_invoice_lines')
-    .select('id, mapped_ingredient_id, status')
+    .select('id, invoice_id, mapped_ingredient_id, status')
     .eq('id', lineId)
     .maybeSingle()
   if (lineErr) return { success: false, message: lineErr.message }
   if (!line) return { success: false, message: 'Línea no encontrada' }
+
+  const invoiceId = String((line as any).invoice_id ?? '').trim()
 
   const hadMapping =
     Boolean((line as any).mapped_ingredient_id) && String((line as any).status ?? '') === 'mapped'
@@ -1860,6 +1886,8 @@ export async function excludeInvoiceLineFromMappingAction(params: {
     .update({ mapped_ingredient_id: null, status: INVOICE_LINE_STATUS_EXCLUDED })
     .eq('id', lineId)
   if (updErr) return { success: false, message: `Error actualizando línea: ${updErr.message}` }
+
+  if (invoiceId) await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
 
   try {
     revalidatePath('/dashboard/albaranes')
@@ -1953,6 +1981,8 @@ export async function unmapInvoiceLineAction(params: {
       }
     }
   }
+
+  if (invoiceId) await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
 
   try {
     revalidatePath('/dashboard/albaranes')
@@ -2137,6 +2167,14 @@ export async function autoMapKnownLinesAction(params?: {
   const rpcResult = result as { mapped?: number; skipped?: number } | null
   const mapped = rpcResult?.mapped ?? 0
   const skipped = rpcResult?.skipped ?? 0
+
+  if (onlyInvoiceId) {
+    await syncPurchaseInvoiceStatusRpc(gate.supabase, onlyInvoiceId)
+  } else {
+    for (const inv of invoiceList) {
+      await syncPurchaseInvoiceStatusRpc(gate.supabase, inv.id)
+    }
+  }
 
   try {
     revalidatePath('/dashboard/albaranes')
