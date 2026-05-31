@@ -71,7 +71,7 @@ export default async function InsightsPage() {
       success: false as const,
       error: timeoutMsg,
     }),
-    ssrWithTimeout(getProductMarginRanking(15), 8000, {
+    ssrWithTimeout(getProductMarginRanking(15, dateFrom, dateTo), 8000, {
       success: false as const,
       error: timeoutMsg,
     }),
@@ -98,10 +98,7 @@ export default async function InsightsPage() {
         hourly: hourlyRes.success ? undefined : hourlyRes.error,
         weekday: weekdayRes.success ? undefined : weekdayRes.error,
         products: productsRes.success ? undefined : productsRes.error,
-        financial:
-          financialRes.success || ('forbidden' in financialRes && financialRes.forbidden)
-            ? undefined
-            : financialRes.error,
+        financial: financialRes.success ? undefined : financialRes.error,
       }}
     />
   )
