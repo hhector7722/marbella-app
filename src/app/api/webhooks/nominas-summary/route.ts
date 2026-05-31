@@ -84,38 +84,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Total: línea "TOTAL EMPRESA ... 11.814,03" (última cifra de la línea suele ser COST TOTAL)
-    const totalEmpresaLine = (() => {
-      const lines = textContent.split(/\r?\n/);
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const ln = lines[i];
-        if (/TOTAL\s+EMPRESA/i.test(ln)) return ln;
-      }
-      return null;
-    })();
+    // Total: mayor cifra europea en los 300 caracteres previos a TOTAL CENTRO / TOTAL EMPRESA
+    // (el OCR suele poner los importes en la línea anterior, no en la misma que el rótulo)
+    const empresaIdx = textContent.search(/TOTAL\s+EMPRESA/i);
+    const centroIdx = textContent.search(/TOTAL\s+CENTRO/i);
+    const markerCandidates = [empresaIdx, centroIdx].filter((idx) => idx >= 0);
+    const markerIndex =
+      markerCandidates.length > 0 ? Math.min(...markerCandidates) : -1;
 
-    if (!totalEmpresaLine) {
+    if (markerIndex < 0) {
       return NextResponse.json(
-        { error: 'No se encontró la línea TOTAL EMPRESA' },
+        { error: 'No se encontró TOTAL CENTRO ni TOTAL EMPRESA en el documento' },
         { status: 422 },
       );
     }
 
-    const numberCandidates = totalEmpresaLine.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})/g) ?? [];
-    if (numberCandidates.length === 0) {
+    const fragment = textContent.slice(Math.max(0, markerIndex - 300), markerIndex);
+    const numberCandidates =
+      fragment.match(/\d{1,3}(?:\.\d{3})*,\d{2}/g) ?? [];
+
+    const positiveAmounts = numberCandidates
+      .map(parseEuroNumber)
+      .filter((n): n is number => n !== null && n > 0);
+
+    if (positiveAmounts.length === 0) {
       return NextResponse.json(
-        { error: 'No se detectó ningún importe en la línea TOTAL EMPRESA' },
+        { error: 'No se detectó ningún importe en el bloque de totales' },
         { status: 422 },
       );
     }
 
-    const totalCompanyCost = parseEuroNumber(numberCandidates[numberCandidates.length - 1]);
-    if (totalCompanyCost === null) {
-      return NextResponse.json(
-        { error: 'No se pudo parsear el importe TOTAL EMPRESA' },
-        { status: 422 },
-      );
-    }
+    const totalCompanyCost = Math.max(...positiveAmounts);
 
     const periodYm = periodYmFromStartDate(startYmd);
 
