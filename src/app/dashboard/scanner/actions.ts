@@ -38,10 +38,81 @@ function parseBase64DataUri(base64DataUri: string): { mimeType: string; rawBase6
   return { mimeType, rawBase64, buffer }
 }
 
+type GeminiAlbaranLine = {
+  nombre?: string
+  cantidad?: number
+  unidad_medida?: string | null
+  precio_unidad?: number
+  tipo_iva_linea?: number | null
+  total_linea?: number
+}
+
+type GeminiAlbaranData = {
+  numero_factura?: string
+  fecha?: string
+  base_imponible?: number | null
+  tipo_iva?: number | null
+  total_iva?: number | null
+  total?: number
+  lineas?: GeminiAlbaranLine[]
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (value == null) return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Normaliza cabecera IVA: calcula base si falta pero hay total + tipo. */
+function normalizeGeminiAlbaranData(raw: unknown): GeminiAlbaranData {
+  const data = raw as GeminiAlbaranData
+  const total = toFiniteNumber(data.total) ?? 0
+  const tipoIva = toFiniteNumber(data.tipo_iva)
+  let baseImponible = toFiniteNumber(data.base_imponible)
+  let totalIva = toFiniteNumber(data.total_iva)
+
+  if ((baseImponible == null || baseImponible === 0) && total > 0 && tipoIva != null && tipoIva > 0) {
+    baseImponible = total / (1 + tipoIva)
+    data.base_imponible = baseImponible
+    if (totalIva == null || totalIva === 0) {
+      totalIva = baseImponible * tipoIva
+      data.total_iva = totalIva
+    }
+  }
+
+  return data
+}
+
+function invoiceTaxInsertFields(data: GeminiAlbaranData) {
+  return {
+    base_amount: toFiniteNumber(data.base_imponible),
+    tax_amount: toFiniteNumber(data.total_iva),
+    tax_rate: toFiniteNumber(data.tipo_iva),
+  }
+}
+
+function mapScannerLineToInsert(line: GeminiAlbaranLine, invoiceId: string, headerTaxRate: number | null) {
+  const tipoIvaLinea = toFiniteNumber(line.tipo_iva_linea) ?? headerTaxRate
+  const precioUnidad = toFiniteNumber(line.precio_unidad) ?? 0
+
+  return {
+    invoice_id: invoiceId,
+    original_name: line.nombre || 'Sin nombre',
+    quantity: line.cantidad || 0,
+    line_unit: line.unidad_medida || null,
+    unit_price: precioUnidad,
+    total_price: line.total_linea || 0,
+    status: 'pending' as const,
+    tax_rate: tipoIvaLinea,
+    base_price:
+      precioUnidad && tipoIvaLinea != null ? precioUnidad / (1 + tipoIvaLinea) : null,
+  }
+}
+
 async function extractAlbaranWithGemini(
   mimeType: string,
   rawBase64: string
-): Promise<{ ok: true; data: any } | { ok: false; message: string }> {
+): Promise<{ ok: true; data: GeminiAlbaranData } | { ok: false; message: string }> {
   const geminiKey = process.env.GEMINI_API_KEY
   if (!geminiKey) return { ok: false, message: 'GEMINI_API_KEY no configurada' }
 
@@ -52,17 +123,28 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 {
     "numero_factura": "Identificador del albarán",
     "fecha": "YYYY-MM-DD",
+    "base_imponible": 0.00,
+    "tipo_iva": 0.10,
+    "total_iva": 0.00,
     "total": 0.00,
     "lineas": [
         { 
           "nombre": "Nombre original exacto", 
           "cantidad": 0.000, 
           "unidad_medida": "garrafa|caja|bolsa|l|kg|ud (extrae la unidad literal del papel, NO la inventes. Si no hay, pon null)",
-          "precio_unidad": 0.0000, 
+          "precio_unidad": 0.0000,
+          "tipo_iva_linea": 0.10,
           "total_linea": 0.00 
         }
     ]
-}`
+}
+Instrucciones IVA:
+- tipo_iva: tipo impositivo de la factura como decimal (0.10 = 10%, 0.04 = 4%, 0.21 = 21%, 0.00 = exento). Si hay múltiples tipos, usar el predominante en la cabecera.
+- base_imponible: total sin IVA. Si no aparece explícitamente, calcular: total / (1 + tipo_iva).
+- total_iva: importe del IVA. Si no aparece, calcular: base_imponible * tipo_iva.
+- tipo_iva_linea: tipo IVA de esa línea específica (puede diferir si hay líneas a tipos distintos). Si no se puede determinar, usar el tipo_iva de la cabecera.
+- Si el albarán no desglosa IVA (solo muestra total), inferir tipo_iva = 0.10 (hostelería España) y calcular base_imponible y total_iva.
+`
 
   const geminiRes = await fetch(geminiUrl, {
     method: 'POST',
@@ -88,7 +170,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
   if (!rawText || typeof rawText !== 'string') return { ok: false, message: 'Respuesta vacía de Gemini' }
 
   try {
-    const data = JSON.parse(rawText)
+    const data = normalizeGeminiAlbaranData(JSON.parse(rawText))
     return { ok: true, data }
   } catch {
     return { ok: false, message: 'JSON inválido de Gemini' }
@@ -226,16 +308,9 @@ export async function appendScannerPageToInvoiceAction(params: {
       return { success: false, message: 'Error guardando la hoja adicional' }
     }
 
-    if (Array.isArray(aiData?.lineas) && aiData.lineas.length > 0) {
-      const linesToInsert = aiData.lineas.map((line: any) => ({
-        invoice_id: invoiceId,
-        original_name: line?.nombre || 'Sin nombre',
-        quantity: line?.cantidad || 0,
-        line_unit: line?.unidad_medida || null,
-        unit_price: line?.precio_unidad || 0,
-        total_price: line?.total_linea || 0,
-        status: 'pending',
-      }))
+    if (Array.isArray(aiData.lineas) && aiData.lineas.length > 0) {
+      const headerTaxRate = toFiniteNumber(aiData.tipo_iva)
+      const linesToInsert = aiData.lineas.map((line) => mapScannerLineToInsert(line, invoiceId, headerTaxRate))
       const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
       if (linesError) {
         console.error('appendScanner lines insert:', linesError)
@@ -334,7 +409,8 @@ export async function processScannerImage(
         supplier_id: supplierId,
         invoice_number: invoiceNum,
         invoice_date: invoiceDateStr,
-        total_amount: aiData?.total || 0,
+        total_amount: aiData.total || 0,
+        ...invoiceTaxInsertFields(aiData),
         file_path: filePath,
         status: 'pending_mapping',
         source: 'scanner',
@@ -352,16 +428,9 @@ export async function processScannerImage(
       return { success: false, message: 'Error al guardar la cabecera del albarán' }
     }
 
-    if (Array.isArray(aiData?.lineas) && aiData.lineas.length > 0) {
-      const linesToInsert = aiData.lineas.map((line: any) => ({
-        invoice_id: invoice.id,
-        original_name: line?.nombre || 'Sin nombre',
-        quantity: line?.cantidad || 0,
-        line_unit: line?.unidad_medida || null,
-        unit_price: line?.precio_unidad || 0,
-        total_price: line?.total_linea || 0,
-        status: 'pending',
-      }))
+    if (Array.isArray(aiData.lineas) && aiData.lineas.length > 0) {
+      const headerTaxRate = toFiniteNumber(aiData.tipo_iva)
+      const linesToInsert = aiData.lineas.map((line) => mapScannerLineToInsert(line, invoice.id, headerTaxRate))
       const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
       if (linesError) {
         console.error('Scanner lines insert error:', linesError)
