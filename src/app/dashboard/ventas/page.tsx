@@ -602,9 +602,9 @@ export default function VentasPage() {
                                 {isHector ? (
                                     <button
                                         type="button"
-                                        onClick={() => router.push('/dashboard/finanzas')}
-                                        aria-label="Abrir finanzas"
-                                        title="Finanzas"
+                                        onClick={() => router.push('/dashboard/insights')}
+                                        aria-label="Abrir rentabilidad"
+                                        title="Rentabilidad"
                                         className={cn(
                                             'min-h-12 min-w-12 shrink-0',
                                             'bg-transparent border-0 outline-none',

@@ -5,7 +5,9 @@ import {
   getHourlySalesVsLabor,
   getWeekdayAnalysis,
   getProductMarginRanking,
+  getFinancialSummary,
 } from './actions'
+import type { FinancialSummaryData } from './actions'
 import type {
   HourlyProfitabilityRow,
   WeekdayAnalysisRow,
@@ -60,7 +62,7 @@ export default async function InsightsPage() {
 
   const timeoutMsg = 'Tiempo de espera agotado. Pulsa Reintentar en la sección afectada.'
 
-  const [hourlyRes, weekdayRes, productsRes] = await Promise.all([
+  const [hourlyRes, weekdayRes, productsRes, financialRes] = await Promise.all([
     ssrWithTimeout(getHourlySalesVsLabor(dateFrom, dateTo), 8000, {
       success: false as const,
       error: timeoutMsg,
@@ -73,6 +75,10 @@ export default async function InsightsPage() {
       success: false as const,
       error: timeoutMsg,
     }),
+    ssrWithTimeout(getFinancialSummary(dateFrom, dateTo), 8000, {
+      success: false as const,
+      error: timeoutMsg,
+    }),
   ])
 
   return (
@@ -82,10 +88,20 @@ export default async function InsightsPage() {
       initialHourly={hourlyRes.success ? hourlyRes.data : ([] as HourlyProfitabilityRow[])}
       initialWeekday={weekdayRes.success ? weekdayRes.data : ([] as WeekdayAnalysisRow[])}
       initialProducts={productsRes.success ? productsRes.data : ([] as ProductMarginRow[])}
+      initialFinancial={
+        financialRes.success ? financialRes.data : (null as FinancialSummaryData | null)
+      }
+      initialFinancialForbidden={
+        !financialRes.success && 'forbidden' in financialRes && financialRes.forbidden === true
+      }
       initialErrors={{
         hourly: hourlyRes.success ? undefined : hourlyRes.error,
         weekday: weekdayRes.success ? undefined : weekdayRes.error,
         products: productsRes.success ? undefined : productsRes.error,
+        financial:
+          financialRes.success || ('forbidden' in financialRes && financialRes.forbidden)
+            ? undefined
+            : financialRes.error,
       }}
     />
   )

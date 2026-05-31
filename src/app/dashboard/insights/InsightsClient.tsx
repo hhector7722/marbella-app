@@ -20,7 +20,9 @@ import {
   getHourlySalesVsLabor,
   getWeekdayAnalysis,
   getProductMarginRanking,
+  getFinancialSummary,
 } from './actions'
+import type { FinancialSummaryData } from './actions'
 import type {
   HourlyProfitabilityRow,
   WeekdayAnalysisRow,
@@ -33,7 +35,7 @@ import {
 
 type DatePreset = 'today' | 'yesterday' | 7 | 30
 
-type SectionKey = 'hourly' | 'weekday' | 'products'
+type SectionKey = 'hourly' | 'weekday' | 'products' | 'financial'
 
 type SectionState<T> = {
   data: T
@@ -47,6 +49,8 @@ type InsightsClientProps = {
   initialHourly: HourlyProfitabilityRow[]
   initialWeekday: WeekdayAnalysisRow[]
   initialProducts: ProductMarginRow[]
+  initialFinancial: FinancialSummaryData | null
+  initialFinancialForbidden?: boolean
   initialErrors?: Partial<Record<SectionKey, string>>
 }
 
@@ -56,6 +60,64 @@ const MARGIN_GREEN = '#4CAF50'
 const MARGIN_BAR_HIGH = '#2E7D32'
 const MARGIN_BAR_MID = '#66BB6A'
 const MARGIN_BAR_LOW = '#FFA726'
+const DELTA_TOOLTIP =
+  'Positivo = rentabilidad contable sin entrar en caja. Negativo = cobros de deuda anterior o ajustes.'
+
+function deltaChipTone(delta: number): string {
+  if (Math.abs(delta) < 50) return 'text-emerald-600'
+  if (delta > 0) return 'text-amber-600'
+  return 'text-rose-600'
+}
+
+function signedEuroTone(value: number, positiveTone: string, negativeTone: string): string {
+  if (value === 0 || Object.is(value, -0)) return 'text-zinc-800'
+  return value > 0 ? positiveTone : negativeTone
+}
+
+function FinancialKpiChip({
+  label,
+  value,
+  valueClassName,
+  badge,
+  tooltip,
+  className,
+}: {
+  label: string
+  value: string
+  valueClassName?: string
+  badge?: string
+  tooltip?: string
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2.5 min-h-12 flex flex-col justify-center min-w-0',
+        className
+      )}
+      title={tooltip}
+    >
+      <span className="text-[8px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+        {label}
+      </span>
+      <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+        <span
+          className={cn(
+            'text-sm lg:text-base font-black tabular-nums truncate',
+            valueClassName ?? 'text-zinc-800'
+          )}
+        >
+          {value}
+        </span>
+        {badge && badge !== ' ' && (
+          <span className="shrink-0 rounded-md bg-zinc-200/80 px-1.5 py-0.5 text-[9px] lg:text-[10px] font-black tabular-nums text-zinc-700">
+            {badge}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function formatEuroChart(value: number, digits = 2): string {
   return new Intl.NumberFormat('es-ES', {
@@ -184,6 +246,8 @@ export default function InsightsClient({
   initialHourly,
   initialWeekday,
   initialProducts,
+  initialFinancial,
+  initialFinancialForbidden = false,
   initialErrors,
 }: InsightsClientProps) {
   const [dateFrom, setDateFrom] = useState(initialDateFrom)
@@ -204,6 +268,17 @@ export default function InsightsClient({
     data: initialProducts,
     loading: false,
     error: initialErrors?.products ?? null,
+  })
+  const [financial, setFinancial] = useState<{
+    data: FinancialSummaryData | null
+    loading: boolean
+    error: string | null
+    forbidden: boolean
+  }>({
+    data: initialFinancial,
+    loading: false,
+    error: initialErrors?.financial ?? null,
+    forbidden: initialFinancialForbidden,
   })
   const [selectedProductIdx, setSelectedProductIdx] = useState(0)
 
@@ -237,13 +312,29 @@ export default function InsightsClient({
     }
   }, [])
 
+  const fetchFinancial = useCallback(async (from: string, to: string) => {
+    setFinancial((s) => ({ ...s, loading: true, error: null, forbidden: false }))
+    const res = await getFinancialSummary(from, to)
+    if (res.success) {
+      setFinancial({ data: res.data, loading: false, error: null, forbidden: false })
+    } else {
+      setFinancial({
+        data: null,
+        loading: false,
+        error: res.forbidden ? null : res.error,
+        forbidden: res.forbidden === true,
+      })
+    }
+  }, [])
+
   const refetchAll = useCallback(
     (from: string, to: string) => {
       void fetchHourly(from, to)
       void fetchWeekday(from, to)
       void fetchProducts()
+      void fetchFinancial(from, to)
     },
-    [fetchHourly, fetchWeekday, fetchProducts]
+    [fetchHourly, fetchWeekday, fetchProducts, fetchFinancial]
   )
 
   const applyPreset = (preset: Exclude<DatePreset, 'today'>) => {
@@ -367,6 +458,32 @@ export default function InsightsClient({
   }, [rankedProducts])
 
   const selectedProduct = rankedProducts[selectedProductIdx] ?? null
+
+  const financialKpis = useMemo(() => {
+    if (!financial.data) return null
+    const { pyg, cashFlow, reconciliation } = financial.data
+    const marginPct =
+      pyg.income.total > 0 ? (pyg.net / pyg.income.total) * 100 : null
+    const marginBadge =
+      marginPct === null
+        ? ' '
+        : formatDisplayValue(Number(marginPct.toFixed(1))) === ' '
+          ? ' '
+          : `${Number(marginPct.toFixed(1))}%`
+    return {
+      income: formatEuroKpi(pyg.income.total),
+      expenses: formatEuroKpi(pyg.expenses.total),
+      pygNet: formatEuroKpi(pyg.net),
+      marginBadge,
+      cashFlowNet: formatEuroKpi(cashFlow.net),
+      delta: formatEuroKpi(reconciliation.delta),
+      incomeTone: signedEuroTone(pyg.income.total, 'text-emerald-600', 'text-rose-600'),
+      expensesTone: 'text-rose-600',
+      pygNetTone: signedEuroTone(pyg.net, 'text-emerald-600', 'text-rose-600'),
+      cashFlowTone: signedEuroTone(cashFlow.net, 'text-emerald-600', 'text-rose-600'),
+      deltaTone: deltaChipTone(reconciliation.delta),
+    }
+  }, [financial.data])
 
   const syncSelectedProductToBest = useCallback(() => {
     setSelectedProductIdx(bestProductIdx)
@@ -739,6 +856,58 @@ export default function InsightsClient({
                 )}
               </section>
             </div>
+
+            {/* Sección 4 — Resultado del periodo (ancho completo) */}
+            <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
+              <SectionTitleRow title="Resultado del periodo" />
+              {financial.error ? (
+                <SectionErrorBanner
+                  message={financial.error}
+                  onRetry={() => void fetchFinancial(dateFrom, dateTo)}
+                />
+              ) : financial.loading ? (
+                <SectionSkeleton rows={2} />
+              ) : financial.forbidden || !financial.data ? (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center">
+                  <p className="text-[10px] lg:text-sm font-semibold text-zinc-600">
+                    Solo disponible para manager
+                  </p>
+                </div>
+              ) : financialKpis ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    <FinancialKpiChip
+                      label="Ventas netas"
+                      value={financialKpis.income}
+                      valueClassName={financialKpis.incomeTone}
+                    />
+                    <FinancialKpiChip
+                      label="Gastos totales"
+                      value={financialKpis.expenses}
+                      valueClassName={financialKpis.expensesTone}
+                    />
+                    <FinancialKpiChip
+                      label="Margen PyG"
+                      value={financialKpis.pygNet}
+                      valueClassName={financialKpis.pygNetTone}
+                      badge={financialKpis.marginBadge}
+                    />
+                    <FinancialKpiChip
+                      label="Caja neta"
+                      value={financialKpis.cashFlowNet}
+                      valueClassName={financialKpis.cashFlowTone}
+                    />
+                    <FinancialKpiChip
+                      label="Delta devengo−caja"
+                      value={financialKpis.delta}
+                      valueClassName={financialKpis.deltaTone}
+                      tooltip={DELTA_TOOLTIP}
+                      className="col-span-2 max-w-[50%] justify-self-center md:col-span-1 md:max-w-none md:justify-self-stretch"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </section>
           </div>
         </div>
       </div>

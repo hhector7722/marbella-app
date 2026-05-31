@@ -53,6 +53,32 @@ const limitSchema = z.coerce.number().int().min(1).max(500).optional()
 type ActionSuccess<T> = { success: true; data: T }
 type ActionFailure = { success: false; error: string }
 
+export type FinancialSummaryData = {
+  pyg: {
+    income: { total: number }
+    expenses: { total: number }
+    net: number
+  }
+  cashFlow: { net: number }
+  reconciliation: { delta: number }
+}
+
+type FinancialActionFailure = { success: false; error: string; forbidden?: boolean }
+
+const financialStatementExtractSchema = z.object({
+  pyg: z.object({
+    income: z.object({ total: z.coerce.number() }),
+    expenses: z.object({ total: z.coerce.number() }),
+    net: z.coerce.number(),
+  }),
+  cashFlow: z.object({
+    net: z.coerce.number(),
+  }),
+  reconciliation: z.object({
+    delta: z.coerce.number(),
+  }),
+})
+
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>> }
   | { ok: false; error: string }
@@ -187,4 +213,37 @@ export async function getProductMarginRanking(
   if (!validated.ok) return { success: false, error: validated.error }
 
   return { success: true, data: validated.data }
+}
+
+export async function getFinancialSummary(
+  dateFrom: string,
+  dateTo: string
+): Promise<ActionSuccess<FinancialSummaryData> | FinancialActionFailure> {
+  const parsed = dateRangeSchema.safeParse({ dateFrom, dateTo })
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? 'Rango de fechas inválido' }
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('get_financial_statement', {
+    p_start_date: parsed.data.dateFrom,
+    p_end_date: parsed.data.dateTo,
+  })
+
+  if (error) {
+    const forbidden = error.message.toLowerCase().includes('forbidden')
+    console.error('[insights] get_financial_statement RPC error:', error.message)
+    return { success: false, error: error.message, forbidden }
+  }
+
+  const extracted = financialStatementExtractSchema.safeParse(data)
+  if (!extracted.success) {
+    console.error(
+      '[insights] get_financial_statement: validación zod fallida',
+      extracted.error.flatten()
+    )
+    return { success: false, error: 'Datos de estado financiero no válidos' }
+  }
+
+  return { success: true, data: extracted.data }
 }
