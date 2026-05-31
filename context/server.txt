@@ -49,17 +49,25 @@ function webhookAuthorized(req) {
 }
 
 /**
- * Verdad única UTC en BD. diaNegocio es la única proyección a Europe/Madrid (día contable).
- * Body ventas: fecha_sistema, hora_cierre, fecha_bdp, fecha — todos ISO-8601 con Z desde el bridge.
+ * Día contable (fecha) desde Fecha_Sistema — inmune a Fecha TPV desfasada.
+ * Hora desde Hora_Cierre del payload — no la hora de recepción en el servidor.
  */
 function resolveVentaTimestamps(v) {
-    const instant = parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date();
+    const dayInstant =
+        VENTAS_FECHA_MODO === 'tpv'
+            ? (parseIso(v.fecha) || parseIso(v.fecha_sistema) || new Date())
+            : (parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date());
+
+    const horaCierreInstant =
+        parseIso(v.hora_cierre) || parseIso(v.fecha) || dayInstant;
+
+    const diaNegocio = ymdMadrid(dayInstant);
 
     return {
-        fecha: instant.toISOString(),
-        hora_cierre: new Date().toISOString(),
-        fecha_real: new Date().toISOString(),
-        diaNegocio: ymdMadrid(instant),
+        fecha: diaNegocio,
+        hora_cierre: horaCierreInstant.toISOString(),
+        fecha_real: horaCierreInstant.toISOString(),
+        diaNegocio,
     };
 }
 

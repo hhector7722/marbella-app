@@ -22,19 +22,25 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-/** UTC puro en Supabase; diaNegocio solo para logs (Madrid). */
+/** Día contable desde fecha_sistema; hora desde hora_cierre TPV (no recepción). */
 function resolveVentaTimestamps(v: {
   fecha?: string
   fecha_sistema?: string
   hora_cierre?: string
 }) {
-  const instant = parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date()
+  const dayInstant =
+    parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date()
+
+  const horaCierreInstant =
+    parseIso(v.hora_cierre) || parseIso(v.fecha) || dayInstant
+
+  const diaNegocio = ymdMadrid(dayInstant)
 
   return {
-    fecha: instant.toISOString(),
-    hora_cierre: new Date().toISOString(),
-    fecha_real: new Date().toISOString(),
-    diaNegocio: ymdMadrid(instant),
+    fecha: diaNegocio,
+    hora_cierre: horaCierreInstant.toISOString(),
+    fecha_real: horaCierreInstant.toISOString(),
+    diaNegocio,
   }
 }
 
