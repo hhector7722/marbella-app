@@ -53,6 +53,12 @@ const limitSchema = z.coerce.number().int().min(1).max(500).optional()
 type ActionSuccess<T> = { success: true; data: T }
 type ActionFailure = { success: false; error: string }
 
+export type FinancialStatementLine = {
+  key: string
+  label: string
+  amount: number
+}
+
 export type FinancialSummaryData = {
   pyg: {
     income: { total: number }
@@ -61,18 +67,36 @@ export type FinancialSummaryData = {
   }
   cashFlow: { net: number }
   reconciliation: { delta: number }
+  incomeLines: FinancialStatementLine[]
+  expenseLines: FinancialStatementLine[]
+  cashIn: number
+  cashOut: number
 }
 
 type FinancialActionFailure = { success: false; error: string; forbidden?: boolean }
 
+const financialStatementLineSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  amount: z.coerce.number(),
+})
+
 const financialStatementExtractSchema = z.object({
   pyg: z.object({
-    income: z.object({ total: z.coerce.number() }),
-    expenses: z.object({ total: z.coerce.number() }),
+    income: z.object({
+      total: z.coerce.number(),
+      lines: z.array(financialStatementLineSchema),
+    }),
+    expenses: z.object({
+      total: z.coerce.number(),
+      lines: z.array(financialStatementLineSchema),
+    }),
     net: z.coerce.number(),
   }),
   cashFlow: z.object({
     net: z.coerce.number(),
+    inflows: z.object({ total: z.coerce.number() }),
+    outflows: z.object({ total: z.coerce.number() }),
   }),
   reconciliation: z.object({
     delta: z.coerce.number(),
@@ -245,5 +269,21 @@ export async function getFinancialSummary(
     return { success: false, error: 'Datos de estado financiero no válidos' }
   }
 
-  return { success: true, data: extracted.data }
+  const row = extracted.data
+  return {
+    success: true,
+    data: {
+      pyg: {
+        income: { total: row.pyg.income.total },
+        expenses: { total: row.pyg.expenses.total },
+        net: row.pyg.net,
+      },
+      cashFlow: { net: row.cashFlow.net },
+      reconciliation: { delta: row.reconciliation.delta },
+      incomeLines: row.pyg.income.lines,
+      expenseLines: row.pyg.expenses.lines,
+      cashIn: row.cashFlow.inflows.total,
+      cashOut: row.cashFlow.outflows.total,
+    },
+  }
 }

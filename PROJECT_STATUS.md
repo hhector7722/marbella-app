@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-05-31 (Albaranes: sync cabecera mapped)
+**Última actualización:** 2026-05-31 (Insights: estado financiero + modal KPI)
+
+- [x] **Insights: horas extras en PyG + modal desglose KPI (2026-05-31)**: Migración [`20260531110000_financial_statement_add_overtime.sql`](supabase/migrations/20260531110000_financial_statement_add_overtime.sql) — `get_financial_statement` suma `weekly_snapshots.total_cost` como línea `overtime` en gastos; guard `is_manager_or_admin()`. [`actions.ts`](src/app/dashboard/insights/actions.ts) expone `incomeLines`, `expenseLines`, `cashIn`, `cashOut`. [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx) — chips «Resultado del periodo» clicables con `FinancialDetailModal` (portal, bottom sheet móvil, Zero-Display).
+
+**Última actualización anterior:** 2026-05-31 (Albaranes: sync cabecera mapped)
 
 - [x] **Albaranes: cabecera `purchase_invoices.status` sincronizada con líneas+stock (2026-05-31)**: Migración [`20260531100000_sync_purchase_invoice_status.sql`](supabase/migrations/20260531100000_sync_purchase_invoice_status.sql) — RPC `sync_purchase_invoice_status` + triggers en `purchase_invoice_lines` y `stock_movements`; cuando todas las líneas están resueltas (`mapped`|`excluded`) y existe `PURCHASE` `ALB-LINE-*`, la cabecera pasa a `mapped` (devengo en finanzas); al desmapear o faltar stock vuelve a `pending_mapping`. Backfill al aplicar. App: [`actions.ts`](src/app/dashboard/albaranes/actions.ts) invoca la RPC tras mapeo/reparar/excluir/desmapear/auto-mapear; lista actualiza `status` junto al tick verde.
 
