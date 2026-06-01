@@ -288,6 +288,14 @@ function formatEuroChart(value: number, digits = 2): string {
   }).format(value)
 }
 
+function formatFoodCostPct(recipeCost: number, salePrice: number): string {
+  if (salePrice <= 0) return ' '
+  const pct = (recipeCost / salePrice) * 100
+  const displayed = formatDisplayValue(Number(pct.toFixed(1)))
+  if (displayed === ' ') return ' '
+  return `${displayed}%`
+}
+
 function formatEuroKpi(value: number): string {
   const displayed = formatDisplayValue(
     value === 0 ? 0 : Number(value.toFixed(2))
@@ -328,6 +336,19 @@ function SectionErrorBanner({
   )
 }
 
+/** Escritorio: lg (1024px)+ */
+function useIsLgDesktop() {
+  const [isLg, setIsLg] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsLg(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return isLg
+}
+
 function ProductStat({
   label,
   value,
@@ -343,7 +364,7 @@ function ProductStat({
     <div
       className={cn(
         'min-w-0 flex flex-col',
-        prominent && 'items-center justify-center text-center p-2 rounded-lg bg-zinc-50 min-h-[3.25rem]',
+        prominent && 'items-center justify-center text-center min-h-[2.75rem]',
         className
       )}
     >
@@ -377,7 +398,7 @@ function ProductDetailCard({
   onOpenRecipe: (recipeId: string | null | undefined, productName: string) => void
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-md p-3 sm:p-4 space-y-3 w-full max-w-full">
+    <div className="space-y-3 w-full max-w-full py-1">
       <div className="flex items-start justify-between gap-2">
         {product.recipe_id ? (
           <button
@@ -409,6 +430,11 @@ function ProductDetailCard({
         />
         <ProductStat prominent label="P. venta" value={formatEuroKpi(product.avg_sale_price)} />
         <ProductStat prominent label="Coste receta" value={formatEuroKpi(product.recipe_cost)} />
+        <ProductStat
+          prominent
+          label="Food cost"
+          value={formatFoodCostPct(product.recipe_cost, product.avg_sale_price)}
+        />
         <ProductStat prominent label="Margen / ud." value={formatEuroKpi(product.margin_per_unit)} />
         <ProductStat
           prominent
@@ -474,7 +500,8 @@ function SectionTitleRow({
                 <span
                   className={cn(
                     'w-2 h-2 shrink-0 rounded-sm',
-                    item.swatchOutline && 'ring-1 ring-inset ring-white/95 border border-white/80'
+                    item.swatchOutline &&
+                      'shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.9)]'
                   )}
                   style={{ backgroundColor: item.color }}
                   aria-hidden
@@ -542,6 +569,7 @@ export default function InsightsClient({
     forbidden: initialFinancialForbidden,
   })
   const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null)
+  const isLgDesktop = useIsLgDesktop()
   const [financialModal, setFinancialModal] = useState<FinancialModalKind | null>(null)
   const router = useRouter()
 
@@ -767,7 +795,11 @@ export default function InsightsClient({
     })
   }, [rankedProducts])
 
-  const productChartHeight = 260
+  const productChartHeight = useMemo(() => {
+    if (!isLgDesktop) return 260
+    const rowH = 20
+    return Math.min(300, Math.max(180, rankedProducts.length * rowH + 24))
+  }, [isLgDesktop, rankedProducts.length])
 
   const productCardAnchorStyle = useMemo((): CSSProperties => {
     if (selectedProductIdx === null || rankedProducts.length === 0) {
@@ -1049,8 +1081,9 @@ export default function InsightsClient({
                 </div>
               </section>
 
-              {/* Rend. por día — fila completa */}
-              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
+              {/* Rend. por día + Margen producto: fila compartida solo en escritorio (lg+) */}
+              <div className="col-span-1 md:col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-5 min-w-0">
+              <section className="rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
                 <SectionTitleRow title="Rend. por día" />
                 <div className="p-2 lg:p-3">
                 {weekday.error ? (
@@ -1058,51 +1091,101 @@ export default function InsightsClient({
                 ) : weekday.loading ? (
                   <SectionSkeleton rows={5} />
                 ) : (
-                  <div className="flex flex-row gap-2 lg:gap-4 min-w-0 items-stretch">
-                    <div className="flex-1 min-w-0 h-[160px] sm:h-[180px] lg:h-[200px]">
+                  <div className="flex flex-row gap-2 lg:gap-3 min-w-0 items-stretch">
+                    <div
+                      className={cn(
+                        'flex-1 min-w-0',
+                        isLgDesktop ? 'h-[200px]' : 'h-[160px] sm:h-[180px]'
+                      )}
+                    >
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={weekdayChartData}
-                          margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
-                          barCategoryGap="4%"
-                          barGap={0}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                          <XAxis
-                            dataKey="shortName"
-                            tick={{ fontSize: 8, fontWeight: 700 }}
-                            interval={0}
-                          />
-                          <YAxis
-                            tick={{ fontSize: 7 }}
-                            width={36}
-                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
-                          />
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (!active || !payload?.length) return null
-                              const row = payload[0]?.payload as WeekdayAnalysisRow
-                              return (
-                                <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
-                                  <p className="font-black text-[#36606F]">{row.weekday_name}</p>
-                                  <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
-                                  <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
-                                  <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
-                                </div>
-                              )
-                            }}
-                          />
-                          <Bar
-                            dataKey="avg_revenue"
-                            name="Media ventas"
-                            fill={PETROLEO}
-                            radius={[3, 3, 0, 0]}
-                            maxBarSize={40}
-                          />
-                        </BarChart>
+                        {isLgDesktop ? (
+                          <BarChart
+                            layout="vertical"
+                            data={weekdayChartData}
+                            margin={{ top: 2, right: 4, left: 0, bottom: 2 }}
+                            barCategoryGap="4%"
+                            barGap={0}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                            <XAxis
+                              type="number"
+                              tick={{ fontSize: 7 }}
+                              tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="shortName"
+                              width={22}
+                              tick={{ fontSize: 7, fontWeight: 700 }}
+                              interval={0}
+                            />
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null
+                                const row = payload[0]?.payload as WeekdayAnalysisRow
+                                return (
+                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
+                                    <p className="font-black text-[#36606F]">{row.weekday_name}</p>
+                                    <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
+                                    <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
+                                    <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
+                                  </div>
+                                )
+                              }}
+                            />
+                            <Bar
+                              dataKey="avg_revenue"
+                              name="Media ventas"
+                              fill={PETROLEO}
+                              radius={[0, 2, 2, 0]}
+                              maxBarSize={12}
+                            />
+                          </BarChart>
+                        ) : (
+                          <BarChart
+                            data={weekdayChartData}
+                            margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+                            barCategoryGap="4%"
+                            barGap={0}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                            <XAxis
+                              dataKey="shortName"
+                              tick={{ fontSize: 8, fontWeight: 700 }}
+                              interval={0}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 7 }}
+                              width={36}
+                              tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            />
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null
+                                const row = payload[0]?.payload as WeekdayAnalysisRow
+                                return (
+                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
+                                    <p className="font-black text-[#36606F]">{row.weekday_name}</p>
+                                    <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
+                                    <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
+                                    <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
+                                  </div>
+                                )
+                              }}
+                            />
+                            <Bar
+                              dataKey="avg_revenue"
+                              name="Media ventas"
+                              fill={PETROLEO}
+                              radius={[3, 3, 0, 0]}
+                              maxBarSize={40}
+                            />
+                          </BarChart>
+                        )}
                       </ResponsiveContainer>
                     </div>
-                    <div className="shrink-0 flex flex-col justify-center gap-2 w-[6.5rem] sm:w-[8.5rem] lg:w-[10rem] border-l border-zinc-100 pl-2 lg:pl-3">
+                    <div className="shrink-0 flex flex-col justify-center gap-2 w-[6.5rem] sm:w-[8.5rem] lg:w-[8rem] border-l border-zinc-100 pl-2">
                       <KpiFloat label="Mejor día" value={weekdayKpis.best} />
                       <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
                     </div>
@@ -1111,8 +1194,7 @@ export default function InsightsClient({
                 </div>
               </section>
 
-              {/* Margen producto — fila completa */}
-              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
+              <section className="rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
                 <SectionTitleRow
                   title="Margen producto"
                   legend={[
@@ -1151,9 +1233,9 @@ export default function InsightsClient({
                             onOpenRecipe={handleOpenRecipe}
                           />
                         </div>
-                        <div className="hidden sm:block relative w-full min-h-[8.5rem] shrink-0 overflow-hidden">
+                        <div className="hidden sm:block lg:hidden relative w-full min-h-[8.5rem] shrink-0 overflow-hidden">
                           <div
-                            className="absolute bottom-0 z-20 w-[min(100%,18rem)] lg:w-[min(100%,20rem)] pointer-events-auto"
+                            className="absolute bottom-0 z-20 w-[min(100%,18rem)] pointer-events-auto"
                             style={productCardAnchorStyle}
                           >
                             <ProductDetailCard
@@ -1163,6 +1245,13 @@ export default function InsightsClient({
                             />
                           </div>
                         </div>
+                        <div className="hidden lg:block w-full min-w-0 max-w-full">
+                          <ProductDetailCard
+                            product={selectedProduct}
+                            onClose={() => setSelectedProductIdx(null)}
+                            onOpenRecipe={handleOpenRecipe}
+                          />
+                        </div>
                       </>
                     )}
                     <div
@@ -1170,68 +1259,136 @@ export default function InsightsClient({
                       style={{ height: productChartHeight }}
                     >
                         <ResponsiveContainer width="100%" height="100%">
-                          <ComposedChart
-                            data={productChartData}
-                            margin={{ top: 8, right: 8, left: 4, bottom: 52 }}
-                            barCategoryGap="4%"
-                            barGap={0}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                            <XAxis
-                              dataKey="shortName"
-                              tick={{ fontSize: 8, fontWeight: 600 }}
-                              interval={0}
-                              angle={-35}
-                              textAnchor="end"
-                              height={52}
-                            />
-                            <YAxis
-                              yAxisId="margin"
-                              tick={{ fontSize: 8 }}
-                              width={40}
-                              tickFormatter={(v) => formatEuroChart(Number(v), 0)}
-                            />
-                            <YAxis yAxisId="units" orientation="right" hide />
-                            <Tooltip content={() => null} cursor={false} />
-                            <Bar
-                              yAxisId="margin"
-                              dataKey="total_margin_contribution"
-                              name="Margen total"
-                              maxBarSize={36}
-                              radius={[3, 3, 0, 0]}
-                              cursor="pointer"
-                              onClick={(_data, index) => {
-                                if (typeof index === 'number') {
-                                  setSelectedProductIdx((prev) => (prev === index ? null : index))
-                                }
-                              }}
+                          {isLgDesktop ? (
+                            <ComposedChart
+                              layout="vertical"
+                              data={productChartData}
+                              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                              barCategoryGap="4%"
+                              barGap={0}
                             >
-                              {productChartData.map((entry, index) => (
-                                <Cell
-                                  key={`prod-${index}`}
-                                  fill={entry.fill}
-                                  stroke={selectedProductIdx === index ? PETROLEO : 'transparent'}
-                                  strokeWidth={selectedProductIdx === index ? 2 : 0}
-                                  opacity={selectedProductIdx === index ? 1 : 0.82}
-                                />
-                              ))}
-                            </Bar>
-                            <Line
-                              yAxisId="units"
-                              type="monotone"
-                              dataKey="total_units_sold"
-                              name="Unidades"
-                              stroke="#9CA3AF"
-                              strokeWidth={1.5}
-                              dot={false}
-                            />
-                          </ComposedChart>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                              <XAxis
+                                type="number"
+                                xAxisId="margin"
+                                tick={{ fontSize: 7 }}
+                                tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                              />
+                              <XAxis type="number" xAxisId="units" hide />
+                              <YAxis
+                                type="category"
+                                dataKey="shortName"
+                                width={28}
+                                tick={{ fontSize: 6, fontWeight: 600 }}
+                                interval={0}
+                              />
+                              <Tooltip content={() => null} cursor={false} />
+                              <Bar
+                                xAxisId="margin"
+                                dataKey="total_margin_contribution"
+                                name="Margen total"
+                                maxBarSize={12}
+                                radius={[0, 2, 2, 0]}
+                                cursor="pointer"
+                                onClick={(_data, index) => {
+                                  if (typeof index === 'number') {
+                                    setSelectedProductIdx((prev) =>
+                                      prev === index ? null : index
+                                    )
+                                  }
+                                }}
+                              >
+                                {productChartData.map((entry, index) => (
+                                  <Cell
+                                    key={`prod-${index}`}
+                                    fill={entry.fill}
+                                    stroke={
+                                      selectedProductIdx === index ? PETROLEO : 'transparent'
+                                    }
+                                    strokeWidth={selectedProductIdx === index ? 2 : 0}
+                                    opacity={selectedProductIdx === index ? 1 : 0.82}
+                                  />
+                                ))}
+                              </Bar>
+                              <Line
+                                xAxisId="units"
+                                type="monotone"
+                                dataKey="total_units_sold"
+                                name="Unidades"
+                                stroke="#9CA3AF"
+                                strokeWidth={1.5}
+                                dot={false}
+                              />
+                            </ComposedChart>
+                          ) : (
+                            <ComposedChart
+                              data={productChartData}
+                              margin={{ top: 8, right: 8, left: 4, bottom: 52 }}
+                              barCategoryGap="4%"
+                              barGap={0}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                              <XAxis
+                                dataKey="shortName"
+                                tick={{ fontSize: 8, fontWeight: 600 }}
+                                interval={0}
+                                angle={-35}
+                                textAnchor="end"
+                                height={52}
+                              />
+                              <YAxis
+                                yAxisId="margin"
+                                tick={{ fontSize: 8 }}
+                                width={40}
+                                tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                              />
+                              <YAxis yAxisId="units" orientation="right" hide />
+                              <Tooltip content={() => null} cursor={false} />
+                              <Bar
+                                yAxisId="margin"
+                                dataKey="total_margin_contribution"
+                                name="Margen total"
+                                maxBarSize={36}
+                                radius={[3, 3, 0, 0]}
+                                cursor="pointer"
+                                onClick={(_data, index) => {
+                                  if (typeof index === 'number') {
+                                    setSelectedProductIdx((prev) =>
+                                      prev === index ? null : index
+                                    )
+                                  }
+                                }}
+                              >
+                                {productChartData.map((entry, index) => (
+                                  <Cell
+                                    key={`prod-${index}`}
+                                    fill={entry.fill}
+                                    stroke={
+                                      selectedProductIdx === index ? PETROLEO : 'transparent'
+                                    }
+                                    strokeWidth={selectedProductIdx === index ? 2 : 0}
+                                    opacity={selectedProductIdx === index ? 1 : 0.82}
+                                  />
+                                ))}
+                              </Bar>
+                              <Line
+                                yAxisId="units"
+                                type="monotone"
+                                dataKey="total_units_sold"
+                                name="Unidades"
+                                stroke="#9CA3AF"
+                                strokeWidth={1.5}
+                                dot={false}
+                              />
+                            </ComposedChart>
+                          )}
                         </ResponsiveContainer>
                     </div>
                   </div>
                 )}
                 </div>
               </section>
+              </div>
             </div>
 
             {/* Sección 4 — Resultado del periodo (ancho completo) */}
