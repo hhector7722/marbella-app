@@ -335,11 +335,11 @@ function ProductStat({ label, value }: { label: string; value: string }) {
 /** KPI sin marco ni relleno — flota sobre el fondo de la sección */
 function KpiFloat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col justify-center min-w-0 px-0 py-1">
+    <div className="flex flex-col items-center justify-center min-w-0 px-1 py-0.5 text-center w-full">
       <span className="text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
         {label}
       </span>
-      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug mt-0.5 truncate">
+      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug mt-0.5 line-clamp-2">
         {value}
       </span>
     </div>
@@ -673,11 +673,17 @@ export default function InsightsClient({
   }, [rankedProducts])
 
   const productChartHeight = useMemo(() => {
-    const rowH = 40
-    const minH = 280
-    const maxH = 720
-    return Math.min(maxH, Math.max(minH, rankedProducts.length * rowH + 48))
+    const rowH = 26
+    const minH = 220
+    const maxH = 520
+    return Math.min(maxH, Math.max(minH, rankedProducts.length * rowH + 40))
   }, [rankedProducts.length])
+
+  const productCardTopPct = useMemo(() => {
+    if (selectedProductIdx === null || rankedProducts.length === 0) return 50
+    const raw = ((selectedProductIdx + 0.5) / rankedProducts.length) * 100
+    return Math.min(88, Math.max(12, raw))
+  }, [selectedProductIdx, rankedProducts.length])
 
   const selectedProduct =
     selectedProductIdx !== null ? (rankedProducts[selectedProductIdx] ?? null) : null
@@ -872,15 +878,15 @@ export default function InsightsClient({
                 ) : hourly.loading ? (
                   <SectionSkeleton rows={6} />
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-0">
                     <div className="min-w-0 overflow-x-auto -mx-0.5 px-0.5">
                       <div className="h-[220px] sm:h-[280px] lg:h-[380px] w-full min-w-[280px] lg:min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={hourlyChartData}
                             margin={{ top: 8, right: 8, left: 4, bottom: 20 }}
-                            barCategoryGap="28%"
-                            barGap={6}
+                            barCategoryGap="8%"
+                            barGap={2}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis
@@ -917,14 +923,14 @@ export default function InsightsClient({
                               name="Ventas"
                               fill={PETROLEO}
                               radius={[3, 3, 0, 0]}
-                              maxBarSize={28}
+                              maxBarSize={48}
                             />
                             <Bar
                               dataKey="labor_cost"
                               name="M. obra"
                               fill={LABOR_RED}
                               radius={[3, 3, 0, 0]}
-                              maxBarSize={28}
+                              maxBarSize={48}
                             />
                             <Line
                               type="monotone"
@@ -938,7 +944,7 @@ export default function InsightsClient({
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-1 lg:gap-3">
+                    <div className="grid grid-cols-3 gap-1 -mt-3 lg:-mt-4 pt-0">
                       <KpiFloat label="Hora más rentable" value={hourlyKpis.best} />
                       <KpiFloat label="Hora de mayor pérdida" value={hourlyKpis.worst} />
                       <KpiFloat label="Franja más rentable" value={hourlyKpis.optimal} />
@@ -1030,14 +1036,86 @@ export default function InsightsClient({
                     </Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-0">
                     <div className="overflow-x-auto -mx-0.5 px-0.5">
-                      <div className="w-full min-w-0" style={{ height: productChartHeight }}>
+                      <div
+                        className="relative w-full min-w-0"
+                        style={{ height: productChartHeight }}
+                      >
+                        {selectedProduct && selectedProductIdx !== null && (
+                          <div
+                            className="absolute left-[9.5rem] right-2 z-20 pointer-events-auto"
+                            style={{
+                              top: `${productCardTopPct}%`,
+                              transform: 'translateY(-100%)',
+                            }}
+                          >
+                            <div className="rounded-xl border border-zinc-200 bg-white/95 shadow-lg backdrop-blur-sm p-3 space-y-2 mb-1">
+                              <div className="flex items-start justify-between gap-2">
+                                {selectedProduct.recipe_id ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleOpenRecipe(
+                                        selectedProduct.recipe_id,
+                                        selectedProduct.product_name
+                                      )
+                                    }
+                                    className="min-h-9 text-left text-xs font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
+                                  >
+                                    {selectedProduct.product_name}
+                                  </button>
+                                ) : (
+                                  <p className="text-xs font-black text-zinc-800 leading-snug">
+                                    {selectedProduct.product_name}
+                                  </p>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedProductIdx(null)}
+                                  aria-label="Cerrar detalle"
+                                  className="min-h-9 min-w-9 shrink-0 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 text-[9px] lg:text-[10px]">
+                                <ProductStat
+                                  label="Unidades"
+                                  value={
+                                    selectedProduct.total_units_sold === 0
+                                      ? ' '
+                                      : String(selectedProduct.total_units_sold)
+                                  }
+                                />
+                                <ProductStat
+                                  label="P. venta"
+                                  value={formatEuroKpi(selectedProduct.avg_sale_price)}
+                                />
+                                <ProductStat
+                                  label="Coste receta"
+                                  value={formatEuroKpi(selectedProduct.recipe_cost)}
+                                />
+                                <ProductStat
+                                  label="Margen / ud."
+                                  value={formatEuroKpi(selectedProduct.margin_per_unit)}
+                                />
+                                <ProductStat
+                                  label="Margen total"
+                                  value={formatEuroKpi(
+                                    selectedProduct.total_margin_contribution
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             layout="vertical"
                             data={productChartData}
-                            margin={{ top: 2, right: 12, left: 8, bottom: 4 }}
+                            margin={{ top: 8, right: 12, left: 8, bottom: 8 }}
+                            barCategoryGap="35%"
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis
@@ -1059,6 +1137,7 @@ export default function InsightsClient({
                               xAxisId="margin"
                               dataKey="total_margin_contribution"
                               name="Margen total"
+                              barSize={14}
                               radius={[0, 4, 4, 0]}
                               cursor="pointer"
                               onClick={(_data, index) => {
@@ -1090,65 +1169,6 @@ export default function InsightsClient({
                         </ResponsiveContainer>
                       </div>
                     </div>
-
-                    {selectedProduct && (
-                      <div className="rounded-xl border border-zinc-100 bg-zinc-50/90 shadow-sm p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          {selectedProduct.recipe_id ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleOpenRecipe(
-                                  selectedProduct.recipe_id,
-                                  selectedProduct.product_name
-                                )
-                              }
-                              className="min-h-10 text-left text-sm font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
-                            >
-                              {selectedProduct.product_name}
-                            </button>
-                          ) : (
-                            <p className="text-sm font-black text-zinc-800 leading-snug">
-                              {selectedProduct.product_name}
-                            </p>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setSelectedProductIdx(null)}
-                            aria-label="Cerrar detalle"
-                            className="min-h-10 min-w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-200/60"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2 text-[10px] lg:text-xs">
-                          <ProductStat
-                            label="Unidades"
-                            value={
-                              selectedProduct.total_units_sold === 0
-                                ? ' '
-                                : String(selectedProduct.total_units_sold)
-                            }
-                          />
-                          <ProductStat
-                            label="P. venta"
-                            value={formatEuroKpi(selectedProduct.avg_sale_price)}
-                          />
-                          <ProductStat
-                            label="Coste receta"
-                            value={formatEuroKpi(selectedProduct.recipe_cost)}
-                          />
-                          <ProductStat
-                            label="Margen / ud."
-                            value={formatEuroKpi(selectedProduct.margin_per_unit)}
-                          />
-                          <ProductStat
-                            label="Margen total"
-                            value={formatEuroKpi(selectedProduct.total_margin_contribution)}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </section>

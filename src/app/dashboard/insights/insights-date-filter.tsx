@@ -190,7 +190,7 @@ export function InsightsMainDateFilter({
             type="button"
             onClick={() => onOpenPicker(m)}
             className={cn(
-              'w-full min-h-12 shrink-0 rounded-xl px-2 md:px-3 text-[10px] md:text-[11px] font-black uppercase tracking-wide border active:scale-95 transition-all whitespace-nowrap',
+              'w-full min-h-9 shrink-0 rounded-lg px-2 md:px-2.5 py-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-wide border active:scale-95 transition-all whitespace-nowrap',
               mode === m
                 ? 'bg-[#36606F] text-white border-[#36606F]'
                 : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
@@ -381,7 +381,7 @@ export function FinancialMonthSelector({
         type="button"
         onClick={() => onChange(shiftInsightsMonth(month, -1))}
         aria-label="Mes anterior"
-        className="min-h-10 min-w-10 inline-flex items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 active:scale-95"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -392,7 +392,7 @@ export function FinancialMonthSelector({
         type="button"
         onClick={() => onChange(shiftInsightsMonth(month, 1))}
         aria-label="Mes siguiente"
-        className="min-h-10 min-w-10 inline-flex items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 active:scale-95"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
