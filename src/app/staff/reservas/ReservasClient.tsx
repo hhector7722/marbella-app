@@ -82,6 +82,17 @@ function getMessage(name: string, time: string) {
   )
 }
 
+function parseReservationsRpc(data: unknown): Reservation[] {
+  if (Array.isArray(data)) return data as Reservation[]
+  if (!data || typeof data !== 'object') return []
+
+  const record = data as Record<string, unknown>
+  const inner = record.reservas
+  if (Array.isArray(inner)) return inner as Reservation[]
+
+  return []
+}
+
 export default function ReservasClient() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -111,7 +122,7 @@ export default function ReservasClient() {
       const { data, error } = await supabase.rpc('consultar_reservas', { p_fecha: dayYmd })
       if (error) throw error
 
-      const list = (Array.isArray(data) ? data : []) as Reservation[]
+      const list = parseReservationsRpc(data)
       if (seq === fetchSeqRef.current) {
         setReservations(list)
       }
@@ -165,17 +176,32 @@ export default function ReservasClient() {
   }, [selectedDayYmd])
 
   useEffect(() => {
+    function handleReservationChange(payload: { new?: { reservation_date?: string } }) {
+      const row = payload?.new
+      const rowDate =
+        typeof row?.reservation_date === 'string'
+          ? row.reservation_date.slice(0, 10)
+          : null
+      if (rowDate && rowDate === selectedDayYmd) {
+        void fetchReservations(selectedDayYmd)
+      }
+    }
+
     const channel = supabase
       .channel('public:reservations')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'reservations' },
-        (payload: any) => {
+        (payload: { new?: { reservation_date?: string } }) => {
           toast.success('¡Nueva reserva desde la web!')
-          const newRow = payload?.new as { reservation_date?: string } | undefined
-          if (newRow?.reservation_date && newRow.reservation_date === selectedDayYmd) {
-            void fetchReservations(selectedDayYmd)
-          }
+          handleReservationChange(payload)
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'reservations' },
+        (payload: { new?: { reservation_date?: string } }) => {
+          handleReservationChange(payload)
         }
       )
       .subscribe()
