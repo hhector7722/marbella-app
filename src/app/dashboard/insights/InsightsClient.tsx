@@ -674,12 +674,17 @@ export default function InsightsClient({
     })
   }, [rankedProducts])
 
-  const productChartHeight = 200
+  const productChartHeight = useMemo(() => {
+    const rowH = 22
+    const minH = 160
+    const maxH = 380
+    return Math.min(maxH, Math.max(minH, rankedProducts.length * rowH + 28))
+  }, [rankedProducts.length])
 
-  const productCardLeftPct = useMemo(() => {
+  const productCardTopPct = useMemo(() => {
     if (selectedProductIdx === null || rankedProducts.length === 0) return 50
     const raw = ((selectedProductIdx + 0.5) / rankedProducts.length) * 100
-    return Math.min(92, Math.max(8, raw))
+    return Math.min(88, Math.max(12, raw))
   }, [selectedProductIdx, rankedProducts.length])
 
   const selectedProduct =
@@ -960,24 +965,27 @@ export default function InsightsClient({
                   <SectionSkeleton rows={5} />
                 ) : (
                   <>
-                    <div className="h-[120px] sm:h-[140px] lg:h-[160px]">
+                    <div className="h-[140px] sm:h-[160px] lg:h-[180px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
+                          layout="vertical"
                           data={weekdayChartData}
-                          margin={{ top: 2, right: 2, left: 0, bottom: 2 }}
+                          margin={{ top: 2, right: 4, left: 0, bottom: 2 }}
                           barCategoryGap="4%"
                           barGap={0}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                           <XAxis
-                            dataKey="shortName"
-                            tick={{ fontSize: 7, fontWeight: 700 }}
-                            interval={0}
+                            type="number"
+                            tick={{ fontSize: 6 }}
+                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                           />
                           <YAxis
-                            tick={{ fontSize: 6 }}
-                            width={28}
-                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            type="category"
+                            dataKey="shortName"
+                            width={24}
+                            tick={{ fontSize: 7, fontWeight: 700 }}
+                            interval={0}
                           />
                           <Tooltip
                             content={({ active, payload }) => {
@@ -997,8 +1005,8 @@ export default function InsightsClient({
                             dataKey="avg_revenue"
                             name="Media ventas"
                             fill={PETROLEO}
-                            radius={[2, 2, 0, 0]}
-                            maxBarSize={28}
+                            radius={[0, 2, 2, 0]}
+                            maxBarSize={14}
                           />
                         </BarChart>
                       </ResponsiveContainer>
@@ -1047,10 +1055,10 @@ export default function InsightsClient({
                       >
                         {selectedProduct && selectedProductIdx !== null && (
                           <div
-                            className="absolute top-2 z-20 pointer-events-auto max-w-[min(100%,16rem)]"
+                            className="absolute left-9 right-1 z-20 pointer-events-auto"
                             style={{
-                              left: `${productCardLeftPct}%`,
-                              transform: 'translateX(-50%)',
+                              top: `${productCardTopPct}%`,
+                              transform: 'translateY(-100%)',
                             }}
                           >
                             <div className="rounded-xl border border-zinc-200 bg-white/95 shadow-lg backdrop-blur-sm p-3 space-y-2 mb-1">
@@ -1115,34 +1123,34 @@ export default function InsightsClient({
                         )}
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
+                            layout="vertical"
                             data={productChartData}
-                            margin={{ top: 4, right: 4, left: 0, bottom: 44 }}
+                            margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
                             barCategoryGap="4%"
                             barGap={0}
                           >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis
-                              dataKey="shortName"
-                              tick={{ fontSize: 6, fontWeight: 600 }}
-                              interval={0}
-                              angle={-50}
-                              textAnchor="end"
-                              height={44}
-                            />
-                            <YAxis
-                              yAxisId="margin"
+                              type="number"
+                              xAxisId="margin"
                               tick={{ fontSize: 6 }}
-                              width={28}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
-                            <YAxis yAxisId="units" orientation="right" hide />
+                            <XAxis type="number" xAxisId="units" hide />
+                            <YAxis
+                              type="category"
+                              dataKey="shortName"
+                              width={32}
+                              tick={{ fontSize: 6, fontWeight: 600 }}
+                              interval={0}
+                            />
                             <Tooltip content={() => null} cursor={false} />
                             <Bar
-                              yAxisId="margin"
+                              xAxisId="margin"
                               dataKey="total_margin_contribution"
                               name="Margen total"
-                              maxBarSize={22}
-                              radius={[2, 2, 0, 0]}
+                              maxBarSize={14}
+                              radius={[0, 2, 2, 0]}
                               cursor="pointer"
                               onClick={(_data, index) => {
                                 if (typeof index === 'number') {
@@ -1161,7 +1169,7 @@ export default function InsightsClient({
                               ))}
                             </Bar>
                             <Line
-                              yAxisId="units"
+                              xAxisId="units"
                               type="monotone"
                               dataKey="total_units_sold"
                               name="Unidades"
