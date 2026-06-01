@@ -22,6 +22,7 @@ const config = {
         trustServerCertificate: true,
         instanceName: 'BDPSOFTWARECF',
         enableArithAbort: true,
+        useUTC: false,
     },
 };
 
@@ -78,13 +79,40 @@ function roundMoney(n) {
     return Math.round((Number(n) || 0) * 100) / 100;
 }
 
-/** Verdad única UTC: siempre ISO-8601 terminado en Z (nunca Date crudo en JSON). */
+/** Verdad única UTC: ISO-8601 con Z. Date del driver mssql = local→UTC; strings sin zona o con Z TPV = componentes locales. */
 function toIso(val) {
     if (val == null) return null;
-    const d = new Date(val);
-    if (Number.isNaN(d.getTime())) return null;
-    const iso = d.toISOString();
-    return iso.endsWith('Z') ? iso : `${iso}Z`;
+
+    if (val instanceof Date) {
+        if (Number.isNaN(val.getTime())) return null;
+        return val.toISOString();
+    }
+
+    const s = String(val).trim();
+    if (!s) return null;
+
+    if (/[+-]\d{2}:\d{2}$/.test(s)) {
+        const d = new Date(s);
+        return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    }
+
+    const clean = s.replace(' ', 'T').replace(/\.(\d{1,3})?Z$/i, '').replace(/Z$/i, '');
+    const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    if (m) {
+        const [, y, mo, d, h, mi, se] = m;
+        const local = new Date(
+            Number(y),
+            Number(mo) - 1,
+            Number(d),
+            Number(h),
+            Number(mi),
+            Number(se)
+        );
+        return Number.isNaN(local.getTime()) ? null : local.toISOString();
+    }
+
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 function toYmdLocal(val) {
