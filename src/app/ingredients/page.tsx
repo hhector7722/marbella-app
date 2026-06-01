@@ -636,7 +636,7 @@ export default function IngredientsPage() {
                                     className="w-full p-3 border rounded-2xl bg-white"
                                 >
                                     <option value="">Proveedor...</option>
-                                    {allSuppliers.map((s: { id: number; name: string }) => (
+                                    {allSuppliers.map((s) => (
                                         <option key={s.id} value={s.name}>{s.name}</option>
                                     ))}
                                     <option value="custom">+ Nuevo...</option>
@@ -678,7 +678,7 @@ export default function IngredientsPage() {
                                     className="w-full p-3 border rounded-2xl bg-white"
                                 >
                                     <option value="">Proveedor 2 (opcional)...</option>
-                                    {allSuppliers.map((s: { id: number; name: string }) => (
+                                    {allSuppliers.map((s) => (
                                         <option key={s.id} value={s.name}>{s.name}</option>
                                     ))}
                                     <option value="custom">+ Nuevo...</option>
