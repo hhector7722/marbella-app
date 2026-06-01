@@ -965,8 +965,8 @@ export default function InsightsClient({
                         <BarChart
                           data={weekdayChartData}
                           margin={{ top: 2, right: 2, left: 0, bottom: 2 }}
-                          barCategoryGap="28%"
-                          barGap={1}
+                          barCategoryGap="4%"
+                          barGap={0}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                           <XAxis
@@ -998,7 +998,7 @@ export default function InsightsClient({
                             name="Media ventas"
                             fill={PETROLEO}
                             radius={[2, 2, 0, 0]}
-                            maxBarSize={14}
+                            maxBarSize={28}
                           />
                         </BarChart>
                       </ResponsiveContainer>
@@ -1117,8 +1117,8 @@ export default function InsightsClient({
                           <ComposedChart
                             data={productChartData}
                             margin={{ top: 4, right: 4, left: 0, bottom: 44 }}
-                            barCategoryGap="28%"
-                            barGap={1}
+                            barCategoryGap="4%"
+                            barGap={0}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                             <XAxis
@@ -1141,7 +1141,7 @@ export default function InsightsClient({
                               yAxisId="margin"
                               dataKey="total_margin_contribution"
                               name="Margen total"
-                              maxBarSize={14}
+                              maxBarSize={22}
                               radius={[2, 2, 0, 0]}
                               cursor="pointer"
                               onClick={(_data, index) => {
