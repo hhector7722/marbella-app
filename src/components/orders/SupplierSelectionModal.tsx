@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { X, Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { getSupplierLogo } from '@/lib/supplier-logos';
+import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { useRouter } from 'next/navigation';
 
 interface Supplier {
@@ -11,13 +12,6 @@ interface Supplier {
     name: string;
     image_url?: string | null;
 }
-
-/** Semilla solo si la BD no tiene proveedores (misma regla que `/suppliers`). */
-const INITIAL_SUPPLIER_NAMES = [
-    'Ametller', 'Panabad', 'Videla', 'Santa Teresa', 'Carnicas Pijuan',
-    'Fritz Ravich', 'Sant Aniol', 'Vins i Pons', 'Shers', 'Zander',
-    'Nestle', 'Abril', 'Sanilec', 'Hielo Fenix',
-];
 
 interface Props {
     isOpen: boolean;
@@ -40,18 +34,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
             .order('name');
 
         const dbSuppliers: Supplier[] = (!error && data) ? data : [];
-
-        // Fuente de verdad = BD. Las plantillas solo si la tabla está vacía.
-        const combined =
-            dbSuppliers.length === 0
-                ? INITIAL_SUPPLIER_NAMES.map((name) => ({
-                      id: `initial-${name}`,
-                      name,
-                      image_url: null,
-                  }))
-                : dbSuppliers;
-
-        setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
+        setSuppliers(resolveSupplierPickerItems(dbSuppliers));
         if (showLoading) setLoading(false);
     }, [supabase]);
 

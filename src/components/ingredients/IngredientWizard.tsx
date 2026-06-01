@@ -15,6 +15,9 @@ import {
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { RECIPE_UNIT_OPTIONS, defaultRecipeUnitFromPurchase, resolveIngredientRecipeUnit } from '@/lib/recipe-cost'
+import { buildSupplierNameSet, getOrphanedSupplierName } from '@/lib/orphaned-supplier'
+import { resolveSupplierPickerItems } from '@/lib/supplier-seed'
+import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplierAlert'
 
 export type IngredientWizardCategory = 'Bebida' | 'Comida' | 'Packaging' | 'Limpieza' | 'Otros'
 export type IngredientWizardHowCharged = 'kilo' | 'litro' | 'pack' | 'unidad'
@@ -363,11 +366,24 @@ export function IngredientWizard({
 
   const unitCost = useMemo(() => computeUnitCost(draft), [draft])
 
-  const [dbSuppliers, setDbSuppliers] = useState<{ id: number; name: string }[]>([])
+  const [dbSuppliers, setDbSuppliers] = useState<{ id: string; name: string }[]>([])
+  const [suppliersLoaded, setSuppliersLoaded] = useState(false)
   const [isCustomSupplier, setIsCustomSupplier] = useState(false)
   const [isCustomSupplier2, setIsCustomSupplier2] = useState(false)
   const [customSupplierName, setCustomSupplierName] = useState('')
   const [customSupplier2Name, setCustomSupplier2Name] = useState('')
+
+  const supplierNamesFromDb = useMemo(() => buildSupplierNameSet(dbSuppliers), [dbSuppliers])
+
+  const orphanedSupplier1 = useMemo(
+    () => getOrphanedSupplierName(draft.supplier, supplierNamesFromDb, suppliersLoaded),
+    [draft.supplier, supplierNamesFromDb, suppliersLoaded],
+  )
+
+  const orphanedSupplier2 = useMemo(
+    () => getOrphanedSupplierName(draft.supplier2, supplierNamesFromDb, suppliersLoaded),
+    [draft.supplier2, supplierNamesFromDb, suppliersLoaded],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -376,9 +392,15 @@ export function IngredientWizard({
       if (cancelled) return
       if (error) {
         toast.error('No se pudieron cargar los proveedores')
+        setSuppliersLoaded(true)
         return
       }
-      if (data) setDbSuppliers(data as { id: number; name: string }[])
+      const rows = (data ?? []).map((r) => ({
+        id: String(r.id),
+        name: String(r.name ?? '').trim(),
+      })).filter((r) => r.name)
+      setDbSuppliers(resolveSupplierPickerItems(rows))
+      setSuppliersLoaded(true)
     })()
     return () => {
       cancelled = true
@@ -411,7 +433,14 @@ export function IngredientWizard({
         const { data, error } = ingRes
         if (cancelled) return
         if (supErr) toast.error('No se pudieron cargar los proveedores')
-        if (supRows?.length) setDbSuppliers(supRows as { id: number; name: string }[])
+        const supMapped = resolveSupplierPickerItems(
+          (supRows ?? []).map((r) => ({
+            id: String((r as { id: number }).id),
+            name: String((r as { name?: string }).name ?? '').trim(),
+          })).filter((r) => r.name),
+        )
+        setDbSuppliers(supMapped)
+        setSuppliersLoaded(true)
         if (error) throw error
         if (!data?.id) throw new Error('Ingrediente no encontrado')
 
@@ -1540,6 +1569,21 @@ export function IngredientWizard({
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] font-bold uppercase text-zinc-400">Proveedor (opcional)</span>
+              {orphanedSupplier1 ? (
+                <OrphanedSupplierAlert
+                  supplierName={orphanedSupplier1}
+                  onPickFromList={() => {
+                    setIsCustomSupplier(false)
+                    setCustomSupplierName('')
+                    setDraft((d) => ({ ...d, supplier: null }))
+                  }}
+                  onClear={() => {
+                    setIsCustomSupplier(false)
+                    setCustomSupplierName('')
+                    setDraft((d) => ({ ...d, supplier: null }))
+                  }}
+                />
+              ) : null}
               {!isCustomSupplier ? (
                 <select
                   value={draft.supplier ?? ''}
@@ -1591,6 +1635,22 @@ export function IngredientWizard({
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] font-bold uppercase text-zinc-400">Proveedor 2 (opcional)</span>
+              {orphanedSupplier2 ? (
+                <OrphanedSupplierAlert
+                  supplierName={orphanedSupplier2}
+                  label="Proveedor 2"
+                  onPickFromList={() => {
+                    setIsCustomSupplier2(false)
+                    setCustomSupplier2Name('')
+                    setDraft((d) => ({ ...d, supplier2: null }))
+                  }}
+                  onClear={() => {
+                    setIsCustomSupplier2(false)
+                    setCustomSupplier2Name('')
+                    setDraft((d) => ({ ...d, supplier2: null }))
+                  }}
+                />
+              ) : null}
               {!isCustomSupplier2 ? (
                 <select
                   value={draft.supplier2 ?? ''}

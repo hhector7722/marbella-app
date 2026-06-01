@@ -10,6 +10,9 @@ import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy';
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
+import { buildSupplierNameSet, getOrphanedSupplierName } from '@/lib/orphaned-supplier';
+import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
+import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplierAlert';
 
 export interface Ingredient {
     id: string;
@@ -145,18 +148,21 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
     const [customSupplierName, setCustomSupplierName] = useState('');
     const [isCustomSupplier2, setIsCustomSupplier2] = useState(false);
     const [customSupplier2Name, setCustomSupplier2Name] = useState('');
-    const [allSuppliers, setAllSuppliers] = useState<{ id: number; name: string }[]>([]);
+    const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
+    const [suppliersLoaded, setSuppliersLoaded] = useState(false);
     const [editPricingOpen, setEditPricingOpen] = useState(false);
     const [editPricingStep, setEditPricingStep] = useState<1 | 2 | 3>(1);
 
-    const supplierNamesFromDb = useMemo(
-        () =>
-            new Set(
-                allSuppliers
-                    .map((s) => String(s?.name ?? '').trim())
-                    .filter(Boolean)
-            ),
-        [allSuppliers]
+    const supplierNamesFromDb = useMemo(() => buildSupplierNameSet(allSuppliers), [allSuppliers]);
+
+    const orphanedSupplier1 = useMemo(
+        () => getOrphanedSupplierName(editForm.supplier, supplierNamesFromDb, suppliersLoaded),
+        [editForm.supplier, supplierNamesFromDb, suppliersLoaded],
+    );
+
+    const orphanedSupplier2 = useMemo(
+        () => getOrphanedSupplierName(editForm.supplier_2, supplierNamesFromDb, suppliersLoaded),
+        [editForm.supplier_2, supplierNamesFromDb, suppliersLoaded],
     );
 
     const navList = useMemo(() => {
@@ -183,18 +189,25 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
 
     useEffect(() => {
         if (!ingredientId) return;
+        setSuppliersLoaded(false);
         void (async () => {
             const { data, error } = await supabase.from('suppliers').select('id,name').order('name');
             if (error) {
                 toast.error('No se pudieron cargar los proveedores');
+                setSuppliersLoaded(true);
                 return;
             }
-            if (data) setAllSuppliers(data as { id: number; name: string }[]);
+            const rows = (data ?? []).map((r) => ({
+                id: String(r.id),
+                name: String(r.name ?? '').trim(),
+            })).filter((r) => r.name);
+            setAllSuppliers(resolveSupplierPickerItems(rows));
+            setSuppliersLoaded(true);
         })();
     }, [ingredientId, supabase]);
 
     useEffect(() => {
-        if (allSuppliers.length === 0) return;
+        if (!suppliersLoaded) return;
         const sup1 = editForm.supplier ?? null;
         const sup1Str = typeof sup1 === 'string' ? sup1.trim() : '';
         const isCustom1 = !!sup1Str && !supplierNamesFromDb.has(sup1Str);
@@ -205,7 +218,31 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
         const isCustom2 = !!sup2Str && !supplierNamesFromDb.has(sup2Str);
         setIsCustomSupplier2(isCustom2);
         setCustomSupplier2Name(isCustom2 ? sup2Str : '');
-    }, [editForm.supplier, editForm.supplier_2, supplierNamesFromDb, allSuppliers.length]);
+    }, [editForm.supplier, editForm.supplier_2, supplierNamesFromDb, suppliersLoaded]);
+
+    function pickSupplier1FromList() {
+        setIsCustomSupplier(false);
+        setCustomSupplierName('');
+        setEditForm((prev) => ({ ...prev, supplier: null }));
+    }
+
+    function clearSupplier1() {
+        setIsCustomSupplier(false);
+        setCustomSupplierName('');
+        setEditForm((prev) => ({ ...prev, supplier: null }));
+    }
+
+    function pickSupplier2FromList() {
+        setIsCustomSupplier2(false);
+        setCustomSupplier2Name('');
+        setEditForm((prev) => ({ ...prev, supplier_2: null }));
+    }
+
+    function clearSupplier2() {
+        setIsCustomSupplier2(false);
+        setCustomSupplier2Name('');
+        setEditForm((prev) => ({ ...prev, supplier_2: null }));
+    }
 
     function applyIngredientToForm(ing: Ingredient) {
         setActiveIngredient(ing);
@@ -1018,6 +1055,13 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                 />
                             </div>
                         </div>
+                        {orphanedSupplier1 ? (
+                            <OrphanedSupplierAlert
+                                supplierName={orphanedSupplier1}
+                                onPickFromList={pickSupplier1FromList}
+                                onClear={clearSupplier1}
+                            />
+                        ) : null}
                         {!isCustomSupplier ? (
                             <select
                                 value={editForm.supplier || ''}
@@ -1063,6 +1107,14 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                             </div>
                         )}
 
+                        {orphanedSupplier2 ? (
+                            <OrphanedSupplierAlert
+                                supplierName={orphanedSupplier2}
+                                label="Proveedor 2"
+                                onPickFromList={pickSupplier2FromList}
+                                onClear={clearSupplier2}
+                            />
+                        ) : null}
                         {!isCustomSupplier2 ? (
                             <select
                                 value={editForm.supplier_2 || ''}

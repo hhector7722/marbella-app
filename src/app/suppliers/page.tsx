@@ -6,6 +6,8 @@ import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Save, Uploa
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
+import { getSupplierLogo } from '@/lib/supplier-logos';
+import { INITIAL_SUPPLIER_SEED, sortSuppliersByName } from '@/lib/supplier-seed';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -22,41 +24,12 @@ interface Supplier {
     category: string | null;
 }
 
-const SUPPLIER_LOGOS: Record<string, string> = {
-    'Ametller': '/icons/prov/Ametller.png',
-    'Panabad': '/icons/prov/panabad.png',
-    'Videla': '/icons/prov/videla.png',
-    'Zander': '/icons/prov/Zander.png',
-    'Abril': '/icons/prov/Abril.png',
-    'Carnicas Pijuan': '/icons/prov/Pijuan.png',
-    'Santa Teresa': '/icons/prov/Sta-Teresa.png',
-    'Shers': '/icons/prov/Shers.png',
-    'Sanilec': '/icons/prov/Sanilec.png',
-    'Nestle': '/icons/prov/Nestle.png',
-    'Sant Aniol': '/icons/prov/Sant-Aniol.png',
-    'Fritz Ravich': '/icons/prov/Fritz-Ravich.png',
-    'Hielo Fenix': '/icons/prov/hielo-fenix.png',
-    'Vins i Pons': '/icons/prov/Pons.png'
-};
-
 const CATEGORIES = ['Alimentos', 'Bebidas', 'Limpieza', 'Mantenimiento', 'Suministros', 'Otros'];
 
-const INITIAL_SUPPLIERS: Partial<Supplier>[] = [
-    { name: 'Ametller', category: 'Alimentos' },
-    { name: 'Panabad', category: 'Alimentos' },
-    { name: 'Videla', category: 'Alimentos' },
-    { name: 'Santa Teresa', category: 'Alimentos' },
-    { name: 'Carnicas Pijuan', category: 'Alimentos' },
-    { name: 'Fritz Ravich', category: 'Alimentos' },
-    { name: 'Sant Aniol', category: 'Bebidas' },
-    { name: 'Vins i Pons', category: 'Bebidas' },
-    { name: 'Shers', category: 'Bebidas' },
-    { name: 'Zander', category: 'Bebidas' },
-    { name: 'Nestle', category: 'Alimentos' },
-    { name: 'Abril', category: 'Alimentos' },
-    { name: 'Sanilec', category: 'Limpieza' },
-    { name: 'Hielo Fenix', category: 'Otros' }
-];
+const INITIAL_SUPPLIERS: Partial<Supplier>[] = INITIAL_SUPPLIER_SEED.map((seed) => ({
+    name: seed.name,
+    category: seed.category ?? null,
+}));
 
 export default function SuppliersPage() {
     const [supabase] = useState(() => createClient());
@@ -161,7 +134,7 @@ export default function SuppliersPage() {
                       }))
                     : dbSuppliers;
 
-            setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
+            setSuppliers(sortSuppliersByName(combined));
         } catch (error: unknown) {
             console.error('Error fetching suppliers:', error);
             // Fallback solo si la base de datos está inaccesible o vacía
@@ -590,9 +563,9 @@ export default function SuppliersPage() {
                                 className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
                             >
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
-                                    {supplier.image_url || SUPPLIER_LOGOS[supplier.name] ? (
+                                    {getSupplierLogo(supplier.image_url, supplier.name) ? (
                                         <img
-                                            src={supplier.image_url || SUPPLIER_LOGOS[supplier.name] || ''}
+                                            src={getSupplierLogo(supplier.image_url, supplier.name) || ''}
                                             alt=""
                                             className="w-full h-full object-contain"
                                         />
@@ -637,8 +610,8 @@ export default function SuppliersPage() {
                         </div>
 
                         <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-3 overflow-hidden">
-                            {detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] ? (
-                                <img src={detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] || ''} alt="" className="w-full h-full object-contain" />
+                            {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
+                                <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="w-full h-full object-contain" />
                             ) : (
                                 <Truck className="w-12 h-12 text-gray-200" />
                             )}
@@ -769,9 +742,7 @@ export default function SuppliersPage() {
                                     const displaySrc = previewImageUrl
                                         ?? (removeImage
                                             ? null
-                                            : (editSupplier.image_url?.trim()
-                                                || SUPPLIER_LOGOS[editSupplier.name]
-                                                || null));
+                                            : getSupplierLogo(editSupplier.image_url, editSupplier.name));
                                     const hasAnyImage = Boolean(displaySrc);
                                     return (
                                         <div className="rounded-2xl border border-zinc-100 bg-zinc-50 overflow-hidden">

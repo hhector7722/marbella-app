@@ -11,6 +11,7 @@ import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
+import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -94,7 +95,7 @@ export default function IngredientsPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
     const [isCreating, setIsCreating] = useState(false);
-    const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
+    const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
     const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
     const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -118,7 +119,11 @@ export default function IngredientsPage() {
             toast.error('No se pudieron cargar los proveedores');
             return;
         }
-        if (data) setAllSuppliers(data);
+        const rows = (data ?? []).map((r) => ({
+            id: String(r.id),
+            name: String(r.name ?? '').trim(),
+        })).filter((r) => r.name);
+        setAllSuppliers(resolveSupplierPickerItems(rows));
     }
 
     async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -189,13 +194,12 @@ export default function IngredientsPage() {
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
 
-    const suppliersList = Array.from(
-        new Set(
-            ingredients
-                .flatMap((i) => [i.supplier, i.supplier_2])
-                .filter(Boolean)
-        )
-    ) as string[];
+    useEffect(() => {
+        if (selectedSupplier && !allSuppliers.some((s) => s.name === selectedSupplier)) {
+            setSelectedSupplier(null);
+        }
+    }, [allSuppliers, selectedSupplier]);
+
     const filteredIngredients = ingredients.filter(ing => {
         const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier || ing.supplier_2 === selectedSupplier;
@@ -251,19 +255,25 @@ export default function IngredientsPage() {
                                             >
                                                 Todos
                                             </button>
-                                            {suppliersList.map((sup) => (
-                                                <button
-                                                    key={sup}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedSupplier(sup);
-                                                        setShowSupplierPopup(false);
-                                                    }}
-                                                    className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-zinc-50"
-                                                >
-                                                    {sup}
-                                                </button>
-                                            ))}
+                                            {allSuppliers.length === 0 ? (
+                                                <p className="px-4 py-2.5 text-xs font-medium text-gray-400">
+                                                    No hay proveedores en la base de datos
+                                                </p>
+                                            ) : (
+                                                allSuppliers.map((sup) => (
+                                                    <button
+                                                        key={sup.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedSupplier(sup.name);
+                                                            setShowSupplierPopup(false);
+                                                        }}
+                                                        className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-zinc-50"
+                                                    >
+                                                        {sup.name}
+                                                    </button>
+                                                ))
+                                            )}
                                         </div>
                                     </>
                                 )}

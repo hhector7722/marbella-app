@@ -45,7 +45,6 @@ export default function NewOrderPage() {
 
     const [selectedSupplier, setSelectedSupplier] = useState<string | null>(initialSupplier);
     const [showSupplierPopup, setShowSupplierPopup] = useState(false);
-    const [suppliers, setSuppliers] = useState<string[]>([]);
     const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null }[]>([]);
 
     // UI Modals
@@ -134,14 +133,6 @@ export default function NewOrderPage() {
             const { data: supData } = await supabase.from('suppliers').select('id, name, phone');
             setDbSuppliers(supData || []);
 
-            const uniqueSuppliers = Array.from(
-                new Set(
-                    (ingData || [])
-                        .flatMap((i) => [i.supplier, i.supplier_2])
-                        .filter(Boolean)
-                )
-            ) as string[];
-            setSuppliers(uniqueSuppliers);
             // Drafts are loaded in useEffect when supplierId is set (shared per supplier)
         } catch (error) {
             console.error('Error fetching data:', error);
