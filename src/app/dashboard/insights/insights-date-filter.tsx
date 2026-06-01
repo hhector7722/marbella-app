@@ -48,23 +48,21 @@ function PickerShell({
 }) {
   if (!open) return null
   return (
-    <>
-      <div
-        className="fixed inset-0 z-[10060] bg-black/40 sm:hidden"
-        aria-hidden
-        onClick={onClose}
-      />
+    <div
+      className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/40 p-4"
+      role="presentation"
+      onClick={onClose}
+    >
       <div
         className={cn(
-          'z-[10061] bg-white border border-zinc-200 shadow-xl p-4',
-          'fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[70vh] overflow-y-auto',
-          'sm:absolute sm:inset-auto sm:top-full sm:left-0 sm:mt-2 sm:rounded-2xl sm:max-h-none sm:w-auto sm:min-w-[18rem]',
+          'z-[10061] w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl',
           className
         )}
+        onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>
-    </>
+    </div>
   )
 }
 

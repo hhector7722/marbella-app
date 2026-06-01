@@ -19,6 +19,7 @@ export const weekdayAnalysisRowSchema = z.object({
 
 export const productMarginRowSchema = z.object({
   product_name: z.string(),
+  recipe_id: z.string().uuid().nullable(),
   total_units_sold: z.coerce.number(),
   avg_sale_price: z.coerce.number(),
   recipe_cost: z.coerce.number(),

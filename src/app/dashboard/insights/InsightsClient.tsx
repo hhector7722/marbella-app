@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { ChevronDown, RefreshCw, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { RefreshCw, X } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -70,6 +71,9 @@ const MARGIN_BAR_LOW = '#FFA726'
 const DELTA_TOOLTIP =
   'Positivo = rentabilidad contable sin entrar en caja. Negativo = cobros de deuda anterior o ajustes.'
 
+const HOURLY_CHART_START = 7
+const HOURLY_CHART_END = 23
+
 type FinancialModalKind = 'income' | 'expenses' | 'margin' | 'cash' | 'delta'
 
 const INCOME_LINE_LABELS: Record<string, string> = {
@@ -135,9 +139,9 @@ function FinancialKpiChip({
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       className={cn(
-        'rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2.5 min-h-12 flex flex-col justify-center min-w-0 text-left w-full',
+        'min-h-12 flex flex-col items-center justify-center min-w-0 text-center w-full px-1 py-2',
         onClick &&
-          'cursor-pointer transition-shadow hover:ring-2 hover:ring-[#36606F]/30 active:scale-[0.99]',
+          'cursor-pointer transition-shadow hover:ring-2 hover:ring-[#36606F]/30 active:scale-[0.99] rounded-xl',
         className
       )}
       title={tooltip}
@@ -145,7 +149,7 @@ function FinancialKpiChip({
       <span className="text-[8px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
         {label}
       </span>
-      <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+      <div className="flex items-center justify-center gap-1.5 mt-0.5 min-w-0 w-full">
         <span
           className={cn(
             'text-sm lg:text-base font-black tabular-nums truncate',
@@ -196,7 +200,7 @@ function FinancialDetailModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10070] flex items-end sm:items-center justify-center bg-black/40 p-3 sm:p-4 transition-opacity duration-150"
+      className="fixed inset-0 z-[10070] flex items-center justify-center bg-black/40 p-4 transition-opacity duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="financial-detail-title"
@@ -205,11 +209,7 @@ function FinancialDetailModal({
       }}
     >
       <div
-        className={cn(
-          'w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden p-6',
-          'rounded-t-2xl sm:rounded-2xl',
-          'mx-0 sm:mx-auto'
-        )}
+        className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden p-6 rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 shrink-0 mb-4">
@@ -239,12 +239,27 @@ function FinancialDetailModal({
 function FinancialDetailRow({ label, amount }: { label: string; amount: number }) {
   const displayed = formatEuroKpi(amount)
   return (
-    <tr className="border-b border-zinc-100 last:border-0">
-      <td className="py-2.5 pr-3 text-xs font-semibold text-zinc-700">{label}</td>
-      <td className="py-2.5 text-right text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap">
-        {displayed === ' ' ? ' ' : `${displayed}`}
-      </td>
-    </tr>
+    <div className="flex items-baseline justify-between gap-4 py-2">
+      <span className="text-xs font-semibold text-zinc-600">{label}</span>
+      <span className="text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap">
+        {displayed === ' ' ? ' ' : displayed}
+      </span>
+    </div>
+  )
+}
+
+function FinancialDetailBlock({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-2">
+      <span className="text-xs font-semibold text-zinc-600">{label}</span>
+      <span className="text-sm font-black tabular-nums text-zinc-800 text-right">{children}</span>
+    </div>
   )
 }
 
@@ -433,8 +448,9 @@ export default function InsightsClient({
     error: initialErrors?.financial ?? null,
     forbidden: initialFinancialForbidden,
   })
-  const [selectedProductIdx, setSelectedProductIdx] = useState(0)
+  const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null)
   const [financialModal, setFinancialModal] = useState<FinancialModalKind | null>(null)
+  const router = useRouter()
 
   const fetchHourly = useCallback(async (from: string, to: string) => {
     setHourly((s) => ({ ...s, loading: true, error: null }))
@@ -551,16 +567,30 @@ export default function InsightsClient({
   )
 
   const hourlyChartData = useMemo(() => {
-    return hourly.data
-      .filter((r) => r.total_revenue > 0 || r.labor_cost > 0)
-      .map((r) => ({
-        ...r,
-        label: `${r.hour}h`,
-      }))
+    const byHour = new Map(hourly.data.map((r) => [r.hour, r]))
+    const rows: (HourlyProfitabilityRow & { label: string })[] = []
+    for (let hour = HOURLY_CHART_START; hour <= HOURLY_CHART_END; hour++) {
+      const row = byHour.get(hour)
+      rows.push({
+        hour,
+        total_revenue: row?.total_revenue ?? 0,
+        ticket_count: row?.ticket_count ?? 0,
+        avg_ticket: row?.avg_ticket ?? 0,
+        labor_cost: row?.labor_cost ?? 0,
+        margin: row?.margin ?? 0,
+        label: `${hour}h`,
+      })
+    }
+    return rows
   }, [hourly.data])
 
   const hourlyKpis = useMemo(() => {
-    const active = hourly.data.filter((r) => r.total_revenue > 0 || r.labor_cost > 0)
+    const active = hourly.data.filter(
+      (r) =>
+        r.hour >= HOURLY_CHART_START &&
+        r.hour <= HOURLY_CHART_END &&
+        (r.total_revenue > 0 || r.labor_cost > 0)
+    )
     if (active.length === 0) {
       return {
         best: ' ',
@@ -586,9 +616,14 @@ export default function InsightsClient({
     const optimalLabel =
       bestWindow.sum === -Infinity ? ' ' : `${bestWindow.start}h–${bestWindow.start + 2}h`
 
+    const marginStr = (v: number) => {
+      const e = formatEuroKpi(v)
+      return e === ' ' ? '' : ` · ${e}`
+    }
+
     return {
-      best: `${best.hour}h (${formatEuroKpi(best.margin)})`,
-      worst: `${worst.hour}h (${formatEuroKpi(worst.margin)})`,
+      best: `${best.hour}h${marginStr(best.margin)}`,
+      worst: `${worst.hour}h${marginStr(worst.margin)}`,
       optimal: optimalLabel,
     }
   }, [hourly.data])
@@ -609,9 +644,14 @@ export default function InsightsClient({
     }
     const best = withRevenue.reduce((a, b) => (b.avg_revenue > a.avg_revenue ? b : a))
     const worst = withRevenue.reduce((a, b) => (b.avg_revenue < a.avg_revenue ? b : a))
+    const revStr = (v: number) => {
+      const e = formatEuroKpi(v)
+      return e === ' ' ? '' : ` · ${e}`
+    }
+
     return {
-      best: `${best.weekday_name} (${formatEuroKpi(best.avg_revenue)})`,
-      worst: `${worst.weekday_name} (${formatEuroKpi(worst.avg_revenue)})`,
+      best: `${best.weekday_name}${revStr(best.avg_revenue)}`,
+      worst: `${worst.weekday_name}${revStr(worst.avg_revenue)}`,
     }
   }, [weekday.data])
 
@@ -626,23 +666,32 @@ export default function InsightsClient({
       else if (marginPct < 30) fill = MARGIN_BAR_LOW
       return {
         ...p,
-        shortName: p.product_name.length > 28 ? `${p.product_name.slice(0, 26)}…` : p.product_name,
         fill,
         marginPct,
       }
     })
   }, [rankedProducts])
 
-  const bestProductIdx = useMemo(() => {
-    if (rankedProducts.length === 0) return 0
-    return rankedProducts.reduce(
-      (bestI, p, i, arr) =>
-        p.total_margin_contribution > arr[bestI].total_margin_contribution ? i : bestI,
-      0,
-    )
-  }, [rankedProducts])
+  const productChartHeight = useMemo(() => {
+    const rowH = 40
+    const minH = 280
+    const maxH = 720
+    return Math.min(maxH, Math.max(minH, rankedProducts.length * rowH + 48))
+  }, [rankedProducts.length])
 
-  const selectedProduct = rankedProducts[selectedProductIdx] ?? null
+  const selectedProduct =
+    selectedProductIdx !== null ? (rankedProducts[selectedProductIdx] ?? null) : null
+
+  const handleOpenRecipe = useCallback(
+    (recipeId: string | null | undefined, productName: string) => {
+      if (!recipeId) return
+      const ok = window.confirm(
+        `¿Abrir la receta de «${productName}»? Saldrás de Insights.`
+      )
+      if (ok) router.push(`/recipes/${recipeId}`)
+    },
+    [router]
+  )
 
   const financialKpis = useMemo(() => {
     if (!financial.data) return null
@@ -687,21 +736,16 @@ export default function InsightsClient({
           title: 'Ventas (s/IVA)',
           footnote: 'Base imponible (IVA 10% descontado). Coincide con el PyG de devengo.',
           body: (
-            <table className="w-full">
-              <tbody>
-                {incomeLines.map((line) => (
-                  <FinancialDetailRow
-                    key={line.key}
-                    label={INCOME_LINE_LABELS[line.key] ?? line.label}
-                    amount={line.amount}
-                  />
-                ))}
+            <div className="space-y-1">
+              {incomeLines.map((line) => (
                 <FinancialDetailRow
-                  label="TPV bruto (c/IVA)"
-                  amount={salesGross}
+                  key={line.key}
+                  label={INCOME_LINE_LABELS[line.key] ?? line.label}
+                  amount={line.amount}
                 />
-              </tbody>
-            </table>
+              ))}
+              <FinancialDetailRow label="TPV bruto (c/IVA)" amount={salesGross} />
+            </div>
           ),
         }
       case 'expenses':
@@ -710,17 +754,15 @@ export default function InsightsClient({
           footnote:
             'Solo albaranes en estado mapeado/completado. Alquiler: meses completos en el rango.',
           body: (
-            <table className="w-full">
-              <tbody>
-                {sortExpenseLines(expenseLines).map((line) => (
-                  <FinancialDetailRow
-                    key={line.key}
-                    label={EXPENSE_LINE_LABELS[line.key] ?? line.label}
-                    amount={line.amount}
-                  />
-                ))}
-              </tbody>
-            </table>
+            <div className="space-y-1">
+              {sortExpenseLines(expenseLines).map((line) => (
+                <FinancialDetailRow
+                  key={line.key}
+                  label={EXPENSE_LINE_LABELS[line.key] ?? line.label}
+                  amount={line.amount}
+                />
+              ))}
+            </div>
           ),
         }
       case 'margin': {
@@ -734,25 +776,20 @@ export default function InsightsClient({
           title: 'Margen PyG',
           footnote: 'Resultado contable del periodo. No refleja cobros reales en caja.',
           body: (
-            <table className="w-full">
-              <tbody>
-                <FinancialDetailRow label="Ventas" amount={pyg.income.total} />
-                <FinancialDetailRow label="Gastos" amount={pyg.expenses.total} />
-                <tr className="border-b border-zinc-100 last:border-0">
-                  <td className="py-2.5 pr-3 text-xs font-semibold text-zinc-700">Margen</td>
-                  <td className="py-2.5 text-right text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap">
-                    {formatEuroKpi(pyg.net) === ' ' ? (
-                      ' '
-                    ) : (
-                      <>
-                        {formatEuroKpi(pyg.net)}
-                        {marginPctLabel !== ' ' ? ` (${marginPctLabel})` : ''}
-                      </>
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="space-y-1">
+              <FinancialDetailRow label="Ventas" amount={pyg.income.total} />
+              <FinancialDetailRow label="Gastos" amount={pyg.expenses.total} />
+              <FinancialDetailBlock label="Margen">
+                {formatEuroKpi(pyg.net) === ' ' ? (
+                  ' '
+                ) : (
+                  <>
+                    {formatEuroKpi(pyg.net)}
+                    {marginPctLabel !== ' ' ? ` · ${marginPctLabel}` : ''}
+                  </>
+                )}
+              </FinancialDetailBlock>
+            </div>
           ),
         }
       }
@@ -761,13 +798,11 @@ export default function InsightsClient({
           title: 'Caja neta',
           footnote: 'Solo efectivo físico. Los cobros con tarjeta no pasan por tesorería.',
           body: (
-            <table className="w-full">
-              <tbody>
-                <FinancialDetailRow label="Entradas (efectivo + cierres)" amount={cashIn} />
-                <FinancialDetailRow label="Salidas (efectivo)" amount={cashOut} />
-                <FinancialDetailRow label="Neto" amount={financial.data.cashFlow.net} />
-              </tbody>
-            </table>
+            <div className="space-y-1">
+              <FinancialDetailRow label="Entradas (efectivo + cierres)" amount={cashIn} />
+              <FinancialDetailRow label="Salidas (efectivo)" amount={cashOut} />
+              <FinancialDetailRow label="Neto" amount={financial.data.cashFlow.net} />
+            </div>
           ),
         }
       case 'delta':
@@ -775,13 +810,11 @@ export default function InsightsClient({
           title: 'Delta devengo−caja',
           footnote: deltaInterpretation(reconciliation.delta),
           body: (
-            <table className="w-full">
-              <tbody>
-                <FinancialDetailRow label="Margen PyG" amount={pyg.net} />
-                <FinancialDetailRow label="Caja neta" amount={financial.data.cashFlow.net} />
-                <FinancialDetailRow label="Diferencia" amount={reconciliation.delta} />
-              </tbody>
-            </table>
+            <div className="space-y-1">
+              <FinancialDetailRow label="Margen PyG" amount={pyg.net} />
+              <FinancialDetailRow label="Caja neta" amount={financial.data.cashFlow.net} />
+              <FinancialDetailRow label="Diferencia" amount={reconciliation.delta} />
+            </div>
           ),
         }
       default:
@@ -789,14 +822,9 @@ export default function InsightsClient({
     }
   }, [financial.data, financialModal, marginPctRaw])
 
-  const syncSelectedProductToBest = useCallback(() => {
-    setSelectedProductIdx(bestProductIdx)
-  }, [bestProductIdx])
-
-  // Al recargar ranking, volver al producto con mejor margen
   useEffect(() => {
-    syncSelectedProductToBest()
-  }, [products.data, syncSelectedProductToBest])
+    setSelectedProductIdx(null)
+  }, [products.data])
 
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24 text-zinc-900">
@@ -850,15 +878,18 @@ export default function InsightsClient({
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={hourlyChartData}
-                            margin={{ top: 8, right: 8, left: 4, bottom: 4 }}
-                            barCategoryGap="18%"
-                            barGap={4}
+                            margin={{ top: 8, right: 8, left: 4, bottom: 20 }}
+                            barCategoryGap="28%"
+                            barGap={6}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis
                               dataKey="label"
-                              tick={{ fontSize: 10, fontWeight: 700 }}
+                              tick={{ fontSize: 8, fontWeight: 700 }}
                               interval={0}
+                              angle={-40}
+                              textAnchor="end"
+                              height={48}
                             />
                             <YAxis
                               tick={{ fontSize: 9 }}
@@ -910,7 +941,7 @@ export default function InsightsClient({
                     <div className="grid grid-cols-3 gap-1 lg:gap-3">
                       <KpiFloat label="Hora más rentable" value={hourlyKpis.best} />
                       <KpiFloat label="Hora de mayor pérdida" value={hourlyKpis.worst} />
-                      <KpiFloat label="Franja óptima de apertura" value={hourlyKpis.optimal} />
+                      <KpiFloat label="Franja más rentable" value={hourlyKpis.optimal} />
                     </div>
                   </div>
                 )}
@@ -962,7 +993,7 @@ export default function InsightsClient({
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="mt-2 flex flex-col gap-2">
+                    <div className="mt-2 grid grid-cols-2 gap-2">
                       <KpiFloat label="Mejor día" value={weekdayKpis.best} />
                       <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
                     </div>
@@ -1001,12 +1032,12 @@ export default function InsightsClient({
                 ) : (
                   <div className="flex flex-col gap-2">
                     <div className="overflow-x-auto -mx-0.5 px-0.5">
-                      <div className="h-[200px] lg:h-[340px] w-full min-w-0">
+                      <div className="w-full min-w-0" style={{ height: productChartHeight }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             layout="vertical"
                             data={productChartData}
-                            margin={{ top: 2, right: 12, left: 4, bottom: 4 }}
+                            margin={{ top: 2, right: 12, left: 8, bottom: 4 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis
@@ -1018,9 +1049,10 @@ export default function InsightsClient({
                             <XAxis type="number" xAxisId="units" orientation="top" hide />
                             <YAxis
                               type="category"
-                              dataKey="shortName"
-                              width={72}
-                              tick={{ fontSize: 8, fontWeight: 600 }}
+                              dataKey="product_name"
+                              width={140}
+                              tick={{ fontSize: 9, fontWeight: 600 }}
+                              interval={0}
                             />
                             <Tooltip content={() => null} cursor={false} />
                             <Bar
@@ -1030,16 +1062,18 @@ export default function InsightsClient({
                               radius={[0, 4, 4, 0]}
                               cursor="pointer"
                               onClick={(_data, index) => {
-                                if (typeof index === 'number') setSelectedProductIdx(index)
+                                if (typeof index === 'number') {
+                                  setSelectedProductIdx((prev) => (prev === index ? null : index))
+                                }
                               }}
                             >
                               {productChartData.map((entry, index) => (
                                 <Cell
                                   key={`prod-${index}`}
                                   fill={entry.fill}
-                                  stroke={index === selectedProductIdx ? PETROLEO : 'transparent'}
-                                  strokeWidth={index === selectedProductIdx ? 2 : 0}
-                                  opacity={index === selectedProductIdx ? 1 : 0.82}
+                                  stroke={selectedProductIdx === index ? PETROLEO : 'transparent'}
+                                  strokeWidth={selectedProductIdx === index ? 2 : 0}
+                                  opacity={selectedProductIdx === index ? 1 : 0.82}
                                 />
                               ))}
                             </Bar>
@@ -1058,29 +1092,36 @@ export default function InsightsClient({
                     </div>
 
                     {selectedProduct && (
-                      <div className="pt-1 space-y-2">
-                        <label className="relative flex items-center gap-1 min-h-10 min-w-0 max-w-full cursor-pointer group">
-                          <span className="text-[9px] lg:text-[10px] font-bold text-zinc-700 leading-tight truncate flex-1 min-w-0">
-                            {selectedProduct.product_name}
-                          </span>
-                          <ChevronDown
-                            className="h-3.5 w-3.5 shrink-0 text-[#36606F] group-hover:text-[#2a4a56]"
-                            aria-hidden
-                          />
-                          <select
-                            value={selectedProductIdx}
-                            onChange={(e) => setSelectedProductIdx(Number(e.target.value))}
-                            aria-label="Seleccionar producto"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      <div className="rounded-xl border border-zinc-100 bg-zinc-50/90 shadow-sm p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          {selectedProduct.recipe_id ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleOpenRecipe(
+                                  selectedProduct.recipe_id,
+                                  selectedProduct.product_name
+                                )
+                              }
+                              className="min-h-10 text-left text-sm font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
+                            >
+                              {selectedProduct.product_name}
+                            </button>
+                          ) : (
+                            <p className="text-sm font-black text-zinc-800 leading-snug">
+                              {selectedProduct.product_name}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProductIdx(null)}
+                            aria-label="Cerrar detalle"
+                            className="min-h-10 min-w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-200/60"
                           >
-                            {rankedProducts.map((p, i) => (
-                              <option key={`${p.product_name}-${i}`} value={i}>
-                                {p.product_name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-1.5 text-[10px] lg:text-xs">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2 text-[10px] lg:text-xs">
                           <ProductStat
                             label="Unidades"
                             value={
