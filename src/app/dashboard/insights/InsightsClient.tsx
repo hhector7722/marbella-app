@@ -674,17 +674,12 @@ export default function InsightsClient({
     })
   }, [rankedProducts])
 
-  const productChartHeight = useMemo(() => {
-    const rowH = 22
-    const minH = 160
-    const maxH = 380
-    return Math.min(maxH, Math.max(minH, rankedProducts.length * rowH + 28))
-  }, [rankedProducts.length])
+  const productChartHeight = 260
 
-  const productCardTopPct = useMemo(() => {
+  const productCardLeftPct = useMemo(() => {
     if (selectedProductIdx === null || rankedProducts.length === 0) return 50
     const raw = ((selectedProductIdx + 0.5) / rankedProducts.length) * 100
-    return Math.min(88, Math.max(12, raw))
+    return Math.min(92, Math.max(8, raw))
   }, [selectedProductIdx, rankedProducts.length])
 
   const selectedProduct =
@@ -955,37 +950,33 @@ export default function InsightsClient({
                 )}
               </section>
 
-              {/* Rend. por día + Margen producto — siempre 50/50 */}
-              <div className="col-span-1 md:col-span-12 grid grid-cols-2 gap-2 min-w-0">
-              <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-1.5 sm:p-2 min-w-0 overflow-hidden">
+              {/* Rend. por día — fila completa */}
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-3 min-w-0">
                 <SectionTitleRow title="Rend. por día" />
                 {weekday.error ? (
                   <SectionErrorBanner message={weekday.error} onRetry={() => void fetchWeekday(dateFrom, dateTo)} />
                 ) : weekday.loading ? (
                   <SectionSkeleton rows={5} />
                 ) : (
-                  <>
-                    <div className="h-[140px] sm:h-[160px] lg:h-[180px]">
+                  <div className="flex flex-row gap-2 lg:gap-4 min-w-0 items-stretch">
+                    <div className="flex-1 min-w-0 h-[160px] sm:h-[180px] lg:h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                          layout="vertical"
                           data={weekdayChartData}
-                          margin={{ top: 2, right: 4, left: 0, bottom: 2 }}
+                          margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
                           barCategoryGap="4%"
                           barGap={0}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                           <XAxis
-                            type="number"
-                            tick={{ fontSize: 6 }}
-                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            dataKey="shortName"
+                            tick={{ fontSize: 8, fontWeight: 700 }}
+                            interval={0}
                           />
                           <YAxis
-                            type="category"
-                            dataKey="shortName"
-                            width={24}
-                            tick={{ fontSize: 7, fontWeight: 700 }}
-                            interval={0}
+                            tick={{ fontSize: 7 }}
+                            width={36}
+                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                           />
                           <Tooltip
                             content={({ active, payload }) => {
@@ -1005,21 +996,22 @@ export default function InsightsClient({
                             dataKey="avg_revenue"
                             name="Media ventas"
                             fill={PETROLEO}
-                            radius={[0, 2, 2, 0]}
-                            maxBarSize={14}
+                            radius={[3, 3, 0, 0]}
+                            maxBarSize={40}
                           />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="mt-1 grid grid-cols-1 gap-1">
+                    <div className="shrink-0 flex flex-col justify-center gap-2 w-[6.5rem] sm:w-[8.5rem] lg:w-[10rem] border-l border-zinc-100 pl-2 lg:pl-3">
                       <KpiFloat label="Mejor día" value={weekdayKpis.best} />
                       <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
                     </div>
-                  </>
+                  </div>
                 )}
               </section>
 
-              <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-1.5 sm:p-2 min-w-0 overflow-hidden">
+              {/* Margen producto — fila completa */}
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
                 <SectionTitleRow
                   title="Margen producto"
                   legend={[
@@ -1055,10 +1047,10 @@ export default function InsightsClient({
                       >
                         {selectedProduct && selectedProductIdx !== null && (
                           <div
-                            className="absolute left-9 right-1 z-20 pointer-events-auto"
+                            className="absolute top-2 z-20 pointer-events-auto max-w-[min(100%,18rem)]"
                             style={{
-                              top: `${productCardTopPct}%`,
-                              transform: 'translateY(-100%)',
+                              left: `${productCardLeftPct}%`,
+                              transform: 'translateX(-50%)',
                             }}
                           >
                             <div className="rounded-xl border border-zinc-200 bg-white/95 shadow-lg backdrop-blur-sm p-3 space-y-2 mb-1">
@@ -1123,34 +1115,34 @@ export default function InsightsClient({
                         )}
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
-                            layout="vertical"
                             data={productChartData}
-                            margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                            margin={{ top: 8, right: 8, left: 4, bottom: 52 }}
                             barCategoryGap="4%"
                             barGap={0}
                           >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                             <XAxis
-                              type="number"
-                              xAxisId="margin"
-                              tick={{ fontSize: 6 }}
+                              dataKey="shortName"
+                              tick={{ fontSize: 8, fontWeight: 600 }}
+                              interval={0}
+                              angle={-35}
+                              textAnchor="end"
+                              height={52}
+                            />
+                            <YAxis
+                              yAxisId="margin"
+                              tick={{ fontSize: 8 }}
+                              width={40}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
-                            <XAxis type="number" xAxisId="units" hide />
-                            <YAxis
-                              type="category"
-                              dataKey="shortName"
-                              width={32}
-                              tick={{ fontSize: 6, fontWeight: 600 }}
-                              interval={0}
-                            />
+                            <YAxis yAxisId="units" orientation="right" hide />
                             <Tooltip content={() => null} cursor={false} />
                             <Bar
-                              xAxisId="margin"
+                              yAxisId="margin"
                               dataKey="total_margin_contribution"
                               name="Margen total"
-                              maxBarSize={14}
-                              radius={[0, 2, 2, 0]}
+                              maxBarSize={36}
+                              radius={[3, 3, 0, 0]}
                               cursor="pointer"
                               onClick={(_data, index) => {
                                 if (typeof index === 'number') {
@@ -1169,7 +1161,7 @@ export default function InsightsClient({
                               ))}
                             </Bar>
                             <Line
-                              xAxisId="units"
+                              yAxisId="units"
                               type="monotone"
                               dataKey="total_units_sold"
                               name="Unidades"
@@ -1184,7 +1176,6 @@ export default function InsightsClient({
                   </div>
                 )}
               </section>
-              </div>
             </div>
 
             {/* Sección 4 — Resultado del periodo (ancho completo) */}
