@@ -328,13 +328,41 @@ function SectionErrorBanner({
   )
 }
 
-function ProductStat({ label, value }: { label: string; value: string }) {
+function ProductStat({
+  label,
+  value,
+  prominent = false,
+  className,
+}: {
+  label: string
+  value: string
+  prominent?: boolean
+  className?: string
+}) {
   return (
-    <div className="min-w-0">
-      <span className="block text-[8px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+    <div
+      className={cn(
+        'min-w-0 flex flex-col',
+        prominent && 'items-center justify-center text-center p-2 rounded-lg bg-zinc-50 min-h-[3.25rem]',
+        className
+      )}
+    >
+      <span
+        className={cn(
+          'block font-bold uppercase tracking-wider text-zinc-500',
+          prominent ? 'text-[10px] sm:text-xs' : 'text-[8px] lg:text-[10px]'
+        )}
+      >
         {label}
       </span>
-      <span className="block font-black text-zinc-800 tabular-nums mt-0.5">{value}</span>
+      <span
+        className={cn(
+          'block font-black text-zinc-800 tabular-nums mt-1',
+          prominent ? 'text-sm sm:text-base lg:text-lg leading-tight' : 'mt-0.5'
+        )}
+      >
+        {value}
+      </span>
     </div>
   )
 }
@@ -349,18 +377,20 @@ function ProductDetailCard({
   onOpenRecipe: (recipeId: string | null | undefined, productName: string) => void
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-md p-3 space-y-2 w-full max-w-full">
+    <div className="rounded-xl border border-zinc-200 bg-white shadow-md p-3 sm:p-4 space-y-3 w-full max-w-full">
       <div className="flex items-start justify-between gap-2">
         {product.recipe_id ? (
           <button
             type="button"
             onClick={() => onOpenRecipe(product.recipe_id, product.product_name)}
-            className="min-h-9 text-left text-xs font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
+            className="min-h-9 text-left text-sm sm:text-base font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
           >
             {product.product_name}
           </button>
         ) : (
-          <p className="text-xs font-black text-zinc-800 leading-snug">{product.product_name}</p>
+          <p className="text-sm sm:text-base font-black text-zinc-800 leading-snug">
+            {product.product_name}
+          </p>
         )}
         <button
           type="button"
@@ -371,15 +401,17 @@ function ProductDetailCard({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 text-[9px] lg:text-[10px]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
         <ProductStat
+          prominent
           label="Unidades"
           value={product.total_units_sold === 0 ? ' ' : String(product.total_units_sold)}
         />
-        <ProductStat label="P. venta" value={formatEuroKpi(product.avg_sale_price)} />
-        <ProductStat label="Coste receta" value={formatEuroKpi(product.recipe_cost)} />
-        <ProductStat label="Margen / ud." value={formatEuroKpi(product.margin_per_unit)} />
+        <ProductStat prominent label="P. venta" value={formatEuroKpi(product.avg_sale_price)} />
+        <ProductStat prominent label="Coste receta" value={formatEuroKpi(product.recipe_cost)} />
+        <ProductStat prominent label="Margen / ud." value={formatEuroKpi(product.margin_per_unit)} />
         <ProductStat
+          prominent
           label="Margen total"
           value={formatEuroKpi(product.total_margin_contribution)}
         />
@@ -406,6 +438,8 @@ type LegendItem = {
   label: string
   color: string
   variant?: 'bar' | 'line'
+  /** Contorno fino en cabecera petróleo cuando el color coincide con el fondo */
+  swatchOutline?: boolean
 }
 
 function SectionTitleRow({
@@ -438,7 +472,10 @@ function SectionTitleRow({
                 />
               ) : (
                 <span
-                  className="w-2 h-2 shrink-0 rounded-sm"
+                  className={cn(
+                    'w-2 h-2 shrink-0 rounded-sm',
+                    item.swatchOutline && 'ring-1 ring-inset ring-white/95 border border-white/80'
+                  )}
                   style={{ backgroundColor: item.color }}
                   aria-hidden
                 />
@@ -925,7 +962,7 @@ export default function InsightsClient({
                 <SectionTitleRow
                   title="Venta vs. Coste por hora"
                   legend={[
-                    { label: 'Ventas', color: PETROLEO, variant: 'bar' },
+                    { label: 'Ventas', color: PETROLEO, variant: 'bar', swatchOutline: true },
                     { label: 'M. obra', color: LABOR_RED, variant: 'bar' },
                     { label: 'Margen', color: MARGIN_GREEN, variant: 'line' },
                   ]}
@@ -1114,7 +1151,7 @@ export default function InsightsClient({
                             onOpenRecipe={handleOpenRecipe}
                           />
                         </div>
-                        <div className="hidden sm:block relative w-full min-h-[6.75rem] shrink-0 overflow-hidden">
+                        <div className="hidden sm:block relative w-full min-h-[8.5rem] shrink-0 overflow-hidden">
                           <div
                             className="absolute bottom-0 z-20 w-[min(100%,18rem)] lg:w-[min(100%,20rem)] pointer-events-auto"
                             style={productCardAnchorStyle}
@@ -1238,13 +1275,6 @@ export default function InsightsClient({
                       onClick={() => setFinancialModal('expenses')}
                     />
                     <FinancialKpiChip
-                      label="Margen PyG"
-                      value={financialKpis.pygNet}
-                      valueClassName={financialKpis.pygNetTone}
-                      badge={financialKpis.marginBadge}
-                      onClick={() => setFinancialModal('margin')}
-                    />
-                    <FinancialKpiChip
                       label="Caja neta"
                       value={financialKpis.cashFlowNet}
                       valueClassName={financialKpis.cashFlowTone}
@@ -1255,8 +1285,15 @@ export default function InsightsClient({
                       value={financialKpis.delta}
                       valueClassName={financialKpis.deltaTone}
                       tooltip={DELTA_TOOLTIP}
-                      className="col-span-2 max-w-[50%] justify-self-center md:col-span-1 md:max-w-none md:justify-self-stretch"
                       onClick={() => setFinancialModal('delta')}
+                    />
+                    <FinancialKpiChip
+                      label="Margen PyG"
+                      value={financialKpis.pygNet}
+                      valueClassName={financialKpis.pygNetTone}
+                      badge={financialKpis.marginBadge}
+                      className="col-span-2 max-w-[50%] justify-self-center md:col-span-1 md:max-w-none md:justify-self-stretch"
+                      onClick={() => setFinancialModal('margin')}
                     />
                   </div>
                   {financialModalContent && (
