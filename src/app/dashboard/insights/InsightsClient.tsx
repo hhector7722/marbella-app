@@ -1,6 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -332,6 +339,55 @@ function ProductStat({ label, value }: { label: string; value: string }) {
   )
 }
 
+function ProductDetailCard({
+  product,
+  onClose,
+  onOpenRecipe,
+}: {
+  product: ProductMarginRow
+  onClose: () => void
+  onOpenRecipe: (recipeId: string | null | undefined, productName: string) => void
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white shadow-md p-3 space-y-2 w-full max-w-full">
+      <div className="flex items-start justify-between gap-2">
+        {product.recipe_id ? (
+          <button
+            type="button"
+            onClick={() => onOpenRecipe(product.recipe_id, product.product_name)}
+            className="min-h-9 text-left text-xs font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
+          >
+            {product.product_name}
+          </button>
+        ) : (
+          <p className="text-xs font-black text-zinc-800 leading-snug">{product.product_name}</p>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar detalle"
+          className="min-h-9 min-w-9 shrink-0 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 text-[9px] lg:text-[10px]">
+        <ProductStat
+          label="Unidades"
+          value={product.total_units_sold === 0 ? ' ' : String(product.total_units_sold)}
+        />
+        <ProductStat label="P. venta" value={formatEuroKpi(product.avg_sale_price)} />
+        <ProductStat label="Coste receta" value={formatEuroKpi(product.recipe_cost)} />
+        <ProductStat label="Margen / ud." value={formatEuroKpi(product.margin_per_unit)} />
+        <ProductStat
+          label="Margen total"
+          value={formatEuroKpi(product.total_margin_contribution)}
+        />
+      </div>
+    </div>
+  )
+}
+
 /** KPI sin marco ni relleno — flota sobre el fondo de la sección */
 function KpiFloat({ label, value }: { label: string; value: string }) {
   return (
@@ -362,8 +418,8 @@ function SectionTitleRow({
   actions?: ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 mb-2 lg:mb-3 min-h-8">
-      <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-[#36606F] leading-tight shrink-0">
+    <div className="bg-[#36606F] px-3 md:px-4 py-2.5 flex items-center justify-between gap-2 min-h-10 shrink-0">
+      <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0">
         {title}
       </h2>
       {(actions || (legend && legend.length > 0)) && (
@@ -372,7 +428,7 @@ function SectionTitleRow({
           {legend?.map((item) => (
             <span
               key={item.label}
-              className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-zinc-600 whitespace-nowrap"
+              className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-white/90 whitespace-nowrap"
             >
               {item.variant === 'line' ? (
                 <span
@@ -676,10 +732,14 @@ export default function InsightsClient({
 
   const productChartHeight = 260
 
-  const productCardLeftPct = useMemo(() => {
-    if (selectedProductIdx === null || rankedProducts.length === 0) return 50
-    const raw = ((selectedProductIdx + 0.5) / rankedProducts.length) * 100
-    return Math.min(92, Math.max(8, raw))
+  const productCardAnchorStyle = useMemo((): CSSProperties => {
+    if (selectedProductIdx === null || rankedProducts.length === 0) {
+      return { left: '50%', transform: 'translateX(-50%)' }
+    }
+    const pct = ((selectedProductIdx + 0.5) / rankedProducts.length) * 100
+    if (pct <= 22) return { left: '0', transform: 'none' }
+    if (pct >= 78) return { right: '0', left: 'auto', transform: 'none' }
+    return { left: `${pct}%`, transform: 'translateX(-50%)' }
   }, [selectedProductIdx, rankedProducts.length])
 
   const selectedProduct =
@@ -858,10 +918,10 @@ export default function InsightsClient({
             </div>
           </div>
 
-          <div className="p-2 md:p-6 space-y-2 md:space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 lg:gap-4">
+          <div className="p-2 md:p-6 space-y-3 md:space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
               {/* Sección 1 — ancho completo, gráfico protagonista */}
-              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden">
                 <SectionTitleRow
                   title="Venta vs. Coste por hora"
                   legend={[
@@ -870,6 +930,7 @@ export default function InsightsClient({
                     { label: 'Margen', color: MARGIN_GREEN, variant: 'line' },
                   ]}
                 />
+                <div className="p-2 lg:p-4">
                 {hourly.error ? (
                   <SectionErrorBanner message={hourly.error} onRetry={() => void fetchHourly(dateFrom, dateTo)} />
                 ) : hourly.loading ? (
@@ -948,11 +1009,13 @@ export default function InsightsClient({
                     </div>
                   </div>
                 )}
+                </div>
               </section>
 
               {/* Rend. por día — fila completa */}
-              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-3 min-w-0">
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
                 <SectionTitleRow title="Rend. por día" />
+                <div className="p-2 lg:p-3">
                 {weekday.error ? (
                   <SectionErrorBanner message={weekday.error} onRetry={() => void fetchWeekday(dateFrom, dateTo)} />
                 ) : weekday.loading ? (
@@ -1008,10 +1071,11 @@ export default function InsightsClient({
                     </div>
                   </div>
                 )}
+                </div>
               </section>
 
               {/* Margen producto — fila completa */}
-              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4 min-w-0">
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
                 <SectionTitleRow
                   title="Margen producto"
                   legend={[
@@ -1019,6 +1083,7 @@ export default function InsightsClient({
                     { label: 'Unidades', color: '#9CA3AF', variant: 'line' },
                   ]}
                 />
+                <div className="p-2 lg:p-4">
                 {products.error ? (
                   <SectionErrorBanner
                     message={products.error}
@@ -1039,80 +1104,34 @@ export default function InsightsClient({
                     </Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-0">
-                    <div className="min-w-0">
-                      <div
-                        className="relative w-full min-w-0"
-                        style={{ height: productChartHeight }}
-                      >
-                        {selectedProduct && selectedProductIdx !== null && (
+                  <div className="flex flex-col gap-2 min-w-0">
+                    {selectedProduct && selectedProductIdx !== null && (
+                      <>
+                        <div className="sm:hidden w-full min-w-0 max-w-full">
+                          <ProductDetailCard
+                            product={selectedProduct}
+                            onClose={() => setSelectedProductIdx(null)}
+                            onOpenRecipe={handleOpenRecipe}
+                          />
+                        </div>
+                        <div className="hidden sm:block relative w-full min-h-[6.75rem] shrink-0 overflow-hidden">
                           <div
-                            className="absolute top-2 z-20 pointer-events-auto max-w-[min(100%,18rem)]"
-                            style={{
-                              left: `${productCardLeftPct}%`,
-                              transform: 'translateX(-50%)',
-                            }}
+                            className="absolute bottom-0 z-20 w-[min(100%,18rem)] lg:w-[min(100%,20rem)] pointer-events-auto"
+                            style={productCardAnchorStyle}
                           >
-                            <div className="rounded-xl border border-zinc-200 bg-white/95 shadow-lg backdrop-blur-sm p-3 space-y-2 mb-1">
-                              <div className="flex items-start justify-between gap-2">
-                                {selectedProduct.recipe_id ? (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleOpenRecipe(
-                                        selectedProduct.recipe_id,
-                                        selectedProduct.product_name
-                                      )
-                                    }
-                                    className="min-h-9 text-left text-xs font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
-                                  >
-                                    {selectedProduct.product_name}
-                                  </button>
-                                ) : (
-                                  <p className="text-xs font-black text-zinc-800 leading-snug">
-                                    {selectedProduct.product_name}
-                                  </p>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedProductIdx(null)}
-                                  aria-label="Cerrar detalle"
-                                  className="min-h-9 min-w-9 shrink-0 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 text-[9px] lg:text-[10px]">
-                                <ProductStat
-                                  label="Unidades"
-                                  value={
-                                    selectedProduct.total_units_sold === 0
-                                      ? ' '
-                                      : String(selectedProduct.total_units_sold)
-                                  }
-                                />
-                                <ProductStat
-                                  label="P. venta"
-                                  value={formatEuroKpi(selectedProduct.avg_sale_price)}
-                                />
-                                <ProductStat
-                                  label="Coste receta"
-                                  value={formatEuroKpi(selectedProduct.recipe_cost)}
-                                />
-                                <ProductStat
-                                  label="Margen / ud."
-                                  value={formatEuroKpi(selectedProduct.margin_per_unit)}
-                                />
-                                <ProductStat
-                                  label="Margen total"
-                                  value={formatEuroKpi(
-                                    selectedProduct.total_margin_contribution
-                                  )}
-                                />
-                              </div>
-                            </div>
+                            <ProductDetailCard
+                              product={selectedProduct}
+                              onClose={() => setSelectedProductIdx(null)}
+                              onOpenRecipe={handleOpenRecipe}
+                            />
                           </div>
-                        )}
+                        </div>
+                      </>
+                    )}
+                    <div
+                      className="relative w-full min-w-0 overflow-hidden"
+                      style={{ height: productChartHeight }}
+                    >
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={productChartData}
@@ -1171,24 +1190,26 @@ export default function InsightsClient({
                             />
                           </ComposedChart>
                         </ResponsiveContainer>
-                      </div>
                     </div>
                   </div>
                 )}
+                </div>
               </section>
             </div>
 
             {/* Sección 4 — Resultado del periodo (ancho completo) */}
-            <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-2 lg:p-4">
+            <section className="rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden">
               <SectionTitleRow
                 title="Resultado del periodo"
                 actions={
                   <FinancialMonthSelector
                     month={financialMonth}
                     onChange={handleFinancialMonthChange}
+                    tone="onDark"
                   />
                 }
               />
+              <div className="p-2 lg:p-4">
               {financial.error ? (
                 <SectionErrorBanner
                   message={financial.error}
@@ -1250,6 +1271,7 @@ export default function InsightsClient({
                   )}
                 </div>
               ) : null}
+              </div>
             </section>
           </div>
         </div>

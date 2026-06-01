@@ -371,28 +371,46 @@ export function InsightsMainDateFilter({
 export function FinancialMonthSelector({
   month,
   onChange,
+  tone = 'default',
 }: {
   month: InsightsMonth
   onChange: (fm: InsightsMonth) => void
+  tone?: 'default' | 'onDark'
 }) {
+  const onDark = tone === 'onDark'
   return (
     <div className="flex items-center gap-1 shrink-0">
       <button
         type="button"
         onClick={() => onChange(shiftInsightsMonth(month, -1))}
         aria-label="Mes anterior"
-        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 active:scale-95"
+        className={cn(
+          'min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg active:scale-95',
+          onDark
+            ? 'text-white hover:bg-white/15'
+            : 'text-zinc-600 hover:bg-zinc-100'
+        )}
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-      <span className="text-[10px] lg:text-xs font-black uppercase tracking-wide text-[#36606F] whitespace-nowrap px-1">
+      <span
+        className={cn(
+          'text-[10px] lg:text-xs font-black uppercase tracking-wide whitespace-nowrap px-1',
+          onDark ? 'text-white' : 'text-[#36606F]'
+        )}
+      >
         {formatInsightsMonthLabel(month)}
       </span>
       <button
         type="button"
         onClick={() => onChange(shiftInsightsMonth(month, 1))}
         aria-label="Mes siguiente"
-        className="min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 active:scale-95"
+        className={cn(
+          'min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg active:scale-95',
+          onDark
+            ? 'text-white hover:bg-white/15'
+            : 'text-zinc-600 hover:bg-zinc-100'
+        )}
       >
         <ChevronRight className="h-4 w-4" />
       </button>
