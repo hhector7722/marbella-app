@@ -15,6 +15,7 @@ type DashboardIosIconProps = {
     className?: string;
     labelClassName?: string;
     contentClassName?: string;
+    badgeCount?: number;
     children?: React.ReactNode;
 };
 
@@ -28,19 +29,31 @@ export default function DashboardIosIcon({
     className,
     labelClassName,
     contentClassName,
+    badgeCount,
     children,
 }: DashboardIosIconProps) {
+    const showBadge = typeof badgeCount === 'number' && badgeCount > 0;
+    const badgeLabel = showBadge ? (badgeCount > 99 ? '99+' : String(badgeCount)) : null;
+
     return (
         <button
             type="button"
             onClick={onClick}
             className={cn(
-                'bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group',
+                'relative bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group',
                 'w-full aspect-square min-w-0 min-h-[48px] touch-manipulation',
                 'md:aspect-auto md:w-[4.75rem] md:max-w-full md:p-1.5 md:gap-0.5 md:rounded-xl',
                 className
             )}
         >
+            {showBadge ? (
+                <span
+                    className="absolute -top-1 -right-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black leading-none text-white shadow-sm ring-2 ring-white"
+                    aria-label={`${badgeCount} pendientes`}
+                >
+                    {badgeLabel}
+                </span>
+            ) : null}
             <div className={cn('flex-1 flex items-center justify-center w-full min-h-0 min-w-0 md:flex-none md:h-11 md:w-11', contentClassName)}>
                 {children ?? (
                     <div className="w-12 h-12 md:w-11 md:h-11 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">

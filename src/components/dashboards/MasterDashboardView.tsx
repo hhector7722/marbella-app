@@ -56,6 +56,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
     const [monthShifts, setMonthShifts] = useState<any[]>([]);
     const [overtimeSnapshot, setOvertimeSnapshot] = useState<OvertimeWeekSnapshot | null>(null);
+    const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const changeBoxes = useMemo(
         () => boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || '')),
@@ -106,6 +107,46 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         }
 
         void loadProfileAndShifts();
+    }, [supabase]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchPendingReservationsCount(showErrorToast: boolean) {
+            const { count, error } = await supabase
+                .from('reservations')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'pending');
+
+            if (cancelled) return;
+
+            if (error) {
+                if (showErrorToast) {
+                    toast.error('No se pudo cargar el contador de reservas pendientes');
+                }
+                return;
+            }
+
+            setPendingReservationsCount(count ?? 0);
+        }
+
+        void fetchPendingReservationsCount(true);
+
+        const channel = supabase
+            .channel('master:reservations-pending')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'reservations' },
+                () => {
+                    void fetchPendingReservationsCount(false);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            cancelled = true;
+            void supabase.removeChannel(channel);
+        };
     }, [supabase]);
 
     useEffect(() => {
@@ -203,6 +244,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     onOpenPlantilla={() => setIsStaffModalOpen(true)}
                     onOpenCierre={() => setIsClosingModalOpen(true)}
                     onOpenChangeBoxAudit={openChangeBoxAudit}
+                    pendingReservationsCount={pendingReservationsCount}
                 />
             </div>
 

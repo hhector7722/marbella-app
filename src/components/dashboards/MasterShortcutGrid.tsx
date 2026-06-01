@@ -19,6 +19,7 @@ type MasterShortcutGridProps = {
     onOpenPlantilla: () => void;
     onOpenCierre: () => void;
     onOpenChangeBoxAudit: (box: any) => void;
+    pendingReservationsCount?: number;
 };
 
 function formatBoxEur(v: number) {
@@ -38,6 +39,7 @@ export default function MasterShortcutGrid({
     onOpenPlantilla,
     onOpenCierre,
     onOpenChangeBoxAudit,
+    pendingReservationsCount = 0,
 }: MasterShortcutGridProps) {
     const router = useRouter();
 
@@ -119,7 +121,17 @@ export default function MasterShortcutGrid({
         { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
         { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
         { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/web.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
-        { key: 'reservas', node: <DashboardIosIcon label="Reservas" img="/icons/reservas.png" onClick={onOpenReservas} /> },
+        {
+            key: 'reservas',
+            node: (
+                <DashboardIosIcon
+                    label="Reservas"
+                    img="/icons/reservas.png"
+                    onClick={onOpenReservas}
+                    badgeCount={pendingReservationsCount}
+                />
+            ),
+        },
         { key: 'propinas', node: <DashboardIosIcon label="Propinas" img="/icons/change.png" onClick={() => router.push('/dashboard/propinas')} /> },
     ];
 

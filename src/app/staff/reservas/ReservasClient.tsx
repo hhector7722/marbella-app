@@ -76,9 +76,22 @@ function formatPhone(phone: string) {
   return cleaned.length === 9 ? '34' + cleaned : cleaned
 }
 
-function getMessage(name: string, time: string) {
+function formatReservationDateLabel(ymd: string) {
+  const parts = ymd.slice(0, 10).split('-').map(Number)
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return ymd
+  const [y, m, d] = parts
+  const date = new Date(y, m - 1, d)
+  return date.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+function getMessage(name: string, dateYmd: string, time: string) {
+  const dateLabel = formatReservationDateLabel(dateYmd)
   return encodeURIComponent(
-    `Hola ${name}, te confirmamos tu reserva en Bar La Marbella para las ${time.slice(0, 5)}. ¡Te esperamos!`
+    `Hola ${name}, te confirmamos tu reserva en Bar La Marbella para el ${dateLabel} a las ${time.slice(0, 5)}. ¡Te esperamos!`
   )
 }
 
@@ -155,7 +168,7 @@ export default function ReservasClient() {
       if (action === 'confirm') {
         toast.success('Reserva confirmada')
         window.open(
-          `https://wa.me/${formatPhone(reserva.customer_phone)}?text=${getMessage(reserva.customer_name, reserva.reservation_time)}`,
+          `https://wa.me/${formatPhone(reserva.customer_phone)}?text=${getMessage(reserva.customer_name, reserva.reservation_date, reserva.reservation_time)}`,
           '_blank'
         )
       }
@@ -315,7 +328,7 @@ export default function ReservasClient() {
 
                       <div className="flex items-center justify-between gap-3">
                         <a
-                          href={`sms:+${formatPhone(r.customer_phone)}?body=${getMessage(r.customer_name, r.reservation_time)}`}
+                          href={`sms:+${formatPhone(r.customer_phone)}?body=${getMessage(r.customer_name, r.reservation_date, r.reservation_time)}`}
                           className={cn(
                             'min-h-12 flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3',
                             'text-zinc-700 font-bold text-[12px] transition min-w-0 flex-1',
