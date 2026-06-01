@@ -666,23 +666,24 @@ export default function InsightsClient({
       else if (marginPct < 30) fill = MARGIN_BAR_LOW
       return {
         ...p,
+        shortName:
+          p.product_name.length > 14 ? `${p.product_name.slice(0, 12)}…` : p.product_name,
         fill,
         marginPct,
       }
     })
   }, [rankedProducts])
 
-  const productChartHeight = useMemo(() => {
-    const rowH = 26
-    const minH = 220
-    const maxH = 520
-    return Math.min(maxH, Math.max(minH, rankedProducts.length * rowH + 40))
-  }, [rankedProducts.length])
+  const productChartHeight = 280
+  const productChartMinWidth = useMemo(
+    () => Math.max(360, rankedProducts.length * 52),
+    [rankedProducts.length]
+  )
 
-  const productCardTopPct = useMemo(() => {
+  const productCardLeftPct = useMemo(() => {
     if (selectedProductIdx === null || rankedProducts.length === 0) return 50
     const raw = ((selectedProductIdx + 0.5) / rankedProducts.length) * 100
-    return Math.min(88, Math.max(12, raw))
+    return Math.min(92, Math.max(8, raw))
   }, [selectedProductIdx, rankedProducts.length])
 
   const selectedProduct =
@@ -965,21 +966,19 @@ export default function InsightsClient({
                     <div className="h-[160px] lg:h-[240px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                          layout="vertical"
                           data={weekdayChartData}
-                          margin={{ top: 2, right: 4, left: 0, bottom: 2 }}
+                          margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                           <XAxis
-                            type="number"
-                            tick={{ fontSize: 7 }}
-                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
+                            dataKey="shortName"
+                            tick={{ fontSize: 8, fontWeight: 700 }}
+                            interval={0}
                           />
                           <YAxis
-                            type="category"
-                            dataKey="shortName"
-                            width={28}
-                            tick={{ fontSize: 8, fontWeight: 700 }}
+                            tick={{ fontSize: 7 }}
+                            width={36}
+                            tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                           />
                           <Tooltip
                             content={({ active, payload }) => {
@@ -995,7 +994,13 @@ export default function InsightsClient({
                               )
                             }}
                           />
-                          <Bar dataKey="avg_revenue" name="Media ventas" fill={PETROLEO} radius={[0, 3, 3, 0]} />
+                          <Bar
+                            dataKey="avg_revenue"
+                            name="Media ventas"
+                            fill={PETROLEO}
+                            radius={[3, 3, 0, 0]}
+                            maxBarSize={32}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -1040,14 +1045,14 @@ export default function InsightsClient({
                     <div className="overflow-x-auto -mx-0.5 px-0.5">
                       <div
                         className="relative w-full min-w-0"
-                        style={{ height: productChartHeight }}
+                        style={{ height: productChartHeight, minWidth: productChartMinWidth }}
                       >
                         {selectedProduct && selectedProductIdx !== null && (
                           <div
-                            className="absolute left-[9.5rem] right-2 z-20 pointer-events-auto"
+                            className="absolute top-2 z-20 pointer-events-auto max-w-[min(100%,16rem)]"
                             style={{
-                              top: `${productCardTopPct}%`,
-                              transform: 'translateY(-100%)',
+                              left: `${productCardLeftPct}%`,
+                              transform: 'translateX(-50%)',
                             }}
                           >
                             <div className="rounded-xl border border-zinc-200 bg-white/95 shadow-lg backdrop-blur-sm p-3 space-y-2 mb-1">
@@ -1112,33 +1117,33 @@ export default function InsightsClient({
                         )}
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
-                            layout="vertical"
                             data={productChartData}
-                            margin={{ top: 8, right: 12, left: 8, bottom: 8 }}
-                            barCategoryGap="35%"
+                            margin={{ top: 8, right: 8, left: 4, bottom: 56 }}
+                            barCategoryGap="20%"
                           >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                             <XAxis
-                              type="number"
-                              xAxisId="margin"
+                              dataKey="shortName"
+                              tick={{ fontSize: 8, fontWeight: 600 }}
+                              interval={0}
+                              angle={-40}
+                              textAnchor="end"
+                              height={56}
+                            />
+                            <YAxis
+                              yAxisId="margin"
                               tick={{ fontSize: 8 }}
+                              width={40}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
-                            <XAxis type="number" xAxisId="units" orientation="top" hide />
-                            <YAxis
-                              type="category"
-                              dataKey="product_name"
-                              width={140}
-                              tick={{ fontSize: 9, fontWeight: 600 }}
-                              interval={0}
-                            />
+                            <YAxis yAxisId="units" orientation="right" hide />
                             <Tooltip content={() => null} cursor={false} />
                             <Bar
-                              xAxisId="margin"
+                              yAxisId="margin"
                               dataKey="total_margin_contribution"
                               name="Margen total"
-                              barSize={14}
-                              radius={[0, 4, 4, 0]}
+                              maxBarSize={36}
+                              radius={[3, 3, 0, 0]}
                               cursor="pointer"
                               onClick={(_data, index) => {
                                 if (typeof index === 'number') {
@@ -1157,7 +1162,7 @@ export default function InsightsClient({
                               ))}
                             </Bar>
                             <Line
-                              xAxisId="units"
+                              yAxisId="units"
                               type="monotone"
                               dataKey="total_units_sold"
                               name="Unidades"
