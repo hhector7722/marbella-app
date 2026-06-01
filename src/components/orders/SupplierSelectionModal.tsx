@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
+import { getSupplierLogo } from '@/lib/supplier-logos';
 import { useRouter } from 'next/navigation';
 
 interface Supplier {
@@ -11,28 +12,11 @@ interface Supplier {
     image_url?: string | null;
 }
 
-// Lista estática idéntica a la de /suppliers para el fallback
-const SUPPLIER_LOGOS: Record<string, string> = {
-    'Ametller': '/icons/prov/Ametller.png',
-    'Panabad': '/icons/prov/panabad.png',
-    'Videla': '/icons/prov/videla.png',
-    'Zander': '/icons/prov/Zander.png',
-    'Abril': '/icons/prov/Abril.png',
-    'Carnicas Pijuan': '/icons/prov/Pijuan.png',
-    'Santa Teresa': '/icons/prov/Sta-Teresa.png',
-    'Shers': '/icons/prov/Shers.png',
-    'Sanilec': '/icons/prov/Sanilec.png',
-    'Nestle': '/icons/prov/Nestle.png',
-    'Sant Aniol': '/icons/prov/Sant-Aniol.png',
-    'Fritz Ravich': '/icons/prov/Fritz-Ravich.png',
-    'Hielo Fenix': '/icons/prov/hielo-fenix.png',
-    'Vins i Pons': '/icons/prov/Pons.png'
-};
-
-const INITIAL_SUPPLIERS = [
+/** Semilla solo si la BD no tiene proveedores (misma regla que `/suppliers`). */
+const INITIAL_SUPPLIER_NAMES = [
     'Ametller', 'Panabad', 'Videla', 'Santa Teresa', 'Carnicas Pijuan',
     'Fritz Ravich', 'Sant Aniol', 'Vins i Pons', 'Shers', 'Zander',
-    'Nestle', 'Abril', 'Sanilec', 'Hielo Fenix'
+    'Nestle', 'Abril', 'Sanilec', 'Hielo Fenix',
 ];
 
 interface Props {
@@ -55,22 +39,17 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
             .select('id, name, image_url')
             .order('name');
 
-        const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-
         const dbSuppliers: Supplier[] = (!error && data) ? data : [];
-        const combined = [...dbSuppliers];
 
-        // Añadir los estáticos que no estén ya en la DB (misma lógica que /suppliers)
-        INITIAL_SUPPLIERS.forEach(name => {
-            const alreadyInDb = dbSuppliers.some(s => {
-                const dbName = normalize(s.name);
-                const initName = normalize(name);
-                return dbName === initName || dbName.includes(initName) || initName.includes(dbName);
-            });
-            if (!alreadyInDb) {
-                combined.push({ id: `static-${name}`, name, image_url: null });
-            }
-        });
+        // Fuente de verdad = BD. Las plantillas solo si la tabla está vacía.
+        const combined =
+            dbSuppliers.length === 0
+                ? INITIAL_SUPPLIER_NAMES.map((name) => ({
+                      id: `initial-${name}`,
+                      name,
+                      image_url: null,
+                  }))
+                : dbSuppliers;
 
         setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
         if (showLoading) setLoading(false);
@@ -119,7 +98,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
         onClose();
     };
 
-    const getLogo = (supplier: Supplier) => supplier.image_url || SUPPLIER_LOGOS[supplier.name] || null;
+    const getLogo = (supplier: Supplier) => getSupplierLogo(supplier.image_url, supplier.name);
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
