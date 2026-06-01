@@ -51,8 +51,9 @@ const CAJA_POLL_INTERVAL_MS = 12000;
 const AXIOS_TIMEOUT_MS = 45000;
 const POLL_TOP = 50;
 
-/** Solo historial al arrancar si BDP_RUN_CATCHUP=1. Por defecto OFF → solo poll (cobros nuevos). */
-const RUN_CATCHUP = process.env.BDP_RUN_CATCHUP === '1';
+/** Solo historial al arrancar si BDP_RUN_CATCHUP=1 o `node index.js --catchup`. Por defecto OFF → solo poll. */
+const RUN_CATCHUP =
+    process.env.BDP_RUN_CATCHUP === '1' || process.argv.includes('--catchup');
 
 /** key → firma de cobros (re-upsert si cambian pagos en Documentos_Pagos). */
 let memoriaTickets = new Map();
@@ -385,6 +386,11 @@ async function start() {
 
         await logDiagnosticoSql(pool);
 
+        // Recuperación: catch-up completo ANTES del poll (TOP 50 no basta para sincronizar el día).
+        if (RUN_CATCHUP) {
+            await catchUpVentas(pool);
+        }
+
         void pollVentasRecientes(pool);
         void pollCajaMovimientos(pool);
 
@@ -403,12 +409,6 @@ async function start() {
                 console.error('❌ ERROR EN CAJA:', e.message);
             }
         }, CAJA_POLL_INTERVAL_MS);
-
-        if (RUN_CATCHUP) {
-            void catchUpVentas(pool).catch((e) => {
-                console.error('❌ Catch-up en segundo plano:', e.message);
-            });
-        }
 
         // TELEMETRÍA / MONITOR COCINA
         setInterval(async () => {
