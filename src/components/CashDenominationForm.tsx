@@ -89,6 +89,13 @@ export const CashDenominationForm = ({
     const showOutAutofill =
         type === 'out' && !isAudit && variant === 'default' && !isEditing;
 
+    /** Entrada / salida / arqueo (caja inicial / movimientos) */
+    const isInEntradaLayout = type === 'in' && !isAudit && variant === 'default';
+    const isOutSalidaLayout = type === 'out' && !isAudit && variant === 'default';
+    const isAuditLayout = isAudit && variant === 'default';
+    const isSimplifiedHeader = isInEntradaLayout || isOutSalidaLayout || isAuditLayout;
+    const isFloatingDateInput = isInEntradaLayout || isAuditLayout;
+
     const autofillTargetAmount = isPurchaseMode
         ? (typeof purchasePrice === 'number' ? purchasePrice : 0)
         : (typeof outTargetAmount === 'number' ? outTargetAmount : 0);
@@ -147,13 +154,16 @@ export const CashDenominationForm = ({
         }
     };
 
-    const renderAutofillButton = (className?: string) => (
+    const renderAutofillButton = (className?: string, iconOnly = false) => (
         <button
             type="button"
             onClick={() => void handleAutofillBreakdown()}
             disabled={autofillDisabled}
+            aria-label="Autorrellenar desglose"
+            title="Autorrellenar"
             className={cn(
-                'min-h-10 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95',
+                'min-h-10 shrink-0 inline-flex items-center justify-center rounded-xl text-white transition-all active:scale-95',
+                iconOnly ? 'min-w-10 w-10 px-0' : 'gap-1.5 px-3 text-[10px] font-black uppercase tracking-widest',
                 autofillDisabled
                     ? 'bg-[#36606F]/40 opacity-50 cursor-not-allowed'
                     : 'bg-[#36606F] hover:brightness-110 shadow-sm',
@@ -165,7 +175,7 @@ export const CashDenominationForm = ({
             ) : (
                 <Wand2 size={14} strokeWidth={2.5} aria-hidden />
             )}
-            Autorrellenar
+            {!iconOnly && 'Autorrellenar'}
         </button>
     );
 
@@ -220,37 +230,63 @@ export const CashDenominationForm = ({
                 'bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0',
                 isTipPool && 'rounded-t-xl md:rounded-t-[2.5rem]'
             )}>
-                <div className="flex items-center gap-3">
-                    <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg",
-                        isPurchaseMode ? "bg-orange-500" : (type === 'in' ? "bg-emerald-500" : "bg-rose-500")
-                    )}>
-                        {isPurchaseMode ? <ShoppingCart size={20} className="text-white" /> : (type === 'in' ? <ArrowRightLeft size={20} /> : <ArrowRight size={20} />)}
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-black uppercase tracking-wider">
+                <div className="flex items-center gap-3 min-w-0">
+                    {!isSimplifiedHeader && (
+                        <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shrink-0",
+                            isPurchaseMode ? "bg-orange-500" : (type === 'in' ? "bg-emerald-500" : "bg-rose-500")
+                        )}>
+                            {isPurchaseMode ? <ShoppingCart size={20} className="text-white" /> : (type === 'in' ? <ArrowRightLeft size={20} /> : <ArrowRight size={20} />)}
+                        </div>
+                    )}
+                    <div className="min-w-0">
+                        <h3 className="text-lg font-black uppercase tracking-wider truncate">
                             {isPurchaseMode ? 'Compra' : (isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida'))}
                         </h3>
-                        {!isTipPool && (
-                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
+                        {!isTipPool && !isSimplifiedHeader && (
+                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] truncate">{boxName}</p>
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="text-right">
-                        <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black leading-none mb-0.5">
-                            {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
-                        </span>
-                        <div className="flex items-baseline justify-end gap-0.5">
-                            <span className="text-xl font-black tabular-nums">{total > 0.005 ? total.toFixed(2) : " "}</span>
-                            <span className="text-xs font-black opacity-50">€</span>
+                <div className="flex items-center gap-2 shrink-0">
+                    {!isSimplifiedHeader && (
+                        <div className="text-right">
+                            <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black leading-none mb-0.5">
+                                {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
+                            </span>
+                            <div className="flex items-baseline justify-end gap-0.5">
+                                <span className="text-xl font-black tabular-nums">{total > 0.005 ? total.toFixed(2) : " "}</span>
+                                <span className="text-xs font-black opacity-50">€</span>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    {type === 'out' && !isEditing && !forcePurchaseMode && (
+                    {isOutSalidaLayout && !isEditing && !forcePurchaseMode && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black uppercase opacity-70 tracking-widest">Compra</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsPurchaseMode(!isPurchaseMode)}
+                                className={cn(
+                                    "w-10 h-5 rounded-full transition-all relative outline-none shrink-0",
+                                    isPurchaseMode ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]" : "bg-white/20"
+                                )}
+                                aria-pressed={isPurchaseMode}
+                                aria-label="Modo compra"
+                            >
+                                <div className={cn(
+                                    "absolute w-3 h-3 bg-white rounded-full top-1 transition-all shadow-sm",
+                                    isPurchaseMode ? "left-6" : "left-1"
+                                )} />
+                            </button>
+                        </div>
+                    )}
+
+                    {type === 'out' && !isEditing && !forcePurchaseMode && !isOutSalidaLayout && (
                         <div className="flex flex-col items-center gap-1 pr-1 border-l border-white/10 pl-4 h-10 justify-center">
                             <span className="text-[7px] font-black uppercase opacity-50 tracking-widest">Compra</span>
                             <button
+                                type="button"
                                 onClick={() => setIsPurchaseMode(!isPurchaseMode)}
                                 className={cn(
                                     "w-10 h-5 rounded-full transition-all relative outline-none",
@@ -365,8 +401,58 @@ export const CashDenominationForm = ({
                         </div>
                     </div>
                 ) : !isTipPool ? (
+                    isOutSalidaLayout && !isPurchaseMode ? (
+                        <div className="flex flex-col gap-2 px-1">
+                            <div className="flex items-center gap-2 min-h-12">
+                                <input
+                                    type="datetime-local"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="shrink-0 bg-transparent border-none p-0 text-zinc-700 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer min-h-10"
+                                />
+                                <div className="flex flex-1 items-center min-h-10 min-w-0">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={outTargetAmount}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setOutTargetAmount(val === '' ? '' : parseFloat(val));
+                                        }}
+                                        placeholder="0.00"
+                                        aria-label="Importe total"
+                                        className="w-full bg-transparent border-none p-0 text-zinc-800 text-sm font-black outline-none focus:ring-0 tabular-nums min-h-10 text-center"
+                                    />
+                                    <span className="text-zinc-400 font-black text-[10px] shrink-0 pointer-events-none">€</span>
+                                </div>
+                                {showOutAutofill && renderAutofillButton(undefined, true)}
+                            </div>
+                            <div className="flex flex-col min-h-10 justify-center">
+                                <input
+                                    type="text"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    placeholder="Concepto / motivo..."
+                                    aria-label="Concepto"
+                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs min-h-10"
+                                />
+                            </div>
+                        </div>
+                    ) : (
                     <div className="flex flex-col gap-2 px-1">
                     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {isFloatingDateInput ? (
+                            <input
+                                type="datetime-local"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                className={cn(
+                                    "bg-transparent border-none p-0 text-zinc-700 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer min-h-10",
+                                    isAuditLayout ? "w-full" : "shrink-0",
+                                )}
+                            />
+                        ) : (
                         <div className={cn(
                             "flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all",
                             isAudit && "col-span-full"
@@ -378,6 +464,7 @@ export const CashDenominationForm = ({
                                 className="w-full bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer text-center"
                             />
                         </div>
+                        )}
 
                         {!isAudit && (
                             <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
@@ -415,6 +502,7 @@ export const CashDenominationForm = ({
                         </div>
                     )}
                     </div>
+                    )
                 ) : null}
 
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
