@@ -29,6 +29,7 @@ import {
     getCartaSubcategoryPickerLabel,
     tPublicUi,
 } from '@/lib/carta-menu-i18n'
+import { postCartaNavigation } from '@/lib/carta-iframe-bridge'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
 import { PlatoMarbellaModalSubheader } from '@/components/carta/PlatoMarbellaModalChrome'
@@ -611,6 +612,22 @@ export function MenuAccordion({
     useEffect(() => {
         setPlatoMarbellaDetailOpen(false)
     }, [openSelectedSubKey])
+
+    useEffect(() => {
+        if (!homeCompact) return
+        const isCategoriesRoot =
+            openKey === null &&
+            !openShowSubPicker &&
+            !platoMarbellaDetailOpen &&
+            reorderScope === null
+        postCartaNavigation(window.location.pathname, isCategoriesRoot)
+    }, [
+        homeCompact,
+        openKey,
+        openShowSubPicker,
+        platoMarbellaDetailOpen,
+        reorderScope,
+    ])
 
     const openPlatoMarbella = Boolean(
         platoMarbellaDetailOpen && hasPlatoMarbellaBundle && !openShowSubPicker
