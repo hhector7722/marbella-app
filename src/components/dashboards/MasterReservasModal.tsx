@@ -22,29 +22,34 @@ export default function MasterReservasModal({ isOpen, onClose }: MasterReservasM
 
     return (
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[200] p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
                 className={cn(
-                    'bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col',
-                    'max-w-md'
+                    'bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]',
+                    'max-w-md animate-in zoom-in-95 duration-200'
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
-                    <h2 className="text-sm font-black uppercase tracking-wider text-zinc-800">Reservas</h2>
+                <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
+                    <div>
+                        <h2 className="text-lg font-black uppercase tracking-wider leading-none">Reservas</h2>
+                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                            Gestión
+                        </p>
+                    </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-zinc-600 active:scale-95 transition-all"
+                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white"
                         aria-label="Cerrar"
                     >
                         <X size={20} strokeWidth={2.5} />
                     </button>
                 </div>
 
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-3 bg-white overflow-y-auto">
                     <button
                         type="button"
                         onClick={() => go('/staff/reservas')}
