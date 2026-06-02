@@ -118,7 +118,7 @@ export default function MasterShortcutGrid({
         { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
         { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
         { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
-        { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/web.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
+        { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/link.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
         {
             key: 'reservas',
             node: (
