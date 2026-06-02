@@ -31,7 +31,7 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
-import { PlatoMarbellaModalScheduleFooter, PlatoMarbellaModalSubheader } from '@/components/carta/PlatoMarbellaModalChrome'
+import { PlatoMarbellaModalSubheader } from '@/components/carta/PlatoMarbellaModalChrome'
 import { PlatoMarbellaStaffGridView } from '@/components/carta/PlatoMarbellaStaffGridView'
 import {
     applyPlatoMarbellaMergeIntoPlatosParentGroup,
@@ -1440,6 +1440,14 @@ export function MenuAccordion({
                         </div>
                         )}
 
+                        {isOpenPlatosParent && !openPlatoMarbella && !openShowSubPicker ? (
+                            <div className="shrink-0 bg-white px-3 pb-2 pt-0 text-center sm:px-3.5 sm:pb-2.5">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-[#36606F]/70 sm:text-[11px]">
+                                    {tPlatoMarbellaUi(lang).schedule}
+                                </p>
+                            </div>
+                        ) : null}
+
                         {reorderScope === 'subs' || reorderScope === 'products' ? (
                             <div className="shrink-0 bg-amber-50 px-2 py-2 sm:px-3 sm:py-2.5">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1785,9 +1793,7 @@ export function MenuAccordion({
                                 </div>
                             )}
                         </CartaCoversLoadingGate>
-                        {showPlatoModalChrome ? (
-                            <PlatoMarbellaModalScheduleFooter lang={lang} />
-                        ) : null}
+                        {/* Nota de horario movida al modal de "Platos". */}
                     </div>
                     )}
                 </div>
