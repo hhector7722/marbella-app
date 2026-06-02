@@ -106,8 +106,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       backToPlatos: 'Volver a platos',
       plateActiveHere: 'Aquí',
       plateTapZone: 'Pulsa',
-      plateExploreHint:
-        'Personaliza tu plato eligiendo un entrante, un principal y una guarnición.',
+      plateExploreHint: 'Elige un entrante, un principal y una guarnición',
       plateExploreHint2: 'Descubre las opciones pulsando sobre cada categoría.',
       staffOpenConfig: 'Config. PLATO MARBELLA',
       staffReorderPlatos: 'Reordenar platos',
@@ -152,8 +151,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       backToPlatos: 'Tornar a plats',
       plateActiveHere: 'Aquí',
       plateTapZone: 'Prem',
-      plateExploreHint:
-        'Personalitza el teu plat triant un entrant, un principal i una guarnició.',
+      plateExploreHint: 'Tria un entrant, un principal i una guarnició',
       plateExploreHint2: 'Descobreix les opcions prement sobre cada categoria.',
       staffOpenConfig: 'Config. PLAT MARBELLA',
       staffReorderPlatos: 'Reordenar plats',
@@ -197,7 +195,7 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       backToPlatos: 'Back to mains',
       plateActiveHere: 'Here',
       plateTapZone: 'Tap',
-      plateExploreHint: 'Customize your dish by choosing a starter, a main and a side.',
+      plateExploreHint: 'Pick a starter, a main and a side',
       plateExploreHint2: 'Discover the options by tapping each category.',
       staffOpenConfig: 'MARBELLA DISH setup',
       staffReorderPlatos: 'Reorder dishes',
