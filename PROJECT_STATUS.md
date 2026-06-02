@@ -4,6 +4,8 @@
 
 - [x] **Compartir enlace (WhatsApp): sin descripción “Sistema de Gestión” (2026-06-02)**: En [`src/app/layout.tsx`](src/app/layout.tsx) se elimina `metadata.description` (evita `meta[name=description]`) y se fuerza `openGraph.description=""` + `twitter.description=""` para que al compartir `marbella-app.vercel.app` (y carta) no aparezca texto secundario bajo el título.
 
+- [x] **Carta embebida: postMessage de navegación al parent (2026-06-02)**: Nuevo componente cliente [`IframeNavBridge.tsx`](src/components/IframeNavBridge.tsx) que, cuando la carta está dentro de un iframe, ejecuta `window.parent.postMessage({ type:'marbella:carta:navigation', pathname })` al cargar, en cada navegación App Router y en `hashchange`. Montado en [`src/app/carta/layout.tsx`](src/app/carta/layout.tsx). `targetOrigin` recomendado vía `NEXT_PUBLIC_MARBELLA_WEB_ORIGIN` (fallback inferido por `document.referrer` o `*`).
+
 - [x] **Insights: horas extras en PyG + modal desglose KPI (2026-05-31)**: Migración [`20260531110000_financial_statement_add_overtime.sql`](supabase/migrations/20260531110000_financial_statement_add_overtime.sql) — `get_financial_statement` suma `weekly_snapshots.total_cost` como línea `overtime` en gastos; guard `is_manager_or_admin()`. [`actions.ts`](src/app/dashboard/insights/actions.ts) expone `incomeLines`, `expenseLines`, `cashIn`, `cashOut`. [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx) — chips «Resultado del periodo» clicables con `FinancialDetailModal` (portal, bottom sheet móvil, Zero-Display).
 
 **Última actualización anterior:** 2026-05-31 (Albaranes: sync cabecera mapped)
