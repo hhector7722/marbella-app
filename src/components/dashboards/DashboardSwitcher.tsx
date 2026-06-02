@@ -249,36 +249,49 @@ export default function DashboardSwitcher({
             </div>
 
             {isManager && (
-                <div className="fixed bottom-[88px] md:bottom-6 left-0 right-0 z-50 pointer-events-none flex justify-center">
+                <>
+                    {/* Móvil: dejar exactamente como estaba (solo indicador, no clicable) */}
+                    <div className="fixed bottom-[88px] left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none">
+                        {(isTriple ? (['admin', 'master', 'staff'] as const) : (['admin', 'staff'] as const)).map((panel) => (
+                            <div
+                                key={panel}
+                                className={cn(
+                                    'w-1 h-1 rounded-full transition-all duration-300',
+                                    view === panel ? 'bg-white scale-110' : 'bg-white/30'
+                                )}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Escritorio: clicable pero con el mismo aspecto que el indicador móvil previo */}
                     <div
-                        className="pointer-events-auto flex items-center justify-center gap-1 rounded-full bg-black/10 px-2 py-1 backdrop-blur-sm"
+                        className="fixed bottom-6 left-0 right-0 z-50 hidden md:flex justify-center pointer-events-none"
                         role="tablist"
                         aria-label="Selector de panel del dashboard"
                     >
-                        {(isTriple ? (['admin', 'master', 'staff'] as const) : (['admin', 'staff'] as const)).map((panel) => (
-                            <button
-                                key={panel}
-                                type="button"
-                                onClick={() => navigateToView(panel)}
-                                className={cn(
-                                    'min-h-12 min-w-12 flex items-center justify-center rounded-full transition-colors',
-                                    view === panel ? 'bg-white/15' : 'bg-transparent hover:bg-white/10'
-                                )}
-                                role="tab"
-                                aria-selected={view === panel}
-                                aria-label={`Ir a ${panel === 'admin' ? 'Admin' : panel === 'master' ? 'Master' : 'Staff'}`}
-                            >
-                                <span
-                                    className={cn(
-                                        'h-1.5 w-1.5 rounded-full transition-all duration-300',
-                                        view === panel ? 'bg-white scale-110' : 'bg-white/30'
-                                    )}
-                                    aria-hidden
-                                />
-                            </button>
-                        ))}
+                        <div className="flex justify-center gap-1 pointer-events-auto">
+                            {(isTriple ? (['admin', 'master', 'staff'] as const) : (['admin', 'staff'] as const)).map((panel) => (
+                                <button
+                                    key={panel}
+                                    type="button"
+                                    onClick={() => navigateToView(panel)}
+                                    className="min-h-12 min-w-12 flex items-center justify-center"
+                                    role="tab"
+                                    aria-selected={view === panel}
+                                    aria-label={`Ir a ${panel === 'admin' ? 'Admin' : panel === 'master' ? 'Master' : 'Staff'}`}
+                                >
+                                    <span
+                                        className={cn(
+                                            'w-1 h-1 rounded-full transition-all duration-300',
+                                            view === panel ? 'bg-white scale-110' : 'bg-white/30'
+                                        )}
+                                        aria-hidden
+                                    />
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </>
             )}
         </div>
     );
