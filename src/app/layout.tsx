@@ -25,8 +25,17 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Bar La Marbella",
-  description: "Sistema de Gestión",
+  // Importante: al compartir en WhatsApp/Telegram no queremos texto secundario.
+  // Omitimos `description` para evitar que se renderice `og:description` y `meta[name=description]`.
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Bar La Marbella",
+    description: "",
+  },
+  twitter: {
+    title: "Bar La Marbella",
+    description: "",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

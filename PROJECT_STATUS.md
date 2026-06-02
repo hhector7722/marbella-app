@@ -2,6 +2,8 @@
 
 **Última actualización:** 2026-05-31 (Insights: estado financiero + modal KPI)
 
+- [x] **Compartir enlace (WhatsApp): sin descripción “Sistema de Gestión” (2026-06-02)**: En [`src/app/layout.tsx`](src/app/layout.tsx) se elimina `metadata.description` (evita `meta[name=description]`) y se fuerza `openGraph.description=""` + `twitter.description=""` para que al compartir `marbella-app.vercel.app` (y carta) no aparezca texto secundario bajo el título.
+
 - [x] **Insights: horas extras en PyG + modal desglose KPI (2026-05-31)**: Migración [`20260531110000_financial_statement_add_overtime.sql`](supabase/migrations/20260531110000_financial_statement_add_overtime.sql) — `get_financial_statement` suma `weekly_snapshots.total_cost` como línea `overtime` en gastos; guard `is_manager_or_admin()`. [`actions.ts`](src/app/dashboard/insights/actions.ts) expone `incomeLines`, `expenseLines`, `cashIn`, `cashOut`. [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx) — chips «Resultado del periodo» clicables con `FinancialDetailModal` (portal, bottom sheet móvil, Zero-Display).
 
 **Última actualización anterior:** 2026-05-31 (Albaranes: sync cabecera mapped)
