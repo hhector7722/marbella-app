@@ -1,10 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+
+/** Encima de BottomNavStaff (md:h-16 + safe-area), mismo criterio que móvil bottom-[88px] */
+const DASHBOARD_DOTS_BOTTOM =
+    'calc(4rem + env(safe-area-inset-bottom, 0px) + 0.75rem)';
 
 function DashboardPanelSkeleton() {
     return <div className="min-h-[480px] w-full animate-pulse bg-white/10 rounded-2xl" aria-hidden />;
@@ -54,6 +59,7 @@ export default function DashboardSwitcher({
     const containerWidth = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const dragMountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [dotsPortalMounted, setDotsPortalMounted] = useState(false);
 
     const DRAG_DEAD_ZONE = 10;
     const DRAG_MOUNT_DELAY_MS = 150;
@@ -64,12 +70,17 @@ export default function DashboardSwitcher({
     }, [initialView]);
 
     useEffect(() => {
+        setDotsPortalMounted(true);
         return () => {
             if (dragMountTimerRef.current) {
                 clearTimeout(dragMountTimerRef.current);
             }
         };
     }, []);
+
+    const panelDots = isTriple
+        ? (['admin', 'master', 'staff'] as const)
+        : (['admin', 'staff'] as const);
 
     const startDragMountTimer = () => {
         if (dragMountTimerRef.current) return;
@@ -250,9 +261,9 @@ export default function DashboardSwitcher({
 
             {isManager && (
                 <>
-                    {/* Móvil: dejar exactamente como estaba (solo indicador, no clicable) */}
+                    {/* Móvil: sin cambios (solo indicador, no clicable) */}
                     <div className="fixed bottom-[88px] left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none">
-                        {(isTriple ? (['admin', 'master', 'staff'] as const) : (['admin', 'staff'] as const)).map((panel) => (
+                        {panelDots.map((panel) => (
                             <div
                                 key={panel}
                                 className={cn(
@@ -263,34 +274,39 @@ export default function DashboardSwitcher({
                         ))}
                     </div>
 
-                    {/* Escritorio: clicable pero con el mismo aspecto que el indicador móvil previo */}
-                    <div
-                        className="fixed bottom-6 left-0 right-0 z-50 hidden md:flex justify-center pointer-events-none"
-                        role="tablist"
-                        aria-label="Selector de panel del dashboard"
-                    >
-                        <div className="flex justify-center gap-1 pointer-events-auto">
-                            {(isTriple ? (['admin', 'master', 'staff'] as const) : (['admin', 'staff'] as const)).map((panel) => (
-                                <button
-                                    key={panel}
-                                    type="button"
-                                    onClick={() => navigateToView(panel)}
-                                    className="min-h-12 min-w-12 flex items-center justify-center"
-                                    role="tab"
-                                    aria-selected={view === panel}
-                                    aria-label={`Ir a ${panel === 'admin' ? 'Admin' : panel === 'master' ? 'Master' : 'Staff'}`}
-                                >
-                                    <span
-                                        className={cn(
-                                            'w-1 h-1 rounded-full transition-all duration-300',
-                                            view === panel ? 'bg-white scale-110' : 'bg-white/30'
-                                        )}
-                                        aria-hidden
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    {/* Escritorio: portal a body (evita clip por overflow) + encima del bottom nav */}
+                    {dotsPortalMounted &&
+                        createPortal(
+                            <div
+                                className="fixed left-0 right-0 z-[96] hidden md:flex justify-center pointer-events-none print:hidden"
+                                style={{ bottom: DASHBOARD_DOTS_BOTTOM }}
+                                role="tablist"
+                                aria-label="Selector de panel del dashboard"
+                            >
+                                <div className="flex justify-center gap-1 pointer-events-auto">
+                                    {panelDots.map((panel) => (
+                                        <button
+                                            key={panel}
+                                            type="button"
+                                            onClick={() => navigateToView(panel)}
+                                            className="min-h-12 min-w-12 flex items-center justify-center"
+                                            role="tab"
+                                            aria-selected={view === panel}
+                                            aria-label={`Ir a ${panel === 'admin' ? 'Admin' : panel === 'master' ? 'Master' : 'Staff'}`}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'w-1 h-1 rounded-full transition-all duration-300',
+                                                    view === panel ? 'bg-white scale-110' : 'bg-white/30'
+                                                )}
+                                                aria-hidden
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>,
+                            document.body
+                        )}
                 </>
             )}
         </div>
