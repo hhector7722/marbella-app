@@ -4,6 +4,7 @@
 import { suggestedAlbaranConversionFactorFromIngredient } from '@/lib/ingredient-pack-pricing'
 import {
   INVOICE_LINE_STATUS_EXCLUDED,
+  INVOICE_LINE_STATUS_EXPENSE_ONLY,
   invoiceLineRequiresStock,
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
@@ -1897,6 +1898,101 @@ export async function excludeInvoiceLineFromMappingAction(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Marcar línea como gasto (sin stock)
+//
+// status='expense_only' sin ingrediente ni stock. Cuenta como resuelta para
+// la sincronización de cabecera `mapped` y para PyG.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function markInvoiceLineExpenseOnlyAction(params: {
+  lineId: string
+}): Promise<{ success: true } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!lineId) return { success: false, message: 'ID de línea inválido' }
+
+  const { data: line, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, mapped_ingredient_id, status')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  if (!line) return { success: false, message: 'Línea no encontrada' }
+
+  const invoiceId = String((line as any).invoice_id ?? '').trim()
+
+  const hadMapping =
+    Boolean((line as any).mapped_ingredient_id) && String((line as any).status ?? '') === 'mapped'
+
+  if (hadMapping) {
+    const { error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_albaran_line', {
+      p_line_id: lineId,
+    })
+    if (rpcErr) {
+      const msg = String(rpcErr.message ?? '')
+      if (!/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
+        return { success: false, message: `Error borrando stock: ${msg}` }
+      }
+    }
+  }
+
+  const { error: updErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .update({ mapped_ingredient_id: null, status: INVOICE_LINE_STATUS_EXPENSE_ONLY })
+    .eq('id', lineId)
+  if (updErr) return { success: false, message: `Error actualizando línea: ${updErr.message}` }
+
+  if (invoiceId) await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true }
+}
+
+export async function restoreInvoiceLineFromExpenseOnlyAction(params: {
+  lineId: string
+}): Promise<{ success: true } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const lineId = String(params?.lineId ?? '').trim()
+  if (!lineId) return { success: false, message: 'ID de línea inválido' }
+
+  const { data: line, error: lineErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .select('id, invoice_id, status')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (lineErr) return { success: false, message: lineErr.message }
+  if (!line) return { success: false, message: 'Línea no encontrada' }
+
+  const status = String((line as any).status ?? '')
+  if (status !== INVOICE_LINE_STATUS_EXPENSE_ONLY) {
+    return { success: false, message: 'La línea no está marcada como gasto.' }
+  }
+
+  const invoiceId = String((line as any).invoice_id ?? '').trim()
+
+  const { error: updErr } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .update({ mapped_ingredient_id: null, status: 'pending' })
+    .eq('id', lineId)
+  if (updErr) return { success: false, message: `Error actualizando línea: ${updErr.message}` }
+
+  if (invoiceId) await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
+
+  try {
+    revalidatePath('/dashboard/albaranes')
+  } catch {}
+
+  return { success: true }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Deshacer match de una línea (con reversión de stock)
 //
 // Caso de uso: el operario detecta que el match fue erróneo. Necesitamos:
@@ -2137,6 +2233,7 @@ export async function autoMapKnownLinesAction(params?: {
     .in('invoice_id', invoiceIds)
     .is('mapped_ingredient_id', null)
     .neq('status', INVOICE_LINE_STATUS_EXCLUDED)
+    .neq('status', INVOICE_LINE_STATUS_EXPENSE_ONLY)
     .limit(20000)
   if (linesErr) return { success: false, message: linesErr.message }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link2, Loader2, MinusCircle, Plus, Settings, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { isInvoiceLineExcluded } from '@/lib/albaranes-line-status'
+import { isInvoiceLineExcluded, isInvoiceLineExpenseOnly } from '@/lib/albaranes-line-status'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 
 export type LineEditDraft = {
@@ -39,6 +39,8 @@ export type LineEditModalProps = {
   onRepairStock: () => void
   onExcludeFromMapping: () => void
   onRestoreFromExcluded: () => void
+  onMarkExpenseOnly: () => void
+  onRestoreFromExpenseOnly: () => void
 }
 
 function formatMaybeMoney(v: number | null | undefined) {
@@ -71,6 +73,8 @@ export function LineEditModal({
   onRepairStock,
   onExcludeFromMapping,
   onRestoreFromExcluded,
+  onMarkExpenseOnly,
+  onRestoreFromExpenseOnly,
 }: LineEditModalProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -85,6 +89,7 @@ export function LineEditModal({
 
   const displayName = line.ingredient_name?.trim() || line.original_name?.trim() || 'Sin nombre'
   const excluded = isInvoiceLineExcluded(line)
+  const expenseOnly = isInvoiceLineExpenseOnly(line)
   const linkedName =
     line.ingredient_name && line.original_name && line.ingredient_name !== line.original_name
       ? line.original_name
@@ -213,6 +218,26 @@ export function LineEditModal({
                       Volver a mapear
                     </button>
                   </>
+                ) : expenseOnly ? (
+                  <>
+                    <p className="text-sm font-bold text-zinc-700">
+                      Marcada como <span className="text-[#36606F]">gasto (sin stock)</span>
+                    </p>
+                    <p className="text-xs font-medium text-zinc-600 leading-snug">
+                      Cuenta como gasto del albarán, pero no genera entrada de stock ni requiere ingrediente.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void onRestoreFromExpenseOnly()}
+                      disabled={busy}
+                      className={cn(
+                        'w-full min-h-12 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wide text-zinc-700',
+                        busy && 'opacity-60 pointer-events-none'
+                      )}
+                    >
+                      Volver a mapear
+                    </button>
+                  </>
                 ) : line.ingredient_name ? (
                   <p className="text-sm font-bold text-zinc-800">
                     Vinculado: <span className="text-[#36606F]">{line.ingredient_name}</span>
@@ -226,7 +251,7 @@ export function LineEditModal({
                     </p>
                   </>
                 )}
-                {!excluded ? (
+                {!excluded && !expenseOnly ? (
                   <>
                     <button
                       type="button"
@@ -255,6 +280,21 @@ export function LineEditModal({
                       >
                         <MinusCircle className="h-4 w-4" />
                         Portes / ajuste / sin cargo
+                      </button>
+                    ) : null}
+
+                    {!line.ingredient_id ? (
+                      <button
+                        type="button"
+                        onClick={() => void onMarkExpenseOnly()}
+                        disabled={busy}
+                        className={cn(
+                          'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white text-zinc-700 text-xs font-black uppercase tracking-wide',
+                          busy && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        <MinusCircle className="h-4 w-4" />
+                        Gasto (sin stock)
                       </button>
                     ) : null}
                   </>

@@ -49,6 +49,8 @@ import {
   autoMapKnownLinesAction,
   deletePurchaseInvoiceAction,
   excludeInvoiceLineFromMappingAction,
+  markInvoiceLineExpenseOnlyAction,
+  restoreInvoiceLineFromExpenseOnlyAction,
   getInvoiceStockStatusesAction,
   getPurchaseInvoiceDetailAction,
   listPurchaseInvoicesAction,
@@ -789,6 +791,35 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  async function markLineExpenseOnly(lineId: string) {
+    setLineActionBusy(true)
+    try {
+      const res = await markInvoiceLineExpenseOnlyAction({ lineId })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      toast.success('Línea marcada como gasto (sin stock).')
+      await refreshDetailAndStock()
+    } finally {
+      setLineActionBusy(false)
+    }
+  }
+
+  async function restoreExpenseOnlyLine(lineId: string) {
+    setLineActionBusy(true)
+    try {
+      const res = await restoreInvoiceLineFromExpenseOnlyAction({ lineId })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      await refreshDetailAndStock()
+    } finally {
+      setLineActionBusy(false)
+    }
+  }
+
   // "Editar match": deshace el mapeo actual (revierte stock) y abre el modal
   // para volver a mapear. Mantiene el aprendizaje en el diccionario porque el
   // usuario va a re-mapear (si lo cambia, el upsert lo sobrescribe).
@@ -1077,15 +1108,19 @@ export default function AlbaranesHistoricoClient({
                         </div>
                         <div className="shrink-0 text-right flex items-center gap-2">
                           <p className="text-sm font-black text-zinc-900">{formatMaybeMoney(it.total_amount)}</p>
-                          {it.is_fully_processed ? (
+                          {(() => {
+                            const st = String(it.status ?? '').toLowerCase()
+                            const accountingReady = st === 'mapped' || st === 'completed'
+                            return accountingReady ? (
                             <span
                               className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-emerald-600 text-white"
-                              aria-label="Albarán procesado"
-                              title="Albarán procesado"
+                              aria-label="Albarán contabilizado"
+                              title="Albarán contabilizado (entra en PyG)"
                             >
                               <Check className="h-4 w-4" strokeWidth={3} />
                             </span>
-                          ) : null}
+                            ) : null
+                          })()}
                         </div>
                       </div>
                     </button>
@@ -1435,6 +1470,12 @@ export default function AlbaranesHistoricoClient({
                   }}
                   onRestoreFromExcluded={() => {
                     if (lineForEditModal) void restoreExcludedLine(lineForEditModal.id)
+                  }}
+                  onMarkExpenseOnly={() => {
+                    if (lineForEditModal) void markLineExpenseOnly(lineForEditModal.id)
+                  }}
+                  onRestoreFromExpenseOnly={() => {
+                    if (lineForEditModal) void restoreExpenseOnlyLine(lineForEditModal.id)
                   }}
                 />
 
