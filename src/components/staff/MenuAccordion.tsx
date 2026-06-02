@@ -1098,8 +1098,8 @@ export function MenuAccordion({
                         className={cn(
                             'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
                             showPlatoModalChrome
-                                ? 'h-[82vh] min-h-0 sm:h-[78vh]'
-                                : 'max-h-[82vh] min-h-0 sm:max-h-[78vh]'
+                                ? 'h-[85vh] min-h-0 sm:h-[80vh]'
+                                : 'max-h-[85vh] min-h-0 sm:max-h-[80vh]'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
