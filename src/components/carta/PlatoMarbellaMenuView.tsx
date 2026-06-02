@@ -5,6 +5,7 @@ import { formatCartaPrice } from '@/lib/carta-price-display'
 import { cn } from '@/lib/utils'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { PlatoMarbellaPlateVisual } from '@/components/carta/PlatoMarbellaPlateVisual'
+import { PlatoMarbellaExploreHint } from '@/components/carta/PlatoMarbellaExploreHint'
 import {
   type CartaLang,
   getCartaDisplayName,
@@ -179,18 +180,13 @@ export function PlatoMarbellaMenuView({
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
       <div className="shrink-0 bg-white px-2 pb-0 pt-0 sm:px-3">
-        <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600 sm:text-xs">
-          {ui.plateExploreHint}
-        </p>
+        <PlatoMarbellaExploreHint text={ui.plateExploreHint} />
         <PlatoMarbellaPlateVisual
           lang={lang}
           activeSlot={activeSlot}
           onSlotChange={onSlotChange}
           className="mt-4 sm:mt-5"
         />
-        <p className="mt-2 text-center text-[11px] font-semibold leading-snug text-zinc-600 sm:mt-3 sm:text-xs">
-          {ui.plateExploreHint2}
-        </p>
       </div>
 
       <div

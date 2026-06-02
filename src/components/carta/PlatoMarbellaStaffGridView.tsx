@@ -20,6 +20,7 @@ import {
   chunkCartaProductGridRows,
   getCartaProductGridRowFrameStyle,
 } from '@/lib/carta-product-photo'
+import { PlatoMarbellaExploreHint } from '@/components/carta/PlatoMarbellaExploreHint'
 import { PlatoMarbellaPlateVisual } from '@/components/carta/PlatoMarbellaPlateVisual'
 import {
   CartaStaffMenuProductCard,
@@ -211,18 +212,13 @@ export function PlatoMarbellaStaffGridView({
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
       <div className="shrink-0 bg-white px-2 pb-0 pt-0 sm:px-3">
-        <p className="text-center text-[11px] font-semibold leading-snug text-zinc-600 sm:text-xs">
-          {ui.plateExploreHint}
-        </p>
+        <PlatoMarbellaExploreHint text={ui.plateExploreHint} />
         <PlatoMarbellaPlateVisual
           lang={lang}
           activeSlot={activeSlot}
           onSlotChange={onSlotChange}
           className="mt-4 sm:mt-5"
         />
-        <p className="mt-2 text-center text-[11px] font-semibold leading-snug text-zinc-600 sm:mt-3 sm:text-xs">
-          {ui.plateExploreHint2}
-        </p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2 pt-3 custom-scrollbar sm:px-3 sm:pt-4">

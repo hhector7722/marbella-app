@@ -106,8 +106,8 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       backToPlatos: 'Volver a platos',
       plateActiveHere: 'Aquí',
       plateTapZone: 'Pulsa',
-      plateExploreHint: 'Elige un entrante, un principal y una guarnición',
-      plateExploreHint2: 'Descubre las opciones pulsando sobre cada categoría.',
+      plateExploreHint:
+        'Elige un entrante, un principal y una guarnición. Descubre las opciones pulsando sobre cada categoría.',
       staffOpenConfig: 'Config. PLATO MARBELLA',
       staffReorderPlatos: 'Reordenar platos',
       staffOrganizeMarbellaMenu: 'Organizar menú Marbella',
@@ -151,8 +151,8 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       backToPlatos: 'Tornar a plats',
       plateActiveHere: 'Aquí',
       plateTapZone: 'Prem',
-      plateExploreHint: 'Tria un entrant, un principal i una guarnició',
-      plateExploreHint2: 'Descobreix les opcions prement sobre cada categoria.',
+      plateExploreHint:
+        'Tria un entrant, un principal i una guarnició. Descobreix les opcions prement sobre cada categoria.',
       staffOpenConfig: 'Config. PLAT MARBELLA',
       staffReorderPlatos: 'Reordenar plats',
       staffOrganizeMarbellaMenu: 'Organitzar menú Marbella',
@@ -195,14 +195,22 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
       backToPlatos: 'Back to mains',
       plateActiveHere: 'Here',
       plateTapZone: 'Tap',
-      plateExploreHint: 'Pick a starter, a main and a side',
-      plateExploreHint2: 'Discover the options by tapping each category.',
+      plateExploreHint:
+        'Pick a starter, a main and a side. Discover the options by tapping each category.',
       staffOpenConfig: 'MARBELLA DISH setup',
       staffReorderPlatos: 'Reorder dishes',
       staffOrganizeMarbellaMenu: 'Organize Marbella menu',
     },
   } as const
   return dict[lang]
+}
+
+/** Dos frases del modal Plato Marbella (separadas por punto en `plateExploreHint`). */
+export function splitPlatoMarbellaExploreHint(hint: string): string[] {
+  return hint
+    .split('.')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 export function translateParentCategoryTitle(lang: CartaLang, raw: string) {
