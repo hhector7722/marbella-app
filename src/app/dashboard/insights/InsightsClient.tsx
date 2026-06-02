@@ -1110,14 +1110,14 @@ export default function InsightsClient({
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis
                               type="number"
-                              tick={{ fontSize: 7 }}
+                              tick={{ fontSize: 9, fontWeight: 700 }}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
                             <YAxis
                               type="category"
                               dataKey="shortName"
-                              width={22}
-                              tick={{ fontSize: 7, fontWeight: 700 }}
+                              width={34}
+                              tick={{ fontSize: 10, fontWeight: 900 }}
                               interval={0}
                             />
                             <Tooltip
@@ -1139,7 +1139,7 @@ export default function InsightsClient({
                               name="Media ventas"
                               fill={PETROLEO}
                               radius={[0, 2, 2, 0]}
-                              maxBarSize={12}
+                              maxBarSize={22}
                             />
                           </BarChart>
                         ) : (
@@ -1261,34 +1261,34 @@ export default function InsightsClient({
                         <ResponsiveContainer width="100%" height="100%">
                           {isLgDesktop ? (
                             <ComposedChart
-                              layout="vertical"
                               data={productChartData}
-                              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                              margin={{ top: 8, right: 8, left: 4, bottom: 56 }}
                               barCategoryGap="4%"
                               barGap={0}
                             >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                               <XAxis
-                                type="number"
-                                xAxisId="margin"
-                                tick={{ fontSize: 7 }}
+                                dataKey="shortName"
+                                tick={{ fontSize: 8, fontWeight: 600 }}
+                                interval={0}
+                                angle={-35}
+                                textAnchor="end"
+                                height={56}
+                              />
+                              <YAxis
+                                yAxisId="margin"
+                                tick={{ fontSize: 8 }}
+                                width={40}
                                 tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                               />
-                              <XAxis type="number" xAxisId="units" hide />
-                              <YAxis
-                                type="category"
-                                dataKey="shortName"
-                                width={28}
-                                tick={{ fontSize: 6, fontWeight: 600 }}
-                                interval={0}
-                              />
+                              <YAxis yAxisId="units" orientation="right" hide />
                               <Tooltip content={() => null} cursor={false} />
                               <Bar
-                                xAxisId="margin"
+                                yAxisId="margin"
                                 dataKey="total_margin_contribution"
                                 name="Margen total"
-                                maxBarSize={12}
-                                radius={[0, 2, 2, 0]}
+                                maxBarSize={36}
+                                radius={[3, 3, 0, 0]}
                                 cursor="pointer"
                                 onClick={(_data, index) => {
                                   if (typeof index === 'number') {
@@ -1311,7 +1311,7 @@ export default function InsightsClient({
                                 ))}
                               </Bar>
                               <Line
-                                xAxisId="units"
+                                yAxisId="units"
                                 type="monotone"
                                 dataKey="total_units_sold"
                                 name="Unidades"
