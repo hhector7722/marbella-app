@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, TrendingUp } from 'lucide-react';
+import { Check } from 'lucide-react';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardIosIcon from '@/components/dashboards/DashboardIosIcon';
 import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
@@ -78,9 +78,7 @@ export default function MasterShortcutGrid({
             node: (
                 <DashboardIosIcon
                     label="Rentabilidad"
-                    icon={TrendingUp}
-                    iconColor="bg-white"
-                    iconClassName="text-[#36606F]"
+                    img="/icons/rent.png"
                     onClick={() => router.push('/dashboard/insights')}
                 />
             ),
