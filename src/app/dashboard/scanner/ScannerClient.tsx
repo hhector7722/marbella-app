@@ -22,7 +22,17 @@ function newPendingId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
+export function ScannerClient({
+  onSuccess,
+  onInvoiceSaved,
+  embedded = false,
+}: {
+  onSuccess?: () => void
+  /** Se invoca tras guardar la cabecera del albarán (processScannerImage). */
+  onInvoiceSaved?: (invoiceId: string) => void
+  /** Modo embebido (p. ej. paso del modal de compra): sin márgenes extra. */
+  embedded?: boolean
+}) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -186,6 +196,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
       )
       setPendingBatch(null)
       setSelectedSupplierId(null)
+      onInvoiceSaved?.(invoiceId)
       onSuccess?.()
     } catch (error: unknown) {
       setMessageTone('error')
@@ -260,7 +271,7 @@ export function ScannerClient({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col', embedded ? 'gap-2' : 'gap-4')}>
       <input
         ref={fileInputRef}
         type="file"

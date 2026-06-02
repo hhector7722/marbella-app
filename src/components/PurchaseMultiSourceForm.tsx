@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
+import { ScannerClient } from '@/app/dashboard/scanner/ScannerClient';
 
 export interface PaymentSourceOption {
     id: string;
@@ -39,7 +40,7 @@ interface PurchaseMultiSourceFormProps {
     onCancel: () => void;
 }
 
-type PurchaseStep = 'details' | 'payment' | 'change' | 'summary';
+type PurchaseStep = 'details' | 'payment' | 'change' | 'scanner' | 'summary';
 
 function parseDateTimeLocal(value: string): Date {
     // TIMEZONE IMMUNITY: no Date('YYYY-MM-DD...') parsing.
@@ -79,7 +80,10 @@ export function PurchaseMultiSourceForm({
     const [sources, setSources] = useState<SourceEntry[]>([]);
     const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
     const [changeDestinationBoxId, setChangeDestinationBoxId] = useState<string | null>(null);
+    const [changeDestinationTouched, setChangeDestinationTouched] = useState(false);
     const [changeBreakdown, setChangeBreakdown] = useState<Record<number, number>>({});
+    const [scannerCompleted, setScannerCompleted] = useState(false);
+    const [scannerInvoiceId, setScannerInvoiceId] = useState<string | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [zoomContext, setZoomContext] = useState<'change' | string | null>(null);
@@ -130,6 +134,26 @@ export function PurchaseMultiSourceForm({
     const needsChangeStep = changeAmount >= 0.01;
     const canAdvanceFromPayment = priceNum > 0 && totalFromSources >= priceNum - 0.01;
     const canAdvanceFromChange = changeOk && !!changeDestinationBoxId;
+    const canAdvanceFromScanner = scannerCompleted;
+
+    const computeDefaultChangeDestination = (): string | null => {
+        const activeCash = paymentSources
+            .filter(s => s.hasInventory)
+            .map(s => ({ id: s.id, amount: getDisplayAmount(s) }))
+            .filter(s => s.amount >= 0.005);
+        if (activeCash.length === 0) return null;
+        if (activeCash.length === 1) return activeCash[0]!.id;
+        return activeCash.reduce((best, cur) => (cur.amount > best.amount ? cur : best)).id;
+    };
+
+    const goToChangeStep = () => {
+        if (!changeDestinationTouched) {
+            setChangeDestinationBoxId(computeDefaultChangeDestination());
+        }
+        setStep('change');
+    };
+
+    const goToScannerStep = () => setStep('scanner');
 
     const buildSourcesForPayload = (): SourceEntry[] => {
         return paymentSources.map(src => {
@@ -179,12 +203,36 @@ export function PurchaseMultiSourceForm({
                     <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'details' ? 'text-white' : 'text-white/40')}>1. Datos</div>
                     <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'payment' ? 'text-white' : 'text-white/40')}>2. Pago</div>
                     <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'change' ? 'text-white' : 'text-white/40')}>3. Cambio</div>
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>4. Resumen</div>
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'scanner' ? 'text-white' : 'text-white/40')}>4. Scanner</div>
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>5. Resumen</div>
                 </div>
             </div>
 
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+            {zoomDenom !== null && zoomContext !== null && (
+                <DenominationZoomModal
+                    isOpen={true}
+                    onClose={() => { setZoomDenom(null); setZoomContext(null); }}
+                    denomination={zoomDenom}
+                    value={zoomContext === 'change' ? (changeBreakdown[zoomDenom] ?? 0) : (getSourceEntry(zoomContext).breakdown[zoomDenom] ?? 0)}
+                    onValueChange={(v) => {
+                        if (zoomContext === 'change') {
+                            setChangeBreakdown(prev => {
+                                const next = { ...prev, [zoomDenom]: v };
+                                if (v === 0) delete next[zoomDenom];
+                                return next;
+                            });
+                        } else {
+                            const entry = getSourceEntry(zoomContext).breakdown;
+                            const next = { ...entry, [zoomDenom]: v };
+                            if (v === 0) delete next[zoomDenom];
+                            setSourceBreakdown(zoomContext, next);
+                        }
+                    }}
+                    availableStock={zoomContext !== 'change' ? (inventoriesByBoxId[zoomContext]?.[zoomDenom] ?? 0) : undefined}
+                />
+            )}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {step === 'details' && (
                     <div className="space-y-4">
@@ -255,29 +303,6 @@ export function PurchaseMultiSourceForm({
                             </div>
                         </div>
 
-                {zoomDenom !== null && zoomContext !== null && (
-                    <DenominationZoomModal
-                        isOpen={true}
-                        onClose={() => { setZoomDenom(null); setZoomContext(null); }}
-                        denomination={zoomDenom}
-                        value={zoomContext === 'change' ? (changeBreakdown[zoomDenom] ?? 0) : (getSourceEntry(zoomContext).breakdown[zoomDenom] ?? 0)}
-                        onValueChange={(v) => {
-                            if (zoomContext === 'change') {
-                                setChangeBreakdown(prev => {
-                                    const next = { ...prev, [zoomDenom]: v };
-                                    if (v === 0) delete next[zoomDenom];
-                                    return next;
-                                });
-                            } else {
-                                const entry = getSourceEntry(zoomContext).breakdown;
-                                const next = { ...entry, [zoomDenom]: v };
-                                if (v === 0) delete next[zoomDenom];
-                                setSourceBreakdown(zoomContext, next);
-                            }
-                        }}
-                        availableStock={zoomContext !== 'change' ? (inventoriesByBoxId[zoomContext]?.[zoomDenom] ?? 0) : undefined}
-                    />
-                )}
                 {selectedSource && (
                     <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3">
                         <div className="flex items-start justify-between gap-3 mb-2">
@@ -386,16 +411,14 @@ export function PurchaseMultiSourceForm({
                 {step === 'change' && (
                     <>
                         {changeAmount < 0.01 ? (
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Sin cambio</p>
-                            </div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Sin cambio</p>
                         ) : (
-                            <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4 space-y-3">
+                            <div className="space-y-3">
                                 <div className="flex items-center justify-between gap-3">
-                                    <h4 className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Cambio</h4>
+                                    <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Cambio</h4>
                                     <div className="text-right">
-                                        <div className="text-[8px] font-black uppercase tracking-widest text-emerald-700/70 leading-none">A devolver</div>
-                                        <div className="text-2xl font-black tabular-nums text-emerald-800 leading-none mt-0.5">
+                                        <div className="text-[8px] font-black uppercase tracking-widest text-zinc-400 leading-none">A devolver</div>
+                                        <div className="text-2xl font-black tabular-nums text-zinc-800 leading-none mt-0.5">
                                             {changeAmount.toFixed(2)}€
                                         </div>
                                     </div>
@@ -405,8 +428,11 @@ export function PurchaseMultiSourceForm({
                                     <label className="block text-[8px] font-black text-gray-500 uppercase mb-1">Destino del cambio</label>
                                     <select
                                         value={changeDestinationBoxId ?? ''}
-                                        onChange={e => setChangeDestinationBoxId(e.target.value || null)}
-                                        className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-emerald-200 min-h-[48px]"
+                                        onChange={e => {
+                                            setChangeDestinationTouched(true);
+                                            setChangeDestinationBoxId(e.target.value || null);
+                                        }}
+                                        className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-[#5B8FB9]/30 min-h-[48px]"
                                     >
                                         <option value="">Elige caja</option>
                                         {cashSources.map(s => (
@@ -489,6 +515,33 @@ export function PurchaseMultiSourceForm({
                     </>
                 )}
 
+                {step === 'scanner' && (
+                    <div className="space-y-3">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                            Escanea el albarán de la compra
+                        </p>
+                        {scannerCompleted ? (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                                    Albarán registrado correctamente
+                                </p>
+                                {scannerInvoiceId ? (
+                                    <p className="text-[9px] font-bold text-emerald-700/80 mt-1">
+                                        Guardado en Albaranes · puedes continuar al resumen
+                                    </p>
+                                ) : null}
+                            </div>
+                        ) : null}
+                        <ScannerClient
+                            embedded
+                            onInvoiceSaved={(invoiceId) => {
+                                setScannerInvoiceId(invoiceId);
+                                setScannerCompleted(true);
+                            }}
+                        />
+                    </div>
+                )}
+
                 {step === 'summary' && (
                     <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -517,6 +570,15 @@ export function PurchaseMultiSourceForm({
                                     <span className="text-xl font-black tabular-nums text-emerald-800">{changeAmount >= 0.01 ? `${changeAmount.toFixed(2)}€` : ' '}</span>
                                 </div>
                             </div>
+
+                            {scannerCompleted && (
+                                <div className="mt-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Albarán escaneado</span>
+                                        <span className="text-[11px] font-black text-zinc-800">Sí</span>
+                                    </div>
+                                </div>
+                            )}
 
                             {changeAmount >= 0.01 && (
                                 <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
@@ -547,10 +609,11 @@ export function PurchaseMultiSourceForm({
                         if (step === 'details') onCancel();
                         else if (step === 'payment') setStep('details');
                         else if (step === 'change') setStep('payment');
-                        else {
-                            if (needsChangeStep) setStep('change');
+                        else if (step === 'scanner') {
+                            if (needsChangeStep) goToChangeStep();
                             else setStep('payment');
                         }
+                        else if (step === 'summary') goToScannerStep();
                     }}
                     className={cn(
                         "flex-1 py-3 font-black uppercase tracking-widest text-[9px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md min-h-[48px]",
@@ -567,15 +630,17 @@ export function PurchaseMultiSourceForm({
                     onClick={() => {
                         if (step === 'details') setStep('payment');
                         else if (step === 'payment') {
-                            if (needsChangeStep) setStep('change');
-                            else setStep('summary');
-                        } else if (step === 'change') setStep('summary');
+                            if (needsChangeStep) goToChangeStep();
+                            else goToScannerStep();
+                        } else if (step === 'change') goToScannerStep();
+                        else if (step === 'scanner') setStep('summary');
                         else handleConfirm();
                     }}
                     disabled={
                         (step === 'details' && !canGoPayment) ||
                         (step === 'payment' && !canAdvanceFromPayment) ||
                         (step === 'change' && needsChangeStep && !canAdvanceFromChange) ||
+                        (step === 'scanner' && !canAdvanceFromScanner) ||
                         (step === 'summary' && !canSubmit)
                     }
                     className={cn(
@@ -583,6 +648,7 @@ export function PurchaseMultiSourceForm({
                         ((step === 'details' && canGoPayment) ||
                             (step === 'payment' && canAdvanceFromPayment) ||
                             (step === 'change' && (!needsChangeStep || canAdvanceFromChange)) ||
+                            (step === 'scanner' && canAdvanceFromScanner) ||
                             (step === 'summary' && canSubmit))
                             ? (step === 'summary' ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-[#5B8FB9] shadow-blue-900/20 hover:brightness-110")
                             : "bg-zinc-300 opacity-50 cursor-not-allowed"
