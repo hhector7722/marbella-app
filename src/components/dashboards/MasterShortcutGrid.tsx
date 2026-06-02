@@ -130,7 +130,7 @@ export default function MasterShortcutGrid({
                 />
             ),
         },
-        { key: 'propinas', node: <DashboardIosIcon label="Propinas" img="/icons/change.png" onClick={() => router.push('/dashboard/propinas')} /> },
+        { key: 'propinas', node: <DashboardIosIcon label="Propinas" img="/icons/tip.png" onClick={() => router.push('/dashboard/propinas')} /> },
     ];
 
     if (changeBox1) {
