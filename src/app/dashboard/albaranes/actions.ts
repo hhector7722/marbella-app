@@ -2203,6 +2203,15 @@ export async function deletePurchaseInvoiceAction(params: {
 // validación humana desde el modal de mapeo.
 // ─────────────────────────────────────────────────────────────────────────────
 
+function supplierNameFromJoin(suppliers: unknown): string | null {
+  if (suppliers == null) return null
+  if (Array.isArray(suppliers)) {
+    const first = suppliers[0] as { name?: string | null } | undefined
+    return first?.name ?? null
+  }
+  return (suppliers as { name?: string | null }).name ?? null
+}
+
 export type AutoMapPendingInvoice = {
   invoiceId: string
   supplierName: string | null
@@ -2260,16 +2269,17 @@ async function loadPendingInvoicesAfterAutoMap(
   }
 
   const out: AutoMapPendingInvoice[] = []
-  for (const inv of invRows as Array<{
-    id: string
-    invoice_date: string | null
-    invoice_number: string | null
-    suppliers: { name: string | null } | null
-  }>) {
+  for (const row of invRows) {
+    const inv = row as {
+      id: string
+      invoice_date: string | null
+      invoice_number: string | null
+      suppliers?: unknown
+    }
     const id = String(inv.id)
     out.push({
       invoiceId: id,
-      supplierName: inv.suppliers?.name ?? null,
+      supplierName: supplierNameFromJoin(inv.suppliers),
       invoiceDate: inv.invoice_date ?? null,
       invoiceNumber: inv.invoice_number ?? null,
       pendingLineCount: countByInvoice.get(id) ?? 0,
