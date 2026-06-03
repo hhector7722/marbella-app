@@ -52,6 +52,28 @@ export type TipDistributionHistoryRow = {
   notes: string | null;
 };
 
+export type StaffTipHistoryEntry = {
+  lineId: string;
+  distributionId: string;
+  totalAmount: number;
+  weekdayAmount: number;
+  weekendAmount: number;
+  weekdayHours: number;
+  weekendHours: number;
+  weekdayHoursEffective: number;
+  weekendHoursEffective: number;
+  jornadasTotales: number;
+  jornadasConOlvido: number;
+  tjiPct: number;
+  penalizacionPct: number;
+  weekdayBonus: number;
+  weekendBonus: number;
+  isSanctioned: boolean;
+  periodStart: string;
+  periodEnd: string;
+  confirmedAt: string;
+};
+
 /** Coste aproximado de la penalización TJI: reparto sin penalizar − reparto actual. */
 export function estimateTjiPenaltyCostEur(row: {
   totalAmount: number;

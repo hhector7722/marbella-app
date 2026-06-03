@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
 import { format, startOfMonth } from 'date-fns';
 import { createClient } from '@/utils/supabase/server';
-import StaffPropinasView, {
+import StaffPropinasView from '@/components/tips/StaffPropinasView';
+import {
+  addLocalDaysIso,
   type StaffTipHistoryEntry,
-} from '@/components/tips/StaffPropinasView';
-import { addLocalDaysIso } from '@/lib/tip-distribution-display';
+} from '@/lib/tip-distribution-display';
 
 /** Vista «Mis propinas» (empleado). Manager/admin entran aquí desde staff; gestión en /dashboard/propinas. */
 const STAFF_PROPINAS_ROLES = new Set(['staff', 'supervisor', 'chef', 'manager', 'admin']);
@@ -33,8 +34,8 @@ export default async function StaffPropinasPage() {
   }
 
   const today = format(new Date(), 'yyyy-MM-dd');
-  let initialStartDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-  const initialEndDate = today;
+  let periodStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+  const periodEnd = today;
 
   const { data: lastDistribution, error: lastDistError } = await supabase
     .from('tip_distribution_history')
@@ -47,8 +48,10 @@ export default async function StaffPropinasPage() {
     console.error('[staff/propinas] last distribution:', lastDistError.message);
   }
 
+  const hasConfirmedDistribution = !!lastDistribution?.period_end;
+
   if (lastDistribution?.period_end) {
-    initialStartDate = addLocalDaysIso(lastDistribution.period_end, 1);
+    periodStart = addLocalDaysIso(lastDistribution.period_end, 1);
   }
 
   const { data: linesRaw, error: linesError } = await supabase
@@ -56,11 +59,21 @@ export default async function StaffPropinasPage() {
     .select(
       `
       id,
+      distribution_id,
       total_amount,
       weekday_amount,
       weekend_amount,
+      weekday_hours,
+      weekend_hours,
+      weekday_hours_effective,
+      weekend_hours_effective,
+      jornadas_totales,
+      jornadas_con_olvido,
       tji_pct,
       penalizacion_pct,
+      weekday_bonus,
+      weekend_bonus,
+      is_sanctioned,
       tip_distribution_history (
         period_start,
         period_end,
@@ -96,11 +109,21 @@ export default async function StaffPropinasPage() {
       if (!h) return null;
       return {
         lineId: row.id as string,
+        distributionId: row.distribution_id as string,
         totalAmount: Number(row.total_amount),
         weekdayAmount: Number(row.weekday_amount),
         weekendAmount: Number(row.weekend_amount),
+        weekdayHours: Number(row.weekday_hours),
+        weekendHours: Number(row.weekend_hours),
+        weekdayHoursEffective: Number(row.weekday_hours_effective),
+        weekendHoursEffective: Number(row.weekend_hours_effective),
+        jornadasTotales: Number(row.jornadas_totales),
+        jornadasConOlvido: Number(row.jornadas_con_olvido),
         tjiPct: Number(row.tji_pct),
         penalizacionPct: Number(row.penalizacion_pct),
+        weekdayBonus: Number(row.weekday_bonus),
+        weekendBonus: Number(row.weekend_bonus),
+        isSanctioned: Boolean(row.is_sanctioned),
         periodStart: h.period_start,
         periodEnd: h.period_end,
         confirmedAt: h.confirmed_at,
@@ -115,8 +138,9 @@ export default async function StaffPropinasPage() {
   return (
     <StaffPropinasView
       userId={user.id}
-      initialStartDate={initialStartDate}
-      initialEndDate={initialEndDate}
+      periodStart={periodStart}
+      periodEnd={periodEnd}
+      hasConfirmedDistribution={hasConfirmedDistribution}
       initialHistory={initialHistory}
     />
   );

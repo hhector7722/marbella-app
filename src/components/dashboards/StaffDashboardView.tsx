@@ -1466,7 +1466,7 @@ export default function StaffDashboardView() {
                             </div>
                             <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
-                            <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
+                            <div className="px-6 py-5 flex flex-col gap-5 bg-white">
                                 {!showBoxManagement ? (
                                     <>
                                         <button
@@ -1478,15 +1478,12 @@ export default function StaffDashboardView() {
                                                 setIsCashOptionsModalOpen(false);
                                                 setShowSwapModal(true);
                                             }}
-                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                            className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
                                         >
-                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                                <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
+                                                <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="h-full w-full object-contain" />
                                             </div>
-                                            <div className="flex flex-col text-left">
-                                                <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
-                                                <span className="text-[10px] text-gray-400 font-medium">Caja cambio: importe y retirada (desglose)</span>
-                                            </div>
+                                            <span className="font-black uppercase tracking-wide text-gray-800">Cambio</span>
                                         </button>
 
                                         <button
@@ -1499,15 +1496,12 @@ export default function StaffDashboardView() {
                                                 setIsCashOptionsModalOpen(false);
                                                 openPurchaseMultiSourceModal();
                                             }}
-                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                            className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
                                         >
-                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                                <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="w-full h-full object-contain" />
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
+                                                <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="h-full w-full object-contain" />
                                             </div>
-                                            <div className="flex flex-col text-left">
-                                                <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
-                                                <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
-                                            </div>
+                                            <span className="font-black uppercase tracking-wide text-gray-800">Compra</span>
                                         </button>
 
                                         <button
@@ -1515,15 +1509,12 @@ export default function StaffDashboardView() {
                                                 setIsCashOptionsModalOpen(false);
                                                 setIsClosingModalOpen(true);
                                             }}
-                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                            className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
                                         >
-                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                                <Image src="/icons/lock.png" alt="Cierre" width={48} height={48} className="w-full h-full object-contain" />
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
+                                                <Image src="/icons/lock.png" alt="Cierre" width={48} height={48} className="h-full w-full object-contain" />
                                             </div>
-                                            <div className="flex flex-col text-left">
-                                                <span className="font-black text-gray-800 uppercase tracking-wide">Cierre</span>
-                                                <span className="text-[10px] text-gray-400 font-medium">Cerrar caja y registrar el arqueo</span>
-                                            </div>
+                                            <span className="font-black uppercase tracking-wide text-gray-800">Cierre</span>
                                         </button>
 
                                         <button
@@ -1531,15 +1522,12 @@ export default function StaffDashboardView() {
                                                 setIsCashOptionsModalOpen(false);
                                                 router.push('/staff/propinas');
                                             }}
-                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-amber-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group min-h-12"
+                                            className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
                                         >
-                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                                <Image src="/icons/tip.png" alt="Propinas" width={48} height={48} className="w-full h-full object-contain" />
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
+                                                <Image src="/icons/tip.png" alt="Propinas" width={48} height={48} className="h-full w-full object-contain" />
                                             </div>
-                                            <div className="flex flex-col text-left">
-                                                <span className="font-black text-gray-800 uppercase tracking-wide">Propinas</span>
-                                                <span className="text-[10px] text-gray-400 font-medium">Tu reparto estimado y desglose TJI</span>
-                                            </div>
+                                            <span className="font-black uppercase tracking-wide text-gray-800">Propinas</span>
                                         </button>
                                     </>
                                 ) : (
