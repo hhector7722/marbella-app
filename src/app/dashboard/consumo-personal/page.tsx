@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
-import { ChevronLeft, ChevronRight, User, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListOrdered, User, X } from 'lucide-react';
+import { ConsumptionRecipeOrderModal } from '@/components/consumo-personal/ConsumptionRecipeOrderModal';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   addMonths,
@@ -135,6 +137,7 @@ export default function ConsumoPersonalDashboardPage() {
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
   const [dayDetail, setDayDetail] = useState<DayDetailPayload | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
 
   const [authState, setAuthState] = useState<
     | { status: 'checking' }
@@ -142,6 +145,7 @@ export default function ConsumoPersonalDashboardPage() {
     | { status: 'forbidden' }
     | { status: 'ok'; userId: string }
   >({ status: 'checking' });
+  const [canEditConsumptionOrder, setCanEditConsumptionOrder] = useState(false);
 
   const calendarDays = useMemo(() => {
     const startVisible = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
@@ -176,7 +180,7 @@ export default function ConsumoPersonalDashboardPage() {
 
       const { data: prof, error: profErr } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, email')
         .eq('id', user.id)
         .maybeSingle();
       if (cancelledAuth) return;
@@ -187,7 +191,7 @@ export default function ConsumoPersonalDashboardPage() {
         return;
       }
 
-      const role = (prof as any)?.role as string | null | undefined;
+      const role = (prof as { role?: string | null })?.role;
       if (role !== 'manager' && role !== 'admin') {
         setAuthState({ status: 'forbidden' });
         toast.error('No autorizado: esta pantalla es solo para gestor/admin.');
@@ -195,6 +199,10 @@ export default function ConsumoPersonalDashboardPage() {
         return;
       }
 
+      const profileEmail = (prof as { email?: string | null })?.email;
+      setCanEditConsumptionOrder(
+        isMasterDashboardUser(user.email) || isMasterDashboardUser(profileEmail),
+      );
       setAuthState({ status: 'ok', userId: user.id });
     })();
     let cancelledEmployees = false;
@@ -371,6 +379,17 @@ export default function ConsumoPersonalDashboardPage() {
               Consumo staff
             </h1>
             <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
+              {canEditConsumptionOrder ? (
+                <button
+                  type="button"
+                  onClick={() => setOrderModalOpen(true)}
+                  className="text-white/90 hover:text-white transition-colors h-10 w-10 md:h-10 md:w-10 flex items-center justify-center rounded-lg hover:bg-white/10"
+                  aria-label="Ordenar productos del modal de fichaje"
+                  title="Orden productos (modal fichaje)"
+                >
+                  <ListOrdered size={20} strokeWidth={2.25} className="shrink-0" />
+                </button>
+              ) : null}
               <TimeFilterButton
                 onClick={() => setIsTimeFilterOpen(true)}
                 hasActiveFilter={filterActive}
@@ -703,6 +722,11 @@ export default function ConsumoPersonalDashboardPage() {
           </div>,
           document.body,
         )}
+
+      <ConsumptionRecipeOrderModal
+        open={orderModalOpen}
+        onClose={() => setOrderModalOpen(false)}
+      />
 
       <StaffSelectionModal
         isOpen={isWorkerModalOpen}
