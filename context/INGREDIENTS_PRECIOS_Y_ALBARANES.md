@@ -95,7 +95,15 @@ Si no está bloqueado: **gana el último proceso que escriba** `ingredients.curr
 
 Si el usuario elige cobro por **unidad** (`ud`) pero el **contenido por pieza** es volumen (ml, cl, l) o masa (g, kg), la app guarda `purchase_unit`/`unit_type` como **`l`** o **`kg`** (coste homogéneo para el trigger y recetas). Caso típico: precio por botella + 740 ml → €/L. Resolver: `src/lib/ingredient-pack-pricing.ts` → `resolveDeclaredPurchaseUnitWithPackContent`.
 
-Los updates desde albarán suelen hacer solo `SET current_price = …` sin tocar `supplier_pricing_mode` ni `pack_*`. Si después se guarda de nuevo un ingrediente en modo pack con todos los `pack_*`, el trigger de pack **puede recalcular** `current_price` desde el pack.
+Los updates automáticos desde albarán **solo cambian el precio si el valor calculado difiere** del actual (tolerancia ~1e-5). No modifican `purchase_unit`, `recipe_unit`, `supplier_pricing_mode` ni `pack_units` / tamaños.
+
+- Modo `per_purchase_unit`: `current_price`.
+- Modo `per_pack` con pack completo: `pack_price` (el trigger de pack recalcula `current_price` de forma coherente).
+- Si `price_locked = true`: no se toca precio ni historial.
+
+Migración: `supabase/migrations/20260604140000_albaran_price_preserve_ingredient_config.sql`. Helper app: `src/lib/ingredient-price-sync.ts`.
+
+La pantalla **Precios desde albarán** (`/dashboard/albaranes-precios`) puede seguir reconfigurando unidades si el operario completa el asistente y aplica con `allowUnitChanges: true`. El escáner + auto-mapeo no deben pisar esa configuración.
 
 ## 4. Historial
 

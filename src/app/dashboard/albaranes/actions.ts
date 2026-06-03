@@ -2,6 +2,8 @@
 
 // SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 import { suggestedAlbaranConversionFactorFromIngredient } from '@/lib/ingredient-pack-pricing'
+import { buildIngredientPriceOnlyPatch } from '@/lib/ingredient-price-sync'
+import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 import {
   INVOICE_LINE_STATUS_EXCLUDED,
   INVOICE_LINE_STATUS_EXPENSE_ONLY,
@@ -123,7 +125,9 @@ async function resyncIngredientPriceForMappedLine(
 
   const { data: ing, error: ingErr } = await supabase
     .from('ingredients')
-    .select('current_price, price_locked, purchase_unit')
+    .select(
+      'current_price, price_locked, purchase_unit, supplier_pricing_mode, pack_price, pack_units, pack_unit_size_qty, pack_unit_size_unit'
+    )
     .eq('id', ingredientId)
     .maybeSingle()
   if (ingErr) return { ok: false, message: ingErr.message }
@@ -153,18 +157,30 @@ async function resyncIngredientPriceForMappedLine(
     return { ok: false, message: 'Descuadre dimensional: Imposible calcular el nuevo precio unitario.' }
   }
 
+  const pricePatch = buildIngredientPriceOnlyPatch(ing as any, Number(newPrice), (qty, from, to) =>
+    convertToPurchaseUnitQuantity(qty, from, to)
+  )
+  if (!pricePatch) {
+    await supabase
+      .from('supplier_item_mappings')
+      .update({ last_known_price: unitPrice })
+      .eq('supplier_id', supplierId)
+      .eq('supplier_item_name', originalName)
+      .eq('ingredient_id', ingredientId)
+    return { ok: true }
+  }
+
   const oldPrice = ((ing as any)?.current_price as number | null) ?? 0
+  const effectiveNew =
+    pricePatch.current_price != null ? Number(pricePatch.current_price) : Number(newPrice)
   const { error: histErr } = await supabase.from('ingredient_price_history').insert({
     ingredient_id: ingredientId,
     old_price: oldPrice,
-    new_price: newPrice,
+    new_price: effectiveNew,
   })
   if (histErr) return { ok: false, message: `Error guardando historial: ${histErr.message}` }
 
-  const { error: ingUpdErr } = await supabase
-    .from('ingredients')
-    .update({ current_price: newPrice, updated_at: new Date().toISOString() })
-    .eq('id', ingredientId)
+  const { error: ingUpdErr } = await supabase.from('ingredients').update(pricePatch).eq('id', ingredientId)
   if (ingUpdErr) return { ok: false, message: `Error actualizando ingrediente: ${ingUpdErr.message}` }
 
   await supabase

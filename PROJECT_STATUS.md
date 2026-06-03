@@ -1,6 +1,16 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-03 (Staff: mis propinas `/staff/propinas`)
+**Última actualización:** 2026-06-04 (Albaranes: precio sin pisar unidades del ingrediente)
+
+- [x] **Albaranes: actualizar solo precio si cambia, sin tocar unidades/recetas (2026-06-04)**: Migración [`20260604140000_albaran_price_preserve_ingredient_config.sql`](supabase/migrations/20260604140000_albaran_price_preserve_ingredient_config.sql) — `handle_new_invoice_line` compara precio antes de escribir; en `per_pack` ajusta `pack_price` (no `purchase_unit` ni `recipe_unit`). App: [`ingredient-price-sync.ts`](src/lib/ingredient-price-sync.ts), [`albaranes/actions.ts`](src/app/dashboard/albaranes/actions.ts) `resyncIngredientPriceForMappedLine`, wizard express en edición desde albarán solo precio. `/dashboard/albaranes-precios` sigue pudiendo cambiar unidades con asistente explícito (`allowUnitChanges: true`).
+
+**Última actualización anterior:** 2026-06-03 (Propinas: chef en preview + tipos + nav staff)
+
+- [x] **Propinas: sanciones sin doble conteo + shadowAmount (2026-06-03)**: Migración [`20260604130000_tip_pool_preview_sanction_shadow_amount.sql`](supabase/migrations/20260604130000_tip_pool_preview_sanction_shadow_amount.sql) — sancionados `totalAmount`/`weekdayAmount`/`weekendAmount` = 0; `shadowAmount` / `shadowWeekdayAmount` / `shadowWeekendAmount` en JSON; `confirm_tip_distribution` no reparte bonus a sancionados. UI: [`SanctionedTipMoney.tsx`](src/components/tips/SanctionedTipMoney.tsx) en [`TipsDashboardView`](src/components/tips/TipsDashboardView.tsx) y [`StaffPropinasView`](src/components/tips/StaffPropinasView.tsx). Aplicado en Supabase (`tip_pool_preview_sanction_shadow_amount_fix`, `confirm_tip_distribution_sanction_zero_bonus`).
+- [x] **Staff nav inferior: Pedidos + sin Propinas (2026-06-03)**: [`src/app/staff/layout.tsx`](src/app/staff/layout.tsx) — ítem **Pedidos** (`Package`, `/orders/new`, abre `SupplierSelectionModal` como `BottomNavStaff`); **Propinas** quitado de la barra (acceso solo desde [`StaffDashboardView`](src/components/dashboards/StaffDashboardView.tsx)).
+- [x] **Propinas: chef en reparto + tipos Supabase (2026-06-03)**: Migración [`20260604120000_tip_pool_preview_include_chef.sql`](supabase/migrations/20260604120000_tip_pool_preview_include_chef.sql) — `get_tip_pool_preview` incluye rol `chef` en CTE `staff`. `src/types/supabase.ts` regenerado. [`BottomNavWrapper`](src/components/BottomNavWrapper.tsx) no duplica barra en `/staff/*`.
+
+**Última actualización anterior:** 2026-06-03 (Staff: mis propinas `/staff/propinas`)
 
 - [x] **Staff: vista «Mis propinas» `/staff/propinas` (2026-06-03)**: Página mobile-first para `staff` / `supervisor` / `chef` — reparto actual vía RPC `get_tip_pool_preview` (desde último `tip_distribution_history` hasta hoy), desglose TJI con barra de umbrales e impacto € estimado ([`StaffPropinasView.tsx`](src/components/tips/StaffPropinasView.tsx), [`tip-distribution-display.ts`](src/lib/tip-distribution-display.ts)). Historial: `tip_distribution_lines` + `tip_distribution_history` filtrado por `user_id`. Manager/admin redirigen a `/dashboard/propinas`.
 

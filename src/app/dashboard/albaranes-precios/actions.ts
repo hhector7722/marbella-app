@@ -9,6 +9,8 @@ import {
   pickSuggestedCandidate,
   canonicalPurchaseUnit,
 } from '@/lib/albaran-price-match'
+import { buildIngredientPriceOnlyPatch } from '@/lib/ingredient-price-sync'
+import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 
 export type ProposalCandidate = {
   id: string
@@ -228,7 +230,8 @@ export async function applyAlbaranPriceUpdatesAction(
     packUnits?: number | null
     packUnitSizeQty?: number | null
     packUnitSizeUnit?: string | null
-  }[]
+  }[],
+  options?: { allowUnitChanges?: boolean }
 ): Promise<{ success: boolean; message: string; applied?: number; errors?: string[] }> {
   const gate = await gateManager()
   if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
@@ -240,6 +243,7 @@ export async function applyAlbaranPriceUpdatesAction(
 
   const errors: string[] = []
   let applied = 0
+  const allowUnitChanges = options?.allowUnitChanges === true
 
   for (const u of updates) {
     if (!u.ingredientId) continue
@@ -248,6 +252,35 @@ export async function applyAlbaranPriceUpdatesAction(
       errors.push(`Precio inválido para ingrediente ${u.ingredientId}`)
       continue
     }
+
+    if (!allowUnitChanges) {
+      const { data: existing, error: loadErr } = await supabase
+        .from('ingredients')
+        .select(
+          'current_price, supplier_pricing_mode, pack_price, pack_units, pack_unit_size_qty, pack_unit_size_unit, purchase_unit'
+        )
+        .eq('id', u.ingredientId)
+        .maybeSingle()
+      if (loadErr) {
+        errors.push(`${u.ingredientId}: ${loadErr.message}`)
+        continue
+      }
+      if (!existing) {
+        errors.push(`${u.ingredientId}: ingrediente no encontrado`)
+        continue
+      }
+
+      const pricePatch = buildIngredientPriceOnlyPatch(existing as any, price, (qty, from, to) =>
+        convertToPurchaseUnitQuantity(qty, from, to)
+      )
+      if (!pricePatch) continue
+
+      const { error } = await supabase.from('ingredients').update(pricePatch).eq('id', u.ingredientId)
+      if (error) errors.push(`${u.ingredientId}: ${error.message}`)
+      else applied++
+      continue
+    }
+
     const unit = String(u.purchaseUnit || 'kg').trim().toLowerCase()
     const allowed = ['kg', 'g', 'l', 'ml', 'cl', 'ud']
     const pu = allowed.includes(unit) ? unit : 'kg'
@@ -266,7 +299,6 @@ export async function applyAlbaranPriceUpdatesAction(
       payload.pack_units = u.packUnits ?? null
       payload.pack_unit_size_qty = u.packUnitSizeQty ?? null
       payload.pack_unit_size_unit = u.packUnitSizeUnit ?? null
-      // current_price lo deriva el trigger en BD
     } else {
       payload.current_price = price
       payload.pack_price = null

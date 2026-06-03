@@ -14,7 +14,13 @@ import {
 } from '@/components/ingredients/IngredientExpressPricePanel'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { RECIPE_UNIT_OPTIONS, defaultRecipeUnitFromPurchase, resolveIngredientRecipeUnit } from '@/lib/recipe-cost'
+import { buildIngredientPriceOnlyPatch } from '@/lib/ingredient-price-sync'
+import {
+  RECIPE_UNIT_OPTIONS,
+  convertToPurchaseUnitQuantity,
+  defaultRecipeUnitFromPurchase,
+  resolveIngredientRecipeUnit,
+} from '@/lib/recipe-cost'
 import { buildSupplierNameSet, getOrphanedSupplierName } from '@/lib/orphaned-supplier'
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed'
 import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplierAlert'
@@ -655,6 +661,46 @@ export function IngredientWizard({
     return resolveIngredientRecipeUnit(d.recipeUnit, purchaseUnit)
   }
 
+  /** Solo precio: conserva purchase_unit, recipe_unit, pack_* y supplier_pricing_mode del catálogo. */
+  async function persistPriceOnlyFromExistingCatalog(d: WizardDraft, id: string) {
+    const { data: row, error } = await supabase
+      .from('ingredients')
+      .select(
+        'current_price, supplier_pricing_mode, pack_price, pack_units, pack_unit_size_qty, pack_unit_size_unit, purchase_unit'
+      )
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    if (!row) throw new Error('Ingrediente no encontrado')
+
+    const mode = String((row as any).supplier_pricing_mode ?? 'per_purchase_unit')
+    let targetPurchaseUnitPrice = d.supplierPrice
+    if (mode === 'per_pack') {
+      const denom =
+        Number((row as any).pack_units) > 0 &&
+        Number((row as any).pack_unit_size_qty) > 0 &&
+        (row as any).pack_unit_size_unit
+          ? (() => {
+              const converted = convertToPurchaseUnitQuantity(
+                Number((row as any).pack_unit_size_qty),
+                String((row as any).pack_unit_size_unit),
+                String((row as any).purchase_unit ?? 'kg')
+              )
+              if (converted == null || converted <= 0) return null
+              return Number((row as any).pack_units) * converted
+            })()
+          : null
+      if (denom != null && denom > 0) targetPurchaseUnitPrice = d.supplierPrice / denom
+    }
+
+    const patch = buildIngredientPriceOnlyPatch(row as any, targetPurchaseUnitPrice, (qty, from, to) =>
+      convertToPurchaseUnitQuantity(qty, from, to)
+    )
+    if (!patch) return
+    const { error: updErr } = await supabase.from('ingredients').update(patch).eq('id', id)
+    if (updErr) throw updErr
+  }
+
   async function persistPricingFromDraft(d: WizardDraft) {
     if (!d.pricingMode) throw new Error('Falta el modo de precio')
     if (d.pricingMode === 'per_purchase_unit') {
@@ -715,7 +761,11 @@ export function IngredientWizard({
       await supabase.from('ingredients').update({ name: cleanName }).eq('id', id)
       const catDb = dbCategoryForExpressKind(expressKind)
       await savePatch({ category: catDb })
-      await persistPricingFromDraft(merged)
+      if (mode === 'editPricing' && initialIngredientId) {
+        await persistPriceOnlyFromExistingCatalog(merged, id)
+      } else {
+        await persistPricingFromDraft(merged)
+      }
       const factor = suggestedAlbaranConversionFactorFromIngredient({
         supplier_pricing_mode: merged.pricingMode ?? undefined,
         purchase_unit: merged.baseUnit,

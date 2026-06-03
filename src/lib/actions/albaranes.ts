@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { buildIngredientPriceOnlyPatch } from '@/lib/ingredient-price-sync'
 import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 
 export async function confirmarMapeoAction(formData: FormData) {
@@ -33,7 +34,9 @@ export async function confirmarMapeoAction(formData: FormData) {
       .single(),
     supabase
       .from('ingredients')
-      .select('current_price, unit, purchase_unit, base_unit, price_locked')
+      .select(
+        'current_price, unit, purchase_unit, base_unit, price_locked, supplier_pricing_mode, pack_price, pack_units, pack_unit_size_qty, pack_unit_size_unit'
+      )
       .eq('id', ingredientId)
       .single(),
   ])
@@ -76,16 +79,22 @@ export async function confirmarMapeoAction(formData: FormData) {
     if (rpcErr || newPrice == null)
       throw new Error('Descuadre dimensional: No se puede convertir a la unidad base de la receta.')
 
-    const { error: histError } = await supabase
-      .from('ingredient_price_history')
-      .insert({ ingredient_id: ingredientId, old_price: oldPrice, new_price: newPrice })
-    if (histError) throw new Error(`Error en historial de precios: ${histError.message}`)
+    const pricePatch = buildIngredientPriceOnlyPatch(ingRes.data as any, Number(newPrice), (qty, from, to) =>
+      convertToPurchaseUnitQuantity(qty, from, to)
+    )
+    if (pricePatch) {
+      const { error: histError } = await supabase
+        .from('ingredient_price_history')
+        .insert({
+          ingredient_id: ingredientId,
+          old_price: oldPrice,
+          new_price: pricePatch.current_price ?? Number(newPrice),
+        })
+      if (histError) throw new Error(`Error en historial de precios: ${histError.message}`)
 
-    const { error: updIngError } = await supabase
-      .from('ingredients')
-      .update({ current_price: newPrice, updated_at: new Date().toISOString() })
-      .eq('id', ingredientId)
-    if (updIngError) throw new Error(`Error actualizando precio base: ${updIngError.message}`)
+      const { error: updIngError } = await supabase.from('ingredients').update(pricePatch).eq('id', ingredientId)
+      if (updIngError) throw new Error(`Error actualizando precio base: ${updIngError.message}`)
+    }
   }
 
   if (supplierIdParsed != null) {

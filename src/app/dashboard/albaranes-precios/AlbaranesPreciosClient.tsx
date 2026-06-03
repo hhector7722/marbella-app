@@ -211,7 +211,7 @@ export default function AlbaranesPreciosClient({
     }
     setApplying(true)
     try {
-      const res = await applyAlbaranPriceUpdatesAction(payload)
+      const res = await applyAlbaranPriceUpdatesAction(payload, { allowUnitChanges: true })
       if (!res.success) {
         toast.error(res.message)
         if (res.errors?.length) toast.error(res.errors.slice(0, 3).join(' · '))
