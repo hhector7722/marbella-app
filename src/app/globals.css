@@ -83,7 +83,13 @@
   }
 }
 
-/* --- MODALES: scroll del fondo vía ModalChromeWatcher (JS) --- */
+/* --- MODALES: bloqueo scroll (CSS) + touchmove vía ModalChromeWatcher --- */
+html[data-modal-open="true"],
+html[data-modal-open="true"] body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 html[data-modal-open="true"] [role="dialog"],
 html[data-modal-open="true"] [aria-modal="true"] {
   touch-action: auto;
