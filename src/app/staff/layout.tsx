@@ -71,10 +71,16 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     const isActive = (path: string) =>
         pathname === path || pathname.startsWith(`${path}/`);
 
+    /** Carta staff: pantalla completa como `/carta` (sin barra inferior ni padding extra). */
+    const isStaffCartaFullscreen = pathname === '/staff/carta';
+
     return (
         <>
             <Toaster position="top-center" richColors />
-            <div className="min-h-screen pb-24 md:pb-20">{children}</div>
+            <div className={cn('min-h-screen', !isStaffCartaFullscreen && 'pb-24 md:pb-20')}>
+                {children}
+            </div>
+            {!isStaffCartaFullscreen ? (
             <nav
                 className="marbella-fixed-bottombar fixed bottom-0 left-0 right-0 z-[95] flex h-20 items-center justify-around border-t border-white/10 bg-[#5B8FB9] px-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md md:h-16 md:px-8 print:hidden"
                 aria-label="Navegación staff"
@@ -108,6 +114,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
                     );
                 })}
             </nav>
+            ) : null}
 
             <SupplierSelectionModal
                 isOpen={isSupplierModalOpen}

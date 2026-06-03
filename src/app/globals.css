@@ -11,6 +11,34 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /**
+   * Modales de carta (MenuAccordion): en PWA iOS/Android `dvh` puede superar el área visible.
+   * `svh` + safe-area evita que el modal Plato Marbella quede cortado al abrir desde la app.
+   */
+  .carta-modal-shell-max {
+    max-height: min(
+      94svh,
+      calc(
+        100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 0.5rem
+      )
+    );
+  }
+
+  .carta-plato-modal-shell {
+    height: min(
+      94svh,
+      calc(
+        100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 0.5rem
+      )
+    );
+    max-height: min(
+      94svh,
+      calc(
+        100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 0.5rem
+      )
+    );
+  }
+
   .h-header-safe {
     height: calc(3.5rem + env(safe-area-inset-top));
   }
