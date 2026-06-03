@@ -630,7 +630,12 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             const target = Number(result?.targetCount ?? userShifts.length);
             const missing = Array.isArray(result?.missingSubscriptionUserIds) ? result.missingSubscriptionUserIds.length : Math.max(0, target - sent);
             if (sent <= 0) {
-                toast.error('No se ha enviado ninguna notificación. Activa notificaciones en el móvil/PC (permiso + dispositivo suscrito).');
+                toast.warning(
+                    result?.message ||
+                        'Aviso guardado en campana. Activa push en el móvil/PC para recibir también fuera de la app.'
+                );
+                onSuccess?.();
+                onClose();
                 return;
             }
             if (sent < target) {
@@ -1289,7 +1294,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 const target = Number(res?.targetCount ?? userShifts.length);
                                                 const missing = Array.isArray(res?.missingSubscriptionUserIds) ? res.missingSubscriptionUserIds.length : Math.max(0, target - sent);
                                                 if (sent <= 0) {
-                                                    toast.error('No se ha enviado ninguna notificación. Activa notificaciones en el móvil/PC (permiso + dispositivo suscrito).');
+                                                    toast.warning(
+                                                        res?.message ||
+                                                            'Aviso en campana. Activa push para recibir también fuera de la app.'
+                                                    );
+                                                    setIsDaySent(true);
                                                     return;
                                                 }
                                                 if (sent < target) {

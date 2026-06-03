@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import {
   addMonths,
@@ -357,6 +358,8 @@ function ReservationListModal({
 
 export default function ReservasClient() {
   const supabase = useMemo(() => createClient(), [])
+  const searchParams = useSearchParams()
+  const deepLinkHandledRef = useRef<string | null>(null)
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()))
   const [loading, setLoading] = useState(true)
@@ -467,6 +470,22 @@ export default function ReservasClient() {
     setLoading(true)
     void fetchMonthReservations()
   }, [fetchMonthReservations])
+
+  useEffect(() => {
+    const targetId = searchParams.get('id')?.trim()
+    if (!targetId || loading || deepLinkHandledRef.current === targetId) return
+
+    const all = Object.values(byDate).flat()
+    const found = all.find((r) => r.id === targetId)
+    if (!found) return
+
+    deepLinkHandledRef.current = targetId
+    const [y, m] = found.reservation_date.slice(0, 10).split('-').map(Number)
+    if (!Number.isNaN(y) && !Number.isNaN(m)) {
+      setViewMonth(new Date(y, m - 1, 1))
+    }
+    setSelectedReservation(found)
+  }, [searchParams, byDate, loading])
 
   useEffect(() => {
     function shouldRefetch(reservationDate: string | null | undefined) {

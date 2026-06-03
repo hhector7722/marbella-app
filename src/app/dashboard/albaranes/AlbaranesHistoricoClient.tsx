@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import {
   AlertCircle,
@@ -102,6 +103,9 @@ export default function AlbaranesHistoricoClient({
   initialError: string | null
   isManager: boolean
 }) {
+  const searchParams = useSearchParams()
+  const deepLinkHandledRef = useRef<string | null>(null)
+
   const [items, setItems] = useState<PurchaseInvoiceListItem[]>(initialItems)
   const [error, setError] = useState<string | null>(initialError)
   const [query, setQuery] = useState('')
@@ -391,6 +395,13 @@ export default function AlbaranesHistoricoClient({
       setIsLoadingDetail(false)
     }
   }
+
+  useEffect(() => {
+    const targetId = searchParams.get('id')?.trim()
+    if (!targetId || deepLinkHandledRef.current === targetId) return
+    deepLinkHandledRef.current = targetId
+    void openDetail(targetId)
+  }, [searchParams])
 
   async function handleAppendSheetFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]

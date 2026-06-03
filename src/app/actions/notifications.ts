@@ -1,6 +1,10 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
+import {
+    NOTIFICATION_HECTOR_EMAIL,
+    normalizeNotificationEmail,
+} from '@/lib/notification-recipients';
 import webpush from 'web-push';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -98,17 +102,32 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     const subs = subscriptions ?? [];
     const subscriptionUserIds = new Set(subs.map(s => s.user_id));
     const missingSubscriptionUserIds = userIds.filter(id => !subscriptionUserIds.has(id));
+
+    const shiftByUser = new Map(userShifts.map(s => [s.userId, s]));
+    for (const uid of userIds) {
+        const shift = shiftByUser.get(uid);
+        const body = shift ? `${shift.start} - ${shift.end}` : null;
+        const { error: inAppScheduleErr } = await supabase.rpc('create_user_notifications_bulk', {
+            p_user_ids: [uid],
+            p_type: 'schedule',
+            p_title: `Horario - ${dateStr}`,
+            p_body: body,
+            p_action_url: '/staff/dashboard',
+        });
+        if (inAppScheduleErr) {
+            console.error('In-app schedule notification:', inAppScheduleErr, uid);
+        }
+    }
+
     if (subs.length === 0) {
         return {
-            success: false,
-            error: 'Ningún destinatario tiene notificaciones push activadas en este dispositivo.',
+            success: true,
+            message: 'Aviso en campana. Ningún destinatario tiene push activo en este dispositivo.',
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds,
         };
     }
-
-    const shiftByUser = new Map(userShifts.map(s => [s.userId, s]));
 
     const results = await Promise.allSettled(
         subs.map(sub => {
@@ -159,19 +178,22 @@ export async function sendClosingNotification(data: { dateStr: string; totalSale
 
     const supabase = await createClient();
 
-    // 1. Get manager(s) to notify (by email)
-    const { data: managers, error: managerError } = await supabase
+    const { data: hectorProfile, error: hectorError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('role', 'manager')
-        .in('email', ['hhector7722@gmail.com', 'fogotorrat@gmail.com']);
+        .select('id, email')
+        .ilike('email', NOTIFICATION_HECTOR_EMAIL)
+        .maybeSingle();
 
-    if (managerError || !managers || managers.length === 0) {
-        console.error('Specific manager not found or error:', managerError);
-        return { success: false, error: 'Target manager not found' };
+    if (hectorError || !hectorProfile?.id) {
+        console.error('Hector profile not found for closing notify:', hectorError);
+        return { success: false, error: 'No se encontró el perfil de Hector para el cierre' };
     }
 
-    const managerIds = managers.map(m => m.id);
+    if (normalizeNotificationEmail(hectorProfile.email) !== NOTIFICATION_HECTOR_EMAIL) {
+        return { success: false, error: 'Perfil de Hector no coincide con el email esperado' };
+    }
+
+    const managerIds = [hectorProfile.id];
 
     // 2. Get subscriptions for these managers
     const { data: subscriptions, error: subError } = await supabase
@@ -184,8 +206,20 @@ export async function sendClosingNotification(data: { dateStr: string; totalSale
         return { error: subError.message };
     }
 
+    const closingBody = `Ventas: ${data.totalSales.toFixed(2)}€ · Venta neta: ${data.netSales.toFixed(2)}€`;
+    const { error: inAppClosingErr } = await supabase.rpc('create_user_notifications_system', {
+        p_user_ids: managerIds,
+        p_type: 'cash_closing',
+        p_title: `Cierre ${data.dateStr}`,
+        p_body: closingBody,
+        p_action_url: '/dashboard/history',
+    });
+    if (inAppClosingErr) {
+        console.error('In-app closing notifications:', inAppClosingErr);
+    }
+
     if (!subscriptions || subscriptions.length === 0) {
-        return { success: true, sentCount: 0, message: 'No active subscriptions found for managers' };
+        return { success: true, sentCount: 0, message: 'Sin push activo; aviso en campana para managers' };
     }
 
     const payload = JSON.stringify({
