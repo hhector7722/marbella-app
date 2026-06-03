@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { useRouter } from 'next/navigation';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface Supplier {
     id: string;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function SupplierSelectionModal({ isOpen, onClose }: Props) {
+    useScrollLock(isOpen);
     const [supabase] = useState(() => createClient());
     const router = useRouter();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);

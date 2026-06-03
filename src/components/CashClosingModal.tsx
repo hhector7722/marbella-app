@@ -17,6 +17,7 @@ import {
     weatherIdFromLabel,
     type ClosingWeatherId,
 } from '@/lib/cash-closing-weather';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import {
     ClosingStepRow,
     ClosingSummaryRow,
@@ -78,6 +79,7 @@ interface CashClosingModalProps {
 }
 
 export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
+    useScrollLock(isOpen);
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');

@@ -6,6 +6,7 @@ import { Link2, Loader2, MinusCircle, Plus, Settings, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isInvoiceLineExcluded, isInvoiceLineExpenseOnly } from '@/lib/albaranes-line-status'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 export type LineEditDraft = {
   original_name: string
@@ -76,6 +77,7 @@ export function LineEditModal({
   onMarkExpenseOnly,
   onRestoreFromExpenseOnly,
 }: LineEditModalProps) {
+  useScrollLock(open)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

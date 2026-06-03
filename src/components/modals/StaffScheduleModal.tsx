@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -70,6 +71,7 @@ export const StaffScheduleModal = ({
     userId: propsUserId,
     initialFocusDate,
 }: Props) => {
+    useScrollLock(isOpen);
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);

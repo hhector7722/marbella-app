@@ -18,6 +18,7 @@ import {
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 function parseYmdLocal(dateStr: string): Date {
   const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
@@ -52,6 +53,7 @@ export function TimeFilterModal({
   initialValue?: TimeFilterValue;
   defaultKind?: TimeFilterKind;
 }) {
+  useScrollLock(isOpen);
   const initialKind = useMemo<TimeFilterKind>(() => {
     const candidate = defaultKind ?? initialValue?.kind ?? allowedKinds[0] ?? "date";
     return allowedKinds.includes(candidate) ? candidate : (allowedKinds[0] ?? "date");
