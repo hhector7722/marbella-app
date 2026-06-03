@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -57,13 +57,23 @@ interface Props {
     userName?: string;
     userRole?: 'staff' | 'manager' | 'supervisor';
     userId?: string | null;
+    /** yyyy-MM-dd desde notificación: abre el detalle de ese día al abrir el modal */
+    initialFocusDate?: string | null;
 }
 
 /* ─── Modal ─────────────────────────────────────────────── */
-export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: propsUserId }: Props) => {
+export const StaffScheduleModal = ({
+    isOpen,
+    onClose,
+    shifts,
+    userRole,
+    userId: propsUserId,
+    initialFocusDate,
+}: Props) => {
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const lastFocusedDateRef = useRef<string | null>(null);
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
     const [dayActivity, setDayActivity] = useState('');
@@ -212,6 +222,24 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             setLoadingDay(false);
         }
     };
+
+    useEffect(() => {
+        if (!isOpen || !initialFocusDate) return;
+        if (lastFocusedDateRef.current === initialFocusDate) return;
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(initialFocusDate);
+        if (!m) return;
+        lastFocusedDateRef.current = initialFocusDate;
+        const y = Number(m[1]);
+        const mo = Number(m[2]);
+        const d = Number(m[3]);
+        const day = new Date(y, mo - 1, d);
+        setCurrentDate(day);
+        void handleDayClick(day);
+    }, [isOpen, initialFocusDate]);
+
+    useEffect(() => {
+        if (!isOpen) lastFocusedDateRef.current = null;
+    }, [isOpen]);
 
     const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
     const handleClose = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); onClose(); };

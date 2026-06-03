@@ -5,6 +5,10 @@ import {
     NOTIFICATION_HECTOR_EMAIL,
     normalizeNotificationEmail,
 } from '@/lib/notification-recipients';
+import {
+    cashClosingHistoryUrl,
+    staffDashboardScheduleUrl,
+} from '@/lib/notification-routes';
 import webpush from 'web-push';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -44,7 +48,11 @@ export type UserShiftForNotification = { userId: string; start: string; end: str
 
 const SCHEDULE_NOTIFY_ROLES = new Set(['manager', 'admin', 'supervisor']);
 
-export async function sendScheduleNotifications(dateStr: string, userShifts: UserShiftForNotification[]) {
+export async function sendScheduleNotifications(
+    dateStr: string,
+    userShifts: UserShiftForNotification[],
+    scheduleDateIso?: string,
+) {
     const userIds = [...new Set(userShifts.map(s => s.userId))];
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
         console.error('Push: VAPID keys not set. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Vercel env.');
@@ -103,6 +111,11 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     const subscriptionUserIds = new Set(subs.map(s => s.user_id));
     const missingSubscriptionUserIds = userIds.filter(id => !subscriptionUserIds.has(id));
 
+    const actionUrl = scheduleDateIso
+        ? staffDashboardScheduleUrl(scheduleDateIso)
+        : '/staff/dashboard';
+    const pushUrl = actionUrl;
+
     const shiftByUser = new Map(userShifts.map(s => [s.userId, s]));
     for (const uid of userIds) {
         const shift = shiftByUser.get(uid);
@@ -112,7 +125,7 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
             p_type: 'schedule',
             p_title: `Horario - ${dateStr}`,
             p_body: body,
-            p_action_url: '/staff/dashboard',
+            p_action_url: actionUrl,
         });
         if (inAppScheduleErr) {
             console.error('In-app schedule notification:', inAppScheduleErr, uid);
@@ -136,7 +149,7 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
             const payload = JSON.stringify({
                 title: `📅 Horario - ${dateStr}`,
                 body,
-                url: '/staff/dashboard/'
+                url: pushUrl,
             });
             return webpush.sendNotification(sub.subscription as any, payload);
         })
@@ -170,7 +183,13 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     };
 }
 
-export async function sendClosingNotification(data: { dateStr: string; totalSales: number; netSales: number; avgTicket?: number }) {
+export async function sendClosingNotification(data: {
+    dateStr: string;
+    totalSales: number;
+    netSales: number;
+    avgTicket?: number;
+    closingId?: string;
+}) {
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
         console.error('Push: VAPID keys not set.');
         return { success: false, error: 'Notificaciones push no configuradas (falta VAPID en el servidor)', sentCount: 0 };
@@ -207,12 +226,15 @@ export async function sendClosingNotification(data: { dateStr: string; totalSale
     }
 
     const closingBody = `Ventas: ${data.totalSales.toFixed(2)}€ · Venta neta: ${data.netSales.toFixed(2)}€`;
+    const actionUrl = data.closingId
+        ? cashClosingHistoryUrl(data.closingId)
+        : '/dashboard/history';
     const { error: inAppClosingErr } = await supabase.rpc('create_user_notifications_system', {
         p_user_ids: managerIds,
         p_type: 'cash_closing',
         p_title: `Cierre ${data.dateStr}`,
         p_body: closingBody,
-        p_action_url: '/dashboard/history',
+        p_action_url: actionUrl,
     });
     if (inAppClosingErr) {
         console.error('In-app closing notifications:', inAppClosingErr);
@@ -225,7 +247,7 @@ export async function sendClosingNotification(data: { dateStr: string; totalSale
     const payload = JSON.stringify({
         title: `✅ Cierre ${data.dateStr}`,
         body: `Ventas: ${data.totalSales.toFixed(2)}€\nVenta Neta: ${data.netSales.toFixed(2)}€`,
-        url: '/dashboard/history'
+        url: actionUrl,
     });
 
     const results = await Promise.allSettled(

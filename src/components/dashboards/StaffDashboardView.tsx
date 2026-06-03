@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Play, Square, CalendarDays,
@@ -123,6 +123,8 @@ export default function StaffDashboardView() {
     const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [scheduleFocusDate, setScheduleFocusDate] = useState<string | null>(null);
+    const searchParams = useSearchParams();
     const [userName, setUserName] = useState("");
 
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
@@ -140,6 +142,21 @@ export default function StaffDashboardView() {
     const [editingBox, setEditingBox] = useState<any>(null);
 
     useEffect(() => { initialize(); }, []);
+
+    useEffect(() => {
+        const d = searchParams.get('scheduleDate')?.trim();
+        if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+        setScheduleFocusDate(d);
+        setIsScheduleModalOpen(true);
+    }, [searchParams]);
+
+    const closeScheduleModal = () => {
+        setIsScheduleModalOpen(false);
+        setScheduleFocusDate(null);
+        if (searchParams.get('scheduleDate')) {
+            router.replace('/staff/dashboard');
+        }
+    };
 
 
 
@@ -1415,11 +1432,12 @@ export default function StaffDashboardView() {
 
             <StaffScheduleModal
                 isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
+                onClose={closeScheduleModal}
                 shifts={monthShifts}
                 userName={userName}
                 userRole={userRole}
                 userId={userId}
+                initialFocusDate={scheduleFocusDate}
             />
 
             {/* MODAL: Cambio (primera caja change): importe en billetes → desglose retirado; IN + OUT en BD */}
@@ -1637,10 +1655,11 @@ export default function StaffDashboardView() {
 
             <StaffScheduleModal
                 isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
+                onClose={closeScheduleModal}
                 shifts={monthShifts}
                 userRole={userRole}
                 userId={userId}
+                initialFocusDate={scheduleFocusDate}
             />
             {editingBox && (
                 <CashBoxEditModal

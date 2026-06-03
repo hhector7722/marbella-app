@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
@@ -9,26 +10,33 @@ import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
 import { cn } from '@/lib/utils'
 import { formatNotificationTime, type UserNotificationRow } from '@/lib/user-notifications'
 
+/** Misma reserva que `MainWrapper` (`pb-[calc(5rem+safe-area)]`) para no tapar la barra inferior. */
+const NOTIFICATIONS_BACKDROP_BOTTOM = 'calc(5rem + env(safe-area-inset-bottom, 0px))'
+const NOTIFICATIONS_BACKDROP_TOP = 'calc(3.5rem + env(safe-area-inset-top, 0px))'
+
 export function NotificationsBell() {
   const router = useRouter()
   const { userId, unreadCount, items, loading, refresh, supabase } = useUnreadNotifications()
   const [open, setOpen] = useState(false)
+  const [portalMounted, setPortalMounted] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!open) return
-    function onDocClick(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onDocClick)
-    return () => document.removeEventListener('mousedown', onDocClick)
-  }, [open])
+    setPortalMounted(true)
+  }, [])
 
   useEffect(() => {
     if (open && userId) void refresh()
   }, [open, userId, refresh])
+
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
 
   const markRead = useCallback(
     async (id: string) => {
@@ -62,6 +70,82 @@ export function NotificationsBell() {
 
   const badgeLabel = unreadCount > 99 ? '99+' : unreadCount > 0 ? String(unreadCount) : ''
 
+  const panelPortal =
+    open && portalMounted
+      ? createPortal(
+          <>
+            <div
+              className="fixed left-0 right-0 z-[98] bg-black/25 backdrop-blur-md animate-in fade-in duration-200"
+              style={{
+                top: NOTIFICATIONS_BACKDROP_TOP,
+                bottom: NOTIFICATIONS_BACKDROP_BOTTOM,
+              }}
+              onClick={() => setOpen(false)}
+              aria-hidden
+            />
+            <div
+              role="dialog"
+              aria-label="Notificaciones sin leer"
+              className={cn(
+                'fixed z-[110] top-header-safe mt-2',
+                'right-[max(0.5rem,env(safe-area-inset-right,0px))]',
+                'w-[min(16.5rem,calc(100vw-1.5rem))]',
+                'rounded-2xl border border-zinc-100 bg-white shadow-2xl overflow-hidden',
+                'animate-in fade-in zoom-in-95 duration-200'
+              )}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wider leading-none">
+                    Notificaciones
+                  </p>
+                  <p className="text-[10px] font-bold text-white/60 mt-0.5">
+                    {unreadCount > 0 ? `${unreadCount} sin leer` : 'Al día'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="max-h-[min(55vh,300px)] overflow-y-auto">
+                {loading && items.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm text-zinc-500">Cargando…</p>
+                ) : items.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm text-zinc-500">
+                    No tienes notificaciones pendientes
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-zinc-100">
+                    {items.map((row) => (
+                      <li key={row.id}>
+                        <button
+                          type="button"
+                          onClick={() => void handleOpenItem(row)}
+                          className="w-full text-left px-4 py-3 hover:bg-zinc-50 active:bg-zinc-100 transition-colors min-h-[56px]"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-black text-zinc-900 leading-snug">
+                              {row.title}
+                            </p>
+                            <span className="text-[10px] font-bold text-zinc-400 shrink-0 tabular-nums">
+                              {formatNotificationTime(row.created_at)}
+                            </span>
+                          </div>
+                          {row.body ? (
+                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{row.body}</p>
+                          ) : null}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </>,
+          document.body
+        )
+      : null
+
   return (
     <div ref={rootRef} className="relative shrink-0">
       <button
@@ -88,67 +172,7 @@ export function NotificationsBell() {
           ) : null}
         </span>
       </button>
-
-      {open ? (
-        <div
-          role="dialog"
-          aria-label="Notificaciones sin leer"
-          className={cn(
-            'fixed z-[110] top-header-safe mt-2',
-            'right-[max(0.5rem,env(safe-area-inset-right,0px))]',
-            'left-[max(0.5rem,env(safe-area-inset-left,0px))]',
-            'sm:left-auto sm:w-80',
-            'max-w-[calc(100vw-max(0.5rem,env(safe-area-inset-left,0px))-max(0.5rem,env(safe-area-inset-right,0px)))]',
-            'rounded-2xl border border-zinc-100 bg-white shadow-2xl overflow-hidden',
-            'animate-in fade-in zoom-in-95 duration-200'
-          )}
-        >
-          <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
-            <div>
-              <p className="text-sm font-black uppercase tracking-wider leading-none">
-                Notificaciones
-              </p>
-              <p className="text-[10px] font-bold text-white/60 mt-0.5">
-                {unreadCount > 0 ? `${unreadCount} sin leer` : 'Al día'}
-              </p>
-            </div>
-          </div>
-
-          <div className="max-h-[min(60vh,320px)] overflow-y-auto">
-            {loading && items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-zinc-500">Cargando…</p>
-            ) : items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-zinc-500">
-                No tienes notificaciones pendientes
-              </p>
-            ) : (
-              <ul className="divide-y divide-zinc-100">
-                {items.map((row) => (
-                  <li key={row.id}>
-                    <button
-                      type="button"
-                      onClick={() => void handleOpenItem(row)}
-                      className="w-full text-left px-4 py-3 hover:bg-zinc-50 active:bg-zinc-100 transition-colors min-h-[56px]"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-black text-zinc-900 leading-snug">
-                          {row.title}
-                        </p>
-                        <span className="text-[10px] font-bold text-zinc-400 shrink-0 tabular-nums">
-                          {formatNotificationTime(row.created_at)}
-                        </span>
-                      </div>
-                      {row.body ? (
-                        <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{row.body}</p>
-                      ) : null}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      ) : null}
+      {panelPortal}
     </div>
   )
 }

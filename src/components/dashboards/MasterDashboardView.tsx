@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { addDays, format } from 'date-fns';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
@@ -41,6 +41,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
     const [isReservasModalOpen, setIsReservasModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [scheduleFocusDate, setScheduleFocusDate] = useState<string | null>(null);
+    const searchParams = useSearchParams();
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
@@ -108,6 +110,21 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
         void loadProfileAndShifts();
     }, [supabase]);
+
+    useEffect(() => {
+        const d = searchParams.get('scheduleDate')?.trim();
+        if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+        setScheduleFocusDate(d);
+        setIsScheduleModalOpen(true);
+    }, [searchParams]);
+
+    const closeScheduleModal = () => {
+        setIsScheduleModalOpen(false);
+        setScheduleFocusDate(null);
+        if (searchParams.get('scheduleDate')) {
+            router.replace('/master/dashboard');
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -254,11 +271,12 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
             <StaffScheduleModal
                 isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
+                onClose={closeScheduleModal}
                 shifts={monthShifts}
                 userName={userData?.name}
                 userRole={userRole}
                 userId={userData?.id}
+                initialFocusDate={scheduleFocusDate}
             />
 
             <StaffSelectionModal

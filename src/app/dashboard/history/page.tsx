@@ -1,6 +1,6 @@
 'use client'; // Force update v3 - polishing calendar cards
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -263,6 +263,9 @@ export default function HistoryPage() {
     const [editData, setEditData] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
 
+    const searchParams = useSearchParams();
+    const deepLinkClosingRef = useRef<string | null>(null);
+
     const [closings, setClosings] = useState<any[]>([]);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
@@ -292,6 +295,38 @@ export default function HistoryPage() {
         checkUserRole();
         fetchHistory();
     }, [rangeStart, rangeEnd, selectedDate, filterMode]);
+
+    useEffect(() => {
+        const closingId = searchParams.get('closingId')?.trim();
+        if (!closingId || deepLinkClosingRef.current === closingId || loading) return;
+
+        const found = closings.find((c) => c.id === closingId);
+        if (found) {
+            deepLinkClosingRef.current = closingId;
+            setSelectedClosing(found);
+            return;
+        }
+
+        void (async () => {
+            const { data, error } = await supabase
+                .from('cash_closings')
+                .select('*')
+                .eq('id', closingId)
+                .maybeSingle();
+
+            if (error || !data) {
+                toast.error('No se encontró el cierre de la notificación');
+                return;
+            }
+
+            deepLinkClosingRef.current = closingId;
+            setSelectedClosing(data);
+            const closedAt = new Date(data.closed_at);
+            if (!Number.isNaN(closedAt.getTime())) {
+                setSelectedDate(format(closedAt, 'yyyy-MM-dd'));
+            }
+        })();
+    }, [searchParams, closings, loading]);
 
     useEffect(() => {
         if (!shareMenuOpen) return;

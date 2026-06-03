@@ -620,7 +620,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
         const loadingToast = toast.loading('Enviando notificaciones...');
         try {
-            const result = await sendScheduleNotifications(dateFormatted, userShifts);
+            const result = await sendScheduleNotifications(dateFormatted, userShifts, date);
             toast.dismiss(loadingToast);
             if (result?.error || result?.success === false) {
                 toast.error(result?.error || 'Error al enviar notificaciones');
@@ -1284,7 +1284,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
                                             const loadToast = toast.loading('Enviando...');
                                             try {
-                                                const res = await sendScheduleNotifications(dateFormatted, userShifts);
+                                                const res = await sendScheduleNotifications(dateFormatted, userShifts, date);
                                                 toast.dismiss(loadToast);
                                                 if (res?.error || res?.success === false) {
                                                     toast.error(res?.error || 'Error al enviar notificaciones');

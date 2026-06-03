@@ -527,19 +527,45 @@ export default function ReservasClient() {
 
   useEffect(() => {
     const targetId = searchParams.get('id')?.trim()
-    if (!targetId || loading || deepLinkHandledRef.current === targetId) return
+    if (!targetId || deepLinkHandledRef.current === targetId) return
 
     const all = Object.values(byDate).flat()
     const found = all.find((r) => r.id === targetId)
-    if (!found) return
-
-    deepLinkHandledRef.current = targetId
-    const [y, m] = found.reservation_date.slice(0, 10).split('-').map(Number)
-    if (!Number.isNaN(y) && !Number.isNaN(m)) {
-      setViewMonth(new Date(y, m - 1, 1))
+    if (found) {
+      deepLinkHandledRef.current = targetId
+      const [y, m] = found.reservation_date.slice(0, 10).split('-').map(Number)
+      if (!Number.isNaN(y) && !Number.isNaN(m)) {
+        setViewMonth(new Date(y, m - 1, 1))
+      }
+      setSelectedReservation(found)
+      return
     }
-    setSelectedReservation(found)
-  }, [searchParams, byDate, loading])
+
+    if (loading) return
+
+    void (async () => {
+      const { data, error } = await supabase
+        .from('reservations')
+        .select(
+          'id, customer_name, customer_phone, reservation_date, reservation_time, pax, status, notes, created_at'
+        )
+        .eq('id', targetId)
+        .maybeSingle()
+
+      if (error || !data) {
+        toast.error('No se encontró la reserva de la notificación')
+        return
+      }
+
+      deepLinkHandledRef.current = targetId
+      const row = data as Reservation
+      const [y, m] = row.reservation_date.slice(0, 10).split('-').map(Number)
+      if (!Number.isNaN(y) && !Number.isNaN(m)) {
+        setViewMonth(new Date(y, m - 1, 1))
+      }
+      setSelectedReservation(row)
+    })()
+  }, [searchParams, byDate, loading, supabase])
 
   useEffect(() => {
     function shouldRefetch(reservationDate: string | null | undefined) {

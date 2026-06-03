@@ -423,7 +423,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 dateStr: closingNotifyDateStr,
                 totalSales: totalSalesGross,
                 netSales: netSalesCalculated,
-                avgTicket: avgTicket
+                avgTicket: avgTicket,
+                closingId: closing?.id,
             }).catch(err => console.error("Error sending closing notify:", err));
 
             if (onSuccess) await onSuccess();
