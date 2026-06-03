@@ -159,7 +159,7 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex items-center justify-center min-h-12 min-w-12 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 active:scale-95 transition-all"
+        className="relative grid place-items-center min-h-12 min-w-12 shrink-0 text-white active:scale-95 transition-transform"
         aria-label={
           unreadCount > 0
             ? `Notificaciones, ${unreadCount} sin leer`
@@ -184,7 +184,11 @@ export function NotificationsBell() {
           role="dialog"
           aria-label="Notificaciones sin leer"
           className={cn(
-            'absolute right-0 top-full mt-2 z-[110] w-[min(100vw-1rem,22rem)]',
+            'fixed z-[110] top-header-safe mt-2',
+            'right-[max(0.5rem,env(safe-area-inset-right,0px))]',
+            'left-[max(0.5rem,env(safe-area-inset-left,0px))]',
+            'sm:left-auto sm:w-80',
+            'max-w-[calc(100vw-max(0.5rem,env(safe-area-inset-left,0px))-max(0.5rem,env(safe-area-inset-right,0px)))]',
             'rounded-2xl border border-zinc-100 bg-white shadow-2xl overflow-hidden',
             'animate-in fade-in zoom-in-95 duration-200'
           )}
