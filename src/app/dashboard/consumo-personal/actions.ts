@@ -62,11 +62,20 @@ export async function getConsumptionRecipesForOrderEditor(): Promise<
     return { success: false, message: 'No se pudieron cargar los productos.' };
   }
 
-  const recipes = (recipesRes.data ?? []).map((row) => ({
-    id: row.id as string,
-    name: row.name as string,
-    category: (row.category as string | null) ?? null,
-    photo_url: (row.photo_url as string | null) ?? null,
+  type RpcRow = {
+    id: string;
+    name: string;
+    category: string | null;
+    photo_url: string | null;
+    sort_order: number | null;
+    usage_count: number | null;
+  };
+
+  const recipes = ((recipesRes.data ?? []) as RpcRow[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category ?? null,
+    photo_url: row.photo_url ?? null,
     sort_order: Number(row.sort_order ?? 999999),
     usage_count: Number(row.usage_count ?? 0),
   }));
