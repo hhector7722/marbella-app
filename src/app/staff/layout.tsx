@@ -77,7 +77,13 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     return (
         <>
             <Toaster position="top-center" richColors />
-            <div className={cn('min-h-screen', !isStaffCartaFullscreen && 'pb-24 md:pb-20')}>
+            <div
+                className={cn(
+                    isStaffCartaFullscreen
+                        ? 'min-h-screen bg-white'
+                        : 'min-h-screen pb-24 md:pb-20'
+                )}
+            >
                 {children}
             </div>
             {!isStaffCartaFullscreen ? (
