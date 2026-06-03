@@ -95,7 +95,7 @@ export default function TipsDashboardView({
   initialEndDate: string;
   lastDistribution?: TipDistributionHistoryRow | null;
 }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
@@ -76,10 +76,13 @@ export default function StaffPropinasView({
   hasConfirmedDistribution: boolean;
   initialHistory: StaffTipHistoryEntry[];
 }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [tjiPreview, setTjiPreview] = useState<TjiPreview | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<StaffTipHistoryEntry | null>(null);
+  const fetchErrorToastShown = useRef(false);
+
+  const periodInvalid = periodStart > periodEnd;
 
   const periodLabel = useMemo(() => {
     const start = formatLocalIsoDateLabel(periodStart, 'd MMM');
@@ -88,6 +91,12 @@ export default function StaffPropinasView({
   }, [periodStart, periodEnd]);
 
   const fetchTjiPreview = useCallback(async () => {
+    if (periodInvalid) {
+      setTjiPreview({ staff: [] });
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_tip_pool_preview', {
@@ -96,14 +105,18 @@ export default function StaffPropinasView({
       });
       if (error) throw error;
       setTjiPreview((data as unknown) as TjiPreview);
+      fetchErrorToastShown.current = false;
     } catch (e: unknown) {
       console.error(e);
-      toast.error('Error crítico de base de datos al cargar el desglose TJI.');
       setTjiPreview(null);
+      if (!fetchErrorToastShown.current) {
+        fetchErrorToastShown.current = true;
+        toast.error('Error crítico de base de datos al cargar el desglose TJI.');
+      }
     } finally {
       setLoading(false);
     }
-  }, [supabase, periodStart, periodEnd]);
+  }, [supabase, periodStart, periodEnd, periodInvalid]);
 
   useEffect(() => {
     void fetchTjiPreview();
@@ -170,7 +183,14 @@ export default function StaffPropinasView({
           </div>
 
           <div className="p-4">
-            {!loading && !myTji ? (
+            {periodInvalid ? (
+              <p className="text-sm font-medium text-zinc-500">
+                El contador TJI se reinicia tras el último reparto confirmado. Aún no hay días
+                nuevos en este tramo.
+              </p>
+            ) : null}
+
+            {!periodInvalid && !loading && !myTji ? (
               <p className="text-sm font-medium text-zinc-500">
                 No hay datos de fichaje para este período.
               </p>
