@@ -1044,7 +1044,9 @@ export function MenuAccordion({
                 <div
                     className={cn(
                         'fixed inset-0 z-[250] flex items-center justify-center animate-in fade-in duration-200',
-                        openPlatoMarbella ? 'p-1 pb-safe pt-safe sm:p-1.5' : 'p-4 pb-safe pt-4'
+                        openPlatoMarbella
+                            ? 'p-2 sm:p-2.5'
+                            : 'p-4 pb-safe pt-4'
                     )}
                     role="dialog"
                     aria-modal="true"
@@ -1118,8 +1120,8 @@ export function MenuAccordion({
                         className={cn(
                             'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
                             showPlatoModalChrome
-                                ? 'h-[min(96dvh,calc(100dvh-0.5rem))] min-h-0 sm:h-[min(94dvh,calc(100dvh-1rem))]'
-                                : 'max-h-[min(96dvh,calc(100dvh-0.5rem))] min-h-0 sm:max-h-[min(94dvh,calc(100dvh-1rem))]'
+                                ? 'carta-plato-modal-shell min-h-0'
+                                : 'carta-modal-shell-max min-h-0'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >

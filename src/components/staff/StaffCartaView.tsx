@@ -32,7 +32,7 @@ export function StaffCartaView({
   const [editing, setEditing] = useState(false)
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-white text-zinc-900">
+    <div className="flex h-[100svh] max-h-[100svh] flex-col bg-white text-zinc-900">
       <div className="relative mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
         <header className="shrink-0 bg-white pb-1 pt-1">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
