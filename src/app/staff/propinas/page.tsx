@@ -6,7 +6,8 @@ import StaffPropinasView, {
 } from '@/components/tips/StaffPropinasView';
 import { addLocalDaysIso } from '@/lib/tip-distribution-display';
 
-const STAFF_TIP_ROLES = new Set(['staff', 'supervisor', 'chef']);
+/** Vista «Mis propinas» (empleado). Manager/admin entran aquí desde staff; gestión en /dashboard/propinas. */
+const STAFF_PROPINAS_ROLES = new Set(['staff', 'supervisor', 'chef', 'manager', 'admin']);
 
 export default async function StaffPropinasPage() {
   const supabase = await createClient();
@@ -27,11 +28,7 @@ export default async function StaffPropinasPage() {
 
   const role = profile?.role ?? null;
 
-  if (role === 'manager' || role === 'admin') {
-    redirect('/dashboard/propinas');
-  }
-
-  if (!role || !STAFF_TIP_ROLES.has(role)) {
+  if (!role || !STAFF_PROPINAS_ROLES.has(role)) {
     redirect('/staff/dashboard');
   }
 
