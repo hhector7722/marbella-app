@@ -1041,6 +1041,32 @@ export default function AlbaranesHistoricoClient({
               Sin match en diccionario: {autoMapReport.skippedNoMatch} · sin proveedor: {autoMapReport.skippedNoSupplier}
               {autoMapReport.errors ? ` · errores: ${autoMapReport.errors}` : ''}
             </p>
+            {autoMapReport.pendingInvoices.length > 0 ? (
+              <div className="mt-2.5 space-y-1.5">
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800/80">
+                  {autoMapReport.pendingInvoices.length === 1
+                    ? 'Albarán con líneas pendientes'
+                    : 'Albaranes con líneas pendientes'}
+                </p>
+                {autoMapReport.pendingInvoices.map((inv) => (
+                  <button
+                    key={inv.invoiceId}
+                    type="button"
+                    onClick={() => void openDetail(inv.invoiceId)}
+                    className="w-full min-h-12 rounded-lg border border-emerald-300/60 bg-white px-3 py-2 text-left text-[11px] font-bold text-emerald-950 hover:bg-emerald-100/50 active:scale-[0.99] transition flex items-center justify-between gap-2"
+                  >
+                    <span className="min-w-0 truncate">
+                      {inv.supplierName ?? 'Proveedor pendiente'}
+                      {inv.invoiceDate ? ` · ${formatDateTitle(inv.invoiceDate)}` : ''}
+                      {inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}
+                    </span>
+                    <span className="shrink-0 rounded-full bg-emerald-200/80 px-2 py-0.5 text-[10px] font-black tabular-nums">
+                      {inv.pendingLineCount} línea{inv.pendingLineCount === 1 ? '' : 's'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
           <button
             type="button"

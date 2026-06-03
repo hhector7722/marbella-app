@@ -2203,6 +2203,14 @@ export async function deletePurchaseInvoiceAction(params: {
 // validación humana desde el modal de mapeo.
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type AutoMapPendingInvoice = {
+  invoiceId: string
+  supplierName: string | null
+  invoiceDate: string | null
+  invoiceNumber: string | null
+  pendingLineCount: number
+}
+
 export type AutoMapReport = {
   invoicesScanned: number
   linesScanned: number
@@ -2210,6 +2218,69 @@ export type AutoMapReport = {
   skippedNoSupplier: number
   skippedNoMatch: number
   errors: number
+  /** Albaranes que siguen con líneas sin mapear tras el auto-mapeo. */
+  pendingInvoices: AutoMapPendingInvoice[]
+}
+
+async function loadPendingInvoicesAfterAutoMap(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invoiceIds: string[]
+): Promise<AutoMapPendingInvoice[]> {
+  if (invoiceIds.length === 0) return []
+
+  const { data: stillPending, error } = await supabase
+    .from('purchase_invoice_lines')
+    .select('invoice_id')
+    .in('invoice_id', invoiceIds)
+    .is('mapped_ingredient_id', null)
+    .neq('status', INVOICE_LINE_STATUS_EXCLUDED)
+    .neq('status', INVOICE_LINE_STATUS_EXPENSE_ONLY)
+    .limit(20000)
+  if (error || !stillPending?.length) return []
+
+  const countByInvoice = new Map<string, number>()
+  for (const row of stillPending) {
+    const id = String((row as { invoice_id: string }).invoice_id)
+    countByInvoice.set(id, (countByInvoice.get(id) ?? 0) + 1)
+  }
+
+  const pendingIds = [...countByInvoice.keys()]
+  const { data: invRows, error: invErr } = await supabase
+    .from('purchase_invoices')
+    .select('id, invoice_date, invoice_number, suppliers(name)')
+    .in('id', pendingIds)
+  if (invErr || !invRows?.length) {
+    return pendingIds.map((invoiceId) => ({
+      invoiceId,
+      supplierName: null,
+      invoiceDate: null,
+      invoiceNumber: null,
+      pendingLineCount: countByInvoice.get(invoiceId) ?? 0,
+    }))
+  }
+
+  const out: AutoMapPendingInvoice[] = []
+  for (const inv of invRows as Array<{
+    id: string
+    invoice_date: string | null
+    invoice_number: string | null
+    suppliers: { name: string | null } | null
+  }>) {
+    const id = String(inv.id)
+    out.push({
+      invoiceId: id,
+      supplierName: inv.suppliers?.name ?? null,
+      invoiceDate: inv.invoice_date ?? null,
+      invoiceNumber: inv.invoice_number ?? null,
+      pendingLineCount: countByInvoice.get(id) ?? 0,
+    })
+  }
+
+  return out.sort(
+    (a, b) =>
+      b.pendingLineCount - a.pendingLineCount ||
+      String(b.invoiceDate ?? '').localeCompare(String(a.invoiceDate ?? ''))
+  )
 }
 
 export async function autoMapKnownLinesAction(params?: {
@@ -2238,7 +2309,15 @@ export async function autoMapKnownLinesAction(params?: {
   if (invoiceIds.length === 0) {
     return {
       success: true,
-      report: { invoicesScanned: 0, linesScanned: 0, autoMapped: 0, skippedNoSupplier: 0, skippedNoMatch: 0, errors: 0 },
+      report: {
+        invoicesScanned: 0,
+        linesScanned: 0,
+        autoMapped: 0,
+        skippedNoSupplier: 0,
+        skippedNoMatch: 0,
+        errors: 0,
+        pendingInvoices: [],
+      },
     }
   }
 
@@ -2268,6 +2347,7 @@ export async function autoMapKnownLinesAction(params?: {
     skippedNoSupplier: 0,
     skippedNoMatch: 0,
     errors: 0,
+    pendingInvoices: [],
   }
   if (lines.length === 0) return { success: true, report }
 
@@ -2289,6 +2369,8 @@ export async function autoMapKnownLinesAction(params?: {
     }
   }
 
+  const pendingInvoices = await loadPendingInvoicesAfterAutoMap(gate.supabase, invoiceIds)
+
   try {
     revalidatePath('/dashboard/albaranes')
   } catch {}
@@ -2302,6 +2384,7 @@ export async function autoMapKnownLinesAction(params?: {
       skippedNoSupplier: report.skippedNoSupplier,
       skippedNoMatch: skipped,
       errors: 0,
+      pendingInvoices,
     },
   }
 }
