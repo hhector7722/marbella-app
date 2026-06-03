@@ -10,7 +10,6 @@ import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistratio
 import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell";
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
-import ModalChromeWatcher from "@/components/ModalChromeWatcher";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -117,7 +116,6 @@ export default async function RootLayout({
         <UnreadNotificationsShell>
           <SileoProvider />
           <ServiceWorkerRegistration />
-          <ModalChromeWatcher />
           <Navbar />
           <MainWrapper>
             <OnboardingOverlay needsOnboarding={needsOnboarding} />

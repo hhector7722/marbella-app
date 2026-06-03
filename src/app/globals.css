@@ -83,19 +83,7 @@
   }
 }
 
-/* --- MODALES: bloqueo scroll (CSS) + touchmove vía ModalChromeWatcher --- */
-html[data-modal-open="true"],
-html[data-modal-open="true"] body {
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-html[data-modal-open="true"] [role="dialog"],
-html[data-modal-open="true"] [aria-modal="true"] {
-  touch-action: auto;
-  overscroll-behavior: contain;
-}
-
+/* --- MODALES: difuminar barras fijas cuando hay overlay --- */
 html[data-modal-open="true"] .marbella-fixed-topbar,
 html[data-modal-open="true"] .marbella-fixed-bottombar {
   filter: blur(6px);
