@@ -26,6 +26,7 @@ type TjiPreviewRow = {
   jornadasConOlvido?: number;
   tjiPct?: number;
   penalizacionPct?: number;
+  penaltyAmount?: number;
   isSanctioned?: boolean;
 };
 
@@ -131,6 +132,7 @@ export default function StaffPropinasView({
   const jornadasTotales = myTji?.jornadasTotales ?? 0;
   const jornadasConOlvido = myTji?.jornadasConOlvido ?? 0;
   const penalizacionPct = myTji?.penalizacionPct ?? 0;
+  const penaltyAmount = myTji?.penaltyAmount ?? 0;
 
   const tjiPeriodHint = hasConfirmedDistribution
     ? `Contador a cero desde el último reparto confirmado (${periodLabel})`
@@ -251,10 +253,20 @@ export default function StaffPropinasView({
                   <span className={cn('font-bold', tjiColorClass(tjiPct))}>
                     {formatTipPct(tjiPct)}
                   </span>
-                  ). Penalización en horas efectivas:{' '}
+                  ). Penalización aplicada:{' '}
                   <span className="font-bold text-zinc-900">
                     {formatPenalizacionPct(penalizacionPct)}
                   </span>
+                  {Math.abs(penaltyAmount) >= 0.005 ? (
+                    <>
+                      {' '}
+                      (descuento estimado{' '}
+                      <span className="font-bold text-rose-600">
+                        {formatTipMoney(penaltyAmount)}
+                      </span>
+                      , redistribuido al equipo)
+                    </>
+                  ) : null}
                   .
                 </p>
               </>
