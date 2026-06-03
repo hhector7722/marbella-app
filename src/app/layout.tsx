@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell";
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import ModalChromeWatcher from "@/components/ModalChromeWatcher";
@@ -113,18 +114,20 @@ export default async function RootLayout({
   return (
     <html lang="es" className="light">
       <body className={`${inter.className} bg-[#5B8FB9] touch-manipulation`}>
-        <SileoProvider />
-        <ServiceWorkerRegistration />
-        <ModalChromeWatcher />
-        <Navbar />
-        <MainWrapper>
-          <OnboardingOverlay needsOnboarding={needsOnboarding} />
-          {children}
-        </MainWrapper>
-        <BottomNavWrapper />
-        
-        {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
-        <ChatMarbellaLazy />
+        <UnreadNotificationsShell>
+          <SileoProvider />
+          <ServiceWorkerRegistration />
+          <ModalChromeWatcher />
+          <Navbar />
+          <MainWrapper>
+            <OnboardingOverlay needsOnboarding={needsOnboarding} />
+            {children}
+          </MainWrapper>
+          <BottomNavWrapper />
+
+          {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
+          <ChatMarbellaLazy />
+        </UnreadNotificationsShell>
       </body>
     </html>
   );

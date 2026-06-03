@@ -5,106 +5,15 @@ import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
 import { cn } from '@/lib/utils'
-import {
-  formatNotificationTime,
-  type UserNotificationRow,
-} from '@/lib/user-notifications'
-import { createClient } from '@/utils/supabase/client'
-
-const PANEL_LIMIT = 30
+import { formatNotificationTime, type UserNotificationRow } from '@/lib/user-notifications'
 
 export function NotificationsBell() {
   const router = useRouter()
-  const supabase = createClient()
-  const [userId, setUserId] = useState<string | null>(null)
+  const { userId, unreadCount, items, loading, refresh, supabase } = useUnreadNotifications()
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [items, setItems] = useState<UserNotificationRow[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
-
-  const fetchUnread = useCallback(async () => {
-    if (!userId) return
-    setLoading(true)
-    try {
-      const { data, error, count } = await supabase
-        .from('user_notifications')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .is('read_at', null)
-        .order('created_at', { ascending: false })
-        .limit(PANEL_LIMIT)
-
-      if (error) throw error
-      setItems((data ?? []) as UserNotificationRow[])
-      setUnreadCount(count ?? (data?.length ?? 0))
-    } catch (e) {
-      const msg =
-        (e as { message?: string })?.message ||
-        'No se pudieron cargar las notificaciones'
-      toast.error(msg)
-      setItems([])
-      setUnreadCount(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [supabase, userId])
-
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      if (cancelled) return
-      setUserId(session?.user?.id ?? null)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [supabase])
-
-  useEffect(() => {
-    if (!userId) return
-    void fetchUnread()
-  }, [userId, fetchUnread])
-
-  useEffect(() => {
-    if (!userId) return
-
-    const channel = supabase
-      .channel(`user_notifications:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'user_notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          void fetchUnread()
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'user_notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          void fetchUnread()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      void supabase.removeChannel(channel)
-    }
-  }, [supabase, userId, fetchUnread])
 
   useEffect(() => {
     if (!open) return
@@ -118,8 +27,8 @@ export function NotificationsBell() {
   }, [open])
 
   useEffect(() => {
-    if (open && userId) void fetchUnread()
-  }, [open, userId, fetchUnread])
+    if (open && userId) void refresh()
+  }, [open, userId, refresh])
 
   const markRead = useCallback(
     async (id: string) => {
@@ -134,11 +43,10 @@ export function NotificationsBell() {
         toast.error(error.message || 'No se pudo marcar como leída')
         return false
       }
-      setItems((prev) => prev.filter((n) => n.id !== id))
-      setUnreadCount((c) => Math.max(0, c - 1))
+      await refresh()
       return true
     },
-    [supabase, userId]
+    [supabase, userId, refresh]
   )
 
   const handleOpenItem = useCallback(
@@ -168,15 +76,17 @@ export function NotificationsBell() {
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <Bell size={20} strokeWidth={2.5} className="text-white" />
-        {badgeLabel ? (
-          <span
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-[#5B8FB9]"
-            aria-hidden
-          >
-            {badgeLabel}
-          </span>
-        ) : null}
+        <span className="relative inline-flex shrink-0">
+          <Bell size={22} strokeWidth={2.5} className="text-white" aria-hidden />
+          {badgeLabel ? (
+            <span
+              className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 min-w-[17px] h-[17px] px-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center ring-2 ring-[#5B8FB9]"
+              aria-hidden
+            >
+              {badgeLabel}
+            </span>
+          ) : null}
+        </span>
       </button>
 
       {open ? (
