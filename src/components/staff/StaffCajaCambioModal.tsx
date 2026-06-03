@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES } from '@/lib/constants';
 import { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 const STEP1_BILLS_ROW1 = [100, 50, 20] as const;
 const STEP1_BILLS_ROW2 = [10, 5] as const;
@@ -43,6 +44,7 @@ export interface StaffCajaCambioModalProps {
 }
 
 export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: StaffCajaCambioModalProps) {
+    useScrollLock(isOpen);
     const supabase = createClient();
     const [step, setStep] = useState<'importe' | 'retirado'>('importe');
     const [step1Counts, setStep1Counts] = useState<Record<number, number>>({});

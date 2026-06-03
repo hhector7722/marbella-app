@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface StaffProductModalProps {
     isOpen: boolean;
@@ -25,6 +26,7 @@ const STAFF_MENU_ITEMS: StaffMenuItem[] = [
 ];
 
 export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: StaffProductModalProps) {
+    useScrollLock(isOpen);
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = useState(false);
 

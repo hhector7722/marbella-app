@@ -11,6 +11,7 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { CashDenominationForm } from './CashDenominationForm';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 /** z-index por encima de AIGlobalWrapper (z-[9999]) — overlay siempre visible */
 const OVERLAY_Z = 'z-[10050]';
@@ -22,6 +23,7 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ movement, onClose, onAfterMutation }: MovementDetailModalProps) {
+    useScrollLock(!!movement);
     const supabase = createClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);

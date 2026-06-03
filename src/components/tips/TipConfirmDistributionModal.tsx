@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { X, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatLocalIsoDateLabel } from '@/lib/tip-distribution-display';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export type TipConfirmStaffRow = {
   id: string;
@@ -39,6 +40,7 @@ export function TipConfirmDistributionModal({
   confirming,
   onConfirm,
 }: Props) {
+  useScrollLock(isOpen);
   if (!isOpen) return null;
 
   const grandTotal = weekdayTotal + weekendTotal;
