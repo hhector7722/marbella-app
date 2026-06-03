@@ -15,7 +15,6 @@ import {
   formatTipMoney,
   formatTipPct,
   tjiColorClass,
-  type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
 
 type TipPreviewStaffRow = {
