@@ -45,7 +45,7 @@ type Reservation = {
   created_at: string
 }
 
-type ActionKind = 'confirm' | 'reject' | 'cancel'
+type ActionKind = 'confirm' | 'reject' | 'delete'
 
 function parseLocalSafe(dateStr: string): Date {
   const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
@@ -107,12 +107,48 @@ function getMessage(name: string, dateYmd: string, time: string) {
   )
 }
 
-function reservationLineShort(r: Reservation) {
-  return `${timeShort(r.reservation_time)} - ${r.pax} pax`
-}
-
 function reservationLineWithName(r: Reservation) {
   return `${timeShort(r.reservation_time)} - ${r.pax} pax - ${r.customer_name}`
+}
+
+function getReservationDateTime(r: Reservation): Date {
+  const [y, m, d] = r.reservation_date.slice(0, 10).split('-').map(Number)
+  const [hh, mm] = timeShort(r.reservation_time).split(':').map(Number)
+  return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0)
+}
+
+function isReservationPast(r: Reservation, now = new Date()) {
+  return getReservationDateTime(r) < now
+}
+
+function reservationDotClass(r: Reservation) {
+  if (isReservationPast(r)) return 'bg-gray-400'
+  if (r.status === 'rejected') return 'bg-red-500'
+  return 'bg-green-500'
+}
+
+function reservationTextClass(r: Reservation) {
+  return isReservationPast(r) ? 'text-gray-400' : 'text-gray-700'
+}
+
+function ReservationCalendarEntry({ r }: { r: Reservation }) {
+  const textCls = reservationTextClass(r)
+  return (
+    <div className="flex gap-0.5 items-start min-w-0">
+      <div
+        className={cn('w-1.5 h-1.5 rounded-full shrink-0 mt-[2px]', reservationDotClass(r))}
+        aria-hidden
+      />
+      <div className={cn('flex flex-col min-w-0 flex-1 leading-none', textCls)}>
+        <span className="text-[6px] min-[370px]:text-[8px] md:text-[9px] font-mono font-bold truncate">
+          {timeShort(r.reservation_time)}
+        </span>
+        <span className="text-[6px] min-[370px]:text-[8px] md:text-[9px] font-black truncate">
+          {r.pax} pax
+        </span>
+      </div>
+    </div>
+  )
 }
 
 function groupByDate(rows: Reservation[]): Record<string, Reservation[]> {
@@ -201,7 +237,9 @@ function ReservationDetailModal({
           </div>
 
           <a
-            href={`sms:+${formatPhone(reservation.customer_phone)}?body=${getMessage(reservation.customer_name, reservation.reservation_date, reservation.reservation_time)}`}
+            href={`https://wa.me/${formatPhone(reservation.customer_phone)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
               'min-h-12 flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3',
               'text-zinc-700 font-bold text-[12px] transition',
@@ -262,7 +300,7 @@ function ReservationDetailModal({
             </button>
             <button
               type="button"
-              onClick={() => onAction('cancel')}
+              onClick={() => onAction('delete')}
               disabled={isBusy}
               className={cn(
                 'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
@@ -271,7 +309,7 @@ function ReservationDetailModal({
               )}
             >
               <span className="inline-flex items-center justify-center gap-1">
-                {actionBusy === 'cancel' ? (
+                {actionBusy === 'delete' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <CircleSlash2 className="h-4 w-4" strokeWidth={2.5} />
@@ -372,6 +410,17 @@ export default function ReservasClient() {
 
   const fetchSeqRef = useRef(0)
 
+  const removeReservationFromState = useCallback((id: string) => {
+    setByDate((prev) => {
+      const next: Record<string, Reservation[]> = {}
+      for (const [key, list] of Object.entries(prev)) {
+        const filtered = list.filter((r) => r.id !== id)
+        if (filtered.length > 0) next[key] = filtered
+      }
+      return next
+    })
+  }, [])
+
   const monthStart = useMemo(() => format(startOfMonth(viewMonth), 'yyyy-MM-dd'), [viewMonth])
   const monthEnd = useMemo(() => format(endOfMonth(viewMonth), 'yyyy-MM-dd'), [viewMonth])
 
@@ -445,15 +494,20 @@ export default function ReservasClient() {
           `https://wa.me/${formatPhone(reserva.customer_phone)}?text=${getMessage(reserva.customer_name, reserva.reservation_date, reserva.reservation_time)}`,
           '_blank'
         )
+        setSelectedReservation(null)
+        setListModalDay(null)
+        await fetchMonthReservations()
       } else if (action === 'reject') {
         toast.success('Reserva rechazada')
+        setSelectedReservation(null)
+        setListModalDay(null)
+        await fetchMonthReservations()
       } else {
         toast.success('Reserva eliminada')
+        removeReservationFromState(id)
+        setSelectedReservation(null)
+        setListModalDay(null)
       }
-
-      setSelectedReservation(null)
-      setListModalDay(null)
-      await fetchMonthReservations()
     } catch (e) {
       const msg =
         (e as { message?: string })?.message ||
@@ -518,12 +572,24 @@ export default function ReservasClient() {
           handleReservationChange(payload)
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'reservations' },
+        (payload: { old?: { id?: string; reservation_date?: string } }) => {
+          const deletedId = payload?.old?.id
+          if (deletedId) removeReservationFromState(deletedId)
+          const rowDate = payload?.old?.reservation_date
+          if (shouldRefetch(rowDate)) {
+            void fetchMonthReservations()
+          }
+        }
+      )
       .subscribe()
 
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [supabase, monthStart, monthEnd, fetchMonthReservations])
+  }, [supabase, monthStart, monthEnd, fetchMonthReservations, removeReservationFromState])
 
   const handleDayClick = (day: Date) => {
     const key = format(day, 'yyyy-MM-dd')
@@ -627,8 +693,8 @@ export default function ReservasClient() {
                         const dayReservations = byDate[key] ?? []
                         const isViewMonthDay = isSameMonth(day, viewMonth)
                         const hasReservations = dayReservations.length > 0
-                        const maxLines = 3
-                        const visible = dayReservations.slice(0, maxLines)
+                        const maxEntries = 2
+                        const visible = dayReservations.slice(0, maxEntries)
                         const hiddenCount = dayReservations.length - visible.length
 
                         return (
@@ -638,7 +704,7 @@ export default function ReservasClient() {
                             onClick={() => isViewMonthDay && handleDayClick(day)}
                             disabled={!isViewMonthDay || !hasReservations}
                             className={cn(
-                              'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all',
+                              'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[64px] md:min-h-[120px] transition-all',
                               !isViewMonthDay &&
                                 'bg-transparent border-transparent opacity-25 pointer-events-none',
                               isViewMonthDay &&
@@ -659,23 +725,11 @@ export default function ReservasClient() {
                                 {format(day, 'd')}
                               </span>
                             </div>
-                            <div className="p-0.5 md:p-1.5 flex flex-col flex-1 gap-0.5 overflow-hidden">
+                            <div className="p-0.5 md:p-1.5 flex flex-col flex-1 gap-1 overflow-hidden">
                               {isViewMonthDay && hasReservations ? (
                                 <>
                                   {visible.map((r) => (
-                                    <span
-                                      key={r.id}
-                                      className={cn(
-                                        'block truncate text-[6px] min-[370px]:text-[8px] md:text-[10px] font-bold leading-tight',
-                                        r.status === 'pending'
-                                          ? 'text-amber-700'
-                                          : r.status === 'confirmed'
-                                            ? 'text-emerald-700'
-                                            : 'text-zinc-500'
-                                      )}
-                                    >
-                                      {reservationLineShort(r)}
-                                    </span>
+                                    <ReservationCalendarEntry key={r.id} r={r} />
                                   ))}
                                   {hiddenCount > 0 ? (
                                     <span className="text-[6px] md:text-[8px] font-black text-zinc-400">
