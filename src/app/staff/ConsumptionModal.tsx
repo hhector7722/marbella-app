@@ -5,56 +5,11 @@ import { submitPersonalConsumption, getConsumptionRecipes } from './actions';
 import { toast } from 'sonner';
 import { X, Search, Loader2, Package, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-/** Subcadenas para el grid de acceso rápido (coincidencia en nombre de receta). */
-const QUICK_DRINK_ITEMS = [
-  'agua',
-  'café',
-  'cafe',
-  'cortado',
-  'café con leche',
-  'cafe con leche',
-  'coca cola',
-  'coca cola zero',
-  'nestea',
-  'red bull',
-];
-
-const QUICK_FOOD_ITEMS = [
-  'croissant',
-  'croissant chocolate',
-  'bacon con queso',
-  'bikini',
-  'jamón serrano',
-  'jamon serrano',
-  'longaniza',
-  'tortilla de patatas',
-  'jamón dulce',
-  'jamon dulce',
-  'chips ahoy',
-  'kinder bueno',
-  'oreo',
-  'butifarra blanca',
-  'pollo bocadillo',
-  'manchego',
-  'patatas bravas',
-  'pechuga de pollo',
-  'pincho de tortilla',
-];
-
-/** Nombres que no deben aparecer en acceso rápido (normalizado minúsculas). */
-const EXCLUDED_QUICK_NAMES = new Set([
-  'agua con gas malavella',
-  'café americano',
-  'café doble',
-  'tortilla de patatas entera',
-  'preparación patatas bravas',
-  'preparacion patatas bravas',
-  'sup manchego',
-  'tabla de manchego',
-  'oreo helado',
-  'oreo palo',
-]);
+import {
+  isDrinkConsumptionRecipe,
+  normalizeConsumptionRecipeName,
+  sortConsumptionRecipesForModal,
+} from '@/lib/staff-consumption-display';
 
 /** Bocadillos sin opción medio (nombre normalizado). */
 const BOCADILLO_SIN_MEDIO = new Set([
@@ -65,47 +20,7 @@ const BOCADILLO_SIN_MEDIO = new Set([
   'roastbeef bocadillo',
 ]);
 
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
-}
-
 type ConsumptionStep = 'drinks' | 'food';
-
-function isDrinkRecipe(recipe: { name: string; category: string | null }): boolean {
-  const name = normalizeName(recipe.name);
-  const cat = recipe.category?.toLowerCase() ?? '';
-
-  // Primario: categorías típicas
-  if (cat.includes('bebid')) return true;
-  if (cat.includes('refresc')) return true;
-  if (cat.includes('cervez')) return true;
-  if (cat.includes('vino')) return true;
-  if (cat.includes('café') || cat.includes('cafe')) return true;
-
-  // Fallback por nombre (cuando la categoría viene vacía o inconsistente)
-  const drinkNeedles = [
-    'agua',
-    'café',
-    'cafe',
-    'cortado',
-    'coca cola',
-    'nestea',
-    'red bull',
-    'zumo',
-    'cerveza',
-    'vino',
-    'tónica',
-    'tonica',
-    'fanta',
-    'sprite',
-    'kas',
-  ];
-  return drinkNeedles.some((n) => name.includes(n));
-}
-
-function isExcludedFromQuick(recipe: { name: string }): boolean {
-  return EXCLUDED_QUICK_NAMES.has(normalizeName(recipe.name));
-}
 
 function isBocadillo(recipe: { name: string; category: string | null }): boolean {
   const cat = recipe.category?.toLowerCase() ?? '';
@@ -115,11 +30,16 @@ function isBocadillo(recipe: { name: string; category: string | null }): boolean
 
 function requiresRacionChoice(recipe: { name: string; category: string | null }): boolean {
   if (!isBocadillo(recipe)) return false;
-  if (BOCADILLO_SIN_MEDIO.has(normalizeName(recipe.name))) return false;
+  if (BOCADILLO_SIN_MEDIO.has(normalizeConsumptionRecipeName(recipe.name))) return false;
   return true;
 }
 
-type Recipe = { id: string; name: string; photo_url: string | null; category: string | null };
+type Recipe = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  category: string | null;
+};
 type CartItem = { recipe: Recipe; quantity: number; is_half: boolean };
 
 export function ConsumptionModal({
@@ -140,7 +60,7 @@ export function ConsumptionModal({
 
   useEffect(() => {
     getConsumptionRecipes().then((data) => {
-      setRecipes(data as Recipe[]);
+      setRecipes(sortConsumptionRecipesForModal(data));
       setIsLoading(false);
     });
   }, []);
@@ -227,19 +147,19 @@ export function ConsumptionModal({
   };
 
   const stepRecipes = useMemo(() => {
-    return recipes.filter((r) => (step === 'drinks' ? isDrinkRecipe(r) : !isDrinkRecipe(r)));
+    return recipes.filter((r) =>
+      step === 'drinks' ? isDrinkConsumptionRecipe(r) : !isDrinkConsumptionRecipe(r),
+    );
   }, [recipes, step]);
 
-  const cartHasDrink = useMemo(() => cart.some((c) => isDrinkRecipe(c.recipe)), [cart]);
-  const cartHasFood = useMemo(() => cart.some((c) => !isDrinkRecipe(c.recipe)), [cart]);
-
-  const quickRecipes = useMemo(() => {
-    const needles = step === 'drinks' ? QUICK_DRINK_ITEMS : QUICK_FOOD_ITEMS;
-    return stepRecipes.filter((r) => {
-      if (isExcludedFromQuick(r)) return false;
-      return needles.some((q) => r.name.toLowerCase().includes(q.toLowerCase()));
-    });
-  }, [step, stepRecipes]);
+  const cartHasDrink = useMemo(
+    () => cart.some((c) => isDrinkConsumptionRecipe(c.recipe)),
+    [cart],
+  );
+  const cartHasFood = useMemo(
+    () => cart.some((c) => !isDrinkConsumptionRecipe(c.recipe)),
+    [cart],
+  );
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];

@@ -40,11 +40,50 @@ export async function submitPersonalConsumption(
   return { success: true };
 }
 
-export async function getConsumptionRecipes() {
+export type ConsumptionModalRecipe = {
+  id: string;
+  name: string;
+  category: string | null;
+  photo_url: string | null;
+  sort_order: number;
+  usage_count: number;
+};
+
+export async function getConsumptionRecipes(): Promise<ConsumptionModalRecipe[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('recipes')
-    .select('id, name, category, photo_url')
-    .order('name', { ascending: true });
-  return data ?? [];
+  const { data, error } = await supabase.rpc('get_consumption_modal_recipes');
+
+  if (error) {
+    console.error('[Consumption] get_consumption_modal_recipes failed:', error);
+    const { data: fallback } = await supabase
+      .from('recipes')
+      .select('id, name, category, photo_url')
+      .order('name', { ascending: true });
+    return (fallback ?? []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      photo_url: r.photo_url,
+      sort_order: 999999,
+      usage_count: 0,
+    }));
+  }
+
+  type RpcRow = {
+    id: string;
+    name: string;
+    category: string | null;
+    photo_url: string | null;
+    sort_order: number | null;
+    usage_count: number | null;
+  };
+
+  return ((data ?? []) as RpcRow[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category ?? null,
+    photo_url: row.photo_url ?? null,
+    sort_order: Number(row.sort_order ?? 999999),
+    usage_count: Number(row.usage_count ?? 0),
+  }));
 }
