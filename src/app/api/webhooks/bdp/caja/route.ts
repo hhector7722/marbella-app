@@ -1,6 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import type { Json } from '@/types/supabase'
+
+/** Mismo alias que `Json` en tipos generados de Supabase (columna jsonb). */
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 type CajaMovementPayload = {
   fecha_negocio?: string
