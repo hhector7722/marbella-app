@@ -24,18 +24,15 @@ export default function DocumentPreviewModal({
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-            setIsLoaded(false);
-            
-            const timer = setTimeout(() => {
-                setIsLoaded(true);
-            }, 3000);
-            
-            return () => clearTimeout(timer);
-        } else {
-            document.body.style.overflow = 'unset';
-        }
+        if (!isOpen) return;
+
+        setIsLoaded(false);
+
+        const timer = setTimeout(() => {
+            setIsLoaded(true);
+        }, 3000);
+
+        return () => clearTimeout(timer);
     }, [isOpen]);
 
     if (!isOpen || !fileUrl) return null;
@@ -44,6 +41,9 @@ export default function DocumentPreviewModal({
         <div 
             className="fixed inset-0 z-[205] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Previsualización: ${fileName}`}
         >
             {/* Fondo difuminado */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />

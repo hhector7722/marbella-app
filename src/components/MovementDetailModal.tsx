@@ -29,15 +29,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const openedAtRef = useRef<number>(Date.now());
 
     useEffect(() => {
-        if (typeof document === 'undefined') return;
-        const prevOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prevOverflow;
-        };
-    }, [movement?.id]);
-
-    useEffect(() => {
         openedAtRef.current = Date.now();
         setIsEditing(false);
         setIsDeleting(false);

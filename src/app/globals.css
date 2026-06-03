@@ -83,7 +83,13 @@
   }
 }
 
-/* --- MODALES: difuminar barras fijas cuando hay overlay --- */
+/* --- MODALES: scroll del fondo vía ModalChromeWatcher (JS) --- */
+html[data-modal-open="true"] [role="dialog"],
+html[data-modal-open="true"] [aria-modal="true"] {
+  touch-action: auto;
+  overscroll-behavior: contain;
+}
+
 html[data-modal-open="true"] .marbella-fixed-topbar,
 html[data-modal-open="true"] .marbella-fixed-bottombar {
   filter: blur(6px);

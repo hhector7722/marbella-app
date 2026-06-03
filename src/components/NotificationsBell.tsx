@@ -29,15 +29,6 @@ export function NotificationsBell() {
     if (open && userId) void refresh()
   }, [open, userId, refresh])
 
-  useEffect(() => {
-    if (!open) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [open])
-
   const markRead = useCallback(
     async (id: string) => {
       const now = new Date().toISOString()
@@ -75,6 +66,7 @@ export function NotificationsBell() {
       ? createPortal(
           <>
             <div
+              data-marbella-modal-overlay="true"
               className="fixed left-0 right-0 z-[98] bg-black/25 backdrop-blur-md animate-in fade-in duration-200"
               style={{
                 top: NOTIFICATIONS_BACKDROP_TOP,
@@ -85,6 +77,7 @@ export function NotificationsBell() {
             />
             <div
               role="dialog"
+              aria-modal="true"
               aria-label="Notificaciones sin leer"
               className={cn(
                 'fixed z-[110] top-header-safe mt-2',

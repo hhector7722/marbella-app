@@ -237,8 +237,6 @@ export default function AlbaranesHistoricoClient({
 
   useEffect(() => {
     if (!selectedId) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       if (invoiceImageViewerOpenRef.current) {
@@ -250,7 +248,6 @@ export default function AlbaranesHistoricoClient({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => {
-      document.body.style.overflow = prevOverflow
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [selectedId])
