@@ -689,9 +689,14 @@ export default function StaffDashboardView() {
                                         {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
                                     </span>
                                 </div>
-                                <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
-                                    Historial <ArrowRight size={10} strokeWidth={3} />
-                                </Link>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <Link href="/staff/propinas" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
+                                        Propinas <ArrowRight size={10} strokeWidth={3} />
+                                    </Link>
+                                    <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
+                                        Historial <ArrowRight size={10} strokeWidth={3} />
+                                    </Link>
+                                </div>
                             </div>
 
                             <div className="p-4">

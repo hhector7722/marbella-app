@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-03 (Consumo personal: orden productos modal fichaje)
+**Última actualización:** 2026-06-03 (Staff: mis propinas `/staff/propinas`)
+
+- [x] **Staff: vista «Mis propinas» `/staff/propinas` (2026-06-03)**: Página mobile-first para `staff` / `supervisor` / `chef` — reparto actual vía RPC `get_tip_pool_preview` (desde último `tip_distribution_history` hasta hoy), desglose TJI con barra de umbrales e impacto € estimado ([`StaffPropinasView.tsx`](src/components/tips/StaffPropinasView.tsx), [`tip-distribution-display.ts`](src/lib/tip-distribution-display.ts)). Historial: `tip_distribution_lines` + `tip_distribution_history` filtrado por `user_id`. Manager/admin redirigen a `/dashboard/propinas`.
+
+**Última actualización anterior:** 2026-06-03 (Consumo personal: orden productos modal fichaje)
 
 - [x] **Consumo personal: orden manual + ranking por uso en modal fichaje (2026-06-03)**: Migración [`20260603100000_staff_consumption_recipe_display_order.sql`](supabase/migrations/20260603100000_staff_consumption_recipe_display_order.sql) — tabla `staff_consumption_recipe_display_order`, RPCs `get_consumption_modal_recipes` (orden: veces consumido ↓, `sort_order` base ↑), `staff_consumption_recipe_usage_counts`, `save_staff_consumption_recipe_display_order`. [`ConsumptionModal.tsx`](src/app/staff/ConsumptionModal.tsx) carga vía RPC. Dashboard [`/dashboard/consumo-personal`](src/app/dashboard/consumo-personal/page.tsx): botón orden (icono lista) → [`ConsumptionRecipeOrderModal.tsx`](src/components/consumo-personal/ConsumptionRecipeOrderModal.tsx) drag-and-drop bebidas/comida; primera apertura siembra orden acceso rápido ([`staff-consumption-display.ts`](src/lib/staff-consumption-display.ts)). **Solo Hector** (`hhector7722@gmail.com`) edita; **todo el staff** ve el mismo grid al fichar ([`20260603130000_consumption_modal_order_hector_base_global.sql`](supabase/migrations/20260603130000_consumption_modal_order_hector_base_global.sql): posición = `sort_order` base − boost uso). UI + [`20260603110000_staff_consumption_order_hector_only.sql`](supabase/migrations/20260603110000_staff_consumption_order_hector_only.sql).
 

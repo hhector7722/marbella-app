@@ -1,17 +1,27 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit3, Plus, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Plus, RefreshCw } from 'lucide-react';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
+import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
+import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
+import {
+  formatLocalIsoDateLabel,
+  formatEffectiveHours,
+  formatPenalizacionPct,
+  tjiColorClass,
+  type TipDistributionHistoryRow,
+} from '@/lib/tip-distribution-display';
 
 type PoolType = 'weekday' | 'weekend';
 
@@ -23,6 +33,12 @@ type TipPreviewStaffRow = {
   weekendHours: number;
   weekdayHoursRaw: number;
   weekendHoursRaw: number;
+  weekdayHoursEffective?: number;
+  weekendHoursEffective?: number;
+  jornadasTotales?: number;
+  jornadasConOlvido?: number;
+  tjiPct?: number;
+  penalizacionPct?: number;
   weekdayAmount: number;
   weekendAmount: number;
   totalAmount: number;
@@ -33,8 +49,8 @@ type TipPreviewStaffRow = {
 type TipPreview = {
   range: { startDate: string; endDate: string };
   pools: {
-    weekday: { id: string | null; cashTotal: number; cashBreakdown: any; notes: string | null };
-    weekend: { id: string | null; cashTotal: number; cashBreakdown: any; notes: string | null };
+    weekday: { id: string | null; cashTotal: number; cashBreakdown: Record<string, number>; notes: string | null };
+    weekend: { id: string | null; cashTotal: number; cashBreakdown: Record<string, number>; notes: string | null };
   };
   totals: {
     weekdayHours: number;
@@ -49,8 +65,8 @@ type TipPreview = {
 const fmtZeroBlank = (val: number, digits = 2) => (Math.abs(val) < 0.005 ? ' ' : val.toFixed(digits));
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${val.toFixed(2)}€`);
 const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)));
+const fmtInt = (val: number) => (val <= 0 ? ' ' : String(val));
 
-/** Convierte cashBreakdown de JSON (claves string) a Record<number, number> para CashDenominationForm */
 function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
   if (!b || typeof b !== 'object') return {};
   return Object.fromEntries(
@@ -61,26 +77,31 @@ function breakdownToInitialCounts(b: Record<string, number> | null | undefined):
 export default function TipsDashboardView({
   canEditPools = true,
   canEditOverrides = false,
+  canConfirmDistribution = false,
+  initialStartDate,
+  initialEndDate,
+  lastDistribution = null,
 }: {
   canEditPools?: boolean;
   canEditOverrides?: boolean;
+  canConfirmDistribution?: boolean;
+  initialStartDate: string;
+  initialEndDate: string;
+  lastDistribution?: TipDistributionHistoryRow | null;
 }) {
   const supabase = createClient();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<TipPreview | null>(null);
-
-  const [startDate, setStartDate] = useState(() => {
-    const now = new Date();
-    return format(startOfMonth(now), 'yyyy-MM-dd');
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const now = new Date();
-    return format(now, 'yyyy-MM-dd');
-  });
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
+  const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 
   const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
   const [cashModal, setCashModal] = useState<{ open: boolean; poolType: PoolType } | null>(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [overrideModal, setOverrideModal] = useState<{
     open: boolean;
     poolType: PoolType;
@@ -98,6 +119,11 @@ export default function TipsDashboardView({
     }
   }, [startDate, endDate]);
 
+  const defaultFilterActive = useMemo(
+    () => startDate === initialStartDate && endDate === initialEndDate,
+    [startDate, endDate, initialStartDate, initialEndDate]
+  );
+
   const fetchPreview = useCallback(async () => {
     setLoading(true);
     try {
@@ -107,7 +133,7 @@ export default function TipsDashboardView({
       });
       if (error) throw error;
       setPreview((data as unknown) as TipPreview);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       toast.error('Error crítico de base de datos al calcular propinas.');
       setPreview(null);
@@ -116,12 +142,10 @@ export default function TipsDashboardView({
     }
   }, [supabase, startDate, endDate]);
 
-  // Carga inicial + recarga al cambiar rango
   useEffect(() => {
     void fetchPreview();
   }, [fetchPreview]);
 
-  // Si faltan pools (no existe fila), inicializar a 0 (solo manager/admin, validación en RPC)
   useEffect(() => {
     const ensurePools = async () => {
       if (!preview) return;
@@ -146,8 +170,7 @@ export default function TipsDashboardView({
           });
         }
         await fetchPreview();
-      } catch (e: any) {
-        // No silenciar: si no eres manager, esta operación fallará y debe quedar claro
+      } catch (e: unknown) {
         console.error(e);
       }
     };
@@ -163,7 +186,7 @@ export default function TipsDashboardView({
     setCashModal({ open: true, poolType });
   };
 
-  const handleSaveCash = async (poolType: PoolType, total: number, breakdown: any, notes: string) => {
+  const handleSaveCash = async (poolType: PoolType, total: number, breakdown: Record<string, number>, notes: string) => {
     try {
       const normalizedTotal = Number.isFinite(total) ? Number(total.toFixed(2)) : 0;
       const normalizedBreakdown = breakdown ?? {};
@@ -171,13 +194,11 @@ export default function TipsDashboardView({
 
       await supabase.rpc('upsert_tip_pool', {
         p_pool_type: poolType,
-        // Debe poder guardarse también 0 (no bloquear, no convertir a null)
         p_cash_total: normalizedTotal,
         p_cash_breakdown: normalizedBreakdown,
         p_notes: normalizedNotes,
       });
 
-      // Optimistic UI: actualizar el importe del bote ya mismo
       setPreview((prev) => {
         if (!prev) return prev;
         const poolKey = poolType;
@@ -199,7 +220,7 @@ export default function TipsDashboardView({
       toast.success('Bote guardado correctamente');
       setCashModal(null);
       await fetchPreview();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       toast.error('Error crítico guardando propina en BD (permiso o validación).');
     }
@@ -225,11 +246,32 @@ export default function TipsDashboardView({
         p_notes: draft.notes || null,
       });
       toast.success('Override guardado');
-      // Recalcula el reparto para todos los empleados (get_tip_pool_preview usa overrides y horas y reparte de nuevo)
       await fetchPreview();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       toast.error('Error crítico guardando override en BD (permiso o validación).');
+    }
+  };
+
+  const handleConfirmDistribution = async () => {
+    setConfirming(true);
+    try {
+      const { error } = await supabase.rpc('confirm_tip_distribution', {
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_notes: null,
+      });
+      if (error) throw error;
+      toast.success('Reparto confirmado y guardado en el historial.');
+      setConfirmModalOpen(false);
+      setHistoryRefreshToken((t) => t + 1);
+      router.refresh();
+      await fetchPreview();
+    } catch (e: unknown) {
+      console.error(e);
+      toast.error('Error al confirmar el reparto (permiso o validación).');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -251,9 +293,27 @@ export default function TipsDashboardView({
     setOverrideModal({ open: true, poolType, staffId, staffName });
   };
 
+  const lastDistBanner = lastDistribution ? (
+    <div className="rounded-xl md:rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 md:px-4 md:py-3 text-[10px] md:text-xs font-bold text-emerald-900 leading-relaxed">
+      <span className="font-black uppercase tracking-wider text-emerald-700">Último reparto: </span>
+      {format(new Date(lastDistribution.confirmed_at), 'd MMM yyyy', { locale: es })}
+      <span className="text-emerald-800/80"> | Período: </span>
+      {formatLocalIsoDateLabel(lastDistribution.period_start, 'd MMM')} →{' '}
+      {formatLocalIsoDateLabel(lastDistribution.period_end, 'd MMM yyyy')}
+      <span className="text-emerald-800/80"> | Weekday: </span>
+      <span className="font-black tabular-nums">{Number(lastDistribution.weekday_total).toFixed(2)}€</span>
+      <span className="text-emerald-800/80"> | Weekend: </span>
+      <span className="font-black tabular-nums">{Number(lastDistribution.weekend_total).toFixed(2)}€</span>
+    </div>
+  ) : (
+    <div className="rounded-xl md:rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 md:px-4 md:py-3 text-[10px] md:text-xs font-bold text-zinc-500">
+      Aún no hay ningún reparto confirmado en el historial.
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-2 sm:p-4 md:p-8 pb-24 text-zinc-900 overflow-x-hidden">
-      <div className="max-w-5xl mx-auto space-y-3 md:space-y-6 min-w-0">
+      <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 min-w-0">
         <div className="bg-white rounded-xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl overflow-hidden min-w-0">
           <div className="bg-[#36606F] p-3 md:p-6 relative">
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -268,21 +328,17 @@ export default function TipsDashboardView({
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
                 <TimeFilterButton
                   onClick={() => setIsTimeFilterOpen(true)}
-                  hasActiveFilter={(() => {
-                    const now = new Date();
-                    const start = format(startOfMonth(now), 'yyyy-MM-dd');
-                    const end = format(now, 'yyyy-MM-dd');
-                    return startDate !== start || endDate !== end;
-                  })()}
+                  hasActiveFilter={!defaultFilterActive}
                   onClear={() => {
-                    const now = new Date();
-                    setStartDate(format(startOfMonth(now), 'yyyy-MM-dd'));
-                    setEndDate(format(now, 'yyyy-MM-dd'));
+                    setStartDate(initialStartDate);
+                    setEndDate(initialEndDate);
                   }}
                 />
                 <button
-                  onClick={fetchPreview}
+                  type="button"
+                  onClick={() => void fetchPreview()}
                   className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center text-white shrink-0 min-h-[48px]"
+                  aria-label="Recalcular"
                 >
                   <RefreshCw size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                 </button>
@@ -291,10 +347,9 @@ export default function TipsDashboardView({
           </div>
 
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
-            {/* Fila 1: etiquetas de contenido */}
-            {/* Fila Única: Contenedores bote combinados (Verde Marbella) */}
+            {lastDistBanner}
+
             <div className="grid grid-cols-2 gap-2 md:gap-4">
-              {/* LUN - VIE */}
               <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-between gap-2 text-white border-b-2 border-emerald-800">
                 <div className="flex flex-row items-baseline gap-1.5 min-w-0">
                   <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
@@ -310,15 +365,15 @@ export default function TipsDashboardView({
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => openCash('weekday')}
-                  className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                  className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                   title="Introducir cantidades"
                 >
                   <Plus size={15} strokeWidth={3.5} className="text-white" />
                 </button>
               </div>
 
-              {/* SÁB - DOM */}
               <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-between gap-2 text-white border-b-2 border-emerald-800">
                 <div className="flex flex-row items-baseline gap-1.5 min-w-0">
                   <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
@@ -334,8 +389,9 @@ export default function TipsDashboardView({
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => openCash('weekend')}
-                  className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                  className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                   title="Introducir cantidades"
                 >
                   <Plus size={15} strokeWidth={3.5} className="text-white" />
@@ -343,7 +399,23 @@ export default function TipsDashboardView({
               </div>
             </div>
 
-            {/* Tabla sin bordes interiores, cabecera petroleo, subcabecera H/€ */}
+            {canConfirmDistribution && (
+              <button
+                type="button"
+                onClick={() => setConfirmModalOpen(true)}
+                disabled={loading || !preview || staffWithWorkedHours.length === 0}
+                className={cn(
+                  'w-full min-h-[48px] rounded-xl md:rounded-2xl font-black text-[11px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98]',
+                  loading || !preview || staffWithWorkedHours.length === 0
+                    ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed'
+                    : 'bg-[#36606F] text-white hover:bg-[#2d505c] shadow-md'
+                )}
+              >
+                <CheckCircle2 size={18} strokeWidth={2.5} />
+                Confirmar reparto
+              </button>
+            )}
+
             <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
               {loading && (
                 <div className="px-4 py-2 flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
@@ -351,36 +423,40 @@ export default function TipsDashboardView({
                   Calculando…
                 </div>
               )}
-              <div>
-                <table className="w-full min-w-0 border-collapse table-fixed">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] border-collapse">
                   <thead>
                     <tr className="bg-[#36606F] text-white">
-                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[20%] min-w-0">
+                      <th className="text-left px-2 py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest sticky left-0 bg-[#36606F] z-10">
                         Staff
                       </th>
-                      <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
+                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">Jor</th>
+                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">Olv</th>
+                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">TJI</th>
+                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">Pen</th>
+                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">H.Eff</th>
+                      <th colSpan={2} className="text-center px-1 py-2 text-[8px] md:text-[10px] font-black uppercase">
                         Lun – Vie
                       </th>
-                      <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest bg-white/5">
+                      <th colSpan={2} className="text-center px-1 py-2 text-[8px] md:text-[10px] font-black uppercase bg-white/5">
                         Sáb – Dom
                       </th>
-                      <th className="text-right px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[12%]">
-                        Tot
-                      </th>
+                      <th className="text-right px-2 py-2 text-[8px] md:text-[10px] font-black uppercase">Tot</th>
                     </tr>
                     <tr className="bg-[#36606F]/90 text-white/90">
-                      <th className="text-left px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
-                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
-                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
-                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%] bg-white/5">H</th>
-                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%] bg-white/5">€</th>
-                      <th className="text-right px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
+                      <th className="sticky left-0 bg-[#36606F]/90 z-10" />
+                      <th colSpan={5} />
+                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase">H</th>
+                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase">€</th>
+                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase bg-white/5">H</th>
+                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase bg-white/5">€</th>
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
                     {!preview || staffWithWorkedHours.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
+                        <td colSpan={11} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
@@ -388,55 +464,95 @@ export default function TipsDashboardView({
                       staffWithWorkedHours.map((s) => {
                         const isSanc = s.isSanctioned;
                         const strikeClass = isSanc ? 'opacity-40' : '';
+                        const tji = s.tjiPct ?? 0;
+                        const pen = s.penalizacionPct ?? 0;
+                        const wdEff = s.weekdayHoursEffective ?? s.weekdayHours;
+                        const weEff = s.weekendHoursEffective ?? s.weekendHours;
+
                         return (
-                        <tr
-                          key={s.id}
-                          className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
-                        >
-                          <td
-                            className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
-                            onClick={() => openOverride('weekday', s.id, s.name)}
+                          <tr
+                            key={s.id}
+                            className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
                           >
-                            <div className="min-w-0">
-                              <div className="text-[10px] md:text-[13px] font-black text-zinc-900 truncate flex items-center gap-1.5 md:gap-2">
+                            <td
+                              className="px-2 py-2 cursor-pointer sticky left-0 bg-white z-[1]"
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              <div className="text-[10px] md:text-[12px] font-black text-zinc-900 truncate flex items-center gap-1">
                                 {(s.name || '').trim().split(/\s+/)[0] || s.name}
-                                {s.hasOverrides && !isSanc && (
-                                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500 shrink-0">
-                                    OVERRIDE
-                                  </span>
-                                )}
+                                {s.hasOverrides && !isSanc ? (
+                                  <span className="text-[7px] font-black text-orange-500">OV</span>
+                                ) : null}
                               </div>
-                            </div>
-                          </td>
-                          <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-600 cursor-pointer", strikeClass)}
-                            onClick={() => openOverride('weekday', s.id, s.name)}
-                          >
-                            {fmtHours(s.weekdayHours)}
-                          </td>
-                          <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer", strikeClass)}
-                            onClick={() => openOverride('weekday', s.id, s.name)}
-                          >
-                            {fmtZeroBlank(s.weekdayAmount, 2)}
-                          </td>
-                          <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80", strikeClass)}
-                            onClick={() => openOverride('weekend', s.id, s.name)}
-                          >
-                            {fmtHours(s.weekendHours)}
-                          </td>
-                          <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80", strikeClass)}
-                            onClick={() => openOverride('weekend', s.id, s.name)}
-                          >
-                            {fmtZeroBlank(s.weekendAmount, 2)}
-                          </td>
-                          <td className={cn("px-2 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-[13px] font-black tabular-nums text-emerald-600", strikeClass)}>
-                            {fmtMoney(s.totalAmount)}
-                          </td>
-                        </tr>
-                      )})
+                            </td>
+                            <td
+                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {fmtInt(s.jornadasTotales ?? 0)}
+                            </td>
+                            <td
+                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {fmtInt(s.jornadasConOlvido ?? 0)}
+                            </td>
+                            <td
+                              className={cn(
+                                'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                tjiColorClass(tji),
+                                strikeClass
+                              )}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {Math.abs(tji) < 0.005 ? ' ' : `${tji.toFixed(0)}%`}
+                            </td>
+                            <td
+                              className={cn(
+                                'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                pen > 0 ? 'text-rose-600' : 'text-zinc-400',
+                                strikeClass
+                              )}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {formatPenalizacionPct(pen)}
+                            </td>
+                            <td
+                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-700', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {formatEffectiveHours(wdEff, weEff)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {fmtHours(s.weekdayHours)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {fmtZeroBlank(s.weekdayAmount, 2)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80', strikeClass)}
+                              onClick={() => openOverride('weekend', s.id, s.name)}
+                            >
+                              {fmtHours(s.weekendHours)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80', strikeClass)}
+                              onClick={() => openOverride('weekend', s.id, s.name)}
+                            >
+                              {fmtZeroBlank(s.weekendAmount, 2)}
+                            </td>
+                            <td className={cn('px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600', strikeClass)}>
+                              {fmtMoney(s.totalAmount)}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -444,6 +560,8 @@ export default function TipsDashboardView({
             </div>
           </div>
         </div>
+
+        <TipDistributionHistorySection refreshToken={historyRefreshToken} />
       </div>
 
       {cashModal?.open && (
@@ -461,7 +579,11 @@ export default function TipsDashboardView({
               boxName={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
               onCancel={() => setCashModal(null)}
               onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
-              initialCounts={breakdownToInitialCounts(cashModal.poolType === 'weekday' ? preview?.pools?.weekday?.cashBreakdown : preview?.pools?.weekend?.cashBreakdown)}
+              initialCounts={breakdownToInitialCounts(
+                cashModal.poolType === 'weekday'
+                  ? preview?.pools?.weekday?.cashBreakdown
+                  : preview?.pools?.weekend?.cashBreakdown
+              )}
               availableStock={{}}
               submitLabel="Guardar bote"
               variant="tipPool"
@@ -479,11 +601,30 @@ export default function TipsDashboardView({
           poolType={overrideModal.poolType}
           onSave={handleSaveOverride}
           initial={{
-            isSanctioned: preview?.staff.find(x => x.id === overrideModal.staffId)?.isSanctioned ?? false,
+            isSanctioned: preview?.staff.find((x) => x.id === overrideModal.staffId)?.isSanctioned ?? false,
             notes: '',
           }}
         />
       )}
+
+      <TipConfirmDistributionModal
+        isOpen={confirmModalOpen}
+        onClose={() => !confirming && setConfirmModalOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
+        weekdayTotal={weekdayPool?.cashTotal ?? 0}
+        weekendTotal={weekendPool?.cashTotal ?? 0}
+        staff={staffWithWorkedHours.map((s) => ({
+          id: s.id,
+          name: s.name,
+          totalAmount: s.totalAmount,
+          weekdayAmount: s.weekdayAmount,
+          weekendAmount: s.weekendAmount,
+          isSanctioned: s.isSanctioned,
+        }))}
+        confirming={confirming}
+        onConfirm={() => void handleConfirmDistribution()}
+      />
 
       <TimeFilterModal
         isOpen={isTimeFilterOpen}
@@ -509,14 +650,11 @@ export default function TipsDashboardView({
             return;
           }
           if (v.kind === 'year') {
-            const s = new Date(v.year, 0, 1);
-            const e = new Date(v.year, 11, 31);
-            setStartDate(format(s, 'yyyy-MM-dd'));
-            setEndDate(format(e, 'yyyy-MM-dd'));
+            setStartDate(format(new Date(v.year, 0, 1), 'yyyy-MM-dd'));
+            setEndDate(format(new Date(v.year, 11, 31), 'yyyy-MM-dd'));
           }
         }}
       />
     </div>
   );
 }
-
