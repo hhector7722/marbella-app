@@ -120,3 +120,31 @@ export function formatTipInt(val: number): string {
   if (val <= 0) return ' ';
   return String(val);
 }
+
+/** Importe del tramo si las horas no tuvieran penalización TJI (escala raw/efectivas). */
+export function tipAmountWithoutPenalty(
+  amount: number,
+  rawHours: number,
+  effectiveHours: number
+): number {
+  if (Math.abs(amount) < 0.005) return 0;
+  if (effectiveHours < 0.005) return amount;
+  if (rawHours <= effectiveHours + 0.005) return amount;
+  return amount * (rawHours / effectiveHours);
+}
+
+export function tipTotalWithoutPenalty(row: {
+  weekdayAmount: number;
+  weekendAmount: number;
+  weekdayHoursRaw: number;
+  weekendHoursRaw: number;
+  weekdayHours: number;
+  weekendHours: number;
+}): number {
+  const wdH = row.weekdayHours;
+  const weH = row.weekendHours;
+  return (
+    tipAmountWithoutPenalty(row.weekdayAmount, row.weekdayHoursRaw, wdH) +
+    tipAmountWithoutPenalty(row.weekendAmount, row.weekendHoursRaw, weH)
+  );
+}

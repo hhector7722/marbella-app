@@ -16,11 +16,13 @@ import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOv
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
+import { FichajeNoRegistradaMark } from '@/components/tips/FichajeNoRegistradaMark';
 import {
   formatLocalIsoDateLabel,
-  formatEffectiveHours,
   formatPenalizacionPct,
   tjiColorClass,
+  tipAmountWithoutPenalty,
+  tipTotalWithoutPenalty,
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
 
@@ -431,36 +433,60 @@ export default function TipsDashboardView({
                 <table className="w-full min-w-[640px] border-collapse">
                   <thead>
                     <tr className="bg-[#36606F] text-white">
-                      <th className="text-left px-2 py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest sticky left-0 bg-[#36606F] z-10">
-                        Staff
-                      </th>
-                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">Jor</th>
-                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">Olv</th>
-                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">TJI</th>
-                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">Pen</th>
-                      <th className="text-center px-1 py-2 text-[8px] font-black uppercase">H.Eff</th>
-                      <th colSpan={2} className="text-center px-1 py-2 text-[8px] md:text-[10px] font-black uppercase">
+                      <th
+                        rowSpan={2}
+                        className="sticky left-0 z-10 bg-[#36606F] px-2 py-2 text-left text-[8px] font-black uppercase tracking-widest md:text-[10px]"
+                      />
+                      <th
+                        colSpan={2}
+                        className="px-1 py-2 text-center text-[8px] font-black uppercase md:text-[10px]"
+                      >
                         Lun – Vie
                       </th>
-                      <th colSpan={2} className="text-center px-1 py-2 text-[8px] md:text-[10px] font-black uppercase bg-white/5">
+                      <th
+                        colSpan={2}
+                        className="px-1 py-2 text-center text-[8px] font-black uppercase md:text-[10px]"
+                      >
                         Sáb – Dom
                       </th>
-                      <th className="text-right px-2 py-2 text-[8px] md:text-[10px] font-black uppercase">Tot</th>
+                      <th
+                        rowSpan={2}
+                        className="px-1 py-2 text-center text-[8px] font-black uppercase"
+                      >
+                        <span className="inline-flex items-center justify-center">
+                          <FichajeNoRegistradaMark size={10} />
+                        </span>
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="px-1 py-2 text-center text-[8px] font-black uppercase"
+                      >
+                        <span className="inline-flex items-center justify-center gap-0.5">
+                          <span>POR</span>
+                          <FichajeNoRegistradaMark size={10} />
+                        </span>
+                      </th>
+                      <th rowSpan={2} className="px-1 py-2 text-center text-[8px] font-black uppercase">
+                        €
+                      </th>
+                      <th rowSpan={2} className="px-1 py-2 text-center text-[8px] font-black uppercase">
+                        PEN
+                      </th>
+                      <th rowSpan={2} className="px-2 py-2 text-right text-[8px] font-black uppercase md:text-[10px]">
+                        TOT
+                      </th>
                     </tr>
-                    <tr className="bg-[#36606F]/90 text-white/90">
-                      <th className="sticky left-0 bg-[#36606F]/90 z-10" />
-                      <th colSpan={5} />
-                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase">H</th>
-                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase">€</th>
-                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase bg-white/5">H</th>
-                      <th className="text-center px-0.5 py-1 text-[7px] font-black uppercase bg-white/5">€</th>
-                      <th />
+                    <tr className="bg-[#36606F] text-white">
+                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">H</th>
+                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">€</th>
+                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">H</th>
+                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">€</th>
                     </tr>
                   </thead>
                   <tbody>
                     {!preview || staffWithWorkedHours.length === 0 ? (
                       <tr>
-                        <td colSpan={11} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
+                        <td colSpan={10} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
@@ -470,8 +496,31 @@ export default function TipsDashboardView({
                         const strikeClass = isSanc ? 'opacity-40' : '';
                         const tji = s.tjiPct ?? 0;
                         const pen = s.penalizacionPct ?? 0;
-                        const wdEff = s.weekdayHoursEffective ?? s.weekdayHours;
-                        const weEff = s.weekendHoursEffective ?? s.weekendHours;
+                        const wdH = s.weekdayHours;
+                        const weH = s.weekendHours;
+                        const wdBase =
+                          isSanc &&
+                          s.shadowWeekdayAmount != null &&
+                          Math.abs(s.shadowWeekdayAmount) >= 0.005
+                            ? s.shadowWeekdayAmount
+                            : s.weekdayAmount;
+                        const weBase =
+                          isSanc &&
+                          s.shadowWeekendAmount != null &&
+                          Math.abs(s.shadowWeekendAmount) >= 0.005
+                            ? s.shadowWeekendAmount
+                            : s.weekendAmount;
+                        const wdAmtRaw = tipAmountWithoutPenalty(
+                          wdBase,
+                          s.weekdayHoursRaw,
+                          wdH
+                        );
+                        const weAmtRaw = tipAmountWithoutPenalty(
+                          weBase,
+                          s.weekendHoursRaw,
+                          weH
+                        );
+                        const totalSinPen = wdAmtRaw + weAmtRaw;
 
                         return (
                           <tr
@@ -482,18 +531,33 @@ export default function TipsDashboardView({
                               className="px-2 py-2 cursor-pointer sticky left-0 bg-white z-[1]"
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
-                              <div className="text-[10px] md:text-[12px] font-black text-zinc-900 truncate flex items-center gap-1">
+                              <div className="text-[10px] md:text-[12px] font-black text-zinc-900 truncate">
                                 {(s.name || '').trim().split(/\s+/)[0] || s.name}
-                                {s.hasOverrides && !isSanc ? (
-                                  <span className="text-[7px] font-black text-orange-500">OV</span>
-                                ) : null}
                               </div>
                             </td>
                             <td
-                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600', strikeClass)}
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer', strikeClass)}
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
-                              {fmtInt(s.jornadasTotales ?? 0)}
+                              {fmtHours(s.weekdayHoursRaw)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {fmtZeroBlank(wdAmtRaw)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80', strikeClass)}
+                              onClick={() => openOverride('weekend', s.id, s.name)}
+                            >
+                              {fmtHours(s.weekendHoursRaw)}
+                            </td>
+                            <td
+                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80', strikeClass)}
+                              onClick={() => openOverride('weekend', s.id, s.name)}
+                            >
+                              {fmtZeroBlank(weAmtRaw)}
                             </td>
                             <td
                               className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600', strikeClass)}
@@ -512,6 +576,12 @@ export default function TipsDashboardView({
                               {Math.abs(tji) < 0.005 ? ' ' : `${tji.toFixed(0)}%`}
                             </td>
                             <td
+                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-800', strikeClass)}
+                              onClick={() => openOverride('weekday', s.id, s.name)}
+                            >
+                              {fmtZeroBlank(totalSinPen)}
+                            </td>
+                            <td
                               className={cn(
                                 'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
                                 pen > 0 ? 'text-rose-600' : 'text-zinc-400',
@@ -520,48 +590,6 @@ export default function TipsDashboardView({
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
                               {formatPenalizacionPct(pen)}
-                            </td>
-                            <td
-                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-700', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              {formatEffectiveHours(wdEff, weEff)}
-                            </td>
-                            <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              {fmtHours(s.weekdayHours)}
-                            </td>
-                            <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              <SanctionedTipMoney
-                                amount={s.weekdayAmount}
-                                shadowAmount={s.shadowWeekdayAmount ?? null}
-                                isSanctioned={isSanc}
-                                className="text-[9px] font-black text-[#36606F]"
-                                formatFn={(n) => (Math.abs(n) < 0.005 ? ' ' : n.toFixed(2))}
-                              />
-                            </td>
-                            <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80', strikeClass)}
-                              onClick={() => openOverride('weekend', s.id, s.name)}
-                            >
-                              {fmtHours(s.weekendHours)}
-                            </td>
-                            <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80', strikeClass)}
-                              onClick={() => openOverride('weekend', s.id, s.name)}
-                            >
-                              <SanctionedTipMoney
-                                amount={s.weekendAmount}
-                                shadowAmount={s.shadowWeekendAmount ?? null}
-                                isSanctioned={isSanc}
-                                className="text-[9px] font-black text-[#36606F]"
-                                formatFn={(n) => (Math.abs(n) < 0.005 ? ' ' : n.toFixed(2))}
-                              />
                             </td>
                             <td className={cn('px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600', strikeClass)}>
                               <SanctionedTipMoney

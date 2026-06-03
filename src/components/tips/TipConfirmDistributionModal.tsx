@@ -48,11 +48,11 @@ export function TipConfirmDistributionModal({
 
   const modal = (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] flex items-end sm:items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-[9999]"
+        className="z-[9999] flex max-h-[90vh] w-full max-w-[min(32rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 duration-200 sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#36606F] px-4 py-3 md:py-4 flex items-center justify-between text-white shrink-0">
