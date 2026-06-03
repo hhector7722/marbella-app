@@ -690,9 +690,6 @@ export default function StaffDashboardView() {
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
-                                    <Link href="/staff/propinas" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
-                                        Propinas <ArrowRight size={10} strokeWidth={3} />
-                                    </Link>
                                     <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
                                         Historial <ArrowRight size={10} strokeWidth={3} />
                                     </Link>
@@ -1552,6 +1549,22 @@ export default function StaffDashboardView() {
                                             <div className="flex flex-col text-left">
                                                 <span className="font-black text-gray-800 uppercase tracking-wide">Cierre</span>
                                                 <span className="text-[10px] text-gray-400 font-medium">Cerrar caja y registrar el arqueo</span>
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setIsCashOptionsModalOpen(false);
+                                                router.push('/staff/propinas');
+                                            }}
+                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-amber-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group min-h-12"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                                <Image src="/icons/tip.png" alt="Propinas" width={48} height={48} className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="flex flex-col text-left">
+                                                <span className="font-black text-gray-800 uppercase tracking-wide">Propinas</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Tu reparto estimado y desglose TJI</span>
                                             </div>
                                         </button>
                                     </>
