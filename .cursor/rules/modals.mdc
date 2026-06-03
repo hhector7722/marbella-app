@@ -1,0 +1,9 @@
+---
+description: Reglas estrictas para la creación de nuevos modales en la app Bar La Marbella.
+globs: *.tsx
+---
+# Reglas de Modales (SSOT)
+- NUNCA manipules el DOM (`document.body.style.overflow`) para bloquear el scroll en los componentes de UI.
+- Todo nuevo modal DEBE tener un backdrop con el atributo `data-marbella-modal-overlay="true"`.
+- Todo contenedor principal de modal DEBE llevar `role="dialog"` y `aria-modal="true"`.
+- El bloqueo de scroll, prevención de layout shift y fix de iOS WebKit lo gestiona automáticamente `ModalChromeWatcher` basándose en la presencia de esos atributos.
