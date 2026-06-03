@@ -76,6 +76,19 @@ export function formatTipMoney(val: number): string {
   return `${val.toFixed(2)} €`;
 }
 
+/** Pagado vs importe teórico tachado cuando el empleado está sancionado. */
+export function getShadowTipDisplay(
+  amount: number,
+  shadowAmount: number | null | undefined,
+  isSanctioned?: boolean,
+  format: (n: number) => string = formatTipMoney
+): { paid: string; shadow: string | null } {
+  if (isSanctioned && shadowAmount != null && Math.abs(shadowAmount) >= 0.005) {
+    return { paid: ' ', shadow: format(shadowAmount) };
+  }
+  return { paid: format(amount), shadow: null };
+}
+
 export function formatTipPct(val: number): string {
   if (Math.abs(val) < 0.005) return ' ';
   return `${val.toFixed(1)}%`;

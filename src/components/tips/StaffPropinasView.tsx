@@ -16,6 +16,7 @@ import {
   formatTipPct,
   tjiColorClass,
 } from '@/lib/tip-distribution-display';
+import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 
 type TipPreviewStaffRow = {
   id: string;
@@ -23,6 +24,9 @@ type TipPreviewStaffRow = {
   weekdayAmount: number;
   weekendAmount: number;
   totalAmount: number;
+  shadowAmount?: number | null;
+  shadowWeekdayAmount?: number | null;
+  shadowWeekendAmount?: number | null;
   weekdayHoursRaw: number;
   weekendHoursRaw: number;
   weekdayHoursEffective?: number;
@@ -223,7 +227,12 @@ export default function StaffPropinasView({
                     Lun–Vie
                   </p>
                   <p className="mt-1 text-lg font-black text-zinc-800 tabular-nums">
-                    {formatTipMoney(myRow.weekdayAmount)}
+                    <SanctionedTipMoney
+                      amount={myRow.weekdayAmount}
+                      shadowAmount={myRow.shadowWeekdayAmount ?? null}
+                      isSanctioned={myRow.isSanctioned}
+                      formatFn={formatTipMoney}
+                    />
                   </p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-3">
@@ -231,7 +240,12 @@ export default function StaffPropinasView({
                     Fin de semana
                   </p>
                   <p className="mt-1 text-lg font-black text-zinc-800 tabular-nums">
-                    {formatTipMoney(myRow.weekendAmount)}
+                    <SanctionedTipMoney
+                      amount={myRow.weekendAmount}
+                      shadowAmount={myRow.shadowWeekendAmount ?? null}
+                      isSanctioned={myRow.isSanctioned}
+                      formatFn={formatTipMoney}
+                    />
                   </p>
                 </div>
               </div>
@@ -241,7 +255,14 @@ export default function StaffPropinasView({
                   Total estimado
                 </p>
                 <p className="mt-1 text-4xl font-black tabular-nums tracking-tight">
-                  {formatTipMoney(myRow.totalAmount)}
+                  <SanctionedTipMoney
+                    amount={myRow.totalAmount}
+                    shadowAmount={myRow.shadowAmount ?? null}
+                    isSanctioned={myRow.isSanctioned}
+                    className="text-white"
+                    strikeClassName="text-white/50"
+                    formatFn={formatTipMoney}
+                  />
                 </p>
               </div>
             </section>

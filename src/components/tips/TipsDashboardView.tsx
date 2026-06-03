@@ -15,6 +15,7 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
+import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import {
   formatLocalIsoDateLabel,
   formatEffectiveHours,
@@ -42,6 +43,9 @@ type TipPreviewStaffRow = {
   weekdayAmount: number;
   weekendAmount: number;
   totalAmount: number;
+  shadowAmount?: number | null;
+  shadowWeekdayAmount?: number | null;
+  shadowWeekendAmount?: number | null;
   isSanctioned?: boolean;
   hasOverrides: boolean;
 };
@@ -533,7 +537,13 @@ export default function TipsDashboardView({
                               className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer', strikeClass)}
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
-                              {fmtZeroBlank(s.weekdayAmount, 2)}
+                              <SanctionedTipMoney
+                                amount={s.weekdayAmount}
+                                shadowAmount={s.shadowWeekdayAmount ?? null}
+                                isSanctioned={isSanc}
+                                className="text-[9px] font-black text-[#36606F]"
+                                formatFn={(n) => (Math.abs(n) < 0.005 ? ' ' : n.toFixed(2))}
+                              />
                             </td>
                             <td
                               className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80', strikeClass)}
@@ -545,10 +555,22 @@ export default function TipsDashboardView({
                               className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80', strikeClass)}
                               onClick={() => openOverride('weekend', s.id, s.name)}
                             >
-                              {fmtZeroBlank(s.weekendAmount, 2)}
+                              <SanctionedTipMoney
+                                amount={s.weekendAmount}
+                                shadowAmount={s.shadowWeekendAmount ?? null}
+                                isSanctioned={isSanc}
+                                className="text-[9px] font-black text-[#36606F]"
+                                formatFn={(n) => (Math.abs(n) < 0.005 ? ' ' : n.toFixed(2))}
+                              />
                             </td>
                             <td className={cn('px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600', strikeClass)}>
-                              {fmtMoney(s.totalAmount)}
+                              <SanctionedTipMoney
+                                amount={s.totalAmount}
+                                shadowAmount={s.shadowAmount ?? null}
+                                isSanctioned={isSanc}
+                                className="text-[10px] font-black text-emerald-600"
+                                formatFn={fmtMoney}
+                              />
                             </td>
                           </tr>
                         );

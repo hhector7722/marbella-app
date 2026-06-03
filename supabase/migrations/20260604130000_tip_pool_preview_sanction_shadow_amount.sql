@@ -1,5 +1,6 @@
 -- ==============================================================================
--- get_tip_pool_preview: incluir rol chef en el CTE staff del reparto de propinas
+-- get_tip_pool_preview: sanciones sin doble conteo + shadowAmount en JSON
+-- (chef incluido en CTE staff; hereda 20260604120000)
 -- ==============================================================================
 
 CREATE OR REPLACE FUNCTION public.get_tip_pool_preview(
@@ -339,7 +340,10 @@ BEGIN
         SELECT
             f.*,
             COALESCE(sa.bonus_amount, 0::numeric) AS redistribution_bonus,
-            f.total_amount + COALESCE(sa.bonus_amount, 0::numeric) AS final_total_amount
+            CASE WHEN f.is_sanctioned THEN f.total_amount ELSE NULL::numeric END AS shadow_amount,
+            CASE WHEN f.is_sanctioned THEN 0::numeric
+                 ELSE f.total_amount + COALESCE(sa.bonus_amount, 0::numeric)
+            END AS final_total_amount
         FROM final_staff_pre_sanction f
         LEFT JOIN sanction_allocation sa ON sa.id = f.id
     )
@@ -382,9 +386,12 @@ BEGIN
                     'jornadasConOlvido', jornadas_con_olvido,
                     'tjiPct', tji_pct,
                     'penalizacionPct', penalizacion_pct,
-                    'weekdayAmount', weekday_amount,
-                    'weekendAmount', weekend_amount,
+                    'weekdayAmount', CASE WHEN is_sanctioned THEN 0::numeric ELSE weekday_amount END,
+                    'weekendAmount', CASE WHEN is_sanctioned THEN 0::numeric ELSE weekend_amount END,
                     'totalAmount', final_total_amount,
+                    'shadowAmount', shadow_amount,
+                    'shadowWeekdayAmount', CASE WHEN is_sanctioned THEN weekday_amount ELSE NULL::numeric END,
+                    'shadowWeekendAmount', CASE WHEN is_sanctioned THEN weekend_amount ELSE NULL::numeric END,
                     'isSanctioned', is_sanctioned,
                     'bonusAmount', redistribution_bonus,
                     'hasOverrides', (
@@ -405,3 +412,134 @@ BEGIN
     RETURN v_result;
 END;
 $$;
+
+-- confirm_tip_distribution: bonus weekday/weekend = 0 si sancionado (JSON ya trae importes pagados en 0)
+CREATE OR REPLACE FUNCTION public.confirm_tip_distribution(
+    p_start_date date,
+    p_end_date date,
+    p_notes text DEFAULT NULL
+)
+    RETURNS uuid
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    SET search_path = public
+AS $$
+DECLARE
+    v_preview jsonb;
+    v_distribution_id uuid;
+    v_weekday_total numeric;
+    v_weekend_total numeric;
+    v_staff jsonb;
+    v_uid uuid;
+BEGIN
+    v_uid := auth.uid();
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'PERMISSION_DENIED: authentication required';
+    END IF;
+
+    IF NOT public.is_manager_or_admin() THEN
+        RAISE EXCEPTION 'PERMISSION_DENIED: only manager/admin can confirm tip distribution';
+    END IF;
+
+    IF p_start_date IS NULL OR p_end_date IS NULL THEN
+        RAISE EXCEPTION 'VALIDATION_ERROR: start_date and end_date are required';
+    END IF;
+    IF p_end_date < p_start_date THEN
+        RAISE EXCEPTION 'VALIDATION_ERROR: end_date must be >= p_start_date';
+    END IF;
+
+    v_preview := public.get_tip_pool_preview(p_start_date, p_end_date);
+
+    v_weekday_total := COALESCE((v_preview->'pools'->'weekday'->>'cashTotal')::numeric, 0);
+    v_weekend_total := COALESCE((v_preview->'pools'->'weekend'->>'cashTotal')::numeric, 0);
+    v_staff := COALESCE(v_preview->'staff', '[]'::jsonb);
+
+    INSERT INTO public.tip_distribution_history (
+        period_start,
+        period_end,
+        weekday_total,
+        weekend_total,
+        confirmed_by,
+        notes
+    )
+    VALUES (
+        p_start_date,
+        p_end_date,
+        v_weekday_total,
+        v_weekend_total,
+        v_uid,
+        p_notes
+    )
+    RETURNING id INTO v_distribution_id;
+
+    INSERT INTO public.tip_distribution_lines (
+        distribution_id,
+        user_id,
+        weekday_hours,
+        weekend_hours,
+        jornadas_totales,
+        jornadas_con_olvido,
+        tji_pct,
+        penalizacion_pct,
+        weekday_hours_effective,
+        weekend_hours_effective,
+        weekday_amount,
+        weekend_amount,
+        total_amount,
+        weekday_bonus,
+        weekend_bonus,
+        is_sanctioned
+    )
+    SELECT
+        v_distribution_id,
+        (elem->>'id')::uuid,
+        COALESCE((elem->>'weekdayHours')::numeric, 0),
+        COALESCE((elem->>'weekendHours')::numeric, 0),
+        COALESCE((elem->>'jornadasTotales')::int, 0),
+        COALESCE((elem->>'jornadasConOlvido')::int, 0),
+        COALESCE((elem->>'tjiPct')::numeric, 0),
+        COALESCE((elem->>'penalizacionPct')::int, 0),
+        COALESCE((elem->>'weekdayHoursEffective')::numeric, 0),
+        COALESCE((elem->>'weekendHoursEffective')::numeric, 0),
+        COALESCE((elem->>'weekdayAmount')::numeric, 0),
+        COALESCE((elem->>'weekendAmount')::numeric, 0),
+        COALESCE((elem->>'totalAmount')::numeric, 0),
+        CASE
+            WHEN COALESCE((elem->>'isSanctioned')::boolean, false) THEN 0
+            WHEN COALESCE((elem->>'weekdayAmount')::numeric, 0) + COALESCE((elem->>'weekendAmount')::numeric, 0) > 0
+            THEN ROUND(
+                COALESCE((elem->>'bonusAmount')::numeric, 0)
+                * COALESCE((elem->>'weekdayAmount')::numeric, 0)
+                / (
+                    COALESCE((elem->>'weekdayAmount')::numeric, 0)
+                    + COALESCE((elem->>'weekendAmount')::numeric, 0)
+                ),
+                2
+            )
+            ELSE COALESCE((elem->>'bonusAmount')::numeric, 0)
+        END,
+        CASE
+            WHEN COALESCE((elem->>'isSanctioned')::boolean, false) THEN 0
+            WHEN COALESCE((elem->>'weekdayAmount')::numeric, 0) + COALESCE((elem->>'weekendAmount')::numeric, 0) > 0
+            THEN COALESCE((elem->>'bonusAmount')::numeric, 0)
+                - ROUND(
+                    COALESCE((elem->>'bonusAmount')::numeric, 0)
+                    * COALESCE((elem->>'weekdayAmount')::numeric, 0)
+                    / (
+                        COALESCE((elem->>'weekdayAmount')::numeric, 0)
+                        + COALESCE((elem->>'weekendAmount')::numeric, 0)
+                    ),
+                    2
+                )
+            ELSE 0
+        END,
+        COALESCE((elem->>'isSanctioned')::boolean, false)
+    FROM jsonb_array_elements(v_staff) AS elem
+    WHERE (elem->>'id') IS NOT NULL;
+
+    RETURN v_distribution_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.confirm_tip_distribution(date, date, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.confirm_tip_distribution(date, date, text) TO authenticated;

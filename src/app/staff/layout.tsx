@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Calendar, Clock, Coins, Home, Settings, User, type LucideIcon } from 'lucide-react';
+import { Calendar, Clock, Home, Package, Settings, User, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
-
-const STAFF_TIP_ROLES = new Set(['staff', 'supervisor', 'chef']);
+import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 
 type StaffNavItem = {
     name: string;
@@ -16,18 +15,15 @@ type StaffNavItem = {
     icon: LucideIcon;
     /** Si se define, el ítem solo se muestra para estos roles de perfil */
     roles?: string[];
+    /** Igual que BottomNavStaff: abre modal de proveedores en lugar de navegar */
+    openSupplierModal?: boolean;
 };
 
 const BASE_NAV_ITEMS: StaffNavItem[] = [
     { name: 'Horarios', href: '/staff/schedule', icon: Calendar },
     { name: 'Asistencia', href: '/staff/history', icon: Clock },
-    {
-        name: 'Propinas',
-        href: '/staff/propinas',
-        icon: Coins,
-        roles: ['staff', 'supervisor', 'chef'],
-    },
     { name: 'Inicio', href: '/staff/dashboard', icon: Home },
+    { name: 'Pedidos', href: '/orders/new', icon: Package, openSupplierModal: true },
     { name: 'Perfil', href: '/staff/profile', icon: User },
     { name: 'Cuenta', href: '/staff/account', icon: Settings },
 ];
@@ -36,6 +32,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const supabase = createClient();
     const [profileRole, setProfileRole] = useState<string | null>(null);
+    const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -96,6 +93,12 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
                                     : 'text-blue-200 hover:text-white'
                             )}
                             aria-current={active ? 'page' : undefined}
+                            onClick={(e) => {
+                                if (item.openSupplierModal) {
+                                    e.preventDefault();
+                                    setIsSupplierModalOpen(true);
+                                }
+                            }}
                         >
                             <Icon size={20} className="md:h-5 md:w-5" strokeWidth={2.5} />
                             <span className="mt-0.5 text-[7.5px] font-black uppercase tracking-tighter whitespace-nowrap md:mt-1 md:text-[9px] md:tracking-widest">
@@ -105,6 +108,11 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
                     );
                 })}
             </nav>
+
+            <SupplierSelectionModal
+                isOpen={isSupplierModalOpen}
+                onClose={() => setIsSupplierModalOpen(false)}
+            />
         </>
     );
 }
