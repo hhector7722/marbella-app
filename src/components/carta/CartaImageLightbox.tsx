@@ -1,5 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useScrollLock } from '@/hooks/useScrollLock'
+
 export function CartaImageLightbox({
   src,
   alt,
@@ -14,9 +18,16 @@ export function CartaImageLightbox({
   open: boolean
   onClose: () => void
 }) {
-  if (!open || !src) return null
+  const [portalReady, setPortalReady] = useState(false)
+  useScrollLock(open && Boolean(src))
 
-  return (
+  useEffect(() => {
+    setPortalReady(true)
+  }, [])
+
+  if (!open || !src || !portalReady) return null
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 p-4 sm:p-6 md:p-8"
       onClick={onClose}
@@ -26,7 +37,7 @@ export function CartaImageLightbox({
       aria-label="Imagen ampliada. Pulsa fuera para cerrar."
     >
       <div
-        className="flex max-h-[min(94vh,960px)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-lg md:max-w-xl lg:max-w-2xl"
+        className="flex max-h-[min(94svh,960px)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-lg md:max-w-xl lg:max-w-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="shrink-0 border-b border-zinc-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
@@ -43,10 +54,11 @@ export function CartaImageLightbox({
           <img
             src={src}
             alt={alt}
-            className="max-h-[min(68vh,680px)] w-full max-w-full object-contain"
+            className="max-h-[min(68svh,680px)] w-full max-w-full object-contain"
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

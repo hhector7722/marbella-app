@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-04 (Insights: cobros tarjeta periodo híbrido)
+**Última actualización:** 2026-06-04 (Carta: modales sección — portal y scroll)
+
+- [x] **Carta: comportamiento modales de sección (2026-06-04)**: [`MenuAccordion.tsx`](src/components/staff/MenuAccordion.tsx) — modales de categoría/subcategoría con `createPortal` a `document.body` (evita recorte y scroll fantasma dentro de contenedores `overflow-y-auto` en `/carta`, `/staff/carta`, encargos); `useScrollLock` al abrir; selector de subcategorías **centrado** en móvil; scroll interno con `scroll-pb-end-cards` + hueco `scroll-end-touch-cards` (última fila y +/− visibles en pedidos). [`CartaImageLightbox.tsx`](src/components/carta/CartaImageLightbox.tsx) también en portal + `svh`. Edición producto/categoría: `useScrollLock` en [`MenuItemEditModal`](src/components/carta/MenuItemEditModal.tsx) / [`MenuCategoryEditModal`](src/components/carta/MenuCategoryEditModal.tsx).
+
+**Última actualización anterior:** 2026-06-04 (Insights: cobros tarjeta periodo híbrido)
 
 - [x] **Insights: cobros tarjeta híbridos por periodo (2026-06-04)**: Migración [`20260604150000_get_period_card_payments.sql`](supabase/migrations/20260604150000_get_period_card_payments.sql) — RPC `get_period_card_payments(p_start, p_end)`: por día `SUM(tickets_marbella.cobro_tarjeta)` si > 0, si no `cash_closings.card_payments` (pre-BDP 26/05); prioridad tickets si ambos > 0. [`actions.ts`](src/app/dashboard/insights/actions.ts) `fetchPeriodCardPayments` una sola RPC (sustituye N× `get_closing_sales_breakdown`). Aplicado en Supabase.
 
