@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-04 (Insights: Resultado del periodo — cobros y KPIs)
+**Última actualización:** 2026-06-04 (Horarios: indicador rentabilidad día — solo Hector)
+
+- [x] **Horarios: indicador rentabilidad en editor diario (2026-06-04)**: [`ScheduleDayProfitabilityBar.tsx`](src/components/schedule/ScheduleDayProfitabilityBar.tsx) en [`ScheduleDayEditor.tsx`](src/components/schedule/ScheduleDayEditor.tsx) — visible solo `hhector7722@gmail.com`. Recalcula en vivo: coste personal (horas × `fn_labor_effective_ordinary_rate` × 1,30 SS, fallback 10 €/h), facturación necesaria al 35%, ratio vs `tickets_marbella.total_documento` del día (— sin ventas). Caché tarifas sesión [`labor-rate-session-cache.ts`](src/lib/labor-rate-session-cache.ts). Sin cambios en guardado ni vista lectura del horario.
+
+**Última actualización anterior:** 2026-06-04 (Insights: Resultado del periodo — cobros y KPIs)
 
 - [x] **Insights: Resultado del periodo — cobros totales y modales KPI (2026-06-04)**: [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx) — chips **Venta neta**, **Cobros totales** (efectivo tesorería + tarjeta), **Delta PyG-Cobros** (margen − cobros); % Margen PyG sin fondo. Modales: ventas (Facturación → Venta neta, sin devoluciones); gastos con grupos desplegables **Mano de obra** (nóminas + extras + bonus 1.700 € fijo en UI) y **Gastos fijos** (alquiler + Otros 0 €); cobros (Entradas / Salidas / Tarjeta); delta recalculado. [`actions.ts`](src/app/dashboard/insights/actions.ts) — `fetchPeriodCardPayments` vía `get_closing_sales_breakdown` por día del rango (fallback `tickets_marbella.cobro_tarjeta`); campos `cardPayments`, `cobrosTotales`, `deltaPygCobros`. [`insights-date-utils.ts`](src/app/dashboard/insights/insights-date-utils.ts) — `enumerateYmdRange`. Chip **Gastos totales** sigue siendo total RPC (bonus 1.700 € solo en desglose modal).
 

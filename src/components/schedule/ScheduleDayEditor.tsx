@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
 
 export interface ScheduleDayEditorProps {
     initialDate: string;
@@ -1133,7 +1134,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     </div>
 
                     {/* Footer Total — mismo que modal: fondo blanco, texto gris */}
-                    <div className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
+                    <div className="flex w-full bg-white border-t border-gray-100 shrink-0">
                         <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
                             Total
                         </div>
@@ -1145,6 +1146,16 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                             ))}
                         </div>
                     </div>
+
+                    <ScheduleDayProfitabilityBar
+                        date={date}
+                        shifts={shifts.map((s) => ({
+                            employeeId: s.employeeId,
+                            start: s.start,
+                            end: s.end,
+                            active: s.active,
+                        }))}
+                    />
                 </div>
 
             </div>
