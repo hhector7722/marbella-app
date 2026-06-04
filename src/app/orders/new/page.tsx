@@ -337,7 +337,7 @@ export default function NewOrderPage() {
                     </div>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end">
                     <div className="grid grid-cols-3 gap-2.5 pt-2 sm:grid-cols-4 sm:gap-6 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
                         {filteredIngredients.map(ing => (
                             <OrderProductCard
@@ -350,6 +350,10 @@ export default function NewOrderPage() {
                             />
                         ))}
                     </div>
+                    <div
+                        className="scroll-end-touch"
+                        aria-hidden
+                    />
                 </div>
             </div>
 

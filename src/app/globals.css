@@ -54,6 +54,18 @@
   .top-header-safe {
     top: calc(3.5rem + env(safe-area-inset-top));
   }
+
+  /** Hueco al final de listas táctiles (última fila de productos / controles +/−). */
+  .scroll-end-touch {
+    min-height: calc(env(safe-area-inset-bottom, 0px) + 9rem);
+    width: 100%;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+
+  .scroll-pb-end {
+    scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 9rem);
+  }
 }
 
 @keyframes animate-spinner-fade {

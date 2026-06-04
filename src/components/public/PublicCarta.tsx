@@ -199,7 +199,7 @@ export function PublicCarta({
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar bg-white pb-2">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end custom-scrollbar bg-white pb-2">
           <MenuAccordion
             items={digitalItems}
             lang={lang}
