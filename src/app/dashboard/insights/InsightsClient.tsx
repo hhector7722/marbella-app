@@ -99,6 +99,14 @@ function signedEuroTone(value: number, positiveTone: string, negativeTone: strin
   return value > 0 ? positiveTone : negativeTone
 }
 
+/** Rentabilidad PyG (% sobre venta neta): &lt;10 rojo, 10–20 naranja, 20–30 ámbar, ≥30 verde. */
+function profitabilityTone(pct: number): string {
+  if (pct < 10) return 'text-rose-600'
+  if (pct < 20) return 'text-orange-500'
+  if (pct < 30) return 'text-amber-500'
+  return 'text-emerald-600'
+}
+
 function FinancialKpiChip({
   label,
   value,
@@ -132,18 +140,15 @@ function FinancialKpiChip({
       )}
       title={tooltip}
     >
-      <span className="text-[8px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
-        {label}
-      </span>
       <div
         className={cn(
-          'mt-0.5 flex min-w-0 w-full items-center justify-center',
-          badge && badge !== ' ' ? 'flex-col gap-0.5' : 'flex-row gap-1'
+          'flex min-w-0 w-full flex-col items-center justify-center gap-0.5',
+          badge && badge !== ' ' && 'gap-0'
         )}
       >
         <span
           className={cn(
-            'max-w-full text-[10px] sm:text-xs lg:text-sm font-black tabular-nums leading-tight text-center',
+            'max-w-full text-sm sm:text-base lg:text-lg font-black tabular-nums leading-tight text-center',
             valueClassName ?? 'text-zinc-800'
           )}
         >
@@ -152,7 +157,7 @@ function FinancialKpiChip({
         {badge && badge !== ' ' && (
           <span
             className={cn(
-              'max-w-full text-[9px] lg:text-[10px] font-black tabular-nums leading-tight text-zinc-700 text-center',
+              'max-w-full text-xs lg:text-sm font-black tabular-nums leading-tight text-zinc-700 text-center',
               !badgePlain && 'rounded-md bg-zinc-200/80 px-1.5 py-0.5'
             )}
           >
@@ -160,6 +165,9 @@ function FinancialKpiChip({
           </span>
         )}
       </div>
+      <span className="mt-1 text-[10px] lg:text-xs font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+        {label}
+      </span>
     </Comp>
   )
 }
@@ -424,30 +432,46 @@ function ProductStat({
   prominent?: boolean
   className?: string
 }) {
+  const valueEl = (
+    <span
+      className={cn(
+        'block font-black text-zinc-800 tabular-nums leading-tight',
+        prominent ? 'text-xs sm:text-sm' : 'mt-0.5 text-[8px] lg:text-[10px]'
+      )}
+    >
+      {value}
+    </span>
+  )
+  const labelEl = (
+    <span
+      className={cn(
+        'block font-bold uppercase tracking-wider text-zinc-500',
+        prominent ? 'mt-0.5 text-[8px] sm:text-[9px]' : 'text-[8px] lg:text-[10px]'
+      )}
+    >
+      {label}
+    </span>
+  )
+
   return (
     <div
       className={cn(
         'min-w-0 flex flex-col',
-        prominent && 'items-center justify-center text-center min-h-[2.75rem]',
+        prominent && 'items-center justify-center text-center min-h-[2.25rem]',
         className
       )}
     >
-      <span
-        className={cn(
-          'block font-bold uppercase tracking-wider text-zinc-500',
-          prominent ? 'text-[10px] sm:text-xs' : 'text-[8px] lg:text-[10px]'
-        )}
-      >
-        {label}
-      </span>
-      <span
-        className={cn(
-          'block font-black text-zinc-800 tabular-nums mt-1',
-          prominent ? 'text-sm sm:text-base lg:text-lg leading-tight' : 'mt-0.5'
-        )}
-      >
-        {value}
-      </span>
+      {prominent ? (
+        <>
+          {valueEl}
+          {labelEl}
+        </>
+      ) : (
+        <>
+          {labelEl}
+          {valueEl}
+        </>
+      )}
     </div>
   )
 }
@@ -455,11 +479,11 @@ function ProductStat({
 function WeekdayDetailStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 text-center leading-tight">
-      <span className="block text-[6px] sm:text-[7px] font-bold uppercase tracking-wide text-zinc-500">
-        {label}
-      </span>
-      <span className="block text-[8px] sm:text-[9px] font-black tabular-nums text-zinc-800 mt-px">
+      <span className="block text-[8px] sm:text-[9px] font-black tabular-nums text-zinc-800">
         {value}
+      </span>
+      <span className="mt-1 block text-[6px] sm:text-[7px] font-bold uppercase tracking-wide text-zinc-500">
+        {label}
       </span>
     </div>
   )
@@ -475,7 +499,7 @@ function WeekdayDetailCard({
   const ticketsValue = day.avg_tickets === 0 ? ' ' : day.avg_tickets.toFixed(1)
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1 py-1 shadow-lg">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1.5 py-1.5 shadow-lg">
       <button
         type="button"
         onClick={onClose}
@@ -484,14 +508,14 @@ function WeekdayDetailCard({
       >
         <X className="h-3 w-3" />
       </button>
-      <p className="shrink-0 pr-7 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
-        {day.weekday_name}
-      </p>
-      <div className="mt-0.5 flex min-h-0 flex-1 flex-col justify-center gap-1">
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2.5 pt-0.5 pb-1">
         <WeekdayDetailStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} />
         <WeekdayDetailStat label="Media tickets" value={ticketsValue} />
         <WeekdayDetailStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} />
       </div>
+      <p className="shrink-0 w-full text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
+        {day.weekday_name}
+      </p>
     </div>
   )
 }
@@ -530,7 +554,7 @@ function ProductDetailCard({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-3 grid-rows-2 gap-x-1.5 gap-y-1">
         <ProductStat
           prominent
           label="Unidades"
@@ -558,11 +582,11 @@ function ProductDetailCard({
 function KpiFloat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-w-0 px-1 py-0.5 text-center w-full">
-      <span className="text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
-        {label}
-      </span>
-      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug mt-0.5 line-clamp-2">
+      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug line-clamp-2">
         {value}
+      </span>
+      <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+        {label}
       </span>
     </div>
   )
@@ -1000,29 +1024,34 @@ export default function InsightsClient({
           body: <ExpensesBreakdownBody expenseLines={expenseLines} />,
         }
       case 'margin': {
-        const marginPctLabel =
+        const rentabilidadPct =
           marginPctRaw === null
-            ? ' '
+            ? null
             : formatDisplayValue(Number(marginPctRaw.toFixed(1))) === ' '
-              ? ' '
-              : `${Number(marginPctRaw.toFixed(1))}%`
+              ? null
+              : Number(marginPctRaw.toFixed(1))
+        const rentabilidadDisplayed =
+          rentabilidadPct === null ? ' ' : `${rentabilidadPct}%`
         return {
           title: 'Margen PyG',
-          footnote: 'Resultado contable del periodo. No refleja cobros reales en caja.',
           body: (
             <div className="space-y-1">
-              <FinancialDetailRow label="Ventas" amount={pyg.income.total} />
+              <FinancialDetailRow label="Venta neta" amount={pyg.income.total} />
               <FinancialDetailRow label="Gastos" amount={pyg.expenses.total} />
-              <FinancialDetailBlock label="Margen">
-                {formatEuroKpi(pyg.net) === ' ' ? (
-                  ' '
-                ) : (
-                  <>
-                    {formatEuroKpi(pyg.net)}
-                    {marginPctLabel !== ' ' ? ` · ${marginPctLabel}` : ''}
-                  </>
-                )}
-              </FinancialDetailBlock>
+              <FinancialDetailRow label="Margen" amount={pyg.net} />
+              <div className="flex items-baseline justify-between gap-4 py-2">
+                <span className="text-xs font-semibold text-zinc-600">Rentabilidad</span>
+                <span
+                  className={cn(
+                    'text-sm font-black tabular-nums whitespace-nowrap',
+                    rentabilidadPct === null
+                      ? 'text-zinc-800'
+                      : profitabilityTone(rentabilidadPct)
+                  )}
+                >
+                  {rentabilidadDisplayed}
+                </span>
+              </div>
             </div>
           ),
         }
@@ -1032,9 +1061,9 @@ export default function InsightsClient({
           title: 'Cobros totales',
           body: (
             <div className="space-y-1">
-              <FinancialDetailRow label="Entradas" amount={efectivoEntradas} />
+              <FinancialDetailRow label="Efectivo" amount={efectivoEntradas} />
               <FinancialDetailRow label="Tarjeta" amount={cardPayments} />
-              <FinancialDetailRow label="Total cobros" amount={cobrosTotales} />
+              <FinancialDetailRow label="Total" amount={cobrosTotales} />
             </div>
           ),
         }
@@ -1104,7 +1133,7 @@ export default function InsightsClient({
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={hourlyChartData}
-                            margin={{ top: 8, right: 8, left: 4, bottom: 20 }}
+                            margin={{ top: 8, right: 8, left: 4, bottom: 8 }}
                             barCategoryGap="8%"
                             barGap={2}
                           >
@@ -1115,7 +1144,7 @@ export default function InsightsClient({
                               interval={0}
                               angle={-40}
                               textAnchor="end"
-                              height={48}
+                              height={32}
                             />
                             <YAxis
                               tick={{ fontSize: 9 }}
@@ -1164,7 +1193,7 @@ export default function InsightsClient({
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-1 -mt-3 lg:-mt-4 pt-0">
+                    <div className="grid grid-cols-3 gap-1 -mt-6 lg:-mt-8 pt-0">
                       <KpiFloat label="Hora más rentable" value={hourlyKpis.best} />
                       <KpiFloat label="Hora de mayor pérdida" value={hourlyKpis.worst} />
                       <KpiFloat label="Franja más rentable" value={hourlyKpis.optimal} />
