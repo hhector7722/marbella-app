@@ -69,15 +69,13 @@ export type FinancialSummaryData = {
   reconciliation: { delta: number }
   incomeLines: FinancialStatementLine[]
   expenseLines: FinancialStatementLine[]
-  cashIn: number
-  cashOut: number
+  /** Entradas brutas de caja (treasury_log IN + CLOSE_ENTRY), sin restar salidas. */
+  efectivoEntradas: number
   salesGross: number
-  /** Cobros tarjeta del periodo (RPC cierre o SUM tickets). */
+  /** Tarjeta del periodo (get_period_card_payments). */
   cardPayments: number
-  /** entradas_efectivo + cardPayments */
+  /** efectivoEntradas + cardPayments */
   cobrosTotales: number
-  /** Margen PyG − cobrosTotales */
-  deltaPygCobros: number
 }
 
 type FinancialActionFailure = { success: false; error: string; forbidden?: boolean }
@@ -272,7 +270,8 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-async function fetchPeriodCardPayments(
+/** Cobros tarjeta del periodo: RPC get_closing_sales_breakdown por día o fallback tickets. */
+async function getPeriodCardPayments(
   supabase: Awaited<ReturnType<typeof createClient>>,
   dateFrom: string,
   dateTo: string
@@ -321,10 +320,13 @@ export async function getFinancialSummary(
   }
 
   const row = extracted.data
-  const cashIn = row.cashFlow.inflows.total
-  const cardPayments = await fetchPeriodCardPayments(supabase, parsed.data.dateFrom, parsed.data.dateTo)
-  const cobrosTotales = roundMoney(cashIn + cardPayments)
-  const deltaPygCobros = roundMoney(row.pyg.net - cobrosTotales)
+  const efectivoEntradas = row.cashFlow.inflows.total
+  const cardPayments = await getPeriodCardPayments(
+    supabase,
+    parsed.data.dateFrom,
+    parsed.data.dateTo
+  )
+  const cobrosTotales = roundMoney(efectivoEntradas + cardPayments)
 
   return {
     success: true,
@@ -338,12 +340,10 @@ export async function getFinancialSummary(
       reconciliation: { delta: row.reconciliation.delta },
       incomeLines: row.pyg.income.lines,
       expenseLines: row.pyg.expenses.lines,
-      cashIn,
-      cashOut: row.cashFlow.outflows.total,
+      efectivoEntradas,
       salesGross: row.pyg.income.gross_net,
       cardPayments,
       cobrosTotales,
-      deltaPygCobros,
     },
   }
 }

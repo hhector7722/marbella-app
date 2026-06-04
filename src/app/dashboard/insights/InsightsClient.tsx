@@ -75,16 +75,13 @@ const MARGIN_GREEN = '#4CAF50'
 const MARGIN_BAR_HIGH = '#2E7D32'
 const MARGIN_BAR_MID = '#66BB6A'
 const MARGIN_BAR_LOW = '#FFA726'
-const DELTA_TOOLTIP =
-  'Margen PyG menos cobros totales (efectivo + tarjeta). Positivo = devengo por encima de cobros.'
-
 const HOURLY_CHART_START = 7
 const HOURLY_CHART_END = 23
 
 const BONUS_LABOR_EUR = 1700
 const GASTOS_FIJOS_OTROS_EUR = 0
 
-type FinancialModalKind = 'income' | 'expenses' | 'margin' | 'cash' | 'delta'
+type FinancialModalKind = 'income' | 'expenses' | 'margin' | 'cash'
 
 const INCOME_LINE_LABELS: Record<string, string> = {
   sales_positive: 'Venta neta',
@@ -95,12 +92,6 @@ const EXPENSE_LINE_LABELS: Record<string, string> = {
   payroll_total: 'Nóminas',
   overtime: 'Horas extras',
   rent_monthly: 'Alquiler',
-}
-
-function deltaChipTone(delta: number): string {
-  if (Math.abs(delta) < 50) return 'text-emerald-600'
-  if (delta > 0) return 'text-amber-600'
-  return 'text-rose-600'
 }
 
 function signedEuroTone(value: number, positiveTone: string, negativeTone: string): string {
@@ -921,7 +912,7 @@ export default function InsightsClient({
 
   const financialKpis = useMemo(() => {
     if (!financial.data) return null
-    const { pyg, cobrosTotales, deltaPygCobros } = financial.data
+    const { pyg, cobrosTotales } = financial.data
     const marginPct =
       pyg.income.total > 0 ? (pyg.net / pyg.income.total) * 100 : null
     const marginBadge =
@@ -936,12 +927,10 @@ export default function InsightsClient({
       pygNet: formatEuroKpi(pyg.net),
       marginBadge,
       cobrosTotales: formatEuroKpi(cobrosTotales),
-      delta: formatEuroKpi(deltaPygCobros),
       incomeTone: signedEuroTone(pyg.income.total, 'text-emerald-600', 'text-rose-600'),
       expensesTone: 'text-rose-600',
       pygNetTone: signedEuroTone(pyg.net, 'text-emerald-600', 'text-rose-600'),
       cobrosTone: signedEuroTone(cobrosTotales, 'text-emerald-600', 'text-rose-600'),
-      deltaTone: deltaChipTone(deltaPygCobros),
     }
   }, [financial.data])
 
@@ -958,12 +947,10 @@ export default function InsightsClient({
       pyg,
       incomeLines,
       expenseLines,
-      cashIn,
-      cashOut,
+      efectivoEntradas,
       salesGross,
       cardPayments,
       cobrosTotales,
-      deltaPygCobros,
     } = financial.data
 
     const ventaNetaAmount =
@@ -1018,21 +1005,9 @@ export default function InsightsClient({
           title: 'Cobros totales',
           body: (
             <div className="space-y-1">
-              <FinancialDetailRow label="Entradas" amount={cashIn} />
-              <FinancialDetailRow label="Salidas" amount={cashOut} />
+              <FinancialDetailRow label="Entradas" amount={efectivoEntradas} />
               <FinancialDetailRow label="Tarjeta" amount={cardPayments} />
-              <FinancialDetailRow label="Cobros totales" amount={cobrosTotales} />
-            </div>
-          ),
-        }
-      case 'delta':
-        return {
-          title: 'Delta PyG-Cobros',
-          body: (
-            <div className="space-y-1">
-              <FinancialDetailRow label="Margen PyG" amount={pyg.net} />
-              <FinancialDetailRow label="Cobros totales" amount={cobrosTotales} />
-              <FinancialDetailRow label="Diferencia" amount={deltaPygCobros} />
+              <FinancialDetailRow label="Total cobros" amount={cobrosTotales} />
             </div>
           ),
         }
@@ -1545,8 +1520,8 @@ export default function InsightsClient({
                   onRetry={() => void fetchFinancial(financialRange.from, financialRange.to)}
                 />
               ) : financialKpis ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <FinancialKpiChip
                       label="Venta neta"
                       value={financialKpis.income}
@@ -1565,20 +1540,15 @@ export default function InsightsClient({
                       valueClassName={financialKpis.cobrosTone}
                       onClick={() => setFinancialModal('cash')}
                     />
-                    <FinancialKpiChip
-                      label="Delta PyG-Cobros"
-                      value={financialKpis.delta}
-                      valueClassName={financialKpis.deltaTone}
-                      tooltip={DELTA_TOOLTIP}
-                      onClick={() => setFinancialModal('delta')}
-                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
                     <FinancialKpiChip
                       label="Margen PyG"
                       value={financialKpis.pygNet}
                       valueClassName={financialKpis.pygNetTone}
                       badge={financialKpis.marginBadge}
                       badgePlain
-                      className="col-span-2 max-w-[50%] justify-self-center md:col-span-1 md:max-w-none md:justify-self-stretch"
+                      className="col-start-2"
                       onClick={() => setFinancialModal('margin')}
                     />
                   </div>
