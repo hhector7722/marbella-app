@@ -1,9 +1,13 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import StaffPropinasView from '@/components/tips/StaffPropinasView';
-import type { StaffTipHistoryEntry } from '@/lib/tip-distribution-display';
+import {
+  mapStaffTipHistoryRows,
+  STAFF_TIP_HISTORY_SELECT,
+  type TipDistributionLineRow,
+} from '@/lib/staff-tip-history';
 
-/** Vista «Mis propinas» (empleado). Manager/admin entran aquí desde staff; gestión en /dashboard/propinas. */
+/** Vista propinas (empleado). Manager/admin entran aquí desde staff; gestión en /dashboard/propinas. */
 const STAFF_PROPINAS_ROLES = new Set(['staff', 'supervisor', 'chef', 'manager', 'admin']);
 
 export default async function StaffPropinasPage() {
@@ -17,7 +21,7 @@ export default async function StaffPropinasPage() {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, first_name')
     .eq('id', user.id)
     .single();
 
@@ -31,84 +35,21 @@ export default async function StaffPropinasPage() {
 
   const { data: linesRaw, error: linesError } = await supabase
     .from('tip_distribution_lines')
-    .select(
-      `
-      id,
-      distribution_id,
-      total_amount,
-      weekday_amount,
-      weekend_amount,
-      weekday_hours,
-      weekend_hours,
-      weekday_hours_effective,
-      weekend_hours_effective,
-      jornadas_totales,
-      jornadas_con_olvido,
-      tji_pct,
-      penalizacion_pct,
-      weekday_bonus,
-      weekend_bonus,
-      is_sanctioned,
-      tip_distribution_history (
-        period_start,
-        period_end,
-        confirmed_at
-      )
-    `
-    )
+    .select(STAFF_TIP_HISTORY_SELECT)
     .eq('user_id', user.id);
 
   if (linesError) {
     console.error('[staff/propinas] history:', linesError.message);
   }
 
-  type HistoryJoin = {
-    period_start: string;
-    period_end: string;
-    confirmed_at: string;
-  };
+  const initialHistory = mapStaffTipHistoryRows(linesRaw as TipDistributionLineRow[] | null);
 
-  function pickHistoryJoin(
-    joined: HistoryJoin | HistoryJoin[] | null | undefined
-  ): HistoryJoin | null {
-    if (!joined) return null;
-    if (Array.isArray(joined)) return joined[0] ?? null;
-    return joined;
-  }
-
-  const initialHistory: StaffTipHistoryEntry[] = (linesRaw ?? [])
-    .map((row) => {
-      const h = pickHistoryJoin(
-        row.tip_distribution_history as HistoryJoin | HistoryJoin[] | null
-      );
-      if (!h) return null;
-      return {
-        lineId: row.id as string,
-        distributionId: row.distribution_id as string,
-        totalAmount: Number(row.total_amount),
-        weekdayAmount: Number(row.weekday_amount),
-        weekendAmount: Number(row.weekend_amount),
-        weekdayHours: Number(row.weekday_hours),
-        weekendHours: Number(row.weekend_hours),
-        weekdayHoursEffective: Number(row.weekday_hours_effective),
-        weekendHoursEffective: Number(row.weekend_hours_effective),
-        jornadasTotales: Number(row.jornadas_totales),
-        jornadasConOlvido: Number(row.jornadas_con_olvido),
-        tjiPct: Number(row.tji_pct),
-        penalizacionPct: Number(row.penalizacion_pct),
-        weekdayBonus: Number(row.weekday_bonus),
-        weekendBonus: Number(row.weekend_bonus),
-        isSanctioned: Boolean(row.is_sanctioned),
-        periodStart: h.period_start,
-        periodEnd: h.period_end,
-        confirmedAt: h.confirmed_at,
-      };
-    })
-    .filter((e): e is StaffTipHistoryEntry => e != null)
-    .sort(
-      (a, b) =>
-        new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime()
-    );
-
-  return <StaffPropinasView initialHistory={initialHistory} />;
+  return (
+    <StaffPropinasView
+      initialHistory={initialHistory}
+      viewerUserId={user.id}
+      viewerEmail={user.email ?? ''}
+      viewerFirstName={profile?.first_name ?? ''}
+    />
+  );
 }

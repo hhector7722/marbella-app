@@ -187,13 +187,15 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           >
             {formatTipInt(entry.jornadasConOlvido)}
           </p>
-          <p className="mt-1.5 text-center text-xs font-medium text-zinc-500">
-            de {formatTipInt(entry.jornadasTotales)} jornadas (
-            <span className={cn('font-bold', tjiColorClass(entry.tjiPct))}>
-              {formatTipPct(entry.tjiPct)}
-            </span>
-            )
-          </p>
+          {(entry.jornadasConOlvido ?? 0) > 0 ? (
+            <p className="mt-1.5 text-center text-xs font-medium text-zinc-500">
+              de {formatTipInt(entry.jornadasTotales)} jornadas (
+              <span className={cn('font-bold', tjiColorClass(entry.tjiPct))}>
+                {formatTipPct(entry.tjiPct)}
+              </span>
+              )
+            </p>
+          ) : null}
         </StaffTipBreakdownModal>
       ) : null}
     </>
