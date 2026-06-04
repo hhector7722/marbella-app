@@ -97,7 +97,8 @@ const TIP_TABLE_NAME_TD = cn(
 
 function staffTableDisplayName(name: string): string {
   const n = (name || '').trim();
-  return n || ' ';
+  if (!n) return ' ';
+  return n.split(/\s+/)[0] ?? ' ';
 }
 
 type TipTableColKey =
