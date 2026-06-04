@@ -82,10 +82,6 @@ const GASTOS_FIJOS_OTROS_EUR = 0
 
 type FinancialModalKind = 'income' | 'expenses' | 'margin' | 'cash'
 
-const INCOME_LINE_LABELS: Record<string, string> = {
-  sales_positive: 'Venta neta',
-}
-
 const EXPENSE_LINE_LABELS: Record<string, string> = {
   purchases_invoices: 'Compras',
   payroll_total: 'Nóminas',
@@ -1052,16 +1048,12 @@ export default function InsightsClient({
     if (!financial.data || !financialModal) return null
     const {
       pyg,
-      incomeLines,
       expenseLines,
       efectivoEntradas,
       salesGross,
       cardPayments,
       cobrosTotales,
     } = financial.data
-
-    const ventaNetaAmount =
-      incomeLines.find((l) => l.key === 'sales_positive')?.amount ?? pyg.income.total
 
     switch (financialModal) {
       case 'income':
@@ -1070,7 +1062,7 @@ export default function InsightsClient({
           body: (
             <div className="space-y-1">
               <FinancialDetailRow label="Facturación" amount={salesGross} />
-              <FinancialDetailRow label="Venta neta" amount={ventaNetaAmount} />
+              <FinancialDetailRow label="Venta neta" amount={pyg.income.total} />
             </div>
           ),
         }
