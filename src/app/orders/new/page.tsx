@@ -290,13 +290,12 @@ export default function NewOrderPage() {
     }
 
     return (
-        <div className="w-full bg-[#5B8FB9] min-h-screen p-4 md:p-6 pb-24">
+        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col bg-[#5B8FB9]">
             <Toaster position="top-right" />
 
-            <div className="max-w-7xl mx-auto">
-                <div className="sticky top-0 z-50 shrink-0 bg-[#5B8FB9] pb-4 pt-0">
+            <div className="mx-auto flex h-full w-full max-w-7xl min-h-0 flex-col p-4 md:p-6">
+                <div className="z-10 shrink-0 bg-[#5B8FB9] pb-4 pt-0">
                     <div className="flex flex-col gap-4">
-                        {/* Fila 1: Proveedor y Buscador */}
                         <div className="flex items-center gap-2">
                             <div className={cn(
                                 "shrink-0 px-4 py-2 bg-white/90 rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-white/50",
@@ -316,31 +315,30 @@ export default function NewOrderPage() {
                             </div>
                         </div>
 
-                        {/* Fila 2: Borrar pedido y Tramitar */}
-                        {selectedItems.length > 0 && selectedSupplier && (
+                        {selectedItems.length > 0 && selectedSupplier ? (
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleNewOrder}
-                                    className="flex-1 px-4 py-2 bg-white hover:bg-zinc-50 text-black rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 animate-in zoom-in duration-200 border border-zinc-200"
+                                    className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-black shadow-sm transition-all hover:bg-zinc-50 active:scale-95 animate-in zoom-in duration-200"
                                 >
                                     <span>Pedido Nuevo</span>
-                                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shrink-0 shadow-sm">
-                                        <Plus className="w-3.5 h-3.5 text-white stroke-[4px]" />
+                                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-500 shadow-sm">
+                                        <Plus className="h-3.5 w-3.5 stroke-[4px] text-white" />
                                     </div>
                                 </button>
                                 <button
                                     onClick={() => setIsSummaryOpen(true)}
-                                    className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
+                                    className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95 animate-in zoom-in duration-200"
                                 >
                                     Tramitar ({selectedItems.length})
                                 </button>
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
-                <div className="pt-4 md:pt-6">
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+                    <div className="grid grid-cols-3 gap-2.5 pt-2 sm:grid-cols-4 sm:gap-6 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
                         {filteredIngredients.map(ing => (
                             <OrderProductCard
                                 key={ing.id}

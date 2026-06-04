@@ -7,3 +7,10 @@ export function isFullscreenCartaPath(pathname: string): boolean {
   if (pathname.startsWith('/eventos/')) return true
   return false
 }
+
+/** Rutas con scroll en contenedor interno (no en `window`). Pull-to-refresh rompe el deslizamiento táctil. */
+export function isInternalScrollShellPath(pathname: string): boolean {
+  if (isFullscreenCartaPath(pathname)) return true
+  if (pathname === '/orders/new' || pathname.startsWith('/orders/')) return true
+  return false
+}

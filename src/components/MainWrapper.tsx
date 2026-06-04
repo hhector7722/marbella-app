@@ -3,20 +3,25 @@
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
-import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
+import {
+    isFullscreenCartaPath,
+    isInternalScrollShellPath,
+} from '@/lib/carta-fullscreen-path';
 
 export default function MainWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLogin = pathname === '/login';
     const fullscreenCarta = isFullscreenCartaPath(pathname);
+    const internalScrollShell = isInternalScrollShellPath(pathname);
+    const ordersPath = pathname === '/orders/new' || pathname.startsWith('/orders/');
 
     return (
         <main className={cn(
             'min-h-screen transition-all duration-300',
             !isLogin && !fullscreenCarta && 'pt-header-safe',
-            !isLogin && !fullscreenCarta && 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
+            !isLogin && !fullscreenCarta && !ordersPath && 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
         )}>
-            <PullToRefresh enabled={!isLogin}>
+            <PullToRefresh enabled={!isLogin && !internalScrollShell}>
                 {children}
             </PullToRefresh>
         </main>

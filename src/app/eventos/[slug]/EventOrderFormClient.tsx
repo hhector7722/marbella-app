@@ -150,7 +150,7 @@ export default function EventOrderFormClient({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
       <div className={cn(cardClass, 'shrink-0 p-4')}>
         <p className={headerPill}>Responsable del pedido</p>
         <input
@@ -173,7 +173,7 @@ export default function EventOrderFormClient({
           </p>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-hidden pb-2">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar pb-28">
           <MenuAccordion
             items={digitalItems}
             lang={lang}
