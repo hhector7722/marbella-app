@@ -3528,6 +3528,7 @@ export type Database = {
         Returns: Json
       }
       get_closing_sales_breakdown: { Args: { p_date: string }; Returns: Json }
+      get_period_card_payments: { Args: { p_end: string; p_start: string }; Returns: number }
       get_consumption_modal_recipes: {
         Args: never
         Returns: {

@@ -2,7 +2,6 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
-import { enumerateYmdRange } from './insights-date-utils'
 import {
   hourlyProfitabilityRowSchema,
   weekdayAnalysisRowSchema,
@@ -273,58 +272,22 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-const closingBreakdownSchema = z.object({
-  total_tarjeta: z.coerce.number().optional(),
-})
-
 async function fetchPeriodCardPayments(
   supabase: Awaited<ReturnType<typeof createClient>>,
   dateFrom: string,
   dateTo: string
 ): Promise<number> {
-  const days = enumerateYmdRange(dateFrom, dateTo)
-  if (days.length === 0) return 0
-
-  const rpcResults = await Promise.all(
-    days.map((p_date) =>
-      supabase.rpc('get_closing_sales_breakdown', { p_date }).then(({ data, error }) => ({
-        data,
-        error,
-      }))
-    )
-  )
-
-  const rpcFailed = rpcResults.some((r) => r.error)
-  if (!rpcFailed) {
-    let total = 0
-    for (const r of rpcResults) {
-      const parsed = closingBreakdownSchema.safeParse(r.data ?? {})
-      if (parsed.success) {
-        total += Math.max(0, Number(parsed.data.total_tarjeta) || 0)
-      }
-    }
-    return roundMoney(total)
-  }
-
-  console.warn(
-    '[insights] get_closing_sales_breakdown falló; fallback tickets_marbella.cobro_tarjeta'
-  )
-  const { data, error } = await supabase
-    .from('tickets_marbella')
-    .select('cobro_tarjeta')
-    .gte('fecha', dateFrom)
-    .lte('fecha', dateTo)
+  const { data, error } = await supabase.rpc('get_period_card_payments', {
+    p_start: dateFrom,
+    p_end: dateTo,
+  })
 
   if (error) {
-    console.error('[insights] tickets_marbella cobro_tarjeta:', error.message)
+    console.error('[insights] get_period_card_payments RPC error:', error.message)
     return 0
   }
 
-  const sum = (data ?? []).reduce(
-    (acc, row) => acc + Math.max(0, Number((row as { cobro_tarjeta?: number }).cobro_tarjeta) || 0),
-    0
-  )
-  return roundMoney(sum)
+  return roundMoney(Math.max(0, Number(data) || 0))
 }
 
 export async function getFinancialSummary(
