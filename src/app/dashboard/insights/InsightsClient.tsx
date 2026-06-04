@@ -1173,6 +1173,7 @@ export default function InsightsClient({
                               interval={0}
                             />
                             <Tooltip
+                              cursor={false}
                               content={({ active, payload }) => {
                                 if (!active || !payload?.length) return null
                                 const row = payload[0]?.payload as WeekdayAnalysisRow
@@ -1190,6 +1191,7 @@ export default function InsightsClient({
                               dataKey="avg_revenue"
                               name="Media ventas"
                               fill={PETROLEO}
+                              activeBar={false}
                               radius={[0, 2, 2, 0]}
                               maxBarSize={22}
                             />
@@ -1213,6 +1215,7 @@ export default function InsightsClient({
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
                             <Tooltip
+                              cursor={false}
                               content={({ active, payload }) => {
                                 if (!active || !payload?.length) return null
                                 const row = payload[0]?.payload as WeekdayAnalysisRow
@@ -1230,6 +1233,7 @@ export default function InsightsClient({
                               dataKey="avg_revenue"
                               name="Media ventas"
                               fill={PETROLEO}
+                              activeBar={false}
                               radius={[3, 3, 0, 0]}
                               maxBarSize={40}
                             />
