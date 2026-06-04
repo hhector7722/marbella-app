@@ -27,15 +27,23 @@ type PanelAnchor = {
   right: number
 }
 
-/** Badge estilo iOS — idéntico en campana y cabecera del dropdown. */
-function NotificationCountBadge({ label }: { label: string }) {
+/** Badge estilo iOS — mismo estilo; en campana un poco más compacto. */
+function NotificationCountBadge({
+  label,
+  placement = 'inline',
+}: {
+  label: string
+  placement?: 'inline' | 'bell'
+}) {
+  const compact = placement === 'bell'
   return (
     <span
       className={cn(
-        'inline-flex min-h-[18px] min-w-[18px] items-center justify-center',
-        'rounded-full bg-[#FF3B30] px-1',
-        'text-[11px] font-semibold leading-none text-white tabular-nums',
-        'shadow-[0_1px_4px_rgba(255,59,48,0.4)]'
+        'inline-flex items-center justify-center rounded-full bg-[#FF3B30] text-white tabular-nums',
+        'font-semibold leading-none shadow-[0_1px_4px_rgba(255,59,48,0.4)]',
+        compact
+          ? 'min-h-[15px] min-w-[15px] px-[3px] text-[9px]'
+          : 'min-h-[18px] min-w-[18px] px-1 text-[11px]'
       )}
     >
       {label}
@@ -334,11 +342,14 @@ export function NotificationsBell() {
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <span className="relative inline-flex shrink-0 p-0.5">
+        <span className="relative inline-flex size-[22px] shrink-0 items-center justify-center">
           <Bell size={20} strokeWidth={1.5} className="text-white/95" aria-hidden />
           {badgeLabel ? (
-            <span className="pointer-events-none absolute -right-0.5 -top-0.5 z-10">
-              <NotificationCountBadge label={badgeLabel} />
+            <span
+              className="pointer-events-none absolute right-0 top-0 z-10 translate-x-[42%] -translate-y-[42%]"
+              aria-hidden
+            >
+              <NotificationCountBadge label={badgeLabel} placement="bell" />
             </span>
           ) : null}
         </span>
