@@ -16,10 +16,12 @@ import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOv
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
-import { FichajeNoRegistradaMark } from '@/components/tips/FichajeNoRegistradaMark';
+import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColumnToggleBadge';
 import {
   formatLocalIsoDateLabel,
-  formatSinRegCell,
+  formatTipInt,
+  penalizacionColorClass,
+  tjiColorClass,
   tipTheoreticalPoolAmounts,
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
@@ -112,6 +114,13 @@ export default function TipsDashboardView({
     staffId: string;
     staffName: string;
   } | null>(null);
+
+  const [showHoursDetail, setShowHoursDetail] = useState(false);
+  const [showSinRegCol, setShowSinRegCol] = useState(false);
+  const [showPropDetail, setShowPropDetail] = useState(false);
+
+  const tableColCount =
+    4 + (showHoursDetail ? 2 : 0) + (showSinRegCol ? 1 : 0) + (showPropDetail ? 3 : 0);
 
   const rangeLabel = useMemo(() => {
     try {
@@ -428,52 +437,92 @@ export default function TipsDashboardView({
                 </div>
               )}
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] border-collapse">
+                <table
+                  className={cn(
+                    'w-full border-collapse',
+                    showHoursDetail || showSinRegCol || showPropDetail ? 'min-w-[520px]' : 'min-w-[320px]'
+                  )}
+                >
                   <thead>
                     <tr className="bg-[#36606F] text-white">
-                      <th
-                        rowSpan={2}
-                        className="sticky left-0 z-10 bg-[#36606F] px-2 py-2 text-left text-[8px] font-black uppercase tracking-widest md:text-[10px]"
-                      />
-                      <th
-                        colSpan={2}
-                        className="px-1 py-2 text-center text-[8px] font-black uppercase md:text-[10px]"
-                      >
-                        Lun – Vie
+                      <th className="sticky left-0 z-10 bg-[#36606F] px-2 py-2 text-left text-[8px] font-black uppercase tracking-widest md:text-[10px]" />
+                      <th className="px-1 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setShowHoursDetail((v) => !v)}
+                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-1 px-1 text-[8px] font-black uppercase tracking-wide md:text-[10px] active:scale-95"
+                          title={showHoursDetail ? 'Ocultar desglose de horas' : 'Mostrar H Lun–Vie y H Sáb–Dom'}
+                        >
+                          <span>H</span>
+                          <TipExpandBadge size={10} />
+                        </button>
                       </th>
-                      <th
-                        colSpan={2}
-                        className="px-1 py-2 text-center text-[8px] font-black uppercase md:text-[10px]"
-                      >
-                        Sáb – Dom
+                      {showHoursDetail && (
+                        <>
+                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                            H Lun – Vie
+                          </th>
+                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                            H Sáb – Dom
+                          </th>
+                        </>
+                      )}
+                      <th className="px-1 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setShowSinRegCol((v) => !v)}
+                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-1 px-1 text-[8px] font-black uppercase tracking-wide md:text-[10px] active:scale-95"
+                          title={showSinRegCol ? 'Ocultar Sin reg' : 'Mostrar jornadas sin registro'}
+                        >
+                          <span>PEN</span>
+                          <TipSinRegHeaderBadge size={10} />
+                        </button>
                       </th>
-                      <th rowSpan={2} className="px-1 py-2 text-center text-[8px] font-black uppercase">
-                        TOT
+                      {showSinRegCol && (
+                        <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                          <span className="inline-flex min-h-[48px] items-center justify-center gap-1">
+                            <span>Sin reg</span>
+                            <TipSinRegHeaderBadge size={10} />
+                          </span>
+                        </th>
+                      )}
+                      <th className="px-2 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setShowPropDetail((v) => !v)}
+                          className="inline-flex min-h-[48px] w-full items-center justify-end gap-1 px-1 text-[8px] font-black uppercase tracking-wide md:text-[10px] active:scale-95"
+                          title={
+                            showPropDetail
+                              ? 'Ocultar € Lun–Vie, € Sáb–Dom y Sin pen'
+                              : 'Mostrar desglose de propinas'
+                          }
+                        >
+                          <span>PROP</span>
+                          <TipExpandBadge size={10} />
+                        </button>
                       </th>
-                      <th
-                        rowSpan={2}
-                        className="px-1 py-2 text-center text-[8px] font-black uppercase"
-                      >
-                        <span className="inline-flex flex-col items-center justify-center gap-0.5">
-                          <FichajeNoRegistradaMark size={10} variant="badge" />
-                          <span>SIN REG</span>
-                        </span>
-                      </th>
-                      <th rowSpan={2} className="px-2 py-2 text-right text-[8px] font-black uppercase md:text-[10px]">
-                        PROP TOT
-                      </th>
-                    </tr>
-                    <tr className="bg-[#36606F] text-white">
-                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">H</th>
-                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">€</th>
-                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">H</th>
-                      <th className="px-0.5 py-1 text-center text-[7px] font-black uppercase">€</th>
+                      {showPropDetail && (
+                        <>
+                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                            € Lun – Vie
+                          </th>
+                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                            € Sáb – Dom
+                          </th>
+                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                            Sin pen
+                          </th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
                     {!preview || staffWithWorkedHours.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
+                        <td
+                          colSpan={tableColCount}
+                          className="px-4 py-10 text-center text-zinc-400 font-bold text-sm"
+                        >
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
@@ -482,11 +531,14 @@ export default function TipsDashboardView({
                         const isSanc = s.isSanctioned;
                         const strikeClass = isSanc ? 'opacity-40' : '';
                         const tji = s.tjiPct ?? 0;
+                        const pen = s.penalizacionPct ?? 0;
                         const teor = tipTheoreticalPoolAmounts(s);
                         const wdAmtTeor = teor.weekday;
                         const weAmtTeor = teor.weekend;
-                        const totTeor = wdAmtTeor + weAmtTeor;
-                        const sinRegLabel = formatSinRegCell(s.jornadasConOlvido ?? 0, tji);
+                        const totSinPen = teor.total;
+                        const hTotal = (s.weekdayHoursRaw ?? 0) + (s.weekendHoursRaw ?? 0);
+                        const penLabel = pen > 0 ? `${pen}%` : ' ';
+                        const openRow = () => openOverride('weekday', s.id, s.name);
 
                         return (
                           <tr
@@ -495,52 +547,71 @@ export default function TipsDashboardView({
                           >
                             <td
                               className="px-2 py-2 cursor-pointer sticky left-0 bg-white z-[1]"
-                              onClick={() => openOverride('weekday', s.id, s.name)}
+                              onClick={openRow}
                             >
                               <div className="text-[10px] md:text-[12px] font-black text-zinc-900 truncate">
                                 {(s.name || '').trim().split(/\s+/)[0] || s.name}
                               </div>
                             </td>
                             <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
+                              className={cn(
+                                'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-700 cursor-pointer',
+                                strikeClass
+                              )}
+                              onClick={openRow}
                             >
-                              {fmtHours(s.weekdayHoursRaw)}
+                              {fmtHours(hTotal)}
                             </td>
+                            {showHoursDetail && (
+                              <>
+                                <td
+                                  className={cn(
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer',
+                                    strikeClass
+                                  )}
+                                  onClick={openRow}
+                                >
+                                  {fmtHours(s.weekdayHoursRaw)}
+                                </td>
+                                <td
+                                  className={cn(
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80',
+                                    strikeClass
+                                  )}
+                                  onClick={() => openOverride('weekend', s.id, s.name)}
+                                >
+                                  {fmtHours(s.weekendHoursRaw)}
+                                </td>
+                              </>
+                            )}
                             <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
+                              className={cn(
+                                'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                penalizacionColorClass(pen),
+                                strikeClass
+                              )}
+                              onClick={openRow}
                             >
-                              {fmtZeroBlank(wdAmtTeor)}
+                              {penLabel}
                             </td>
+                            {showSinRegCol && (
+                              <td
+                                className={cn(
+                                  'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                  tjiColorClass(tji),
+                                  strikeClass
+                                )}
+                                onClick={openRow}
+                              >
+                                {formatTipInt(s.jornadasConOlvido ?? 0)}
+                              </td>
+                            )}
                             <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80', strikeClass)}
-                              onClick={() => openOverride('weekend', s.id, s.name)}
+                              className={cn(
+                                'px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600',
+                                strikeClass
+                              )}
                             >
-                              {fmtHours(s.weekendHoursRaw)}
-                            </td>
-                            <td
-                              className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80', strikeClass)}
-                              onClick={() => openOverride('weekend', s.id, s.name)}
-                            >
-                              {fmtZeroBlank(weAmtTeor)}
-                            </td>
-                            <td
-                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-800', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              {fmtZeroBlank(totTeor)}
-                            </td>
-                            <td
-                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-700', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              <span className="inline-flex items-center justify-center gap-1">
-                                <FichajeNoRegistradaMark size={9} variant="badge" />
-                                <span>{sinRegLabel}</span>
-                              </span>
-                            </td>
-                            <td className={cn('px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600', strikeClass)}>
                               <SanctionedTipMoney
                                 amount={s.totalAmount}
                                 shadowAmount={s.shadowAmount ?? null}
@@ -549,6 +620,37 @@ export default function TipsDashboardView({
                                 formatFn={fmtMoney}
                               />
                             </td>
+                            {showPropDetail && (
+                              <>
+                                <td
+                                  className={cn(
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer',
+                                    strikeClass
+                                  )}
+                                  onClick={openRow}
+                                >
+                                  {fmtZeroBlank(wdAmtTeor)}
+                                </td>
+                                <td
+                                  className={cn(
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80',
+                                    strikeClass
+                                  )}
+                                  onClick={() => openOverride('weekend', s.id, s.name)}
+                                >
+                                  {fmtZeroBlank(weAmtTeor)}
+                                </td>
+                                <td
+                                  className={cn(
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-500 cursor-pointer',
+                                    strikeClass
+                                  )}
+                                  onClick={openRow}
+                                >
+                                  {fmtZeroBlank(totSinPen)}
+                                </td>
+                              </>
+                            )}
                           </tr>
                         );
                       })

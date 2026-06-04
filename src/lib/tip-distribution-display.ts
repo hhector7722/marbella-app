@@ -28,6 +28,15 @@ export function tjiColorClass(tjiPct: number): string {
   return 'text-rose-600';
 }
 
+/** Color de la columna PEN según % de penalización aplicado. */
+export function penalizacionColorClass(penalizacionPct: number): string {
+  if (penalizacionPct <= 0) return 'text-zinc-500';
+  if (penalizacionPct <= 10) return 'text-emerald-600';
+  if (penalizacionPct <= 25) return 'text-amber-500';
+  if (penalizacionPct <= 50) return 'text-orange-500';
+  return 'text-rose-600';
+}
+
 export function formatPenalizacionPct(penalizacionPct: number): string {
   if (penalizacionPct <= 0) return '—';
   return `-${penalizacionPct}%`;
