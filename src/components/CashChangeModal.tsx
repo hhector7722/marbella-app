@@ -506,7 +506,7 @@ export const CashChangeModal = ({
         return (
             <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-                <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex w-full max-w-[420px] flex-col max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 px-4 py-3">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
@@ -529,9 +529,9 @@ export const CashChangeModal = ({
                     </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 overflow-y-auto bg-white p-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-3">
                                 <h3 className="text-[12px] font-black uppercase text-center text-[#36606F]">Origen</h3>
                                 {sortedOptions.map((opt) => {
                                     const isA = boxA?.id === opt.id;
@@ -541,21 +541,21 @@ export const CashChangeModal = ({
                                             type="button"
                                             onClick={() => setBoxA(isA ? null : opt)}
                                             className={cn(
-                                                'w-full min-h-[64px] rounded-2xl border font-black text-[10px] uppercase tracking-wide transition-all flex flex-col items-center justify-center text-center p-2 leading-tight gap-1.5 shadow-sm active:scale-95',
-                                                isA ? 'border-[#36606F]/30 bg-white text-[#36606F]' : 'border-zinc-100 bg-white text-zinc-500',
+                                                'flex w-full min-h-[72px] flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-1 text-center font-black text-[10px] uppercase tracking-wide shadow-none transition-all active:scale-95',
+                                                isA ? 'text-[#36606F]' : 'text-zinc-500',
                                                 boxB?.id === opt.id && !isA ? 'opacity-30' : '',
                                             )}
                                         >
                                             <div
                                                 className={cn(
-                                                    'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full transition-colors',
-                                                    isA ? 'bg-[#36606F]/18' : 'bg-[#36606F]/10',
+                                                    'flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all',
+                                                    isA ? 'bg-[#36606F]/22 ring-2 ring-[#36606F]/20' : 'bg-[#36606F]/14',
                                                 )}
                                             >
                                                 {opt.image_url ? (
                                                     <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="h-full w-full object-contain" />
                                                 ) : (
-                                                    <Wallet size={18} className={cn('transition-colors', isA ? 'text-[#36606F]/80' : 'text-zinc-400')} strokeWidth={2.5} />
+                                                    <Wallet size={20} className={cn('transition-colors', isA ? 'text-[#36606F]/85' : 'text-[#36606F]/45')} strokeWidth={2.5} />
                                                 )}
                                             </div>
                                             <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
@@ -563,7 +563,7 @@ export const CashChangeModal = ({
                                     );
                                 })}
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-3">
                                 <h3 className="text-[12px] font-black uppercase text-center text-[#36606F]">Destino</h3>
                                 {sortedOptions.map((opt) => {
                                     const isB = boxB?.id === opt.id;
@@ -573,21 +573,21 @@ export const CashChangeModal = ({
                                             type="button"
                                             onClick={() => setBoxB(isB ? null : opt)}
                                             className={cn(
-                                                'w-full min-h-[64px] rounded-2xl border font-black text-[10px] uppercase tracking-wide transition-all flex flex-col items-center justify-center text-center p-2 leading-tight gap-1.5 shadow-sm active:scale-95',
-                                                isB ? 'border-rose-200 bg-white text-rose-700/90' : 'border-zinc-100 bg-white text-zinc-500',
+                                                'flex w-full min-h-[72px] flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-1 text-center font-black text-[10px] uppercase tracking-wide shadow-none transition-all active:scale-95',
+                                                isB ? 'text-rose-700/90' : 'text-zinc-500',
                                                 boxA?.id === opt.id && !isB ? 'opacity-30' : '',
                                             )}
                                         >
                                             <div
                                                 className={cn(
-                                                    'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full transition-colors',
-                                                    isB ? 'bg-rose-100' : 'bg-rose-50',
+                                                    'flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all',
+                                                    isB ? 'bg-rose-200/70 ring-2 ring-rose-200/60' : 'bg-rose-100/80',
                                                 )}
                                             >
                                                 {opt.image_url ? (
                                                     <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="h-full w-full object-contain" />
                                                 ) : (
-                                                    <Wallet size={18} className={cn('transition-colors', isB ? 'text-rose-500/80' : 'text-zinc-400')} strokeWidth={2.5} />
+                                                    <Wallet size={20} className={cn('transition-colors', isB ? 'text-rose-600/75' : 'text-rose-400/55')} strokeWidth={2.5} />
                                                 )}
                                             </div>
                                             <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
