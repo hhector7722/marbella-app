@@ -1,3 +1,12 @@
+import type { LucideIcon } from 'lucide-react'
+import {
+  AlertCircle,
+  Banknote,
+  Bell,
+  Calendar,
+  CalendarClock,
+} from 'lucide-react'
+
 export type UserNotificationRow = {
   id: string
   user_id: string
@@ -9,6 +18,35 @@ export type UserNotificationRow = {
   entity_id: string | null
   read_at: string | null
   created_at: string
+}
+
+export type NotificationVisual = {
+  Icon: LucideIcon
+  iconClass: string
+  bgClass: string
+  critical?: boolean
+}
+
+export function getNotificationVisual(type: string): NotificationVisual {
+  const t = type.toLowerCase()
+  if (t.includes('alert') || t.includes('critical') || t.includes('urgent')) {
+    return {
+      Icon: AlertCircle,
+      iconClass: 'text-rose-600',
+      bgClass: 'bg-rose-50',
+      critical: true,
+    }
+  }
+  if (t === 'schedule' || t.includes('horario')) {
+    return { Icon: Calendar, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+  }
+  if (t === 'cash_closing' || t.includes('cierre') || t.includes('cash')) {
+    return { Icon: Banknote, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+  }
+  if (t === 'reservation_new' || t.includes('reserva')) {
+    return { Icon: CalendarClock, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+  }
+  return { Icon: Bell, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
 }
 
 export function formatNotificationTime(iso: string): string {
