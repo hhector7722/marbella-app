@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { X, Copy, Calculator, Delete, Minus, Plus, Banknote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -28,6 +28,10 @@ interface QuickCalculatorModalProps {
     /** p. ej. z-[320] cuando hay otro overlay encima (lightbox) */
     overlayClassName?: string;
 }
+
+/** Denominaciones del desglose excepto 1c (fila final con total). */
+const BREAKDOWN_DENOMINATIONS_MAIN = DENOMINATIONS.filter((d) => d !== 0.01);
+const BREAKDOWN_DENOM_CENT = 0.01;
 
 const BTN_VALUES: (string | 'back')[][] = [
     ['C', 'back', '±', '%', '/'],
@@ -92,6 +96,9 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
     }, [result, display]);
 
     const breakdownTotal = DENOMINATIONS.reduce((sum, d) => sum + d * (breakdownCounts[d] || 0), 0);
+    const breakdownTotalLabel =
+        breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' ';
+    const centQty = breakdownCounts[BREAKDOWN_DENOM_CENT] || 0;
     const handleBreakdownAdjust = useCallback((denom: number, delta: number) => {
         setBreakdownCounts((prev) => ({
             ...prev,
@@ -320,10 +327,16 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-[#36606F] px-3 py-2 flex items-center justify-between text-white shrink-0">
-                    <div className="flex rounded-xl bg-white/10 p-0.5 gap-0.5">
+                <div className="bg-[#36606F] px-3 py-2 flex items-center justify-end text-white shrink-0 relative min-h-[48px]">
+                    <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex rounded-xl bg-white/10 p-0.5 gap-0.5"
+                        role="tablist"
+                        aria-label="Calculadora o desglose"
+                    >
                         <button
                             type="button"
+                            role="tab"
+                            aria-selected={tab === 'calculator'}
                             onClick={() => setTab('calculator')}
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px]',
@@ -334,6 +347,8 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                         </button>
                         <button
                             type="button"
+                            role="tab"
+                            aria-selected={tab === 'breakdown'}
                             onClick={() => setTab('breakdown')}
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px] flex items-center gap-1',
@@ -347,7 +362,7 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[44px] min-w-[44px] shrink-0"
+                        className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[44px] min-w-[44px] shrink-0 relative z-10"
                         aria-label="Cerrar"
                     >
                         <X size={18} strokeWidth={3} />
@@ -409,9 +424,9 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                                     onValueChange={(v) => setBreakdownCounts((prev) => ({ ...prev, [zoomDenom]: v }))}
                                 />
                             )}
-                            <div>
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-5 gap-x-3 p-3">
-                                    {DENOMINATIONS.map((denom) => {
+                            <div className="p-3 space-y-5">
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-5 gap-x-3">
+                                    {BREAKDOWN_DENOMINATIONS_MAIN.map((denom) => {
                                         const qty = breakdownCounts[denom] || 0;
                                         return (
                                             <div key={denom} className="flex flex-col items-center gap-1.5 group transition-all">
@@ -464,13 +479,68 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                                             </div>
                                         );
                                     })}
-                                {/* Floating Total Indicator */}
-                                <div className="sticky bottom-0 left-0 right-0 p-3 pointer-events-none">
-                                    <div className="bg-[#36606F]/95 backdrop-blur-md px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-2xl border border-white/10 animate-in slide-in-from-bottom-2">
-                                        <span className="text-[10px] font-black text-white/70 uppercase tracking-[0.2em]">Total</span>
-                                        <span className="text-xl font-black text-white tabular-nums">
-                                            {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : '0.00€'}
-                                        </span>
+                                </div>
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-x-3 items-end">
+                                    <div className="flex flex-col items-center gap-1.5 group transition-all">
+                                        <div
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => setZoomDenom(BREAKDOWN_DENOM_CENT)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(BREAKDOWN_DENOM_CENT); }}
+                                            className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer focus:outline-none min-h-[44px]"
+                                            aria-label="Editar cantidad de 1 céntimo"
+                                        >
+                                            <img
+                                                src={CURRENCY_IMAGES[BREAKDOWN_DENOM_CENT]}
+                                                alt="1c"
+                                                width={140}
+                                                height={140}
+                                                className="h-full w-auto object-contain drop-shadow-md pointer-events-none"
+                                                draggable={false}
+                                            />
+                                        </div>
+                                        <div className="text-center w-full space-y-1">
+                                            <span className="font-black text-gray-400 text-[8px] uppercase tracking-widest block">
+                                                1c
+                                            </span>
+                                            <div className="flex items-center justify-between w-full h-10 min-h-[44px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleBreakdownAdjust(BREAKDOWN_DENOM_CENT, -1)}
+                                                    className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                >
+                                                    <Minus size={12} strokeWidth={3} />
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={centQty > 0 ? centQty : ''}
+                                                    onChange={(e) => handleBreakdownCountChange(BREAKDOWN_DENOM_CENT, e.target.value)}
+                                                    placeholder=""
+                                                    className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 px-0.5 text-[11px] tracking-normal tabular-nums leading-none focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleBreakdownAdjust(BREAKDOWN_DENOM_CENT, 1)}
+                                                    className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                >
+                                                    <Plus size={12} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-3 sm:col-span-4 flex items-end justify-start min-h-[44px]">
+                                        <div
+                                            className="inline-flex w-fit max-w-full items-center gap-2 h-10 min-h-[44px] px-3 rounded-xl bg-[#36606F] shadow-lg border border-white/10"
+                                            aria-live="polite"
+                                        >
+                                            <span className="text-[10px] font-black text-white/70 uppercase tracking-[0.2em] whitespace-nowrap">
+                                                Total
+                                            </span>
+                                            <span className="text-base font-black text-white tabular-nums whitespace-nowrap">
+                                                {breakdownTotalLabel}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
