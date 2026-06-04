@@ -27,11 +27,14 @@ import { StaffTipModalColumnGrid } from '@/components/tips/StaffTipModalColumnGr
 const fmtHours = (val: number) =>
   Math.abs(val) < 0.005 ? ' ' : val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
 
-const METRIC_VALUE_SLOT = 'flex h-8 w-full shrink-0 items-center justify-center';
+const METRIC_VALUE_SLOT = 'flex h-9 w-full min-w-0 shrink-0 items-center justify-center px-0.5';
 const METRIC_LABEL_TEXT =
-  'text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]';
+  'max-w-full truncate whitespace-nowrap text-[9px] font-bold uppercase leading-none tracking-wide text-zinc-500 sm:text-[10px]';
+const METRIC_VALUE_DESCRIPTIVE =
+  'max-w-full truncate whitespace-nowrap px-0.5 text-center text-[8px] font-medium leading-none text-zinc-400 sm:text-[9px]';
 const METRIC_LABEL_SLOT =
-  'flex min-h-[2.75rem] w-full shrink-0 items-start justify-center pt-0.5';
+  'flex min-h-[2.5rem] w-full min-w-0 shrink-0 items-start justify-center pt-0.5';
+const METRICS_GRID = 'mt-3 grid w-full grid-cols-4 gap-x-1 gap-y-0';
 
 type DetailKind = 'hours' | 'propina' | 'penalizacion' | null;
 
@@ -41,7 +44,6 @@ function MetricCell({
   valueClassName,
   valueTypography = 'metric',
   onOpenDetail,
-  detailHintAlignPlusToLens = false,
 }: {
   label: ReactNode;
   value: ReactNode;
@@ -49,7 +51,6 @@ function MetricCell({
   /** Texto secundario (p. ej. «Sin penalización») en lugar de cifra principal. */
   valueTypography?: 'metric' | 'descriptive';
   onOpenDetail?: () => void;
-  detailHintAlignPlusToLens?: boolean;
 }) {
   const body = (
     <>
@@ -57,8 +58,8 @@ function MetricCell({
         <span
           className={cn(
             valueTypography === 'descriptive'
-              ? 'whitespace-nowrap px-0.5 text-center text-[6px] font-medium leading-none text-zinc-400 sm:text-[7px]'
-              : 'text-sm font-black tabular-nums leading-tight',
+              ? METRIC_VALUE_DESCRIPTIVE
+              : 'max-w-full truncate whitespace-nowrap text-sm font-black tabular-nums leading-none',
             valueClassName,
           )}
         >
@@ -69,7 +70,7 @@ function MetricCell({
         <div className="flex flex-col items-center gap-0.5 text-center">
           <span className={METRIC_LABEL_TEXT}>{label}</span>
           {onOpenDetail ? (
-            <StaffTipDetailHintIcon alignPlusToLens={detailHintAlignPlusToLens} />
+            <StaffTipDetailHintIcon />
           ) : (
             <span className="h-5 w-5 shrink-0" aria-hidden />
           )}
@@ -83,14 +84,14 @@ function MetricCell({
       <button
         type="button"
         onClick={onOpenDetail}
-        className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1 transition-opacity active:opacity-70"
+        className="flex min-w-0 w-full flex-col items-center px-0 py-1 transition-opacity active:opacity-70"
       >
         {body}
       </button>
     );
   }
 
-  return <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1">{body}</div>;
+  return <div className="flex min-w-0 w-full flex-col items-center px-0 py-1">{body}</div>;
 }
 
 export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry }) {
@@ -129,7 +130,7 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-start gap-0.5">
+      <div className={METRICS_GRID}>
         <MetricCell
           label="Horas"
           value={fmtHours(hTotal)}
@@ -147,7 +148,6 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           valueTypography={adjustmentKind === 'ninguna' ? 'descriptive' : 'metric'}
           valueClassName={adjustmentKind === 'ninguna' ? undefined : adjustmentValueClass}
           onOpenDetail={() => setDetail('penalizacion')}
-          detailHintAlignPlusToLens
         />
         <MetricCell
           label="Propina final"
