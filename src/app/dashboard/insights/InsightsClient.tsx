@@ -447,6 +447,37 @@ function ProductStat({
   )
 }
 
+function WeekdayDetailCard({
+  day,
+  onClose,
+}: {
+  day: WeekdayAnalysisRow
+  onClose: () => void
+}) {
+  return (
+    <div className="relative flex h-full min-h-0 flex-col rounded-xl border border-zinc-200 bg-white p-2.5 shadow-lg">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Cerrar detalle del día"
+        className="absolute right-1 top-1 z-10 min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+      >
+        <X className="h-4 w-4" />
+      </button>
+      <p className="pr-9 text-sm font-black leading-snug text-[#36606F]">{day.weekday_name}</p>
+      <div className="mt-2 flex flex-1 flex-col justify-center gap-2">
+        <ProductStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} prominent />
+        <ProductStat
+          label="Media tickets"
+          value={day.avg_tickets === 0 ? ' ' : day.avg_tickets.toFixed(1)}
+          prominent
+        />
+        <ProductStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} prominent />
+      </div>
+    </div>
+  )
+}
+
 function ProductDetailCard({
   product,
   onClose,
@@ -628,6 +659,7 @@ export default function InsightsClient({
     forbidden: initialFinancialForbidden,
   })
   const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null)
+  const [selectedWeekdayIdx, setSelectedWeekdayIdx] = useState<number | null>(null)
   const isLgDesktop = useIsLgDesktop()
   const [financialModal, setFinancialModal] = useState<FinancialModalKind | null>(null)
   const router = useRouter()
@@ -873,6 +905,9 @@ export default function InsightsClient({
   const selectedProduct =
     selectedProductIdx !== null ? (rankedProducts[selectedProductIdx] ?? null) : null
 
+  const selectedWeekday =
+    selectedWeekdayIdx !== null ? (weekdayChartData[selectedWeekdayIdx] ?? null) : null
+
   const handleOpenRecipe = useCallback(
     (recipeId: string | null | undefined, productName: string) => {
       if (!recipeId) return
@@ -1009,6 +1044,10 @@ export default function InsightsClient({
   useEffect(() => {
     setSelectedProductIdx(null)
   }, [products.data])
+
+  useEffect(() => {
+    setSelectedWeekdayIdx(null)
+  }, [weekday.data, dateFrom, dateTo])
 
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24 text-zinc-900">
@@ -1172,21 +1211,7 @@ export default function InsightsClient({
                               tick={{ fontSize: 10, fontWeight: 900 }}
                               interval={0}
                             />
-                            <Tooltip
-                              cursor={false}
-                              content={({ active, payload }) => {
-                                if (!active || !payload?.length) return null
-                                const row = payload[0]?.payload as WeekdayAnalysisRow
-                                return (
-                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
-                                    <p className="font-black text-[#36606F]">{row.weekday_name}</p>
-                                    <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
-                                    <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
-                                    <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
-                                  </div>
-                                )
-                              }}
-                            />
+                            <Tooltip content={() => null} cursor={false} />
                             <Bar
                               dataKey="avg_revenue"
                               name="Media ventas"
@@ -1194,7 +1219,27 @@ export default function InsightsClient({
                               activeBar={false}
                               radius={[0, 2, 2, 0]}
                               maxBarSize={22}
-                            />
+                              cursor="pointer"
+                              onClick={(_data, index) => {
+                                if (typeof index === 'number') {
+                                  setSelectedWeekdayIdx((prev) =>
+                                    prev === index ? null : index
+                                  )
+                                }
+                              }}
+                            >
+                              {weekdayChartData.map((_, index) => (
+                                <Cell
+                                  key={`wd-${index}`}
+                                  fill={PETROLEO}
+                                  stroke={
+                                    selectedWeekdayIdx === index ? PETROLEO : 'transparent'
+                                  }
+                                  strokeWidth={selectedWeekdayIdx === index ? 2 : 0}
+                                  opacity={selectedWeekdayIdx === index ? 1 : 0.82}
+                                />
+                              ))}
+                            </Bar>
                           </BarChart>
                         ) : (
                           <BarChart
@@ -1214,21 +1259,7 @@ export default function InsightsClient({
                               width={36}
                               tickFormatter={(v) => formatEuroChart(Number(v), 0)}
                             />
-                            <Tooltip
-                              cursor={false}
-                              content={({ active, payload }) => {
-                                if (!active || !payload?.length) return null
-                                const row = payload[0]?.payload as WeekdayAnalysisRow
-                                return (
-                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs space-y-1">
-                                    <p className="font-black text-[#36606F]">{row.weekday_name}</p>
-                                    <p>Media ventas: {formatEuroChart(row.avg_revenue)}</p>
-                                    <p>Media tickets: {row.avg_tickets.toFixed(1)}</p>
-                                    <p>Ticket medio: {formatEuroChart(row.avg_ticket_value)}</p>
-                                  </div>
-                                )
-                              }}
-                            />
+                            <Tooltip content={() => null} cursor={false} />
                             <Bar
                               dataKey="avg_revenue"
                               name="Media ventas"
@@ -1236,14 +1267,55 @@ export default function InsightsClient({
                               activeBar={false}
                               radius={[3, 3, 0, 0]}
                               maxBarSize={40}
-                            />
+                              cursor="pointer"
+                              onClick={(_data, index) => {
+                                if (typeof index === 'number') {
+                                  setSelectedWeekdayIdx((prev) =>
+                                    prev === index ? null : index
+                                  )
+                                }
+                              }}
+                            >
+                              {weekdayChartData.map((_, index) => (
+                                <Cell
+                                  key={`wd-m-${index}`}
+                                  fill={PETROLEO}
+                                  stroke={
+                                    selectedWeekdayIdx === index ? PETROLEO : 'transparent'
+                                  }
+                                  strokeWidth={selectedWeekdayIdx === index ? 2 : 0}
+                                  opacity={selectedWeekdayIdx === index ? 1 : 0.82}
+                                />
+                              ))}
+                            </Bar>
                           </BarChart>
                         )}
                       </ResponsiveContainer>
                     </div>
-                    <div className="shrink-0 flex flex-col justify-center gap-2 w-[6.5rem] sm:w-[8.5rem] lg:w-[8rem] border-l border-zinc-100 pl-2">
-                      <KpiFloat label="Mejor día" value={weekdayKpis.best} />
-                      <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
+                    <div
+                      className={cn(
+                        'relative shrink-0 w-[6.5rem] sm:w-[8.5rem] lg:w-[8rem] border-l border-zinc-100 pl-2',
+                        isLgDesktop ? 'h-[200px]' : 'h-[160px] sm:h-[180px]'
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'flex h-full flex-col justify-center gap-2',
+                          selectedWeekday && 'invisible pointer-events-none'
+                        )}
+                        aria-hidden={selectedWeekday ? true : undefined}
+                      >
+                        <KpiFloat label="Mejor día" value={weekdayKpis.best} />
+                        <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
+                      </div>
+                      {selectedWeekday ? (
+                        <div className="absolute inset-0 z-20 min-h-0">
+                          <WeekdayDetailCard
+                            day={selectedWeekday}
+                            onClose={() => setSelectedWeekdayIdx(null)}
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 )}
