@@ -1470,9 +1470,9 @@ export default function StaffDashboardView() {
                                 <button
                                     type="button"
                                     onClick={() => setIsCashOptionsModalOpen(false)}
-                                    className="absolute right-2 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-xl bg-rose-600 text-white transition-all hover:bg-rose-700 active:scale-90"
+                                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-rose-600 p-0 text-white transition-all hover:bg-rose-700 active:scale-90"
                                 >
-                                    <X size={20} strokeWidth={3} />
+                                    <X size={16} strokeWidth={2.5} />
                                 </button>
                             </div>
                             <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
