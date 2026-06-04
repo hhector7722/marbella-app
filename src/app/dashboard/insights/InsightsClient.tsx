@@ -213,13 +213,13 @@ function FinancialDetailModal({
       }}
     >
       <div
-        className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden p-6 rounded-2xl"
+        className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 shrink-0 mb-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 bg-[#36606F] px-4 py-3">
           <h3
             id="financial-detail-title"
-            className="text-sm font-black uppercase tracking-wider text-[#36606F] leading-tight pr-2"
+            className="text-sm font-black uppercase tracking-wider text-white leading-tight pr-2"
           >
             {title}
           </h3>
@@ -227,14 +227,16 @@ function FinancialDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="min-h-10 min-w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100 active:scale-95"
+            className="min-h-10 min-w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-white/90 hover:bg-white/15 active:scale-95"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{children}</div>
         {footnote ? (
-          <p className="mt-4 text-[10px] leading-snug text-zinc-500 font-medium shrink-0">{footnote}</p>
+          <p className="px-6 pb-4 text-[10px] leading-snug text-zinc-500 font-medium shrink-0">
+            {footnote}
+          </p>
         ) : null}
       </div>
     </div>,
@@ -242,12 +244,25 @@ function FinancialDetailModal({
   )
 }
 
-function FinancialDetailRow({ label, amount }: { label: string; amount: number }) {
+function FinancialDetailRow({
+  label,
+  amount,
+  amountClassName,
+}: {
+  label: string
+  amount: number
+  amountClassName?: string
+}) {
   const displayed = formatEuroKpi(amount)
   return (
     <div className="flex items-baseline justify-between gap-4 py-2">
       <span className="text-xs font-semibold text-zinc-600">{label}</span>
-      <span className="text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap">
+      <span
+        className={cn(
+          'text-sm font-black tabular-nums whitespace-nowrap',
+          amountClassName ?? 'text-zinc-800'
+        )}
+      >
         {displayed === ' ' ? ' ' : displayed}
       </span>
     </div>
@@ -508,14 +523,14 @@ function WeekdayDetailCard({
       >
         <X className="h-3 w-3" />
       </button>
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2.5 pt-0.5 pb-1">
+      <p className="shrink-0 w-full pr-7 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
+        {day.weekday_name}
+      </p>
+      <div className="mt-1 flex min-h-0 flex-1 flex-col justify-center gap-2.5 pb-0.5">
         <WeekdayDetailStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} />
         <WeekdayDetailStat label="Media tickets" value={ticketsValue} />
         <WeekdayDetailStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} />
       </div>
-      <p className="shrink-0 w-full text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
-        {day.weekday_name}
-      </p>
     </div>
   )
 }
@@ -529,8 +544,8 @@ function ProductDetailCard({
   onClose: () => void
   onOpenRecipe: (recipeId: string | null | undefined, productName: string) => void
 }) {
-  return (
-    <div className="space-y-3 w-full max-w-full py-1">
+    return (
+    <div className="space-y-2 w-full max-w-full">
       <div className="flex items-start justify-between gap-2">
         {product.recipe_id ? (
           <button
@@ -929,9 +944,9 @@ export default function InsightsClient({
   }, [rankedProducts])
 
   const productChartHeight = useMemo(() => {
-    if (!isLgDesktop) return 260
+    if (!isLgDesktop) return 248
     const rowH = 20
-    return Math.min(300, Math.max(180, rankedProducts.length * rowH + 24))
+    return Math.min(280, Math.max(168, rankedProducts.length * rowH + 8))
   }, [isLgDesktop, rankedProducts.length])
 
   const productCardAnchorStyle = useMemo((): CSSProperties => {
@@ -977,6 +992,8 @@ export default function InsightsClient({
       expenses: formatEuroKpi(pyg.expenses.total),
       pygNet: formatEuroKpi(pyg.net),
       marginBadge,
+      rentabilidadTone:
+        marginPct === null ? 'text-zinc-800' : profitabilityTone(marginPct),
       cobrosTotales: formatEuroKpi(cobrosTotales),
       incomeTone: signedEuroTone(pyg.income.total, 'text-emerald-600', 'text-rose-600'),
       expensesTone: 'text-rose-600',
@@ -1042,8 +1059,16 @@ export default function InsightsClient({
           title: 'Margen PyG',
           body: (
             <div className="space-y-1">
-              <FinancialDetailRow label="Venta neta" amount={pyg.income.total} />
-              <FinancialDetailRow label="Gastos" amount={pyg.expenses.total} />
+              <FinancialDetailRow
+                label="Venta neta"
+                amount={pyg.income.total}
+                amountClassName="text-emerald-600"
+              />
+              <FinancialDetailRow
+                label="Gastos"
+                amount={pyg.expenses.total}
+                amountClassName="text-rose-600"
+              />
               <FinancialDetailRow label="Margen" amount={pyg.net} />
               <div className="flex items-baseline justify-between gap-4 py-2">
                 <span className="text-xs font-semibold text-zinc-600">Rentabilidad</span>
@@ -1139,7 +1164,7 @@ export default function InsightsClient({
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={hourlyChartData}
-                            margin={{ top: 8, right: 8, left: 4, bottom: 8 }}
+                            margin={{ top: 8, right: 8, left: 4, bottom: 16 }}
                             barCategoryGap="8%"
                             barGap={2}
                           >
@@ -1150,7 +1175,7 @@ export default function InsightsClient({
                               interval={0}
                               angle={-40}
                               textAnchor="end"
-                              height={32}
+                              height={40}
                             />
                             <YAxis
                               tick={{ fontSize: 9 }}
@@ -1199,7 +1224,7 @@ export default function InsightsClient({
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-1 -mt-6 lg:-mt-8 pt-0">
+                    <div className="grid grid-cols-3 gap-1 mt-2 lg:mt-3 pt-1">
                       <KpiFloat label="Hora más rentable" value={hourlyKpis.best} />
                       <KpiFloat label="Hora de mayor pérdida" value={hourlyKpis.worst} />
                       <KpiFloat label="Franja más rentable" value={hourlyKpis.optimal} />
@@ -1388,7 +1413,7 @@ export default function InsightsClient({
                     </Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2 min-w-0">
+                  <div className="flex flex-col gap-1 min-w-0">
                     {selectedProduct && selectedProductIdx !== null && (
                       <>
                         <div className="sm:hidden w-full min-w-0 max-w-full">
@@ -1427,7 +1452,7 @@ export default function InsightsClient({
                           {isLgDesktop ? (
                             <ComposedChart
                               data={productChartData}
-                              margin={{ top: 8, right: 8, left: 4, bottom: 56 }}
+                              margin={{ top: 8, right: 8, left: 4, bottom: 40 }}
                               barCategoryGap="4%"
                               barGap={0}
                             >
@@ -1438,7 +1463,7 @@ export default function InsightsClient({
                                 interval={0}
                                 angle={-35}
                                 textAnchor="end"
-                                height={56}
+                                height={40}
                               />
                               <YAxis
                                 yAxisId="margin"
@@ -1488,7 +1513,7 @@ export default function InsightsClient({
                           ) : (
                             <ComposedChart
                               data={productChartData}
-                              margin={{ top: 8, right: 8, left: 4, bottom: 52 }}
+                              margin={{ top: 8, right: 8, left: 4, bottom: 40 }}
                               barCategoryGap="4%"
                               barGap={0}
                             >
@@ -1499,7 +1524,7 @@ export default function InsightsClient({
                                 interval={0}
                                 angle={-35}
                                 textAnchor="end"
-                                height={52}
+                                height={40}
                               />
                               <YAxis
                                 yAxisId="margin"
@@ -1603,16 +1628,21 @@ export default function InsightsClient({
                       onClick={() => setFinancialModal('cash')}
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <FinancialKpiChip
-                      label="Margen PyG"
-                      value={financialKpis.pygNet}
-                      valueClassName={financialKpis.pygNetTone}
-                      badge={financialKpis.marginBadge}
-                      badgePlain
-                      className="col-start-2"
-                      onClick={() => setFinancialModal('margin')}
-                    />
+                  <div className="flex justify-center">
+                    <div className="grid w-full max-w-md grid-cols-2 gap-2">
+                      <FinancialKpiChip
+                        label="Margen PyG"
+                        value={financialKpis.pygNet}
+                        valueClassName={financialKpis.pygNetTone}
+                        onClick={() => setFinancialModal('margin')}
+                      />
+                      <FinancialKpiChip
+                        label="Rentabilidad"
+                        value={financialKpis.marginBadge}
+                        valueClassName={financialKpis.rentabilidadTone}
+                        onClick={() => setFinancialModal('margin')}
+                      />
+                    </div>
                   </div>
                   {financialModalContent && (
                     <FinancialDetailModal
