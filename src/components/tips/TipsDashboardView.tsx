@@ -81,7 +81,7 @@ const TIP_TABLE_TH = 'whitespace-nowrap px-2 py-1.5 align-middle leading-none';
 const TIP_TABLE_TH_TEXT =
   'text-[7px] font-black uppercase tracking-wide md:text-[8px]';
 const TIP_TABLE_TH_BTN =
-  'inline-flex w-max max-w-full items-center gap-1 py-0 leading-none active:scale-95';
+  'inline-flex w-full max-w-full items-center gap-1 py-0 leading-none active:scale-95';
 const TIP_TABLE_BODY_TEXT = 'text-[10px] font-black leading-none md:text-[11px]';
 const TIP_TABLE_DATA_CELL = cn(
   'whitespace-nowrap px-2 py-2 text-center align-middle tabular-nums',
@@ -98,6 +98,44 @@ const TIP_TABLE_NAME_TD = cn(
 function staffTableDisplayName(name: string): string {
   const n = (name || '').trim();
   return n || ' ';
+}
+
+type TipTableColKey =
+  | 'name'
+  | 'h'
+  | 'hLv'
+  | 'hSd'
+  | 'pen'
+  | 'sinReg'
+  | 'prop'
+  | 'eLv'
+  | 'eSd'
+  | 'sinPen';
+
+/** Reparte el 100% del ancho según columnas visibles (más columnas → más estrechas). */
+function buildTipTableColWidths(flags: {
+  showHoursDetail: boolean;
+  showSinRegCol: boolean;
+  showPropDetail: boolean;
+}): Record<TipTableColKey, string> {
+  const cols: { key: TipTableColKey; weight: number }[] = [
+    { key: 'name', weight: 2.5 },
+    { key: 'h', weight: 1 },
+  ];
+  if (flags.showHoursDetail) {
+    cols.push({ key: 'hLv', weight: 1 }, { key: 'hSd', weight: 1 });
+  }
+  cols.push({ key: 'pen', weight: 1 });
+  if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: 1 });
+  cols.push({ key: 'prop', weight: 1.2 });
+  if (flags.showPropDetail) {
+    cols.push({ key: 'eLv', weight: 1 }, { key: 'eSd', weight: 1 }, { key: 'sinPen', weight: 1 });
+  }
+  const total = cols.reduce((sum, c) => sum + c.weight, 0);
+  return Object.fromEntries(cols.map((c) => [c.key, `${(c.weight / total) * 100}%`])) as Record<
+    TipTableColKey,
+    string
+  >;
 }
 
 function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
@@ -148,6 +186,16 @@ export default function TipsDashboardView({
 
   const tableColCount =
     4 + (showHoursDetail ? 2 : 0) + (showSinRegCol ? 1 : 0) + (showPropDetail ? 3 : 0);
+
+  const colWidths = useMemo(
+    () =>
+      buildTipTableColWidths({
+        showHoursDetail,
+        showSinRegCol,
+        showPropDetail,
+      }),
+    [showHoursDetail, showSinRegCol, showPropDetail]
+  );
 
   const rangeLabel = useMemo(() => {
     try {
@@ -463,12 +511,15 @@ export default function TipsDashboardView({
                   Calculando…
                 </div>
               )}
-              <div className="overflow-x-auto">
-                <table className="w-max max-w-full table-auto border-collapse">
+              <div className="overflow-hidden">
+                <table className="w-full table-fixed border-collapse">
                   <thead>
                     <tr className="align-middle bg-[#36606F] text-white">
-                      <th className={cn(TIP_TABLE_NAME_TH, TIP_TABLE_TH, TIP_TABLE_TH_TEXT)} />
-                      <th className={cn('text-center', TIP_TABLE_TH)}>
+                      <th
+                        style={{ width: colWidths.name }}
+                        className={cn(TIP_TABLE_NAME_TH, TIP_TABLE_TH, TIP_TABLE_TH_TEXT)}
+                      />
+                      <th style={{ width: colWidths.h }} className={cn('text-center', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowHoursDetail((v) => !v)}
@@ -486,6 +537,7 @@ export default function TipsDashboardView({
                       {showHoursDetail && (
                         <>
                           <th
+                            style={{ width: colWidths.hLv }}
                             className={cn(
                               'text-center',
                               TIP_TABLE_TH,
@@ -496,6 +548,7 @@ export default function TipsDashboardView({
                             H L-V
                           </th>
                           <th
+                            style={{ width: colWidths.hSd }}
                             className={cn(
                               'text-center',
                               TIP_TABLE_TH,
@@ -507,7 +560,7 @@ export default function TipsDashboardView({
                           </th>
                         </>
                       )}
-                      <th className={cn('text-center', TIP_TABLE_TH)}>
+                      <th style={{ width: colWidths.pen }} className={cn('text-center', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowSinRegCol((v) => !v)}
@@ -524,6 +577,7 @@ export default function TipsDashboardView({
                       </th>
                       {showSinRegCol && (
                         <th
+                          style={{ width: colWidths.sinReg }}
                           className={cn(
                             'text-center',
                             TIP_TABLE_TH,
@@ -537,7 +591,7 @@ export default function TipsDashboardView({
                           </span>
                         </th>
                       )}
-                      <th className={cn('text-right', TIP_TABLE_TH)}>
+                      <th style={{ width: colWidths.prop }} className={cn('text-right', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowPropDetail((v) => !v)}
@@ -559,6 +613,7 @@ export default function TipsDashboardView({
                       {showPropDetail && (
                         <>
                           <th
+                            style={{ width: colWidths.eLv }}
                             className={cn(
                               'text-center',
                               TIP_TABLE_TH,
@@ -569,6 +624,7 @@ export default function TipsDashboardView({
                             € L-V
                           </th>
                           <th
+                            style={{ width: colWidths.eSd }}
                             className={cn(
                               'text-center',
                               TIP_TABLE_TH,
@@ -579,6 +635,7 @@ export default function TipsDashboardView({
                             € S-D
                           </th>
                           <th
+                            style={{ width: colWidths.sinPen }}
                             className={cn(
                               'text-center',
                               TIP_TABLE_TH,
@@ -621,10 +678,15 @@ export default function TipsDashboardView({
                             key={s.id}
                             className="align-middle hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
                           >
-                            <td className={cn(TIP_TABLE_NAME_TD, strikeClass)} onClick={openRow}>
+                            <td
+                              style={{ width: colWidths.name }}
+                              className={cn(TIP_TABLE_NAME_TD, strikeClass)}
+                              onClick={openRow}
+                            >
                               {staffTableDisplayName(s.name)}
                             </td>
                             <td
+                              style={{ width: colWidths.h }}
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'text-zinc-700 cursor-pointer',
@@ -637,6 +699,7 @@ export default function TipsDashboardView({
                             {showHoursDetail && (
                               <>
                                 <td
+                                  style={{ width: colWidths.hLv }}
                                   className={cn(
                                     TIP_TABLE_DATA_CELL,
                                     'text-zinc-600 cursor-pointer',
@@ -648,6 +711,7 @@ export default function TipsDashboardView({
                                   {fmtHours(s.weekdayHoursRaw)}
                                 </td>
                                 <td
+                                  style={{ width: colWidths.hSd }}
                                   className={cn(
                                     TIP_TABLE_DATA_CELL,
                                     'text-zinc-600 cursor-pointer',
@@ -661,6 +725,7 @@ export default function TipsDashboardView({
                               </>
                             )}
                             <td
+                              style={{ width: colWidths.pen }}
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'cursor-pointer',
@@ -673,6 +738,7 @@ export default function TipsDashboardView({
                             </td>
                             {showSinRegCol && (
                               <td
+                                style={{ width: colWidths.sinReg }}
                                 className={cn(
                                   TIP_TABLE_DATA_CELL,
                                   'cursor-pointer',
@@ -686,6 +752,7 @@ export default function TipsDashboardView({
                               </td>
                             )}
                             <td
+                              style={{ width: colWidths.prop }}
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'text-right text-emerald-600',
@@ -703,6 +770,7 @@ export default function TipsDashboardView({
                             {showPropDetail && (
                               <>
                                 <td
+                                  style={{ width: colWidths.eLv }}
                                   className={cn(
                                     TIP_TABLE_DATA_CELL,
                                     'text-[#36606F] cursor-pointer',
@@ -714,6 +782,7 @@ export default function TipsDashboardView({
                                   {fmtZeroBlank(wdAmtTeor)}
                                 </td>
                                 <td
+                                  style={{ width: colWidths.eSd }}
                                   className={cn(
                                     TIP_TABLE_DATA_CELL,
                                     'text-[#36606F] cursor-pointer',
@@ -725,6 +794,7 @@ export default function TipsDashboardView({
                                   {fmtZeroBlank(weAmtTeor)}
                                 </td>
                                 <td
+                                  style={{ width: colWidths.sinPen }}
                                   className={cn(
                                     TIP_TABLE_DATA_CELL,
                                     'text-zinc-500 cursor-pointer',

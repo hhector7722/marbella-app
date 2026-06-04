@@ -40,11 +40,13 @@ function MetricCell({
   value,
   valueClassName,
   onOpenDetail,
+  detailHintAlignPlusToLens = false,
 }: {
   label: ReactNode;
   value: ReactNode;
   valueClassName?: string;
   onOpenDetail?: () => void;
+  detailHintAlignPlusToLens?: boolean;
 }) {
   const body = (
     <>
@@ -57,7 +59,7 @@ function MetricCell({
         <div className="flex flex-col items-center gap-0.5 text-center">
           <span className={METRIC_LABEL_TEXT}>{label}</span>
           {onOpenDetail ? (
-            <StaffTipDetailHintIcon />
+            <StaffTipDetailHintIcon alignPlusToLens={detailHintAlignPlusToLens} />
           ) : (
             <span className="h-5 w-5 shrink-0" aria-hidden />
           )}
@@ -134,6 +136,7 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           value={adjustmentValue}
           valueClassName={adjustmentValueClass}
           onOpenDetail={() => setDetail('penalizacion')}
+          detailHintAlignPlusToLens
         />
         <MetricCell
           label="Propina final"
