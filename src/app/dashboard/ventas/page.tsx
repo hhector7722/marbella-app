@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { X, ChevronLeft, ChevronRight, Landmark, Filter } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ChartLine, Filter } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -60,7 +60,7 @@ export default function VentasPage() {
     const searchParams = useSearchParams();
 
     const [activeTab, setActiveTab] = useState<VentasTab>('VENTAS');
-    const [isHector, setIsHector] = useState(false);
+    const [canAccessInsights, setCanAccessInsights] = useState(false);
 
     // Leer el parámetro ?tab=X al montar (viene desde /dashboard/sala via SubNavVentas)
     useEffect(() => {
@@ -76,8 +76,19 @@ export default function VentasPage() {
         let cancelled = false;
         void (async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            const email = session?.user?.email ?? '';
-            if (!cancelled) setIsHector(String(email).toLowerCase() === 'hhector7722@gmail.com');
+            if (!session?.user) {
+                if (!cancelled) setCanAccessInsights(false);
+                return;
+            }
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .maybeSingle();
+            const role = (profile as { role?: string | null } | null)?.role ?? null;
+            if (!cancelled) {
+                setCanAccessInsights(role === 'manager' || role === 'admin');
+            }
         })();
         return () => {
             cancelled = true;
@@ -599,21 +610,21 @@ export default function VentasPage() {
                             </div>
 
                             <div className="flex items-center gap-1 shrink-0 text-white">
-                                {isHector ? (
+                                {canAccessInsights ? (
                                     <button
                                         type="button"
                                         onClick={() => router.push('/dashboard/insights')}
-                                        aria-label="Abrir rentabilidad"
-                                        title="Rentabilidad"
+                                        aria-label="Abrir insights"
+                                        title="Insights"
                                         className={cn(
                                             'min-h-12 min-w-12 shrink-0',
-                                            'bg-transparent border-0 outline-none',
+                                            'bg-transparent border-0 outline-none shadow-none',
                                             'text-white/90 hover:text-white',
                                             'inline-flex items-center justify-center',
                                             'active:scale-95 transition-transform',
                                         )}
                                     >
-                                        <Landmark className="w-[18px] h-[18px]" strokeWidth={2.75} />
+                                        <ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />
                                     </button>
                                 ) : null}
 

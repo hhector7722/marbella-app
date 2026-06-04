@@ -139,8 +139,8 @@ async function gateManager(): Promise<GateResult> {
   }
 
   const role = (profile as { role?: string | null } | null)?.role ?? null
-  const allowed = role === 'manager' || role === 'admin' || role === 'supervisor'
-  if (!allowed) return { ok: false, error: 'Sin permiso (solo gestión)' }
+  const allowed = role === 'manager' || role === 'admin'
+  if (!allowed) return { ok: false, error: 'Sin permiso (solo manager o admin)' }
 
   return { ok: true, supabase }
 }
