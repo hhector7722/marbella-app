@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
+import { enumerateYmdRange } from './insights-date-utils'
 import {
   hourlyProfitabilityRowSchema,
   weekdayAnalysisRowSchema,
@@ -72,6 +73,12 @@ export type FinancialSummaryData = {
   cashIn: number
   cashOut: number
   salesGross: number
+  /** Cobros tarjeta del periodo (RPC cierre o SUM tickets). */
+  cardPayments: number
+  /** entradas_efectivo + cardPayments */
+  cobrosTotales: number
+  /** Margen PyG − cobrosTotales */
+  deltaPygCobros: number
 }
 
 type FinancialActionFailure = { success: false; error: string; forbidden?: boolean }
@@ -262,6 +269,64 @@ export async function getProductMarginRanking(
   return { success: true, data: validated.data }
 }
 
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+const closingBreakdownSchema = z.object({
+  total_tarjeta: z.coerce.number().optional(),
+})
+
+async function fetchPeriodCardPayments(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  dateFrom: string,
+  dateTo: string
+): Promise<number> {
+  const days = enumerateYmdRange(dateFrom, dateTo)
+  if (days.length === 0) return 0
+
+  const rpcResults = await Promise.all(
+    days.map((p_date) =>
+      supabase.rpc('get_closing_sales_breakdown', { p_date }).then(({ data, error }) => ({
+        data,
+        error,
+      }))
+    )
+  )
+
+  const rpcFailed = rpcResults.some((r) => r.error)
+  if (!rpcFailed) {
+    let total = 0
+    for (const r of rpcResults) {
+      const parsed = closingBreakdownSchema.safeParse(r.data ?? {})
+      if (parsed.success) {
+        total += Math.max(0, Number(parsed.data.total_tarjeta) || 0)
+      }
+    }
+    return roundMoney(total)
+  }
+
+  console.warn(
+    '[insights] get_closing_sales_breakdown falló; fallback tickets_marbella.cobro_tarjeta'
+  )
+  const { data, error } = await supabase
+    .from('tickets_marbella')
+    .select('cobro_tarjeta')
+    .gte('fecha', dateFrom)
+    .lte('fecha', dateTo)
+
+  if (error) {
+    console.error('[insights] tickets_marbella cobro_tarjeta:', error.message)
+    return 0
+  }
+
+  const sum = (data ?? []).reduce(
+    (acc, row) => acc + Math.max(0, Number((row as { cobro_tarjeta?: number }).cobro_tarjeta) || 0),
+    0
+  )
+  return roundMoney(sum)
+}
+
 export async function getFinancialSummary(
   dateFrom: string,
   dateTo: string
@@ -293,6 +358,11 @@ export async function getFinancialSummary(
   }
 
   const row = extracted.data
+  const cashIn = row.cashFlow.inflows.total
+  const cardPayments = await fetchPeriodCardPayments(supabase, parsed.data.dateFrom, parsed.data.dateTo)
+  const cobrosTotales = roundMoney(cashIn + cardPayments)
+  const deltaPygCobros = roundMoney(row.pyg.net - cobrosTotales)
+
   return {
     success: true,
     data: {
@@ -305,9 +375,12 @@ export async function getFinancialSummary(
       reconciliation: { delta: row.reconciliation.delta },
       incomeLines: row.pyg.income.lines,
       expenseLines: row.pyg.expenses.lines,
-      cashIn: row.cashFlow.inflows.total,
+      cashIn,
       cashOut: row.cashFlow.outflows.total,
       salesGross: row.pyg.income.gross_net,
+      cardPayments,
+      cobrosTotales,
+      deltaPygCobros,
     },
   }
 }

@@ -76,40 +76,25 @@ const MARGIN_BAR_HIGH = '#2E7D32'
 const MARGIN_BAR_MID = '#66BB6A'
 const MARGIN_BAR_LOW = '#FFA726'
 const DELTA_TOOLTIP =
-  'Positivo = rentabilidad contable sin entrar en caja. Negativo = cobros de deuda anterior o ajustes.'
+  'Margen PyG menos cobros totales (efectivo + tarjeta). Positivo = devengo por encima de cobros.'
 
 const HOURLY_CHART_START = 7
 const HOURLY_CHART_END = 23
 
+const BONUS_LABOR_EUR = 1700
+const GASTOS_FIJOS_OTROS_EUR = 0
+
 type FinancialModalKind = 'income' | 'expenses' | 'margin' | 'cash' | 'delta'
 
 const INCOME_LINE_LABELS: Record<string, string> = {
-  sales_positive: 'Ventas positivas',
-  refunds: 'Devoluciones',
+  sales_positive: 'Venta neta',
 }
 
 const EXPENSE_LINE_LABELS: Record<string, string> = {
-  purchases_invoices: 'Compras (albaranes)',
-  payroll_total: 'Nóminas (PDF)',
+  purchases_invoices: 'Compras',
+  payroll_total: 'Nóminas',
   overtime: 'Horas extras',
   rent_monthly: 'Alquiler',
-}
-
-const EXPENSE_LINE_ORDER = [
-  'purchases_invoices',
-  'payroll_total',
-  'overtime',
-  'rent_monthly',
-] as const
-
-function deltaInterpretation(delta: number): string {
-  if (delta > 50) {
-    return 'Rentabilidad contable superior a caja: puede haber ventas pendientes de cobro o gastos no reflejados en caja.'
-  }
-  if (delta < -50) {
-    return 'Caja superior al PyG: posibles cobros de periodos anteriores o ajustes manuales.'
-  }
-  return 'PyG y caja están alineados.'
 }
 
 function deltaChipTone(delta: number): string {
@@ -128,6 +113,7 @@ function FinancialKpiChip({
   value,
   valueClassName,
   badge,
+  badgePlain,
   tooltip,
   className,
   onClick,
@@ -136,6 +122,8 @@ function FinancialKpiChip({
   value: string
   valueClassName?: string
   badge?: string
+  /** Sin fondo en el chip de porcentaje (Margen PyG). */
+  badgePlain?: boolean
   tooltip?: string
   className?: string
   onClick?: () => void
@@ -166,7 +154,12 @@ function FinancialKpiChip({
           {value}
         </span>
         {badge && badge !== ' ' && (
-          <span className="shrink-0 rounded-md bg-zinc-200/80 px-1.5 py-0.5 text-[9px] lg:text-[10px] font-black tabular-nums text-zinc-700">
+          <span
+            className={cn(
+              'shrink-0 text-[9px] lg:text-[10px] font-black tabular-nums text-zinc-700',
+              !badgePlain && 'rounded-md bg-zinc-200/80 px-1.5 py-0.5'
+            )}
+          >
             {badge}
           </span>
         )}
@@ -186,7 +179,7 @@ function FinancialDetailModal({
   title: string
   onClose: () => void
   children: ReactNode
-  footnote: string
+  footnote?: string
 }) {
   const [mounted, setMounted] = useState(false)
 
@@ -236,7 +229,9 @@ function FinancialDetailModal({
           </button>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
-        <p className="mt-4 text-[10px] leading-snug text-zinc-500 font-medium shrink-0">{footnote}</p>
+        {footnote ? (
+          <p className="mt-4 text-[10px] leading-snug text-zinc-500 font-medium shrink-0">{footnote}</p>
+        ) : null}
       </div>
     </div>,
     document.body
@@ -270,13 +265,77 @@ function FinancialDetailBlock({
   )
 }
 
-function sortExpenseLines(lines: FinancialStatementLine[]): FinancialStatementLine[] {
-  const orderIndex = new Map(EXPENSE_LINE_ORDER.map((k, i) => [k, i]))
-  return [...lines].sort((a, b) => {
-    const ai = orderIndex.get(a.key as (typeof EXPENSE_LINE_ORDER)[number]) ?? 99
-    const bi = orderIndex.get(b.key as (typeof EXPENSE_LINE_ORDER)[number]) ?? 99
-    return ai - bi
-  })
+function expenseLineAmount(lines: FinancialStatementLine[], key: string): number {
+  return lines.find((l) => l.key === key)?.amount ?? 0
+}
+
+function FinancialDetailGroupRow({
+  label,
+  amount,
+  subRows,
+}: {
+  label: string
+  amount: number
+  subRows: { label: string; amount: number }[]
+}) {
+  const [open, setOpen] = useState(false)
+  const displayed = formatEuroKpi(amount)
+  return (
+    <div className="border-b border-zinc-100 last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full min-h-12 items-baseline justify-between gap-4 py-2 text-left active:bg-zinc-50 rounded-lg"
+      >
+        <span className="text-xs font-semibold text-zinc-600">{label}</span>
+        <span className="text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap">
+          {displayed === ' ' ? ' ' : displayed}
+        </span>
+      </button>
+      {open ? (
+        <div className="pl-3 pb-1 space-y-0">
+          {subRows.map((row) => (
+            <FinancialDetailRow key={row.label} label={row.label} amount={row.amount} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function ExpensesBreakdownBody({ expenseLines }: { expenseLines: FinancialStatementLine[] }) {
+  const purchases = expenseLineAmount(expenseLines, 'purchases_invoices')
+  const payroll = expenseLineAmount(expenseLines, 'payroll_total')
+  const overtime = expenseLineAmount(expenseLines, 'overtime')
+  const rent = expenseLineAmount(expenseLines, 'rent_monthly')
+  const laborTotal = payroll + overtime + BONUS_LABOR_EUR
+  const fixedTotal = rent + GASTOS_FIJOS_OTROS_EUR
+
+  return (
+    <div className="space-y-1">
+      <FinancialDetailRow
+        label={EXPENSE_LINE_LABELS.purchases_invoices}
+        amount={purchases}
+      />
+      <FinancialDetailGroupRow
+        label="Mano de obra"
+        amount={laborTotal}
+        subRows={[
+          { label: EXPENSE_LINE_LABELS.payroll_total, amount: payroll },
+          { label: EXPENSE_LINE_LABELS.overtime, amount: overtime },
+          { label: 'Bonus', amount: BONUS_LABOR_EUR },
+        ]}
+      />
+      <FinancialDetailGroupRow
+        label="Gastos fijos"
+        amount={fixedTotal}
+        subRows={[
+          { label: EXPENSE_LINE_LABELS.rent_monthly, amount: rent },
+          { label: 'Otros', amount: GASTOS_FIJOS_OTROS_EUR },
+        ]}
+      />
+    </div>
+  )
 }
 
 function formatEuroChart(value: number, digits = 2): string {
@@ -827,7 +886,7 @@ export default function InsightsClient({
 
   const financialKpis = useMemo(() => {
     if (!financial.data) return null
-    const { pyg, cashFlow, reconciliation } = financial.data
+    const { pyg, cobrosTotales, deltaPygCobros } = financial.data
     const marginPct =
       pyg.income.total > 0 ? (pyg.net / pyg.income.total) * 100 : null
     const marginBadge =
@@ -841,13 +900,13 @@ export default function InsightsClient({
       expenses: formatEuroKpi(pyg.expenses.total),
       pygNet: formatEuroKpi(pyg.net),
       marginBadge,
-      cashFlowNet: formatEuroKpi(cashFlow.net),
-      delta: formatEuroKpi(reconciliation.delta),
+      cobrosTotales: formatEuroKpi(cobrosTotales),
+      delta: formatEuroKpi(deltaPygCobros),
       incomeTone: signedEuroTone(pyg.income.total, 'text-emerald-600', 'text-rose-600'),
       expensesTone: 'text-rose-600',
       pygNetTone: signedEuroTone(pyg.net, 'text-emerald-600', 'text-rose-600'),
-      cashFlowTone: signedEuroTone(cashFlow.net, 'text-emerald-600', 'text-rose-600'),
-      deltaTone: deltaChipTone(reconciliation.delta),
+      cobrosTone: signedEuroTone(cobrosTotales, 'text-emerald-600', 'text-rose-600'),
+      deltaTone: deltaChipTone(deltaPygCobros),
     }
   }, [financial.data])
 
@@ -860,42 +919,36 @@ export default function InsightsClient({
 
   const financialModalContent = useMemo(() => {
     if (!financial.data || !financialModal) return null
-    const { pyg, reconciliation, incomeLines, expenseLines, cashIn, cashOut, salesGross } = financial.data
+    const {
+      pyg,
+      incomeLines,
+      expenseLines,
+      cashIn,
+      cashOut,
+      salesGross,
+      cardPayments,
+      cobrosTotales,
+      deltaPygCobros,
+    } = financial.data
+
+    const ventaNetaAmount =
+      incomeLines.find((l) => l.key === 'sales_positive')?.amount ?? pyg.income.total
 
     switch (financialModal) {
       case 'income':
         return {
-          title: 'Ventas (s/IVA)',
-          footnote: 'Base imponible (IVA 10% descontado). Coincide con el PyG de devengo.',
+          title: 'Ventas',
           body: (
             <div className="space-y-1">
-              {incomeLines.map((line) => (
-                <FinancialDetailRow
-                  key={line.key}
-                  label={INCOME_LINE_LABELS[line.key] ?? line.label}
-                  amount={line.amount}
-                />
-              ))}
-              <FinancialDetailRow label="TPV bruto (c/IVA)" amount={salesGross} />
+              <FinancialDetailRow label="Facturación" amount={salesGross} />
+              <FinancialDetailRow label="Venta neta" amount={ventaNetaAmount} />
             </div>
           ),
         }
       case 'expenses':
         return {
           title: 'Gastos totales',
-          footnote:
-            'Solo albaranes en estado mapeado/completado. Alquiler: meses completos en el rango.',
-          body: (
-            <div className="space-y-1">
-              {sortExpenseLines(expenseLines).map((line) => (
-                <FinancialDetailRow
-                  key={line.key}
-                  label={EXPENSE_LINE_LABELS[line.key] ?? line.label}
-                  amount={line.amount}
-                />
-              ))}
-            </div>
-          ),
+          body: <ExpensesBreakdownBody expenseLines={expenseLines} />,
         }
       case 'margin': {
         const marginPctLabel =
@@ -927,25 +980,24 @@ export default function InsightsClient({
       }
       case 'cash':
         return {
-          title: 'Caja neta',
-          footnote: 'Solo efectivo físico. Los cobros con tarjeta no pasan por tesorería.',
+          title: 'Cobros totales',
           body: (
             <div className="space-y-1">
-              <FinancialDetailRow label="Entradas (efectivo + cierres)" amount={cashIn} />
-              <FinancialDetailRow label="Salidas (efectivo)" amount={cashOut} />
-              <FinancialDetailRow label="Neto" amount={financial.data.cashFlow.net} />
+              <FinancialDetailRow label="Entradas" amount={cashIn} />
+              <FinancialDetailRow label="Salidas" amount={cashOut} />
+              <FinancialDetailRow label="Tarjeta" amount={cardPayments} />
+              <FinancialDetailRow label="Cobros totales" amount={cobrosTotales} />
             </div>
           ),
         }
       case 'delta':
         return {
-          title: 'Delta devengo−caja',
-          footnote: deltaInterpretation(reconciliation.delta),
+          title: 'Delta PyG-Cobros',
           body: (
             <div className="space-y-1">
               <FinancialDetailRow label="Margen PyG" amount={pyg.net} />
-              <FinancialDetailRow label="Caja neta" amount={financial.data.cashFlow.net} />
-              <FinancialDetailRow label="Diferencia" amount={reconciliation.delta} />
+              <FinancialDetailRow label="Cobros totales" amount={cobrosTotales} />
+              <FinancialDetailRow label="Diferencia" amount={deltaPygCobros} />
             </div>
           ),
         }
@@ -1420,7 +1472,7 @@ export default function InsightsClient({
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     <FinancialKpiChip
-                      label="Ventas (s/IVA)"
+                      label="Venta neta"
                       value={financialKpis.income}
                       valueClassName={financialKpis.incomeTone}
                       onClick={() => setFinancialModal('income')}
@@ -1432,13 +1484,13 @@ export default function InsightsClient({
                       onClick={() => setFinancialModal('expenses')}
                     />
                     <FinancialKpiChip
-                      label="Caja neta"
-                      value={financialKpis.cashFlowNet}
-                      valueClassName={financialKpis.cashFlowTone}
+                      label="Cobros totales"
+                      value={financialKpis.cobrosTotales}
+                      valueClassName={financialKpis.cobrosTone}
                       onClick={() => setFinancialModal('cash')}
                     />
                     <FinancialKpiChip
-                      label="Delta devengo−caja"
+                      label="Delta PyG-Cobros"
                       value={financialKpis.delta}
                       valueClassName={financialKpis.deltaTone}
                       tooltip={DELTA_TOOLTIP}
@@ -1449,6 +1501,7 @@ export default function InsightsClient({
                       value={financialKpis.pygNet}
                       valueClassName={financialKpis.pygNetTone}
                       badge={financialKpis.marginBadge}
+                      badgePlain
                       className="col-span-2 max-w-[50%] justify-self-center md:col-span-1 md:max-w-none md:justify-self-stretch"
                       onClick={() => setFinancialModal('margin')}
                     />

@@ -150,3 +150,16 @@ export function monthFromYmd(ymd: string): InsightsMonth {
   const { y, m } = parseYmdLocal(ymd)
   return { year: y, month: m }
 }
+
+/** Días inclusivos entre dos YMD (sin parse ISO). */
+export function enumerateYmdRange(fromYmd: string, toYmd: string): string[] {
+  const { y: y1, m: m1, d: d1 } = parseYmdLocal(fromYmd)
+  const { y: y2, m: m2, d: d2 } = parseYmdLocal(toYmd)
+  const start = new Date(y1, m1 - 1, d1)
+  const end = new Date(y2, m2 - 1, d2)
+  const days: string[] = []
+  for (let cur = new Date(start); cur.getTime() <= end.getTime(); cur.setDate(cur.getDate() + 1)) {
+    days.push(ymdFromLocalDate(cur))
+  }
+  return days
+}

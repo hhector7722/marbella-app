@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-04 (Albaranes: precio sin pisar unidades del ingrediente)
+**Última actualización:** 2026-06-04 (Insights: Resultado del periodo — cobros y KPIs)
+
+- [x] **Insights: Resultado del periodo — cobros totales y modales KPI (2026-06-04)**: [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx) — chips **Venta neta**, **Cobros totales** (efectivo tesorería + tarjeta), **Delta PyG-Cobros** (margen − cobros); % Margen PyG sin fondo. Modales: ventas (Facturación → Venta neta, sin devoluciones); gastos con grupos desplegables **Mano de obra** (nóminas + extras + bonus 1.700 € fijo en UI) y **Gastos fijos** (alquiler + Otros 0 €); cobros (Entradas / Salidas / Tarjeta); delta recalculado. [`actions.ts`](src/app/dashboard/insights/actions.ts) — `fetchPeriodCardPayments` vía `get_closing_sales_breakdown` por día del rango (fallback `tickets_marbella.cobro_tarjeta`); campos `cardPayments`, `cobrosTotales`, `deltaPygCobros`. [`insights-date-utils.ts`](src/app/dashboard/insights/insights-date-utils.ts) — `enumerateYmdRange`. Chip **Gastos totales** sigue siendo total RPC (bonus 1.700 € solo en desglose modal).
+
+**Última actualización anterior:** 2026-06-04 (Albaranes: precio sin pisar unidades del ingrediente)
 
 - [x] **Albaranes: actualizar solo precio si cambia, sin tocar unidades/recetas (2026-06-04)**: Migración [`20260604140000_albaran_price_preserve_ingredient_config.sql`](supabase/migrations/20260604140000_albaran_price_preserve_ingredient_config.sql) — `handle_new_invoice_line` compara precio antes de escribir; en `per_pack` ajusta `pack_price` (no `purchase_unit` ni `recipe_unit`). App: [`ingredient-price-sync.ts`](src/lib/ingredient-price-sync.ts), [`albaranes/actions.ts`](src/app/dashboard/albaranes/actions.ts) `resyncIngredientPriceForMappedLine`, wizard express en edición desde albarán solo precio. `/dashboard/albaranes-precios` sigue pudiendo cambiar unidades con asistente explícito (`allowUnitChanges: true`).
 
