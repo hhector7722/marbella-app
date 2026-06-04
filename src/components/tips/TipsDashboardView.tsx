@@ -73,6 +73,16 @@ const fmtZeroBlank = (val: number, digits = 2) => (Math.abs(val) < 0.005 ? ' ' :
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${val.toFixed(2)}€`);
 const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)));
 
+/** Columnas desplegables (desglose H/€, Sin reg) vs fijas (nombre, H, PEN, PROP). */
+const TIP_EXPAND_TH = 'bg-[#4a7583]';
+const TIP_EXPAND_TD = 'bg-[#36606F]/[0.07] hover:bg-[#36606F]/[0.11]';
+
+const TIP_TABLE_TH = 'px-1 py-1 leading-none';
+const TIP_TABLE_TH_TEXT =
+  'text-[7px] font-black uppercase tracking-wide whitespace-nowrap md:text-[8px]';
+const TIP_TABLE_TH_BTN =
+  'inline-flex w-full items-center gap-0.5 py-0 leading-none active:scale-95';
+
 function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
   if (!b || typeof b !== 'object') return {};
   return Object.fromEntries(
@@ -445,52 +455,91 @@ export default function TipsDashboardView({
                 >
                   <thead>
                     <tr className="bg-[#36606F] text-white">
-                      <th className="sticky left-0 z-10 bg-[#36606F] px-2 py-2 text-left text-[8px] font-black uppercase tracking-widest md:text-[10px]" />
-                      <th className="px-1 py-2 text-center">
+                      <th
+                        className={cn(
+                          'sticky left-0 z-10 bg-[#36606F] px-2 text-left',
+                          TIP_TABLE_TH,
+                          TIP_TABLE_TH_TEXT
+                        )}
+                      />
+                      <th className={cn('text-center', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowHoursDetail((v) => !v)}
-                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-1 px-1 text-[8px] font-black uppercase tracking-wide md:text-[10px] active:scale-95"
+                          className={cn(
+                            TIP_TABLE_TH_BTN,
+                            'justify-center',
+                            TIP_TABLE_TH_TEXT
+                          )}
                           title={showHoursDetail ? 'Ocultar desglose de horas' : 'Mostrar H Lun–Vie y H Sáb–Dom'}
                         >
                           <span>H</span>
-                          <TipExpandBadge size={10} />
+                          <TipExpandBadge size={8} />
                         </button>
                       </th>
                       {showHoursDetail && (
                         <>
-                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                          <th
+                            className={cn(
+                              'text-center',
+                              TIP_TABLE_TH,
+                              TIP_TABLE_TH_TEXT,
+                              TIP_EXPAND_TH
+                            )}
+                          >
                             H Lun – Vie
                           </th>
-                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                          <th
+                            className={cn(
+                              'text-center',
+                              TIP_TABLE_TH,
+                              TIP_TABLE_TH_TEXT,
+                              TIP_EXPAND_TH
+                            )}
+                          >
                             H Sáb – Dom
                           </th>
                         </>
                       )}
-                      <th className="px-1 py-2 text-center">
+                      <th className={cn('text-center', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowSinRegCol((v) => !v)}
-                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-1 px-1 text-[8px] font-black uppercase tracking-wide md:text-[10px] active:scale-95"
+                          className={cn(
+                            TIP_TABLE_TH_BTN,
+                            'justify-center',
+                            TIP_TABLE_TH_TEXT
+                          )}
                           title={showSinRegCol ? 'Ocultar Sin reg' : 'Mostrar jornadas sin registro'}
                         >
                           <span>PEN</span>
-                          <TipSinRegHeaderBadge size={10} />
+                          <TipSinRegHeaderBadge size={8} />
                         </button>
                       </th>
                       {showSinRegCol && (
-                        <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
-                          <span className="inline-flex min-h-[48px] items-center justify-center gap-1">
+                        <th
+                          className={cn(
+                            'text-center',
+                            TIP_TABLE_TH,
+                            TIP_TABLE_TH_TEXT,
+                            TIP_EXPAND_TH
+                          )}
+                        >
+                          <span className={cn(TIP_TABLE_TH_BTN, 'justify-center')}>
                             <span>Sin reg</span>
-                            <TipSinRegHeaderBadge size={10} />
+                            <TipSinRegHeaderBadge size={8} />
                           </span>
                         </th>
                       )}
-                      <th className="px-2 py-2 text-right">
+                      <th className={cn('px-2 text-right', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowPropDetail((v) => !v)}
-                          className="inline-flex min-h-[48px] w-full items-center justify-end gap-1 px-1 text-[8px] font-black uppercase tracking-wide md:text-[10px] active:scale-95"
+                          className={cn(
+                            TIP_TABLE_TH_BTN,
+                            'justify-end',
+                            TIP_TABLE_TH_TEXT
+                          )}
                           title={
                             showPropDetail
                               ? 'Ocultar € Lun–Vie, € Sáb–Dom y Sin pen'
@@ -498,18 +547,39 @@ export default function TipsDashboardView({
                           }
                         >
                           <span>PROP</span>
-                          <TipExpandBadge size={10} />
+                          <TipExpandBadge size={8} />
                         </button>
                       </th>
                       {showPropDetail && (
                         <>
-                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                          <th
+                            className={cn(
+                              'text-center',
+                              TIP_TABLE_TH,
+                              TIP_TABLE_TH_TEXT,
+                              TIP_EXPAND_TH
+                            )}
+                          >
                             € Lun – Vie
                           </th>
-                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                          <th
+                            className={cn(
+                              'text-center',
+                              TIP_TABLE_TH,
+                              TIP_TABLE_TH_TEXT,
+                              TIP_EXPAND_TH
+                            )}
+                          >
                             € Sáb – Dom
                           </th>
-                          <th className="px-1 py-2 text-center text-[7px] font-black uppercase md:text-[9px]">
+                          <th
+                            className={cn(
+                              'text-center',
+                              TIP_TABLE_TH,
+                              TIP_TABLE_TH_TEXT,
+                              TIP_EXPAND_TH
+                            )}
+                          >
                             Sin pen
                           </th>
                         </>
@@ -567,6 +637,7 @@ export default function TipsDashboardView({
                                 <td
                                   className={cn(
                                     'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer',
+                                    TIP_EXPAND_TD,
                                     strikeClass
                                   )}
                                   onClick={openRow}
@@ -575,7 +646,8 @@ export default function TipsDashboardView({
                                 </td>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80',
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer',
+                                    TIP_EXPAND_TD,
                                     strikeClass
                                   )}
                                   onClick={() => openOverride('weekend', s.id, s.name)}
@@ -598,6 +670,7 @@ export default function TipsDashboardView({
                               <td
                                 className={cn(
                                   'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                  TIP_EXPAND_TD,
                                   tjiColorClass(tji),
                                   strikeClass
                                 )}
@@ -625,6 +698,7 @@ export default function TipsDashboardView({
                                 <td
                                   className={cn(
                                     'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer',
+                                    TIP_EXPAND_TD,
                                     strikeClass
                                   )}
                                   onClick={openRow}
@@ -633,7 +707,8 @@ export default function TipsDashboardView({
                                 </td>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80',
+                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer',
+                                    TIP_EXPAND_TD,
                                     strikeClass
                                   )}
                                   onClick={() => openOverride('weekend', s.id, s.name)}
@@ -643,6 +718,7 @@ export default function TipsDashboardView({
                                 <td
                                   className={cn(
                                     'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-500 cursor-pointer',
+                                    TIP_EXPAND_TD,
                                     strikeClass
                                   )}
                                   onClick={openRow}
