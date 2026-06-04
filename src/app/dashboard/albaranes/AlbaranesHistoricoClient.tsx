@@ -8,7 +8,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Eye,
   FileText,
   Filter,
   Loader2,
@@ -1240,26 +1239,6 @@ export default function AlbaranesHistoricoClient({
                         )}
                       </button>
                     ) : null}
-                    {invoiceImageSheetOptions.length >= 1 ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setInvoiceCarouselIndex(0)
-                          invoiceCarouselIndexRef.current = 0
-                          setInvoiceImageViewerOpen(true)
-                        }}
-                        aria-label="Ver imagen del albarán"
-                        title={
-                          invoiceImageSheetOptions.length > 1
-                            ? 'Ver todas las hojas: desliza o usa los puntos'
-                            : 'Ver fotografía del albarán'
-                        }
-                        className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99] shrink-0"
-                      >
-                        <Eye className="h-4 w-4 md:h-5 md:w-5" />
-                      </button>
-                    ) : null}
                     {isManager && detail?.id ? (
                       <button
                         type="button"
@@ -1291,22 +1270,53 @@ export default function AlbaranesHistoricoClient({
                 </div>
 
                 <div className="p-4 overflow-auto flex-1 min-h-0">
-                  {detail?.id && detail.supplier_id != null && !isLoadingDetail ? (
-                    <div className="mb-3 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => appendSheetInputRef.current?.click()}
-                        disabled={appendSheetBusy}
-                        aria-label="Añadir hoja"
-                        title="Añadir otra página del mismo albarán (fotografía)"
-                        className={cn(
-                          'w-full min-h-12 inline-flex items-center justify-center rounded-xl px-4 text-sm font-medium uppercase tracking-wide text-[#36606F] hover:bg-zinc-50 active:scale-[0.99] transition border-0 bg-transparent shadow-none',
-                          appendSheetBusy && 'opacity-60 pointer-events-none'
-                        )}
-                      >
-                        {appendSheetBusy ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> : null}
-                        {appendSheetBusy ? 'Subiendo…' : 'Añadir hoja'}
-                      </button>
+                  {detail?.id && !isLoadingDetail ? (
+                    <div className="mb-3 shrink-0 flex flex-col items-center gap-2">
+                      {invoiceImageSheetOptions.length >= 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvoiceCarouselIndex(0)
+                            invoiceCarouselIndexRef.current = 0
+                            setInvoiceImageViewerOpen(true)
+                          }}
+                          aria-label="Ver imagen del albarán"
+                          title={
+                            invoiceImageSheetOptions.length > 1
+                              ? 'Ver todas las hojas: desliza o usa los puntos'
+                              : 'Ver fotografía del albarán'
+                          }
+                          className="relative min-h-12 w-full max-w-[10rem] overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm transition active:scale-[0.99] hover:ring-2 hover:ring-[#36606F]/25"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={invoiceImageSheetOptions[0]?.url}
+                            alt={invoiceImageSheetOptions[0]?.label ?? 'Hoja del albarán'}
+                            className="block h-20 w-full object-cover object-top"
+                          />
+                          {invoiceImageSheetOptions.length > 1 ? (
+                            <span className="absolute bottom-1 right-1 rounded-md bg-zinc-900/75 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                              +{invoiceImageSheetOptions.length - 1}
+                            </span>
+                          ) : null}
+                        </button>
+                      ) : null}
+                      {detail.supplier_id != null ? (
+                        <button
+                          type="button"
+                          onClick={() => appendSheetInputRef.current?.click()}
+                          disabled={appendSheetBusy}
+                          aria-label="Añadir hoja"
+                          title="Añadir otra página del mismo albarán (fotografía)"
+                          className={cn(
+                            'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl px-4 text-xs font-medium uppercase tracking-wide text-[#36606F] hover:bg-zinc-50 active:scale-[0.99] transition border-0 bg-transparent shadow-none',
+                            appendSheetBusy && 'opacity-60 pointer-events-none'
+                          )}
+                        >
+                          {appendSheetBusy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : null}
+                          {appendSheetBusy ? 'Subiendo…' : 'Añadir hoja'}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                   {deleteError ? (
