@@ -224,7 +224,7 @@ export function PlatoMarbellaStaffGridView({
       <div
         className={cn(
           'min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y px-2 pt-3 custom-scrollbar sm:px-3 sm:pt-4',
-          eventOrder ? 'scroll-pb-end pb-2' : 'pb-2'
+          eventOrder ? 'scroll-pb-end-cards pb-6' : 'pb-2'
         )}
       >
         <ProductGrid rows={grouped.sections[activeSlot] as StaffRow[]} {...gridProps} />
@@ -247,7 +247,7 @@ export function PlatoMarbellaStaffGridView({
             <ProductGrid rows={unassignedRows} {...gridProps} />
           </section>
         ) : null}
-        {eventOrder ? <div className="scroll-end-touch" aria-hidden /> : null}
+        {eventOrder ? <div className="scroll-end-touch-cards" aria-hidden /> : null}
       </div>
     </div>
   )

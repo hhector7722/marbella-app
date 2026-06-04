@@ -55,16 +55,28 @@
     top: calc(3.5rem + env(safe-area-inset-top));
   }
 
-  /** Hueco al final de listas táctiles (última fila de productos / controles +/−). */
+  /** Hueco al final de listas táctiles (grids de tarjetas). */
   .scroll-end-touch {
-    min-height: calc(env(safe-area-inset-bottom, 0px) + 9rem);
+    min-height: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+    width: 100%;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+
+  /** Productos / pedidos: tarjeta completa + barra +/− visible al deslizar hasta el final. */
+  .scroll-end-touch-cards {
+    min-height: calc(env(safe-area-inset-bottom, 0px) + 15rem);
     width: 100%;
     flex-shrink: 0;
     pointer-events: none;
   }
 
   .scroll-pb-end {
-    scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 9rem);
+    scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+  }
+
+  .scroll-pb-end-cards {
+    scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 15rem);
   }
 }
 

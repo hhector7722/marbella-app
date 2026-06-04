@@ -484,10 +484,11 @@ export default function SuppliersPage() {
     });
 
     return (
-        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
+        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col bg-[#5B8FB9]">
             <Toaster position="top-right" />
 
-            <div className="mb-6 md:mb-8 flex flex-row gap-2 items-center px-0">
+            <div className="shrink-0 px-6 pb-4 pt-4 md:px-8 md:pb-6 md:pt-6">
+            <div className="flex flex-row items-center gap-2">
                 <div className="relative flex-1 min-w-0">
                     <Search className="absolute left-2.5 md:left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" />
                     <input
@@ -552,10 +553,16 @@ export default function SuppliersPage() {
                     </button>
                 </div>
             </div>
+            </div>
 
-            {/* GRID (mismo patrón que /recipes y /ingredients) */}
-            {!loading && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-8">
+            {loading ? (
+                <div className="flex w-full items-center justify-center py-20">
+                    <LoadingSpinner size="xl" className="text-white" />
+                </div>
+            ) : (
+                <>
+                <div className="grid grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
                     {filteredSuppliers.map((supplier) => (
                         <div key={supplier.id} className="relative group">
                             <div
@@ -591,13 +598,10 @@ export default function SuppliersPage() {
                         </div>
                     )}
                 </div>
+                <div className="scroll-end-touch" aria-hidden />
+                </>
             )}
-
-            {loading && (
-                <div className="flex items-center justify-center py-20 w-full">
-                    <LoadingSpinner size="xl" className="text-white" />
-                </div>
-            )}
+            </div>
 
             {/* MODAL DETALLE / CONTACTO PROVEEDOR */}
             {detailSupplier && (

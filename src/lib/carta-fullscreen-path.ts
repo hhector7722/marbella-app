@@ -12,5 +12,12 @@ export function isFullscreenCartaPath(pathname: string): boolean {
 export function isInternalScrollShellPath(pathname: string): boolean {
   if (isFullscreenCartaPath(pathname)) return true
   if (pathname === '/orders/new' || pathname.startsWith('/orders/')) return true
+  if (pathname === '/suppliers' || pathname.startsWith('/suppliers/')) return true
   return false
+}
+
+/** Páginas con barra inferior propia: el `main` no añade padding inferior extra. */
+export function isAppShellScrollPage(pathname: string): boolean {
+  if (isFullscreenCartaPath(pathname)) return false
+  return isInternalScrollShellPath(pathname)
 }
