@@ -21,8 +21,9 @@ export type UserNotificationRow = {
   created_at: string
 }
 
-const ICON_PETROL = 'text-[#2F5D6A]'
-const ICON_ALERT = 'text-rose-600'
+/** Iconos discretos sobre la tarjeta — sin contenedor. */
+const ICON_PETROL = 'text-[#2F5D6A]/45'
+const ICON_ALERT = 'text-rose-500/70'
 
 export type NotificationVisual = {
   Icon: LucideIcon
@@ -91,14 +92,32 @@ export function getNotificationVisual(
   return { Icon: FileText, iconClass: ICON_PETROL }
 }
 
-export function formatNotificationTime(iso: string): string {
+function parseNotificationDate(iso: string): Date | null {
   const raw = iso.replace('T', ' ').replace('Z', '').trim()
   const [datePart, timePart] = raw.split(' ')
-  if (!datePart || !timePart) return ''
+  if (!datePart || !timePart) return null
   const [y, m, d] = datePart.split('-').map(Number)
   const [hh, mm] = timePart.split(':').map(Number)
-  if ([y, m, d, hh, mm].some((n) => Number.isNaN(n))) return ''
-  const dt = new Date(y, m - 1, d, hh, mm)
+  if ([y, m, d, hh, mm].some((n) => Number.isNaN(n))) return null
+  return new Date(y, m - 1, d, hh, mm)
+}
+
+/** Línea inferior: fecha + hora (menor jerarquía visual). */
+export function formatNotificationDateTimeLine(iso: string): string {
+  const dt = parseNotificationDate(iso)
+  if (!dt) return ''
+  const date = dt.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+  const time = dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+  return `${date}  ${time}`
+}
+
+export function formatNotificationTime(iso: string): string {
+  const dt = parseNotificationDate(iso)
+  if (!dt) return ''
   const now = new Date()
   const sameDay =
     dt.getFullYear() === now.getFullYear() &&

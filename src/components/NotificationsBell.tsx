@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
 import { cn } from '@/lib/utils'
 import {
-  formatNotificationTime,
+  formatNotificationDateTimeLine,
   getNotificationVisual,
   type UserNotificationRow,
 } from '@/lib/user-notifications'
@@ -18,20 +18,37 @@ const PANEL_GAP_PX = 6
 const PANEL_WIDTH_PX = 288
 const CARET_OFFSET_FROM_PANEL_RIGHT_PX = 22
 
-const PANEL_SHADOW =
-  'shadow-[0_18px_45px_-14px_rgba(47,93,106,0.2),0_6px_16px_-6px_rgba(15,23,42,0.08)]'
+const PANEL_SURFACE = 'bg-[#E8EDF0]/[0.92] backdrop-blur-[16px]'
+const PANEL_SHADOW = 'shadow-[0_20px_50px_rgba(0,0,0,0.16)]'
+const CARD_SURFACE = 'bg-[#F8F9FA]'
 
 type PanelAnchor = {
   top: number
   right: number
 }
 
+/** Badge estilo iOS — idéntico en campana y cabecera del dropdown. */
+function NotificationCountBadge({ label }: { label: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex min-h-[18px] min-w-[18px] items-center justify-center',
+        'rounded-full bg-[#FF3B30] px-1',
+        'text-[11px] font-semibold leading-none text-white tabular-nums',
+        'shadow-[0_1px_4px_rgba(255,59,48,0.4)]'
+      )}
+    >
+      {label}
+    </span>
+  )
+}
+
 function NotificationsEmptyState() {
   return (
     <div className="flex min-h-[168px] flex-col items-center justify-center px-5 py-10 text-center">
-      <Check className="mb-4 size-10 text-[#2F5D6A]/50" strokeWidth={1.5} aria-hidden />
+      <Check className="mb-4 size-9 text-[#2F5D6A]/35" strokeWidth={1.25} aria-hidden />
       <p className="text-[15px] font-semibold tracking-tight text-[#2F5D6A]">Todo al día</p>
-      <p className="mt-1.5 max-w-[220px] text-[13px] leading-relaxed text-zinc-500">
+      <p className="mt-1.5 max-w-[220px] text-[13px] leading-relaxed text-black/55">
         No hay notificaciones pendientes
       </p>
     </div>
@@ -46,6 +63,7 @@ function NotificationCard({
   onOpen: (row: UserNotificationRow) => void
 }) {
   const { Icon, iconClass, critical } = getNotificationVisual(row.type, row.entity_type)
+  const dateTimeLine = formatNotificationDateTimeLine(row.created_at)
 
   return (
     <li>
@@ -53,33 +71,34 @@ function NotificationCard({
         type="button"
         onClick={() => onOpen(row)}
         className={cn(
-          'w-full rounded-2xl border p-3 text-left transition-all duration-150',
-          'bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]',
-          'hover:shadow-[0_4px_14px_rgba(47,93,106,0.1)] hover:-translate-y-px',
-          'active:scale-[0.99] active:shadow-sm min-h-[56px]',
+          'w-full rounded-2xl border p-3.5 text-left transition-all duration-150',
+          CARD_SURFACE,
+          'shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+          'hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] active:scale-[0.995]',
+          'min-h-[56px]',
           critical
-            ? 'border-rose-100 hover:border-rose-200/80'
-            : 'border-zinc-100/90 hover:border-[#2F5D6A]/15'
+            ? 'border-rose-200/60 hover:border-rose-300/70'
+            : 'border-black/[0.04] hover:border-black/[0.08]'
         )}
       >
-        <div className="flex gap-2.5">
+        <div className="flex gap-2">
           <Icon
-            className={cn('mt-0.5 size-5 shrink-0', iconClass)}
-            strokeWidth={1.5}
+            className={cn('mt-0.5 size-4 shrink-0', iconClass)}
+            strokeWidth={1.25}
             aria-hidden
           />
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[13px] font-semibold leading-snug tracking-tight text-[#2F5D6A] line-clamp-2">
-                {row.title}
-              </p>
-              <span className="shrink-0 pt-0.5 text-[11px] font-medium tabular-nums text-zinc-400">
-                {formatNotificationTime(row.created_at)}
-              </span>
-            </div>
+            <p className="text-[13px] font-semibold leading-snug tracking-tight text-[#2F5D6A]">
+              {row.title}
+            </p>
             {row.body ? (
-              <p className="mt-1 text-[12px] leading-relaxed text-zinc-500 line-clamp-2">
+              <p className="mt-1 text-[12px] leading-relaxed text-black/55 line-clamp-3 whitespace-pre-line">
                 {row.body}
+              </p>
+            ) : null}
+            {dateTimeLine ? (
+              <p className="mt-2 text-right text-[11px] font-medium tabular-nums text-black/40">
+                {dateTimeLine}
               </p>
             ) : null}
           </div>
@@ -224,57 +243,57 @@ export function NotificationsBell() {
             }}
           >
             <div className={cn('relative', PANEL_SHADOW)}>
-              {/* Flecha integrada en el contenedor */}
               <div
-                className="pointer-events-none absolute -top-[5px] z-20 size-2.5 rotate-45 rounded-[2px] bg-white border border-zinc-200/70 border-b-0 border-r-0"
+                className={cn(
+                  'pointer-events-none absolute -top-[5px] z-20 size-2.5 rotate-45 rounded-[2px]',
+                  PANEL_SURFACE,
+                  'border border-black/[0.06] border-b-0 border-r-0'
+                )}
                 style={{ right: CARET_OFFSET_FROM_PANEL_RIGHT_PX }}
                 aria-hidden
               />
 
-              <div className="relative z-10 overflow-hidden rounded-[24px] bg-white ring-1 ring-zinc-200/60">
-                {/* Cabecera */}
-                <div className="flex items-center gap-2 border-b border-zinc-100 px-3 py-2.5">
-                  <Bell className="size-[17px] shrink-0 text-[#2F5D6A]" strokeWidth={1.5} aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[13px] font-semibold tracking-tight text-[#2F5D6A]">
-                        Notificaciones
-                      </p>
-                      {unreadCount > 0 ? (
-                        <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#2F5D6A] px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none text-white">
-                          {badgeLabel}
-                        </span>
-                      ) : null}
-                    </div>
+              <div
+                className={cn(
+                  'relative z-10 overflow-hidden rounded-[24px]',
+                  PANEL_SURFACE,
+                  'ring-1 ring-black/[0.05]'
+                )}
+              >
+                <div className="flex items-center justify-between gap-2 border-b border-black/[0.06] px-3.5 py-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="text-[13px] font-semibold tracking-tight text-[#2F5D6A]">
+                      Notificaciones
+                    </p>
+                    {unreadCount > 0 ? <NotificationCountBadge label={badgeLabel} /> : null}
                   </div>
                   {unreadCount > 0 ? (
                     <button
                       type="button"
                       onClick={() => void clearAll()}
                       disabled={clearingAll}
-                      className="shrink-0 min-h-9 rounded-lg px-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-[#2F5D6A] disabled:opacity-50"
+                      className="shrink-0 min-h-9 rounded-lg px-2 text-[11px] font-medium text-black/45 transition-colors hover:bg-black/[0.04] hover:text-[#2F5D6A] disabled:opacity-50"
                     >
                       {clearingAll ? '…' : 'Borrar todo'}
                     </button>
                   ) : null}
                 </div>
 
-                {/* Cuerpo */}
                 <div
                   className={cn(
                     showEmpty && 'min-h-[168px]',
-                    hasItems && 'max-h-[min(50vh,300px)] overflow-y-auto bg-zinc-50/50'
+                    hasItems && 'max-h-[min(50vh,300px)] overflow-y-auto px-2.5 py-2.5'
                   )}
                 >
                   {loading && !hasItems ? (
                     <div className="flex min-h-[168px] flex-col items-center justify-center gap-2 py-10">
-                      <Loader2 className="size-5 animate-spin text-[#2F5D6A]/60" aria-hidden />
-                      <p className="text-[12px] text-zinc-500">Cargando…</p>
+                      <Loader2 className="size-5 animate-spin text-[#2F5D6A]/40" aria-hidden />
+                      <p className="text-[12px] text-black/45">Cargando…</p>
                     </div>
                   ) : showEmpty ? (
                     <NotificationsEmptyState />
                   ) : (
-                    <ul className="flex flex-col gap-2 p-2.5">
+                    <ul className="flex flex-col gap-2.5">
                       {items.map((row) => (
                         <NotificationCard
                           key={row.id}
@@ -305,7 +324,7 @@ export function NotificationsBell() {
         }}
         className={cn(
           'relative grid min-h-12 min-w-12 shrink-0 place-items-center text-white transition-transform active:scale-95',
-          open && 'scale-[0.97]'
+          open && 'opacity-90'
         )}
         aria-label={
           unreadCount > 0
@@ -315,11 +334,11 @@ export function NotificationsBell() {
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <span className="relative inline-flex shrink-0">
-          <Bell size={22} strokeWidth={2.25} className="text-white" aria-hidden />
+        <span className="relative inline-flex shrink-0 p-0.5">
+          <Bell size={20} strokeWidth={1.5} className="text-white/95" aria-hidden />
           {badgeLabel ? (
-            <span className="pointer-events-none absolute -right-1 -top-1.5 z-10 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#2F5D6A] px-0.5 text-[9px] font-bold leading-none text-white shadow-sm">
-              {badgeLabel}
+            <span className="pointer-events-none absolute -right-0.5 -top-0.5 z-10">
+              <NotificationCountBadge label={badgeLabel} />
             </span>
           ) : null}
         </span>
