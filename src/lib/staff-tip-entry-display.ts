@@ -80,9 +80,8 @@ export function getTipAdjustmentKind(
 }
 
 export function getTipAdjustmentLabel(kind: TipAdjustmentKind): string {
-  if (kind === 'penalizacion') return 'Penalización';
   if (kind === 'bonificacion') return 'Bonificación';
-  return 'Sin penalización';
+  return 'Penalización';
 }
 
 export function formatTipAdjustmentValue(
@@ -91,7 +90,7 @@ export function formatTipAdjustmentValue(
   amountSinPen: number,
   amountFinal: number
 ): string {
-  if (kind === 'ninguna') return ' ';
+  if (kind === 'ninguna') return '-';
   if (penalizacionPct > 0) {
     return kind === 'bonificacion' ? `+${penalizacionPct}%` : `${penalizacionPct}%`;
   }

@@ -77,17 +77,23 @@ const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 
 const TIP_EXPAND_TH = 'bg-[#4a7583]';
 const TIP_EXPAND_TD = 'bg-[#36606F]/[0.07] hover:bg-[#36606F]/[0.11]';
 
-const TIP_TABLE_TH = 'w-px whitespace-nowrap px-0.5 py-1 leading-none';
+const TIP_TABLE_TH = 'whitespace-nowrap px-2 py-1.5 align-middle leading-none';
 const TIP_TABLE_TH_TEXT =
   'text-[7px] font-black uppercase tracking-wide md:text-[8px]';
 const TIP_TABLE_TH_BTN =
-  'inline-flex w-max max-w-full items-center gap-0.5 py-0 leading-none active:scale-95';
-const TIP_TABLE_DATA_CELL =
-  'w-px whitespace-nowrap px-0.5 py-1.5 text-center text-[9px] font-black tabular-nums';
+  'inline-flex w-max max-w-full items-center gap-1 py-0 leading-none active:scale-95';
+const TIP_TABLE_BODY_TEXT = 'text-[10px] font-black leading-none md:text-[11px]';
+const TIP_TABLE_DATA_CELL = cn(
+  'whitespace-nowrap px-2 py-2 text-center align-middle tabular-nums',
+  TIP_TABLE_BODY_TEXT
+);
 const TIP_TABLE_NAME_TH =
-  'sticky left-0 z-10 w-px max-w-none whitespace-nowrap bg-[#36606F] px-1.5 text-left';
-const TIP_TABLE_NAME_TD =
-  'sticky left-0 z-[1] w-px max-w-none whitespace-nowrap bg-white px-1.5 py-1.5 cursor-pointer';
+  'sticky left-0 z-10 max-w-none whitespace-nowrap bg-[#36606F] px-2.5 text-left align-middle';
+const TIP_TABLE_NAME_TD = cn(
+  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-white px-2.5 py-2 cursor-pointer align-middle',
+  TIP_TABLE_BODY_TEXT,
+  'text-left text-zinc-900'
+);
 
 function staffTableDisplayName(name: string): string {
   const n = (name || '').trim();
@@ -460,7 +466,7 @@ export default function TipsDashboardView({
               <div className="overflow-x-auto">
                 <table className="w-max max-w-full table-auto border-collapse">
                   <thead>
-                    <tr className="bg-[#36606F] text-white">
+                    <tr className="align-middle bg-[#36606F] text-white">
                       <th className={cn(TIP_TABLE_NAME_TH, TIP_TABLE_TH, TIP_TABLE_TH_TEXT)} />
                       <th className={cn('text-center', TIP_TABLE_TH)}>
                         <button
@@ -613,12 +619,10 @@ export default function TipsDashboardView({
                         return (
                           <tr
                             key={s.id}
-                            className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
+                            className="align-middle hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
                           >
                             <td className={cn(TIP_TABLE_NAME_TD, strikeClass)} onClick={openRow}>
-                              <span className="text-[10px] font-black text-zinc-900 md:text-[11px]">
-                                {staffTableDisplayName(s.name)}
-                              </span>
+                              {staffTableDisplayName(s.name)}
                             </td>
                             <td
                               className={cn(
@@ -684,7 +688,7 @@ export default function TipsDashboardView({
                             <td
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
-                                'text-right text-[10px] text-emerald-600',
+                                'text-right text-emerald-600',
                                 strikeClass
                               )}
                             >
@@ -692,7 +696,7 @@ export default function TipsDashboardView({
                                 amount={s.totalAmount}
                                 shadowAmount={s.shadowAmount ?? null}
                                 isSanctioned={isSanc}
-                                className="text-[10px] font-black text-emerald-600"
+                                className={cn(TIP_TABLE_BODY_TEXT, 'text-emerald-600')}
                                 formatFn={fmtMoney}
                               />
                             </td>

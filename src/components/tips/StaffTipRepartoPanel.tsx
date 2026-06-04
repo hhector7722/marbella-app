@@ -27,9 +27,10 @@ const fmtHours = (val: number) =>
   Math.abs(val) < 0.005 ? ' ' : val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
 
 const METRIC_VALUE_SLOT = 'flex h-8 w-full shrink-0 items-center justify-center';
+const METRIC_LABEL_TEXT =
+  'text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]';
 const METRIC_LABEL_SLOT =
-  'flex min-h-[2.5rem] w-full shrink-0 items-start justify-center pt-0.5 text-center text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]';
-const METRIC_HINT_SLOT = 'flex h-5 w-full shrink-0 items-center justify-center';
+  'flex min-h-[2.75rem] w-full shrink-0 items-start justify-center pt-0.5';
 
 type DetailKind = 'hours' | 'propina' | 'penalizacion' | null;
 
@@ -51,14 +52,16 @@ function MetricCell({
           {value}
         </span>
       </div>
-      <div className={METRIC_LABEL_SLOT}>{label}</div>
-      {onOpenDetail ? (
-        <div className={METRIC_HINT_SLOT}>
-          <StaffTipDetailHintIcon />
+      <div className={METRIC_LABEL_SLOT}>
+        <div className="flex flex-col items-center gap-0.5 text-center">
+          <span className={METRIC_LABEL_TEXT}>{label}</span>
+          {onOpenDetail ? (
+            <StaffTipDetailHintIcon />
+          ) : (
+            <span className="h-5 w-5 shrink-0" aria-hidden />
+          )}
         </div>
-      ) : (
-        <div className={METRIC_HINT_SLOT} aria-hidden />
-      )}
+      </div>
     </>
   );
 
@@ -137,12 +140,7 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           onOpenDetail={() => setDetail('penalizacion')}
         />
         <MetricCell
-          label={
-            <>
-              <span className="block">Propina</span>
-              <span className="block">final</span>
-            </>
-          }
+          label="Propina final"
           value={
             <SanctionedTipMoney
               amount={entry.totalAmount}
