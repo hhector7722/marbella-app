@@ -694,15 +694,14 @@ export default function ConsumoPersonalDashboardPage() {
                                 {w.items.map((it, idx) => (
                                   <div
                                     key={`${it.name}-${idx}`}
-                                    className="py-1 border-b border-zinc-100 last:border-0"
+                                    className="flex items-center justify-between gap-2 py-1 border-b border-zinc-100 last:border-0"
                                   >
-                                    <p className="truncate text-[12px] font-bold text-zinc-700">
+                                    <p className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
                                       {it.quantity > 1 ? `${it.name} ×${it.quantity}` : it.name}
-                                      {' — '}
-                                      <span className="font-black tabular-nums text-zinc-900">
-                                        {formatEuroRead(it.amount)}
-                                      </span>
                                     </p>
+                                    <span className="shrink-0 text-[12px] font-normal tabular-nums text-zinc-700">
+                                      {formatEuroRead(it.amount)}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
