@@ -544,12 +544,11 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                                     </div>
                                 </div>
                             </div>
-                        </div>
                     </>
                 )}
-            </div>
+                </div>
 
-                    {/* Fixed Footer for Breakdown tab */}
+                {/* Fixed Footer for Breakdown tab */}
                     {tab === 'breakdown' && (
                         <div className="p-4 bg-gray-50/80 backdrop-blur-sm border-t border-zinc-100 shrink-0">
                             <button
