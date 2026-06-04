@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import { useUnreadNotificationCount } from '@/hooks/useUnreadNotificationCount'
@@ -23,10 +23,14 @@ const UnreadNotificationsContext = createContext<UnreadNotificationsContextValue
 )
 
 export function UnreadNotificationsProvider({ children }: { children: ReactNode }) {
+  const handleFetchError = useCallback((message: string) => {
+    toast.error(message)
+  }, [])
+
   const { userId, unreadCount, items, loading, refresh, supabase } =
     useUnreadNotificationCount({
       withItems: true,
-      onFetchError: (message) => toast.error(message),
+      onFetchError: handleFetchError,
     })
 
   const value = useMemo(
