@@ -68,11 +68,11 @@ export function NotificationsBell() {
               'fixed z-[110] top-header-safe mt-2',
               'right-[max(0.5rem,env(safe-area-inset-right,0px))]',
               'w-[min(16.5rem,calc(100vw-1.5rem))]',
-              'rounded-2xl border border-white/20 shadow-2xl overflow-hidden',
+              'rounded-2xl border-2 border-white shadow-2xl overflow-hidden',
               'animate-in fade-in zoom-in-95 duration-200'
             )}
           >
-            <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
+            <div className="bg-[#36606F] border-b-2 border-white px-4 py-3 flex items-center justify-between text-white shrink-0">
               <div>
                 <p className="text-sm font-black uppercase tracking-wider leading-none">
                   Notificaciones
@@ -83,7 +83,7 @@ export function NotificationsBell() {
               </div>
             </div>
 
-            <div className="max-h-[min(55vh,300px)] overflow-y-auto bg-[#5B8FB9] text-white">
+            <div className="max-h-[min(55vh,300px)] overflow-y-auto bg-[#4A7A89] text-white">
               {loading && items.length === 0 ? (
                 <p className="px-4 py-8 text-center text-sm font-medium text-white/80">
                   Cargando…
@@ -93,13 +93,13 @@ export function NotificationsBell() {
                   No tienes notificaciones pendientes
                 </p>
               ) : (
-                <ul className="divide-y divide-white/15">
+                <ul className="divide-y divide-white">
                   {items.map((row) => (
                     <li key={row.id}>
                       <button
                         type="button"
                         onClick={() => void handleOpenItem(row)}
-                        className="w-full text-left px-4 py-3 bg-[#5B8FB9] text-white transition-colors min-h-[56px] hover:bg-[#4a7a9e] active:bg-[#4a7a9e] active:scale-[0.99]"
+                        className="w-full text-left px-4 py-3 bg-[#4A7A89] text-white transition-colors min-h-[56px] hover:bg-[#3F707F] active:bg-[#3F707F] active:scale-[0.99]"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-black text-white leading-snug">
@@ -141,7 +141,7 @@ export function NotificationsBell() {
           <Bell size={22} strokeWidth={2.5} className="text-white" aria-hidden />
           {badgeLabel ? (
             <span
-              className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 min-w-[17px] h-[17px] px-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center ring-2 ring-[#5B8FB9]"
+              className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 min-w-[17px] h-[17px] px-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center ring-2 ring-white"
               aria-hidden
             >
               {badgeLabel}
