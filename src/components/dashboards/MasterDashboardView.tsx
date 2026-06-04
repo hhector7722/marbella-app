@@ -203,10 +203,15 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         const list: BoxOption[] = [];
         const op = boxes.find((b: any) => b.type === 'operational');
         const changes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const tpvBoxes = boxes.filter((b: any) => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         if (op) list.push({ id: op.id, name: 'Caja inicial', hasInventory: true, image_url: op.image_url });
         changes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
-        list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
-        list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+        if (tpvBoxes.length > 0) {
+            tpvBoxes.forEach((b: any) => list.push({ id: b.id, name: b.name, hasInventory: false, image_url: b.image_url }));
+        } else {
+            list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
+            list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+        }
         return list;
     };
 

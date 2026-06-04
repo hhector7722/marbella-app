@@ -48,6 +48,13 @@ function buildBreakdown(counts: Record<number, number>): Record<string, number> 
     return out;
 }
 
+/** TPV: selección visual; no tiene inventario físico en BD. */
+export function isTpvCashBox(box: BoxOption | null | undefined): boolean {
+    if (!box) return false;
+    if (box.id === 'tpv1' || box.id === 'tpv2') return true;
+    return /\btpv\b/i.test(box.name);
+}
+
 export const CashChangeModal = ({
     boxId,
     boxName,
@@ -102,7 +109,7 @@ export const CashChangeModal = ({
 
     useEffect(() => {
         if (!useTwoBoxFlow || step !== 'step1' || !boxA?.hasInventory || !boxA.id) return;
-        if (boxA.id === 'tpv1' || boxA.id === 'tpv2') return;
+        if (isTpvCashBox(boxA)) return;
         const fetchStock = async () => {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxA.id).gt('quantity', 0);
             const s: Record<number, number> = {};
@@ -114,7 +121,7 @@ export const CashChangeModal = ({
 
     useEffect(() => {
         if (!useTwoBoxFlow || step !== 'step2' || !boxB?.hasInventory || !boxB.id) return;
-        if (boxB.id === 'tpv1' || boxB.id === 'tpv2') return;
+        if (isTpvCashBox(boxB)) return;
         const fetchStock = async () => {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxB.id).gt('quantity', 0);
             const s: Record<number, number> = {};
@@ -247,16 +254,61 @@ export const CashChangeModal = ({
 
     const handleGuardarStep2 = async () => {
         if (!boxA || !boxB || totalStep2 < 0.005 || hasStockIssueStep2) return;
-        
+
+        if (isTpvCashBox(boxA) && isTpvCashBox(boxB)) {
+            toast.error('Selecciona al menos una caja con efectivo físico');
+            return;
+        }
+
         try {
             const { data: { user } } = await supabase.auth.getUser();
             const exchangeGroupId = crypto.randomUUID();
+            let legsSaved = 0;
+
             const insertExchange = async (fromBox: BoxOption, toBox: BoxOption, counts: Record<number, number>, directionLabel: string) => {
-                if (fromBox.id === 'tpv1' || fromBox.id === 'tpv2' || toBox.id === 'tpv1' || toBox.id === 'tpv2') return;
-                if (!fromBox.hasInventory || !toBox.hasInventory) return;
+                const fromTpv = isTpvCashBox(fromBox);
+                const toTpv = isTpvCashBox(toBox);
+                if (fromTpv && toTpv) return;
+
                 const breakdown = buildBreakdown(counts);
                 const amount = ALL_DENOMS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
                 if (amount < 0.005) return;
+
+                const userId = user?.id ?? null;
+                const groupMeta = { exchange_group_id: exchangeGroupId, user_id: userId };
+
+                // TPV → caja física: solo entra efectivo en la caja real (sin fila en TPV)
+                if (fromTpv && toBox.hasInventory) {
+                    const { error } = await supabase.from('treasury_log').insert({
+                        box_id: toBox.id,
+                        type: 'IN',
+                        amount,
+                        breakdown,
+                        notes: `${directionLabel} · visual ${fromBox.name}`,
+                        ...groupMeta,
+                    });
+                    if (error) throw new Error(error.message);
+                    legsSaved += 1;
+                    return;
+                }
+
+                // Caja física → TPV: solo sale efectivo de la caja real (TPV solo visual)
+                if (toTpv && fromBox.hasInventory) {
+                    const { error } = await supabase.from('treasury_log').insert({
+                        box_id: fromBox.id,
+                        type: 'OUT',
+                        amount,
+                        breakdown,
+                        notes: `${directionLabel} · visual ${toBox.name}`,
+                        ...groupMeta,
+                    });
+                    if (error) throw new Error(error.message);
+                    legsSaved += 1;
+                    return;
+                }
+
+                if (!fromBox.hasInventory || !toBox.hasInventory) return;
+
                 const { error } = await supabase.from('treasury_log').insert({
                     box_id: fromBox.id,
                     to_box_id: toBox.id,
@@ -264,17 +316,22 @@ export const CashChangeModal = ({
                     amount,
                     breakdown,
                     notes: directionLabel,
-                    user_id: user?.id ?? null,
-                    exchange_group_id: exchangeGroupId
+                    ...groupMeta,
                 });
                 if (error) throw new Error(error.message);
+                legsSaved += 1;
             };
 
-            // Paso 1: "Dinero que sale de Origen". Significa movimiento De Origen a Destino
+            // Paso 1: dinero que sale del origen → hacia destino
             await insertExchange(boxA, boxB, step1Counts, `Intercambio: Sale de ${boxA.name}`);
-            
-            // Paso 2: "Dinero que entra en Origen". Significa movimiento De Destino a Origen
+
+            // Paso 2: dinero que vuelve del destino → hacia origen
             await insertExchange(boxB, boxA, step2Counts, `Intercambio: Entra en ${boxA.name}`);
+
+            if (legsSaved === 0) {
+                toast.error('No hay importe que registrar en cajas físicas');
+                return;
+            }
 
             toast.success('Cambio entre cajas guardado');
             if (onSuccess) onSuccess();
