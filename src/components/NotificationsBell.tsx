@@ -15,6 +15,7 @@ export function NotificationsBell() {
   const { userId, unreadCount, items, loading, refresh, supabase } = useUnreadNotifications()
   const [open, setOpen] = useState(false)
   const [portalMounted, setPortalMounted] = useState(false)
+  const [clearingAll, setClearingAll] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -53,6 +54,27 @@ export function NotificationsBell() {
     [markRead, router]
   )
 
+  const clearAll = useCallback(async () => {
+    if (!userId || unreadCount === 0) return
+    setClearingAll(true)
+    try {
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read_at: now })
+        .eq('user_id', userId)
+        .is('read_at', null)
+
+      if (error) {
+        toast.error(error.message || 'No se pudieron borrar las notificaciones')
+        return
+      }
+      await refresh()
+    } finally {
+      setClearingAll(false)
+    }
+  }, [supabase, userId, unreadCount, refresh])
+
   if (!userId) return null
 
   const badgeLabel = unreadCount > 99 ? '99+' : unreadCount > 0 ? String(unreadCount) : ''
@@ -72,15 +94,20 @@ export function NotificationsBell() {
               'animate-in fade-in zoom-in-95 duration-200'
             )}
           >
-            <div className="bg-[#36606F] border-b-2 border-white px-4 py-3 flex items-center justify-between text-white shrink-0">
-              <div>
-                <p className="text-sm font-black uppercase tracking-wider leading-none">
-                  Notificaciones
-                </p>
-                <p className="text-[10px] font-bold text-white/60 mt-0.5">
-                  {unreadCount > 0 ? `${unreadCount} sin leer` : 'Al día'}
-                </p>
-              </div>
+            <div className="bg-rose-600 border-b-2 border-white px-4 py-3 flex items-center justify-between gap-2 text-white shrink-0">
+              <p className="text-sm font-black uppercase tracking-wider leading-none shrink-0">
+                Notificaciones
+              </p>
+              {unreadCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => void clearAll()}
+                  disabled={clearingAll}
+                  className="shrink-0 min-h-10 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wide text-white/95 hover:bg-white/15 active:bg-white/25 disabled:opacity-50 transition-colors"
+                >
+                  {clearingAll ? 'Borrando…' : 'Borrar todo'}
+                </button>
+              ) : null}
             </div>
 
             <div className="max-h-[min(55vh,300px)] overflow-y-auto bg-[#4A7A89] text-white">
