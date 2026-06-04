@@ -1,6 +1,5 @@
 'use client'
 
-import { useScrollLock } from '@/hooks/useScrollLock'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { Camera, Trash2, Upload, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -44,7 +43,6 @@ export function MenuItemEditModal({
   articuloId: number | null
   categories: CategoryRow[]
 }) {
-  useScrollLock(open)
   const supabase = useMemo(() => createClient(), [])
   const [isPending, startTransition] = useTransition()
   const [loading, setLoading] = useState(false)

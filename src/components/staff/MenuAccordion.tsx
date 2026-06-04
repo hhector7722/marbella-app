@@ -1,16 +1,6 @@
 'use client'
 
-import {
-    Fragment,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type MouseEvent,
-} from 'react'
-import { createPortal } from 'react-dom'
-import { useScrollLock } from '@/hooks/useScrollLock'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
@@ -509,13 +499,6 @@ export function MenuAccordion({
     const [reorderPick, setReorderPick] = useState<string | null>(null)
     const [committingReorder, setCommittingReorder] = useState(false)
     const [platoLightbox, setPlatoLightbox] = useState<{ src: string; alt: string } | null>(null)
-    const [portalReady, setPortalReady] = useState(false)
-
-    useEffect(() => {
-        setPortalReady(true)
-    }, [])
-
-    useScrollLock(Boolean(openKey))
     const [platoMarbellaReorderSection, setPlatoMarbellaReorderSection] =
         useState<PlatoMarbellaReorderSection>('entrante')
     const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
@@ -602,8 +585,6 @@ export function MenuAccordion({
     )
 
     const eventOrderGaplessGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
-    /** Pedido encargo: el padre hace scroll; no recortar la rejilla con flex-1. */
-    const eventOrderScrollLayout = Boolean(eventOrder) && !encargoEditActive && !openGroup
 
     const homeCategoryCoverUrls = useMemo(
         () => homeCategoryGroups.map((g) => g.coverPhotoUrl),
@@ -901,14 +882,13 @@ export function MenuAccordion({
         </span>
     )
 
-    const homeGridCentered = hideLangPicker && homeCompact && !reorderScope && !eventOrder
+    const homeGridCentered = hideLangPicker && homeCompact && !reorderScope
 
     const gridBlock = (
         <CartaCoversLoadingGate
             urls={homeCategoryCoverUrls}
             className={cn(
-                'w-full',
-                !eventOrderScrollLayout && 'min-h-0 flex-1',
+                'w-full min-h-0 flex-1',
                 !hideLangPicker && 'mt-4 sm:mt-5'
             )}
         >
@@ -916,10 +896,8 @@ export function MenuAccordion({
                 className={cn(
                     'min-h-0 w-full flex-1',
                     homeGridCentered
-                        ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar touch-pan-y'
-                        : hideLangPicker && homeCompact && !reorderScope && eventOrder
-                          ? 'flex w-full flex-col justify-start'
-                          : 'flex flex-col'
+                        ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar'
+                        : 'flex flex-col'
                 )}
             >
                 <CartaCategoryGrid
@@ -1014,15 +992,7 @@ export function MenuAccordion({
         </CartaCoversLoadingGate>
     )
     return (
-        <div
-            className={cn(
-                hideLangPicker
-                    ? eventOrderScrollLayout
-                        ? 'flex w-full flex-col'
-                        : 'flex min-h-0 flex-1 flex-col'
-                    : 'space-y-6'
-            )}
-        >
+        <div className={hideLangPicker ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'}>
             {!hideLangPicker ? (
                 <div className="w-full pt-1">
                     <CartaLangPicker lang={lang} onChange={setLang} />
@@ -1066,23 +1036,17 @@ export function MenuAccordion({
                 </div>
             ) : null}
 
-            <div
-                className={cn(
-                    eventOrderScrollLayout ? 'w-full' : cn('min-h-0 flex-1', hideLangPicker && 'flex flex-col')
-                )}
-            >
+            <div className={cn('min-h-0 flex-1', hideLangPicker && 'flex flex-col')}>
                 {gridBlock}
-                {eventOrderScrollLayout ? <div className="scroll-end-touch-cards" aria-hidden /> : null}
             </div>
 
-            {openGroup && portalReady
-                ? createPortal(
+            {openGroup ? (
                 <div
                     className={cn(
-                        'fixed inset-0 z-[250] flex animate-in fade-in duration-200 overscroll-contain touch-pan-y',
-                        openShowSubPicker || openPlatoMarbella
-                            ? 'items-center justify-center p-2 sm:p-2.5'
-                            : 'flex-col justify-end p-0 pb-safe sm:items-center sm:justify-center sm:p-4 sm:pt-safe sm:pb-safe'
+                        'fixed inset-0 z-[250] flex items-center justify-center animate-in fade-in duration-200',
+                        openPlatoMarbella
+                            ? 'p-2 sm:p-2.5'
+                            : 'p-4 pb-safe pt-4'
                     )}
                     role="dialog"
                     aria-modal="true"
@@ -1154,7 +1118,7 @@ export function MenuAccordion({
                     ) : (
                     <div
                         className={cn(
-                            'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl sm:rounded-[22px]',
+                            'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
                             showPlatoModalChrome
                                 ? 'carta-plato-modal-shell min-h-0'
                                 : 'carta-modal-shell-max min-h-0'
@@ -1623,12 +1587,10 @@ export function MenuAccordion({
                         <CartaCoversLoadingGate
                             urls={openModalImageUrls}
                             className={cn(
-                                'flex min-h-0 flex-1 flex-col bg-white',
+                                'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
-                                    : cn(
-                                          'overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end-cards px-2.5 pb-6 pt-2 custom-scrollbar sm:px-3 sm:pb-8 sm:pt-2.5'
-                                      )
+                                    : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
                             )}
                         >
                             {openPlatoMarbella && platoBundleRows ? (
@@ -1852,17 +1814,12 @@ export function MenuAccordion({
                                     ))}
                                 </div>
                             )}
-                            {eventOrder && !encargoEditActive ? (
-                                <div className="scroll-end-touch-cards" aria-hidden />
-                            ) : null}
                         </CartaCoversLoadingGate>
                         {/* Nota de horario movida al modal de "Platos". */}
                     </div>
                     )}
-                </div>,
-                document.body
-            )
-                : null}
+                </div>
+            ) : null}
 
             <CartaImageLightbox
                 src={platoLightbox?.src ?? null}

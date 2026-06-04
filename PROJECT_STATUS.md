@@ -1,8 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-04 (Carta: modales sección — portal y scroll)
+**Última actualización:** 2026-06-04 (Carta: revert modales — regresión scroll mañana)
 
-- [x] **Carta: comportamiento modales de sección (2026-06-04)**: [`MenuAccordion.tsx`](src/components/staff/MenuAccordion.tsx) — modales de categoría/subcategoría con `createPortal` a `document.body` (evita recorte y scroll fantasma dentro de contenedores `overflow-y-auto` en `/carta`, `/staff/carta`, encargos); `useScrollLock` al abrir; selector de subcategorías **centrado** en móvil; scroll interno con `scroll-pb-end-cards` + hueco `scroll-end-touch-cards` (última fila y +/− visibles en pedidos). [`CartaImageLightbox.tsx`](src/components/carta/CartaImageLightbox.tsx) también en portal + `svh`. Edición producto/categoría: `useScrollLock` en [`MenuItemEditModal`](src/components/carta/MenuItemEditModal.tsx) / [`MenuCategoryEditModal`](src/components/carta/MenuCategoryEditModal.tsx).
+- [x] **Carta: revert modales tras regresión 2026-06-04 mañana**: Los commits de scroll (`c6ce3bd8`, `5d8e5780`, …) rompieron los modales de sección (bottom sheet móvil, `eventOrderScrollLayout`, altura `flex-1` en lugar de `min-h-[50vh,320px]`). **Restaurado** [`MenuAccordion.tsx`](src/components/staff/MenuAccordion.tsx) y [`CartaImageLightbox.tsx`](src/components/carta/CartaImageLightbox.tsx) al estado previo (modal **centrado**, sin portal). [`StaffCartaView.tsx`](src/components/staff/StaffCartaView.tsx) vuelve a `overflow-hidden` en el panel de carta.
 
 **Última actualización anterior:** 2026-06-04 (Insights: cobros tarjeta periodo híbrido)
 
