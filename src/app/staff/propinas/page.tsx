@@ -1,11 +1,7 @@
 import { redirect } from 'next/navigation';
-import { format, startOfMonth } from 'date-fns';
 import { createClient } from '@/utils/supabase/server';
 import StaffPropinasView from '@/components/tips/StaffPropinasView';
-import {
-  addLocalDaysIso,
-  type StaffTipHistoryEntry,
-} from '@/lib/tip-distribution-display';
+import type { StaffTipHistoryEntry } from '@/lib/tip-distribution-display';
 
 /** Vista «Mis propinas» (empleado). Manager/admin entran aquí desde staff; gestión en /dashboard/propinas. */
 const STAFF_PROPINAS_ROLES = new Set(['staff', 'supervisor', 'chef', 'manager', 'admin']);
@@ -31,27 +27,6 @@ export default async function StaffPropinasPage() {
 
   if (!role || !STAFF_PROPINAS_ROLES.has(role)) {
     redirect('/staff/dashboard');
-  }
-
-  const today = format(new Date(), 'yyyy-MM-dd');
-  let periodStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-  const periodEnd = today;
-
-  const { data: lastDistribution, error: lastDistError } = await supabase
-    .from('tip_distribution_history')
-    .select('period_end')
-    .order('confirmed_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (lastDistError) {
-    console.error('[staff/propinas] last distribution:', lastDistError.message);
-  }
-
-  const hasConfirmedDistribution = !!lastDistribution?.period_end;
-
-  if (lastDistribution?.period_end) {
-    periodStart = addLocalDaysIso(lastDistribution.period_end, 1);
   }
 
   const { data: linesRaw, error: linesError } = await supabase
@@ -135,13 +110,5 @@ export default async function StaffPropinasPage() {
         new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime()
     );
 
-  return (
-    <StaffPropinasView
-      userId={user.id}
-      periodStart={periodStart}
-      periodEnd={periodEnd}
-      hasConfirmedDistribution={hasConfirmedDistribution}
-      initialHistory={initialHistory}
-    />
-  );
+  return <StaffPropinasView initialHistory={initialHistory} />;
 }
