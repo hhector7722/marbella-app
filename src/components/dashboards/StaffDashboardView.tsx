@@ -997,7 +997,7 @@ export default function StaffDashboardView() {
                             {/* Header Petrol - Estilo Modal Marbella */}
                             <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
                                 <div className="flex items-center gap-3">
-                                    {infoSubMenu && (
+                                    {infoSubMenu && infoSubMenu !== 'contactos' && (
                                         <button onClick={() => setInfoSubMenu(null)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
                                             <ArrowLeft size={18} strokeWidth={3} />
                                         </button>
@@ -1097,12 +1097,11 @@ export default function StaffDashboardView() {
                                     </div>
                                 )}
                                 {infoSubMenu === 'contactos' && (
-                                    <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+                                    <div className="max-h-[60vh] overflow-y-auto pr-1 divide-y divide-gray-100">
                                         {CONTACTS_DATA.map((c, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div key={idx} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                                                 <div className="min-w-0">
                                                     <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
-                                                    <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
                                                 </div>
                                                 <div className="flex gap-4 items-center">
                                                     <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
