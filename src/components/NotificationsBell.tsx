@@ -10,10 +10,6 @@ import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
 import { cn } from '@/lib/utils'
 import { formatNotificationTime, type UserNotificationRow } from '@/lib/user-notifications'
 
-/** Misma reserva que `MainWrapper` (`pb-[calc(5rem+safe-area)]`) para no tapar la barra inferior. */
-const NOTIFICATIONS_BACKDROP_BOTTOM = 'calc(5rem + env(safe-area-inset-bottom, 0px))'
-const NOTIFICATIONS_BACKDROP_TOP = 'calc(3.5rem + env(safe-area-inset-top, 0px))'
-
 export function NotificationsBell() {
   const router = useRouter()
   const { userId, unreadCount, items, loading, refresh, supabase } = useUnreadNotifications()
@@ -64,77 +60,65 @@ export function NotificationsBell() {
   const panelPortal =
     open && portalMounted
       ? createPortal(
-          <>
-            <div
-              data-marbella-modal-overlay="true"
-              className="fixed left-0 right-0 z-[98] bg-black/25 backdrop-blur-md animate-in fade-in duration-200"
-              style={{
-                top: NOTIFICATIONS_BACKDROP_TOP,
-                bottom: NOTIFICATIONS_BACKDROP_BOTTOM,
-              }}
-              onClick={() => setOpen(false)}
-              aria-hidden
-            />
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Notificaciones sin leer"
-              className={cn(
-                'fixed z-[110] top-header-safe mt-2',
-                'right-[max(0.5rem,env(safe-area-inset-right,0px))]',
-                'w-[min(16.5rem,calc(100vw-1.5rem))]',
-                'rounded-2xl border border-zinc-100 bg-white shadow-2xl overflow-hidden',
-                'animate-in fade-in zoom-in-95 duration-200'
-              )}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
-                <div>
-                  <p className="text-sm font-black uppercase tracking-wider leading-none">
-                    Notificaciones
-                  </p>
-                  <p className="text-[10px] font-bold text-white/60 mt-0.5">
-                    {unreadCount > 0 ? `${unreadCount} sin leer` : 'Al día'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="max-h-[min(55vh,300px)] overflow-y-auto">
-                {loading && items.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-zinc-500">Cargando…</p>
-                ) : items.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-zinc-500">
-                    No tienes notificaciones pendientes
-                  </p>
-                ) : (
-                  <ul className="divide-y divide-zinc-100">
-                    {items.map((row) => (
-                      <li key={row.id}>
-                        <button
-                          type="button"
-                          onClick={() => void handleOpenItem(row)}
-                          className="w-full text-left px-4 py-3 hover:bg-zinc-50 active:bg-zinc-100 transition-colors min-h-[56px]"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-black text-zinc-900 leading-snug">
-                              {row.title}
-                            </p>
-                            <span className="text-[10px] font-bold text-zinc-400 shrink-0 tabular-nums">
-                              {formatNotificationTime(row.created_at)}
-                            </span>
-                          </div>
-                          {row.body ? (
-                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{row.body}</p>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+          <div
+            role="dialog"
+            aria-modal="false"
+            aria-label="Notificaciones sin leer"
+            className={cn(
+              'fixed z-[110] top-header-safe mt-2',
+              'right-[max(0.5rem,env(safe-area-inset-right,0px))]',
+              'w-[min(16.5rem,calc(100vw-1.5rem))]',
+              'rounded-2xl border border-white/20 shadow-2xl overflow-hidden',
+              'animate-in fade-in zoom-in-95 duration-200'
+            )}
+          >
+            <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
+              <div>
+                <p className="text-sm font-black uppercase tracking-wider leading-none">
+                  Notificaciones
+                </p>
+                <p className="text-[10px] font-bold text-white/60 mt-0.5">
+                  {unreadCount > 0 ? `${unreadCount} sin leer` : 'Al día'}
+                </p>
               </div>
             </div>
-          </>,
+
+            <div className="max-h-[min(55vh,300px)] overflow-y-auto bg-[#5B8FB9] text-white">
+              {loading && items.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm font-medium text-white/80">
+                  Cargando…
+                </p>
+              ) : items.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm font-medium text-white/80">
+                  No tienes notificaciones pendientes
+                </p>
+              ) : (
+                <ul className="divide-y divide-white/15">
+                  {items.map((row) => (
+                    <li key={row.id}>
+                      <button
+                        type="button"
+                        onClick={() => void handleOpenItem(row)}
+                        className="w-full text-left px-4 py-3 bg-[#5B8FB9] text-white transition-colors min-h-[56px] hover:bg-[#4a7a9e] active:bg-[#4a7a9e] active:scale-[0.99]"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-black text-white leading-snug">
+                            {row.title}
+                          </p>
+                          <span className="text-[10px] font-bold text-white/70 shrink-0 tabular-nums">
+                            {formatNotificationTime(row.created_at)}
+                          </span>
+                        </div>
+                        {row.body ? (
+                          <p className="text-xs text-white/80 mt-1 line-clamp-2">{row.body}</p>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>,
           document.body
         )
       : null
