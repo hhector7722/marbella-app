@@ -21,7 +21,8 @@ import {
 } from '@/lib/staff-tip-entry-display';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
-import { StaffTipBreakdownModal, StaffTipBreakdownRows } from '@/components/tips/StaffTipBreakdownModal';
+import { StaffTipBreakdownModal } from '@/components/tips/StaffTipBreakdownModal';
+import { StaffTipModalColumnGrid } from '@/components/tips/StaffTipModalColumnGrid';
 
 const fmtHours = (val: number) =>
   Math.abs(val) < 0.005 ? ' ' : val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
@@ -97,11 +98,6 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
   const adjustmentValue = formatTipAdjustmentValue(adjustmentKind, pen, sinPen.total, finalAmount);
   const adjustmentValueClass = tipAdjustmentValueClass(adjustmentKind, pen);
 
-  const olvidosHeader =
-    (entry.jornadasConOlvido ?? 0) > 0
-      ? 'Veces que te has olvidado de fichar'
-      : 'Sin olvidos de fichaje';
-
   return (
     <>
       <p className="text-center text-[10px] font-bold uppercase tracking-wide text-zinc-500">
@@ -154,8 +150,8 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
 
       {detail === 'hours' ? (
         <StaffTipBreakdownModal title="Horas trabajadas" onClose={() => setDetail(null)}>
-          <StaffTipBreakdownRows
-            rows={[
+          <StaffTipModalColumnGrid
+            columns={[
               { label: 'Lun – Vie', value: fmtHours(entry.weekdayHours) },
               { label: 'Sáb – Dom', value: fmtHours(entry.weekendHours) },
             ]}
@@ -165,10 +161,18 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
 
       {detail === 'propina' ? (
         <StaffTipBreakdownModal title="Propina" onClose={() => setDetail(null)}>
-          <StaffTipBreakdownRows
-            rows={[
-              { label: 'Lun – Vie', value: formatTipMoney(sinPen.weekday) },
-              { label: 'Sáb – Dom', value: formatTipMoney(sinPen.weekend) },
+          <StaffTipModalColumnGrid
+            columns={[
+              {
+                label: 'Lun – Vie',
+                value: formatTipMoney(sinPen.weekday),
+                valueClassName: 'text-[#36606F]',
+              },
+              {
+                label: 'Sáb – Dom',
+                value: formatTipMoney(sinPen.weekend),
+                valueClassName: 'text-[#36606F]',
+              },
             ]}
           />
         </StaffTipBreakdownModal>
@@ -176,26 +180,24 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
 
       {detail === 'penalizacion' ? (
         <StaffTipBreakdownModal title={adjustmentLabel} onClose={() => setDetail(null)}>
-          <p className="text-center text-[10px] font-bold uppercase tracking-wide text-zinc-400">
-            {olvidosHeader}
-          </p>
-          <p
-            className={cn(
-              'mt-2 text-center text-2xl font-black tabular-nums',
-              tjiColorClass(entry.tjiPct)
-            )}
-          >
-            {formatTipInt(entry.jornadasConOlvido)}
-          </p>
-          {(entry.jornadasConOlvido ?? 0) > 0 ? (
-            <p className="mt-1.5 text-center text-xs font-medium text-zinc-500">
-              de {formatTipInt(entry.jornadasTotales)} jornadas (
-              <span className={cn('font-bold', tjiColorClass(entry.tjiPct))}>
-                {formatTipPct(entry.tjiPct)}
-              </span>
-              )
-            </p>
-          ) : null}
+          <StaffTipModalColumnGrid
+            columns={[
+              {
+                label: 'Días trabajados',
+                value: formatTipInt(entry.jornadasTotales),
+              },
+              {
+                label: 'Días sin fichar',
+                value: formatTipInt(entry.jornadasConOlvido),
+                valueClassName: tjiColorClass(entry.tjiPct),
+              },
+              {
+                label: 'Tasa de error',
+                value: formatTipPct(entry.tjiPct),
+                valueClassName: tjiColorClass(entry.tjiPct),
+              },
+            ]}
+          />
         </StaffTipBreakdownModal>
       ) : null}
     </>
