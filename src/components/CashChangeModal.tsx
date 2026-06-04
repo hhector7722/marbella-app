@@ -549,7 +549,7 @@ export const CashChangeModal = ({
                                             <div
                                                 className={cn(
                                                     'flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all',
-                                                    isA ? 'bg-[#36606F]/22 ring-2 ring-[#36606F]/20' : 'bg-[#36606F]/14',
+                                                    isA ? 'bg-[#b5cdd6] ring-2 ring-[#36606F]/25' : 'bg-[#dce8ec]',
                                                 )}
                                             >
                                                 {opt.image_url ? (
@@ -581,7 +581,7 @@ export const CashChangeModal = ({
                                             <div
                                                 className={cn(
                                                     'flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all',
-                                                    isB ? 'bg-rose-200/70 ring-2 ring-rose-200/60' : 'bg-rose-100/80',
+                                                    isB ? 'bg-rose-200 ring-2 ring-rose-300/50' : 'bg-rose-100',
                                                 )}
                                             >
                                                 {opt.image_url ? (
