@@ -1,14 +1,6 @@
-import KDSView from '@/components/kds/KDSView';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-    title: 'Monitor de Cocina (KDS) | Bar La Marbella',
-    description: 'Sistema de gestión de comandas en tiempo real para Bar La Marbella.',
-};
-
+/** KDS desactivado — no hay pantalla de cocina en uso. */
 export default function KDSPage() {
-    return (
-        <main className="h-screen overflow-hidden">
-            <KDSView />
-        </main>
-    );
+  redirect('/dashboard');
 }

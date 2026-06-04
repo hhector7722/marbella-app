@@ -93,7 +93,6 @@ export async function proxy(request: NextRequest) {
     // fuera y el proxy redirigía a `/staff/dashboard` o colgaba en getUser.
     const staffDashboardAllowed =
       path.startsWith("/dashboard/propinas") ||
-      path.startsWith("/dashboard/kds") ||
       path.startsWith("/dashboard/albaranes") ||
       path.startsWith("/dashboard/scanner") ||
       path.startsWith("/dashboard/eventos");
