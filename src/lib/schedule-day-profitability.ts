@@ -49,20 +49,6 @@ export function computeRequiredBilling(laborCost: number): number {
     return laborCost / SCHEDULE_LABOR_TARGET_RATIO;
 }
 
-export function computeLaborCostPctOfSales(
-    laborCost: number,
-    salesTotal: number,
-): number | null {
-    if (salesTotal <= 0) return null;
-    return (laborCost / salesTotal) * 100;
-}
-
-export function scheduleLaborRatioColorClass(pct: number): string {
-    if (pct > 45) return 'text-red-600';
-    if (pct > 35) return 'text-orange-500';
-    return 'text-emerald-600';
-}
-
 export function formatScheduleEuro(value: number): string {
     const rounded = Math.round(value);
     return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format(rounded)} €`;
