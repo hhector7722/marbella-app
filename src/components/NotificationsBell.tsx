@@ -250,7 +250,7 @@ export function NotificationsBell() {
               maxWidth: '340px',
             }}
           >
-            <div className={cn('relative', PANEL_SHADOW)}>
+            <div className="relative">
               <div
                 className={cn(
                   'pointer-events-none absolute -top-[5px] z-20 size-2.5 rotate-45 rounded-[2px]',
@@ -263,9 +263,9 @@ export function NotificationsBell() {
 
               <div
                 className={cn(
-                  'relative z-10 overflow-hidden rounded-[24px]',
+                  'relative z-10 isolate overflow-hidden rounded-[24px]',
                   PANEL_SURFACE,
-                  'ring-1 ring-black/[0.05]'
+                  PANEL_SHADOW
                 )}
               >
                 <div className="flex items-center justify-between gap-2 border-b border-black/[0.06] px-3.5 py-3">
@@ -289,8 +289,10 @@ export function NotificationsBell() {
 
                 <div
                   className={cn(
+                    'rounded-b-[24px]',
                     showEmpty && 'min-h-[168px]',
-                    hasItems && 'max-h-[min(50vh,300px)] overflow-y-auto px-2.5 py-2.5'
+                    hasItems &&
+                      'max-h-[min(50vh,300px)] overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 pb-3 pt-2.5'
                   )}
                 >
                   {loading && !hasItems ? (
