@@ -15,7 +15,6 @@ import { ChevronDown, RefreshCw, X } from 'lucide-react'
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
   ComposedChart,
   Line,
@@ -514,21 +513,21 @@ function WeekdayDetailCard({
   const ticketsValue = day.avg_tickets === 0 ? ' ' : day.avg_tickets.toFixed(1)
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1.5 py-1.5 shadow-lg">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1.5 py-1.5 shadow-lg lg:flex-row lg:items-center lg:gap-4 lg:px-4 lg:py-3">
       <button
         type="button"
         onClick={onClose}
         aria-label="Cerrar detalle del día"
-        className="absolute right-0 top-0 z-10 min-h-8 min-w-8 inline-flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100"
+        className="absolute right-0 top-0 z-10 min-h-8 min-w-8 inline-flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 lg:static lg:order-last lg:ml-1"
       >
         <X className="h-3 w-3" />
       </button>
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <p className="w-full px-0.5 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
+      <div className="flex min-h-0 flex-1 items-center justify-center lg:flex-none lg:shrink-0 lg:min-w-[4.5rem]">
+        <p className="w-full px-0.5 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2 lg:text-xs">
           {day.weekday_name}
         </p>
       </div>
-      <div className="shrink-0 flex flex-col gap-2.5 pb-0.5">
+      <div className="shrink-0 flex flex-col gap-2.5 pb-0.5 lg:flex-1 lg:flex-row lg:items-center lg:justify-around lg:gap-3 lg:pb-0 lg:pt-0">
         <WeekdayDetailStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} />
         <WeekdayDetailStat label="Media tickets" value={ticketsValue} />
         <WeekdayDetailStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} />
@@ -604,6 +603,31 @@ function KpiFloat({ label, value }: { label: string; value: string }) {
       </span>
       <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
         {label}
+      </span>
+    </div>
+  )
+}
+
+/** KPI Rend. por día: valor → día → concepto (3 filas) */
+function WeekdayKpiFloat({
+  value,
+  dayName,
+  conceptLabel,
+}: {
+  value: string
+  dayName: string
+  conceptLabel: string
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center min-w-0 px-1 py-0.5 text-center w-full">
+      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug line-clamp-2">
+        {value}
+      </span>
+      <span className="mt-1 text-[8px] lg:text-[11px] font-bold text-[#36606F] leading-tight line-clamp-2">
+        {dayName}
+      </span>
+      <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+        {conceptLabel}
       </span>
     </div>
   )
@@ -913,20 +937,23 @@ export default function InsightsClient({
   }, [weekday.data])
 
   const weekdayKpis = useMemo(() => {
+    const empty = { value: ' ', dayName: ' ' }
     const withRevenue = weekday.data.filter((d) => d.avg_revenue > 0)
     if (withRevenue.length === 0) {
-      return { best: ' ', worst: ' ' }
+      return { best: empty, worst: empty }
     }
     const best = withRevenue.reduce((a, b) => (b.avg_revenue > a.avg_revenue ? b : a))
     const worst = withRevenue.reduce((a, b) => (b.avg_revenue < a.avg_revenue ? b : a))
-    const revStr = (v: number) => {
-      const e = formatEuroKpi(v)
-      return e === ' ' ? '' : ` · ${e}`
-    }
 
     return {
-      best: `${best.weekday_name}${revStr(best.avg_revenue)}`,
-      worst: `${worst.weekday_name}${revStr(worst.avg_revenue)}`,
+      best: {
+        value: formatEuroKpi(best.avg_revenue),
+        dayName: best.weekday_name,
+      },
+      worst: {
+        value: formatEuroKpi(worst.avg_revenue),
+        dayName: worst.weekday_name,
+      },
     }
   }, [weekday.data])
 
@@ -1174,7 +1201,6 @@ export default function InsightsClient({
                             barCategoryGap="8%"
                             barGap={2}
                           >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis
                               dataKey="label"
                               tick={{ fontSize: 8, fontWeight: 700 }}
@@ -1250,10 +1276,10 @@ export default function InsightsClient({
                 ) : weekday.loading ? (
                   <SectionSkeleton rows={5} />
                 ) : (
-                  <div className="flex flex-row gap-2 lg:gap-3 min-w-0 items-stretch">
+                  <div className="flex flex-row lg:flex-col gap-2 lg:gap-3 min-w-0 items-stretch">
                     <div
                       className={cn(
-                        'flex-1 min-w-0',
+                        'flex-1 min-w-0 w-full',
                         isLgDesktop ? 'h-[200px]' : 'h-[160px] sm:h-[180px]'
                       )}
                     >
@@ -1266,7 +1292,6 @@ export default function InsightsClient({
                             barCategoryGap="4%"
                             barGap={0}
                           >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis
                               type="number"
                               tick={{ fontSize: 9, fontWeight: 700 }}
@@ -1316,7 +1341,6 @@ export default function InsightsClient({
                             barCategoryGap="4%"
                             barGap={0}
                           >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                             <XAxis
                               dataKey="shortName"
                               tick={{ fontSize: 8, fontWeight: 700 }}
@@ -1362,22 +1386,37 @@ export default function InsightsClient({
                     </div>
                     <div
                       className={cn(
-                        'relative shrink-0 w-[6.5rem] sm:w-[8.5rem] lg:w-[8rem] border-l border-zinc-100 pl-2',
-                        isLgDesktop ? 'h-[200px]' : 'h-[160px] sm:h-[180px]'
+                        'relative shrink-0 w-[6.5rem] sm:w-[8.5rem] border-l border-zinc-100 pl-2',
+                        'lg:w-full lg:border-l-0 lg:border-t lg:pl-0 lg:pt-3 lg:min-h-[4.5rem]',
+                        isLgDesktop ? 'lg:h-auto' : 'h-[160px] sm:h-[180px]'
                       )}
                     >
                       <div
                         className={cn(
                           'flex h-full flex-col justify-center gap-2',
-                          selectedWeekday && 'invisible pointer-events-none'
+                          'lg:flex-row lg:justify-center lg:items-center lg:gap-4 lg:h-auto lg:py-1',
+                          selectedWeekday && 'invisible pointer-events-none lg:hidden'
                         )}
                         aria-hidden={selectedWeekday ? true : undefined}
                       >
-                        <KpiFloat label="Mejor día" value={weekdayKpis.best} />
-                        <KpiFloat label="Día más flojo" value={weekdayKpis.worst} />
+                        <WeekdayKpiFloat
+                          conceptLabel="Mejor día"
+                          dayName={weekdayKpis.best.dayName}
+                          value={weekdayKpis.best.value}
+                        />
+                        <WeekdayKpiFloat
+                          conceptLabel="Día más flojo"
+                          dayName={weekdayKpis.worst.dayName}
+                          value={weekdayKpis.worst.value}
+                        />
                       </div>
                       {selectedWeekday ? (
-                        <div className="absolute inset-0 z-20 min-h-0">
+                        <div
+                          className={cn(
+                            'absolute inset-0 z-20 min-h-0',
+                            'lg:static lg:inset-auto lg:z-auto lg:w-full'
+                          )}
+                        >
                           <WeekdayDetailCard
                             day={selectedWeekday}
                             onClose={() => setSelectedWeekdayIdx(null)}
@@ -1462,7 +1501,6 @@ export default function InsightsClient({
                               barCategoryGap="4%"
                               barGap={0}
                             >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                               <XAxis
                                 dataKey="shortName"
                                 tick={{ fontSize: 8, fontWeight: 600 }}
@@ -1523,7 +1561,6 @@ export default function InsightsClient({
                               barCategoryGap="4%"
                               barGap={0}
                             >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                               <XAxis
                                 dataKey="shortName"
                                 tick={{ fontSize: 8, fontWeight: 600 }}
