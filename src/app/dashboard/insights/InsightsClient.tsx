@@ -992,7 +992,13 @@ export default function InsightsClient({
     return (financial.data.pyg.net / income) * 100
   }, [financial.data])
 
-  const financialModalContent = useMemo(() => {
+  type FinancialModalContent = {
+    title: string
+    body: ReactNode
+    footnote?: string
+  }
+
+  const financialModalContent = useMemo((): FinancialModalContent | null => {
     if (!financial.data || !financialModal) return null
     const {
       pyg,
