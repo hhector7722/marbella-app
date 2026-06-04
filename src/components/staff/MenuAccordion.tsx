@@ -585,6 +585,8 @@ export function MenuAccordion({
     )
 
     const eventOrderGaplessGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
+    /** Pedido encargo: el padre hace scroll; no recortar la rejilla con flex-1. */
+    const eventOrderScrollLayout = Boolean(eventOrder) && !encargoEditActive && !openGroup
 
     const homeCategoryCoverUrls = useMemo(
         () => homeCategoryGroups.map((g) => g.coverPhotoUrl),
@@ -888,7 +890,8 @@ export function MenuAccordion({
         <CartaCoversLoadingGate
             urls={homeCategoryCoverUrls}
             className={cn(
-                'w-full min-h-0 flex-1',
+                'w-full',
+                !eventOrderScrollLayout && 'min-h-0 flex-1',
                 !hideLangPicker && 'mt-4 sm:mt-5'
             )}
         >
@@ -994,7 +997,15 @@ export function MenuAccordion({
         </CartaCoversLoadingGate>
     )
     return (
-        <div className={hideLangPicker ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'}>
+        <div
+            className={cn(
+                hideLangPicker
+                    ? eventOrderScrollLayout
+                        ? 'flex w-full flex-col'
+                        : 'flex min-h-0 flex-1 flex-col'
+                    : 'space-y-6'
+            )}
+        >
             {!hideLangPicker ? (
                 <div className="w-full pt-1">
                     <CartaLangPicker lang={lang} onChange={setLang} />
@@ -1038,17 +1049,22 @@ export function MenuAccordion({
                 </div>
             ) : null}
 
-            <div className={cn('min-h-0 flex-1', hideLangPicker && 'flex flex-col')}>
+            <div
+                className={cn(
+                    eventOrderScrollLayout ? 'w-full' : cn('min-h-0 flex-1', hideLangPicker && 'flex flex-col')
+                )}
+            >
                 {gridBlock}
+                {eventOrderScrollLayout ? <div className="scroll-end-touch" aria-hidden /> : null}
             </div>
 
             {openGroup ? (
                 <div
                     className={cn(
-                        'fixed inset-0 z-[250] flex items-center justify-center animate-in fade-in duration-200',
+                        'fixed inset-0 z-[250] flex animate-in fade-in duration-200 overscroll-contain touch-pan-y',
                         openPlatoMarbella
-                            ? 'p-2 sm:p-2.5'
-                            : 'p-4 pb-safe pt-4'
+                            ? 'items-center justify-center p-2 sm:p-2.5'
+                            : 'flex-col justify-end p-0 pb-safe sm:items-center sm:justify-center sm:p-4 sm:pt-safe sm:pb-safe'
                     )}
                     role="dialog"
                     aria-modal="true"
@@ -1120,10 +1136,10 @@ export function MenuAccordion({
                     ) : (
                     <div
                         className={cn(
-                            'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
+                            'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl sm:rounded-[22px]',
                             showPlatoModalChrome
                                 ? 'carta-plato-modal-shell min-h-0'
-                                : 'carta-modal-shell-max min-h-0'
+                                : 'carta-modal-shell-max min-h-0 max-h-[min(94dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))]'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1589,12 +1605,11 @@ export function MenuAccordion({
                         <CartaCoversLoadingGate
                             urls={openModalImageUrls}
                             className={cn(
-                                'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
+                                'flex min-h-0 flex-1 flex-col bg-white',
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
                                     : cn(
-                                          'overflow-y-auto overscroll-contain touch-pan-y px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5',
-                                          eventOrder && !encargoEditActive && 'pb-28 sm:pb-32'
+                                          'overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end px-2.5 pt-2 custom-scrollbar sm:px-3 sm:pt-2.5'
                                       )
                             )}
                         >
@@ -1819,6 +1834,9 @@ export function MenuAccordion({
                                     ))}
                                 </div>
                             )}
+                            {eventOrder && !encargoEditActive ? (
+                                <div className="scroll-end-touch" aria-hidden />
+                            ) : null}
                         </CartaCoversLoadingGate>
                         {/* Nota de horario movida al modal de "Platos". */}
                     </div>
