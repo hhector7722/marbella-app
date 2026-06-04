@@ -179,32 +179,23 @@ export function PurchaseMultiSourceForm({
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl relative">
-            <div className="bg-[#36606F] px-4 py-2.5 flex flex-col gap-1 text-white shrink-0 relative">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
-                    <input
-                        type="datetime-local"
-                        value={selectedDate}
-                        onChange={e => setSelectedDate(e.target.value)}
-                        className="bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark] min-h-[48px]"
-                    />
-                    <div className="flex items-center justify-end w-[120px] shrink-0">
-                        {step === 'payment' && (
-                            <div className="px-2 py-1 rounded-xl bg-white/10 border border-white/10 text-right min-h-[48px] flex flex-col items-end justify-center">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
-                                <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
-                                    {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'details' ? 'text-white' : 'text-white/40')}>1. Datos</div>
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'payment' ? 'text-white' : 'text-white/40')}>2. Pago</div>
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'change' ? 'text-white' : 'text-white/40')}>3. Cambio</div>
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'scanner' ? 'text-white' : 'text-white/40')}>4. Scanner</div>
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>5. Resumen</div>
+            <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between text-white shrink-0 relative">
+                <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
+                <input
+                    type="datetime-local"
+                    value={selectedDate}
+                    onChange={e => setSelectedDate(e.target.value)}
+                    className="bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark] min-h-[48px]"
+                />
+                <div className="flex items-center justify-end w-[120px] shrink-0">
+                    {step === 'payment' && (
+                        <div className="px-2 py-1 rounded-xl bg-white/10 border border-white/10 text-right min-h-[48px] flex flex-col items-end justify-center">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
+                            <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
+                                {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
