@@ -1451,7 +1451,7 @@ export default function StaffDashboardView() {
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="relative shrink-0 bg-[#36606F] px-6 py-4 text-white">
                                 <h3 className="text-center text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
-                                {(userRole === 'manager' || userRole === 'supervisor') && (
+                                {(userRole === 'supervisor' || userRole === 'manager') && (
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -1460,7 +1460,7 @@ export default function StaffDashboardView() {
                                         }}
                                         className={cn(
                                             'absolute right-14 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center',
-                                            'bg-transparent text-white opacity-80 transition-all hover:opacity-100 active:scale-90',
+                                            'border-0 bg-transparent p-0 shadow-none text-white opacity-80 transition-all hover:opacity-100 active:scale-90',
                                         )}
                                         aria-label="Cambio entre cajas"
                                     >
@@ -1470,7 +1470,7 @@ export default function StaffDashboardView() {
                                 <button
                                     type="button"
                                     onClick={() => setIsCashOptionsModalOpen(false)}
-                                    className="absolute right-2 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
+                                    className="absolute right-2 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-xl bg-rose-600 text-white transition-all hover:bg-rose-700 active:scale-90"
                                 >
                                     <X size={20} strokeWidth={3} />
                                 </button>
@@ -1619,7 +1619,7 @@ export default function StaffDashboardView() {
             {isCashChangeModalOpen && (
                 <CashChangeModal
                     boxOptions={buildPaymentSources()}
-                    isManager={userRole === 'manager' || userRole === 'supervisor'}
+                    isManager={userRole === 'supervisor' || userRole === 'manager'}
                     onClose={() => setIsCashChangeModalOpen(false)}
                     onSuccess={() => {
                         setIsCashChangeModalOpen(false);
