@@ -11,7 +11,7 @@ import {
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { RefreshCw, X } from 'lucide-react'
+import { ChevronDown, RefreshCw, X } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -127,7 +127,7 @@ function FinancialKpiChip({
       className={cn(
         'min-h-12 flex flex-col items-center justify-center min-w-0 text-center w-full px-1 py-2',
         onClick &&
-          'cursor-pointer transition-shadow hover:ring-2 hover:ring-[#36606F]/30 active:scale-[0.99] rounded-xl',
+          'cursor-pointer rounded-xl outline-none focus:outline-none focus-visible:outline-none hover:bg-zinc-50/80 active:scale-[0.99]',
         className
       )}
       title={tooltip}
@@ -135,10 +135,15 @@ function FinancialKpiChip({
       <span className="text-[8px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
         {label}
       </span>
-      <div className="flex items-center justify-center gap-1.5 mt-0.5 min-w-0 w-full">
+      <div
+        className={cn(
+          'mt-0.5 flex min-w-0 w-full items-center justify-center',
+          badge && badge !== ' ' ? 'flex-col gap-0.5' : 'flex-row gap-1'
+        )}
+      >
         <span
           className={cn(
-            'text-sm lg:text-base font-black tabular-nums truncate',
+            'max-w-full text-[10px] sm:text-xs lg:text-sm font-black tabular-nums leading-tight text-center',
             valueClassName ?? 'text-zinc-800'
           )}
         >
@@ -147,7 +152,7 @@ function FinancialKpiChip({
         {badge && badge !== ' ' && (
           <span
             className={cn(
-              'shrink-0 text-[9px] lg:text-[10px] font-black tabular-nums text-zinc-700',
+              'max-w-full text-[9px] lg:text-[10px] font-black tabular-nums leading-tight text-zinc-700 text-center',
               !badgePlain && 'rounded-md bg-zinc-200/80 px-1.5 py-0.5'
             )}
           >
@@ -272,14 +277,23 @@ function FinancialDetailGroupRow({
   const [open, setOpen] = useState(false)
   const displayed = formatEuroKpi(amount)
   return (
-    <div className="border-b border-zinc-100 last:border-b-0">
+    <div>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full min-h-12 items-baseline justify-between gap-4 py-2 text-left active:bg-zinc-50 rounded-lg"
+        className="flex w-full min-h-12 items-baseline justify-between gap-4 py-2 text-left outline-none focus:outline-none active:bg-zinc-50/80 rounded-lg"
       >
-        <span className="text-xs font-semibold text-zinc-600">{label}</span>
-        <span className="text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap">
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="text-xs font-semibold text-zinc-600">{label}</span>
+          <ChevronDown
+            className={cn(
+              'h-3 w-3 shrink-0 text-zinc-300/90 transition-transform duration-150',
+              open && 'rotate-180'
+            )}
+            aria-hidden
+          />
+        </span>
+        <span className="text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap shrink-0">
           {displayed === ' ' ? ' ' : displayed}
         </span>
       </button>
@@ -438,6 +452,19 @@ function ProductStat({
   )
 }
 
+function WeekdayDetailStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 text-center leading-tight">
+      <span className="block text-[6px] sm:text-[7px] font-bold uppercase tracking-wide text-zinc-500">
+        {label}
+      </span>
+      <span className="block text-[8px] sm:text-[9px] font-black tabular-nums text-zinc-800 mt-px">
+        {value}
+      </span>
+    </div>
+  )
+}
+
 function WeekdayDetailCard({
   day,
   onClose,
@@ -445,25 +472,25 @@ function WeekdayDetailCard({
   day: WeekdayAnalysisRow
   onClose: () => void
 }) {
+  const ticketsValue = day.avg_tickets === 0 ? ' ' : day.avg_tickets.toFixed(1)
+
   return (
-    <div className="relative flex h-full min-h-0 flex-col rounded-xl border border-zinc-200 bg-white p-2.5 shadow-lg">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1 py-1 shadow-lg">
       <button
         type="button"
         onClick={onClose}
         aria-label="Cerrar detalle del día"
-        className="absolute right-1 top-1 z-10 min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+        className="absolute right-0 top-0 z-10 min-h-8 min-w-8 inline-flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100"
       >
-        <X className="h-4 w-4" />
+        <X className="h-3 w-3" />
       </button>
-      <p className="pr-9 text-sm font-black leading-snug text-[#36606F]">{day.weekday_name}</p>
-      <div className="mt-2 flex flex-1 flex-col justify-center gap-2">
-        <ProductStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} prominent />
-        <ProductStat
-          label="Media tickets"
-          value={day.avg_tickets === 0 ? ' ' : day.avg_tickets.toFixed(1)}
-          prominent
-        />
-        <ProductStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} prominent />
+      <p className="shrink-0 pr-7 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
+        {day.weekday_name}
+      </p>
+      <div className="mt-0.5 flex min-h-0 flex-1 flex-col justify-center gap-1">
+        <WeekdayDetailStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} />
+        <WeekdayDetailStat label="Media tickets" value={ticketsValue} />
+        <WeekdayDetailStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} />
       </div>
     </div>
   )
