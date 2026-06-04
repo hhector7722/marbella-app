@@ -57,12 +57,14 @@ export default function MasterShortcutGrid({
                     onClick={() => router.push('/dashboard/movements')}
                     className="bg-emerald-600 shadow-md border-2 border-white"
                 >
-                    <PremiumCountUp
-                        value={actualBalance}
-                        suffix="€"
-                        decimals={2}
-                        className="text-sm md:text-[11px] font-black text-white leading-none tabular-nums text-center w-full"
-                    />
+                    <div className="flex h-full w-full items-center justify-center">
+                        <PremiumCountUp
+                            value={actualBalance}
+                            suffix="€"
+                            decimals={2}
+                            className="inline-block max-w-full text-center text-sm font-black leading-none text-white tabular-nums md:text-[11px]"
+                        />
+                    </div>
                 </DashboardIosIcon>
             ),
         },
