@@ -45,6 +45,9 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - **Pedidos**: pedidos a proveedores, PDFs y limpieza automática por cron.
 - **Inventario / mermas / consumo personal**: recuento, ledger, waste, RPC `process_staff_consumption`.
 - **IA integrada**: Copiloto (chat + voz LiveKit) con RBAC y registro de llamadas.
+- **Insights / BI**: `/dashboard/insights` — PyG periodo (`get_financial_statement`), cobros híbridos tarjeta (`get_period_card_payments`), rentabilidad horaria y ranking margen (Recharts).
+- **Pedidos por eventos**: formulario público `/eventos/[slug]` (carta digital + RPC `create_event_order`); admin `/dashboard/eventos`.
+- **Hub master (Hector)**: `/master/dashboard` — carrusel Admin | Master | Staff + `MasterShortcutGrid`.
 
 ---
 
@@ -110,14 +113,19 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 
 ### Proxy de rutas (`src/proxy.ts`) — sustituye middleware clásico
 - **Bypass**: `/api/*` sin auth (ingestas automáticas).
-- **Público sin login**: `/carta`, `/carta/*`.
+- **Público sin login**: `/carta`, `/carta/*`, `/eventos`, `/eventos/*`.
 - Sin sesión → `/login` (salvo `/auth`, recovery en `/profile` con query tokens).
+- **`/staff`** → redirect `/staff/dashboard`.
 - **Staff/supervisor** en `/dashboard/*`: solo permitido:
   - `/dashboard/propinas`
   - `/dashboard/kds`
   - `/dashboard/albaranes`
   - `/dashboard/scanner`
+  - `/dashboard/eventos` (lectura encargos)
   - Resto de `/dashboard/*` → redirect `/staff/dashboard`
+- **`/dashboard/insights`**: solo **manager** y **admin** (supervisor → `/staff/dashboard`).
+- **`/master/*`**: solo `hhector7722@gmail.com` (`isMasterDashboardUser`); resto → `/dashboard`.
+- Login con sesión → home por rol (`getHomeHrefForUser`; master → `/master/dashboard`).
 - Guard usa **`auth.getSession()`** + `profiles.role` con **`.maybeSingle()`**.
 
 ### Albaranes (permisos app, 2026-05-13+)
@@ -133,6 +141,10 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 
 ### Público
 - `/carta` — carta QR (i18n ES/CA/EN, secciones desde BD)
+- `/eventos/[slug]` — pedido encargo (UI carta + RPC `create_event_order`)
+
+### Master (solo Hector)
+- `/master/dashboard` — hub 3 pantallas + accesos rápidos (`MasterShortcutGrid`)
 
 ### Manager / gestión (`/dashboard/*`)
 - `/dashboard` — hub
@@ -140,6 +152,8 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - KDS: `/dashboard/kds`
 - Ventas: `/dashboard/ventas`
 - Finanzas: `/dashboard/finanzas` (PyG + caja, RPC `get_financial_statement`)
+- Insights: `/dashboard/insights` (manager/admin; KPIs periodo + gráficos rentabilidad)
+- Eventos: `/dashboard/eventos`, pedidos `/dashboard/eventos/[eventId]/pedidos`
 - Tesorería: `/dashboard/movements`
 - Cierres: `/dashboard/history`
 - Ledger: `/dashboard/ledger`
@@ -165,11 +179,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - Admin legacy: `/admin/import`, `/admin/mapeo`
 
 ### Staff (`/staff/*`)
-- `/staff/dashboard`
+- `/staff/dashboard` — hub unificado (`StaffDashboardView` / `DashboardSwitcher`)
 - `/staff/history`
 - `/staff/carta` — editor inline carta (toggle Editar, reorden, i18n categorías)
 - `/staff/reservas` — gestión reservas del día (RPC + Realtime `public:reservations`)
-- `/staff` — redirect hub
+- `/staff/propinas` — mis propinas (`get_tip_pool_preview`); manager/admin pueden ver vista staff desde modal Caja
 
 ---
 
@@ -195,6 +209,9 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - `POST /api/copiloto/transcribe` — transcripción
 - `GET /api/copiloto/voice/token` — token LiveKit
 
+### Eventos
+- `GET /api/eventos/[eventId]/export` — CSV pedidos (auth manager/admin)
+
 ### Serving seguro (documentos)
 - `GET /api/nominas/open?owner=&path=`
 - `GET /api/employee-documents/open?owner=&path=&tipo=`
@@ -218,7 +235,10 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - Sala/KDS: `estado_sala`, `kds_orders`, `kds_order_lines`
 - Recetas: `recipes` (+ `menu_category_id`, `elaboration_video_url`), `recipe_ingredients`, `ingredients` (+ `price_locked`, `inventory_visible`, pack fields), `ingredient_price_history`, `categories`, `menu_category_overrides`
 - Carta: `digital_menu_overrides` (+ `plato_marbella_slot`, `plato_marbella_is_menu_price`), vistas `v_digital_menu_items`, `v_public_menu_items`
-- Proveedores/albaranes: `suppliers`, `purchase_invoices`, `purchase_invoice_lines` (+ `line_unit` texto OCR), `purchase_invoice_attachments`, `supplier_item_mappings` (+ `line_billing_unit`, `line_content_qty`, `line_content_unit`)
+- Propinas: `tip_distribution_history`, `tip_distribution_lines`
+- Eventos: `events`, `event_products`, `event_default_pack`, `event_orders`
+- Consumo personal UI: `staff_consumption_recipe_display_order`
+- Proveedores/albaranes: `suppliers`, `purchase_invoices`, `purchase_invoice_lines` (+ `line_unit` texto OCR; `status`: `pending_mapping`|`mapped`|`excluded`|`expense_only`), `purchase_invoice_attachments`, `supplier_item_mappings` (+ `line_billing_unit`, `line_content_qty`, `line_content_unit`)
 - Stock: `stock_movements` (+ `reference_doc` tipo `ALB-LINE-<uuid>`)
 - Pedidos: `purchase_orders`, `purchase_order_items`, `order_drafts`
 - Documentos: `nominas`, `nominas_excepciones`, `employee_documents`
@@ -227,19 +247,24 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 ### RPCs / funciones (nombres exactos, selección)
 - Ventas: `get_daily_sales_stats`, `get_hourly_sales`, `get_ticket_lines`, `get_product_sales_ranking`
 - Finanzas: `get_financial_statement(p_start_date, p_end_date) -> jsonb`
+- Insights: `get_period_card_payments(p_start, p_end)`, `get_hourly_sales_vs_labor`, `get_weekday_ticket_analysis`, `get_product_margin_ranking`
 - Tesorería: `get_operational_box_status`, `get_treasury_period_summary`, `get_theoretical_balance`, `get_closing_sales_breakdown(p_date)`
+- Eventos: `create_event_order(p_slug, p_responsible_name, p_items, p_notes)` — `SECURITY DEFINER`, anon OK
+- Propinas: `get_tip_pool_preview`, `confirm_tip_distribution`
 - Reservas: `consultar_reservas(p_fecha)`, `gestionar_reservas(p_accion, p_datos)` — acciones `confirm|reject|cancel`
 - Recetas: `get_recipe_cost`, `convert_pricing_qty`
 - Albaranes precio: `invoice_line_price_to_purchase_unit(p_unit_price, p_mapping_content_qty, p_mapping_content_unit, p_ingredient_purchase_unit, p_fallback_factor)`
-- Personal: `get_monthly_timesheet`, `get_worker_weekly_log_grid`, `get_weekly_worker_stats` (+ `p_only_completed_weeks`), `rpc_recalculate_all_balances`, `fn_recalc_and_propagate_snapshots`
+- Personal: `get_monthly_timesheet`, `get_worker_weekly_log_grid`, `get_weekly_worker_stats` (+ `p_only_completed_weeks`), `rpc_recalculate_all_balances`, `fn_recalc_and_propagate_snapshots`, `fn_labor_effective_ordinary_rate`, `fn_worker_effective_overtime_rate`
+- Consumo modal: `get_consumption_modal_recipes`, `save_staff_consumption_recipe_display_order`
 - Cierres: `get_cash_closings_summary`
-- Albaranes/stock: `delete_stock_movements_for_purchase_invoice`, `delete_stock_movements_for_albaran_line`
+- Albaranes/stock: `delete_stock_movements_for_purchase_invoice`, `delete_stock_movements_for_albaran_line`, `sync_purchase_invoice_status`
 - Consumo: `process_staff_consumption`
 - RBAC helpers: `get_employee_role`, `get_my_employee_id`, `is_manager_or_admin()`
 
 ### Triggers albaranes (operativa crítica)
-- `handle_new_invoice_line` — auto-mapeo + precio vía `invoice_line_price_to_purchase_unit` (respeta `price_locked`; **falla en voz alta** si no hay tríada/factor válido)
+- `handle_new_invoice_line` — auto-mapeo + precio vía `invoice_line_price_to_purchase_unit` (respeta `price_locked`; en `per_pack` solo `pack_price`; **falla en voz alta** si no hay tríada/factor válido)
 - `handle_invoice_line_mapped_stock` — `PURCHASE` al pasar línea a `status='mapped'`
+- `sync_purchase_invoice_status` — cabecera `mapped` cuando todas las líneas resueltas (`mapped`|`excluded`|`expense_only`) + stock `ALB-LINE-*`
 - Adjuntos multipágina: `purchase_invoice_attachments` (misma cabecera, varias hojas)
 
 ### Migración remota (conversión estricta)
@@ -267,12 +292,13 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto “prompt-ready”**. D
 - **IA documentos**: `GEMINI_API_KEY`
 - **Copiloto**: `OPENAI_API_KEY` (+ vars LiveKit si voz)
 - **Cron**: `CRON_SECRET`
+- **Carta iframe (opcional)**: `NEXT_PUBLIC_MARBELLA_WEB_ORIGIN` — `postMessage` navegación embebida
 
 ---
 
 ## 10) Prompt corto recomendado (inicio de sesión)
 
-> Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, Supabase (Auth + RLS + Realtime + Storage) con SSR @supabase/ssr. Dominios: sala/radar, KDS, tesorería (cierre con get_closing_sales_breakdown + bdp_cash_movements), finanzas (RPC get_financial_statement), personal/horas (AcumulaHoras; fichajes especiales por clock_in/out), propinas, recetas/escandallo, carta QR (/carta, Plato Marbella), reservas (/staff/reservas), albaranes vía /dashboard/scanner + histórico con LineMappingModal (tríada + RPC invoice_line_price_to_purchase_unit; webhook email 410), pedidos, inventario/mermas. BDP: context/index.txt + server.txt (UTC ingesta, Madrid display). Reglas: frontend tonto (RPCs SQL), RLS estricto, anti-silent-fail, zero-display (0→" "), fechas sin new Date('YYYY-MM-DD'), proxy getSession() no getUser(). No inventes columnas; usa supabase/migrations y PROJECT_STATUS.md. Precios ingredientes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md.
+> Proyecto Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind, Supabase (Auth + RLS + Realtime + Storage) con SSR @supabase/ssr. Dominios: sala/radar, KDS, tesorería (get_closing_sales_breakdown + bdp_cash_movements), finanzas/insights (/dashboard/insights, get_financial_statement + get_period_card_payments), personal/horas (AcumulaHoras; fichajes especiales clock_in/out), propinas (/dashboard/propinas + /staff/propinas), recetas/escandallo, carta QR (/carta, Plato Marbella), reservas (/staff/reservas), eventos (/eventos/[slug], /dashboard/eventos), albaranes (/dashboard/scanner + LineMappingModal; líneas excluded/expense_only; sync_purchase_invoice_status), pedidos, inventario/mermas, hub master /master/dashboard (Hector). BDP: context/index.txt + server.txt (UTC ingesta, Madrid display). Reglas: RPCs SQL, RLS, anti-silent-fail, zero-display (0→" "), fechas sin new Date('YYYY-MM-DD'), proxy getSession() no getUser(). Esquema: supabase/migrations + PROJECT_STATUS.md (§11 auto-sync). Precios: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md.
 
 ---
 
