@@ -997,9 +997,14 @@ export default function StaffDashboardView() {
                             {/* Header Petrol - Estilo Modal Marbella */}
                             <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
                                 <div className="flex items-center gap-3">
-                                    {infoSubMenu && infoSubMenu !== 'contactos' && (
-                                        <button onClick={() => setInfoSubMenu(null)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                            <ArrowLeft size={18} strokeWidth={3} />
+                                    {infoSubMenu && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setInfoSubMenu(null)}
+                                            aria-label="Volver"
+                                            className="flex h-12 w-12 shrink-0 items-center justify-center text-white transition-all hover:opacity-80 active:scale-90 -ml-2"
+                                        >
+                                            <ArrowLeft size={20} strokeWidth={3} />
                                         </button>
                                     )}
                                     <h3 className="text-[10px] font-black uppercase tracking-widest">
@@ -1141,13 +1146,13 @@ export default function StaffDashboardView() {
                                     </div>
                                 )}
                                 {infoSubMenu === 'reservas' && (
-                                    <div className="space-y-3">
+                                    <div className="divide-y divide-gray-100">
                                         <Link
                                             href="/staff/reservas"
                                             onClick={closeMenus}
-                                            className="flex items-center gap-4 w-full p-4 rounded-xl border border-zinc-100 bg-white shadow-sm text-gray-600 hover:text-blue-600 hover:bg-zinc-50 transition-all group active:scale-95 min-h-[56px]"
+                                            className="flex items-center gap-4 w-full py-3 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] first:pt-0 last:pb-0"
                                         >
-                                            <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-50 flex items-center justify-center p-1">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image
                                                     src="/icons/reservas.png"
                                                     alt="Reservas"
@@ -1156,19 +1161,15 @@ export default function StaffDashboardView() {
                                                     className="object-contain transition-transform group-hover:scale-110"
                                                 />
                                             </div>
-                                            <div className="min-w-0 flex-1 text-left">
-                                                <p className="text-sm font-black text-gray-800">Reservas</p>
-                                                <p className="text-xs font-medium text-gray-400">Gestión de reservas</p>
-                                            </div>
-                                            <ArrowRight size={20} className="shrink-0 text-gray-400 group-hover:text-blue-600" strokeWidth={2.5} />
+                                            <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
                                         </Link>
 
                                         <Link
                                             href="/dashboard/eventos"
                                             onClick={closeMenus}
-                                            className="flex items-center gap-4 w-full p-4 rounded-xl border border-zinc-100 bg-white shadow-sm text-gray-600 hover:text-blue-600 hover:bg-zinc-50 transition-all group active:scale-95 min-h-[56px]"
+                                            className="flex items-center gap-4 w-full py-3 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] first:pt-0 last:pb-0"
                                         >
-                                            <div className="w-12 h-12 shrink-0 rounded-xl bg-[#36606F]/10 flex items-center justify-center p-1">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image
                                                     src="/icons/suppliers.png"
                                                     alt="Encargos"
@@ -1177,11 +1178,7 @@ export default function StaffDashboardView() {
                                                     className="object-contain transition-transform group-hover:scale-110"
                                                 />
                                             </div>
-                                            <div className="min-w-0 flex-1 text-left">
-                                                <p className="text-sm font-black text-gray-800">Encargos</p>
-                                                <p className="text-xs font-medium text-gray-400">Pedidos por eventos</p>
-                                            </div>
-                                            <ArrowRight size={20} className="shrink-0 text-gray-400 group-hover:text-blue-600" strokeWidth={2.5} />
+                                            <span className="font-bold text-sm tracking-tight text-left">Encargos</span>
                                         </Link>
                                     </div>
                                 )}
