@@ -91,7 +91,7 @@ export function StaffCartaView({
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar bg-white pb-2">
           {canEditMenu ? (
             <StaffCartaInlineEditor
               canEdit={canEditMenu}

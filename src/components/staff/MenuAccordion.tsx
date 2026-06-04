@@ -882,7 +882,7 @@ export function MenuAccordion({
         </span>
     )
 
-    const homeGridCentered = hideLangPicker && homeCompact && !reorderScope
+    const homeGridCentered = hideLangPicker && homeCompact && !reorderScope && !eventOrder
 
     const gridBlock = (
         <CartaCoversLoadingGate
@@ -896,8 +896,10 @@ export function MenuAccordion({
                 className={cn(
                     'min-h-0 w-full flex-1',
                     homeGridCentered
-                        ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar'
-                        : 'flex flex-col'
+                        ? 'flex flex-col justify-center overflow-y-auto overscroll-contain custom-scrollbar touch-pan-y'
+                        : hideLangPicker && homeCompact && !reorderScope && eventOrder
+                          ? 'flex w-full flex-col justify-start'
+                          : 'flex flex-col'
                 )}
             >
                 <CartaCategoryGrid
@@ -1590,7 +1592,10 @@ export function MenuAccordion({
                                 'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
-                                    : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
+                                    : cn(
+                                          'overflow-y-auto overscroll-contain touch-pan-y px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5',
+                                          eventOrder && !encargoEditActive && 'pb-28 sm:pb-32'
+                                      )
                             )}
                         >
                             {openPlatoMarbella && platoBundleRows ? (
