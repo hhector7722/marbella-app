@@ -1,6 +1,16 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import {
+    Fragment,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type MouseEvent,
+} from 'react'
+import { createPortal } from 'react-dom'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
@@ -499,6 +509,13 @@ export function MenuAccordion({
     const [reorderPick, setReorderPick] = useState<string | null>(null)
     const [committingReorder, setCommittingReorder] = useState(false)
     const [platoLightbox, setPlatoLightbox] = useState<{ src: string; alt: string } | null>(null)
+    const [portalReady, setPortalReady] = useState(false)
+
+    useEffect(() => {
+        setPortalReady(true)
+    }, [])
+
+    useScrollLock(Boolean(openKey))
     const [platoMarbellaReorderSection, setPlatoMarbellaReorderSection] =
         useState<PlatoMarbellaReorderSection>('entrante')
     const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
@@ -1058,11 +1075,12 @@ export function MenuAccordion({
                 {eventOrderScrollLayout ? <div className="scroll-end-touch-cards" aria-hidden /> : null}
             </div>
 
-            {openGroup ? (
+            {openGroup && portalReady
+                ? createPortal(
                 <div
                     className={cn(
                         'fixed inset-0 z-[250] flex animate-in fade-in duration-200 overscroll-contain touch-pan-y',
-                        openPlatoMarbella
+                        openShowSubPicker || openPlatoMarbella
                             ? 'items-center justify-center p-2 sm:p-2.5'
                             : 'flex-col justify-end p-0 pb-safe sm:items-center sm:justify-center sm:p-4 sm:pt-safe sm:pb-safe'
                     )}
@@ -1139,7 +1157,7 @@ export function MenuAccordion({
                             'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-t-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl sm:rounded-[22px]',
                             showPlatoModalChrome
                                 ? 'carta-plato-modal-shell min-h-0'
-                                : 'carta-modal-shell-max min-h-0 max-h-[min(94dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))]'
+                                : 'carta-modal-shell-max min-h-0'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1841,8 +1859,10 @@ export function MenuAccordion({
                         {/* Nota de horario movida al modal de "Platos". */}
                     </div>
                     )}
-                </div>
-            ) : null}
+                </div>,
+                document.body
+            )
+                : null}
 
             <CartaImageLightbox
                 src={platoLightbox?.src ?? null}
