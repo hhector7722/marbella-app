@@ -385,13 +385,14 @@ export function FinancialMonthSelector({
         onClick={() => onChange(shiftInsightsMonth(month, -1))}
         aria-label="Mes anterior"
         className={cn(
-          'min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg active:scale-95',
+          'inline-flex items-center justify-center rounded-lg active:scale-95',
+          onDark ? 'min-h-7 min-w-7' : 'min-h-9 min-w-9',
           onDark
             ? 'text-white hover:bg-white/15'
             : 'text-zinc-600 hover:bg-zinc-100'
         )}
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className={onDark ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
       </button>
       <span
         className={cn(
@@ -406,13 +407,14 @@ export function FinancialMonthSelector({
         onClick={() => onChange(shiftInsightsMonth(month, 1))}
         aria-label="Mes siguiente"
         className={cn(
-          'min-h-9 min-w-9 inline-flex items-center justify-center rounded-lg active:scale-95',
+          'inline-flex items-center justify-center rounded-lg active:scale-95',
+          onDark ? 'min-h-7 min-w-7' : 'min-h-9 min-w-9',
           onDark
             ? 'text-white hover:bg-white/15'
             : 'text-zinc-600 hover:bg-zinc-100'
         )}
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className={onDark ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
       </button>
     </div>
   )

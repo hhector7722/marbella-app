@@ -216,10 +216,10 @@ function FinancialDetailModal({
         className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 bg-[#36606F] px-4 py-3">
+        <div className={cn(SECTION_HEADER_CLASS, 'gap-2')}>
           <h3
             id="financial-detail-title"
-            className="text-sm font-black uppercase tracking-wider text-white leading-tight pr-2"
+            className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0 pr-1"
           >
             {title}
           </h3>
@@ -227,9 +227,9 @@ function FinancialDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="min-h-10 min-w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-white/90 hover:bg-white/15 active:scale-95"
+            className="min-h-7 min-w-7 shrink-0 inline-flex items-center justify-center rounded-lg text-white/90 hover:bg-white/15 active:scale-95"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{children}</div>
@@ -523,10 +523,12 @@ function WeekdayDetailCard({
       >
         <X className="h-3 w-3" />
       </button>
-      <p className="shrink-0 w-full pr-7 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
-        {day.weekday_name}
-      </p>
-      <div className="mt-1 flex min-h-0 flex-1 flex-col justify-center gap-2.5 pb-0.5">
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <p className="w-full px-0.5 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2">
+          {day.weekday_name}
+        </p>
+      </div>
+      <div className="shrink-0 flex flex-col gap-2.5 pb-0.5">
         <WeekdayDetailStat label="Media ventas" value={formatEuroKpi(day.avg_revenue)} />
         <WeekdayDetailStat label="Media tickets" value={ticketsValue} />
         <WeekdayDetailStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} />
@@ -615,6 +617,10 @@ type LegendItem = {
   swatchOutline?: boolean
 }
 
+/** Misma altura visual que cabeceras de sección (p. ej. Margen producto). */
+const SECTION_HEADER_CLASS =
+  'bg-[#36606F] px-3 md:px-4 py-2.5 flex h-10 min-h-10 max-h-10 items-center justify-between gap-2 shrink-0'
+
 function SectionTitleRow({
   title,
   legend,
@@ -625,7 +631,7 @@ function SectionTitleRow({
   actions?: ReactNode
 }) {
   return (
-    <div className="bg-[#36606F] px-3 md:px-4 py-2.5 flex items-center justify-between gap-2 min-h-10 shrink-0">
+    <div className={SECTION_HEADER_CLASS}>
       <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0">
         {title}
       </h2>
