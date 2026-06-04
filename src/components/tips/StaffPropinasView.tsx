@@ -1,8 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import {
   formatLocalIsoDateLabel,
   formatTipMoney,
@@ -24,29 +23,13 @@ export default function StaffPropinasView({
 
   return (
     <div className="min-h-screen bg-[#5B8FB9] pb-24">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#5B8FB9]/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-4">
-          <Link
-            href="/staff/dashboard"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white active:scale-95"
-            aria-label="Volver al inicio"
-          >
-            <ArrowLeft size={22} strokeWidth={2.5} />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-black uppercase tracking-wide text-white">
-              Propinas
-            </h1>
-          </div>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
         <section className="overflow-hidden rounded-2xl bg-white shadow-xl">
           <div className="border-b border-zinc-100 bg-[#36606F] px-4 py-3">
-            <h2 className="text-sm font-black uppercase tracking-wide text-white">
+            <h2 className="text-sm font-black uppercase tracking-wide text-white">Propinas</h2>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-white/75">
               Último reparto
-            </h2>
+            </p>
           </div>
 
           <div className="p-4">

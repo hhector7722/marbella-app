@@ -1,4 +1,5 @@
 import {
+  penalizacionColorClass,
   tipAmountWithoutPenalty,
   tipTheoreticalPoolAmounts,
   type StaffTipHistoryEntry,
@@ -61,4 +62,48 @@ export function staffEntryPropinaSinPen(entry: StaffTipHistoryEntry): {
 
 export function staffEntryHoursTotal(entry: StaffTipHistoryEntry): number {
   return entry.weekdayHours + entry.weekendHours;
+}
+
+export type TipAdjustmentKind = 'penalizacion' | 'bonificacion' | 'ninguna';
+
+const TIP_AMOUNT_EPS = 0.005;
+
+/** Compara propina sin ajuste vs final cobrada. */
+export function getTipAdjustmentKind(
+  amountSinPen: number,
+  amountFinal: number
+): TipAdjustmentKind {
+  const diff = amountSinPen - amountFinal;
+  if (Math.abs(diff) < TIP_AMOUNT_EPS) return 'ninguna';
+  if (diff > TIP_AMOUNT_EPS) return 'penalizacion';
+  return 'bonificacion';
+}
+
+export function getTipAdjustmentLabel(kind: TipAdjustmentKind): string {
+  if (kind === 'penalizacion') return 'Penalización';
+  if (kind === 'bonificacion') return 'Bonificación';
+  return 'Sin penalización';
+}
+
+export function formatTipAdjustmentValue(
+  kind: TipAdjustmentKind,
+  penalizacionPct: number,
+  amountSinPen: number,
+  amountFinal: number
+): string {
+  if (kind === 'ninguna') return ' ';
+  if (penalizacionPct > 0) {
+    return kind === 'bonificacion' ? `+${penalizacionPct}%` : `${penalizacionPct}%`;
+  }
+  if (amountSinPen < TIP_AMOUNT_EPS) return ' ';
+  const pct = Math.abs(((amountFinal - amountSinPen) / amountSinPen) * 100);
+  if (pct < 0.05) return ' ';
+  const rounded = pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1);
+  return kind === 'bonificacion' ? `+${rounded}%` : `${rounded}%`;
+}
+
+export function tipAdjustmentValueClass(kind: TipAdjustmentKind, penalizacionPct: number): string {
+  if (kind === 'ninguna') return 'text-zinc-500';
+  if (kind === 'bonificacion') return 'text-emerald-600';
+  return penalizacionColorClass(penalizacionPct);
 }

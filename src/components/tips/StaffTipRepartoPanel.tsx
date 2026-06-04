@@ -1,28 +1,35 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   formatLocalIsoDateLabel,
   formatTipInt,
   formatTipMoney,
   formatTipPct,
-  penalizacionColorClass,
   tjiColorClass,
   type StaffTipHistoryEntry,
 } from '@/lib/tip-distribution-display';
 import {
+  formatTipAdjustmentValue,
+  getTipAdjustmentKind,
+  getTipAdjustmentLabel,
   staffEntryHoursTotal,
   staffEntryPropinaSinPen,
+  tipAdjustmentValueClass,
 } from '@/lib/staff-tip-entry-display';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
+import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
 import { StaffTipBreakdownModal, StaffTipBreakdownRows } from '@/components/tips/StaffTipBreakdownModal';
 
 const fmtHours = (val: number) =>
   Math.abs(val) < 0.005 ? ' ' : val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
 
-const fmtPen = (pen: number) => (pen > 0 ? `${pen}%` : ' ');
+const METRIC_VALUE_SLOT = 'flex h-8 w-full shrink-0 items-center justify-center';
+const METRIC_LABEL_SLOT =
+  'flex min-h-[2.5rem] w-full shrink-0 items-start justify-center pt-0.5 text-center text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]';
+const METRIC_HINT_SLOT = 'flex h-5 w-full shrink-0 items-center justify-center';
 
 type DetailKind = 'hours' | 'propina' | 'penalizacion' | null;
 
@@ -37,27 +44,21 @@ function MetricCell({
   valueClassName?: string;
   onOpenDetail?: () => void;
 }) {
-  const content = (
+  const body = (
     <>
-      <span
-        className={cn(
-          'w-full text-center text-sm font-black tabular-nums leading-tight',
-          valueClassName
-        )}
-      >
-        {value}
-      </span>
-      <span className="w-full text-center text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]">
-        {label}
-      </span>
+      <div className={METRIC_VALUE_SLOT}>
+        <span className={cn('text-sm font-black tabular-nums leading-tight', valueClassName)}>
+          {value}
+        </span>
+      </div>
+      <div className={METRIC_LABEL_SLOT}>{label}</div>
       {onOpenDetail ? (
-        <ChevronRight
-          size={14}
-          strokeWidth={2.5}
-          className="mt-0.5 shrink-0 text-[#36606F]/60"
-          aria-hidden
-        />
-      ) : null}
+        <div className={METRIC_HINT_SLOT}>
+          <StaffTipDetailHintIcon />
+        </div>
+      ) : (
+        <div className={METRIC_HINT_SLOT} aria-hidden />
+      )}
     </>
   );
 
@@ -66,18 +67,14 @@ function MetricCell({
       <button
         type="button"
         onClick={onOpenDetail}
-        className="flex min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2 transition-colors hover:bg-zinc-50/80 active:scale-[0.98]"
+        className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1 transition-opacity active:opacity-70"
       >
-        {content}
+        {body}
       </button>
     );
   }
 
-  return (
-    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2">
-      {content}
-    </div>
-  );
+  return <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1">{body}</div>;
 }
 
 export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry }) {
@@ -87,6 +84,20 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
   const sinPen = staffEntryPropinaSinPen(entry);
   const hTotal = staffEntryHoursTotal(entry);
   const pen = entry.penalizacionPct ?? 0;
+  const finalAmount = entry.totalAmount ?? 0;
+
+  const adjustmentKind = useMemo(
+    () => getTipAdjustmentKind(sinPen.total, finalAmount),
+    [sinPen.total, finalAmount]
+  );
+  const adjustmentLabel = getTipAdjustmentLabel(adjustmentKind);
+  const adjustmentValue = formatTipAdjustmentValue(adjustmentKind, pen, sinPen.total, finalAmount);
+  const adjustmentValueClass = tipAdjustmentValueClass(adjustmentKind, pen);
+
+  const olvidosHeader =
+    (entry.jornadasConOlvido ?? 0) > 0
+      ? 'Veces que te has olvidado de fichar'
+      : 'Sin olvidos de fichaje';
 
   return (
     <>
@@ -107,7 +118,7 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-stretch divide-x divide-zinc-100 rounded-xl border border-zinc-100 bg-zinc-50/30">
+      <div className="mt-3 flex items-start gap-0.5">
         <MetricCell
           label="Horas"
           value={fmtHours(hTotal)}
@@ -120,28 +131,27 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           onOpenDetail={() => setDetail('propina')}
         />
         <MetricCell
-          label={
-            <>
-              <span className="block">Penalización</span>
-              <span className="block">/ bonificación</span>
-            </>
-          }
-          value={fmtPen(pen)}
-          valueClassName={penalizacionColorClass(pen)}
+          label={adjustmentLabel}
+          value={adjustmentValue}
+          valueClassName={adjustmentValueClass}
           onOpenDetail={() => setDetail('penalizacion')}
         />
-        <div className="flex min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2">
-          <SanctionedTipMoney
-            amount={entry.totalAmount}
-            isSanctioned={entry.isSanctioned}
-            className="w-full text-center text-sm font-black text-emerald-600"
-            formatFn={formatTipMoney}
-          />
-          <span className="w-full text-center text-[9px] font-bold uppercase leading-tight tracking-wide text-zinc-500">
-            <span className="block">Propina</span>
-            <span className="block">final</span>
-          </span>
-        </div>
+        <MetricCell
+          label={
+            <>
+              <span className="block">Propina</span>
+              <span className="block">final</span>
+            </>
+          }
+          value={
+            <SanctionedTipMoney
+              amount={entry.totalAmount}
+              isSanctioned={entry.isSanctioned}
+              className="text-sm font-black text-emerald-600"
+              formatFn={formatTipMoney}
+            />
+          }
+        />
       </div>
 
       {detail === 'hours' ? (
@@ -156,7 +166,7 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       ) : null}
 
       {detail === 'propina' ? (
-        <StaffTipBreakdownModal title="Propina sin penalización" onClose={() => setDetail(null)}>
+        <StaffTipBreakdownModal title="Propina" onClose={() => setDetail(null)}>
           <StaffTipBreakdownRows
             rows={[
               { label: 'Lun – Vie', value: formatTipMoney(sinPen.weekday) },
@@ -167,12 +177,9 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       ) : null}
 
       {detail === 'penalizacion' ? (
-        <StaffTipBreakdownModal
-          title="Penalización / bonificación"
-          onClose={() => setDetail(null)}
-        >
+        <StaffTipBreakdownModal title={adjustmentLabel} onClose={() => setDetail(null)}>
           <p className="text-center text-[10px] font-bold uppercase tracking-wide text-zinc-400">
-            Jornadas con fichaje «no registrada»
+            {olvidosHeader}
           </p>
           <p
             className={cn(
