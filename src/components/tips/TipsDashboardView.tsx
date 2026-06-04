@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle2, Plus, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Clock, Plus, RefreshCw } from 'lucide-react';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -129,7 +129,7 @@ function buildTipTableColWidths(flags: {
   if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: 1 });
   cols.push({ key: 'prop', weight: 1.2 });
   if (flags.showPropDetail) {
-    cols.push({ key: 'eLv', weight: 1 }, { key: 'eSd', weight: 1 }, { key: 'sinPen', weight: 1 });
+    cols.push({ key: 'sinPen', weight: 1 }, { key: 'eLv', weight: 1 }, { key: 'eSd', weight: 1 });
   }
   const total = cols.reduce((sum, c) => sum + c.weight, 0);
   return Object.fromEntries(cols.map((c) => [c.key, `${(c.weight / total) * 100}%`])) as Record<
@@ -545,7 +545,15 @@ export default function TipsDashboardView({
                               TIP_EXPAND_TH
                             )}
                           >
-                            H L-V
+                            <span
+                              className={cn(
+                                'inline-flex items-center justify-center gap-0.5',
+                                TIP_TABLE_TH_TEXT
+                              )}
+                            >
+                              <Clock size={8} strokeWidth={2.5} className="shrink-0" aria-hidden />
+                              <span>L - V</span>
+                            </span>
                           </th>
                           <th
                             style={{ width: colWidths.hSd }}
@@ -556,7 +564,15 @@ export default function TipsDashboardView({
                               TIP_EXPAND_TH
                             )}
                           >
-                            H S-D
+                            <span
+                              className={cn(
+                                'inline-flex items-center justify-center gap-0.5',
+                                TIP_TABLE_TH_TEXT
+                              )}
+                            >
+                              <Clock size={8} strokeWidth={2.5} className="shrink-0" aria-hidden />
+                              <span>S - D</span>
+                            </span>
                           </th>
                         </>
                       )}
@@ -585,10 +601,7 @@ export default function TipsDashboardView({
                             TIP_EXPAND_TH
                           )}
                         >
-                          <span className={cn(TIP_TABLE_TH_BTN, 'justify-center')}>
-                            <span>Sin reg</span>
-                            <TipSinRegHeaderBadge size={8} />
-                          </span>
+                          Sin reg
                         </th>
                       )}
                       <th style={{ width: colWidths.prop }} className={cn('text-right', TIP_TABLE_TH)}>
@@ -602,7 +615,7 @@ export default function TipsDashboardView({
                           )}
                           title={
                             showPropDetail
-                              ? 'Ocultar € Lun–Vie, € Sáb–Dom y Sin pen'
+                              ? 'Ocultar Sin pen, € Lun–Vie y € Sáb–Dom'
                               : 'Mostrar desglose de propinas'
                           }
                         >
@@ -612,6 +625,17 @@ export default function TipsDashboardView({
                       </th>
                       {showPropDetail && (
                         <>
+                          <th
+                            style={{ width: colWidths.sinPen }}
+                            className={cn(
+                              'text-center',
+                              TIP_TABLE_TH,
+                              TIP_TABLE_TH_TEXT,
+                              TIP_EXPAND_TH
+                            )}
+                          >
+                            Sin pen
+                          </th>
                           <th
                             style={{ width: colWidths.eLv }}
                             className={cn(
@@ -633,17 +657,6 @@ export default function TipsDashboardView({
                             )}
                           >
                             € S-D
-                          </th>
-                          <th
-                            style={{ width: colWidths.sinPen }}
-                            className={cn(
-                              'text-center',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
-                              TIP_EXPAND_TH
-                            )}
-                          >
-                            Sin pen
                           </th>
                         </>
                       )}
@@ -770,6 +783,18 @@ export default function TipsDashboardView({
                             {showPropDetail && (
                               <>
                                 <td
+                                  style={{ width: colWidths.sinPen }}
+                                  className={cn(
+                                    TIP_TABLE_DATA_CELL,
+                                    'text-zinc-500 cursor-pointer',
+                                    TIP_EXPAND_TD,
+                                    strikeClass
+                                  )}
+                                  onClick={openRow}
+                                >
+                                  {fmtZeroBlank(totSinPen)}
+                                </td>
+                                <td
                                   style={{ width: colWidths.eLv }}
                                   className={cn(
                                     TIP_TABLE_DATA_CELL,
@@ -792,18 +817,6 @@ export default function TipsDashboardView({
                                   onClick={() => openOverride('weekend', s.id, s.name)}
                                 >
                                   {fmtZeroBlank(weAmtTeor)}
-                                </td>
-                                <td
-                                  style={{ width: colWidths.sinPen }}
-                                  className={cn(
-                                    TIP_TABLE_DATA_CELL,
-                                    'text-zinc-500 cursor-pointer',
-                                    TIP_EXPAND_TD,
-                                    strikeClass
-                                  )}
-                                  onClick={openRow}
-                                >
-                                  {fmtZeroBlank(totSinPen)}
                                 </td>
                               </>
                             )}

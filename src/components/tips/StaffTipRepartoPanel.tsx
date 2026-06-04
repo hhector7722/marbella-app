@@ -57,7 +57,7 @@ function MetricCell({
         <span
           className={cn(
             valueTypography === 'descriptive'
-              ? 'px-0.5 text-center text-[10px] font-medium italic leading-snug text-zinc-400 sm:text-[11px]'
+              ? 'whitespace-nowrap px-0.5 text-center text-[6px] font-medium leading-none text-zinc-400 sm:text-[7px]'
               : 'text-sm font-black tabular-nums leading-tight',
             valueClassName,
           )}
