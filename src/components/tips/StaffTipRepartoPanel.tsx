@@ -39,19 +39,29 @@ function MetricCell({
   label,
   value,
   valueClassName,
+  valueTypography = 'metric',
   onOpenDetail,
   detailHintAlignPlusToLens = false,
 }: {
   label: ReactNode;
   value: ReactNode;
   valueClassName?: string;
+  /** Texto secundario (p. ej. «Sin penalización») en lugar de cifra principal. */
+  valueTypography?: 'metric' | 'descriptive';
   onOpenDetail?: () => void;
   detailHintAlignPlusToLens?: boolean;
 }) {
   const body = (
     <>
       <div className={METRIC_VALUE_SLOT}>
-        <span className={cn('text-sm font-black tabular-nums leading-tight', valueClassName)}>
+        <span
+          className={cn(
+            valueTypography === 'descriptive'
+              ? 'px-0.5 text-center text-[10px] font-medium italic leading-snug text-zinc-400 sm:text-[11px]'
+              : 'text-sm font-black tabular-nums leading-tight',
+            valueClassName,
+          )}
+        >
           {value}
         </span>
       </div>
@@ -134,7 +144,8 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
         <MetricCell
           label={adjustmentLabel}
           value={adjustmentValue}
-          valueClassName={adjustmentValueClass}
+          valueTypography={adjustmentKind === 'ninguna' ? 'descriptive' : 'metric'}
+          valueClassName={adjustmentKind === 'ninguna' ? undefined : adjustmentValueClass}
           onOpenDetail={() => setDetail('penalizacion')}
           detailHintAlignPlusToLens
         />

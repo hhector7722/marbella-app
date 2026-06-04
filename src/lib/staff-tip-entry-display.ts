@@ -90,7 +90,7 @@ export function formatTipAdjustmentValue(
   amountSinPen: number,
   amountFinal: number
 ): string {
-  if (kind === 'ninguna') return '-';
+  if (kind === 'ninguna') return 'Sin penalización';
   if (penalizacionPct > 0) {
     return kind === 'bonificacion' ? `+${penalizacionPct}%` : `${penalizacionPct}%`;
   }
