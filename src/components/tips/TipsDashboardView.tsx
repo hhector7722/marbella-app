@@ -19,10 +19,8 @@ import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { FichajeNoRegistradaMark } from '@/components/tips/FichajeNoRegistradaMark';
 import {
   formatLocalIsoDateLabel,
-  formatPenalizacionPct,
-  tjiColorClass,
-  tipAmountWithoutPenalty,
-  tipTotalWithoutPenalty,
+  formatSinRegCell,
+  tipTheoreticalPoolAmounts,
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
 
@@ -42,6 +40,7 @@ type TipPreviewStaffRow = {
   jornadasConOlvido?: number;
   tjiPct?: number;
   penalizacionPct?: number;
+  penaltyAmount?: number;
   weekdayAmount: number;
   weekendAmount: number;
   totalAmount: number;
@@ -71,7 +70,6 @@ type TipPreview = {
 const fmtZeroBlank = (val: number, digits = 2) => (Math.abs(val) < 0.005 ? ' ' : val.toFixed(digits));
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${val.toFixed(2)}€`);
 const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)));
-const fmtInt = (val: number) => (val <= 0 ? ' ' : String(val));
 
 function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
   if (!b || typeof b !== 'object') return {};
@@ -449,31 +447,20 @@ export default function TipsDashboardView({
                       >
                         Sáb – Dom
                       </th>
-                      <th
-                        rowSpan={2}
-                        className="px-1 py-2 text-center text-[8px] font-black uppercase"
-                      >
-                        <span className="inline-flex items-center justify-center">
-                          <FichajeNoRegistradaMark size={10} />
-                        </span>
+                      <th rowSpan={2} className="px-1 py-2 text-center text-[8px] font-black uppercase">
+                        TOT
                       </th>
                       <th
                         rowSpan={2}
                         className="px-1 py-2 text-center text-[8px] font-black uppercase"
                       >
-                        <span className="inline-flex items-center justify-center gap-0.5">
-                          <span>POR</span>
-                          <FichajeNoRegistradaMark size={10} />
+                        <span className="inline-flex flex-col items-center justify-center gap-0.5">
+                          <FichajeNoRegistradaMark size={10} variant="badge" />
+                          <span>SIN REG</span>
                         </span>
-                      </th>
-                      <th rowSpan={2} className="px-1 py-2 text-center text-[8px] font-black uppercase">
-                        €
-                      </th>
-                      <th rowSpan={2} className="px-1 py-2 text-center text-[8px] font-black uppercase">
-                        PEN
                       </th>
                       <th rowSpan={2} className="px-2 py-2 text-right text-[8px] font-black uppercase md:text-[10px]">
-                        TOT
+                        PROP TOT
                       </th>
                     </tr>
                     <tr className="bg-[#36606F] text-white">
@@ -486,7 +473,7 @@ export default function TipsDashboardView({
                   <tbody>
                     {!preview || staffWithWorkedHours.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
+                        <td colSpan={8} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
@@ -495,32 +482,11 @@ export default function TipsDashboardView({
                         const isSanc = s.isSanctioned;
                         const strikeClass = isSanc ? 'opacity-40' : '';
                         const tji = s.tjiPct ?? 0;
-                        const pen = s.penalizacionPct ?? 0;
-                        const wdH = s.weekdayHours;
-                        const weH = s.weekendHours;
-                        const wdBase =
-                          isSanc &&
-                          s.shadowWeekdayAmount != null &&
-                          Math.abs(s.shadowWeekdayAmount) >= 0.005
-                            ? s.shadowWeekdayAmount
-                            : s.weekdayAmount;
-                        const weBase =
-                          isSanc &&
-                          s.shadowWeekendAmount != null &&
-                          Math.abs(s.shadowWeekendAmount) >= 0.005
-                            ? s.shadowWeekendAmount
-                            : s.weekendAmount;
-                        const wdAmtRaw = tipAmountWithoutPenalty(
-                          wdBase,
-                          s.weekdayHoursRaw,
-                          wdH
-                        );
-                        const weAmtRaw = tipAmountWithoutPenalty(
-                          weBase,
-                          s.weekendHoursRaw,
-                          weH
-                        );
-                        const totalSinPen = wdAmtRaw + weAmtRaw;
+                        const teor = tipTheoreticalPoolAmounts(s);
+                        const wdAmtTeor = teor.weekday;
+                        const weAmtTeor = teor.weekend;
+                        const totTeor = wdAmtTeor + weAmtTeor;
+                        const sinRegLabel = formatSinRegCell(s.jornadasConOlvido ?? 0, tji);
 
                         return (
                           <tr
@@ -545,7 +511,7 @@ export default function TipsDashboardView({
                               className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer', strikeClass)}
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
-                              {fmtZeroBlank(wdAmtRaw)}
+                              {fmtZeroBlank(wdAmtTeor)}
                             </td>
                             <td
                               className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80', strikeClass)}
@@ -557,39 +523,22 @@ export default function TipsDashboardView({
                               className={cn('px-0.5 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80', strikeClass)}
                               onClick={() => openOverride('weekend', s.id, s.name)}
                             >
-                              {fmtZeroBlank(weAmtRaw)}
-                            </td>
-                            <td
-                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600', strikeClass)}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              {fmtInt(s.jornadasConOlvido ?? 0)}
-                            </td>
-                            <td
-                              className={cn(
-                                'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
-                                tjiColorClass(tji),
-                                strikeClass
-                              )}
-                              onClick={() => openOverride('weekday', s.id, s.name)}
-                            >
-                              {Math.abs(tji) < 0.005 ? ' ' : `${tji.toFixed(0)}%`}
+                              {fmtZeroBlank(weAmtTeor)}
                             </td>
                             <td
                               className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-800', strikeClass)}
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
-                              {fmtZeroBlank(totalSinPen)}
+                              {fmtZeroBlank(totTeor)}
                             </td>
                             <td
-                              className={cn(
-                                'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
-                                pen > 0 ? 'text-rose-600' : 'text-zinc-400',
-                                strikeClass
-                              )}
+                              className={cn('px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-700', strikeClass)}
                               onClick={() => openOverride('weekday', s.id, s.name)}
                             >
-                              {formatPenalizacionPct(pen)}
+                              <span className="inline-flex items-center justify-center gap-1">
+                                <FichajeNoRegistradaMark size={9} variant="badge" />
+                                <span>{sinRegLabel}</span>
+                              </span>
                             </td>
                             <td className={cn('px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600', strikeClass)}>
                               <SanctionedTipMoney

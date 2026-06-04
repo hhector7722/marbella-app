@@ -148,3 +148,52 @@ export function tipTotalWithoutPenalty(row: {
     tipAmountWithoutPenalty(row.weekendAmount, row.weekendHoursRaw, weH)
   );
 }
+
+/** Importes teóricos por tramo (antes de penalización TJI sobre importe). */
+export function tipTheoreticalPoolAmounts(row: {
+  weekdayAmount: number;
+  weekendAmount: number;
+  weekdayHoursRaw: number;
+  weekendHoursRaw: number;
+  penalizacionPct?: number;
+  penaltyAmount?: number;
+  isSanctioned?: boolean;
+  shadowWeekdayAmount?: number | null;
+  shadowWeekendAmount?: number | null;
+}): { weekday: number; weekend: number; total: number } {
+  const wdPaid =
+    row.isSanctioned &&
+    row.shadowWeekdayAmount != null &&
+    Math.abs(row.shadowWeekdayAmount) >= 0.005
+      ? row.shadowWeekdayAmount
+      : row.weekdayAmount;
+  const wePaid =
+    row.isSanctioned &&
+    row.shadowWeekendAmount != null &&
+    Math.abs(row.shadowWeekendAmount) >= 0.005
+      ? row.shadowWeekendAmount
+      : row.weekendAmount;
+  const pen = row.penalizacionPct ?? 0;
+  const penalty = row.penaltyAmount ?? 0;
+  const poolTotal =
+    pen > 0 && Math.abs(penalty) >= 0.005 ? (penalty * 100) / pen : wdPaid + wePaid;
+  const rawSum = row.weekdayHoursRaw + row.weekendHoursRaw;
+  if (rawSum < 0.005) {
+    return { weekday: 0, weekend: 0, total: poolTotal };
+  }
+  return {
+    weekday: (poolTotal * row.weekdayHoursRaw) / rawSum,
+    weekend: (poolTotal * row.weekendHoursRaw) / rawSum,
+    total: poolTotal,
+  };
+}
+
+/** Celda SIN REG: jornadas con olvido + % TJI (ej. «10 - 21%»). */
+export function formatSinRegCell(jornadasConOlvido: number, tjiPct: number): string {
+  const j = jornadasConOlvido > 0 ? String(jornadasConOlvido) : ' ';
+  const p = Math.abs(tjiPct) < 0.005 ? ' ' : `${tjiPct.toFixed(0)}%`;
+  if (j === ' ' && p === ' ') return ' ';
+  if (j === ' ') return p;
+  if (p === ' ') return j;
+  return `${j} - ${p}`;
+}
