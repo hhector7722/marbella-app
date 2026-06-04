@@ -1055,7 +1055,7 @@ export function MenuAccordion({
                 )}
             >
                 {gridBlock}
-                {eventOrderScrollLayout ? <div className="scroll-end-touch" aria-hidden /> : null}
+                {eventOrderScrollLayout ? <div className="scroll-end-touch-cards" aria-hidden /> : null}
             </div>
 
             {openGroup ? (
@@ -1609,7 +1609,7 @@ export function MenuAccordion({
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
                                     : cn(
-                                          'overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end px-2.5 pt-2 custom-scrollbar sm:px-3 sm:pt-2.5'
+                                          'overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end-cards px-2.5 pb-6 pt-2 custom-scrollbar sm:px-3 sm:pb-8 sm:pt-2.5'
                                       )
                             )}
                         >
@@ -1835,7 +1835,7 @@ export function MenuAccordion({
                                 </div>
                             )}
                             {eventOrder && !encargoEditActive ? (
-                                <div className="scroll-end-touch" aria-hidden />
+                                <div className="scroll-end-touch-cards" aria-hidden />
                             ) : null}
                         </CartaCoversLoadingGate>
                         {/* Nota de horario movida al modal de "Platos". */}
