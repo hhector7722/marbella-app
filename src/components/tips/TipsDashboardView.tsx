@@ -77,11 +77,22 @@ const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 
 const TIP_EXPAND_TH = 'bg-[#4a7583]';
 const TIP_EXPAND_TD = 'bg-[#36606F]/[0.07] hover:bg-[#36606F]/[0.11]';
 
-const TIP_TABLE_TH = 'px-1 py-1 leading-none';
+const TIP_TABLE_TH = 'w-px whitespace-nowrap px-0.5 py-1 leading-none';
 const TIP_TABLE_TH_TEXT =
-  'text-[7px] font-black uppercase tracking-wide whitespace-nowrap md:text-[8px]';
+  'text-[7px] font-black uppercase tracking-wide md:text-[8px]';
 const TIP_TABLE_TH_BTN =
-  'inline-flex w-full items-center gap-0.5 py-0 leading-none active:scale-95';
+  'inline-flex w-max max-w-full items-center gap-0.5 py-0 leading-none active:scale-95';
+const TIP_TABLE_DATA_CELL =
+  'w-px whitespace-nowrap px-0.5 py-1.5 text-center text-[9px] font-black tabular-nums';
+const TIP_TABLE_NAME_TH =
+  'sticky left-0 z-10 w-px max-w-none whitespace-nowrap bg-[#36606F] px-1.5 text-left';
+const TIP_TABLE_NAME_TD =
+  'sticky left-0 z-[1] w-px max-w-none whitespace-nowrap bg-white px-1.5 py-1.5 cursor-pointer';
+
+function staffTableDisplayName(name: string): string {
+  const n = (name || '').trim();
+  return n || ' ';
+}
 
 function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
   if (!b || typeof b !== 'object') return {};
@@ -447,21 +458,10 @@ export default function TipsDashboardView({
                 </div>
               )}
               <div className="overflow-x-auto">
-                <table
-                  className={cn(
-                    'w-full border-collapse',
-                    showHoursDetail || showSinRegCol || showPropDetail ? 'min-w-[520px]' : 'min-w-[320px]'
-                  )}
-                >
+                <table className="w-max max-w-full table-auto border-collapse">
                   <thead>
                     <tr className="bg-[#36606F] text-white">
-                      <th
-                        className={cn(
-                          'sticky left-0 z-10 bg-[#36606F] px-2 text-left',
-                          TIP_TABLE_TH,
-                          TIP_TABLE_TH_TEXT
-                        )}
-                      />
+                      <th className={cn(TIP_TABLE_NAME_TH, TIP_TABLE_TH, TIP_TABLE_TH_TEXT)} />
                       <th className={cn('text-center', TIP_TABLE_TH)}>
                         <button
                           type="button"
@@ -487,7 +487,7 @@ export default function TipsDashboardView({
                               TIP_EXPAND_TH
                             )}
                           >
-                            H Lun – Vie
+                            H L-V
                           </th>
                           <th
                             className={cn(
@@ -497,7 +497,7 @@ export default function TipsDashboardView({
                               TIP_EXPAND_TH
                             )}
                           >
-                            H Sáb – Dom
+                            H S-D
                           </th>
                         </>
                       )}
@@ -531,7 +531,7 @@ export default function TipsDashboardView({
                           </span>
                         </th>
                       )}
-                      <th className={cn('px-2 text-right', TIP_TABLE_TH)}>
+                      <th className={cn('text-right', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowPropDetail((v) => !v)}
@@ -560,7 +560,7 @@ export default function TipsDashboardView({
                               TIP_EXPAND_TH
                             )}
                           >
-                            € Lun – Vie
+                            € L-V
                           </th>
                           <th
                             className={cn(
@@ -570,7 +570,7 @@ export default function TipsDashboardView({
                               TIP_EXPAND_TH
                             )}
                           >
-                            € Sáb – Dom
+                            € S-D
                           </th>
                           <th
                             className={cn(
@@ -615,17 +615,15 @@ export default function TipsDashboardView({
                             key={s.id}
                             className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
                           >
-                            <td
-                              className="px-2 py-2 cursor-pointer sticky left-0 bg-white z-[1]"
-                              onClick={openRow}
-                            >
-                              <div className="text-[10px] md:text-[12px] font-black text-zinc-900 truncate">
-                                {(s.name || '').trim().split(/\s+/)[0] || s.name}
-                              </div>
+                            <td className={cn(TIP_TABLE_NAME_TD, strikeClass)} onClick={openRow}>
+                              <span className="text-[10px] font-black text-zinc-900 md:text-[11px]">
+                                {staffTableDisplayName(s.name)}
+                              </span>
                             </td>
                             <td
                               className={cn(
-                                'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-700 cursor-pointer',
+                                TIP_TABLE_DATA_CELL,
+                                'text-zinc-700 cursor-pointer',
                                 strikeClass
                               )}
                               onClick={openRow}
@@ -636,7 +634,8 @@ export default function TipsDashboardView({
                               <>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer',
+                                    TIP_TABLE_DATA_CELL,
+                                    'text-zinc-600 cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
@@ -646,7 +645,8 @@ export default function TipsDashboardView({
                                 </td>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-600 cursor-pointer',
+                                    TIP_TABLE_DATA_CELL,
+                                    'text-zinc-600 cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
@@ -658,7 +658,8 @@ export default function TipsDashboardView({
                             )}
                             <td
                               className={cn(
-                                'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                TIP_TABLE_DATA_CELL,
+                                'cursor-pointer',
                                 penalizacionColorClass(pen),
                                 strikeClass
                               )}
@@ -669,7 +670,8 @@ export default function TipsDashboardView({
                             {showSinRegCol && (
                               <td
                                 className={cn(
-                                  'px-1 py-2 text-center text-[9px] font-black tabular-nums cursor-pointer',
+                                  TIP_TABLE_DATA_CELL,
+                                  'cursor-pointer',
                                   TIP_EXPAND_TD,
                                   tjiColorClass(tji),
                                   strikeClass
@@ -681,7 +683,8 @@ export default function TipsDashboardView({
                             )}
                             <td
                               className={cn(
-                                'px-2 py-2 text-right text-[10px] font-black tabular-nums text-emerald-600',
+                                TIP_TABLE_DATA_CELL,
+                                'text-right text-[10px] text-emerald-600',
                                 strikeClass
                               )}
                             >
@@ -697,7 +700,8 @@ export default function TipsDashboardView({
                               <>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer',
+                                    TIP_TABLE_DATA_CELL,
+                                    'text-[#36606F] cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
@@ -707,7 +711,8 @@ export default function TipsDashboardView({
                                 </td>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-[#36606F] cursor-pointer',
+                                    TIP_TABLE_DATA_CELL,
+                                    'text-[#36606F] cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
@@ -717,7 +722,8 @@ export default function TipsDashboardView({
                                 </td>
                                 <td
                                   className={cn(
-                                    'px-1 py-2 text-center text-[9px] font-black tabular-nums text-zinc-500 cursor-pointer',
+                                    TIP_TABLE_DATA_CELL,
+                                    'text-zinc-500 cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
