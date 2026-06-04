@@ -26,31 +26,57 @@ const fmtPen = (pen: number) => (pen > 0 ? `${pen}%` : ' ');
 
 type DetailKind = 'hours' | 'propina' | 'penalizacion' | null;
 
-function SummaryRow({
+function MetricCell({
   label,
   value,
   valueClassName,
   onOpenDetail,
 }: {
-  label: string;
+  label: ReactNode;
   value: ReactNode;
   valueClassName?: string;
-  onOpenDetail: () => void;
+  onOpenDetail?: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpenDetail}
-      className="flex min-h-12 w-full items-center justify-between gap-3 border-b border-zinc-100 py-3 text-left transition-colors last:border-0 hover:bg-zinc-50/80 active:scale-[0.99]"
-    >
-      <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</span>
-      <span className="flex shrink-0 items-center gap-2">
-        <span className={cn('text-sm font-black tabular-nums', valueClassName)}>{value}</span>
-        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-[#36606F]">
-          <ChevronRight size={18} strokeWidth={2.5} aria-hidden />
-        </span>
+  const content = (
+    <>
+      <span
+        className={cn(
+          'w-full text-center text-sm font-black tabular-nums leading-tight',
+          valueClassName
+        )}
+      >
+        {value}
       </span>
-    </button>
+      <span className="w-full text-center text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]">
+        {label}
+      </span>
+      {onOpenDetail ? (
+        <ChevronRight
+          size={14}
+          strokeWidth={2.5}
+          className="mt-0.5 shrink-0 text-[#36606F]/60"
+          aria-hidden
+        />
+      ) : null}
+    </>
+  );
+
+  if (onOpenDetail) {
+    return (
+      <button
+        type="button"
+        onClick={onOpenDetail}
+        className="flex min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2 transition-colors hover:bg-zinc-50/80 active:scale-[0.98]"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2">
+      {content}
+    </div>
   );
 }
 
@@ -64,47 +90,57 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
 
   return (
     <>
-      <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Período</p>
-      <p className="mt-1 text-base font-black text-zinc-900">{periodLabel}</p>
+      <p className="text-center text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+        Período
+      </p>
+      <p className="mt-0.5 text-center text-sm font-black leading-snug text-zinc-900">
+        {periodLabel}
+      </p>
 
       {entry.isSanctioned ? (
         <div
-          className="mt-4 flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800"
+          className="mt-3 flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-800"
           role="alert"
         >
-          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Sin propina en este período (sanción)</span>
         </div>
       ) : null}
 
-      <div className="mt-4 rounded-xl border border-zinc-100 bg-zinc-50/30 px-3">
-        <SummaryRow
+      <div className="mt-3 flex items-stretch divide-x divide-zinc-100 rounded-xl border border-zinc-100 bg-zinc-50/30">
+        <MetricCell
           label="Horas"
           value={fmtHours(hTotal)}
           onOpenDetail={() => setDetail('hours')}
         />
-        <SummaryRow
+        <MetricCell
           label="Propina"
           value={formatTipMoney(sinPen.total)}
           valueClassName="text-[#36606F]"
           onOpenDetail={() => setDetail('propina')}
         />
-        <SummaryRow
-          label="Penalización"
+        <MetricCell
+          label={
+            <>
+              <span className="block">Penalización</span>
+              <span className="block">/ bonificación</span>
+            </>
+          }
           value={fmtPen(pen)}
           valueClassName={penalizacionColorClass(pen)}
           onOpenDetail={() => setDetail('penalizacion')}
         />
-        <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-          <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Propina final
-          </span>
+        <div className="flex min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2">
           <SanctionedTipMoney
             amount={entry.totalAmount}
             isSanctioned={entry.isSanctioned}
-            className="text-sm font-black text-emerald-600"
+            className="w-full text-center text-sm font-black text-emerald-600"
             formatFn={formatTipMoney}
           />
+          <span className="w-full text-center text-[9px] font-bold uppercase leading-tight tracking-wide text-zinc-500">
+            <span className="block">Propina</span>
+            <span className="block">final</span>
+          </span>
         </div>
       </div>
 
@@ -131,19 +167,22 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       ) : null}
 
       {detail === 'penalizacion' ? (
-        <StaffTipBreakdownModal title="Penalización" onClose={() => setDetail(null)}>
-          <p className="text-center text-xs font-bold uppercase tracking-wide text-zinc-400">
+        <StaffTipBreakdownModal
+          title="Penalización / bonificación"
+          onClose={() => setDetail(null)}
+        >
+          <p className="text-center text-[10px] font-bold uppercase tracking-wide text-zinc-400">
             Jornadas con fichaje «no registrada»
           </p>
           <p
             className={cn(
-              'mt-3 text-center text-3xl font-black tabular-nums',
+              'mt-2 text-center text-2xl font-black tabular-nums',
               tjiColorClass(entry.tjiPct)
             )}
           >
             {formatTipInt(entry.jornadasConOlvido)}
           </p>
-          <p className="mt-2 text-center text-sm font-medium text-zinc-500">
+          <p className="mt-1.5 text-center text-xs font-medium text-zinc-500">
             de {formatTipInt(entry.jornadasTotales)} jornadas (
             <span className={cn('font-bold', tjiColorClass(entry.tjiPct))}>
               {formatTipPct(entry.tjiPct)}
