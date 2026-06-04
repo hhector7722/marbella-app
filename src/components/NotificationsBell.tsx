@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, Loader2 } from 'lucide-react'
+import { Bell, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
@@ -29,9 +29,7 @@ type PanelAnchor = {
 function NotificationsEmptyState() {
   return (
     <div className="flex min-h-[168px] flex-col items-center justify-center px-5 py-10 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-[20px] bg-[#2F5D6A]/10">
-        <Bell className="size-8 text-[#2F5D6A]/70" strokeWidth={1.75} aria-hidden />
-      </div>
+      <Check className="mb-4 size-10 text-[#2F5D6A]/50" strokeWidth={1.5} aria-hidden />
       <p className="text-[15px] font-semibold tracking-tight text-[#2F5D6A]">Todo al día</p>
       <p className="mt-1.5 max-w-[220px] text-[13px] leading-relaxed text-zinc-500">
         No hay notificaciones pendientes
@@ -47,7 +45,7 @@ function NotificationCard({
   row: UserNotificationRow
   onOpen: (row: UserNotificationRow) => void
 }) {
-  const { Icon, iconClass, bgClass, critical } = getNotificationVisual(row.type)
+  const { Icon, iconClass, critical } = getNotificationVisual(row.type, row.entity_type)
 
   return (
     <li>
@@ -64,15 +62,12 @@ function NotificationCard({
             : 'border-zinc-100/90 hover:border-[#2F5D6A]/15'
         )}
       >
-        <div className="flex gap-3">
-          <div
-            className={cn(
-              'flex size-10 shrink-0 items-center justify-center rounded-xl',
-              bgClass
-            )}
-          >
-            <Icon className={cn('size-[18px]', iconClass)} strokeWidth={2} aria-hidden />
-          </div>
+        <div className="flex gap-2.5">
+          <Icon
+            className={cn('mt-0.5 size-5 shrink-0', iconClass)}
+            strokeWidth={1.5}
+            aria-hidden
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <p className="text-[13px] font-semibold leading-snug tracking-tight text-[#2F5D6A] line-clamp-2">
@@ -238,10 +233,8 @@ export function NotificationsBell() {
 
               <div className="relative z-10 overflow-hidden rounded-[24px] bg-white ring-1 ring-zinc-200/60">
                 {/* Cabecera */}
-                <div className="flex items-center gap-2.5 border-b border-zinc-100 px-3 py-2.5">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#2F5D6A]/10">
-                    <Bell className="size-[17px] text-[#2F5D6A]" strokeWidth={2.25} aria-hidden />
-                  </div>
+                <div className="flex items-center gap-2 border-b border-zinc-100 px-3 py-2.5">
+                  <Bell className="size-[17px] shrink-0 text-[#2F5D6A]" strokeWidth={1.5} aria-hidden />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="text-[13px] font-semibold tracking-tight text-[#2F5D6A]">

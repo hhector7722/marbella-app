@@ -1,10 +1,11 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  AlertCircle,
-  Banknote,
-  Bell,
   Calendar,
-  CalendarClock,
+  Euro,
+  FileText,
+  Package,
+  AlertTriangle,
+  User,
 } from 'lucide-react'
 
 export type UserNotificationRow = {
@@ -20,33 +21,74 @@ export type UserNotificationRow = {
   created_at: string
 }
 
+const ICON_PETROL = 'text-[#2F5D6A]'
+const ICON_ALERT = 'text-rose-600'
+
 export type NotificationVisual = {
   Icon: LucideIcon
   iconClass: string
-  bgClass: string
   critical?: boolean
 }
 
-export function getNotificationVisual(type: string): NotificationVisual {
+/** Icono outline por tipo de evento — sin contenedor de fondo. */
+export function getNotificationVisual(
+  type: string,
+  entityType?: string | null
+): NotificationVisual {
   const t = type.toLowerCase()
-  if (t.includes('alert') || t.includes('critical') || t.includes('urgent')) {
-    return {
-      Icon: AlertCircle,
-      iconClass: 'text-rose-600',
-      bgClass: 'bg-rose-50',
-      critical: true,
-    }
+  const entity = (entityType ?? '').toLowerCase()
+  const haystack = `${t} ${entity}`
+
+  if (
+    haystack.includes('alert') ||
+    haystack.includes('critical') ||
+    haystack.includes('urgent') ||
+    haystack.includes('warning')
+  ) {
+    return { Icon: AlertTriangle, iconClass: ICON_ALERT, critical: true }
   }
-  if (t === 'schedule' || t.includes('horario')) {
-    return { Icon: Calendar, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+
+  if (
+    haystack.includes('albaran') ||
+    haystack.includes('invoice') ||
+    haystack.includes('purchase')
+  ) {
+    return { Icon: FileText, iconClass: ICON_PETROL }
   }
-  if (t === 'cash_closing' || t.includes('cierre') || t.includes('cash')) {
-    return { Icon: Banknote, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+
+  if (
+    haystack.includes('pedido') ||
+    haystack.includes('order') ||
+    haystack.includes('event_order')
+  ) {
+    return { Icon: Package, iconClass: ICON_PETROL }
   }
-  if (t === 'reservation_new' || t.includes('reserva')) {
-    return { Icon: CalendarClock, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+
+  if (haystack.includes('reserva') || haystack.includes('reservation')) {
+    return { Icon: Calendar, iconClass: ICON_PETROL }
   }
-  return { Icon: Bell, iconClass: 'text-[#2F5D6A]', bgClass: 'bg-[#2F5D6A]/10' }
+
+  if (
+    haystack.includes('schedule') ||
+    haystack.includes('horario') ||
+    haystack.includes('personal') ||
+    haystack.includes('staff') ||
+    haystack.includes('profile') ||
+    haystack.includes('worker')
+  ) {
+    return { Icon: User, iconClass: ICON_PETROL }
+  }
+
+  if (
+    haystack.includes('cash') ||
+    haystack.includes('cierre') ||
+    haystack.includes('caja') ||
+    haystack.includes('closing')
+  ) {
+    return { Icon: Euro, iconClass: ICON_PETROL }
+  }
+
+  return { Icon: FileText, iconClass: ICON_PETROL }
 }
 
 export function formatNotificationTime(iso: string): string {
