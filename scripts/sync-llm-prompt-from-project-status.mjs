@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Sincroniza la sección 11 de context/LLM_PROMPT.md desde PROJECT_STATUS.md.
+ * Sincroniza la sección 17 (marcadores sync) de context/LLM_PROMPT.md desde PROJECT_STATUS.md.
  * Uso:
  *   node scripts/sync-llm-prompt-from-project-status.mjs
  *   node scripts/sync-llm-prompt-from-project-status.mjs --check

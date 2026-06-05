@@ -1,36 +1,25 @@
-# Bar La Marbella — Contexto para LLM (prompt-ready)
+# Bar La Marbella — Contexto LLM v2 (prompt-ready)
 
-Este documento está diseñado para **copiar/pegar** como contexto en un LLM cuando se vaya a trabajar en este repositorio.
-
-> Optimizado tras auditoría 2026-06-05 para consumo autónomo (~90/100). Ver `llm_context_audit.md` para el informe completo.
+> Documento optimizado para que un LLM **sin acceso al repositorio** pueda entender, localizar y modificar el proyecto con seguridad operativa.  
+> **Auditoría base:** 2026-06-05. **Puntuación objetivo:** ~90/100.
 
 ---
 
-## 0) Mantenimiento (OBLIGATORIO)
-
-Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe estar **siempre** actualizado y listo para copiar/pegar.
+## 0) Mantenimiento y fuentes de verdad
 
 ### Jerarquía de fuentes (en caso de conflicto)
 
 1. **Código en `src/` y `supabase/migrations/`** — verdad ejecutable
-2. **`PROJECT_STATUS.md`** — estado funcional y changelog (§17 de este doc se auto-genera desde aquí)
-3. **`context/LLM_PROMPT.md`** — artefacto producción (editar a mano §§1-16 tras cambios estructurales; §17 no se edita a mano)
+2. **`PROJECT_STATUS.md`** — estado funcional y changelog (§19 de este doc se auto-genera desde aquí)
+3. **`context/LLM_PROMPT.md`** — artefacto producción (sincronizar manualmente §§1-18 tras cambios estructurales)
 4. **`schema_dump.sql`** — referencia esquema (puede ir detrás de migraciones)
 5. **`README.md`** — **parcialmente obsoleto** (no confiar en rutas `/api/ai/*`)
 
-### Sincronización automática (§17)
+### Sincronización automática §19
 
 - Hook Cursor: `.cursor/hooks.json` → al guardar `PROJECT_STATUS.md`
 - Hook Git: `.githooks/pre-commit` → `npm run setup:githooks`
 - Manual: `npm run sync:llm-prompt` · check: `npm run sync:llm-prompt:check`
-
-### Qué cambios obligan a tocar este archivo (manual §§1-16)
-
-- Nuevas rutas o cambios de comportamiento en `/dashboard/*`, `/staff/*`, `/api/*`, `/carta`
-- Nuevas tablas/columnas/RPCs/triggers/RLS o cambios de permisos
-- Cambios de stack/versiones, build (Webpack), o librerías base
-- Nuevas variables de entorno o cambios en nombres/contratos
-- Nuevas "reglas duras" del proyecto (UX táctil, fechas, zero-display, anti-silent)
 
 ### Documentación satélite (leer según tarea)
 
@@ -461,15 +450,15 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 ## 16) Prompt corto (inicio de sesión)
 
-> Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind + Supabase (RLS, Realtime, Storage). Dominios: sala/radar, KDS (/dashboard/kds, solo admin/manager), tesorería, **Insights** (/dashboard/insights = PyG + finanzas, NO /dashboard/finanzas), personal (AcumulaHoras), propinas (doble vista), recetas, carta QR, reservas, eventos, albaranes (scanner + LineMappingModal, tríada dimensional), pedidos, inventario, consumo, copiloto OpenAI (chat+voz Realtime, NO LiveKit), notificaciones push, PWA. BDP: context/index.txt + server.txt (UTC ingesta, Madrid display). Reglas: zero-display, fechas sin new Date('YYYY-MM-DD'), usar src/utils/date-utils.ts (NO lib/date-utils para UI), proxy getSession(), RPC para stock albarán, .not(in) prohibido. Mapa: §5. Esquema: supabase/migrations + PROJECT_STATUS.md (§17 auto-sync).
+> Bar La Marbella: Next.js 16 App Router + React 19 + TS + Tailwind + Supabase (RLS, Realtime, Storage). Dominios: sala/radar, KDS (/dashboard/kds, solo admin/manager), tesorería, **Insights** (/dashboard/insights = PyG + finanzas, NO /dashboard/finanzas), personal (AcumulaHoras), propinas (doble vista), recetas, carta QR, reservas, eventos, albaranes (scanner + LineMappingModal, tríada dimensional), pedidos, inventario, consumo, copiloto OpenAI (chat+voz Realtime, NO LiveKit), notificaciones push, PWA. BDP: context/index.txt + server.txt (UTC ingesta, Madrid display). Reglas: zero-display, fechas sin new Date('YYYY-MM-DD'), usar src/utils/date-utils.ts (NO lib/date-utils para UI), proxy getSession(), RPC para stock albarán, .not(in) prohibido. Mapa: §5. Esquema: supabase/migrations + PROJECT_STATUS.md §19 auto-sync.
 
 ---
 
 ## 17) Estado actual (snapshot operativo)
 
-<!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
+<!-- sync:project-status:start — NO EDITAR A MANO; generado por scripts/sync-llm-prompt-from-project-status.mjs -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-06-04 (Carta: revert modales — regresión scroll mañana)
+**Fuente:** `PROJECT_STATUS.md` — **última actualización:** 2026-06-04 (Carta: revert modales — regresión scroll mañana)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
@@ -501,7 +490,7 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Fichajes especiales: horas desde entrada/salida (2026-05-28)**: Al guardar tipos distintos de `regular` (Festivo, Baja, Enfermedad, Personal, etc.) [`updateWeeklyWorkerConfig`](src/app/actions/overtime.ts) ya no fuerza `total_hours = 8`; calcula con redondeo Marbella entre `clock_in` y `clock_out` (o respeta `total_hours_override` del manager). Fichajes históricos con 8h fijas requieren re-guardar el día o recálculo manual para corregir `time_logs.total_hours`.
 - **UTC verdad única en ingesta BDP + render Madrid (2026-05-26)**: Bridge [`context/index.txt`](context/index.txt) — `toIso()` obligatorio (Z) en ventas y telemetría. Gateway [`context/server.txt`](context/server.txt) — `resolveVentaTimestamps` UTC puro; `diaNegocio` solo Madrid; telemetría normaliza `timestamp_tpv` a ISO. Webhooks Next [`ventas/route.ts`](src/app/api/webhooks/bdp/ventas/route.ts), [`telemetria/route.ts`](src/app/api/webhooks/bdp/telemetria/route.ts). Frontend: [`date-utils.ts`](src/utils/date-utils.ts) (`formatInTimeZone`), [`formatTicketTimeMadrid`](src/utils/date-utils.ts) en ventas/admin, [`getHourFromTicketTime`](src/lib/utils.ts) por hora Madrid. Sin migración BD ni backfill histórico. Desplegar: copiar `index.txt` + `server.txt` y reiniciar PuenteBDP/receptor.
 - **Tesorería TPV BDP: desglose cobros + staging caja (2026-05-26)**: Migración [`20260526150000_refactor_tesoreria_bdp.sql`](supabase/migrations/20260526150000_refactor_tesoreria_bdp.sql) — `tickets_marbella.cobro_efectivo|tarjeta|pendiente`, tabla `bdp_cash_movements` (concepto 107, UNIQUE dedup), RPC `get_closing_sales_breakdown(p_date)`. Puente [`context/index.txt`](context/index.txt): `VENTAS_WHERE` incluye `Hora_Cierre IS NOT NULL OR Pendiente = 1` (a cuenta sin cierre); poll prioriza pendientes sin cierre; `Documentos_Pagos` + firma de cobros (re-upsert al pagar); poll caja 12s. Radar sala **sin cambios** (Comandas + DIRECTO 15 min). Receptores upsert `numero_documento`: [`context/server.txt`](context/server.txt), [`src/app/api/webhooks/bdp/ventas/route.ts`](src/app/api/webhooks/bdp/ventas/route.ts), [`src/app/api/webhooks/bdp/caja/route.ts`](src/app/api/webhooks/bdp/caja/route.ts). Cierre: [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx). Dashboard/KPIs: `get_daily_sales_stats` suma `total_documento` de todos los tickets del día (pendientes = devengo). Desplegar migración; TPV: `index.txt` → `AgenteBDP/index.js`, `pm2 restart PuenteBDP`; gateway Linux: `server.txt` + reinicio.
-- **Reservas: tabla + RLS + RPC + UI staff realtime (2026-05-27)**: Migración [`20260527140600_create_reservations_module.sql`](supabase/migrations/20260527140600_create_reservations_module.sql) — tabla `public.reservations` (INSERT `anon`/`authenticated`, SELECT/UPDATE `authenticated`) + RPC `consultar_reservas(p_fecha)` (array JSONB por día) y `gestionar_reservas(p_accion,p_datos)` (status `confirm|reject|cancel`). UI sala: nueva ruta [`/staff/reservas`](src/app/staff/reservas/page.tsx) + [`ReservasClient.tsx`](src/app/staff/reservas/ReservasClient.tsx) (Touch-first, Bento, Zero-display en notas, botones min-h-12, anti-silent failures con `toast.error`, realtime `channel('public:reservations')` INSERT→toast+refetch). Enlaces desde [`StaffDashboardView.tsx`](src/components/dashboards/StaffDashboardView.tsx) y [`/staff/dashboard`](src/app/staff/dashboard/page.tsx).
+- **Reservas: tabla + RLS + RPC + UI staff realtime (2026-05-27)**: Migración [`20260527140600_create_reservations_module.sql`](supabase/migrations/20260527140600_create_reservations_module.sql) — tabla `public.reservations` (INSERT `anon`/`authenticated`, SELECT/UPDATE `authenticated`) + RPC `consultar_reservas(p_fecha)` (array JSONB por día) y `gestionar_reservas(p_accion,p_datos)` (status `confirm|reject|cancel`). UI sala: nueva ruta [`/staff/reservas`](src/app/staff/reservas/page.tsx) + [`ReservasClient.tsx`](src/app/staff/reservas/ReservasClient.tsx) (Touch-first, Bento, Zero-display en notas, botones min-h-12, anti-silent failures con `toast.error`, realtime `channel('public:reservations')` INSERT→toast+refetch). Enlaces desde [`StaffDashboardView.tsx`](src/components/dashboards/StaffDashboardView.tsx).
 - **Consumo personal: cantidad visible en modal y dashboard (2026-05-26)**: [`ConsumptionModal.tsx`](src/app/staff/ConsumptionModal.tsx) — filas táctiles `−` / `×N` / `+`, badge `×N` en grid, `handleDecrement` (a 0 elimina línea). [`20260526120000_staff_consumption_day_detail_quantity.sql`](supabase/migrations/20260526120000_staff_consumption_day_detail_quantity.sql) — RPC `get_staff_consumption_day_detail` devuelve `quantity` (suma por `reference_doc` de `SUM(quantity movimientos) / COUNT(ingredientes receta)`). [`consumo-personal/page.tsx`](src/app/dashboard/consumo-personal/page.tsx) — desglose `Nombre ×4 — 1,44 €`. Desplegar migración en Supabase.
 - **Cierre de caja: rediseño paso 1 Datos (2026-05-25)**: [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx) — 6 filas (Clima→Ventas→Tickets→Tarjeta→Cobros→Pendiente), títulos petróleo `#36606F`, inputs borde petróleo. Clima: selector por iconos [`/public/icons/clima/`](public/icons/clima/) sin selección por defecto ([`cash-closing-weather.ts`](src/lib/cash-closing-weather.ts)). Fotos: botones verdes «Añadir informe» / «Añadir totales» + submodal cámara ([`ClosingStep1Parts.tsx`](src/components/cash-closing/ClosingStep1Parts.tsx)). Siguiente verde; sync TPV automático sin botón Refresh.
 - **Horas: cron recálculo global semanal + DST Madrid (2026-05-25)**: Dos jobs pg_cron con guarda CET/CEST: `weekly_recalculate_balances_winter` (`0 3 * * 1`, offset Madrid=1) y `weekly_recalculate_balances_summer` (`0 2 * * 1`, offset=2); wrappers `cron_weekly_recalculate_balances_if_madrid_*`. Migración [`20260525120000_cron_weekly_recalculate_all_balances.sql`](supabase/migrations/20260525120000_cron_weekly_recalculate_all_balances.sql). Sin `CREATE EXTENSION pg_cron`.
@@ -520,3 +509,7 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **TPV ventas: fix poll 0 cobros (2026-05-16)**: En producción el poll `Hora_Cierre 3h` devolvía **0 filas** (`Memoria inicial: 16`); ventas paradas desde ~14:42. **`context/index.txt`**: poll vuelve a `VENTAS_WHERE` (Fecha_Sistema); eliminada memoria semilla 24h; diagnóstico SQL al arranque (`GETDATE`, counts). Tras copiar a `AgenteBDP/index.js`: una vez `BDP_RUN_CATCHUP=1` para hueco, luego poll normal.
 
 <!-- sync:project-status:end -->
+
+---
+
+*Fin del contexto LLM v2. Para promover a producción: fusionar secciones §§1-18 en `context/LLM_PROMPT.md` y mantener §19 auto-sync.*
