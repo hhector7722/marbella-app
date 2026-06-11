@@ -13,6 +13,7 @@ export function isInternalScrollShellPath(pathname: string): boolean {
   if (isFullscreenCartaPath(pathname)) return true
   if (pathname === '/orders/new' || pathname.startsWith('/orders/')) return true
   if (pathname === '/suppliers' || pathname.startsWith('/suppliers/')) return true
+  if (pathname === '/dashboard/propinas') return true
   return false
 }
 

@@ -401,7 +401,7 @@ export default function TipsDashboardView({
   );
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] p-2 sm:p-4 md:p-8 pb-24 text-zinc-900 overflow-x-hidden">
+    <div className="min-h-screen bg-[#5B8FB9] p-2 sm:p-4 md:p-8 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 min-w-0">
         <div className="bg-white rounded-xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl overflow-hidden min-w-0">
           <div className="bg-[#36606F] p-3 md:p-6 relative">
@@ -512,7 +512,7 @@ export default function TipsDashboardView({
                   Calculando…
                 </div>
               )}
-              <div className="overflow-hidden">
+              <div className="overflow-x-auto touch-pan-y overscroll-y-auto">
                 <table className="w-full table-fixed border-collapse">
                   <thead>
                     <tr className="align-middle bg-[#36606F] text-white">
@@ -833,6 +833,7 @@ export default function TipsDashboardView({
         </div>
 
         <TipDistributionHistorySection refreshToken={historyRefreshToken} />
+        <div className="scroll-end-touch" aria-hidden />
       </div>
 
       {cashModal?.open && (
