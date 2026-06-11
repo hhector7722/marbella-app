@@ -181,6 +181,11 @@ function ReservationDetailModal({
   onAction: (action: ActionKind) => void
 }) {
   const isBusy = Boolean(actionBusy)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+
+  useEffect(() => {
+    setDeleteConfirmOpen(false)
+  }, [reservation.id])
 
   return (
     <div
@@ -259,65 +264,105 @@ function ReservationDetailModal({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-3 gap-2 shrink-0 mt-auto">
-            <button
-              type="button"
-              onClick={() => onAction('confirm')}
-              disabled={isBusy}
-              className={cn(
-                'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                'bg-emerald-600 text-white shadow-sm active:scale-95 transition',
-                'disabled:opacity-60 disabled:active:scale-100'
-              )}
-            >
-              <span className="inline-flex items-center justify-center gap-1">
-                {actionBusy === 'confirm' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />
+          {deleteConfirmOpen ? (
+            <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 flex flex-col gap-3 shrink-0 mt-auto">
+              <p className="text-[13px] font-black text-rose-900 text-center">
+                ¿Eliminar la reserva de {reservation.customer_name}?
+              </p>
+              <p className="text-[11px] font-medium text-rose-700 text-center">
+                Esta acción no se puede deshacer.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  disabled={isBusy}
+                  className={cn(
+                    'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                    'bg-white text-zinc-700 border border-zinc-200 shadow-sm active:scale-95 transition',
+                    'disabled:opacity-60 disabled:active:scale-100'
+                  )}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onAction('delete')}
+                  disabled={isBusy}
+                  className={cn(
+                    'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                    'bg-rose-600 text-white shadow-sm active:scale-95 transition',
+                    'disabled:opacity-60 disabled:active:scale-100'
+                  )}
+                >
+                  <span className="inline-flex items-center justify-center gap-1">
+                    {actionBusy === 'delete' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CircleSlash2 className="h-4 w-4" strokeWidth={2.5} />
+                    )}
+                    Sí, eliminar
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 shrink-0 mt-auto">
+              <button
+                type="button"
+                onClick={() => onAction('confirm')}
+                disabled={isBusy}
+                className={cn(
+                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                  'bg-emerald-600 text-white shadow-sm active:scale-95 transition',
+                  'disabled:opacity-60 disabled:active:scale-100'
                 )}
-                Confirmar
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onAction('reject')}
-              disabled={isBusy}
-              className={cn(
-                'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                'bg-rose-600 text-white shadow-sm active:scale-95 transition',
-                'disabled:opacity-60 disabled:active:scale-100'
-              )}
-            >
-              <span className="inline-flex items-center justify-center gap-1">
-                {actionBusy === 'reject' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <XCircle className="h-4 w-4" strokeWidth={2.5} />
+              >
+                <span className="inline-flex items-center justify-center gap-1">
+                  {actionBusy === 'confirm' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />
+                  )}
+                  Confirmar
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onAction('reject')}
+                disabled={isBusy}
+                className={cn(
+                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                  'bg-rose-600 text-white shadow-sm active:scale-95 transition',
+                  'disabled:opacity-60 disabled:active:scale-100'
                 )}
-                Rechazar
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onAction('delete')}
-              disabled={isBusy}
-              className={cn(
-                'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                'bg-zinc-200 text-zinc-800 shadow-sm active:scale-95 transition',
-                'disabled:opacity-60 disabled:active:scale-100'
-              )}
-            >
-              <span className="inline-flex items-center justify-center gap-1">
-                {actionBusy === 'delete' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+              >
+                <span className="inline-flex items-center justify-center gap-1">
+                  {actionBusy === 'reject' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4" strokeWidth={2.5} />
+                  )}
+                  Rechazar
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(true)}
+                disabled={isBusy}
+                className={cn(
+                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                  'bg-zinc-200 text-zinc-800 shadow-sm active:scale-95 transition',
+                  'disabled:opacity-60 disabled:active:scale-100'
+                )}
+              >
+                <span className="inline-flex items-center justify-center gap-1">
                   <CircleSlash2 className="h-4 w-4" strokeWidth={2.5} />
-                )}
-                Eliminar
-              </span>
-            </button>
-          </div>
+                  Eliminar
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -452,6 +497,7 @@ export default function ReservasClient() {
         )
         .gte('reservation_date', monthStart)
         .lte('reservation_date', monthEnd)
+        .neq('status', 'cancelled')
         .order('reservation_time', { ascending: true })
 
       if (error) throw error
@@ -475,17 +521,53 @@ export default function ReservasClient() {
     }
   }, [supabase, monthStart, monthEnd])
 
+  async function softCancelReservation(id: string) {
+    const { data, error } = await supabase.rpc('gestionar_reservas', {
+      p_accion: 'cancel',
+      p_datos: { id },
+    })
+    if (error) throw error
+    if (data?.error) {
+      throw new Error(typeof data.error === 'string' ? data.error : 'Error cancelando reserva')
+    }
+    return data
+  }
+
   async function mutateReservation(reserva: Reservation, action: ActionKind) {
     const { id } = reserva
     setActionBusy((s) => ({ ...s, [id]: action }))
     try {
-      const { data, error } = await supabase.rpc('gestionar_reservas', {
-        p_accion: action,
-        p_datos: { id },
-      })
-      if (error) throw error
-      if (data?.error) {
-        throw new Error(typeof data.error === 'string' ? data.error : 'Error actualizando reserva')
+      let data: { soft_deleted?: boolean; deleted?: boolean; error?: string } | null = null
+
+      if (action === 'delete') {
+        const result = await supabase.rpc('gestionar_reservas', {
+          p_accion: 'delete',
+          p_datos: { id },
+        })
+        if (result.error) {
+          const errMsg = result.error.message ?? ''
+          if (errMsg.includes('accion_invalida')) {
+            await softCancelReservation(id)
+            data = { soft_deleted: true }
+          } else {
+            throw result.error
+          }
+        } else {
+          data = result.data as typeof data
+          if (data?.error) {
+            throw new Error(typeof data.error === 'string' ? data.error : 'Error eliminando reserva')
+          }
+        }
+      } else {
+        const result = await supabase.rpc('gestionar_reservas', {
+          p_accion: action,
+          p_datos: { id },
+        })
+        if (result.error) throw result.error
+        data = result.data as typeof data
+        if (data?.error) {
+          throw new Error(typeof data.error === 'string' ? data.error : 'Error actualizando reserva')
+        }
       }
 
       if (action === 'confirm') {
@@ -503,7 +585,7 @@ export default function ReservasClient() {
         setListModalDay(null)
         await fetchMonthReservations()
       } else {
-        toast.success('Reserva eliminada')
+        toast.success(data?.soft_deleted ? 'Reserva cancelada' : 'Reserva eliminada')
         removeReservationFromState(id)
         setSelectedReservation(null)
         setListModalDay(null)
@@ -550,6 +632,7 @@ export default function ReservasClient() {
           'id, customer_name, customer_phone, reservation_date, reservation_time, pax, status, notes, created_at'
         )
         .eq('id', targetId)
+        .neq('status', 'cancelled')
         .maybeSingle()
 
       if (error || !data) {
@@ -594,7 +677,10 @@ export default function ReservasClient() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'reservations' },
-        (payload: { new?: { reservation_date?: string } }) => {
+        (payload: { new?: { id?: string; status?: string; reservation_date?: string } }) => {
+          if (payload?.new?.status === 'cancelled' && payload.new.id) {
+            removeReservationFromState(payload.new.id)
+          }
           handleReservationChange(payload)
         }
       )
