@@ -47,6 +47,15 @@ type Reservation = {
 
 type ActionKind = 'confirm' | 'reject' | 'delete'
 
+type GestionarReservasResult = {
+  ok?: boolean
+  id?: string
+  status?: string
+  deleted?: boolean
+  soft_deleted?: boolean
+  error?: string
+}
+
 function parseLocalSafe(dateStr: string): Date {
   const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
   return new Date(y, m - 1, d)
@@ -527,17 +536,18 @@ export default function ReservasClient() {
       p_datos: { id },
     })
     if (error) throw error
-    if (data?.error) {
-      throw new Error(typeof data.error === 'string' ? data.error : 'Error cancelando reserva')
+    const payload = data as GestionarReservasResult | null
+    if (payload?.error) {
+      throw new Error(typeof payload.error === 'string' ? payload.error : 'Error cancelando reserva')
     }
-    return data
+    return payload
   }
 
   async function mutateReservation(reserva: Reservation, action: ActionKind) {
     const { id } = reserva
     setActionBusy((s) => ({ ...s, [id]: action }))
     try {
-      let data: { soft_deleted?: boolean; deleted?: boolean; error?: string } | null = null
+      let data: GestionarReservasResult | null = null
 
       if (action === 'delete') {
         const result = await supabase.rpc('gestionar_reservas', {
@@ -553,8 +563,8 @@ export default function ReservasClient() {
             throw result.error
           }
         } else {
-          data = result.data as typeof data
-          if (data?.error) {
+          data = result.data as GestionarReservasResult
+          if (data.error) {
             throw new Error(typeof data.error === 'string' ? data.error : 'Error eliminando reserva')
           }
         }
@@ -564,8 +574,8 @@ export default function ReservasClient() {
           p_datos: { id },
         })
         if (result.error) throw result.error
-        data = result.data as typeof data
-        if (data?.error) {
+        data = result.data as GestionarReservasResult
+        if (data.error) {
           throw new Error(typeof data.error === 'string' ? data.error : 'Error actualizando reserva')
         }
       }
