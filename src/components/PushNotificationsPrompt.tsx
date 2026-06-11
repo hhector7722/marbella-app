@@ -124,7 +124,7 @@ export function PushNotificationsPrompt({
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[250] flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 min-h-[100dvh] bg-black/60 backdrop-blur-sm z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={handleDismiss}
       role="dialog"
       aria-modal="true"
@@ -133,22 +133,23 @@ export function PushNotificationsPrompt({
       <div
         className={cn(
           'bg-white w-full max-w-md rounded-3xl shadow-xl border border-zinc-100 overflow-hidden',
-          'animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200',
+          'animate-in zoom-in-95 duration-200',
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-[#36606F] text-white">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="shrink-0 w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-              <Bell size={22} strokeWidth={2.5} />
-            </div>
-            <h2
-              id="push-prompt-title"
-              className="text-base font-black uppercase tracking-wider truncate"
-            >
-              {PUSH_PROMPT_COPY.title}
-            </h2>
-          </div>
+        <div className="shrink-0 flex items-center gap-2 px-4 py-4 border-b border-zinc-100 bg-[#36606F] text-white">
+          <Bell
+            size={22}
+            strokeWidth={2.5}
+            className="shrink-0"
+            aria-hidden
+          />
+          <h2
+            id="push-prompt-title"
+            className="flex-1 min-w-0 text-[10px] min-[360px]:text-[11px] min-[400px]:text-xs font-black uppercase tracking-wide whitespace-nowrap leading-tight"
+          >
+            {PUSH_PROMPT_COPY.title}
+          </h2>
           <button
             type="button"
             onClick={handleDismiss}

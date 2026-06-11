@@ -6,7 +6,7 @@ export const PUSH_PROMPT_FORCE_PREVIEW = true
 
 export const PUSH_PROMPT_COPY = {
   title: 'Activa las notificaciones',
-  lead: 'Al activar las notificaciones recibirás avisos en tiempo real cuando se publiquen horarios, propinas, nóminas, comunicados de la empresa, etc.',
+  lead: 'Al activar las notificaciones recibirás avisos en tiempo real de horarios, propinas, nóminas, comunicados de la empresa, etc.',
   activateLabel: 'Activar notificaciones',
   dismissLabel: 'Ahora no',
   deniedHint:
