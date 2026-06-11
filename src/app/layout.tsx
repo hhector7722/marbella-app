@@ -8,6 +8,7 @@ import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { PushNotificationsPrompt } from "@/components/PushNotificationsPrompt";
+import { ClientDisplayModeReporter } from "@/components/ClientDisplayModeReporter";
 import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell";
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
@@ -117,6 +118,7 @@ export default async function RootLayout({
         <UnreadNotificationsShell>
           <SileoProvider />
           <ServiceWorkerRegistration />
+          <ClientDisplayModeReporter isLoggedIn={!!user} />
           <PushNotificationsPrompt
             isLoggedIn={!!user}
             needsOnboarding={needsOnboarding}

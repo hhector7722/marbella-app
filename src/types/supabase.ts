@@ -1623,6 +1623,8 @@ export type Database = {
           is_fixed_salary: boolean | null
           is_supervisor: boolean | null
           joining_date: string | null
+          last_display_mode: string | null
+          last_display_mode_at: string | null
           last_name: string | null
           monthly_cost: number | null
           needs_onboarding: boolean | null
@@ -1649,6 +1651,8 @@ export type Database = {
           is_fixed_salary?: boolean | null
           is_supervisor?: boolean | null
           joining_date?: string | null
+          last_display_mode?: string | null
+          last_display_mode_at?: string | null
           last_name?: string | null
           monthly_cost?: number | null
           needs_onboarding?: boolean | null
@@ -1675,6 +1679,8 @@ export type Database = {
           is_fixed_salary?: boolean | null
           is_supervisor?: boolean | null
           joining_date?: string | null
+          last_display_mode?: string | null
+          last_display_mode_at?: string | null
           last_name?: string | null
           monthly_cost?: number | null
           needs_onboarding?: boolean | null
@@ -3672,6 +3678,18 @@ export type Database = {
           mesa: number
           numero_documento: string
           total_documento: number
+        }[]
+      }
+      get_team_client_install_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          full_name: string
+          has_push: boolean
+          last_display_mode: string
+          last_display_mode_at: string
+          role: string
+          user_id: string
         }[]
       }
       get_tip_pool_preview: {
