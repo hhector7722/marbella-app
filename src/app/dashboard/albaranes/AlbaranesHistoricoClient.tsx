@@ -4,12 +4,14 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import {
+  Camera,
   AlertCircle,
   Check,
   ChevronLeft,
   ChevronRight,
   FileText,
   Filter,
+  ImageIcon,
   Loader2,
   MinusCircle,
   Pencil,
@@ -152,8 +154,10 @@ export default function AlbaranesHistoricoClient({
   const [autoMapError, setAutoMapError] = useState<string | null>(null)
   const [deletingInvoice, setDeletingInvoice] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const appendSheetInputRef = useRef<HTMLInputElement>(null)
+  const appendSheetCameraRef = useRef<HTMLInputElement>(null)
+  const appendSheetGalleryRef = useRef<HTMLInputElement>(null)
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
+  const [showAppendSheetSourceModal, setShowAppendSheetSourceModal] = useState(false)
   /** Visor carrusel (varias hojas), mismo patrón que el borrador del escáner. */
   const [invoiceImageViewerOpen, setInvoiceImageViewerOpen] = useState(false)
   const [invoiceCarouselIndex, setInvoiceCarouselIndex] = useState(0)
@@ -399,9 +403,22 @@ export default function AlbaranesHistoricoClient({
     void openDetail(targetId)
   }, [searchParams])
 
+  const clearAppendSheetInputs = () => {
+    if (appendSheetCameraRef.current) appendSheetCameraRef.current.value = ''
+    if (appendSheetGalleryRef.current) appendSheetGalleryRef.current.value = ''
+  }
+
+  const pickAppendSheetSource = (source: 'camera' | 'gallery') => {
+    setShowAppendSheetSourceModal(false)
+    setTimeout(() => {
+      if (source === 'camera') appendSheetCameraRef.current?.click()
+      else appendSheetGalleryRef.current?.click()
+    }, 200)
+  }
+
   async function handleAppendSheetFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
+    clearAppendSheetInputs()
     if (!file || !detail?.id || detail.supplier_id == null) return
 
     setAppendSheetBusy(true)
@@ -489,7 +506,8 @@ export default function AlbaranesHistoricoClient({
     setWizardTargetLineId(null)
     setWizardInvoiceContext(null)
     setAppendSheetBusy(false)
-    if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
+    setShowAppendSheetSourceModal(false)
+    clearAppendSheetInputs()
     setInvoiceImageViewerOpen(false)
     setInvoiceCarouselIndex(0)
     invoiceCarouselIndexRef.current = 0
@@ -1174,10 +1192,17 @@ export default function AlbaranesHistoricoClient({
             >
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
                 <input
-                  ref={appendSheetInputRef}
+                  ref={appendSheetCameraRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  className="hidden"
+                  onChange={handleAppendSheetFileChange}
+                />
+                <input
+                  ref={appendSheetGalleryRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/*"
                   className="hidden"
                   onChange={handleAppendSheetFileChange}
                 />
@@ -1304,7 +1329,7 @@ export default function AlbaranesHistoricoClient({
                       {detail.supplier_id != null ? (
                         <button
                           type="button"
-                          onClick={() => appendSheetInputRef.current?.click()}
+                          onClick={() => setShowAppendSheetSourceModal(true)}
                           disabled={appendSheetBusy}
                           aria-label="Añadir hoja"
                           title="Añadir otra página del mismo albarán (fotografía)"
@@ -1661,6 +1686,56 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   </div>
                 ) : null}
+              </div>
+            </div>,
+            modalContainer
+          )
+        : null}
+
+      {showAppendSheetSourceModal && modalContainer
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[10150] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
+              onClick={() => setShowAppendSheetSourceModal(false)}
+            >
+              <div
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-[#36606F] px-5 py-4 flex justify-between items-center text-white">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-black uppercase tracking-wider">Añadir hoja</h3>
+                    <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-1">
+                      Cámara o galería del dispositivo
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAppendSheetSourceModal(false)}
+                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all shrink-0"
+                    aria-label="Cerrar"
+                  >
+                    <X size={20} strokeWidth={3} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4">
+                  <button
+                    type="button"
+                    onClick={() => pickAppendSheetSource('camera')}
+                    className="min-h-24 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-zinc-100 bg-zinc-50 hover:bg-zinc-100 active:scale-[0.98] transition-all"
+                  >
+                    <Camera className="h-8 w-8 text-[#36606F]" strokeWidth={2} />
+                    <span className="text-xs font-black uppercase tracking-wide text-zinc-800">Hacer foto</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pickAppendSheetSource('gallery')}
+                    className="min-h-24 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-zinc-100 bg-zinc-50 hover:bg-zinc-100 active:scale-[0.98] transition-all"
+                  >
+                    <ImageIcon className="h-8 w-8 text-[#36606F]" strokeWidth={2} />
+                    <span className="text-xs font-black uppercase tracking-wide text-zinc-800">Galería</span>
+                  </button>
+                </div>
               </div>
             </div>,
             modalContainer
