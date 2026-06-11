@@ -44,6 +44,26 @@ export async function saveSubscription(subscription: any) {
     return { success: true };
 }
 
+export async function getPushSubscriptionStatus(): Promise<{ hasSubscription: boolean }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { hasSubscription: false };
+
+    const { data, error } = await supabase
+        .from('push_subscriptions')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error checking push subscription:', error);
+        return { hasSubscription: false };
+    }
+
+    return { hasSubscription: !!data };
+}
+
 export type UserShiftForNotification = { userId: string; start: string; end: string };
 
 const SCHEDULE_NOTIFY_ROLES = new Set(['manager', 'admin', 'supervisor']);
