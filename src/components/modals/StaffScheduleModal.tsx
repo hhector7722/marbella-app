@@ -12,8 +12,7 @@ import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { formatShiftBarTimeLabel } from '@/lib/schedule-shift-bar-display';
-import { useShiftBarShowMinutes } from '@/hooks/useShiftBarShowMinutes';
+import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -30,7 +29,6 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     const barRef = useRef<HTMLDivElement>(null);
     const leftPos = Math.max(0, timeToPercent(start));
     const width = Math.max(timeToPercent(end) - leftPos, 5);
-    const showMinutes = useShiftBarShowMinutes(barRef, start, end);
     return (
         <div
             ref={barRef}
@@ -42,8 +40,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
         >
-            <span className="text-[9px] font-black text-white pointer-events-none select-none shrink-0 leading-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(start, showMinutes)}</span>
-            <span className="text-[9px] font-black text-white pointer-events-none select-none shrink-0 leading-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(end, showMinutes)}</span>
+            <ShiftBarTimeLabels barRef={barRef} start={start} end={end} />
         </div>
     );
 };

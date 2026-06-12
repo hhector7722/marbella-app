@@ -24,8 +24,7 @@ import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
-import { formatShiftBarTimeLabel } from '@/lib/schedule-shift-bar-display';
-import { useShiftBarShowMinutes } from '@/hooks/useShiftBarShowMinutes';
+import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 
 export interface ScheduleDayEditorProps {
     initialDate: string;
@@ -85,8 +84,6 @@ const ShiftBar = ({
     const leftPos = timeToPercent(shift.start);
     const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
     const isFloating = barClass.includes('bg-[') || barClass.includes('zinc');
-    const showMinutes = useShiftBarShowMinutes(barRef, shift.start, shift.end);
-
     const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
         if (!allowMove) return;
         e.stopPropagation();
@@ -153,8 +150,7 @@ const ShiftBar = ({
             onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
         >
             <div className="absolute left-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
-            <span className="relative z-20 text-[9px] font-black text-white pointer-events-none select-none shrink-0 leading-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(shift.start, showMinutes)}</span>
-            <span className="relative z-20 text-[9px] font-black text-white pointer-events-none select-none shrink-0 leading-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(shift.end, showMinutes)}</span>
+            <ShiftBarTimeLabels barRef={barRef} start={shift.start} end={shift.end} className="relative z-20" />
             <div className="absolute right-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
         </div>
     );
