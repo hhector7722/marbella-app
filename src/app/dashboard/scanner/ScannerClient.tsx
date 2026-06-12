@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Camera, ChevronLeft, ChevronRight, ImageIcon, Loader2, Search, Truck, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Search, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { appendScannerPageToInvoiceAction, processScannerImage } from './actions'
@@ -45,12 +45,19 @@ export function ScannerClient({
   /** Borrador: fotos validadas listas para guardar en un solo albarán (1ª = cabecera, resto = adjuntos). */
   const [pendingBatch, setPendingBatch] = useState<{ supplierId: number; items: PendingItem[] } | null>(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
-  const [showImageSourceModal, setShowImageSourceModal] = useState(false)
-  const cameraInputRef = useRef<HTMLInputElement>(null)
-  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
   const prevBatchLenRef = useRef(0)
+  /** Android: cámara directa (desde la UI nativa se puede ir a galería). iOS: selector nativo del SO. */
+  const [fileInputCapture, setFileInputCapture] = useState<'environment' | undefined>('environment')
   const supabase = createClient()
+
+  useEffect(() => {
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    if (isIOS) setFileInputCapture(undefined)
+  }, [])
 
   const effectiveSupplierId = pendingBatch?.supplierId ?? selectedSupplierId
 
@@ -136,6 +143,14 @@ export function ScannerClient({
     })
   }, [pendingBatch])
 
+  const triggerNativeImagePicker = () => {
+    setTimeout(() => fileInputRef.current?.click(), 200)
+  }
+
+  const clearFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const openModal = () => {
     if (pendingBatch) {
       setMessageTone('error')
@@ -144,32 +159,10 @@ export function ScannerClient({
     }
     setMessage(null)
     if (selectedSupplierId) {
-      setShowImageSourceModal(true)
+      triggerNativeImagePicker()
       return
     }
     setShowSupplierModal(true)
-  }
-
-  const openImageSourceModal = () => {
-    if (!effectiveSupplierId) {
-      setMessageTone('error')
-      setMessage('Selecciona primero el proveedor antes de añadir la imagen.')
-      return
-    }
-    setShowImageSourceModal(true)
-  }
-
-  const clearFileInputs = () => {
-    if (cameraInputRef.current) cameraInputRef.current.value = ''
-    if (galleryInputRef.current) galleryInputRef.current.value = ''
-  }
-
-  const pickImageSource = (source: 'camera' | 'gallery') => {
-    setShowImageSourceModal(false)
-    setTimeout(() => {
-      if (source === 'camera') cameraInputRef.current?.click()
-      else galleryInputRef.current?.click()
-    }, 200)
   }
 
   const closeModal = () => {
@@ -231,7 +224,7 @@ export function ScannerClient({
       setMessage(error instanceof Error ? error.message : 'Error al guardar. Reintenta.')
     } finally {
       setIsProcessing(false)
-      clearFileInputs()
+      clearFileInput()
     }
   }
 
@@ -243,7 +236,7 @@ export function ScannerClient({
     if (!supplierId) {
       setMessageTone('error')
       setMessage('Selecciona primero el proveedor antes de añadir la imagen.')
-      clearFileInputs()
+      clearFileInput()
       return
     }
 
@@ -278,7 +271,7 @@ export function ScannerClient({
       setPreview(null)
     } finally {
       setIsProcessing(false)
-      clearFileInputs()
+      clearFileInput()
     }
   }
 
@@ -288,28 +281,21 @@ export function ScannerClient({
     setSelectedSupplierId(id)
     setShowSupplierModal(false)
     setSearchQuery('')
-    setTimeout(() => setShowImageSourceModal(true), 200)
+    triggerNativeImagePicker()
   }
 
   const triggerAnotherCapture = () => {
     if (!pendingBatch) return
-    openImageSourceModal()
+    fileInputRef.current?.click()
   }
 
   return (
     <div className={cn('flex flex-col', embedded ? 'gap-2' : 'gap-4')}>
       <input
-        ref={cameraInputRef}
+        ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
-        onChange={handleCapture}
-        className="hidden"
-      />
-      <input
-        ref={galleryInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/*"
+        capture={fileInputCapture}
         onChange={handleCapture}
         className="hidden"
       />
@@ -484,53 +470,6 @@ export function ScannerClient({
           </div>
         ) : null}
       </div>
-
-      {showImageSourceModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => setShowImageSourceModal(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-[#36606F] px-5 py-4 flex justify-between items-center text-white">
-              <div className="min-w-0">
-                <h3 className="text-base font-black uppercase tracking-wider">Añadir imagen</h3>
-                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-1">
-                  Cámara o galería del dispositivo
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowImageSourceModal(false)}
-                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all shrink-0"
-                aria-label="Cerrar"
-              >
-                <X size={20} strokeWidth={3} />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 p-4">
-              <button
-                type="button"
-                onClick={() => pickImageSource('camera')}
-                className="min-h-24 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-zinc-100 bg-zinc-50 hover:bg-zinc-100 active:scale-[0.98] transition-all"
-              >
-                <Camera className="h-8 w-8 text-[#36606F]" strokeWidth={2} />
-                <span className="text-xs font-black uppercase tracking-wide text-zinc-800">Hacer foto</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => pickImageSource('gallery')}
-                className="min-h-24 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-zinc-100 bg-zinc-50 hover:bg-zinc-100 active:scale-[0.98] transition-all"
-              >
-                <ImageIcon className="h-8 w-8 text-[#36606F]" strokeWidth={2} />
-                <span className="text-xs font-black uppercase tracking-wide text-zinc-800">Galería</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showSupplierModal && (
         <div
