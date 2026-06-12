@@ -12,7 +12,6 @@ type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
     overtimeSnapshot: OvertimeWeekSnapshot | null;
-    onOpenPedidos: () => void;
     onOpenCambio: () => void;
     onOpenReservas: () => void;
     onOpenHorarios: () => void;
@@ -32,7 +31,6 @@ export default function MasterShortcutGrid({
     actualBalance,
     changeBoxes,
     overtimeSnapshot,
-    onOpenPedidos,
     onOpenCambio,
     onOpenReservas,
     onOpenHorarios,
@@ -72,7 +70,6 @@ export default function MasterShortcutGrid({
         { key: 'recetas', node: <DashboardIosIcon label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes')} /> },
         { key: 'ingredientes', node: <DashboardIosIcon label="Ingredientes" img="/icons/ingrediente.png" onClick={() => router.push('/ingredients')} /> },
         { key: 'albaranes', node: <DashboardIosIcon label="Albaranes" img="/icons/scan.png" onClick={() => router.push('/dashboard/albaranes')} /> },
-        { key: 'pedidos', node: <DashboardIosIcon label="Pedidos" img="/icons/suppliers.png" onClick={onOpenPedidos} /> },
         { key: 'carta', node: <DashboardIosIcon label="Carta" img="/icons/menu.png" onClick={() => router.push('/staff/carta')} /> },
         { key: 'consumo', node: <DashboardIosIcon label="Consumo" img="/icons/consum.png" onClick={() => router.push('/dashboard/consumo-personal')} /> },
         {

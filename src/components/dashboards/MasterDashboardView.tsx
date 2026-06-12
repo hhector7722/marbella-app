@@ -12,7 +12,6 @@ import MasterReservasModal from '@/components/dashboards/MasterReservasModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
-import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
@@ -37,7 +36,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         boxes: initialData?.boxes,
     });
 
-    const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
     const [isReservasModalOpen, setIsReservasModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -259,7 +257,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
                     overtimeSnapshot={overtimeSnapshot}
-                    onOpenPedidos={() => setIsSupplierModalOpen(true)}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => setIsReservasModalOpen(true)}
                     onOpenHorarios={() => setIsScheduleModalOpen(true)}
@@ -269,8 +266,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     pendingReservationsCount={pendingReservationsCount}
                 />
             </div>
-
-            <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
 
             <MasterReservasModal isOpen={isReservasModalOpen} onClose={() => setIsReservasModalOpen(false)} />
 
