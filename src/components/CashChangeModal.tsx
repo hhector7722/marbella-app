@@ -10,6 +10,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
 const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
@@ -23,7 +24,7 @@ interface CashChangeModalProps {
     boxName?: string;
     /** Nuevo flujo: elegir Caja A y Caja B, luego De A→B y De B→A. */
     boxOptions?: BoxOption[];
-    /** Si true, muestra lupa en cabecera (paso selección) para abrir histórico de intercambios. */
+    /** @deprecated El histórico solo se muestra a hhector7722@gmail.com (ver isMasterDashboardUser). */
     isManager?: boolean;
     onClose: () => void;
     onSuccess?: () => void;
@@ -37,6 +38,38 @@ export interface ExchangeHistoryItem {
     from_box_name: string;
     to_box_name: string;
     legs: { from_box_name: string; to_box_name: string; breakdown: Record<string, number>; amount: number }[];
+}
+
+type TreasuryExchangeRow = {
+    id: string;
+    exchange_group_id: string | null;
+    created_at: string;
+    amount: number | string;
+    box_id: string;
+    to_box_id: string | null;
+    breakdown: Record<string, number> | null;
+    user_id: string | null;
+    type: string;
+    notes: string | null;
+};
+
+function resolveLegDirection(
+    row: TreasuryExchangeRow,
+    boxMap: Record<string, string>,
+): { from_box_name: string; to_box_name: string } {
+    const boxName = boxMap[row.box_id] || '';
+    if (row.type === 'EXCHANGE' && row.to_box_id) {
+        return { from_box_name: boxName, to_box_name: boxMap[row.to_box_id] || '' };
+    }
+    const visualMatch = row.notes?.match(/visual\s+(.+)$/i);
+    const visual = visualMatch?.[1]?.trim() || '';
+    if (row.type === 'OUT') {
+        return { from_box_name: boxName, to_box_name: visual || '—' };
+    }
+    if (row.type === 'IN') {
+        return { from_box_name: visual || '—', to_box_name: boxName };
+    }
+    return { from_box_name: boxName, to_box_name: visual || '—' };
 }
 
 function buildBreakdown(counts: Record<number, number>): Record<string, number> {
@@ -59,7 +92,6 @@ export const CashChangeModal = ({
     boxId,
     boxName,
     boxOptions = [],
-    isManager = false,
     onClose,
     onSuccess
 }: CashChangeModalProps) => {
@@ -91,6 +123,17 @@ export const CashChangeModal = ({
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
+    const [canViewExchangeHistory, setCanViewExchangeHistory] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (cancelled) return;
+            setCanViewExchangeHistory(isMasterDashboardUser(user?.email));
+        })();
+        return () => { cancelled = true; };
+    }, [supabase]);
 
     useEffect(() => {
         if (!useTwoBoxFlow && boxId) {
@@ -138,48 +181,80 @@ export const CashChangeModal = ({
         const end = new Date(year, month, 0, 23, 59, 59, 999);
         setExchangeHistoryLoading(true);
         (async () => {
-            const { data: rows } = await supabase
+            const { data: rows, error } = await supabase
                 .from('treasury_log')
-                .select('id, exchange_group_id, created_at, amount, box_id, to_box_id, breakdown, user_id')
-                .eq('type', 'EXCHANGE')
+                .select('id, exchange_group_id, created_at, amount, box_id, to_box_id, breakdown, user_id, type, notes')
+                .not('exchange_group_id', 'is', null)
                 .gte('created_at', start.toISOString())
                 .lte('created_at', end.toISOString())
                 .order('created_at', { ascending: false });
+            if (error) {
+                console.error('CashChangeModal exchange history:', error);
+                toast.error('No se pudo cargar el histórico de cambios');
+                setExchangeHistoryList([]);
+                setExchangeHistoryLoading(false);
+                return;
+            }
             if (!rows?.length) {
                 setExchangeHistoryList([]);
                 setExchangeHistoryLoading(false);
                 return;
             }
-            const userIds = [...new Set((rows as any[]).map((r: any) => r.user_id).filter(Boolean))];
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name').in('id', userIds);
+            const typedRows = rows as TreasuryExchangeRow[];
+            const userIds = [...new Set(typedRows.map((r) => r.user_id).filter(Boolean))] as string[];
+            const { data: profiles } = userIds.length
+                ? await supabase.from('profiles').select('id, first_name').in('id', userIds)
+                : { data: [] };
             const profileMap: Record<string, string> = {};
-            (profiles || []).forEach((p: any) => { profileMap[p.id] = p.first_name || ''; });
-            const boxIds = [...new Set((rows as any[]).flatMap((r: any) => [r.box_id, r.to_box_id]).filter(Boolean))];
-            const { data: boxes } = await supabase.from('cash_boxes').select('id, name').in('id', boxIds);
+            (profiles || []).forEach((p: { id: string; first_name: string | null }) => {
+                profileMap[p.id] = p.first_name || '';
+            });
+            const boxIds = [...new Set(typedRows.flatMap((r) => [r.box_id, r.to_box_id]).filter(Boolean))] as string[];
+            const { data: boxes } = boxIds.length
+                ? await supabase.from('cash_boxes').select('id, name').in('id', boxIds)
+                : { data: [] };
             const boxMap: Record<string, string> = {};
-            (boxes || []).forEach((b: any) => { boxMap[b.id] = b.name || ''; });
-            const byGroup = new Map<string, any[]>();
-            (rows as any[]).forEach((r: any) => {
+            (boxes || []).forEach((b: { id: string; name: string | null }) => {
+                boxMap[b.id] = b.name || '';
+            });
+            const byGroup = new Map<string, TreasuryExchangeRow[]>();
+            typedRows.forEach((r) => {
                 const g = r.exchange_group_id || r.id;
                 if (!byGroup.has(g)) byGroup.set(g, []);
                 byGroup.get(g)!.push(r);
             });
             const list: ExchangeHistoryItem[] = [];
             byGroup.forEach((legs, exchange_group_id) => {
-                const first = legs[0];
+                const sortedLegs = [...legs].sort(
+                    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+                );
+                const summaryLeg =
+                    sortedLegs.find((l) => l.type === 'EXCHANGE')
+                    || sortedLegs.find((l) => l.type === 'OUT')
+                    || sortedLegs[0];
+                const summaryDirection = resolveLegDirection(summaryLeg, boxMap);
+                const amount = Math.max(...sortedLegs.map((l) => Number(l.amount) || 0));
+                const createdAt = sortedLegs.reduce(
+                    (latest, leg) => (new Date(leg.created_at) > new Date(latest) ? leg.created_at : latest),
+                    sortedLegs[0].created_at,
+                );
+                const userId = sortedLegs.find((l) => l.user_id)?.user_id || summaryLeg.user_id;
                 list.push({
                     exchange_group_id,
-                    created_at: first.created_at,
-                    first_name: profileMap[first.user_id] || '',
-                    amount: Number(first.amount) || 0,
-                    from_box_name: boxMap[first.box_id] || '',
-                    to_box_name: boxMap[first.to_box_id] || '',
-                    legs: legs.map((l: any) => ({
-                        from_box_name: boxMap[l.box_id] || '',
-                        to_box_name: boxMap[l.to_box_id] || '',
-                        breakdown: (l.breakdown as Record<string, number>) || {},
-                        amount: Number(l.amount) || 0
-                    }))
+                    created_at: createdAt,
+                    first_name: userId ? profileMap[userId] || '' : '',
+                    amount,
+                    from_box_name: summaryDirection.from_box_name,
+                    to_box_name: summaryDirection.to_box_name,
+                    legs: sortedLegs.map((l) => {
+                        const direction = resolveLegDirection(l, boxMap);
+                        return {
+                            from_box_name: direction.from_box_name,
+                            to_box_name: direction.to_box_name,
+                            breakdown: (l.breakdown as Record<string, number>) || {},
+                            amount: Number(l.amount) || 0,
+                        };
+                    }),
                 });
             });
             list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -511,7 +586,7 @@ export const CashChangeModal = ({
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
                             <div className="flex items-center gap-1 shrink-0">
-                                {isManager && (
+                                {canViewExchangeHistory && (
                                     <button
                                         type="button"
                                         onClick={() => setShowExchangeHistoryModal(true)}
