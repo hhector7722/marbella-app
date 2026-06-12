@@ -12,6 +12,7 @@ import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { formatShiftBarTimeLabel, shouldShowMinutesOnShiftBar } from '@/lib/schedule-shift-bar-display';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -27,6 +28,7 @@ const timeToPercent = (timeStr: string) => {
 const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     const leftPos = Math.max(0, timeToPercent(start));
     const width = Math.max(timeToPercent(end) - leftPos, 5);
+    const showMinutes = shouldShowMinutesOnShiftBar(start, end, START_HOUR, TOTAL_HOURS);
     return (
         <div
             className="absolute top-1.5 bottom-1.5 flex items-center rounded-full z-10 overflow-hidden touch-none"
@@ -38,11 +40,11 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
             }}
         >
             <div className="absolute left-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{start}</span>
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(start, showMinutes)}</span>
             </div>
             <div className="flex-1 h-full min-w-0" />
             <div className="absolute right-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{end}</span>
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(end, showMinutes)}</span>
             </div>
         </div>
     );

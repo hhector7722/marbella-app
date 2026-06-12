@@ -24,6 +24,7 @@ import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
+import { formatShiftBarTimeLabel, shouldShowMinutesOnShiftBar } from '@/lib/schedule-shift-bar-display';
 
 export interface ScheduleDayEditorProps {
     initialDate: string;
@@ -83,6 +84,7 @@ const ShiftBar = ({
     const leftPos = timeToPercent(shift.start);
     const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
     const isFloating = barClass.includes('bg-[') || barClass.includes('zinc');
+    const showMinutes = shouldShowMinutesOnShiftBar(shift.start, shift.end, START_HOUR, TOTAL_HOURS);
 
     const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
         if (!allowMove) return;
@@ -151,11 +153,11 @@ const ShiftBar = ({
         >
             <div className="absolute left-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
             <div className="absolute left-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{shift.start}</span>
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(shift.start, showMinutes)}</span>
             </div>
             <div className="flex-1 h-full min-w-0" />
             <div className="absolute right-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{shift.end}</span>
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(shift.end, showMinutes)}</span>
             </div>
             <div className="absolute right-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
         </div>
