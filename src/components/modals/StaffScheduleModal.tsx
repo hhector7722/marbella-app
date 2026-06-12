@@ -12,7 +12,8 @@ import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { formatShiftBarTimeLabel, shouldShowMinutesOnShiftBar } from '@/lib/schedule-shift-bar-display';
+import { formatShiftBarTimeLabel } from '@/lib/schedule-shift-bar-display';
+import { useShiftBarShowMinutes } from '@/hooks/useShiftBarShowMinutes';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -26,12 +27,14 @@ const timeToPercent = (timeStr: string) => {
 
 /* ─── Read-Only ShiftBar: barra completa en gradiente difuminado ── */
 const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
+    const barRef = useRef<HTMLDivElement>(null);
     const leftPos = Math.max(0, timeToPercent(start));
     const width = Math.max(timeToPercent(end) - leftPos, 5);
-    const showMinutes = shouldShowMinutesOnShiftBar(start, end, START_HOUR, TOTAL_HOURS);
+    const showMinutes = useShiftBarShowMinutes(barRef, start, end);
     return (
         <div
-            className="absolute top-1.5 bottom-1.5 flex items-center rounded-full z-10 overflow-hidden touch-none"
+            ref={barRef}
+            className="absolute top-1.5 bottom-1.5 flex items-center justify-between rounded-full z-10 overflow-hidden touch-none px-1.5"
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
@@ -39,13 +42,8 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
         >
-            <div className="absolute left-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(start, showMinutes)}</span>
-            </div>
-            <div className="flex-1 h-full min-w-0" />
-            <div className="absolute right-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(end, showMinutes)}</span>
-            </div>
+            <span className="text-[9px] font-black text-white pointer-events-none select-none shrink-0 leading-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(start, showMinutes)}</span>
+            <span className="text-[9px] font-black text-white pointer-events-none select-none shrink-0 leading-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{formatShiftBarTimeLabel(end, showMinutes)}</span>
         </div>
     );
 };
