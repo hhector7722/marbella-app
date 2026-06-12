@@ -1,12 +1,52 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import {
+  matchRecipeIdsByName,
+  parseConsumptionErrorRecipeName,
+} from '@/lib/staff-consumption-errors';
 
 export type ConsumptionItem = { recipe_id: string; quantity: number; is_half: boolean };
 
 export type ConsumptionSubmitResult =
-  | { success: true; consumptionSkipped?: boolean }
-  | { success: false; code: 'EMPTY_CART' | 'AUTH'; message: string };
+  | { success: true }
+  | {
+      success: false;
+      code: 'EMPTY_CART' | 'AUTH' | 'CONSUMPTION_ERROR';
+      message: string;
+      failedRecipeIds: string[];
+    };
+
+type ValidateRow = { recipe_id: string; recipe_name: string; error_message: string };
+
+async function resolveFailedRecipeIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  items: ConsumptionItem[],
+  fallbackMessage: string | undefined,
+): Promise<string[]> {
+  const { data: validationRows, error: validateErr } = await supabase.rpc(
+    'validate_staff_consumption',
+    { p_items: items },
+  );
+
+  if (!validateErr && validationRows?.length) {
+    return [...new Set((validationRows as ValidateRow[]).map((row) => row.recipe_id))];
+  }
+
+  const recipeIds = [...new Set(items.map((item) => item.recipe_id))];
+  const { data: recipes } = await supabase
+    .from('recipes')
+    .select('id, name')
+    .in('id', recipeIds);
+
+  const parsedName = parseConsumptionErrorRecipeName(fallbackMessage);
+  if (parsedName && recipes?.length) {
+    const matched = matchRecipeIdsByName(parsedName, recipes);
+    if (matched.length > 0) return matched;
+  }
+
+  return recipeIds.length === 1 ? [recipeIds[0]!] : [];
+}
 
 export async function submitPersonalConsumption(
   items: ConsumptionItem[],
@@ -16,13 +56,19 @@ export async function submitPersonalConsumption(
       success: false,
       code: 'EMPTY_CART',
       message: 'Debes apuntar tu consumo antes de fichar la salida.',
+      failedRecipeIds: [],
     };
   }
 
   const supabase = await createClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
-    return { success: false, code: 'AUTH', message: 'Usuario no autenticado' };
+    return {
+      success: false,
+      code: 'AUTH',
+      message: 'Usuario no autenticado',
+      failedRecipeIds: [],
+    };
   }
 
   console.log('[Consumption] Submitting:', { employeeId: user.id, itemsCount: items.length });
@@ -33,8 +79,17 @@ export async function submitPersonalConsumption(
   });
 
   if (error) {
-    console.error('[Consumption] RPC failed, allowing clock-out:', error);
-    return { success: true, consumptionSkipped: true };
+    console.error('[Consumption] RPC failed:', error);
+    const failedRecipeIds = await resolveFailedRecipeIds(supabase, items, error.message);
+    const userMessage =
+      parseConsumptionErrorRecipeName(error.message) ??
+      'Hay un producto con datos incorrectos. Quítalo o avisa a un responsable.';
+    return {
+      success: false,
+      code: 'CONSUMPTION_ERROR',
+      message: userMessage,
+      failedRecipeIds,
+    };
   }
 
   return { success: true };
