@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-04 (Carta: revert modales — regresión scroll mañana)
+**Última actualización:** 2026-06-12 (Carta: editores delegados — Willy)
+
+- [x] **Carta: editores delegados sin rol supervisor (2026-06-12)**: Migración [`20260612120000_carta_editors.sql`](supabase/migrations/20260612120000_carta_editors.sql) — tabla `carta_editors`, helper `can_manage_carta()` (manager/admin/supervisor o fila en tabla), RLS carta/storage actualizado. **Willy** (`staff`) añadido como editor. UI: [`carta-permissions.ts`](src/lib/carta-permissions.ts), [`/staff/carta`](src/app/staff/carta/page.tsx), server actions carta. Aplicado en Supabase.
+
+**Última actualización anterior:** 2026-06-04 (Carta: revert modales — regresión scroll mañana)
 
 - [x] **Carta: revert modales tras regresión 2026-06-04 mañana**: Los commits de scroll (`c6ce3bd8`, `5d8e5780`, …) rompieron los modales de sección (bottom sheet móvil, `eventOrderScrollLayout`, altura `flex-1` en lugar de `min-h-[50vh,320px]`). **Restaurado** [`MenuAccordion.tsx`](src/components/staff/MenuAccordion.tsx) y [`CartaImageLightbox.tsx`](src/components/carta/CartaImageLightbox.tsx) al estado previo (modal **centrado**, sin portal). [`StaffCartaView.tsx`](src/components/staff/StaffCartaView.tsx) vuelve a `overflow-hidden` en el panel de carta.
 

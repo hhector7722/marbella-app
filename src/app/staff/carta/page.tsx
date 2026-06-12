@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { createClient } from '@/utils/supabase/server';
+import { canEditCartaMenu } from '@/lib/carta-permissions';
 
 import { StaffCartaView } from '@/components/staff/StaffCartaView';
 
@@ -46,15 +47,11 @@ export default async function StaffCartaPage() {
 
 
 
-    const { data: profile, error: profileError } = await supabase
-
-        .from('profiles')
-
-        .select('role')
-
-        .eq('id', user.id)
-
-        .maybeSingle();
+    const [{ data: profile, error: profileError }, { data: cartaEditor, error: cartaEditorError }] =
+        await Promise.all([
+            supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
+            supabase.from('carta_editors').select('user_id').eq('user_id', user.id).maybeSingle(),
+        ]);
 
 
 
@@ -64,11 +61,17 @@ export default async function StaffCartaPage() {
 
     }
 
+    if (cartaEditorError) {
+
+        console.error('Error fetching carta editor flag (staff/carta):', cartaEditorError);
+
+    }
+
 
 
     const role = (profile?.role ?? null) as string | null;
 
-    const canEditMenu = role === 'manager' || role === 'admin' || role === 'supervisor';
+    const canEditMenu = canEditCartaMenu(role, Boolean(cartaEditor));
 
     const canOpenMapeo = role === 'manager' || role === 'admin';
 

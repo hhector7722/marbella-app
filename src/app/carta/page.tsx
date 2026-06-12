@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { canEditCartaMenu } from '@/lib/carta-permissions'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
 import { isCartaDualRacionColumnError } from '@/lib/carta-dual-racion'
 import {
@@ -40,12 +41,15 @@ export default async function PublicCartaPage() {
   let cartaEditHref: string | null = null
   let backHref: string | null = null
   if (user) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const [{ data: profile }, { data: cartaEditor }] = await Promise.all([
+      supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
+      supabase.from('carta_editors').select('user_id').eq('user_id', user.id).maybeSingle(),
+    ])
     const role = (profile?.role ?? null) as string | null
     backHref = role === 'manager' || role === 'admin' ? '/dashboard' : '/staff/dashboard'
     if (role === 'manager' || role === 'admin') {
       cartaEditHref = '/dashboard/carta'
-    } else if (role === 'supervisor') {
+    } else if (canEditCartaMenu(role, Boolean(cartaEditor))) {
       cartaEditHref = '/staff/carta'
     }
   }

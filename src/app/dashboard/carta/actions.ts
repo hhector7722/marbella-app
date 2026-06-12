@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { canEditCartaMenu } from '@/lib/carta-permissions'
 import { normalizeCartaPhotoScale, type CartaPhotoScale } from '@/lib/carta-product-photo'
 
 /** Campos opcionales = solo se actualizan si van en el objeto (merge con fila existente). */
@@ -34,7 +35,7 @@ export type MenuOverrideUpsertInput = {
   carta_racion_medio_en: string | null
 }>
 
-async function requireManager() {
+async function requireCartaEditor() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -52,8 +53,18 @@ async function requireManager() {
   if (profileError) return { ok: false as const, supabase, error: profileError.message }
 
   const role = (profile?.role ?? null) as string | null
-  const allowed = role === 'manager' || role === 'admin' || role === 'supervisor'
-  if (!allowed) return { ok: false as const, supabase, error: 'Forbidden' as const }
+  if (canEditCartaMenu(role)) return { ok: true as const, supabase }
+
+  const { data: editor, error: editorError } = await supabase
+    .from('carta_editors')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (editorError) return { ok: false as const, supabase, error: editorError.message }
+  if (!canEditCartaMenu(role, Boolean(editor))) {
+    return { ok: false as const, supabase, error: 'Forbidden' as const }
+  }
 
   return { ok: true as const, supabase }
 }
@@ -89,7 +100,7 @@ export async function clearPlatoMarbellaMenuPriceExcept(
   category_id: string,
   keep_articulo_id: number
 ): Promise<{ success: true } | { success: false; error: string }> {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false, error: gate.error }
 
   const { error } = await gate.supabase
@@ -106,7 +117,7 @@ export async function clearPlatoMarbellaMenuPriceExcept(
 }
 
 export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
   const supabase = gate.supabase
@@ -245,7 +256,7 @@ export async function setMenuCategoryCover(input: {
   cover_photo_url: string | null
   cover_photo_scale?: CartaPhotoScale | null
 }): Promise<{ success: true } | { success: false; error: string }> {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
   const supabase = gate.supabase
@@ -340,7 +351,7 @@ export async function setMenuSectionCoverArticulo(category_id: string, cover_art
 }
 
 export async function deleteMenuOverride(articulo_id: number) {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
   const supabase = gate.supabase
@@ -358,7 +369,7 @@ export async function deleteMenuOverride(articulo_id: number) {
 }
 
 export async function setArticuloDepartamento(articulo_id: number, departamento_id: number | null) {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
   const supabase = gate.supabase
@@ -388,7 +399,7 @@ export type MenuCategoryOverrideUpsertInput = {
 }>
 
 export async function upsertMenuCategoryOverride(input: MenuCategoryOverrideUpsertInput) {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
 
   const supabase = gate.supabase
@@ -428,7 +439,7 @@ export type MenuCategorySortOrderInput = {
 }
 
 export async function setMenuCategorySortOrders(input: MenuCategorySortOrderInput[]) {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
   const supabase = gate.supabase
 
@@ -464,7 +475,7 @@ export type MenuItemSortOrderInput = {
 }
 
 export async function setMenuItemSortOrders(input: MenuItemSortOrderInput[]) {
-  const gate = await requireManager()
+  const gate = await requireCartaEditor()
   if (!gate.ok) return { success: false as const, error: gate.error }
   const supabase = gate.supabase
 

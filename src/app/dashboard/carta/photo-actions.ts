@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { canEditCartaMenu } from '@/lib/carta-permissions'
 import { normalizeProductPhotoFile } from '@/lib/server/normalize-product-photo'
 
 async function requirePhotoUploader() {
@@ -21,8 +22,18 @@ async function requirePhotoUploader() {
   if (profileError) return { ok: false as const, error: profileError.message }
 
   const role = (profile?.role ?? null) as string | null
-  const allowed = role === 'manager' || role === 'admin' || role === 'supervisor'
-  if (!allowed) return { ok: false as const, error: 'Sin permisos para subir imágenes' }
+  if (canEditCartaMenu(role)) return { ok: true as const, supabase }
+
+  const { data: editor, error: editorError } = await supabase
+    .from('carta_editors')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (editorError) return { ok: false as const, error: editorError.message }
+  if (!canEditCartaMenu(role, Boolean(editor))) {
+    return { ok: false as const, error: 'Sin permisos para subir imágenes' }
+  }
 
   return { ok: true as const, supabase }
 }
