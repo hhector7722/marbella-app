@@ -260,7 +260,7 @@ export default function ActividadesPage() {
                             </div>
                             <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
                               {hasPdf && isViewMonthDay ? (
-                                <span className="inline-flex items-center justify-center min-h-[28px] md:min-h-[32px] px-2 md:px-2.5 rounded-md md:rounded-lg border border-black bg-white text-[8px] md:text-[10px] font-black uppercase tracking-wider text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.12)]">
+                                <span className="inline-block leading-none px-[3px] py-px rounded-sm border border-zinc-700 bg-white text-[8px] md:text-[10px] font-black uppercase tracking-wide text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
                                   VER
                                 </span>
                               ) : (
