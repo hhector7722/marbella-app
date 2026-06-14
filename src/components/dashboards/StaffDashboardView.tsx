@@ -33,6 +33,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -138,6 +139,60 @@ export default function StaffDashboardView() {
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
+
+    useModalUsageTracking({
+        open: showModal,
+        usageId: 'staff-clock-confirm',
+        usageLabel: modalAction === 'in' ? 'Confirmar entrada' : 'Confirmar salida',
+    });
+    useModalUsageTracking({
+        open: Boolean(activeMenu),
+        usageId: `staff-info-menu-${infoSubMenu ?? activeMenu ?? 'root'}`,
+        usageLabel:
+            infoSubMenu === 'contactos' ? 'Contactos'
+            : infoSubMenu === 'convenio' ? 'Convenio'
+            : infoSubMenu === 'conducta' ? 'Código conducta'
+            : infoSubMenu === 'web' ? 'Página web'
+            : infoSubMenu === 'reservas' ? 'Reservas'
+            : activeMenu === 'pedidos' ? 'Pedidos'
+            : 'Información',
+    });
+    useModalUsageTracking({
+        open: isManualsModalOpen,
+        usageId: 'staff-manuals-menu',
+        usageLabel: 'Manuales',
+    });
+    useModalUsageTracking({
+        open: isManualsModalOpen && isTpvManualModalOpen,
+        usageId: 'staff-tpv-manual',
+        usageLabel: 'Manual TPV',
+    });
+    useModalUsageTracking({
+        open: isManualsModalOpen && isHornoManualModalOpen,
+        usageId: 'staff-horno-manual',
+        usageLabel: 'Manual horno',
+    });
+    useModalUsageTracking({
+        open: manualMediaViewer !== null,
+        usageId: 'staff-manual-media',
+        usageLabel: manualMediaViewer?.title ?? 'Visor manual',
+    });
+    useModalUsageTracking({
+        open: isCashOptionsModalOpen,
+        usageId: 'staff-cash-options',
+        usageLabel: 'Opciones de caja',
+    });
+    useModalUsageTracking({
+        open: showPurchaseMultiSourceModal,
+        usageId: 'staff-purchase-multi-source',
+        usageLabel: 'Compra multiorigen',
+    });
+    useModalUsageTracking({
+        open: cashModalMode !== 'none',
+        usageId: 'staff-treasury-out',
+        usageLabel: 'Salida de caja',
+    });
+
     useEffect(() => { initialize(); }, []);
 
     useEffect(() => {

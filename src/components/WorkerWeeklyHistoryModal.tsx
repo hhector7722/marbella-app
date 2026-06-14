@@ -10,6 +10,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 // --- TYPES ---
 interface DailyLog {
@@ -63,6 +64,7 @@ const fmtMoney = (val: number): string => {
 const formatWorked = (val: number) => fmtDecimal(Math.abs(val));
 
 export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, weekStart }: WorkerWeeklyHistoryModalProps) {
+    useModalUsageTracking({ open: isOpen, usageId: 'worker-weekly-history', usageLabel: 'Historial semanal' });
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [weekData, setWeekData] = useState<WeeklyData | null>(null);

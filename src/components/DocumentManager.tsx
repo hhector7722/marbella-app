@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface DocumentManagerProps {
     userId: string;
@@ -24,6 +25,12 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
     const [uploading, setUploading] = useState(false);
     const [docType, setDocType] = useState<'contract' | 'payroll'>(initialType);
     const [period, setPeriod] = useState(format(new Date(), 'yyyy-MM'));
+
+    useModalUsageTracking({
+        open: showUpload,
+        usageId: 'document-upload',
+        usageLabel: 'Subir documento',
+    });
 
     useEffect(() => {
         fetchDocs();

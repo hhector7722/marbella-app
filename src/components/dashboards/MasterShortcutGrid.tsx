@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Smartphone } from 'lucide-react';
+import { BarChart3, Check, Smartphone } from 'lucide-react';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardIosIcon from '@/components/dashboards/DashboardIosIcon';
 import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
@@ -136,6 +136,17 @@ export default function MasterShortcutGrid({
                     icon={Smartphone}
                     iconClassName="text-[#36606F]"
                     onClick={() => router.push('/dashboard/instalacion-app')}
+                />
+            ),
+        },
+        {
+            key: 'uso-app',
+            node: (
+                <DashboardIosIcon
+                    label="Uso app"
+                    icon={BarChart3}
+                    iconClassName="text-[#36606F]"
+                    onClick={() => router.push('/dashboard/uso')}
                 />
             ),
         },

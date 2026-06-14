@@ -1,5 +1,7 @@
 'use client'
 
+import { Modal } from '@/components/ui/modal'
+
 export function CartaImageLightbox({
   src,
   alt,
@@ -14,39 +16,29 @@ export function CartaImageLightbox({
   open: boolean
   onClose: () => void
 }) {
-  if (!open || !src) return null
+  if (!src) return null
 
   return (
-    <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 p-4 sm:p-6 md:p-8"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="carta-lightbox-title"
-      aria-label="Imagen ampliada. Pulsa fuera para cerrar."
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title || alt}
+      headerTitleAlign="left"
+      className="max-h-[min(94vh,960px)] w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
+      wrapperClassName="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
+      zIndexClass="z-[300]"
+      backdropClassName="bg-black/80"
+      usageId="carta-image-lightbox"
+      usageLabel="Imagen carta"
     >
-      <div
-        className="flex max-h-[min(94vh,960px)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-lg md:max-w-xl lg:max-w-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="shrink-0 border-b border-zinc-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
-          <h2
-            id="carta-lightbox-title"
-            className="min-w-0 text-center text-sm font-black uppercase leading-snug tracking-wide text-[#36606F] sm:text-base"
-          >
-            {title || alt}
-          </h2>
-        </header>
-
-        <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-50/40 p-6 sm:p-8 md:p-10">
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL externa / Storage */}
-          <img
-            src={src}
-            alt={alt}
-            className="max-h-[min(68vh,680px)] w-full max-w-full object-contain"
-          />
-        </div>
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-50/40 p-6 sm:p-8 md:p-10">
+        {/* eslint-disable-next-line @next/next/no-img-element -- URL externa / Storage */}
+        <img
+          src={src}
+          alt={alt}
+          className="max-h-[min(68vh,680px)] w-full max-w-full object-contain"
+        />
       </div>
-    </div>
+    </Modal>
   )
 }

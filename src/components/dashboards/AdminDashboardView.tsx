@@ -34,6 +34,7 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 // Sub-components
 const StaffOvertimeRow = memo(({
@@ -205,6 +206,33 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [overtimeLoading, setOvertimeLoading] = useState(false);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
     const [editingBox, setEditingBox] = useState<any>(null);
+
+    useModalUsageTracking({
+        open: cashModalMode !== 'none' && cashModalMode !== 'swap',
+        usageId: `admin-treasury-${cashModalMode}`,
+        usageLabel:
+            cashModalMode === 'in' ? 'Entrada de caja'
+            : cashModalMode === 'out' ? 'Salida de caja'
+            : cashModalMode === 'audit' ? 'Arqueo de caja'
+            : cashModalMode === 'inventory' ? 'Inventario de caja'
+            : cashModalMode === 'menu' ? 'Menú tesorería'
+            : 'Tesorería',
+    });
+    useModalUsageTracking({
+        open: showPurchaseMultiSourceModal,
+        usageId: 'admin-purchase-multi-source',
+        usageLabel: 'Compra multiorigen',
+    });
+    useModalUsageTracking({
+        open: isNewWorkerModalOpen,
+        usageId: 'admin-new-worker',
+        usageLabel: 'Nuevo trabajador',
+    });
+    useModalUsageTracking({
+        open: weekDetailModal !== null,
+        usageId: 'admin-overtime-week-detail',
+        usageLabel: 'Detalle semana horas extras',
+    });
 
     useEffect(() => {
         setIsDesktop(window.innerWidth >= 768);

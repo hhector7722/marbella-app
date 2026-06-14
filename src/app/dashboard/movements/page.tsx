@@ -42,6 +42,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -175,6 +176,32 @@ export default function MovementsPage() {
         loading: true
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
+
+    useModalUsageTracking({
+        open: showCalendar !== null,
+        usageId: showCalendar === 'single' ? 'movements-date-single' : 'movements-date-range',
+        usageLabel: showCalendar === 'single' ? 'Fecha única' : 'Rango de fechas',
+    });
+    useModalUsageTracking({
+        open: showMonthPicker,
+        usageId: 'movements-month-picker',
+        usageLabel: 'Selector de mes',
+    });
+    useModalUsageTracking({
+        open: cashModalMode !== 'none',
+        usageId: `movements-treasury-${cashModalMode}`,
+        usageLabel:
+            cashModalMode === 'in' ? 'Entrada de caja'
+            : cashModalMode === 'out' ? 'Salida de caja'
+            : cashModalMode === 'audit' ? 'Arqueo de caja'
+            : cashModalMode === 'inventory' ? 'Inventario de caja'
+            : 'Tesorería',
+    });
+    useModalUsageTracking({
+        open: selectedMovement !== null,
+        usageId: 'movements-detail',
+        usageLabel: 'Detalle de movimiento',
+    });
 
     // SALDO ACTUAL (KPI) = running_balance más reciente del libro (caja operativa).
     // DIFERENCIA (UI) = efectivo físico contado − saldo libro (ignora ADJUSTMENT/SWAP).

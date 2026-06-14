@@ -18,6 +18,7 @@ import {
     type ClosingWeatherId,
 } from '@/lib/cash-closing-weather';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
     ClosingStepRow,
     ClosingSummaryRow,
@@ -79,6 +80,7 @@ interface CashClosingModalProps {
 }
 
 export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
+    useModalUsageTracking({ open: isOpen, usageId: 'cash-closing', usageLabel: 'Cierre de caja' });
     useScrollLock(isOpen);
     const supabase = createClient();
     const [loading, setLoading] = useState(false);

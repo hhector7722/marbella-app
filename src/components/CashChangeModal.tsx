@@ -11,6 +11,7 @@ import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
@@ -95,6 +96,7 @@ export const CashChangeModal = ({
     onClose,
     onSuccess
 }: CashChangeModalProps) => {
+    useModalUsageTracking({ open: true, usageId: 'cash-change', usageLabel: 'Cambio de caja' });
     const supabase = createClient();
     const useTwoBoxFlow = boxOptions.length > 0;
 

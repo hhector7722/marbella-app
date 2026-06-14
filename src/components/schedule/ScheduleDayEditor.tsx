@@ -20,6 +20,7 @@ import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
@@ -191,6 +192,22 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
+
+    useModalUsageTracking({
+        open: editingIndex !== null,
+        usageId: 'schedule-shift-edit',
+        usageLabel: 'Editar turno',
+    });
+    useModalUsageTracking({
+        open: showCalendarModal,
+        usageId: 'schedule-calendar',
+        usageLabel: 'Calendario horarios',
+    });
+    useModalUsageTracking({
+        open: showShareModal,
+        usageId: 'schedule-share',
+        usageLabel: 'Compartir horario',
+    });
 
     useEffect(() => {
         if (!loading && hasUnsavedChanges) {

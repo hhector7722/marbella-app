@@ -5,6 +5,7 @@ import { Download, Share2, Send } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -31,6 +32,17 @@ export function OrderSuccessModal({
     const [isCapturing, setIsCapturing] = useState(false);
     const [cachedPngBlob, setCachedPngBlob] = useState<Blob | null>(null);
     const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
+
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'order-success',
+        usageLabel: 'Pedido guardado',
+    });
+    useModalUsageTracking({
+        open: showConfirmEnviar,
+        usageId: 'order-success-confirm-send',
+        usageLabel: 'Confirmar envío pedido',
+    });
 
     useEffect(() => {
         if (generatedBlob) {

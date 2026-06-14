@@ -1,0 +1,49 @@
+---
+description: Comportamiento obligatorio de modales (centrado, backdrop, scroll lock, tracking)
+globs: components/**/*modal*.tsx,components/ui/modal.tsx,**/*Modal*.tsx
+alwaysApply: false
+---
+
+# Modales — reglas obligatorias
+
+Todo modal **debe** usar `Modal` de `@/components/ui/modal` o `useModalUsageTracking` si la UI no puede envolverse.
+
+## Comportamiento visual
+
+| Requisito | Implementación |
+|-----------|----------------|
+| Centro en pantalla | `Modal` → `fixed inset-0 flex items-center justify-center` |
+| Ancho < pantalla | `max-w-sm` por defecto; `className="max-w-lg"` etc. |
+| Altura < pantalla | `max-h-[calc(100dvh-2rem)]` en el panel |
+| Fondo difuminado | Backdrop `bg-black/40 backdrop-blur-sm` |
+| Clic fuera cierra | Backdrop button con `onClick={onClose}` |
+
+## Tracking de uso (obligatorio)
+
+```tsx
+<Modal
+  open={open}
+  onClose={onClose}
+  title="Cierre de caja"
+  usageId="cash-closing"
+  usageLabel="Cierre de caja"
+>
+  ...
+</Modal>
+```
+
+Modales custom:
+
+```tsx
+useModalUsageTracking({
+  open: isOpen,
+  usageId: 'cash-closing',
+  usageLabel: 'Cierre de caja',
+});
+```
+
+## Prohibiciones
+
+- ❌ `items-end` bottom sheet salvo requisito UX documentado
+- ❌ Overlays ad hoc sin scroll-lock ni tracking
+- ❌ Duplicar portal/scroll-lock fuera de `Modal`

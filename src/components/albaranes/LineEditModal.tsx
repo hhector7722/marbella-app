@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { isInvoiceLineExcluded, isInvoiceLineExpenseOnly } from '@/lib/albaranes-line-status'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import { useScrollLock } from '@/hooks/useScrollLock'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
 export type LineEditDraft = {
   original_name: string
@@ -77,6 +78,7 @@ export function LineEditModal({
   onMarkExpenseOnly,
   onRestoreFromExpenseOnly,
 }: LineEditModalProps) {
+  useModalUsageTracking({ open, usageId: 'albaran-line-edit', usageLabel: 'Editar línea albarán' })
   useScrollLock(open)
   const [mounted, setMounted] = useState(false)
 

@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 
 import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import {
   formatNotificationDateTimeLine,
   getNotificationVisual,
@@ -126,6 +127,12 @@ export function NotificationsBell() {
   const [panelAnchor, setPanelAnchor] = useState<PanelAnchor | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+
+  useModalUsageTracking({
+    open,
+    usageId: 'notifications-panel',
+    usageLabel: 'Notificaciones',
+  })
 
   useEffect(() => {
     setPortalMounted(true)

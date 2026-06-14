@@ -17,6 +17,7 @@ import {
   type InsightsFilterMode,
   type InsightsMonth,
 } from './insights-date-utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
 export type { InsightsFilterMode, InsightsMonth }
 
@@ -40,12 +41,18 @@ function PickerShell({
   onClose,
   children,
   className,
+  usageId = 'insights-date-picker',
+  usageLabel = 'Selector fecha insights',
 }: {
   open: boolean
   onClose: () => void
   children: ReactNode
   className?: string
+  usageId?: string
+  usageLabel?: string
 }) {
+  useModalUsageTracking({ open, usageId, usageLabel })
+
   if (!open) return null
   return (
     <div

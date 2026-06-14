@@ -1,9 +1,10 @@
 'use client';
 
-import { X, Copy, Check, Upload, Eye } from 'lucide-react';
+import { Copy, Check, Upload, Eye } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Modal } from '@/components/ui/modal';
 
 interface DatosPersonalesModalProps {
     isOpen: boolean;
@@ -93,8 +94,6 @@ export default function DatosPersonalesModal({
         };
     }, [isOpen, canDni, ownerUserId]);
 
-    if (!isOpen) return null;
-
     const handlePickDniImage = () => {
         if (!canDni) return;
         fileInputRef.current?.click();
@@ -149,101 +148,87 @@ export default function DatosPersonalesModal({
     };
 
     return (
-        <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
-            onClick={onClose}
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title="Datos personales"
+            headerVariant="petroleum"
+            className="rounded-3xl"
+            usageId="profile-personal"
+            usageLabel="Datos personales"
         >
-            <div
-                className={cn(
-                    'bg-white w-full max-w-sm rounded-3xl shadow-xl border border-zinc-100 overflow-hidden',
-                    'animate-in zoom-in-95 duration-200'
-                )}
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-[#36606F] text-white">
-                    <h2 className="text-base font-black uppercase tracking-wider">Datos personales</h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white/80 hover:bg-white/20 transition-colors active:scale-95"
-                        aria-label="Cerrar"
-                    >
-                        <X size={22} strokeWidth={2.5} />
-                    </button>
-                </div>
-                <div className="p-6 space-y-5">
-                    <div>
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">DNI / NIE</p>
-                        <div className="flex items-center gap-2">
-                            <p className="text-zinc-800 font-bold text-sm flex-1 min-w-0 break-words">{dni || '—'}</p>
-                            {dni && (
+            <div className="p-6 space-y-5">
+                <div>
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">DNI / NIE</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-zinc-800 font-bold text-sm flex-1 min-w-0 break-words">{dni || '—'}</p>
+                        {dni && (
+                            <button
+                                onClick={() => copy(dni, 'DNI')}
+                                className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
+                            >
+                                {copied === 'DNI' ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
+                                <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
+                            </button>
+                        )}
+                        {canDni && (
+                            <>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={handleDniFileChange}
+                                    className="hidden"
+                                />
                                 <button
-                                    onClick={() => copy(dni, 'DNI')}
-                                    className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
+                                    type="button"
+                                    onClick={handlePickDniImage}
+                                    disabled={dniUploading}
+                                    className={cn(
+                                        'shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl',
+                                        'bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors active:scale-95',
+                                        (dniUploading || dniDocLoading) && 'opacity-60 pointer-events-none'
+                                    )}
+                                    aria-label="Subir imagen DNI"
+                                    title="Subir imagen DNI"
                                 >
-                                    {copied === 'DNI' ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
-                                    <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
+                                    <Upload size={18} />
+                                    <span className="text-[10px] text-zinc-400 font-medium leading-tight">
+                                        {dniUploading ? 'subiendo' : 'imagen'}
+                                    </span>
                                 </button>
-                            )}
-                            {canDni && (
-                                <>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        onChange={handleDniFileChange}
-                                        className="hidden"
-                                    />
+                                {openHref && (
                                     <button
                                         type="button"
-                                        onClick={handlePickDniImage}
-                                        disabled={dniUploading}
-                                        className={cn(
-                                            'shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl',
-                                            'bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors active:scale-95',
-                                            (dniUploading || dniDocLoading) && 'opacity-60 pointer-events-none'
-                                        )}
-                                        aria-label="Subir imagen DNI"
-                                        title="Subir imagen DNI"
+                                        onClick={() => window.open(openHref, '_blank')}
+                                        className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors active:scale-95"
+                                        aria-label="Ver imagen DNI"
+                                        title="Ver imagen DNI"
                                     >
-                                        <Upload size={18} />
-                                        <span className="text-[10px] text-zinc-400 font-medium leading-tight">
-                                            {dniUploading ? 'subiendo' : 'imagen'}
-                                        </span>
+                                        <Eye size={18} />
+                                        <span className="text-[10px] text-zinc-400 font-medium leading-tight">ver</span>
                                     </button>
-                                    {openHref && (
-                                        <button
-                                            type="button"
-                                            onClick={() => window.open(openHref, '_blank')}
-                                            className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors active:scale-95"
-                                            aria-label="Ver imagen DNI"
-                                            title="Ver imagen DNI"
-                                        >
-                                            <Eye size={18} />
-                                            <span className="text-[10px] text-zinc-400 font-medium leading-tight">ver</span>
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                        </div>
+                                )}
+                            </>
+                        )}
                     </div>
-                    <div>
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Email</p>
-                        <div className="flex items-center gap-2">
-                            <p className="text-zinc-800 font-bold text-sm flex-1 min-w-0 break-all">{email || '—'}</p>
-                            {email && (
-                                <button
-                                    onClick={() => copy(email, 'Email')}
-                                    className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
-                                >
-                                    {copied === 'Email' ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
-                                    <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
-                                </button>
-                            )}
-                        </div>
+                </div>
+                <div>
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Email</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-zinc-800 font-bold text-sm flex-1 min-w-0 break-all">{email || '—'}</p>
+                        {email && (
+                            <button
+                                onClick={() => copy(email, 'Email')}
+                                className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
+                            >
+                                {copied === 'Email' ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
+                                <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }

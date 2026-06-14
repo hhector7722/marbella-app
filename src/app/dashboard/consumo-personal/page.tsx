@@ -26,6 +26,7 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 type DayCell = { total: number };
 
@@ -148,6 +149,12 @@ export default function ConsumoPersonalDashboardPage() {
   const [dayDetail, setDayDetail] = useState<DayDetailPayload | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
+
+  useModalUsageTracking({
+    open: detailOpen,
+    usageId: 'consumo-day-detail',
+    usageLabel: 'Detalle consumo del día',
+  });
 
   const [authState, setAuthState] = useState<
     | { status: 'checking' }

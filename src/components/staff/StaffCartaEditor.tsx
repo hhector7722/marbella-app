@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { Check, Loader2, Pencil, Search, X, Eye, EyeOff, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import {
   upsertMenuOverride,
   setMenuSectionCoverArticulo,
@@ -52,6 +53,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
   const [items, setItems] = useState<MenuItemRow[]>([])
   const [overrides, setOverrides] = useState<OverrideRow[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+
+  useModalUsageTracking({
+    open,
+    usageId: 'staff-carta-editor',
+    usageLabel: 'Editor carta',
+  })
 
   const overrideByArticulo = useMemo(() => {
     const m = new Map<number, OverrideRow>()

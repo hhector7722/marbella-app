@@ -22,6 +22,7 @@ import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEd
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
 import { translateCaToEsTextAction } from '@/app/actions/translate-ca-es';
@@ -90,6 +91,22 @@ function RecipeDetailContent() {
     const [recipeIngredientEditTarget, setRecipeIngredientEditTarget] = useState<Ingredient | null>(null);
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
+
+    useModalUsageTracking({
+        open: showIngredientModal,
+        usageId: 'recipe-add-ingredient',
+        usageLabel: 'Añadir ingrediente receta',
+    });
+    useModalUsageTracking({
+        open: isModalOpen,
+        usageId: 'recipe-ingredient-wizard',
+        usageLabel: 'Asistente ingrediente receta',
+    });
+    useModalUsageTracking({
+        open: showCategoryModal,
+        usageId: 'recipe-category',
+        usageLabel: 'Categoría receta',
+    });
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';

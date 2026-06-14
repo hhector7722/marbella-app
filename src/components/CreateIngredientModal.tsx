@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { X, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface Props {
     isOpen: boolean;
@@ -12,6 +13,12 @@ interface Props {
 }
 
 export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Props) {
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'create-ingredient',
+        usageLabel: 'Nuevo ingrediente',
+    });
+
     const supabase = createClient();
     const [name, setName] = useState('');
     const [price, setPrice] = useState<number | ''>('');

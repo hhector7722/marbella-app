@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Image from 'next/image';
 import { toast, Toaster } from 'sonner';
 import type { AuthError } from '@supabase/supabase-js';
+import { trackUsageLogin } from '@/lib/usage/client';
 
 const PASSWORD_RECOVERY_REDIRECT = 'https://marbella-app.vercel.app/profile';
 const RECOVERY_COOLDOWN_SECONDS = 60;
@@ -92,6 +93,7 @@ export default function LoginPage() {
 
             if (error) throw error;
 
+            trackUsageLogin('/login');
             toast.success("Acceso concedido");
             router.push('/');
             router.refresh(); // Forzar actualización de estado de auth en la app

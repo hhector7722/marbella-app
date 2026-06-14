@@ -22,6 +22,7 @@ import {
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { saveEventEncargoConfigAction } from '@/app/dashboard/eventos/actions'
 import { submitEventOrderAction } from './actions'
 
@@ -107,6 +108,12 @@ export default function EventEncargoCartaClient({
   const [responsibleName, setResponsibleName] = useState('')
   const [limitWarnings, setLimitWarnings] = useState<string[]>([])
   const [orderDone, setOrderDone] = useState(false)
+
+  useModalUsageTracking({
+    open: saveModalOpen,
+    usageId: 'event-encargo-save',
+    usageLabel: 'Confirmar encargo',
+  })
 
   const enabledIdsForClient = useMemo(
     () => normalizeEnabledProductIdsForSave(enabledSet, allProductIds),

@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { X, Package, Search, Truck } from 'lucide-react';
+import { Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { useRouter } from 'next/navigation';
-import { useScrollLock } from '@/hooks/useScrollLock';
+import { Modal } from '@/components/ui/modal';
 
 interface Supplier {
     id: string;
@@ -20,7 +20,6 @@ interface Props {
 }
 
 export function SupplierSelectionModal({ isOpen, onClose }: Props) {
-    useScrollLock(isOpen);
     const [supabase] = useState(() => createClient());
     const router = useRouter();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -72,8 +71,6 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
         };
     }, [fetchSuppliers, isOpen, supabase]);
 
-    if (!isOpen) return null;
-
     const filteredSuppliers = suppliers.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -86,77 +83,73 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
     const getLogo = (supplier: Supplier) => getSupplierLogo(supplier.image_url, supplier.name);
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
-
-                {/* Header Marbella Premium */}
-                <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
-                    <div className="flex flex-col">
-                        <h3 className="text-lg font-black uppercase tracking-wider leading-none">Proveedor</h3>
-                        <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                            <Package size={12} /> Selecciona proveedor
-                        </p>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
-                    >
-                        <X size={20} strokeWidth={3} />
-                    </button>
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title="Proveedor"
+            subtitle={
+                <span className="inline-flex items-center gap-1">
+                    <Package size={12} /> Selecciona proveedor
+                </span>
+            }
+            headerVariant="petroleum"
+            usageId="supplier-selection"
+            usageLabel="Selección de proveedor"
+            wrapperClassName="max-w-lg"
+            className="max-h-[85vh]"
+            scrollContent={false}
+            zIndexClass="z-[200]"
+        >
+            <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
+                <div className="relative mb-4 shrink-0">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar proveedor..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
+                    />
                 </div>
 
-                <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
-                    {/* Buscador */}
-                    <div className="relative mb-4 shrink-0">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar proveedor..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
-                        />
-                    </div>
-
-                    <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
-                        {loading ? (
-                            <div className="col-span-full py-10 flex justify-center">
-                                <span className="text-sm font-bold text-gray-400 animate-pulse">Cargando proveedores...</span>
-                            </div>
-                        ) : filteredSuppliers.length === 0 ? (
-                            <div className="col-span-full py-10 text-center">
-                                <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
-                            </div>
-                        ) : (
-                            filteredSuppliers.map(supplier => {
-                                const logo = getLogo(supplier);
-                                return (
-                                    <button
-                                        key={supplier.id}
-                                        onClick={() => handleSelectSupplier(supplier.name)}
-                                        className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 bg-transparent"
-                                    >
-                                        <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
-                                            {logo ? (
-                                                <img
-                                                    src={logo}
-                                                    alt={supplier.name}
-                                                    className="w-full h-full object-contain"
-                                                />
-                                            ) : (
-                                                <Truck className="w-6 h-6 text-gray-300" />
-                                            )}
-                                        </div>
-                                        <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
-                                            {supplier.name}
-                                        </span>
-                                    </button>
-                                );
-                            })
-                        )}
-                    </div>
+                <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
+                    {loading ? (
+                        <div className="col-span-full py-10 flex justify-center">
+                            <span className="text-sm font-bold text-gray-400 animate-pulse">Cargando proveedores...</span>
+                        </div>
+                    ) : filteredSuppliers.length === 0 ? (
+                        <div className="col-span-full py-10 text-center">
+                            <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
+                        </div>
+                    ) : (
+                        filteredSuppliers.map(supplier => {
+                            const logo = getLogo(supplier);
+                            return (
+                                <button
+                                    key={supplier.id}
+                                    onClick={() => handleSelectSupplier(supplier.name)}
+                                    className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 bg-transparent"
+                                >
+                                    <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
+                                        {logo ? (
+                                            <img
+                                                src={logo}
+                                                alt={supplier.name}
+                                                className="w-full h-full object-contain"
+                                            />
+                                        ) : (
+                                            <Truck className="w-6 h-6 text-gray-300" />
+                                        )}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
+                                        {supplier.name}
+                                    </span>
+                                </button>
+                            );
+                        })
+                    )}
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }

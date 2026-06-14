@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { LineEditModal } from '@/components/albaranes/LineEditModal'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
@@ -161,6 +162,32 @@ export default function AlbaranesHistoricoClient({
   const invoiceCarouselRef = useRef<HTMLDivElement>(null)
   const invoiceCarouselIndexRef = useRef(0)
   const invoiceImageViewerOpenRef = useRef(false)
+
+  useModalUsageTracking({
+    open: selectedId !== null,
+    usageId: 'albaranes-invoice-detail',
+    usageLabel: 'Detalle albarán',
+  })
+  useModalUsageTracking({
+    open: supplierPickerOpen,
+    usageId: 'albaranes-supplier-picker',
+    usageLabel: 'Asignar proveedor',
+  })
+  useModalUsageTracking({
+    open: wizardOpen,
+    usageId: 'albaranes-ingredient-wizard',
+    usageLabel: 'Asistente ingrediente',
+  })
+  useModalUsageTracking({
+    open: invoiceImageViewerOpen,
+    usageId: 'albaranes-image-viewer',
+    usageLabel: 'Visor hojas albarán',
+  })
+  useModalUsageTracking({
+    open: filterOpen,
+    usageId: 'albaranes-filter',
+    usageLabel: 'Filtrar albaranes',
+  })
 
   useEffect(() => {
     invoiceCarouselIndexRef.current = invoiceCarouselIndex

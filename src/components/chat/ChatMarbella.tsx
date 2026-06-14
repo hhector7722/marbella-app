@@ -8,6 +8,7 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { cn } from '@/lib/utils';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 // Helper para extraer texto del Vercel AI SDK
 function messageCombinedText(parts: unknown): string {
@@ -30,6 +31,17 @@ export default function ChatMarbella() {
   const isOpen = useAIStore((s) => s.isOpen);
   const closeChat = useAIStore((s) => s.closeChat);
   const [showVoiceCall, setShowVoiceCall] = useState(false);
+
+  useModalUsageTracking({
+    open: isOpen,
+    usageId: 'chat-marbella',
+    usageLabel: 'Chat Marbella',
+  });
+  useModalUsageTracking({
+    open: isOpen && showVoiceCall,
+    usageId: 'chat-voice-call',
+    usageLabel: 'Llamada voz chat',
+  });
 
   if (!isOpen) return null;
 

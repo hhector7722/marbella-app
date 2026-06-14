@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getHomeHrefForUser, isMasterDashboardUser } from "@/lib/master-dashboard";
+import {
+  applyUsageTrackingCookies,
+  trackAppUsageInMiddleware,
+} from "@/lib/usage/middleware-track";
 
 function isPasswordRecoveryProfileRequest(request: NextRequest) {
   if (request.nextUrl.pathname !== "/profile") return false;
@@ -124,9 +128,20 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    if (path.startsWith("/dashboard/uso") && !isMasterDashboardUser(email)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
     if (path.startsWith("/login")) {
       const home = getHomeHrefForUser(email, role);
       return NextResponse.redirect(new URL(home, request.url));
+    }
+
+    try {
+      const flags = await trackAppUsageInMiddleware(request, supabase, user.id, path);
+      applyUsageTrackingCookies(response, path, request.nextUrl.search, flags);
+    } catch {
+      // No bloquear navegación si falla el tracking.
     }
   }
 

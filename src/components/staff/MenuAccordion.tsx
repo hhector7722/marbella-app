@@ -19,6 +19,7 @@ import { CartaActiveToggleButton } from '@/components/carta/CartaActiveToggleBut
 import { subsWithVisibleProducts } from '@/lib/event-encargo-config'
 import { type EventEncargoEditControl, type EventOrderCartaControl } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
     type CartaLang,
@@ -347,6 +348,12 @@ export function MenuAccordion({
 
     const [openKey, setOpenKey] = useState<string | null>(null)
     const [modalEditActive, setModalEditActive] = useState(false)
+
+    useModalUsageTracking({
+        open: openKey !== null,
+        usageId: 'menu-accordion-section',
+        usageLabel: 'Sección carta',
+    })
 
     useEffect(() => {
         setModalEditActive(false)

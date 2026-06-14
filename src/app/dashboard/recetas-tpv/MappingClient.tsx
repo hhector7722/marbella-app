@@ -6,6 +6,7 @@ import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Check, Filter, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
 import {
   addRecipeIngredientLineAction,
@@ -537,6 +538,12 @@ function IngredientEscandalloModal({
   const [addByIng, setAddByIng] = useState<Record<string, { supplierId: string; text: string; factor: string }>>({})
   const [linkIngredientId, setLinkIngredientId] = useState('')
   const [linkUnit, setLinkUnit] = useState('kg')
+
+  useModalUsageTracking({
+    open,
+    usageId: 'recetas-tpv-ingredient-modal',
+    usageLabel: 'Ingredientes y albarán',
+  })
 
   useEffect(() => {
     if (!open) return

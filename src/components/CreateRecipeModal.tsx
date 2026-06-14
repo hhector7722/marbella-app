@@ -2,6 +2,7 @@
 
 import { X, Plus, Trash2, Save } from 'lucide-react';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface CreateModalProps {
     showCreateModal: boolean;
@@ -31,6 +32,11 @@ export default function CreateModal({
     removeIngredientFromRecipe,
     updateRecipeIngredient
 }: CreateModalProps) {
+    useModalUsageTracking({
+        open: showCreateModal,
+        usageId: 'create-recipe',
+        usageLabel: 'Nueva receta',
+    });
 
     if (!showCreateModal) return null;
 

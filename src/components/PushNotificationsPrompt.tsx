@@ -6,6 +6,7 @@ import { Bell, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPushSubscriptionStatus, saveSubscription } from '@/app/actions/notifications'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import {
   PUSH_PROMPT_COPY,
   PUSH_PROMPT_FORCE_PREVIEW,
@@ -41,6 +42,12 @@ export function PushNotificationsPrompt({
   const [permissionDenied, setPermissionDenied] = useState(false)
   const [mounted, setMounted] = useState(false)
   const forcedPreview = isForcedPreviewUser(userEmail)
+
+  useModalUsageTracking({
+    open,
+    usageId: 'push-notifications-prompt',
+    usageLabel: 'Activar notificaciones',
+  })
 
   useEffect(() => {
     setMounted(true)

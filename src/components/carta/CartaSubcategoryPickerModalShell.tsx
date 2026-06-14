@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
 /** Modal compacto: solo selector de subcategorías (Bocadillos, Bebidas, etc.). */
 export function CartaSubcategoryPickerModalShell({
@@ -16,6 +17,12 @@ export function CartaSubcategoryPickerModalShell({
   children: ReactNode
   className?: string
 }) {
+  useModalUsageTracking({
+    open: true,
+    usageId: 'carta-subcategory-picker',
+    usageLabel: 'Elegir subcategoría',
+  })
+
   return (
     <div
       className={cn(

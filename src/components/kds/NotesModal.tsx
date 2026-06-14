@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { KdsMesaNumber } from "@/components/kds/KdsMesaNumber";
 import { cn } from "@/lib/utils";
+import { useModalUsageTracking } from "@/hooks/useModalUsageTracking";
 
 function norm(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -39,6 +40,12 @@ export function NotesModal(props: {
   onSave: (notes: string) => Promise<void> | void;
 }) {
   const { isOpen, title, subtitle, initialNotes, quickNotes, onClose, onSave } = props;
+
+  useModalUsageTracking({
+    open: isOpen,
+    usageId: 'kds-notes',
+    usageLabel: 'Notas KDS',
+  });
 
   const [selectedQuick, setSelectedQuick] = useState<Set<string>>(new Set());
   const [freeText, setFreeText] = useState("");

@@ -22,6 +22,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface LedgerRow {
     id: string;
@@ -78,6 +79,17 @@ export default function ManagerLedgerView() {
     const [editDate, setEditDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    useModalUsageTracking({
+        open: modalOpen || editModalOpen,
+        usageId: editModalOpen ? 'ledger-edit' : 'ledger-create',
+        usageLabel: editModalOpen ? 'Editar apunte libro' : 'Nuevo apunte libro',
+    });
+    useModalUsageTracking({
+        open: deleteModalOpen,
+        usageId: 'ledger-delete',
+        usageLabel: 'Eliminar apunte libro',
+    });
 
     const parseLocalSafe = (dateStr: string | null) => {
         if (!dateStr) return new Date();

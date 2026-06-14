@@ -1,8 +1,8 @@
 'use client';
 
-import { X, Download, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { X, Download, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface DocumentPreviewModalProps {
     isOpen: boolean;
@@ -22,6 +22,12 @@ export default function DocumentPreviewModal({
     onDownload
 }: DocumentPreviewModalProps) {
     const [isLoaded, setIsLoaded] = useState(false);
+
+    useModalUsageTracking({
+        open: isOpen && Boolean(fileUrl),
+        usageId: 'document-preview',
+        usageLabel: 'Vista documento',
+    });
 
     useEffect(() => {
         if (!isOpen) return;

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { KdsCommandRail, kdsRailCardOverlapClass, kdsRailRowWrapperClass } from '@/components/kds/KdsCommandRail';
 import { combinedLineNotesForDisplay } from '@/components/kds/combined-line-notes';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 /** Máximo de comandas por fila (pantalla ancha). */
 const KDS_MAX_COLS = 4;
@@ -329,6 +330,12 @@ export default function KDSView() {
     const [showCompleted, setShowCompleted] = useState(false);
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
     const kdsSound = useKdsNotificationSound({ cooldownMs: 900 });
+
+    useModalUsageTracking({
+        open: isSummaryOpen,
+        usageId: 'kds-summary',
+        usageLabel: 'Resumen KDS',
+    });
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

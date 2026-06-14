@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import { getCroppedImg, type CropAreaPixels } from '@/lib/crop-image';
 import { cn } from '@/lib/utils';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface AvatarCropModalProps {
   imageSrc: string;
@@ -28,6 +29,12 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropAreaPixels | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useModalUsageTracking({
+    open: true,
+    usageId: 'avatar-crop',
+    usageLabel: 'Recorte avatar',
+  });
 
   useEffect(() => {
     const img = new Image();

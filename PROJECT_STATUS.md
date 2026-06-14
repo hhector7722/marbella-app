@@ -1,6 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-12 (Carta: editores delegados — Willy)
+**Última actualización:** 2026-06-14 (Uso de la app — tracking completo pantallas + modales)
+
+- [x] **Uso de la app: tracking modales completo (2026-06-14)**: Componente base [`Modal`](src/components/ui/modal.tsx) + hook [`useModalUsageTracking`](src/hooks/useModalUsageTracking.ts). Regla [`.cursor/rules/modals.mdc`](.cursor/rules/modals.mdc). Migración masiva: pedidos, caja, albaranes, propinas, carta, KDS, dashboards, recetas/ingredientes/proveedores, chat, onboarding, asistencia (incl. editar semana), confirmación envío pedido, etc. Eventos `modal_open` / `modal_dwell` visibles en [`/dashboard/uso`](src/app/dashboard/uso/page.tsx).
+
+- [x] **Uso de la app: tracking + dashboard `/dashboard/uso` (2026-06-14)**: Migración [`20260614120000_app_usage_tracking.sql`](supabase/migrations/20260614120000_app_usage_tracking.sql) — tabla `app_usage_events`, RLS insert propio + select solo `is_usage_analyst()` (Hector). Stack: `lib/usage/*`, API [`/api/usage/event`](src/app/api/usage/event/route.ts), tracker cliente en layout, sesiones en [`proxy.ts`](src/proxy.ts), pestañas staff en [`StaffBottomNav`](src/components/StaffBottomNav.tsx), login en [`login/page.tsx`](src/app/login/page.tsx). Dashboard master: [`/dashboard/uso`](src/app/dashboard/uso/page.tsx) + acceso rápido en [`MasterShortcutGrid`](src/components/dashboards/MasterShortcutGrid.tsx).
+
+**Última actualización anterior:** 2026-06-12 (Carta: editores delegados — Willy)
 
 - [x] **Carta: editores delegados sin rol supervisor (2026-06-12)**: Migración [`20260612120000_carta_editors.sql`](supabase/migrations/20260612120000_carta_editors.sql) — tabla `carta_editors`, helper `can_manage_carta()` (manager/admin/supervisor o fila en tabla), RLS carta/storage actualizado. **Willy** (`staff`) añadido como editor. UI: [`carta-permissions.ts`](src/lib/carta-permissions.ts), [`/staff/carta`](src/app/staff/carta/page.tsx), server actions carta. Aplicado en Supabase.
 

@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 
@@ -227,6 +228,12 @@ export default function LaborHistoryPage() {
         dayNetSales: number;
         workers: WorkerRow[];
     } | null>(null);
+
+    useModalUsageTracking({
+        open: detailOpen,
+        usageId: 'labor-day-detail',
+        usageLabel: 'Detalle día laboral',
+    });
 
     const calendarDays = useMemo(() => {
         const startVisible = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });

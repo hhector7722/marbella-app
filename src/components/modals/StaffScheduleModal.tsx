@@ -12,6 +12,7 @@ import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
@@ -69,6 +70,11 @@ export const StaffScheduleModal = ({
     initialFocusDate,
 }: Props) => {
     useScrollLock(isOpen);
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'staff-schedule',
+        usageLabel: 'Horario del personal',
+    });
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);

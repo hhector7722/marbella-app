@@ -24,6 +24,7 @@ import {
   searchIngredientsForMappingAction,
   updateMappedLineConversionFactorAction,
 } from '@/app/dashboard/albaranes/actions'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 type LineDimensionalDraft = {
   lineBillingUnit: string
   lineContentQty: string
@@ -80,6 +81,7 @@ export function LineMappingModal({
   onClose,
   onSuccess,
 }: LineMappingModalProps) {
+  useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Minus, Plus, Trash2, Package } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface Ingredient {
@@ -47,7 +48,13 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     // This ref tells us if the user is currently interacting and hasn't saved yet
     const isDirtyRef = useRef(false);
 
-    // 1. Sync from Props (External changes, e.g. from Realtime AI voice or initial load)
+    useModalUsageTracking({
+        open: showModal,
+        usageId: 'order-product-edit',
+        usageLabel: 'Editar producto pedido',
+    });
+
+    // 1. Sync from Props
     useEffect(() => {
         if (!isDirtyRef.current) {
             setQuantity(initialQuantity);

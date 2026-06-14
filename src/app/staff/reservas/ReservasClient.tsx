@@ -29,6 +29,7 @@ import { toast } from 'sonner'
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { createClient } from '@/utils/supabase/client'
 
 type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'rejected'
@@ -461,6 +462,17 @@ export default function ReservasClient() {
   const [listModalDay, setListModalDay] = useState<string | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [actionBusy, setActionBusy] = useState<Record<string, ActionKind | null>>({})
+
+  useModalUsageTracking({
+    open: listModalDay !== null,
+    usageId: 'reservas-day-list',
+    usageLabel: 'Reservas del día',
+  })
+  useModalUsageTracking({
+    open: selectedReservation !== null,
+    usageId: 'reservas-detail',
+    usageLabel: 'Detalle de reserva',
+  })
 
   const fetchSeqRef = useRef(0)
 

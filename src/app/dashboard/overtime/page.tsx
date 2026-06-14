@@ -15,6 +15,7 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
 const formatDisplay = (val: number, suffix: string = '') => {
@@ -87,6 +88,12 @@ export default function OvertimePage() {
     const [weeksData, setWeeksData] = useState<WeeklyStats[]>([]);
     const [loading, setLoading] = useState(true);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
+
+    useModalUsageTracking({
+        open: weekDetailModal !== null,
+        usageId: 'overtime-week-detail',
+        usageLabel: 'Detalle semana horas extras',
+    });
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);

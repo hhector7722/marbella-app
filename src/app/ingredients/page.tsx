@@ -12,6 +12,7 @@ import { IngredientEditModal, type Ingredient } from '@/components/ingredients/I
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -96,6 +97,12 @@ export default function IngredientsPage() {
     const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
+
+    useModalUsageTracking({
+        open: showCreateModal,
+        usageId: 'ingredient-create-inline',
+        usageLabel: 'Crear ingrediente',
+    });
     const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
     const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);

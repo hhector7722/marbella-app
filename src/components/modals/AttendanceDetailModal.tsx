@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { formatMadridHmFromIso, madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -41,6 +42,12 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
     const [preferStock, setPreferStock] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'attendance-edit-week',
+        usageLabel: 'Editar semana asistencia',
+    });
 
     const weekStart = date
         ? format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
@@ -196,6 +203,12 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
 }
 
 export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, onSuccess }: AttendanceDetailModalProps) {
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'attendance-detail',
+        usageLabel: 'Detalle de asistencia',
+    });
+
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, RefreshCw, X } from 'lucide-react'
@@ -181,6 +182,12 @@ function FinancialDetailModal({
   footnote?: string
 }) {
   const [mounted, setMounted] = useState(false)
+
+  useModalUsageTracking({
+    open,
+    usageId: `insights-financial-${title.toLowerCase().replace(/\s+/g, '-')}`,
+    usageLabel: title,
+  })
 
   useEffect(() => {
     setMounted(true)

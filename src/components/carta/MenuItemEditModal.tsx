@@ -5,6 +5,7 @@ import { Camera, Trash2, Upload, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
@@ -71,6 +72,12 @@ export function MenuItemEditModal({
   const [labelMedioCa, setLabelMedioCa] = useState('')
   const [labelMedioEn, setLabelMedioEn] = useState('')
   const [tpvPrecioBase, setTpvPrecioBase] = useState<string | null>(null)
+
+  useModalUsageTracking({
+    open: open && articuloId != null,
+    usageId: 'carta-item-edit',
+    usageLabel: 'Editar producto carta',
+  })
 
   const platoMarbellaCategoryId = useMemo(
     () => categories.find((c) => c.slug === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null,

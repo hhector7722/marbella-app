@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { Avatar } from '@/components/ui/Avatar';
 import { CreditCard } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
@@ -68,6 +69,13 @@ function ProfileContent() {
     const [comunicadosOpen, setComunicadosOpen] = useState(false);
     const [contratoOpen, setContratoOpen] = useState(false);
     const [logoutConfirm, setLogoutConfirm] = useState(false);
+
+    useModalUsageTracking({
+        open: logoutConfirm,
+        usageId: 'profile-logout-confirm',
+        usageLabel: 'Confirmar cierre de sesión',
+    });
+
     const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [joiningDateYmd, setJoiningDateYmd] = useState<string>('');

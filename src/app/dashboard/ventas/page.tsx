@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
 import type { VentasTab } from '@/components/dashboards/SubNavVentas';
@@ -103,6 +104,17 @@ export default function VentasPage() {
 
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
     const [showMonthPicker, setShowMonthPicker] = useState(false);
+
+    useModalUsageTracking({
+        open: showCalendar !== null,
+        usageId: showCalendar === 'single' ? 'ventas-date-single' : 'ventas-date-range',
+        usageLabel: showCalendar === 'single' ? 'Fecha única' : 'Rango de fechas',
+    });
+    useModalUsageTracking({
+        open: showMonthPicker,
+        usageId: 'ventas-month-picker',
+        usageLabel: 'Selector de mes',
+    });
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);

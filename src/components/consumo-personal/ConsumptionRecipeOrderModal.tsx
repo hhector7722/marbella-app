@@ -31,6 +31,7 @@ import {
   buildDefaultConsumptionRecipeOrder,
   isDrinkConsumptionRecipe,
 } from '@/lib/staff-consumption-display';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 function sortByManualOrder(recipes: ConsumptionRecipeForOrder[]): ConsumptionRecipeForOrder[] {
   return [...recipes].sort((a, b) => {
@@ -97,6 +98,7 @@ export function ConsumptionRecipeOrderModal({
   open: boolean;
   onClose: () => void;
 }) {
+  useModalUsageTracking({ open, usageId: 'consumption-order', usageLabel: 'Orden consumo' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<OrderStep>('drinks');

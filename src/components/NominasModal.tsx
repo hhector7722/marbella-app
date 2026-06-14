@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Modal } from '@/components/ui/modal';
 interface NominasModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -148,31 +149,27 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
     if (!isOpen) return null;
 
+    const uploadTrailing = isManager && targetUserId ? (
+        <>
+            <input type="file" id="nomina-upload" className="hidden" accept=".pdf" onChange={handleUpload} disabled={uploading} />
+            <label htmlFor="nomina-upload" className={cn('min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30', uploading && 'opacity-60 cursor-wait')}>
+                {uploading ? <LoadingSpinner size="sm" className="text-white" /> : <Plus size={22} strokeWidth={2.5} />}
+            </label>
+        </>
+    ) : null;
+
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
-                <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
-                    <h2 className="text-base font-black uppercase tracking-wider">
-                        {targetUserId ? 'Nóminas' : 'Mis nóminas'}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        {isManager && targetUserId && (
-                            <>
-                                <input type="file" id="nomina-upload" className="hidden" accept=".pdf" onChange={handleUpload} disabled={uploading} />
-                                <label htmlFor="nomina-upload" className={cn('min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30', uploading && 'opacity-60 cursor-wait')}>
-                                    {uploading ? <LoadingSpinner size="sm" className="text-white" /> : <Plus size={22} strokeWidth={2.5} />}
-                                </label>
-                            </>
-                        )}
-                        <button type="button" onClick={onClose} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors" aria-label="Cerrar">
-                            <X size={22} strokeWidth={2.5} />
-                        </button>
-                    </div>
-                </div>
-
-
-
-                <div className="flex-1 overflow-y-auto max-h-[60vh] p-4">
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title={targetUserId ? 'Nóminas' : 'Mis nóminas'}
+            headerVariant="petroleum"
+            className="max-w-lg rounded-3xl"
+            usageId="nominas"
+            usageLabel="Nóminas"
+            headerTrailing={uploadTrailing}
+        >
+            <div className="max-h-[60vh] overflow-y-auto p-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -224,7 +221,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                         </ul>
                     )}
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

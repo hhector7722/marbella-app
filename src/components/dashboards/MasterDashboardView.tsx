@@ -15,6 +15,7 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +46,12 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
+
+    useModalUsageTracking({
+        open: auditBox !== null,
+        usageId: 'master-cash-audit',
+        usageLabel: 'Arqueo de caja',
+    });
 
     const [closingSalesSummary, setClosingSalesSummary] = useState(
         initialData?.liveTickets || { total: 0, count: 0 }

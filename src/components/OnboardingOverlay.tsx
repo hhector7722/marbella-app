@@ -9,6 +9,7 @@ import { completeOnboarding } from '@/app/actions/profile';
 import Image from 'next/image';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface OnboardingOverlayProps {
     needsOnboarding: boolean;
@@ -27,6 +28,12 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
     const [loading, setLoading] = useState(false);
     const [os, setOs] = useState<'ios' | 'android' | 'desktop'>('desktop');
     const { isInstallable, install } = usePWAInstall();
+
+    useModalUsageTracking({
+        open: isVisible,
+        usageId: 'onboarding',
+        usageLabel: 'Onboarding inicial',
+    });
 
     useEffect(() => {
         if (needsOnboarding) {

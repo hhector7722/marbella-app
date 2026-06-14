@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { AuthError } from '@supabase/supabase-js';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -32,6 +33,12 @@ export default function ChangePasswordModal({
     isRecoveryMode = false,
     onSuccess,
 }: ChangePasswordModalProps) {
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'change-password',
+        usageLabel: 'Cambiar contraseña',
+    });
+
     const supabase = createClient();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');

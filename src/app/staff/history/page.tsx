@@ -22,6 +22,7 @@ import {
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
@@ -109,6 +110,12 @@ export default function HistoryPage() {
 
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
+    useModalUsageTracking({
+        open: showMonthPicker,
+        usageId: 'staff-history-month-picker',
+        usageLabel: 'Selector de mes',
+    });
 
     const [editingDate, setEditingDate] = useState<string | null>(null);
     const [editingUserId, setEditingUserId] = useState<string | null>(null);

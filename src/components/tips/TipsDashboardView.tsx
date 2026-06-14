@@ -13,6 +13,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
@@ -184,6 +185,12 @@ export default function TipsDashboardView({
   const [showHoursDetail, setShowHoursDetail] = useState(false);
   const [showSinRegCol, setShowSinRegCol] = useState(false);
   const [showPropDetail, setShowPropDetail] = useState(false);
+
+  useModalUsageTracking({
+    open: cashModal?.open ?? false,
+    usageId: `tips-cash-${cashModal?.poolType ?? 'pool'}`,
+    usageLabel: cashModal?.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana',
+  });
 
   const tableColCount =
     4 + (showHoursDetail ? 2 : 0) + (showSinRegCol ? 1 : 0) + (showPropDetail ? 3 : 0);

@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 type PoolType = 'weekday' | 'weekend';
 
@@ -41,6 +42,12 @@ export function TipOverrideModal({
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
+
+  useModalUsageTracking({
+    open: isOpen,
+    usageId: 'tip-override',
+    usageLabel: 'Ajuste propina',
+  });
 
   useEffect(() => {
     if (!isOpen) return;

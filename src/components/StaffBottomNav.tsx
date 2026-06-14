@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { trackUsageTabSwitch } from '@/lib/usage/client';
 import { createClient } from '@/utils/supabase/client';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
@@ -167,13 +168,18 @@ export default function StaffBottomNav() {
                             onClick={(e) => {
                                 if (item.action === 'scheduleModal') {
                                     e.preventDefault();
+                                    trackUsageTabSwitch(pathname, '#horarios', item.name);
                                     setIsScheduleModalOpen(true);
                                 } else if (item.action === 'supplierModal') {
                                     e.preventDefault();
+                                    trackUsageTabSwitch(pathname, '/orders/new', item.name);
                                     setIsSupplierModalOpen(true);
                                 } else if (item.action === 'home') {
                                     e.preventDefault();
+                                    trackUsageTabSwitch(pathname, homeHref, item.name);
                                     router.push(homeHref);
+                                } else if (!item.href.startsWith('#')) {
+                                    trackUsageTabSwitch(pathname, linkHref, item.name);
                                 }
                             }}
                         >

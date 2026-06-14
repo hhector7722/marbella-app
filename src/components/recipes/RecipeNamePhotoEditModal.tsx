@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Camera, X } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Modal } from '@/components/ui/modal';
 import { uploadNormalizedRecipePhoto } from '@/app/dashboard/carta/photo-actions';
 
 export type RecipeNamePhotoSaved = { name: string; photo_url: string | null };
@@ -121,43 +122,16 @@ export function RecipeNamePhotoEditModal({
     if (!open) return null;
 
     return (
-        <div
-            className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-            role="presentation"
-            onClick={onClose}
+        <Modal
+            open={open}
+            onClose={onClose}
+            title="Nombre e imagen"
+            headerVariant="petroleum"
+            className="max-w-md"
+            usageId="recipe-name-photo"
+            usageLabel="Editar receta"
         >
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="recipe-name-photo-edit-title"
-                className={cn(
-                    'w-full max-w-md overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-xl',
-                    'flex max-h-[90vh] flex-col',
-                )}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 bg-[#36606F] px-4 py-3">
-                    <h2
-                        id="recipe-name-photo-edit-title"
-                        className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-white md:text-xs"
-                    >
-                        Nombre e imagen
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className={cn(
-                            'absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center',
-                            'text-white/70 transition hover:text-white',
-                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                        )}
-                        aria-label="Cerrar"
-                    >
-                        <X className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
                     <label className="block">
                         <span className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-zinc-400">Nombre</span>
                         <input
@@ -241,7 +215,6 @@ export function RecipeNamePhotoEditModal({
                         )}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

@@ -14,6 +14,7 @@ import { BUSINESS_HOURS } from '@/lib/constants';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 export type DashboardVentasInitialData = {
     liveTickets?: { total: number; count: number };
@@ -42,6 +43,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const initialLoadDoneRef = useRef(false);
     const hourlyFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false);
+
+    useModalUsageTracking({
+        open: isSalesDateModalOpen,
+        usageId: 'dashboard-ventas-date',
+        usageLabel: 'Selector de fecha ventas',
+    });
     const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
     const [selectedChartHour, setSelectedChartHour] = useState<number | null>(null);
     const chartContainerRef = useRef<HTMLDivElement>(null);

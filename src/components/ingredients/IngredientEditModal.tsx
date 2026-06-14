@@ -13,6 +13,7 @@ import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-c
 import { buildSupplierNameSet, getOrphanedSupplierName } from '@/lib/orphaned-supplier';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplierAlert';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 export interface Ingredient {
     id: string;
@@ -139,6 +140,7 @@ export type IngredientEditModalProps = {
 };
 
 export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIngredients }: IngredientEditModalProps) {
+    useModalUsageTracking({ open: !!ingredient, usageId: 'ingredient-edit', usageLabel: 'Editar ingrediente' });
     const supabase = createClient();
     const [activeIngredient, setActiveIngredient] = useState<Ingredient | null>(null);
     const [editForm, setEditForm] = useState<Partial<Ingredient>>({});

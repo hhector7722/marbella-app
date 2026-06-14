@@ -12,6 +12,7 @@ import { ClientDisplayModeReporter } from "@/components/ClientDisplayModeReporte
 import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell";
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
+import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -130,6 +131,7 @@ export default async function RootLayout({
             {children}
           </MainWrapper>
           <BottomNavWrapper />
+          <UsageAuthenticatedTracker enabled={!!user} />
 
           {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
           <ChatMarbellaLazy />

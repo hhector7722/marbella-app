@@ -8,6 +8,7 @@ import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { INITIAL_SUPPLIER_SEED, sortSuppliersByName } from '@/lib/supplier-seed';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -245,6 +246,22 @@ export default function SuppliersPage() {
     const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    useModalUsageTracking({
+        open: !!detailSupplier,
+        usageId: 'supplier-detail',
+        usageLabel: 'Detalle proveedor',
+    });
+    useModalUsageTracking({
+        open: !!editSupplier,
+        usageId: 'supplier-edit',
+        usageLabel: 'Editar proveedor',
+    });
+    useModalUsageTracking({
+        open: showCreateModal,
+        usageId: 'supplier-create',
+        usageLabel: 'Crear proveedor',
+    });
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const [removeImage, setRemoveImage] = useState<boolean>(false);

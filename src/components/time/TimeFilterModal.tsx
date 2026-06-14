@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   addDays,
   addMonths,
@@ -18,7 +18,7 @@ import {
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
-import { useScrollLock } from "@/hooks/useScrollLock";
+import { Modal } from "@/components/ui/modal";
 
 function parseYmdLocal(dateStr: string): Date {
   const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
@@ -53,7 +53,6 @@ export function TimeFilterModal({
   initialValue?: TimeFilterValue;
   defaultKind?: TimeFilterKind;
 }) {
-  useScrollLock(isOpen);
   const initialKind = useMemo<TimeFilterKind>(() => {
     const candidate = defaultKind ?? initialValue?.kind ?? allowedKinds[0] ?? "date";
     return allowedKinds.includes(candidate) ? candidate : (allowedKinds[0] ?? "date");
@@ -226,27 +225,15 @@ export function TimeFilterModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="bg-[#36606F] p-5 text-white relative">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="text-lg font-black uppercase tracking-tight italic">Filtro</div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-xl transition-all min-h-[48px] min-w-[48px] flex items-center justify-center shrink-0"
-              aria-label="Cerrar"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Filtro"
+      headerVariant="petroleum"
+      className="rounded-[2.5rem] max-w-sm"
+      usageId="time-filter"
+      usageLabel="Filtro horario"
+    >
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-3 gap-2">
             {allowedKinds.includes("hours") && <TabButton kind="hours" />}
@@ -423,8 +410,7 @@ export function TimeFilterModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

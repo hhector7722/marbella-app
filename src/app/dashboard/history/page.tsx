@@ -32,6 +32,7 @@ import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
@@ -130,6 +131,13 @@ const CashBreakdownModal = ({
     saving?: boolean,
 }) => {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'history-cash-breakdown',
+        usageLabel: 'Arqueo de efectivo',
+    });
+
     if (!isOpen) return null;
 
     const displayBreakdown = isEditing ? {
@@ -251,6 +259,22 @@ export default function HistoryPage() {
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'table'>('calendar');
+
+    useModalUsageTracking({
+        open: selectedClosing !== null,
+        usageId: 'history-closing-detail',
+        usageLabel: 'Detalle de cierre',
+    });
+    useModalUsageTracking({
+        open: showCalendar !== null,
+        usageId: showCalendar === 'single' ? 'history-date-single' : 'history-date-range',
+        usageLabel: showCalendar === 'single' ? 'Fecha única' : 'Rango de fechas',
+    });
+    useModalUsageTracking({
+        open: showMonthPicker,
+        usageId: 'history-month-picker',
+        usageLabel: 'Selector de mes',
+    });
 
     const calendarDays = useMemo(() => {
         const base = filterMode === 'range' && rangeStart ? new Date(rangeStart) : new Date(selectedDate);

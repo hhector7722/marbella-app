@@ -10,6 +10,7 @@ import {
   normalizeConsumptionRecipeName,
   sortConsumptionRecipesForModal,
 } from '@/lib/staff-consumption-display';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 /** Bocadillos sin opción medio (nombre normalizado). */
 const BOCADILLO_SIN_MEDIO = new Set([
@@ -49,6 +50,7 @@ export function ConsumptionModal({
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }) {
+  useModalUsageTracking({ open: true, usageId: 'staff-consumption', usageLabel: 'Consumo al fichar' });
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);

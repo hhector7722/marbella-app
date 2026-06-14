@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { ClipboardList, Copy, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { createEventAction, deleteEventAction } from './actions'
 
@@ -43,6 +44,12 @@ export default function EventosAdminClient({
   canManage?: boolean
 }) {
   const [createOpen, setCreateOpen] = useState(false)
+
+  useModalUsageTracking({
+    open: createOpen,
+    usageId: 'eventos-create',
+    usageLabel: 'Nuevo evento',
+  })
   const [isPending, startTransition] = useTransition()
 
   const [contactName, setContactName] = useState('')

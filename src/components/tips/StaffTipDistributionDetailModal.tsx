@@ -16,8 +16,9 @@ export function StaffTipDistributionDetailModal({
   return (
     <StaffTipModalShell
       title="Reparto"
-      titleId="tip-distribution-detail-title"
       onClose={onClose}
+      usageId="staff-tip-distribution-detail"
+      usageLabel="Detalle reparto propinas"
     >
       <StaffTipRepartoPanel entry={entry} />
     </StaffTipModalShell>

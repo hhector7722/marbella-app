@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Trash2, ArrowRight } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { Modal } from '@/components/ui/modal';
 
 interface Ingredient {
     id: string;
@@ -23,32 +24,21 @@ interface OrderSummaryModalProps {
 
 export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcessing }: OrderSummaryModalProps) {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
-    if (!isOpen) return null;
-
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300"
-            onClick={onClose}
-        >
-            <div
-                className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300"
-                onClick={(e) => e.stopPropagation()}
+        <>
+            <Modal
+                open={isOpen}
+                onClose={onClose}
+                title="Pedido"
+                headerVariant="petroleum"
+                usageId="order-summary"
+                usageLabel="Resumen de pedido"
+                wrapperClassName="max-w-2xl"
+                className="max-h-[85vh]"
+                scrollContent={false}
+                zIndexClass="z-[70]"
             >
-                {/* Header */}
-                <div className="bg-[#36606F] py-2 px-4 sm:py-4 sm:px-8 flex justify-between items-center shrink-0">
-                    <h2 className="text-sm sm:text-xl font-black text-white uppercase tracking-widest">Pedido</h2>
-                    <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={onClose} className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
-                            <X className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-                        </button>
-                    </div>
-                </div>
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-
-                {/* Table Content */}
                 <div className="flex-1 overflow-y-auto px-1 sm:px-6 py-2 sm:py-6">
                     <table className="w-full text-left border-separate border-spacing-y-1 sm:border-spacing-y-2 table-fixed">
                         <thead>
@@ -87,9 +77,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                     </table>
                 </div>
 
-                {/* Footer / Totals */}
                 <div className="p-3 sm:p-8 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-end gap-6 shrink-0">
-
                     <button
                         onClick={onConfirm}
                         disabled={isProcessing}
@@ -111,7 +99,9 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                         )}
                     </button>
                 </div>
-            </div>
-        </div>
+            </Modal>
+            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+            <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+        </>
     );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
 export type ImageLightboxSlide = {
   src: string
@@ -52,6 +53,13 @@ export function ImageLightbox({
     : internalIndex
 
   const currentSlide = resolvedSlides[currentIndex]
+
+  useModalUsageTracking({
+    open,
+    usageId: 'image-lightbox',
+    usageLabel: 'Imagen ampliada',
+    disabled: !currentSlide,
+  })
 
   useEffect(() => {
     if (!isControlled) setInternalIndex(activeIndex)

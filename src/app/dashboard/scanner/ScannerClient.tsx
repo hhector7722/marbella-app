@@ -8,6 +8,7 @@ import { appendScannerPageToInvoiceAction, processScannerImage } from './actions
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { createClient } from '@/utils/supabase/client'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
 interface Supplier {
   id: number
@@ -48,6 +49,12 @@ export function ScannerClient({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
   const prevBatchLenRef = useRef(0)
+
+  useModalUsageTracking({
+    open: showSupplierModal,
+    usageId: 'scanner-supplier',
+    usageLabel: 'Proveedor escáner',
+  })
   /** Android: cámara directa (desde la UI nativa se puede ir a galería). iOS: selector nativo del SO. */
   const [fileInputCapture, setFileInputCapture] = useState<'environment' | undefined>('environment')
   const supabase = createClient()

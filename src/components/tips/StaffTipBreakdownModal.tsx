@@ -13,7 +13,13 @@ export function StaffTipBreakdownModal({
   children: ReactNode;
 }) {
   return (
-    <StaffTipModalShell title={title} titleId="staff-tip-breakdown-title" onClose={onClose} zClass="z-[130]">
+    <StaffTipModalShell
+      title={title}
+      onClose={onClose}
+      zClass="z-[130]"
+      usageId="staff-tip-breakdown"
+      usageLabel="Desglose propina"
+    >
       {children}
     </StaffTipModalShell>
   );

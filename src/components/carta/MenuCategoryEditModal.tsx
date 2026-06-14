@@ -5,6 +5,7 @@ import { X, Loader2, Search, Upload, Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import {
   setMenuCategoryCover,
   upsertMenuCategoryOverride,
@@ -56,6 +57,12 @@ export function MenuCategoryEditModal({
   const [coverPhotoScale, setCoverPhotoScale] = useState<CartaPhotoScale>('m')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null)
+
+  useModalUsageTracking({
+    open: open && category != null,
+    usageId: 'carta-category-edit',
+    usageLabel: 'Editar categoría carta',
+  })
 
   const isParent = category?.parent_id == null
 

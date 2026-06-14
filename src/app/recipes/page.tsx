@@ -9,6 +9,7 @@ import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
     type MenuCategoryRow,
     denormalizedRecipeCategoryName,
@@ -52,6 +53,12 @@ function RecipesContent() {
     const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
     /** Lista para flechas anterior/siguiente (misma regla que `/recipes/[id]`: orden nombre, opcional filtro categoría URL). */
     const [staffNavRecipes, setStaffNavRecipes] = useState<Array<{ id: string }>>([]);
+
+    useModalUsageTracking({
+        open: !!selectedRecipeId,
+        usageId: 'recipe-detail-overlay',
+        usageLabel: 'Detalle receta (lista)',
+    });
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
     const router = useRouter();

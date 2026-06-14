@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 type ModalTab = 'calculator' | 'breakdown';
 
@@ -53,6 +54,12 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
     const [lastCaptureCopied, setLastCaptureCopied] = useState(false);
     const overlayRef = useRef<HTMLDivElement | null>(null);
     const modalRef = useRef<HTMLDivElement | null>(null);
+
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'quick-calculator',
+        usageLabel: 'Calculadora rápida',
+    });
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {

@@ -5,6 +5,7 @@ import { X, Save } from 'lucide-react';
 import { updateProfile } from '@/app/actions/profile';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -24,6 +25,12 @@ interface EditProfileModalProps {
 }
 
 export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }: EditProfileModalProps) {
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'edit-profile',
+        usageLabel: 'Editar perfil',
+    });
+
     const [dni, setDni] = useState(profile.dni || '');
     const [iban, setIban] = useState(profile.bank_account || '');
     const [phone, setPhone] = useState(profile.phone || '');
