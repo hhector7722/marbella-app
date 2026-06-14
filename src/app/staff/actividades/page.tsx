@@ -33,19 +33,6 @@ function parseLocalSafe(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
-function madridTodayIso(): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date());
-  const y = parts.find((p) => p.type === 'year')?.value ?? '1970';
-  const m = parts.find((p) => p.type === 'month')?.value ?? '01';
-  const d = parts.find((p) => p.type === 'day')?.value ?? '01';
-  return `${y}-${m}-${d}`;
-}
-
 export default function ActividadesPage() {
   usePageView();
 
@@ -60,8 +47,6 @@ export default function ActividadesPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
-
-  const todayStr = madridTodayIso();
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(viewMonth);
@@ -121,7 +106,7 @@ export default function ActividadesPage() {
 
   const openDay = (day: Date) => {
     const key = format(day, 'yyyy-MM-dd');
-    if (key > todayStr) return;
+    if (!isSameMonth(day, viewMonth)) return;
     setSelectedDayStr(key);
     setModalOpen(true);
   };
@@ -136,7 +121,6 @@ export default function ActividadesPage() {
     const d = parseLocalSafe(selectedDayStr);
     d.setDate(d.getDate() + delta);
     const key = format(d, 'yyyy-MM-dd');
-    if (key > todayStr) return;
     setSelectedDayStr(key);
     if (!isSameMonth(d, viewMonth)) {
       setViewMonth(startOfMonth(d));
@@ -153,7 +137,7 @@ export default function ActividadesPage() {
     }
   };
 
-  const daysWithPdf = Object.keys(byDate).filter((k) => k <= todayStr).length;
+  const daysWithPdf = Object.keys(byDate).length;
 
   const selectedRow = selectedDayStr ? byDate[selectedDayStr] ?? null : null;
 
@@ -275,36 +259,30 @@ export default function ActividadesPage() {
                     <div className="grid grid-cols-7 gap-1 md:gap-2">
                       {calendarDays.map((day) => {
                         const key = format(day, 'yyyy-MM-dd');
-                        const isFutureDay = key > todayStr;
                         const hasPdf = Boolean(byDate[key]);
                         const isViewMonthDay = isSameMonth(day, viewMonth);
-                        const clickable = isViewMonthDay && !isFutureDay;
+                        const clickable = isViewMonthDay;
 
                         return (
                           <button
                             key={key}
                             type="button"
                             onClick={() => clickable && openDay(day)}
+                            disabled={!clickable}
                             className={cn(
                               'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all',
                               !isViewMonthDay &&
                                 'bg-transparent border-transparent opacity-25 pointer-events-none',
                               isViewMonthDay &&
-                                isFutureDay &&
-                                'cursor-default border-zinc-200/60 bg-zinc-50/90',
-                              isViewMonthDay &&
-                                !isFutureDay &&
-                                'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99]',
+                                'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99] cursor-pointer',
                             )}
                           >
                             <div
                               className={cn(
                                 'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
-                                hasPdf && isViewMonthDay && !isFutureDay
+                                hasPdf && isViewMonthDay
                                   ? 'bg-emerald-600'
-                                  : isFutureDay && isViewMonthDay
-                                    ? 'bg-zinc-300'
-                                    : 'bg-[#D64D5D]',
+                                  : 'bg-[#D64D5D]',
                               )}
                             >
                               <span className="text-[8px] md:text-[10px] font-black text-white">
@@ -312,7 +290,7 @@ export default function ActividadesPage() {
                               </span>
                             </div>
                             <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
-                              {hasPdf && isViewMonthDay && !isFutureDay ? (
+                              {hasPdf && isViewMonthDay ? (
                                 <>
                                   <span className="text-[8px] md:text-[10px] font-black uppercase text-emerald-700 tracking-wider">
                                     PDF

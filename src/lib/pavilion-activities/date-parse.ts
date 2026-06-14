@@ -3,9 +3,16 @@
 const ISO_DATE = /(\d{4})-(\d{2})-(\d{2})/;
 const DMY_SLASH = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/;
 const DMY_DASH = /(\d{1,2})-(\d{1,2})-(\d{4})/;
+/** Adjuntos CEM: 09-06-26-DM.pdf → día 9, mes 6, año 2026 */
+const DMY_DASH_SHORT_YEAR = /(?:^|[^\d])(\d{1,2})-(\d{1,2})-(\d{2})(?:[^\d]|$)/;
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+function expandTwoDigitYear(yy: number): number {
+  if (yy >= 100) return yy;
+  return yy >= 70 ? 1900 + yy : 2000 + yy;
 }
 
 function isValidYmd(y: number, m: number, d: number): boolean {
@@ -29,6 +36,15 @@ export function parseActivityDateFromText(text: string): string | null {
     const m = Number(iso[2]);
     const d = Number(iso[3]);
     return toIsoDate(y, m, d);
+  }
+
+  const shortYear = DMY_DASH_SHORT_YEAR.exec(t);
+  if (shortYear) {
+    const d = Number(shortYear[1]);
+    const mo = Number(shortYear[2]);
+    const y = expandTwoDigitYear(Number(shortYear[3]));
+    const parsed = toIsoDate(y, mo, d);
+    if (parsed) return parsed;
   }
 
   for (const re of [DMY_SLASH, DMY_DASH]) {
