@@ -1,35 +1,41 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { isMasterDashboardUser } from "@/lib/master-dashboard";
+import { getHomeHrefForUser } from "@/lib/master-dashboard";
+import { withTimeout } from "@/lib/with-timeout";
 
+/** Respaldo si el proxy no redirigió `/` (p. ej. entorno sin proxy). */
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sessionResult = await withTimeout(
+    supabase.auth.getSession(),
+    2500,
+    { data: { session: null }, error: null }
+  );
+  const user = sessionResult.data.session?.user ?? null;
 
   if (!user) {
     redirect("/login");
   }
 
-  // Obtener rol del usuario
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, email")
-    .eq("id", user.id)
-    .single();
+  const profileResult = await withTimeout(
+    (async () => {
+      try {
+        return await supabase
+          .from("profiles")
+          .select("role, email")
+          .eq("id", user.id)
+          .maybeSingle();
+      } catch {
+        return { data: null, error: null };
+      }
+    })(),
+    2500,
+    { data: null, error: null }
+  );
 
-  const role = profile?.role;
-  const email = profile?.email ?? user.email ?? "";
+  const role = profileResult.data?.role;
+  const email = profileResult.data?.email ?? user.email ?? "";
 
-  if (isMasterDashboardUser(email)) {
-    redirect("/master/dashboard");
-  }
-
-  if (role === "manager") {
-    redirect("/dashboard");
-  }
-
-  redirect("/staff/dashboard");
+  redirect(getHomeHrefForUser(email, role));
 }

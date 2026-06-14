@@ -52,7 +52,7 @@ export async function POST(request: Request) {
           success: true,
           skipped: true,
           activityDate: result.activityDate,
-          message: 'Mensaje ya procesado',
+          message: 'Adjunto ya procesado',
         },
         { status: 200 },
       );

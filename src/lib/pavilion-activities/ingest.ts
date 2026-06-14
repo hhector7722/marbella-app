@@ -48,6 +48,14 @@ export function resolvePavilionActivityDate(params: {
 
   const receivedAtMs = params.emailDate ? new Date(params.emailDate).getTime() : null;
 
+  // Un email puede traer 14 PDF: la fecha va en cada nombre de archivo, no en el asunto.
+  const fromFilename = resolveActivityDate({
+    subject: null,
+    filename: params.filename,
+    receivedAtMs: null,
+  });
+  if (fromFilename) return fromFilename;
+
   const fromSubject = resolveActivityDate({
     subject: params.subject,
     filename: null,
@@ -57,7 +65,7 @@ export function resolvePavilionActivityDate(params: {
 
   return resolveActivityDate({
     subject: null,
-    filename: params.filename,
+    filename: null,
     receivedAtMs: receivedAtMs != null && Number.isFinite(receivedAtMs) ? receivedAtMs : null,
   });
 }
@@ -69,11 +77,14 @@ export async function ingestPavilionActivityPdf(
 ): Promise<IngestPavilionActivityResult> {
   assertPdfBuffer(params.pdfBuffer);
 
+  const normalizedFilename = params.filename?.trim() || 'actividades.pdf';
+
   if (params.gmailMessageId) {
     const { data: existing } = await supabase
       .from('pavilion_activity_sheets')
       .select('id, activity_date, file_path')
       .eq('gmail_message_id', params.gmailMessageId)
+      .eq('original_filename', normalizedFilename)
       .maybeSingle();
 
     if (existing) {
@@ -86,7 +97,7 @@ export async function ingestPavilionActivityPdf(
   }
 
   const activityDate = resolvePavilionActivityDate({
-    filename: params.filename,
+    filename: normalizedFilename,
     subject: params.subject,
     emailDate: params.emailDate,
     activityDate: params.activityDate,
@@ -115,7 +126,7 @@ export async function ingestPavilionActivityPdf(
       file_path: storagePath,
       source: params.source,
       gmail_message_id: params.gmailMessageId ?? null,
-      original_filename: params.filename?.trim() || 'actividades.pdf',
+      original_filename: normalizedFilename,
       uploaded_by: params.uploadedBy ?? null,
       updated_at: new Date().toISOString(),
     },

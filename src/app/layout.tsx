@@ -13,6 +13,7 @@ import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell"
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
+import { withTimeout } from "@/lib/with-timeout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,29 +50,6 @@ export const metadata: Metadata = {
     apple: "/icons/logo-white.png",
   },
 };
-
-/**
- * Aplica un timeout a una promesa de SSR para que un hang en GoTrue
- * o PostgREST NUNCA congele el render de TODA la app. Sin esto, una
- * sola llamada lenta a `auth.getSession()` en este layout deja la página
- * en "cargando" infinito para usuarios cuya cookie de sesión necesita
- * refresco. Anti-silent-failures: si timeout, devolvemos `fallback`
- * y la app se renderiza igualmente (las páginas internas tendrán
- * que volver a verificar sesión por su cuenta).
- */
-async function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  try {
-    return await Promise.race([
-      p,
-      new Promise<T>((resolve) => {
-        timeoutId = setTimeout(() => resolve(fallback), ms);
-      }),
-    ]);
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
-  }
-}
 
 export default async function RootLayout({
   children,

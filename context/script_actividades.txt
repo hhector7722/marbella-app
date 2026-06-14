@@ -45,10 +45,13 @@ function procesarActividadesEntrantes() {
     var subject = lastMessage.getSubject() || '';
     var attachments = lastMessage.getAttachments({ includeInlineImages: false });
     var errorEnHilo = false;
+    var pdfCount = 0;
+    var okCount = 0;
 
     attachments.forEach(function (att) {
       if (att.getContentType() !== 'application/pdf' && !att.getName().toLowerCase().endsWith('.pdf')) return;
 
+      pdfCount += 1;
       var filename = att.getName();
       var b64 = Utilities.base64Encode(att.getBytes());
 
@@ -74,7 +77,8 @@ function procesarActividadesEntrantes() {
         var responseText = response.getContentText();
 
         if (code >= 200 && code < 300) {
-          Logger.log('✅ Actividad subida OK: ' + filename);
+          okCount += 1;
+          Logger.log('✅ Actividad subida OK (' + okCount + '/' + pdfCount + '): ' + filename);
         } else {
           errorEnHilo = true;
           _reportarErrorActividades(lastMessage, 'HTTP ' + code, responseText, filename);
@@ -85,9 +89,12 @@ function procesarActividadesEntrantes() {
       }
     });
 
+    if (pdfCount === 0) return;
+
     if (!errorEnHilo) {
       thread.addLabel(labelOk);
       lastMessage.markRead();
+      Logger.log('✅ Email completado: ' + okCount + ' PDF de ' + pdfCount);
     } else {
       thread.addLabel(labelError);
     }
