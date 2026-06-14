@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -75,6 +77,7 @@ export const StaffScheduleModal = ({
         usageId: 'staff-schedule',
         usageLabel: 'Horario del personal',
     });
+    const router = useRouter();
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -297,7 +300,29 @@ export const StaffScheduleModal = ({
                 ) : (
                 <>
                 {/* ── HEADER (petrol, same style as editor) ── */}
-                <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0">
+                <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0 relative">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            handleClose();
+                            router.push('/staff/actividades');
+                        }}
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-0.5 min-h-[48px] justify-center px-2 text-white hover:opacity-90 active:scale-95 transition-all"
+                        aria-label="Actividades del pabellón"
+                    >
+                        <div className="relative w-7 h-7 shrink-0">
+                            <Image
+                                src="/icons/calendar.png"
+                                alt=""
+                                fill
+                                className="object-contain drop-shadow-sm"
+                                sizes="28px"
+                            />
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-[0.15em] leading-none">
+                            Actividades
+                        </span>
+                    </button>
                     {selectedDate ? (
                         <div className="flex items-center justify-between w-full gap-2">
                             {/* Volver al calendario */}

@@ -23,6 +23,7 @@ const STATIC_ROUTE_LABELS: Record<string, string> = {
   '/staff/carta': 'Carta staff',
   '/staff/propinas': 'Mis propinas',
   '/staff/reservas': 'Reservas',
+  '/staff/actividades': 'Actividades pabellón',
   '/recipes': 'Recetas',
   '/ingredients': 'Ingredientes',
   '/suppliers': 'Proveedores',

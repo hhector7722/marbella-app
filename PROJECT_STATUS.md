@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-14 (Uso de la app — tracking completo pantallas + modales)
+**Última actualización:** 2026-06-14 (Actividades pabellón — PDF Gmail + calendario)
+
+- [x] **Actividades pabellón: PDF diarios desde Gmail + `/staff/actividades` (2026-06-14)**: Migración [`20260614140000_pavilion_activities.sql`](supabase/migrations/20260614140000_pavilion_activities.sql) — tabla `pavilion_activity_sheets`, bucket Storage `pavilion_activities`. Cron [`/api/cron/sync-pavilion-activities`](src/app/api/cron/sync-pavilion-activities/route.ts) cada 2h (Gmail `fmarco@cemmarbella.cat` → `hhector7722@gmail.com`). Página calendario estilo consumo personal [`/staff/actividades`](src/app/staff/actividades/page.tsx); acceso flotante en cabecera modal Horarios [`StaffScheduleModal`](src/components/modals/StaffScheduleModal.tsx) (icono `/icons/calendar.png`). Modal PDF con zoom [`PavilionActivityPdfModal`](src/components/pavilion/PavilionActivityPdfModal.tsx). Solo Hector: subida manual / pegar PDF + botón sync. Env: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, opcional `GMAIL_ACTIVITY_FROM`.
+
+**Última actualización anterior:** 2026-06-14 (Uso de la app — tracking completo pantallas + modales)
 
 - [x] **Uso de la app: tracking modales completo (2026-06-14)**: Componente base [`Modal`](src/components/ui/modal.tsx) + hook [`useModalUsageTracking`](src/hooks/useModalUsageTracking.ts). Regla [`.cursor/rules/modals.mdc`](.cursor/rules/modals.mdc). Migración masiva: pedidos, caja, albaranes, propinas, carta, KDS, dashboards, recetas/ingredientes/proveedores, chat, onboarding, asistencia (incl. editar semana), confirmación envío pedido, etc. Eventos `modal_open` / `modal_dwell` visibles en [`/dashboard/uso`](src/app/dashboard/uso/page.tsx).
 
