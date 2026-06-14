@@ -430,21 +430,21 @@ export const StaffScheduleModal = ({
                                 <button
                                     type="button"
                                     onClick={openActividades}
-                                    className="flex flex-col items-center gap-0.5 min-h-[48px] min-w-[48px] justify-center shrink-0 text-gray-500 hover:text-[#36606F] active:scale-95 transition-all"
-                                    aria-label="Actividades del pabellón"
+                                    className="flex flex-row items-center gap-1.5 min-h-[48px] px-1 shrink-0 text-gray-500 hover:text-[#36606F] active:scale-95 transition-all"
+                                    aria-label="Ver actividades del pabellón"
                                 >
-                                    <div className="relative w-7 h-7 shrink-0">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.12em] leading-none whitespace-nowrap">
+                                        Ver actividades
+                                    </span>
+                                    <div className="relative w-5 h-5 shrink-0">
                                         <Image
                                             src="/icons/calendar.png"
                                             alt=""
                                             fill
                                             className="object-contain"
-                                            sizes="28px"
+                                            sizes="20px"
                                         />
                                     </div>
-                                    <span className="text-[8px] font-black uppercase tracking-[0.12em] leading-none">
-                                        Actividades
-                                    </span>
                                 </button>
                             </div>
                             {futureShifts.length === 0 ? (
