@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, ClipboardPaste, Trash2, Upload, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -40,6 +40,9 @@ async function fileToBase64(file: File): Promise<string> {
   }
   return btoa(binary);
 }
+
+const headerIconBtn =
+  'min-h-[48px] min-w-[48px] flex items-center justify-center text-white hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 shrink-0';
 
 export function PavilionActivityPdfModal({
   open,
@@ -137,35 +140,10 @@ export function PavilionActivityPdfModal({
     }
   }, [activityDate, canUpload, filePath, onUploaded]);
 
-  const handlePaste = useCallback(
-    async (e: ClipboardEvent) => {
-      if (!open || !canUpload || !activityDate) return;
-      const items = e.clipboardData?.items;
-      if (!items?.length) return;
-
-      for (const item of items) {
-        if (item.kind !== 'file') continue;
-        const file = item.getAsFile();
-        if (!file) continue;
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-          e.preventDefault();
-          await handleUploadFile(file);
-          return;
-        }
-      }
-    },
-    [open, canUpload, activityDate, handleUploadFile],
-  );
-
-  useEffect(() => {
-    if (!open || !canUpload) return;
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, [open, canUpload, handlePaste]);
-
   if (!open || !activityDate) return null;
 
   const hasPdf = Boolean(filePath && pdfUrl && !loadError);
+  const busy = uploading || deleting;
 
   return typeof document !== 'undefined'
     ? createPortal(
@@ -177,37 +155,83 @@ export function PavilionActivityPdfModal({
           role="presentation"
         >
           <div
-            className="bg-white rounded-[2rem] w-full max-w-lg h-[85vh] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-[2rem] w-full max-w-lg max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-[#36606F] px-3 py-2 text-white shrink-0 flex items-center justify-between gap-1">
-              <div className="flex-1" />
-              <div className="flex items-center justify-center gap-1 shrink-0">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleUploadFile(file);
+                e.target.value = '';
+              }}
+            />
+
+            <div className="bg-[#36606F] px-2 py-2 text-white shrink-0 flex items-center gap-0.5">
+              <div className="flex items-center justify-center gap-0 shrink-0 min-w-0 flex-1">
                 <button
                   type="button"
                   onClick={() => onNavigateDay(-1)}
-                  className="min-h-[48px] min-w-[48px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors"
+                  className="min-h-[48px] min-w-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors shrink-0"
                   aria-label="Día anterior"
                 >
                   <ChevronLeft size={20} />
                 </button>
-                <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-center capitalize px-1">
+                <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-center capitalize px-0.5 truncate">
                   {format(parseLocalSafe(activityDate), 'EEEE d MMM', { locale: es })}
                 </h3>
                 <button
                   type="button"
                   onClick={() => onNavigateDay(1)}
-                  className="min-h-[48px] min-w-[48px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors"
+                  className="min-h-[48px] min-w-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors shrink-0"
                   aria-label="Día siguiente"
                 >
                   <ChevronRight size={20} />
                 </button>
               </div>
-              <div className="flex-1 flex justify-end">
+
+              <div className="flex items-center shrink-0">
+                {canUpload ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={headerIconBtn}
+                      aria-label="Subir PDF"
+                      title="Subir PDF"
+                    >
+                      {uploading ? (
+                        <LoadingSpinner size="sm" className="text-white" />
+                      ) : (
+                        <Upload size={20} />
+                      )}
+                    </button>
+                    {filePath ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void handleDelete()}
+                        className={headerIconBtn}
+                        aria-label="Eliminar PDF"
+                        title="Eliminar PDF"
+                      >
+                        {deleting ? (
+                          <LoadingSpinner size="sm" className="text-white" />
+                        ) : (
+                          <Trash2 size={20} />
+                        )}
+                      </button>
+                    ) : null}
+                  </>
+                ) : null}
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[48px] min-w-[48px] flex items-center justify-center hover:bg-white/10 rounded-xl transition-colors"
+                  className={headerIconBtn}
                   aria-label="Cerrar"
                 >
                   <X size={20} />
@@ -215,73 +239,13 @@ export function PavilionActivityPdfModal({
               </div>
             </div>
 
-            {canUpload ? (
-              <div className="shrink-0 px-4 py-3 border-b border-zinc-100 flex flex-wrap gap-2 bg-zinc-50/80">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void handleUploadFile(file);
-                    e.target.value = '';
-                  }}
-                />
-                <button
-                  type="button"
-                  disabled={uploading || deleting}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    'flex-1 min-h-[48px] flex items-center justify-center gap-2 rounded-xl font-black text-[10px] uppercase tracking-wider',
-                    'bg-[#36606F] text-white hover:opacity-95 active:scale-[0.99] disabled:opacity-50',
-                  )}
-                >
-                  {uploading ? (
-                    <LoadingSpinner size="sm" className="text-white" />
-                  ) : (
-                    <Upload size={16} />
-                  )}
-                  Subir PDF
-                </button>
-                <button
-                  type="button"
-                  disabled={uploading || deleting}
-                  onClick={() => toast.info('Pega el PDF con Ctrl+V (o mantén pulsado y Pegar en móvil)')}
-                  className="min-h-[48px] px-3 flex items-center justify-center gap-1.5 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-black text-[10px] uppercase tracking-wider hover:bg-zinc-50"
-                >
-                  <ClipboardPaste size={16} />
-                  Pegar
-                </button>
-                {filePath ? (
-                  <button
-                    type="button"
-                    disabled={uploading || deleting}
-                    onClick={() => void handleDelete()}
-                    className={cn(
-                      'min-h-[48px] px-3 flex items-center justify-center gap-1.5 rounded-xl',
-                      'bg-rose-50 border border-rose-200 text-rose-700 font-black text-[10px] uppercase tracking-wider',
-                      'hover:bg-rose-100 active:scale-[0.99] disabled:opacity-50',
-                    )}
-                  >
-                    {deleting ? (
-                      <LoadingSpinner size="sm" className="text-rose-700" />
-                    ) : (
-                      <Trash2 size={16} />
-                    )}
-                    Eliminar
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col min-h-0 overflow-hidden">
               {loading ? (
-                <div className="relative flex flex-1 min-h-0 items-center justify-center bg-zinc-50/60">
+                <div className="flex items-center justify-center bg-zinc-50/60 py-16 px-6">
                   <LoadingSpinner className="text-[#36606F]" />
                 </div>
               ) : loadError ? (
-                <div className="relative flex flex-1 min-h-0 flex-col items-center justify-center text-center gap-3 px-6">
+                <div className="flex flex-col items-center justify-center text-center gap-3 py-12 px-6">
                   <p className="text-sm font-black text-zinc-800">
                     {filePath ? 'No se pudo cargar el PDF' : 'Sin hoja de actividades este día'}
                   </p>
@@ -289,20 +253,16 @@ export function PavilionActivityPdfModal({
                     <p className="text-xs font-bold text-zinc-500 max-w-[22rem]">{loadError}</p>
                   ) : null}
                   {canUpload ? (
-                    <p className="text-[11px] text-zinc-400 font-bold">
-                      Sube un PDF o pégalo desde el portapapeles
-                    </p>
+                    <p className="text-[11px] text-zinc-400 font-bold">Sube un PDF con el icono superior</p>
                   ) : null}
                 </div>
               ) : hasPdf && pdfUrl ? (
-                <PavilionActivityPdfViewer url={pdfUrl} className="flex-1 min-h-0 h-full" />
+                <PavilionActivityPdfViewer url={pdfUrl} />
               ) : (
-                <div className="relative flex flex-1 min-h-0 flex-col items-center justify-center px-6 text-center gap-2">
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center gap-2">
                   <p className="text-sm font-black text-zinc-700">Sin hoja de actividades</p>
                   {canUpload ? (
-                    <p className="text-xs font-bold text-zinc-400">
-                      Sube un PDF o pégalo desde el portapapeles
-                    </p>
+                    <p className="text-xs font-bold text-zinc-400">Sube un PDF con el icono superior</p>
                   ) : null}
                 </div>
               )}

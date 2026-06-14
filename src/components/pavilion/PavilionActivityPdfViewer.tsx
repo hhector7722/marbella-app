@@ -59,23 +59,23 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
   }, [renderPdf]);
 
   return (
-    <div className={cn('flex flex-col min-h-0 flex-1 h-full', className)}>
-      <div className="relative flex flex-1 min-h-0 h-full">
+    <div className={cn('flex flex-col min-h-0', className)}>
+      <div className="relative flex min-h-0 w-full max-h-[70vh]">
         {loading ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/80">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/80 min-h-[200px]">
             <LoadingSpinner className="text-[#36606F]" />
           </div>
         ) : null}
 
         {error ? (
-          <p className="absolute inset-0 z-10 flex items-center justify-center text-center text-sm font-bold text-rose-600 px-4">
+          <p className="absolute inset-0 z-10 flex items-center justify-center text-center text-sm font-bold text-rose-600 px-4 min-h-[120px]">
             {error}
           </p>
         ) : null}
 
         <PinchZoomViewport
           resetKey={url}
-          className="flex-1 min-h-0 h-full bg-zinc-50/60 p-3"
+          className="w-full min-h-0 max-h-[70vh] bg-zinc-50/60 p-3"
         >
           <div ref={containerRef} className="flex flex-col items-center" />
         </PinchZoomViewport>
