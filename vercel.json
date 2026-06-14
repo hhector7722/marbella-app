@@ -7,10 +7,6 @@
         {
             "path": "/api/cron/cleanup-order-pdfs",
             "schedule": "30 3 * * *"
-        },
-        {
-            "path": "/api/cron/sync-pavilion-activities",
-            "schedule": "0 */2 * * *"
         }
     ]
 }

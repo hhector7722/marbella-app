@@ -24,7 +24,6 @@ import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { PavilionActivityPdfModal } from '@/components/pavilion/PavilionActivityPdfModal';
 import {
   fetchPavilionActivitiesForRangeAction,
-  syncPavilionActivitiesNowAction,
   type PavilionActivityRow,
 } from '@/app/staff/actividades/actions';
 import { usePageView } from '@/lib/usage/usePageView';
@@ -55,7 +54,7 @@ export default function ActividadesPage() {
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [canUpload, setCanUpload] = useState(false);
   const [byDate, setByDate] = useState<Record<string, PavilionActivityRow>>({});
 
@@ -144,23 +143,13 @@ export default function ActividadesPage() {
     }
   };
 
-  const handleSync = async () => {
-    setSyncing(true);
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
-      const res = await syncPavilionActivitiesNowAction();
-      if (!res.success) {
-        toast.error(res.error);
-        return;
-      }
-      toast.success(
-        `Sincronizado: ${res.imported} nuevos, ${res.skipped} omitidos`,
-      );
-      if (res.errors.length) {
-        console.warn('[actividades sync]', res.errors);
-      }
       await loadData();
+      toast.success('Calendario actualizado');
     } finally {
-      setSyncing(false);
+      setRefreshing(false);
     }
   };
 
@@ -203,13 +192,13 @@ export default function ActividadesPage() {
             {canUpload ? (
               <button
                 type="button"
-                onClick={() => void handleSync()}
-                disabled={syncing}
+                onClick={() => void handleRefresh()}
+                disabled={refreshing}
                 className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10 text-white transition-colors shrink-0 disabled:opacity-50"
-                aria-label="Sincronizar Gmail"
-                title="Sincronizar correo"
+                aria-label="Actualizar calendario"
+                title="Actualizar calendario"
               >
-                {syncing ? (
+                {refreshing ? (
                   <LoadingSpinner size="sm" className="text-white" />
                 ) : (
                   <RefreshCw size={18} strokeWidth={2.5} />

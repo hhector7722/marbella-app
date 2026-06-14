@@ -3,11 +3,10 @@
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
-  createPavilionActivitiesServiceClient,
-  syncPavilionActivitiesFromGmail,
-} from '@/lib/gmail/pavilion-activities-sync';
+  ingestPavilionActivityPdf,
+  PAVILION_ACTIVITIES_BUCKET,
+} from '@/lib/pavilion-activities/ingest';
 
-const BUCKET = 'pavilion_activities';
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export type PavilionActivityRow = {
@@ -47,10 +46,6 @@ async function requireMasterUpload() {
   }
 
   return auth;
-}
-
-function buildStoragePath(activityDate: string): string {
-  return `${activityDate}/activity.pdf`;
 }
 
 export async function fetchPavilionActivitiesForRangeAction(params: {
@@ -101,7 +96,7 @@ export async function getPavilionActivitySignedUrlAction(params: {
   }
 
   const { data, error } = await auth.supabase.storage
-    .from(BUCKET)
+    .from(PAVILION_ACTIVITIES_BUCKET)
     .createSignedUrl(filePath, 3600);
 
   if (error || !data?.signedUrl) {
@@ -135,64 +130,21 @@ export async function uploadPavilionActivityAction(params: {
     return { success: false, error: 'Archivo corrupto.' };
   }
 
-  if (buffer.length === 0) {
-    return { success: false, error: 'El archivo está vacío.' };
-  }
   if (buffer.length > MAX_BYTES) {
     return { success: false, error: 'El PDF supera el límite de 10 MB.' };
   }
 
-  const header = buffer.subarray(0, 5).toString('ascii');
-  if (!header.startsWith('%PDF-')) {
-    return { success: false, error: 'El archivo debe ser un PDF.' };
-  }
-
-  const storagePath = buildStoragePath(activityDate);
-
-  const { error: uploadError } = await auth.supabase.storage
-    .from(BUCKET)
-    .upload(storagePath, buffer, {
-      contentType: 'application/pdf',
-      upsert: true,
-    });
-
-  if (uploadError) {
-    return { success: false, error: uploadError.message ?? 'Error al subir el PDF.' };
-  }
-
-  const { error: upsertError } = await auth.supabase.from('pavilion_activity_sheets').upsert(
-    {
-      activity_date: activityDate,
-      file_path: storagePath,
-      source: 'manual',
-      gmail_message_id: null,
-      original_filename: filename?.trim() || 'manual.pdf',
-      uploaded_by: auth.userId,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'activity_date' },
-  );
-
-  if (upsertError) {
-    return { success: false, error: upsertError.message ?? 'Error al guardar en base de datos.' };
-  }
-
-  return { success: true, filePath: storagePath };
-}
-
-export async function syncPavilionActivitiesNowAction(): Promise<
-  | { success: true; processed: number; imported: number; skipped: number; errors: string[] }
-  | { success: false; error: string }
-> {
-  const auth = await requireMasterUpload();
-  if (!auth.ok) return { success: false, error: auth.error };
-
   try {
-    const service = createPavilionActivitiesServiceClient();
-    const result = await syncPavilionActivitiesFromGmail(service);
-    return { success: true, ...result };
+    const result = await ingestPavilionActivityPdf(auth.supabase, {
+      pdfBuffer: buffer,
+      filename: filename?.trim() || 'manual.pdf',
+      activityDate,
+      source: 'manual',
+      uploadedBy: auth.userId,
+    });
+    return { success: true, filePath: result.filePath };
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error al sincronizar Gmail.';
+    const message = err instanceof Error ? err.message : 'Error al subir el PDF.';
     return { success: false, error: message };
   }
 }
