@@ -137,8 +137,6 @@ export default function ActividadesPage() {
     }
   };
 
-  const daysWithPdf = Object.keys(byDate).length;
-
   const selectedRow = selectedDayStr ? byDate[selectedDayStr] ?? null : null;
 
   return (
@@ -169,9 +167,6 @@ export default function ActividadesPage() {
                   Actividades
                 </h1>
               </div>
-              <p className="text-[9px] font-bold text-white/70 uppercase tracking-wider mt-0.5">
-                Pabellón CEM Marbella
-              </p>
             </div>
             {canUpload ? (
               <button
@@ -216,25 +211,6 @@ export default function ActividadesPage() {
           </div>
 
           <div className="p-4 md:p-8 flex flex-col">
-            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
-              <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                  Hojas
-                </span>
-                <span className="text-[11px] font-black leading-tight text-emerald-700 tabular-nums sm:text-xs md:text-sm">
-                  {loading ? ' ' : String(daysWithPdf)}
-                </span>
-              </div>
-              <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                  Mes
-                </span>
-                <span className="text-[11px] font-black leading-tight text-zinc-700 tabular-nums sm:text-xs md:text-sm capitalize">
-                  {format(viewMonth, 'MMM', { locale: es })}
-                </span>
-              </div>
-            </div>
-
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -277,28 +253,16 @@ export default function ActividadesPage() {
                                 'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99] cursor-pointer',
                             )}
                           >
-                            <div
-                              className={cn(
-                                'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
-                                hasPdf && isViewMonthDay
-                                  ? 'bg-emerald-600'
-                                  : 'bg-[#D64D5D]',
-                              )}
-                            >
+                            <div className="px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0 bg-[#D64D5D]">
                               <span className="text-[8px] md:text-[10px] font-black text-white">
                                 {format(day, 'd')}
                               </span>
                             </div>
                             <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
                               {hasPdf && isViewMonthDay ? (
-                                <>
-                                  <span className="text-[8px] md:text-[10px] font-black uppercase text-emerald-700 tracking-wider">
-                                    PDF
-                                  </span>
-                                  <span className="text-[5px] md:text-[7px] font-bold text-zinc-400 uppercase mt-0.5 hidden md:block">
-                                    Ver
-                                  </span>
-                                </>
+                                <span className="inline-flex items-center justify-center min-h-[28px] md:min-h-[32px] px-2 md:px-2.5 rounded-md md:rounded-lg border border-black bg-white text-[8px] md:text-[10px] font-black uppercase tracking-wider text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.12)]">
+                                  VER
+                                </span>
                               ) : (
                                 <span className="text-[9px] md:text-xs font-black text-zinc-300">
                                   {' '}
