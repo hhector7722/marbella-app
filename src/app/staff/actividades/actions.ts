@@ -148,3 +148,52 @@ export async function uploadPavilionActivityAction(params: {
     return { success: false, error: message };
   }
 }
+
+export async function deletePavilionActivityAction(params: {
+  activityDate: string;
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const auth = await requireMasterUpload();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const { activityDate } = params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(activityDate)) {
+    return { success: false, error: 'Fecha no válida.' };
+  }
+
+  const { data: row, error: fetchError } = await auth.supabase
+    .from('pavilion_activity_sheets')
+    .select('file_path')
+    .eq('activity_date', activityDate)
+    .maybeSingle();
+
+  if (fetchError) {
+    return { success: false, error: fetchError.message ?? 'Error al buscar la hoja.' };
+  }
+  if (!row?.file_path) {
+    return { success: false, error: 'No hay PDF para este día.' };
+  }
+
+  const filePath = row.file_path as string;
+  if (filePath.includes('..')) {
+    return { success: false, error: 'Ruta de archivo no válida.' };
+  }
+
+  const { error: storageError } = await auth.supabase.storage
+    .from(PAVILION_ACTIVITIES_BUCKET)
+    .remove([filePath]);
+
+  if (storageError) {
+    return { success: false, error: storageError.message ?? 'Error al eliminar el archivo.' };
+  }
+
+  const { error: deleteError } = await auth.supabase
+    .from('pavilion_activity_sheets')
+    .delete()
+    .eq('activity_date', activityDate);
+
+  if (deleteError) {
+    return { success: false, error: deleteError.message ?? 'Error al eliminar el registro.' };
+  }
+
+  return { success: true };
+}

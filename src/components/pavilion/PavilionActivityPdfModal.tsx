@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, ClipboardPaste, Upload, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardPaste, Trash2, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { PavilionActivityPdfViewer } from '@/components/pavilion/PavilionActivityPdfViewer';
 import {
+  deletePavilionActivityAction,
   getPavilionActivitySignedUrlAction,
   uploadPavilionActivityAction,
 } from '@/app/staff/actividades/actions';
@@ -59,6 +60,7 @@ export function PavilionActivityPdfModal({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadPdf = useCallback(async () => {
@@ -112,6 +114,28 @@ export function PavilionActivityPdfModal({
       setUploading(false);
     }
   }, [activityDate, canUpload, onUploaded]);
+
+  const handleDelete = useCallback(async () => {
+    if (!activityDate || !canUpload || !filePath) return;
+    if (!confirm('¿Eliminar el PDF de actividades de este día?')) return;
+
+    setDeleting(true);
+    try {
+      const res = await deletePavilionActivityAction({ activityDate });
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success('PDF eliminado');
+      setPdfUrl(null);
+      setLoadError(null);
+      onUploaded();
+    } catch {
+      toast.error('Error al eliminar el PDF');
+    } finally {
+      setDeleting(false);
+    }
+  }, [activityDate, canUpload, filePath, onUploaded]);
 
   const handlePaste = useCallback(
     async (e: ClipboardEvent) => {
@@ -206,7 +230,7 @@ export function PavilionActivityPdfModal({
                 />
                 <button
                   type="button"
-                  disabled={uploading}
+                  disabled={uploading || deleting}
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
                     'flex-1 min-h-[48px] flex items-center justify-center gap-2 rounded-xl font-black text-[10px] uppercase tracking-wider',
@@ -222,13 +246,32 @@ export function PavilionActivityPdfModal({
                 </button>
                 <button
                   type="button"
-                  disabled={uploading}
+                  disabled={uploading || deleting}
                   onClick={() => toast.info('Pega el PDF con Ctrl+V (o mantén pulsado y Pegar en móvil)')}
                   className="min-h-[48px] px-3 flex items-center justify-center gap-1.5 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-black text-[10px] uppercase tracking-wider hover:bg-zinc-50"
                 >
                   <ClipboardPaste size={16} />
                   Pegar
                 </button>
+                {filePath ? (
+                  <button
+                    type="button"
+                    disabled={uploading || deleting}
+                    onClick={() => void handleDelete()}
+                    className={cn(
+                      'min-h-[48px] px-3 flex items-center justify-center gap-1.5 rounded-xl',
+                      'bg-rose-50 border border-rose-200 text-rose-700 font-black text-[10px] uppercase tracking-wider',
+                      'hover:bg-rose-100 active:scale-[0.99] disabled:opacity-50',
+                    )}
+                  >
+                    {deleting ? (
+                      <LoadingSpinner size="sm" className="text-rose-700" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                    Eliminar
+                  </button>
+                ) : null}
               </div>
             ) : null}
 

@@ -22,7 +22,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pageCount, setPageCount] = useState(0);
 
   const renderPdf = useCallback(async () => {
     if (!url || !containerRef.current) return;
@@ -35,7 +34,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
       if (!res.ok) throw new Error('No se pudo descargar el PDF');
       const buffer = await res.arrayBuffer();
       const pdfDoc = await getDocument({ data: new Uint8Array(buffer) }).promise;
-      setPageCount(pdfDoc.numPages);
 
       const host = containerRef.current;
       for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -51,7 +49,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al renderizar el PDF';
       setError(msg);
-      setPageCount(0);
     } finally {
       setLoading(false);
     }
@@ -63,12 +60,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
 
   return (
     <div className={cn('flex flex-col min-h-0 flex-1', className)}>
-      {pageCount > 0 && !loading ? (
-        <p className="shrink-0 px-4 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-zinc-400">
-          {pageCount} {pageCount === 1 ? 'página' : 'páginas'} · pellizca para ampliar
-        </p>
-      ) : null}
-
       <div className="relative flex flex-1 min-h-0">
         {loading ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/80">
