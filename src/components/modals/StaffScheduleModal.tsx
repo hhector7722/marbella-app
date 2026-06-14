@@ -423,20 +423,20 @@ export const StaffScheduleModal = ({
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 bg-[#fafafa]">
-                            <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-                                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                            <div className="flex items-center justify-between gap-3 mb-3 min-h-[48px] shrink-0">
+                                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none">
                                     Próximos Turnos
                                 </h4>
                                 <button
                                     type="button"
                                     onClick={openActividades}
-                                    className="flex flex-row items-center gap-1.5 min-h-[48px] px-1 shrink-0 text-gray-500 hover:text-[#36606F] active:scale-95 transition-all"
+                                    className="inline-flex items-center justify-center gap-1.5 min-h-[48px] px-1 shrink-0 text-gray-500 hover:text-[#36606F] active:scale-95 transition-all"
                                     aria-label="Ver actividades del pabellón"
                                 >
                                     <span className="text-[9px] font-black uppercase tracking-[0.12em] leading-none whitespace-nowrap">
                                         Ver actividades
                                     </span>
-                                    <div className="relative w-5 h-5 shrink-0">
+                                    <span className="relative inline-block h-5 w-5 shrink-0 align-middle">
                                         <Image
                                             src="/icons/calendar.png"
                                             alt=""
@@ -444,7 +444,7 @@ export const StaffScheduleModal = ({
                                             className="object-contain"
                                             sizes="20px"
                                         />
-                                    </div>
+                                    </span>
                                 </button>
                             </div>
                             {futureShifts.length === 0 ? (
