@@ -177,7 +177,7 @@ export function PavilionActivityPdfModal({
           role="presentation"
         >
           <div
-            className="bg-white rounded-[2rem] w-full max-w-lg max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-[2rem] w-full max-w-lg h-[85vh] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-[#36606F] px-3 py-2 text-white shrink-0 flex items-center justify-between gap-1">
@@ -275,13 +275,13 @@ export function PavilionActivityPdfModal({
               </div>
             ) : null}
 
-            <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {loading ? (
-                <div className="flex justify-center py-20">
+                <div className="relative flex flex-1 min-h-0 items-center justify-center bg-zinc-50/60">
                   <LoadingSpinner className="text-[#36606F]" />
                 </div>
               ) : loadError ? (
-                <div className="flex flex-col items-center justify-center text-center gap-3 py-12 px-6">
+                <div className="relative flex flex-1 min-h-0 flex-col items-center justify-center text-center gap-3 px-6">
                   <p className="text-sm font-black text-zinc-800">
                     {filePath ? 'No se pudo cargar el PDF' : 'Sin hoja de actividades este día'}
                   </p>
@@ -295,9 +295,9 @@ export function PavilionActivityPdfModal({
                   ) : null}
                 </div>
               ) : hasPdf && pdfUrl ? (
-                <PavilionActivityPdfViewer url={pdfUrl} />
+                <PavilionActivityPdfViewer url={pdfUrl} className="flex-1 min-h-0 h-full" />
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-2">
+                <div className="relative flex flex-1 min-h-0 flex-col items-center justify-center px-6 text-center gap-2">
                   <p className="text-sm font-black text-zinc-700">Sin hoja de actividades</p>
                   {canUpload ? (
                     <p className="text-xs font-bold text-zinc-400">
