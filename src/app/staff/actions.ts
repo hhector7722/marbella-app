@@ -1,10 +1,6 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import {
-  matchRecipeIdsByName,
-  parseConsumptionErrorRecipeName,
-} from '@/lib/staff-consumption-errors';
 
 export type ConsumptionItem = { recipe_id: string; quantity: number; is_half: boolean };
 
@@ -12,41 +8,17 @@ export type ConsumptionSubmitResult =
   | { success: true }
   | {
       success: false;
-      code: 'EMPTY_CART' | 'AUTH' | 'CONSUMPTION_ERROR';
+      code: 'EMPTY_CART' | 'NO_FOOD' | 'AUTH' | 'RPC';
       message: string;
-      failedRecipeIds: string[];
     };
 
-type ValidateRow = { recipe_id: string; recipe_name: string; error_message: string };
-
-async function resolveFailedRecipeIds(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  items: ConsumptionItem[],
-  fallbackMessage: string | undefined,
-): Promise<string[]> {
-  const { data: validationRows, error: validateErr } = await supabase.rpc(
-    'validate_staff_consumption',
-    { p_items: items },
-  );
-
-  if (!validateErr && validationRows?.length) {
-    return [...new Set((validationRows as ValidateRow[]).map((row) => row.recipe_id))];
-  }
-
-  const recipeIds = [...new Set(items.map((item) => item.recipe_id))];
-  const { data: recipes } = await supabase
-    .from('recipes')
-    .select('id, name')
-    .in('id', recipeIds);
-
-  const parsedName = parseConsumptionErrorRecipeName(fallbackMessage);
-  if (parsedName && recipes?.length) {
-    const matched = matchRecipeIdsByName(parsedName, recipes);
-    if (matched.length > 0) return matched;
-  }
-
-  return recipeIds.length === 1 ? [recipeIds[0]!] : [];
-}
+type ProcessConsumptionResult = {
+  ok: boolean;
+  code?: string;
+  reference_doc?: string;
+  stock_written_count?: number;
+  error_count?: number;
+};
 
 export async function submitPersonalConsumption(
   items: ConsumptionItem[],
@@ -56,40 +28,62 @@ export async function submitPersonalConsumption(
       success: false,
       code: 'EMPTY_CART',
       message: 'Debes apuntar tu consumo antes de fichar la salida.',
-      failedRecipeIds: [],
     };
   }
 
   const supabase = await createClient();
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser();
   if (authErr || !user) {
     return {
       success: false,
       code: 'AUTH',
       message: 'Usuario no autenticado',
-      failedRecipeIds: [],
     };
   }
 
-  console.log('[Consumption] Submitting:', { employeeId: user.id, itemsCount: items.length });
-
-  const { error } = await supabase.rpc('process_staff_consumption', {
+  const { data, error } = await supabase.rpc('process_staff_consumption', {
     p_employee_id: user.id,
     p_items: items,
   });
 
   if (error) {
     console.error('[Consumption] RPC failed:', error);
-    const failedRecipeIds = await resolveFailedRecipeIds(supabase, items, error.message);
-    const userMessage =
-      parseConsumptionErrorRecipeName(error.message) ??
-      'Hay un producto con datos incorrectos. Quítalo o avisa a un responsable.';
     return {
       success: false,
-      code: 'CONSUMPTION_ERROR',
-      message: userMessage,
-      failedRecipeIds,
+      code: 'RPC',
+      message: 'No se pudo registrar el consumo. Inténtalo de nuevo.',
     };
+  }
+
+  const result = data as ProcessConsumptionResult | null;
+
+  if (!result?.ok) {
+    if (result?.code === 'NO_FOOD') {
+      return {
+        success: false,
+        code: 'NO_FOOD',
+        message: 'Debes apuntar al menos una comida antes de fichar la salida.',
+      };
+    }
+    return {
+      success: false,
+      code: 'EMPTY_CART',
+      message: 'Debes apuntar tu consumo antes de fichar la salida.',
+    };
+  }
+
+  const errorCount = Number(result.error_count ?? 0);
+  if (errorCount > 0) {
+    console.error('[Consumption] Errores técnicos (silencioso para staff):', {
+      employeeId: user.id,
+      referenceDoc: result.reference_doc,
+      errorCount,
+      stockWrittenCount: result.stock_written_count ?? 0,
+      itemsCount: items.length,
+    });
   }
 
   return { success: true };

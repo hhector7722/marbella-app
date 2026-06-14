@@ -56,8 +56,6 @@ export function ConsumptionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [racionPicker, setRacionPicker] = useState<Recipe | null>(null);
   const [showEmptyCartError, setShowEmptyCartError] = useState(false);
-  const [failedRecipeIds, setFailedRecipeIds] = useState<string[]>([]);
-  const [consumptionErrorMessage, setConsumptionErrorMessage] = useState<string | null>(null);
   const [step, setStep] = useState<ConsumptionStep>('drinks');
 
   useEffect(() => {
@@ -67,16 +65,7 @@ export function ConsumptionModal({
     });
   }, []);
 
-  const clearRecipeError = useCallback((recipeId: string) => {
-    setFailedRecipeIds((prev) => {
-      const next = prev.filter((id) => id !== recipeId);
-      if (next.length === 0) setConsumptionErrorMessage(null);
-      return next;
-    });
-  }, []);
-
   const handleAdd = useCallback((recipe: Recipe, is_half: boolean) => {
-    clearRecipeError(recipe.id);
     setCart((prev) => {
       const existing = prev.find((item) => item.recipe.id === recipe.id && item.is_half === is_half);
       if (existing) {
@@ -84,10 +73,9 @@ export function ConsumptionModal({
       }
       return [...prev, { recipe, quantity: 1, is_half }];
     });
-  }, [clearRecipeError]);
+  }, []);
 
   const handleDecrement = useCallback((recipeId: string, is_half: boolean) => {
-    clearRecipeError(recipeId);
     setCart((prev) => {
       const existing = prev.find((item) => item.recipe.id === recipeId && item.is_half === is_half);
       if (!existing) return prev;
@@ -98,7 +86,7 @@ export function ConsumptionModal({
       }
       return prev.filter((i) => i !== existing);
     });
-  }, [clearRecipeError]);
+  }, []);
 
   const cartQuantityByRecipe = useMemo(() => {
     const map = new Map<string, number>();
@@ -125,11 +113,24 @@ export function ConsumptionModal({
     [handleAdd],
   );
 
+  const cartHasDrink = useMemo(
+    () => cart.some((c) => isDrinkConsumptionRecipe(c.recipe)),
+    [cart],
+  );
+  const cartHasFood = useMemo(
+    () => cart.some((c) => !isDrinkConsumptionRecipe(c.recipe)),
+    [cart],
+  );
+
   const handleSubmit = async () => {
-    // Defensa: este botón solo debería existir en el paso Comida,
-    // pero mantenemos el guard por si se llama desde DevTools.
-    if (cart.length === 0) {
+    if (cart.length === 0 || !cartHasDrink) {
       setShowEmptyCartError(true);
+      setStep('drinks');
+      return;
+    }
+    if (!cartHasFood) {
+      setShowEmptyCartError(true);
+      setStep('food');
       return;
     }
 
@@ -142,25 +143,18 @@ export function ConsumptionModal({
       }));
       const res = await submitPersonalConsumption(payload);
       if (!res.success) {
-        if (res.code === 'EMPTY_CART') {
+        if (res.code === 'NO_FOOD') {
           setShowEmptyCartError(true);
-        } else if (res.code === 'CONSUMPTION_ERROR') {
-          setFailedRecipeIds(res.failedRecipeIds);
-          setConsumptionErrorMessage(res.message);
-          const failedInDrinks = res.failedRecipeIds.some((id) => {
-            const recipe = recipes.find((r) => r.id === id);
-            return recipe && isDrinkConsumptionRecipe(recipe);
-          });
-          setStep(failedInDrinks ? 'drinks' : 'food');
-          toast.error('Revisa el producto marcado en rojo');
+          setStep('food');
+        } else if (res.code === 'EMPTY_CART') {
+          setShowEmptyCartError(true);
+          setStep(cartHasDrink ? 'food' : 'drinks');
         } else {
           toast.error(res.message);
         }
         setIsSubmitting(false);
         return;
       }
-      setFailedRecipeIds([]);
-      setConsumptionErrorMessage(null);
       await Promise.resolve(onConfirm());
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al fichar la salida';
@@ -175,35 +169,16 @@ export function ConsumptionModal({
     );
   }, [recipes, step]);
 
-  const cartHasDrink = useMemo(
-    () => cart.some((c) => isDrinkConsumptionRecipe(c.recipe)),
-    [cart],
-  );
-  const cartHasFood = useMemo(
-    () => cart.some((c) => !isDrinkConsumptionRecipe(c.recipe)),
-    [cart],
-  );
-
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
     return stepRecipes.filter((r) => r.name.toLowerCase().includes(q));
   }, [search, stepRecipes]);
 
-  // En cada paso deben verse TODOS los productos del paso.
-  // La búsqueda solo reduce el conjunto (nunca "esconde" items por diseño).
   const gridRecipes = search.trim() ? searchResults : stepRecipes;
 
-  /** Tras intento sin productos: aviso rojo solo mientras el carrito sigue vacío. */
   const emptyCartMessageVisible =
     showEmptyCartError && (step === 'drinks' ? !cartHasDrink : !cartHasFood);
-
-  const failedRecipeIdSet = useMemo(() => new Set(failedRecipeIds), [failedRecipeIds]);
-
-  const isRecipeFailed = useCallback(
-    (recipeId: string) => failedRecipeIdSet.has(recipeId),
-    [failedRecipeIdSet],
-  );
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end justify-center bg-gray-900/80 p-4 backdrop-blur-sm sm:items-center">
@@ -245,26 +220,15 @@ export function ConsumptionModal({
                 {gridRecipes.map((recipe) => {
                   const badgeCount =
                     getCartBadgeCount(recipe.id, false) + getCartBadgeCount(recipe.id, true);
-                  const hasError = isRecipeFailed(recipe.id);
                   return (
                   <button
                     key={recipe.id}
                     type="button"
                     onClick={() => onRecipeActivate(recipe)}
-                    className={cn(
-                      'relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl p-1.5 text-center transition-transform active:scale-[0.98]',
-                      hasError
-                        ? 'bg-red-50 ring-2 ring-red-500 ring-offset-1'
-                        : 'bg-transparent',
-                    )}
+                    className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98]"
                   >
                     {badgeCount > 0 ? (
-                      <span
-                        className={cn(
-                          'absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full px-1.5 text-[10px] font-black leading-6 text-white shadow-sm',
-                          hasError ? 'bg-red-600' : 'bg-[#36606F]',
-                        )}
-                      >
+                      <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
                         ×{badgeCount}
                       </span>
                     ) : null}
@@ -276,17 +240,11 @@ export function ConsumptionModal({
                           className="max-h-12 w-full object-contain"
                         />
                       ) : (
-                        <Package
-                          className={cn('h-5 w-5', hasError ? 'text-red-400' : 'text-zinc-300')}
-                          aria-hidden
-                        />
+                        <Package className="h-5 w-5 text-zinc-300" aria-hidden />
                       )}
                     </div>
                     <span
-                      className={cn(
-                        'line-clamp-2 w-full text-center text-[9px] font-black leading-tight min-[380px]:text-[10px]',
-                        hasError ? 'text-red-700' : 'text-zinc-800',
-                      )}
+                      className="line-clamp-2 w-full text-center text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
                       title={recipe.name}
                     >
                       {recipe.name}
@@ -304,15 +262,10 @@ export function ConsumptionModal({
             <>
               <h3 className="mb-2 font-bold text-zinc-900">Has consumido:</h3>
               <div className="mb-3 flex flex-col gap-2">
-                {cart.map((c, i) => {
-                  const hasError = isRecipeFailed(c.recipe.id);
-                  return (
+                {cart.map((c, i) => (
                   <div
                     key={`${c.recipe.id}-${c.is_half}-${i}`}
-                    className={cn(
-                      'flex min-h-12 items-center gap-2 rounded-xl px-2',
-                      hasError && 'bg-red-50 ring-1 ring-red-400',
-                    )}
+                    className="flex min-h-12 items-center gap-2 rounded-xl px-2"
                   >
                     <button
                       type="button"
@@ -327,22 +280,14 @@ export function ConsumptionModal({
                     </button>
                     <div className="min-w-0 flex-1">
                       <p
-                        className={cn(
-                          'truncate text-sm font-bold',
-                          hasError ? 'text-red-700' : 'text-zinc-900',
-                        )}
+                        className="truncate text-sm font-bold text-zinc-900"
                         title={c.recipe.name}
                       >
                         {c.recipe.name}
                         {c.is_half ? ' (Mitad)' : ''}
                       </p>
                     </div>
-                    <div
-                      className={cn(
-                        'shrink-0 tabular-nums text-sm font-black',
-                        hasError ? 'text-red-700' : 'text-zinc-700',
-                      )}
-                    >
+                    <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
                       ×{c.quantity}
                     </div>
                     <button
@@ -357,22 +302,18 @@ export function ConsumptionModal({
                       <Plus className="h-5 w-5" strokeWidth={2.5} />
                     </button>
                   </div>
-                );
-                })}
+                ))}
               </div>
             </>
-          )}
-          {consumptionErrorMessage && failedRecipeIds.length > 0 && (
-            <p className="mb-2 text-center text-sm font-semibold text-red-600" role="alert">
-              Error en «{consumptionErrorMessage}». Quítalo del consumo o avisa a un responsable.
-            </p>
           )}
           {emptyCartMessageVisible && (
             <p
               className="mb-2 text-center text-sm font-semibold text-red-600"
               role="alert"
             >
-              Registra tu consumo antes de continuar.
+              {step === 'drinks'
+                ? 'Apunta tu bebida antes de continuar.'
+                : 'Apunta al menos una comida antes de fichar.'}
             </p>
           )}
 
@@ -415,13 +356,7 @@ export function ConsumptionModal({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!cartHasFood) {
-                    setShowEmptyCartError(true);
-                    return;
-                  }
-                  void handleSubmit();
-                }}
+                onClick={() => void handleSubmit()}
                 disabled={isSubmitting}
                 className={cn(
                   'min-h-12 flex-1 shrink-0 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-md transition-all',

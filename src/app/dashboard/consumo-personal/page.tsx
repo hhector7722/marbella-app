@@ -48,16 +48,26 @@ type DayDetailItem = {
   quantity: number;
 };
 
+type DayDetailError = {
+  name: string;
+  quantity: number;
+  is_half: boolean;
+  is_drink: boolean;
+  error_message: string;
+};
+
 type DayDetailWorker = {
   id: string;
   name: string | null;
   total: number;
   items: DayDetailItem[];
+  errors: DayDetailError[];
 };
 
 type DayDetailPayload = {
   date: string;
   totalAmount: number;
+  errorCount?: number;
   workers: DayDetailWorker[];
 };
 
@@ -337,6 +347,15 @@ export default function ConsumoPersonalDashboardPage() {
                     quantity: Math.max(0, Math.round(Number(it?.quantity) || 0)),
                   }))
                 : [],
+              errors: Array.isArray((w as any).errors)
+                ? (w as any).errors.map((err: any) => ({
+                    name: consumptionProductDisplayName(String(err?.name ?? '')),
+                    quantity: Math.max(0, Math.round(Number(err?.quantity) || 0)),
+                    is_half: Boolean(err?.is_half),
+                    is_drink: Boolean(err?.is_drink),
+                    error_message: String(err?.error_message ?? ''),
+                  }))
+                : [],
             }))
           : [];
         mappedWorkers.sort((a, b) => b.total - a.total);
@@ -346,6 +365,7 @@ export default function ConsumoPersonalDashboardPage() {
         setDayDetail({
           date: String(raw.date),
           totalAmount: Number(raw.totalAmount) || 0,
+          errorCount: Number((raw as any).errorCount) || 0,
           workers: mappedWorkers,
         });
       } catch (e) {
@@ -697,7 +717,7 @@ export default function ConsumoPersonalDashboardPage() {
                                     className="flex items-center justify-between gap-2 py-1 border-b border-zinc-100 last:border-0"
                                   >
                                     <p className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
-                                      {it.quantity > 1 ? `${it.name} ×${it.quantity}` : it.name}
+                                      {it.quantity > 1 ? `${consumptionProductDisplayName(it.name)} ×${it.quantity}` : consumptionProductDisplayName(it.name)}
                                     </p>
                                     <span className="shrink-0 text-[12px] font-normal tabular-nums text-zinc-700">
                                       {formatEuroRead(it.amount)}
@@ -705,6 +725,28 @@ export default function ConsumoPersonalDashboardPage() {
                                   </div>
                                 ))}
                               </div>
+                              {w.errors.length > 0 ? (
+                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+                                  <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-800">
+                                    Errores al registrar (sin stock)
+                                  </p>
+                                  <div className="flex flex-col gap-2">
+                                    {w.errors.map((err, idx) => (
+                                      <div key={`${err.name}-err-${idx}`} className="text-left">
+                                        <p className="text-[12px] font-bold text-amber-950">
+                                          {err.quantity > 1
+                                            ? `${consumptionProductDisplayName(err.name)} ×${err.quantity}${err.is_half ? ' (Mitad)' : ''}`
+                                            : `${consumptionProductDisplayName(err.name)}${err.is_half ? ' (Mitad)' : ''}`}
+                                          {err.is_drink ? ' · bebida' : ' · comida'}
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] font-medium leading-snug text-amber-900/90">
+                                          {err.error_message}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                         ))}
