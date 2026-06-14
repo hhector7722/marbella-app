@@ -252,6 +252,11 @@ export const StaffScheduleModal = ({
     const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
     const handleClose = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); onClose(); };
 
+    const openActividades = () => {
+        handleClose();
+        router.push('/staff/actividades');
+    };
+
     const exitEditModeAndRefresh = () => {
         setEditModeForDate(null);
         if (selectedDate) handleDayClick(selectedDate);
@@ -300,29 +305,7 @@ export const StaffScheduleModal = ({
                 ) : (
                 <>
                 {/* ── HEADER (petrol, same style as editor) ── */}
-                <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0 relative">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            handleClose();
-                            router.push('/staff/actividades');
-                        }}
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-0.5 min-h-[48px] justify-center px-2 text-white hover:opacity-90 active:scale-95 transition-all"
-                        aria-label="Actividades del pabellón"
-                    >
-                        <div className="relative w-7 h-7 shrink-0">
-                            <Image
-                                src="/icons/calendar.png"
-                                alt=""
-                                fill
-                                className="object-contain drop-shadow-sm"
-                                sizes="28px"
-                            />
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-[0.15em] leading-none">
-                            Actividades
-                        </span>
-                    </button>
+                <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0">
                     {selectedDate ? (
                         <div className="flex items-center justify-between w-full gap-2">
                             {/* Volver al calendario */}
@@ -440,7 +423,30 @@ export const StaffScheduleModal = ({
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 bg-[#fafafa]">
-                            <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3">Próximos Turnos</h4>
+                            <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
+                                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                                    Próximos Turnos
+                                </h4>
+                                <button
+                                    type="button"
+                                    onClick={openActividades}
+                                    className="flex flex-col items-center gap-0.5 min-h-[48px] min-w-[48px] justify-center shrink-0 text-gray-500 hover:text-[#36606F] active:scale-95 transition-all"
+                                    aria-label="Actividades del pabellón"
+                                >
+                                    <div className="relative w-7 h-7 shrink-0">
+                                        <Image
+                                            src="/icons/calendar.png"
+                                            alt=""
+                                            fill
+                                            className="object-contain"
+                                            sizes="28px"
+                                        />
+                                    </div>
+                                    <span className="text-[8px] font-black uppercase tracking-[0.12em] leading-none">
+                                        Actividades
+                                    </span>
+                                </button>
+                            </div>
                             {futureShifts.length === 0 ? (
                                 <p className="text-center text-gray-400 text-xs font-bold py-10 italic">No hay más turnos este mes.</p>
                             ) : (
