@@ -518,16 +518,6 @@ export default function ReservasClient() {
     return weeks
   }, [calendarDays])
 
-  const monthReservationCount = useMemo(() => {
-    return Object.values(byDate).reduce((acc, list) => acc + list.length, 0)
-  }, [byDate])
-
-  const pendingCount = useMemo(() => {
-    return Object.values(byDate)
-      .flat()
-      .filter((r) => r.status === 'pending').length
-  }, [byDate])
-
   const fetchMonthReservations = useCallback(async () => {
     const seq = ++fetchSeqRef.current
     setRpcError(null)
@@ -773,7 +763,7 @@ export default function ReservasClient() {
             </h1>
           </div>
 
-          <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
+          <div className="px-4 md:px-8 pt-2 pb-4 md:pb-6 flex flex-col gap-2 shrink-0">
             <div className="flex justify-center w-full">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
@@ -795,27 +785,6 @@ export default function ReservasClient() {
                 >
                   <ChevronRight size={22} />
                 </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 md:p-8 flex flex-col">
-            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
-              <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                  Total mes
-                </span>
-                <span className="text-[11px] font-black leading-tight text-zinc-700 tabular-nums sm:text-xs md:text-sm">
-                  {loading ? ' ' : String(monthReservationCount)}
-                </span>
-              </div>
-              <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                  Pendientes
-                </span>
-                <span className="text-[11px] font-black leading-tight text-amber-700 tabular-nums sm:text-xs md:text-sm">
-                  {loading ? ' ' : pendingCount === 0 ? ' ' : String(pendingCount)}
-                </span>
               </div>
             </div>
 
