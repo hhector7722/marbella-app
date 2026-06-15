@@ -519,6 +519,14 @@ export default function ReservasClient() {
     return eachDayOfInterval({ start: startVisible, end: endVisible })
   }, [viewMonth])
 
+  const calendarWeeks = useMemo(() => {
+    const weeks: Date[][] = []
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      weeks.push(calendarDays.slice(i, i + 7))
+    }
+    return weeks
+  }, [calendarDays])
+
   const monthReservationCount = useMemo(() => {
     return Object.values(byDate).reduce((acc, list) => acc + list.length, 0)
   }, [byDate])
@@ -832,13 +840,13 @@ export default function ReservasClient() {
             ) : (
               <div className="flex flex-col">
                 <div className="overflow-x-auto no-scrollbar">
-                  <div className="min-w-0 bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100">
+                  <div className="min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                     <div className="grid grid-cols-7 border-b border-gray-100">
                       {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                         <div
                           key={d}
                           className={cn(
-                            'flex items-center justify-center border-r border-gray-100 last:border-r-0 py-1',
+                            'flex items-center justify-center border-r border-white/30 last:border-r-0 py-1 shadow-sm',
                             'bg-gradient-to-b from-[#6B1F2E] to-[#4A1522]'
                           )}
                         >
@@ -849,8 +857,9 @@ export default function ReservasClient() {
                         </div>
                       ))}
                     </div>
-                    <div className="grid grid-cols-7">
-                      {calendarDays.map((day, index) => {
+                    {calendarWeeks.map((week, weekIdx) => (
+                      <div key={weekIdx} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
+                        {week.map((day) => {
                         const key = format(day, 'yyyy-MM-dd')
                         const dayReservations = byDate[key] ?? []
                         const isViewMonthDay = isSameMonth(day, viewMonth)
@@ -859,8 +868,6 @@ export default function ReservasClient() {
                         const visible = dayReservations.slice(0, maxEntries)
                         const hiddenCount = dayReservations.length - visible.length
                         const headerTone = dayHeaderTone(day, isViewMonthDay)
-                        const isLastCol = (index + 1) % 7 === 0
-                        const isLastRow = index >= calendarDays.length - 7
 
                         return (
                           <button
@@ -870,13 +877,11 @@ export default function ReservasClient() {
                             disabled={!isViewMonthDay || !hasReservations}
                             className={cn(
                               'group relative flex flex-col text-left min-h-[64px] md:min-h-[108px] transition-colors',
-                              'border-r border-b border-gray-100 bg-white',
-                              isLastCol && 'border-r-0',
-                              isLastRow && 'border-b-0',
+                              'border-r border-gray-100 last:border-r-0 bg-white',
                               !isViewMonthDay && 'opacity-25 pointer-events-none',
                               isViewMonthDay &&
                                 hasReservations &&
-                                'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                                'hover:bg-zinc-50 active:bg-zinc-50 cursor-pointer',
                               isViewMonthDay && !hasReservations && 'cursor-default'
                             )}
                           >
@@ -911,7 +916,8 @@ export default function ReservasClient() {
                           </button>
                         )
                       })}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
