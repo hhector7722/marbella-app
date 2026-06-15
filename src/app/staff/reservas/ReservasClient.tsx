@@ -163,14 +163,17 @@ function ReservationCalendarEntry({ r }: { r: Reservation }) {
           {timeShort(r.reservation_time)}
         </span>
       </div>
-      <span
-        className={cn(
-          'block w-full text-right text-[8px] font-normal leading-none pr-0.5',
-          isPast ? 'text-gray-400' : 'text-gray-800'
-        )}
-      >
-        {r.pax === 0 ? ' ' : `${r.pax} pax`}
-      </span>
+      <div className="flex items-center gap-1 min-w-0 shrink-0">
+        <span className="w-1.5 shrink-0" aria-hidden />
+        <span
+          className={cn(
+            'text-[8px] font-normal leading-none',
+            isPast ? 'text-gray-400' : 'text-gray-800'
+          )}
+        >
+          {r.pax === 0 ? ' ' : `${r.pax} pax`}
+        </span>
+      </div>
     </div>
   )
 }
