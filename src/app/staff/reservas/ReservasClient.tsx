@@ -137,24 +137,30 @@ function reservationDotClass(r: Reservation) {
   return 'bg-green-500'
 }
 
-function reservationTextClass(r: Reservation) {
-  return isReservationPast(r) ? 'text-gray-400' : 'text-gray-700'
-}
-
 function ReservationCalendarEntry({ r }: { r: Reservation }) {
-  const textCls = reservationTextClass(r)
+  const isPast = isReservationPast(r)
   return (
-    <div className="flex gap-0.5 items-start min-w-0">
+    <div className="flex gap-1 items-center min-w-0">
       <div
-        className={cn('w-1.5 h-1.5 rounded-full shrink-0 mt-[2px]', reservationDotClass(r))}
+        className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r))}
         aria-hidden
       />
-      <div className={cn('flex flex-col min-w-0 flex-1 leading-none', textCls)}>
-        <span className="text-[6px] min-[370px]:text-[8px] md:text-[9px] font-mono font-bold truncate">
+      <div className="flex flex-col min-w-0 flex-1 leading-none">
+        <span
+          className={cn(
+            'text-[9px] font-mono leading-none truncate',
+            isPast ? 'text-gray-400' : 'text-gray-700'
+          )}
+        >
           {timeShort(r.reservation_time)}
         </span>
-        <span className="text-[6px] min-[370px]:text-[8px] md:text-[9px] font-black truncate">
-          {r.pax} pax
+        <span
+          className={cn(
+            'text-[8px] font-bold truncate',
+            isPast ? 'text-gray-400' : 'text-gray-800'
+          )}
+        >
+          {r.pax === 0 ? ' ' : `${r.pax} pax`}
         </span>
       </div>
     </div>
@@ -866,7 +872,7 @@ export default function ReservasClient() {
                                     <ReservationCalendarEntry key={r.id} r={r} />
                                   ))}
                                   {hiddenCount > 0 ? (
-                                    <span className="text-[6px] md:text-[8px] font-black text-zinc-400">
+                                    <span className="text-[8px] text-gray-400">
                                       +{hiddenCount} más
                                     </span>
                                   ) : null}
