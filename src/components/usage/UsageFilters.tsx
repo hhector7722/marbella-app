@@ -151,21 +151,26 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
             </button>
           </div>
 
-          <div className="max-h-48 space-y-1 overflow-y-auto">
+          <div className="flex max-h-48 flex-wrap content-start gap-2 overflow-y-auto">
             {users.map((user) => {
               const checked = selectedIds.has(user.profileId);
               return (
                 <label
                   key={user.profileId}
-                  className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-zinc-50"
+                  className={cn(
+                    'inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5',
+                    checked
+                      ? 'border-[#36606F]/30 bg-[#36606F]/5'
+                      : 'border-zinc-100 hover:bg-zinc-50'
+                  )}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleUser(user.profileId)}
-                    className="size-5 shrink-0 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30"
+                    className="size-4 shrink-0 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30"
                   />
-                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-800">
+                  <span className="whitespace-nowrap text-sm text-zinc-800">
                     {firstNameOnly(user.displayName)}
                   </span>
                 </label>
