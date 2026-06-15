@@ -14,6 +14,8 @@ export function isInternalScrollShellPath(pathname: string): boolean {
   if (pathname === '/orders/new' || pathname.startsWith('/orders/')) return true
   if (pathname === '/suppliers' || pathname.startsWith('/suppliers/')) return true
   if (pathname === '/dashboard/propinas') return true
+  if (pathname === '/dashboard/uso' || pathname.startsWith('/dashboard/uso')) return true
+  if (pathname === '/dashboard/instalacion-app') return true
   return false
 }
 

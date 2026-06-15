@@ -39,7 +39,7 @@ export default async function UsoPage({ searchParams }: UsoPageProps) {
   const data = await getUsageDashboardData(filters);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 pb-24">
+    <div className="mx-auto min-h-screen max-w-3xl space-y-4 p-4">
       <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-zinc-100 bg-zinc-50">
           <BarChart3 className="size-6 text-[#36606F]" aria-hidden />

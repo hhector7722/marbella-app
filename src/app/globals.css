@@ -108,6 +108,17 @@
 }
 
 /* --- MODALES: difuminar barras fijas cuando hay overlay --- */
+.marbella-fixed-bottombar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 html[data-modal-open="true"] .marbella-fixed-topbar,
 html[data-modal-open="true"] .marbella-fixed-bottombar {
   filter: blur(6px);

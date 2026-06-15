@@ -1,6 +1,11 @@
 import { fromZonedTime } from 'date-fns-tz';
 import { usageDisplayName } from '@/lib/usage/display-name';
-import { parseProfileIdsParam, USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
+import {
+  defaultUsageProfileIds,
+  parseProfileIdsParam,
+  resolveUsageProfileIds,
+  USAGE_RECENT_PAGE_SIZE,
+} from '@/lib/usage/filters';
 import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
@@ -150,8 +155,11 @@ async function getActiveFilterUsers(): Promise<UsageFilterUser[]> {
   }));
 }
 
-async function fetchUsageEventRows(filters: UsageDashboardFilters): Promise<UsageEventRow[]> {
-  if (filters.profileIds !== null && filters.profileIds.length === 0) {
+async function fetchUsageEventRows(
+  day: string | null,
+  profileIds: string[]
+): Promise<UsageEventRow[]> {
+  if (profileIds.length === 0) {
     return [];
   }
 
@@ -177,15 +185,12 @@ async function fetchUsageEventRows(filters: UsageDashboardFilters): Promise<Usag
       )
     `
     )
+    .in('profile_id', profileIds)
     .order('created_at', { ascending: false })
     .limit(2000);
 
-  if (filters.profileIds !== null && filters.profileIds.length > 0) {
-    eventsQuery = eventsQuery.in('profile_id', filters.profileIds);
-  }
-
-  if (filters.day) {
-    const { start, end } = madridDayRange(filters.day);
+  if (day) {
+    const { start, end } = madridDayRange(day);
     eventsQuery = eventsQuery.gte('created_at', start).lte('created_at', end);
   }
 
@@ -226,7 +231,9 @@ export async function getUsageRecentEventsPage(
   offset: number,
   limit = USAGE_RECENT_PAGE_SIZE
 ): Promise<{ events: UsageRecentEvent[]; hasMore: boolean }> {
-  const rows = await fetchUsageEventRows(filters);
+  const filterUsers = await getActiveFilterUsers();
+  const resolvedIds = resolveUsageProfileIds(filters.profileIds, filterUsers);
+  const rows = await fetchUsageEventRows(filters.day, resolvedIds);
   const feed = buildUsageRecentFeed(rows, limit, offset);
   const events = mapRecentFeedToEvents(rows, feed);
   const hasMore = hasMoreUsageRecentFeed(rows, offset, limit);
@@ -237,10 +244,9 @@ export async function getUsageRecentEventsPage(
 export async function getUsageDashboardData(
   filters: UsageDashboardFilters
 ): Promise<UsageDashboardData> {
-  const [rows, filterUsers] = await Promise.all([
-    fetchUsageEventRows(filters),
-    getActiveFilterUsers(),
-  ]);
+  const filterUsers = await getActiveFilterUsers();
+  const resolvedIds = resolveUsageProfileIds(filters.profileIds, filterUsers);
+  const rows = await fetchUsageEventRows(filters.day, resolvedIds);
   const summaryMap = new Map<string, UsageUserSummary>();
 
   let eventsCount = 0;

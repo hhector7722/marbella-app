@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { firstNameOnly } from '@/lib/usage/display-name';
-import { serializeProfileIdsForUrl } from '@/lib/usage/filters';
+import {
+  defaultUsageProfileIds,
+  isDefaultUsageSelection,
+  serializeProfileIdsForUrl,
+} from '@/lib/usage/filters';
 import type { UsageDashboardFilters, UsageFilterUser } from '@/lib/usage/queries';
 
 type UsageFiltersProps = {
@@ -15,10 +19,10 @@ type UsageFiltersProps = {
 
 function resolveSelectedIds(
   filters: UsageDashboardFilters,
-  allUserIds: string[]
+  users: UsageFilterUser[]
 ): Set<string> {
   if (filters.profileIds === null) {
-    return new Set(allUserIds);
+    return new Set(defaultUsageProfileIds(users));
   }
   return new Set(filters.profileIds);
 }
@@ -29,14 +33,14 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
 
   const [day, setDay] = useState(filters.day ?? '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
-    resolveSelectedIds(filters, allUserIds)
+    resolveSelectedIds(filters, users)
   );
   const [usersOpen, setUsersOpen] = useState(false);
 
   useEffect(() => {
     setDay(filters.day ?? '');
-    setSelectedIds(resolveSelectedIds(filters, allUserIds));
-  }, [filters.day, filters.profileIds, allUserIds]);
+    setSelectedIds(resolveSelectedIds(filters, users));
+  }, [filters.day, filters.profileIds, users]);
 
   function applyFilters(nextDay: string, nextSelected: Set<string>) {
     const params = new URLSearchParams();
@@ -44,7 +48,12 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
 
     const allSelected =
       allUserIds.length > 0 && allUserIds.every((id) => nextSelected.has(id));
-    if (!allSelected) {
+    const isDefault = isDefaultUsageSelection(nextSelected, users);
+
+    if (allSelected) {
+      const usuarios = serializeProfileIdsForUrl(allUserIds);
+      if (usuarios !== null) params.set('usuarios', usuarios);
+    } else if (!isDefault) {
       const usuarios = serializeProfileIdsForUrl([...nextSelected]);
       if (usuarios !== null) params.set('usuarios', usuarios);
     }
@@ -79,7 +88,14 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
   }
 
   const selectedCount = selectedIds.size;
-  const allSelected = allUserIds.length > 0 && selectedCount === allUserIds.length;
+  const allSelected = allUserIds.length > 0 && allUserIds.every((id) => selectedIds.has(id));
+  const isDefault = isDefaultUsageSelection(selectedIds, users);
+
+  const userFilterLabel = allSelected
+    ? 'Todos los usuarios'
+    : isDefault
+      ? `${selectedCount} usuarios`
+      : `${selectedCount} usuario${selectedCount === 1 ? '' : 's'}`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
@@ -106,7 +122,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
             usersOpen && 'border-[#36606F] ring-1 ring-[#36606F]/30'
           )}
         >
-          {allSelected ? 'Todos los usuarios' : `${selectedCount} usuario${selectedCount === 1 ? '' : 's'}`}
+          {userFilterLabel}
         </button>
 
         <button
@@ -120,7 +136,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
           href="/dashboard/uso"
           onClick={() => {
             setDay('');
-            setSelectedIds(new Set(allUserIds));
+            setSelectedIds(new Set(defaultUsageProfileIds(users)));
             setUsersOpen(false);
           }}
           className={cn(
