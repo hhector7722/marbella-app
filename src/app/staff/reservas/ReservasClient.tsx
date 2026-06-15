@@ -148,12 +148,12 @@ function reservationDotClass(r: Reservation) {
 function ReservationCalendarEntry({ r }: { r: Reservation }) {
   const isPast = isReservationPast(r)
   return (
-    <div className="flex gap-1 items-center min-w-0 w-full">
-      <div
-        className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r))}
-        aria-hidden
-      />
-      <div className="flex flex-col min-w-0 flex-1 leading-none">
+    <div className="flex flex-col min-w-0 w-full leading-none gap-0.5">
+      <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
+        <div
+          className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r))}
+          aria-hidden
+        />
         <span
           className={cn(
             'text-[9px] font-mono leading-none whitespace-nowrap',
@@ -162,15 +162,15 @@ function ReservationCalendarEntry({ r }: { r: Reservation }) {
         >
           {timeShort(r.reservation_time)}
         </span>
-        <span
-          className={cn(
-            'text-[8px] font-normal leading-none',
-            isPast ? 'text-gray-400' : 'text-gray-800'
-          )}
-        >
-          {r.pax === 0 ? ' ' : `${r.pax} pax`}
-        </span>
       </div>
+      <span
+        className={cn(
+          'block w-full text-right text-[8px] font-normal leading-none pr-0.5',
+          isPast ? 'text-gray-400' : 'text-gray-800'
+        )}
+      >
+        {r.pax === 0 ? ' ' : `${r.pax} pax`}
+      </span>
     </div>
   )
 }
