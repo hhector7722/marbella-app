@@ -62,21 +62,12 @@ function parseLocalSafe(dateStr: string): Date {
   return new Date(y, m - 1, d)
 }
 
-function isDayBeforeToday(day: Date, now = new Date()): boolean {
-  const y = day.getFullYear()
-  const m = day.getMonth()
-  const d = day.getDate()
-  const ty = now.getFullYear()
-  const tm = now.getMonth()
-  const td = now.getDate()
-  if (y !== ty) return y < ty
-  if (m !== tm) return m < tm
-  return d < td
-}
-
-function dayHeaderTone(day: Date, isViewMonthDay: boolean): 'past' | 'active' | 'muted' {
-  if (!isViewMonthDay) return 'muted'
-  return isDayBeforeToday(day) ? 'past' : 'active'
+function isToday(day: Date, now = new Date()): boolean {
+  return (
+    day.getFullYear() === now.getFullYear() &&
+    day.getMonth() === now.getMonth() &&
+    day.getDate() === now.getDate()
+  )
 }
 
 function timeShort(t: string) {
@@ -157,7 +148,7 @@ function reservationDotClass(r: Reservation) {
 function ReservationCalendarEntry({ r }: { r: Reservation }) {
   const isPast = isReservationPast(r)
   return (
-    <div className="flex gap-1 items-center min-w-0">
+    <div className="flex gap-1 items-center min-w-0 w-full">
       <div
         className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r))}
         aria-hidden
@@ -165,7 +156,7 @@ function ReservationCalendarEntry({ r }: { r: Reservation }) {
       <div className="flex flex-col min-w-0 flex-1 leading-none">
         <span
           className={cn(
-            'text-[9px] font-mono leading-none truncate',
+            'text-[9px] font-mono leading-none whitespace-nowrap',
             isPast ? 'text-gray-400' : 'text-gray-700'
           )}
         >
@@ -173,7 +164,7 @@ function ReservationCalendarEntry({ r }: { r: Reservation }) {
         </span>
         <span
           className={cn(
-            'text-[8px] font-bold truncate',
+            'text-[8px] font-normal leading-none',
             isPast ? 'text-gray-400' : 'text-gray-800'
           )}
         >
@@ -845,10 +836,7 @@ export default function ReservasClient() {
                       {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                         <div
                           key={d}
-                          className={cn(
-                            'flex items-center justify-center border-r border-white/30 last:border-r-0 py-1 shadow-sm',
-                            'bg-gradient-to-b from-[#6B1F2E] to-[#4A1522]'
-                          )}
+                          className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
                         >
                           <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
                             <span className="hidden md:inline">{d}</span>
@@ -867,7 +855,7 @@ export default function ReservasClient() {
                         const maxEntries = 2
                         const visible = dayReservations.slice(0, maxEntries)
                         const hiddenCount = dayReservations.length - visible.length
-                        const headerTone = dayHeaderTone(day, isViewMonthDay)
+                        const today = isToday(day)
 
                         return (
                           <button
@@ -876,28 +864,25 @@ export default function ReservasClient() {
                             onClick={() => isViewMonthDay && handleDayClick(day)}
                             disabled={!isViewMonthDay || !hasReservations}
                             className={cn(
-                              'group relative flex flex-col text-left min-h-[64px] md:min-h-[108px] transition-colors',
+                              'group relative flex flex-col text-left min-h-[64px] md:min-h-[108px] transition-colors p-1',
                               'border-r border-gray-100 last:border-r-0 bg-white',
                               !isViewMonthDay && 'opacity-25 pointer-events-none',
                               isViewMonthDay &&
                                 hasReservations &&
-                                'hover:bg-zinc-50 active:bg-zinc-50 cursor-pointer',
+                                'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                               isViewMonthDay && !hasReservations && 'cursor-default'
                             )}
                           >
-                            <div
+                            <span
                               className={cn(
-                                'flex items-center justify-center shrink-0 py-px leading-none',
-                                headerTone === 'active' && 'bg-gradient-to-b from-red-500 to-red-600',
-                                headerTone === 'past' && 'bg-zinc-400',
-                                headerTone === 'muted' && 'bg-zinc-300'
+                                'absolute top-1 right-1 text-[9px] font-bold',
+                                today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                                !isViewMonthDay && 'opacity-50'
                               )}
                             >
-                              <span className="text-[9px] font-bold text-white leading-none">
-                                {format(day, 'd')}
-                              </span>
-                            </div>
-                            <div className="p-1 flex flex-col flex-1 gap-0.5 overflow-hidden">
+                              {format(day, 'd')}
+                            </span>
+                            <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px] gap-0.5 overflow-hidden">
                               {isViewMonthDay && hasReservations ? (
                                 <>
                                   {visible.map((r) => (
@@ -909,9 +894,7 @@ export default function ReservasClient() {
                                     </span>
                                   ) : null}
                                 </>
-                              ) : (
-                                <span className="flex-1" aria-hidden />
-                              )}
+                              ) : null}
                             </div>
                           </button>
                         )
