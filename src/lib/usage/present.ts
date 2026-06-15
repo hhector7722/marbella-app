@@ -100,18 +100,32 @@ function isDuplicateEvent(
   return false;
 }
 
+export type UsageRecentFeedItem = {
+  id: string;
+  title: string;
+  createdAt: string;
+};
+
 export function buildUsageRecentFeed(
   rows: UsageEventRowForPresent[],
-  limit = 80
-): Array<{ id: string; title: string; createdAt: string }> {
+  limit = 80,
+  offset = 0
+): UsageRecentFeedItem[] {
   const included: UsageEventRowForPresent[] = [];
-  const feed: Array<{ id: string; title: string; createdAt: string }> = [];
+  const feed: UsageRecentFeedItem[] = [];
+  let skipped = 0;
 
   for (const row of rows) {
     if (isNoiseUsagePath(row.path)) continue;
     if (isDuplicateEvent(row, included)) continue;
 
     included.push(row);
+
+    if (skipped < offset) {
+      skipped += 1;
+      continue;
+    }
+
     feed.push({
       id: row.id,
       title: formatUsageActivityTitle(row),
@@ -122,4 +136,13 @@ export function buildUsageRecentFeed(
   }
 
   return feed;
+}
+
+/** Indica si hay más actividad tras offset+limit en el feed deduplicado. */
+export function hasMoreUsageRecentFeed(
+  rows: UsageEventRowForPresent[],
+  offset: number,
+  limit: number
+): boolean {
+  return buildUsageRecentFeed(rows, limit + 1, offset).length > limit;
 }

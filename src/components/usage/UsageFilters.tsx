@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { serializeProfileIdsForUrl } from '@/lib/usage/filters';
 import type { UsageDashboardFilters, UsageFilterUser } from '@/lib/usage/queries';
 
 type UsageFiltersProps = {
@@ -11,87 +12,167 @@ type UsageFiltersProps = {
   users: UsageFilterUser[];
 };
 
+function resolveSelectedIds(
+  filters: UsageDashboardFilters,
+  allUserIds: string[]
+): Set<string> {
+  if (filters.profileIds === null) {
+    return new Set(allUserIds);
+  }
+  return new Set(filters.profileIds);
+}
+
 export function UsageFilters({ filters, users }: UsageFiltersProps) {
   const router = useRouter();
+  const allUserIds = useMemo(() => users.map((user) => user.profileId), [users]);
 
   const [day, setDay] = useState(filters.day ?? '');
-  const [profileId, setProfileId] = useState(filters.profileId ?? '');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
+    resolveSelectedIds(filters, allUserIds)
+  );
+  const [usersOpen, setUsersOpen] = useState(false);
 
   useEffect(() => {
     setDay(filters.day ?? '');
-    setProfileId(filters.profileId ?? '');
-  }, [filters.day, filters.profileId]);
+    setSelectedIds(resolveSelectedIds(filters, allUserIds));
+  }, [filters.day, filters.profileIds, allUserIds]);
 
-  function applyFilters(nextDay: string, nextProfileId: string) {
+  function applyFilters(nextDay: string, nextSelected: Set<string>) {
     const params = new URLSearchParams();
     if (nextDay) params.set('dia', nextDay);
-    if (nextProfileId) params.set('usuario', nextProfileId);
+
+    const allSelected =
+      allUserIds.length > 0 && allUserIds.every((id) => nextSelected.has(id));
+    if (!allSelected) {
+      const usuarios = serializeProfileIdsForUrl([...nextSelected]);
+      if (usuarios !== null) params.set('usuarios', usuarios);
+    }
+
     const query = params.toString();
     router.push(query ? `/dashboard/uso?${query}` : '/dashboard/uso');
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    applyFilters(day, profileId);
+    applyFilters(day, selectedIds);
   }
 
+  function toggleUser(profileId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(profileId)) {
+        next.delete(profileId);
+      } else {
+        next.add(profileId);
+      }
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setSelectedIds(new Set(allUserIds));
+  }
+
+  function deselectAll() {
+    setSelectedIds(new Set());
+  }
+
+  const selectedCount = selectedIds.size;
+  const allSelected = allUserIds.length > 0 && selectedCount === allUserIds.length;
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex shrink-0 items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    >
-      <input
-        id="usage-day"
-        name="dia"
-        type="date"
-        aria-label="Día"
-        value={day}
-        onChange={(event) => setDay(event.target.value)}
-        className={cn(
-          'box-border h-12 w-[7rem] max-w-[7rem] shrink-0 rounded-xl border border-zinc-200 bg-white px-2 text-xs text-zinc-800 outline-none',
-          'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30'
-        )}
-      />
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <input
+          id="usage-day"
+          name="dia"
+          type="date"
+          aria-label="Día"
+          value={day}
+          onChange={(event) => setDay(event.target.value)}
+          className={cn(
+            'box-border h-12 w-[7rem] max-w-[7rem] shrink-0 rounded-xl border border-zinc-200 bg-white px-2 text-xs text-zinc-800 outline-none',
+            'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30'
+          )}
+        />
 
-      <select
-        id="usage-user"
-        name="usuario"
-        aria-label="Usuario"
-        value={profileId}
-        onChange={(event) => setProfileId(event.target.value)}
-        className={cn(
-          'h-12 min-w-[8rem] flex-1 shrink-0 rounded-xl border border-zinc-200 bg-white px-2 text-xs text-zinc-800 outline-none',
-          'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30'
-        )}
-      >
-        <option value="">Todos</option>
-        {users.map((user) => (
-          <option key={user.profileId} value={user.profileId}>
-            {user.displayName}
-          </option>
-        ))}
-      </select>
+        <button
+          type="button"
+          onClick={() => setUsersOpen((prev) => !prev)}
+          className={cn(
+            'h-12 min-w-[8rem] flex-1 shrink-0 rounded-xl border border-zinc-200 bg-white px-3 text-left text-xs text-zinc-800 outline-none',
+            'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30',
+            usersOpen && 'border-[#36606F] ring-1 ring-[#36606F]/30'
+          )}
+        >
+          {allSelected ? 'Todos los usuarios' : `${selectedCount} usuario${selectedCount === 1 ? '' : 's'}`}
+        </button>
 
-      <button
-        type="submit"
-        className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-[#36606F] px-4 text-xs font-semibold text-white"
-      >
-        OK
-      </button>
+        <button
+          type="submit"
+          className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-[#36606F] px-4 text-xs font-semibold text-white"
+        >
+          OK
+        </button>
 
-      <Link
-        href="/dashboard/uso"
-        onClick={() => {
-          setDay('');
-          setProfileId('');
-        }}
-        className={cn(
-          'inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 px-3 text-xs text-zinc-500',
-          'hover:border-[#36606F]/40 hover:text-[#36606F]'
-        )}
-      >
-        ×
-      </Link>
+        <Link
+          href="/dashboard/uso"
+          onClick={() => {
+            setDay('');
+            setSelectedIds(new Set(allUserIds));
+            setUsersOpen(false);
+          }}
+          className={cn(
+            'inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 px-3 text-xs text-zinc-500',
+            'hover:border-[#36606F]/40 hover:text-[#36606F]'
+          )}
+        >
+          ×
+        </Link>
+      </div>
+
+      {usersOpen ? (
+        <div className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
+          <div className="mb-2 flex gap-2">
+            <button
+              type="button"
+              onClick={selectAll}
+              className="min-h-10 rounded-lg border border-zinc-200 px-3 text-xs font-medium text-[#36606F] hover:bg-zinc-50"
+            >
+              Seleccionar todos
+            </button>
+            <button
+              type="button"
+              onClick={deselectAll}
+              className="min-h-10 rounded-lg border border-zinc-200 px-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+            >
+              Quitar todos
+            </button>
+          </div>
+
+          <div className="max-h-48 space-y-1 overflow-y-auto">
+            {users.map((user) => {
+              const checked = selectedIds.has(user.profileId);
+              return (
+                <label
+                  key={user.profileId}
+                  className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-zinc-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleUser(user.profileId)}
+                    className="size-5 shrink-0 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-800">
+                    {user.displayName}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }

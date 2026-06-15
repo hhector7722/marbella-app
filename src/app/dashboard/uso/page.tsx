@@ -9,7 +9,7 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic';
 
 type UsoPageProps = {
-  searchParams: Promise<{ dia?: string; usuario?: string }>;
+  searchParams: Promise<{ dia?: string; usuario?: string; usuarios?: string }>;
 };
 
 export default async function UsoPage({ searchParams }: UsoPageProps) {

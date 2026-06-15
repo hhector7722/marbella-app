@@ -1,7 +1,10 @@
 import { fromZonedTime } from 'date-fns-tz';
-import { buildUsageRecentFeed } from '@/lib/usage/present';
+import { parseProfileIdsParam, USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
+import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
+
+export { USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 
 const MADRID_TZ = 'Europe/Madrid';
 
@@ -14,7 +17,8 @@ export type UsageFilterUser = {
 export type UsageDashboardFilters = {
   /** YYYY-MM-DD civil Madrid; null = todos los días. */
   day: string | null;
-  profileId: string | null;
+  /** null = todos los usuarios seleccionados; [] = ninguno. */
+  profileIds: string[] | null;
 };
 
 export type UsageUserSummary = {
@@ -32,6 +36,7 @@ export type UsageUserSummary = {
 
 export type UsageRecentEvent = {
   id: string;
+  profileId: string;
   email: string;
   displayName: string;
   title: string;
@@ -42,6 +47,7 @@ export type UsageRecentEvent = {
 export type UsageDashboardData = {
   summaries: UsageUserSummary[];
   recentEvents: UsageRecentEvent[];
+  recentHasMore: boolean;
   filterUsers: UsageFilterUser[];
   filters: UsageDashboardFilters;
   totals: {
@@ -110,6 +116,7 @@ function profileDisplayName(profile: UsageEventProfile | null, fallbackEmail = '
 export function parseUsageDashboardFilters(searchParams: {
   dia?: string;
   usuario?: string;
+  usuarios?: string;
 }): UsageDashboardFilters {
   const dayParam = searchParams.dia?.trim();
   const day =
@@ -119,9 +126,9 @@ export function parseUsageDashboardFilters(searchParams: {
         ? dayParam
         : todayMadridDate();
 
-  const profileId = searchParams.usuario?.trim() || null;
+  const profileIds = parseProfileIdsParam(searchParams.usuarios, searchParams.usuario);
 
-  return { day, profileId };
+  return { day, profileIds };
 }
 
 async function getActiveFilterUsers(): Promise<UsageFilterUser[]> {
@@ -144,9 +151,11 @@ async function getActiveFilterUsers(): Promise<UsageFilterUser[]> {
   }));
 }
 
-export async function getUsageDashboardData(
-  filters: UsageDashboardFilters
-): Promise<UsageDashboardData> {
+async function fetchUsageEventRows(filters: UsageDashboardFilters): Promise<UsageEventRow[]> {
+  if (filters.profileIds !== null && filters.profileIds.length === 0) {
+    return [];
+  }
+
   const supabase = await createClient();
 
   let eventsQuery = supabase
@@ -172,8 +181,8 @@ export async function getUsageDashboardData(
     .order('created_at', { ascending: false })
     .limit(2000);
 
-  if (filters.profileId) {
-    eventsQuery = eventsQuery.eq('profile_id', filters.profileId);
+  if (filters.profileIds !== null && filters.profileIds.length > 0) {
+    eventsQuery = eventsQuery.in('profile_id', filters.profileIds);
   }
 
   if (filters.day) {
@@ -181,16 +190,58 @@ export async function getUsageDashboardData(
     eventsQuery = eventsQuery.gte('created_at', start).lte('created_at', end);
   }
 
-  const [{ data: events, error }, filterUsers] = await Promise.all([
-    eventsQuery,
-    getActiveFilterUsers(),
-  ]);
+  const { data: events, error } = await eventsQuery;
 
   if (error) {
     throw new Error(error.message);
   }
 
-  const rows = (events ?? []) as UsageEventRow[];
+  return (events ?? []) as UsageEventRow[];
+}
+
+function mapRecentFeedToEvents(
+  rows: UsageEventRow[],
+  feed: ReturnType<typeof buildUsageRecentFeed>
+): UsageRecentEvent[] {
+  const rowById = new Map(rows.map((row) => [row.id, row]));
+
+  return feed.map((item) => {
+    const row = rowById.get(item.id);
+    const profile = row ? resolveUsageEventProfile(row.profiles) : null;
+    const email = profile?.email ?? '?';
+
+    return {
+      id: item.id,
+      profileId: row?.profile_id ?? '',
+      email,
+      displayName: profileDisplayName(profile, email),
+      title: item.title,
+      createdAt: item.createdAt,
+      timeLabel: formatDateTimeMadrid(item.createdAt),
+    };
+  });
+}
+
+export async function getUsageRecentEventsPage(
+  filters: UsageDashboardFilters,
+  offset: number,
+  limit = USAGE_RECENT_PAGE_SIZE
+): Promise<{ events: UsageRecentEvent[]; hasMore: boolean }> {
+  const rows = await fetchUsageEventRows(filters);
+  const feed = buildUsageRecentFeed(rows, limit, offset);
+  const events = mapRecentFeedToEvents(rows, feed);
+  const hasMore = hasMoreUsageRecentFeed(rows, offset, limit);
+
+  return { events, hasMore };
+}
+
+export async function getUsageDashboardData(
+  filters: UsageDashboardFilters
+): Promise<UsageDashboardData> {
+  const [rows, filterUsers] = await Promise.all([
+    fetchUsageEventRows(filters),
+    getActiveFilterUsers(),
+  ]);
   const summaryMap = new Map<string, UsageUserSummary>();
 
   let eventsCount = 0;
@@ -243,27 +294,14 @@ export async function getUsageDashboardData(
     return bTime.localeCompare(aTime);
   });
 
-  const rowById = new Map(rows.map((row) => [row.id, row]));
-  const recentFeed = buildUsageRecentFeed(rows, 80);
-
-  const recentEvents: UsageRecentEvent[] = recentFeed.map((item) => {
-    const row = rowById.get(item.id);
-    const profile = row ? resolveUsageEventProfile(row.profiles) : null;
-    const email = profile?.email ?? '?';
-
-    return {
-      id: item.id,
-      email,
-      displayName: profileDisplayName(profile, email),
-      title: item.title,
-      createdAt: item.createdAt,
-      timeLabel: formatDateTimeMadrid(item.createdAt),
-    };
-  });
+  const recentFeed = buildUsageRecentFeed(rows, USAGE_RECENT_PAGE_SIZE, 0);
+  const recentEvents = mapRecentFeedToEvents(rows, recentFeed);
+  const recentHasMore = hasMoreUsageRecentFeed(rows, 0, USAGE_RECENT_PAGE_SIZE);
 
   return {
     summaries,
     recentEvents,
+    recentHasMore,
     filterUsers,
     filters,
     totals: {
