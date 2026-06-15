@@ -364,6 +364,7 @@ export default function MovementsPage() {
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: dateSortDir === 'asc' })
+                .order('id', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
 
             if (boxData?.id) {
@@ -566,6 +567,7 @@ export default function MovementsPage() {
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: dateSortDir === 'asc' })
+                .order('id', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
 
             if (boxData?.id) {
