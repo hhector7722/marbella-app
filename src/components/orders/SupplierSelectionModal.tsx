@@ -5,8 +5,9 @@ import { Package, Search, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Modal } from '@/components/ui/modal';
+import { trackUsageModalApply } from '@/lib/usage/client';
 
 interface Supplier {
     id: string;
@@ -22,6 +23,7 @@ interface Props {
 export function SupplierSelectionModal({ isOpen, onClose }: Props) {
     const [supabase] = useState(() => createClient());
     const router = useRouter();
+    const pathname = usePathname();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -76,6 +78,12 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
     );
 
     const handleSelectSupplier = (supplierName: string) => {
+        trackUsageModalApply(
+            'supplier-selection',
+            'Selección de proveedor',
+            pathname,
+            supplierName
+        );
         router.push(`/orders/new?supplier=${encodeURIComponent(supplierName)}`);
         onClose();
     };

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -43,6 +44,7 @@ export function OrderSuccessModal({
         usageId: 'order-success-confirm-send',
         usageLabel: 'Confirmar envío pedido',
     });
+    const trackConfirmSend = useTrackModalApply('order-success-confirm-send', 'Confirmar envío pedido');
 
     useEffect(() => {
         if (generatedBlob) {
@@ -137,6 +139,7 @@ export function OrderSuccessModal({
     /** Paso 2: Abre WhatsApp con el contacto del proveedor (desde modal de confirmación) */
     const handleConfirmEnviar = () => {
         if (!supplierPhone) return;
+        trackConfirmSend('Enviar por WhatsApp');
         const cleanPhone = supplierPhone.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
         const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;

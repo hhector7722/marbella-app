@@ -9,6 +9,7 @@ import { createManagerFichaje } from '@/app/actions/overtime';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 export type EmployeeOption = { id: string; first_name: string; last_name: string };
 
@@ -26,6 +27,7 @@ interface DaySummaryModalProps {
 }
 
 export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, employees = [], onFichajeCreated, isManager }: DaySummaryModalProps) {
+    const trackDaySummary = useTrackModalApply('day-summary', 'Resumen de fichajes');
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
     const [createUserId, setCreateUserId] = useState('');
     const [createTime, setCreateTime] = useState('09:00');
@@ -107,7 +109,11 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                             return (
                                 <button
                                     key={log.id}
-                                    onClick={() => onSelectLog(log.user_id)}
+                                    onClick={() => {
+                                        const summary = `${firstName} ${lastName}`.trim() || '?';
+                                        trackDaySummary(summary, { selectedUserId: log.user_id });
+                                        onSelectLog(log.user_id);
+                                    }}
                                     className="w-full bg-zinc-50 hover:bg-zinc-100/80 active:scale-[0.98] transition-all px-3 py-2 rounded-2xl border border-zinc-100 flex items-center gap-2 group"
                                 >
                                     <span className="text-[11px] font-black text-zinc-800 uppercase tracking-tight truncate flex-1 min-w-0 text-left">

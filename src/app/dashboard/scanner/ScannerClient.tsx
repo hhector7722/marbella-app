@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { createClient } from '@/utils/supabase/client'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { namedEntitySummary } from '@/lib/usage/modal-apply'
 
 interface Supplier {
   id: number
@@ -55,6 +57,7 @@ export function ScannerClient({
     usageId: 'scanner-supplier',
     usageLabel: 'Proveedor escáner',
   })
+  const trackScannerSupplier = useTrackModalApply('scanner-supplier', 'Proveedor escáner')
   /** Android: cámara directa (desde la UI nativa se puede ir a galería). iOS: selector nativo del SO. */
   const [fileInputCapture, setFileInputCapture] = useState<'environment' | undefined>('environment')
   const supabase = createClient()
@@ -285,6 +288,8 @@ export function ScannerClient({
   const filteredSuppliers = suppliers.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
   const handleSelectSupplier = (id: number) => {
+    const supplierName = suppliers.find((s) => s.id === id)?.name ?? String(id)
+    trackScannerSupplier(namedEntitySummary(supplierName), { supplierId: String(id) })
     setSelectedSupplierId(id)
     setShowSupplierModal(false)
     setSearchQuery('')

@@ -23,6 +23,8 @@ import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { saveEventEncargoConfigAction } from '@/app/dashboard/eventos/actions'
 import { submitEventOrderAction } from './actions'
 
@@ -114,6 +116,9 @@ export default function EventEncargoCartaClient({
     usageId: 'event-encargo-save',
     usageLabel: 'Confirmar encargo',
   })
+
+  const trackEncargoConfigSave = useTrackModalApply('event-encargo-config-save', 'Guardar configuración encargo')
+  const trackEncargoOrderSave = useTrackModalApply('event-encargo-save', 'Confirmar encargo')
 
   const enabledIdsForClient = useMemo(
     () => normalizeEnabledProductIdsForSave(enabledSet, allProductIds),
@@ -329,6 +334,7 @@ export default function EventEncargoCartaClient({
               return
             }
             toast.success('Configuración guardada')
+            trackEncargoConfigSave(event.name)
             setEditMode(false)
           })
         }}
@@ -438,6 +444,7 @@ export default function EventEncargoCartaClient({
                   }
                   setSaveModalOpen(false)
                   setOrderDone(true)
+                  trackEncargoOrderSave(`${namedEntitySummary(name)} · ${items.length} productos`)
                   toast.success('Pedido enviado correctamente')
                 })
               }}

@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { PavilionActivityPdfViewer } from '@/components/pavilion/PavilionActivityPdfViewer';
 import {
   deletePavilionActivityAction,
@@ -58,6 +60,8 @@ export function PavilionActivityPdfModal({
     usageId: 'pavilion-activity-pdf',
     usageLabel: 'Actividades pabellón',
   });
+
+  const trackPavilionPdf = useTrackModalApply('pavilion-activity-pdf', 'Actividades pabellón');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -110,13 +114,14 @@ export function PavilionActivityPdfModal({
         return;
       }
       toast.success('PDF subido correctamente');
+      trackPavilionPdf(`PDF subido · ${formatYmdShort(activityDate)}`, { activityDate });
       onUploaded();
     } catch {
       toast.error('Error al subir el PDF');
     } finally {
       setUploading(false);
     }
-  }, [activityDate, canUpload, onUploaded]);
+  }, [activityDate, canUpload, onUploaded, trackPavilionPdf]);
 
   const handleDelete = useCallback(async () => {
     if (!activityDate || !canUpload || !filePath) return;
@@ -174,7 +179,15 @@ export function PavilionActivityPdfModal({
               <div className="flex items-center justify-center gap-0 shrink-0 min-w-0 flex-1">
                 <button
                   type="button"
-                  onClick={() => onNavigateDay(-1)}
+                  onClick={() => {
+                    if (activityDate) {
+                      const [y, m, d] = activityDate.split('-').map(Number);
+                      const next = new Date(y, m - 1, d - 1);
+                      const nextStr = format(next, 'yyyy-MM-dd');
+                      trackPavilionPdf(formatYmdShort(nextStr), { selectedDate: nextStr, direction: 'prev' });
+                    }
+                    onNavigateDay(-1);
+                  }}
                   className="min-h-[48px] min-w-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors shrink-0"
                   aria-label="Día anterior"
                 >
@@ -185,7 +198,15 @@ export function PavilionActivityPdfModal({
                 </h3>
                 <button
                   type="button"
-                  onClick={() => onNavigateDay(1)}
+                  onClick={() => {
+                    if (activityDate) {
+                      const [y, m, d] = activityDate.split('-').map(Number);
+                      const next = new Date(y, m - 1, d + 1);
+                      const nextStr = format(next, 'yyyy-MM-dd');
+                      trackPavilionPdf(formatYmdShort(nextStr), { selectedDate: nextStr, direction: 'next' });
+                    }
+                    onNavigateDay(1);
+                  }}
                   className="min-h-[48px] min-w-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors shrink-0"
                   aria-label="Día siguiente"
                 >

@@ -27,6 +27,8 @@ import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { albaranesFilterSummary, namedEntitySummary } from '@/lib/usage/modal-apply'
 import { LineEditModal } from '@/components/albaranes/LineEditModal'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
@@ -104,6 +106,8 @@ export default function AlbaranesHistoricoClient({
   isManager: boolean
 }) {
   const searchParams = useSearchParams()
+  const trackAlbaranesSupplier = useTrackModalApply('albaranes-supplier-picker', 'Proveedor albarán')
+  const trackAlbaranesFilter = useTrackModalApply('albaranes-filter', 'Filtro albaranes')
   const deepLinkHandledRef = useRef<string | null>(null)
 
   const [items, setItems] = useState<PurchaseInvoiceListItem[]>(initialItems)
@@ -659,6 +663,14 @@ export default function AlbaranesHistoricoClient({
       setSupplierPickerOpen(false)
       setSupplierQuery('')
       setSupplierResults([])
+      const supplierName =
+        supplierResults.find((s) => s.id === supplierId)?.name ??
+        detail.supplier_name ??
+        String(supplierId)
+      trackAlbaranesSupplier(namedEntitySummary(supplierName), {
+        supplierId: String(supplierId),
+        invoiceId: detail.id,
+      })
     } finally {
       setSupplierSaving(false)
     }
@@ -1906,7 +1918,20 @@ export default function AlbaranesHistoricoClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFilterOpen(false)}
+                  onClick={() => {
+                    const supplierName = filterSuppliers.find(
+                      (s) => String(s.id) === filterSupplierId
+                    )?.name
+                    trackAlbaranesFilter(
+                      albaranesFilterSummary({
+                        from: filterFrom,
+                        to: filterTo,
+                        supplierId: filterSupplierId,
+                        supplierName,
+                      })
+                    )
+                    setFilterOpen(false)
+                  }}
                   className="min-h-[48px] flex-1 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider"
                 >
                   Aplicar

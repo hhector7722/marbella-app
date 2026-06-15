@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { namedEntitySummary } from '@/lib/usage/modal-apply';
 
 type PoolType = 'weekday' | 'weekend';
 
@@ -48,6 +50,7 @@ export function TipOverrideModal({
     usageId: 'tip-override',
     usageLabel: 'Ajuste propina',
   });
+  const trackTipOverrideSave = useTrackModalApply('tip-override', 'Ajuste propina');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -82,6 +85,10 @@ export function TipOverrideModal({
         isSanctioned,
         notes: (notes || '').trim(),
       });
+      trackTipOverrideSave(
+        `${namedEntitySummary(displayName)} · ${isSanctioned ? 'Sin propina' : 'Con propina'}`,
+        { staffId, poolType }
+      );
       onClose();
     } finally {
       setSaving(false);

@@ -59,6 +59,17 @@ export function formatUsageActivityTitle(row: UsageEventRowForPresent): string {
       const duration = formatDurationMs(row.duration_ms);
       return duration.trim() ? `${duration} en ${modalLabel}` : `Tiempo en ${modalLabel}`;
     }
+    if (action === 'modal_apply') {
+      const applySummary =
+        typeof meta.applySummary === 'string'
+          ? meta.applySummary
+          : typeof row.label === 'string' && row.label.includes(' · ')
+            ? row.label.split(' · ')[0]
+            : null;
+      const modalLabel = typeof meta.modalLabel === 'string' ? meta.modalLabel : place;
+      if (applySummary?.trim()) return `${applySummary.trim()} · ${modalLabel}`;
+      return `Aplicó filtro en ${modalLabel}`;
+    }
     if (action === 'clock_in') return 'Fichó entrada';
     if (action === 'clock_out') return 'Fichó salida';
     if (action === 'consumption_saved') return 'Registró consumo';

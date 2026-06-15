@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { Check, Filter, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
 import {
   addRecipeIngredientLineAction,
@@ -90,6 +92,7 @@ export default function MappingClient({
   const [drafts, setDrafts] = useState<Record<number, { recipe_id: string | null; factor: string }>>({})
   const [busyId, setBusyId] = useState<number | null>(null)
   const [ingModal, setIngModal] = useState<IngredientModalState | null>(null)
+  const trackTpvMappingSave = useTrackModalApply('recetas-tpv-mapping-save', 'Guardar mapeo TPV')
   const [deptFilter, setDeptFilter] = useState<string | null>(null)
   const [deptMenuOpen, setDeptMenuOpen] = useState(false)
   const deptMenuRef = useRef<HTMLDivElement>(null)
@@ -226,6 +229,11 @@ export default function MappingClient({
         toast.error(res.error ?? 'Error guardando el mapeo')
         return
       }
+      const recipeName = recipes.find((r) => r.id === recipeId)?.name ?? recipeId
+      trackTpvMappingSave(`${namedEntitySummary(row.nombre)} → ${namedEntitySummary(recipeName)}`, {
+        articuloId: String(row.articulo_id),
+        recipeId,
+      })
       toast.success('Mapeo guardado.')
       router.refresh()
     })
@@ -921,6 +929,7 @@ function RecipeCombobox({
   compact?: boolean
   micro?: boolean
 }) {
+  const trackTpvRecipePick = useTrackModalApply('recetas-tpv-recipe-pick', 'Seleccionar receta TPV')
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -1041,6 +1050,7 @@ function RecipeCombobox({
                       role="option"
                       aria-selected={r.id === selectedId}
                       onClick={() => {
+                        trackTpvRecipePick(namedEntitySummary(r.name), { recipeId: r.id })
                         onSelect(r.id)
                         setIsOpen(false)
                         setSearch('')

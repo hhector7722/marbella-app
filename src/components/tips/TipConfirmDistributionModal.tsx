@@ -4,6 +4,8 @@ import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatLocalIsoDateLabel } from '@/lib/tip-distribution-display';
 import { Modal } from '@/components/ui/modal';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { periodRangeSummary } from '@/lib/usage/modal-apply';
 
 export type TipConfirmStaffRow = {
   id: string;
@@ -39,6 +41,7 @@ export function TipConfirmDistributionModal({
   confirming,
   onConfirm,
 }: Props) {
+  const trackTipConfirm = useTrackModalApply('tip-confirm-distribution', 'Confirmar reparto propinas');
   const grandTotal = weekdayTotal + weekendTotal;
   const staffWithPayout = staff.filter(
     (s) => Math.abs(s.totalAmount) > 0.005 && !s.isSanctioned
@@ -115,7 +118,13 @@ export function TipConfirmDistributionModal({
         </button>
         <button
           type="button"
-          onClick={onConfirm}
+          onClick={() => {
+            trackTipConfirm(
+              `${periodRangeSummary(startDate, endDate)} · ${grandTotal.toFixed(2)} €`,
+              { employeeCount: String(staffWithPayout.length) }
+            );
+            onConfirm();
+          }}
           disabled={confirming || staffWithPayout.length === 0}
           className={cn(
             'flex-[2] min-h-[48px] rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2',

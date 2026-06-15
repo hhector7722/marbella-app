@@ -5,6 +5,7 @@ export type AppUsageActionKind =
   | 'page_dwell'
   | 'modal_open'
   | 'modal_dwell'
+  | 'modal_apply'
   | 'clock_in'
   | 'clock_out'
   | 'consumption_saved';
@@ -13,6 +14,8 @@ export type AppUsageMetadata = {
   action?: AppUsageActionKind;
   modalId?: string;
   modalLabel?: string;
+  /** Valor legible de la selección o filtro aplicado (ej. nombre trabajador, mes). */
+  applySummary?: string;
   tabLabel?: string;
   tabHref?: string;
   source?: 'client' | 'middleware' | 'server';

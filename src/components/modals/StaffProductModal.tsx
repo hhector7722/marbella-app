@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 interface StaffProductModalProps {
     isOpen: boolean;
@@ -28,6 +29,8 @@ const STAFF_MENU_ITEMS: StaffMenuItem[] = [
 export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: StaffProductModalProps) {
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = useState(false);
+
+    const trackStaffProduct = useTrackModalApply('staff-product', 'Menú stock (staff)');
 
     const handleClose = () => {
         if (isNavigating) return;
@@ -55,6 +58,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                                 key={i}
                                 type="button"
                                 onClick={() => {
+                                    trackStaffProduct(item.title);
                                     onClose();
                                     setTimeout(() => onOpenSupplierModal(), 150);
                                 }}
@@ -85,7 +89,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                             isActive && 'ring-2 ring-[#36606F]/40 bg-white shadow-sm',
                         );
                         return (
-                            <Link key={i} href={item.href} onClick={() => setIsNavigating(true)} className={baseClass}>
+                            <Link key={i} href={item.href} onClick={() => { trackStaffProduct(item.title); setIsNavigating(true); }} className={baseClass}>
                                 <div className="w-12 h-12 transition-transform group-hover:scale-110">
                                     <Image
                                         src={item.img}

@@ -15,6 +15,8 @@ import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort } from '@/lib/usage/modal-apply';
 
 export type DashboardVentasInitialData = {
     liveTickets?: { total: number; count: number };
@@ -49,6 +51,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         usageId: 'dashboard-ventas-date',
         usageLabel: 'Selector de fecha ventas',
     });
+    const trackVentasDate = useTrackModalApply('dashboard-ventas-date', 'Selector de fecha ventas');
     const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
     const [selectedChartHour, setSelectedChartHour] = useState<number | null>(null);
     const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -616,6 +619,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                 key={i}
                                                 onClick={() => {
                                                     if (!isFuture) {
+                                                        trackVentasDate(formatYmdShort(dStr), { selectedDate: dStr });
                                                         setSalesViewDate(dStr);
                                                         setIsSalesDateModalOpen(false);
                                                     }
@@ -635,7 +639,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             {!isToday(parseSalesViewDate()) && (
                                 <button
                                     onClick={() => {
-                                        setSalesViewDate(format(new Date(), 'yyyy-MM-dd'));
+                                        const todayStr = format(new Date(), 'yyyy-MM-dd');
+                                        trackVentasDate(formatYmdShort(todayStr), { selectedDate: todayStr });
+                                        setSalesViewDate(todayStr);
                                         setIsSalesDateModalOpen(false);
                                     }}
                                     className="mt-6 w-full py-3 rounded-2xl bg-[#5B8FB9] text-white font-black text-xs uppercase tracking-widest hover:bg-[#4a7a9e] active:scale-[0.98] transition-all"

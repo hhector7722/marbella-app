@@ -17,6 +17,8 @@ import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
@@ -83,6 +85,7 @@ export const StaffScheduleModal = ({
         usageId: 'staff-schedule',
         usageLabel: 'Horario del personal',
     });
+    const trackScheduleDay = useTrackModalApply('staff-schedule-day', 'Día horario personal');
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -119,6 +122,7 @@ export const StaffScheduleModal = ({
     };
 
     const handleDayClick = async (day: Date) => {
+        trackScheduleDay(formatYmdShort(format(day, 'yyyy-MM-dd')));
         setLoadingDay(true);
         setSelectedDate(day);
         try {

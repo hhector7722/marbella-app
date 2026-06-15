@@ -100,6 +100,31 @@ export function trackUsageModalDwell(
   });
 }
 
+/** Registra la selección o filtro aplicado dentro de un modal (no solo apertura). */
+export function trackUsageModalApply(
+  modalId: string,
+  modalLabel: string,
+  pagePath: string,
+  applySummary: string,
+  extra?: Record<string, string | null | undefined>
+): void {
+  const summary = applySummary.trim();
+  if (!summary) return;
+
+  void sendUsageEvent({
+    eventType: 'action',
+    path: pagePath,
+    label: `${summary} · ${modalLabel}`,
+    metadata: {
+      action: 'modal_apply',
+      modalId,
+      modalLabel,
+      applySummary: summary,
+      ...extra,
+    },
+  });
+}
+
 export function trackUsageLogin(path = '/login'): void {
   void sendUsageEvent({
     eventType: 'login',

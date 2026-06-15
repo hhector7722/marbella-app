@@ -9,6 +9,8 @@ import Image from 'next/image';
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { INITIAL_SUPPLIER_SEED, sortSuppliersByName } from '@/lib/supplier-seed';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { namedEntitySummary } from '@/lib/usage/modal-apply';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -262,6 +264,9 @@ export default function SuppliersPage() {
         usageId: 'supplier-create',
         usageLabel: 'Crear proveedor',
     });
+
+    const trackSupplierCategory = useTrackModalApply('suppliers-category-filter', 'Filtro categoría proveedores');
+    const trackSupplierDetail = useTrackModalApply('supplier-detail', 'Detalle proveedor');
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const [removeImage, setRemoveImage] = useState<boolean>(false);
@@ -533,7 +538,7 @@ export default function SuppliersPage() {
                                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
                                         </div>
                                         <button
-                                            onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
+                                            onClick={() => { trackSupplierCategory('Todas'); setSelectedCategory(null); setShowCategoryPopup(false); }}
                                             className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
                                         >
                                             Todas
@@ -541,7 +546,7 @@ export default function SuppliersPage() {
                                         {CATEGORIES.map(cat => (
                                             <button
                                                 key={cat}
-                                                onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
+                                                onClick={() => { trackSupplierCategory(cat); setSelectedCategory(cat); setShowCategoryPopup(false); }}
                                                 className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
                                             >
                                                 {cat}
@@ -583,7 +588,10 @@ export default function SuppliersPage() {
                     {filteredSuppliers.map((supplier) => (
                         <div key={supplier.id} className="relative group">
                             <div
-                                onClick={() => setDetailSupplier(supplier)}
+                                onClick={() => {
+                                    trackSupplierDetail(namedEntitySummary(supplier.name));
+                                    setDetailSupplier(supplier);
+                                }}
                                 className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
                             >
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">

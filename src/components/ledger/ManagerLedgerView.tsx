@@ -23,6 +23,8 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { namedEntitySummary } from '@/lib/usage/modal-apply';
 
 interface LedgerRow {
     id: string;
@@ -90,6 +92,9 @@ export default function ManagerLedgerView() {
         usageId: 'ledger-delete',
         usageLabel: 'Eliminar apunte libro',
     });
+
+    const trackLedgerCreate = useTrackModalApply('ledger-create', 'Nuevo apunte libro');
+    const trackLedgerEdit = useTrackModalApply('ledger-edit', 'Editar apunte libro');
 
     const parseLocalSafe = (dateStr: string | null) => {
         if (!dateStr) return new Date();
@@ -236,6 +241,7 @@ export default function ManagerLedgerView() {
                 p_entry_date: entryDate,
             });
             if (error) throw error;
+            trackLedgerCreate(`${type === 'entrada' ? 'Entrada' : 'Salida'} · ${namedEntitySummary(concept.trim())} · ${numericAmount.toFixed(2)}€`);
             toast.success("Movimiento registrado con éxito");
             setModalOpen(false);
             fetchData();
@@ -272,6 +278,7 @@ export default function ManagerLedgerView() {
                 p_entry_date: editDate,
             });
             if (error) throw error;
+            trackLedgerEdit(`${type === 'entrada' ? 'Entrada' : 'Salida'} · ${namedEntitySummary(concept.trim())} · ${numericAmount.toFixed(2)}€`);
             toast.success("Movimiento actualizado con éxito");
             setEditModalOpen(false);
             fetchData();

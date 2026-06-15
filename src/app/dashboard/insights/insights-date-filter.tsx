@@ -18,6 +18,8 @@ import {
   type InsightsMonth,
 } from './insights-date-utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { formatMonthYearParts, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply'
 
 export type { InsightsFilterMode, InsightsMonth }
 
@@ -145,6 +147,10 @@ export function InsightsMainDateFilter({
   onApplyPeriod: (from: string, to: string) => void
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
+  const trackWeekApply = useTrackModalApply('insights-date-week', 'Selector semana insights')
+  const trackMonthApply = useTrackModalApply('insights-date-month', 'Selector mes insights')
+  const trackDayApply = useTrackModalApply('insights-date-day', 'Selector día insights')
+  const trackPeriodApply = useTrackModalApply('insights-date-period', 'Selector periodo insights')
   useClickOutside(rootRef, onClosePicker, openPicker !== null)
 
   const [weekView, setWeekView] = useViewMonthFromYmd(selectedWeekMonday)
@@ -210,6 +216,24 @@ export function InsightsMainDateFilter({
             open={openPicker === m}
             onClose={onClosePicker}
             className={m === 'periodo' ? 'sm:min-w-[20rem]' : undefined}
+            usageId={
+              m === 'sem'
+                ? 'insights-date-week'
+                : m === 'mes'
+                  ? 'insights-date-month'
+                  : m === 'dia'
+                    ? 'insights-date-day'
+                    : 'insights-date-period'
+            }
+            usageLabel={
+              m === 'sem'
+                ? 'Selector semana insights'
+                : m === 'mes'
+                  ? 'Selector mes insights'
+                  : m === 'dia'
+                    ? 'Selector día insights'
+                    : 'Selector periodo insights'
+            }
           >
             {m === 'sem' && (
               <>
@@ -236,7 +260,12 @@ export function InsightsMainDateFilter({
                       <button
                         key={row.monday}
                         type="button"
-                        onClick={() => onSelectWeek(row.monday)}
+                        onClick={() => {
+                          trackWeekApply(`Semana ${isoWeekNumber(row.monday)} (${row.monday})`, {
+                            weekMonday: row.monday,
+                          })
+                          onSelectWeek(row.monday)
+                        }}
                         className={cn(
                           'w-full grid grid-cols-7 gap-1 rounded-xl px-1 py-1.5 transition-colors',
                           'hover:bg-[#36606F]/10',
@@ -282,7 +311,13 @@ export function InsightsMainDateFilter({
                       <button
                         key={name}
                         type="button"
-                        onClick={() => onSelectMonth(fm)}
+                        onClick={() => {
+                          trackMonthApply(formatMonthYearParts(fm.year, fm.month), {
+                            filterYear: String(fm.year),
+                            filterMonth: String(fm.month),
+                          })
+                          onSelectMonth(fm)
+                        }}
                         className={cn(
                           'min-h-11 rounded-xl text-xs font-black border transition-colors',
                           active
@@ -323,7 +358,10 @@ export function InsightsMainDateFilter({
                       <button
                         key={d}
                         type="button"
-                        onClick={() => onSelectDay(d)}
+                        onClick={() => {
+                          trackDayApply(formatYmdShort(d), { selectedDate: d })
+                          onSelectDay(d)
+                        }}
                         className={cn(
                           'min-h-10 rounded-xl text-xs font-black tabular-nums transition-colors',
                           active
@@ -361,7 +399,13 @@ export function InsightsMainDateFilter({
                 </label>
                 <button
                   type="button"
-                  onClick={() => onApplyPeriod(periodDraftFrom, periodDraftTo)}
+                  onClick={() => {
+                    trackPeriodApply(periodRangeSummary(periodDraftFrom, periodDraftTo), {
+                      periodFrom: periodDraftFrom,
+                      periodTo: periodDraftTo,
+                    })
+                    onApplyPeriod(periodDraftFrom, periodDraftTo)
+                  }}
                   className="w-full min-h-12 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wide"
                 >
                   Aplicar
@@ -385,11 +429,19 @@ export function FinancialMonthSelector({
   tone?: 'default' | 'onDark'
 }) {
   const onDark = tone === 'onDark'
+  const trackFinancialMonth = useTrackModalApply('insights-financial-month', 'Mes financiero insights')
+  const handleChange = (fm: InsightsMonth) => {
+    trackFinancialMonth(formatInsightsMonthLabel(fm), {
+      filterYear: String(fm.year),
+      filterMonth: String(fm.month),
+    })
+    onChange(fm)
+  }
   return (
     <div className="flex items-center gap-1 shrink-0">
       <button
         type="button"
-        onClick={() => onChange(shiftInsightsMonth(month, -1))}
+        onClick={() => handleChange(shiftInsightsMonth(month, -1))}
         aria-label="Mes anterior"
         className={cn(
           'inline-flex items-center justify-center rounded-lg active:scale-95',
@@ -411,7 +463,7 @@ export function FinancialMonthSelector({
       </span>
       <button
         type="button"
-        onClick={() => onChange(shiftInsightsMonth(month, 1))}
+        onClick={() => handleChange(shiftInsightsMonth(month, 1))}
         aria-label="Mes siguiente"
         className={cn(
           'inline-flex items-center justify-center rounded-lg active:scale-95',

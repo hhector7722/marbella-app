@@ -1,9 +1,12 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
+import { trackUsageModalApply } from '@/lib/usage/client';
+import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
 
 interface Employee {
     id: string;
@@ -51,6 +54,20 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     headerTextAction,
     hideHeaderClose = false
 }) => {
+    const pathname = usePathname();
+
+    const handleSelect = (employee: Employee) => {
+        trackUsageModalApply(
+            'staff-selection',
+            'Selección de plantilla',
+            pathname,
+            staffSelectionApplySummary(employee),
+            employee.id ? { selectedUserId: employee.id } : { selectedUserId: null }
+        );
+        onSelect(employee);
+        onClose();
+    };
+
     const filteredEmployees = employees.filter(emp => {
         const name = (emp.first_name || '').trim().toLowerCase();
         if (name === 'ramon' || name === 'ramón' || name === 'empleado') return false;
@@ -105,10 +122,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                 {allowPlantilla && (
                     <button
                         type="button"
-                        onClick={() => {
-                            onSelect(PLANTILLA_SENTINEL);
-                            onClose();
-                        }}
+                        onClick={() => handleSelect(PLANTILLA_SENTINEL)}
                         className="w-full mb-3 py-2.5 px-3 rounded-xl bg-[#36606F]/10 border border-[#36606F]/20 text-[#36606F] text-[10px] font-black uppercase tracking-widest hover:bg-[#36606F]/20 active:scale-[0.98] transition-all"
                     >
                         Vista plantilla (todos)
@@ -121,10 +135,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                             <button
                                 key={emp.id}
                                 type="button"
-                                onClick={() => {
-                                    onSelect(emp);
-                                    onClose();
-                                }}
+                                onClick={() => handleSelect(emp)}
                                 className="group flex flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
                             >
                                 <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
@@ -140,10 +151,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                             <button
                                 key={emp.id}
                                 type="button"
-                                onClick={() => {
-                                    onSelect(emp);
-                                    onClose();
-                                }}
+                                onClick={() => handleSelect(emp)}
                                 className="group flex flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
                             >
                                 <div className="transition-all group-hover:-translate-y-1 shrink-0">

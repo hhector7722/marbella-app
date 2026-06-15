@@ -38,6 +38,7 @@ const ACTION_LABELS: Record<string, string> = {
   page_dwell: 'Tiempo en pantalla',
   modal_open: 'Modal abierto',
   modal_dwell: 'Tiempo en modal',
+  modal_apply: 'Filtro o selección aplicada',
   clock_in: 'Entrada fichada',
   clock_out: 'Salida fichada',
   consumption_saved: 'Consumo registrado',

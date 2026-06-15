@@ -25,6 +25,8 @@ import {
   updateMappedLineConversionFactorAction,
 } from '@/app/dashboard/albaranes/actions'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { namedEntitySummary } from '@/lib/usage/modal-apply'
 type LineDimensionalDraft = {
   lineBillingUnit: string
   lineContentQty: string
@@ -82,6 +84,7 @@ export function LineMappingModal({
   onSuccess,
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
+  const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -458,6 +461,13 @@ export function LineMappingModal({
       } else {
         toast.success('Línea vinculada al catálogo.')
       }
+
+      const lineLabel = line.original_name?.trim() || line.id
+      const ingredientName = ingredientLabel?.trim() || ingredientId || '?'
+      trackLineMapping(`${namedEntitySummary(lineLabel)} → ${namedEntitySummary(ingredientName)}`, {
+        lineId: line.id,
+        ingredientId: ingredientId ?? undefined,
+      })
 
       await onSuccess()
       onClose()

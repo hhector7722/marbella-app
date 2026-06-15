@@ -30,6 +30,8 @@ import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { formatYmdShort, reservationApplySummary } from '@/lib/usage/modal-apply'
 import { createClient } from '@/utils/supabase/client'
 
 type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'rejected'
@@ -488,6 +490,9 @@ export default function ReservasClient() {
     usageLabel: 'Detalle de reserva',
   })
 
+  const trackReservasDayList = useTrackModalApply('reservas-day-list', 'Reservas del día')
+  const trackReservasDetail = useTrackModalApply('reservas-detail', 'Detalle de reserva')
+
   const fetchSeqRef = useRef(0)
 
   const removeReservationFromState = useCallback((id: string) => {
@@ -742,9 +747,12 @@ export default function ReservasClient() {
     const dayReservations = byDate[key] ?? []
     if (dayReservations.length === 0) return
     if (dayReservations.length === 1) {
-      setSelectedReservation(dayReservations[0])
+      const reservation = dayReservations[0]
+      trackReservasDetail(reservationApplySummary(reservation), { reservationId: reservation.id })
+      setSelectedReservation(reservation)
       return
     }
+    trackReservasDayList(`${formatYmdShort(key)} (${dayReservations.length} reservas)`, { day: key })
     setListModalDay(key)
   }
 
@@ -890,6 +898,7 @@ export default function ReservasClient() {
             reservations={listModalReservations}
             onClose={() => setListModalDay(null)}
             onSelect={(r) => {
+              trackReservasDetail(reservationApplySummary(r), { reservationId: r.id })
               setListModalDay(null)
               setSelectedReservation(r)
             }}

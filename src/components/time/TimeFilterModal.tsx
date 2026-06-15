@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   addDays,
@@ -19,6 +20,8 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
 import { Modal } from "@/components/ui/modal";
+import { trackUsageModalApply } from "@/lib/usage/client";
+import { timeFilterApplySummary } from "@/lib/usage/modal-apply";
 
 function parseYmdLocal(dateStr: string): Date {
   const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
@@ -53,6 +56,7 @@ export function TimeFilterModal({
   initialValue?: TimeFilterValue;
   defaultKind?: TimeFilterKind;
 }) {
+  const pathname = usePathname();
   const initialKind = useMemo<TimeFilterKind>(() => {
     const candidate = defaultKind ?? initialValue?.kind ?? allowedKinds[0] ?? "date";
     return allowedKinds.includes(candidate) ? candidate : (allowedKinds[0] ?? "date");
@@ -126,6 +130,13 @@ export function TimeFilterModal({
   if (!isOpen) return null;
 
   const applyAndClose = (v: TimeFilterValue) => {
+    trackUsageModalApply(
+      'time-filter',
+      'Filtro horario',
+      pathname,
+      timeFilterApplySummary(v),
+      { filterKind: v.kind }
+    );
     onApply(v);
     onClose();
   };

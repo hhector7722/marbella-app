@@ -11,6 +11,8 @@ import {
   sortConsumptionRecipesForModal,
 } from '@/lib/staff-consumption-display';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { consumptionCartSummary } from '@/lib/usage/modal-apply';
 
 /** Bocadillos sin opción medio (nombre normalizado). */
 const BOCADILLO_SIN_MEDIO = new Set([
@@ -51,6 +53,7 @@ export function ConsumptionModal({
   onCancel: () => void;
 }) {
   useModalUsageTracking({ open: true, usageId: 'staff-consumption', usageLabel: 'Consumo al fichar' });
+  const trackConsumptionApply = useTrackModalApply('staff-consumption', 'Consumo al fichar');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -157,6 +160,7 @@ export function ConsumptionModal({
         setIsSubmitting(false);
         return;
       }
+      trackConsumptionApply(consumptionCartSummary(cart));
       await Promise.resolve(onConfirm());
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al fichar la salida';

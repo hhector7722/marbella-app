@@ -15,6 +15,8 @@ import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
 import type { VentasTab } from '@/components/dashboards/SubNavVentas';
@@ -56,6 +58,10 @@ interface HourSlotRow {
 }
 
 export default function VentasPage() {
+    const trackVentasMonthPicker = useTrackModalApply('ventas-month-picker', 'Selector de mes ventas');
+    const trackVentasDateSingle = useTrackModalApply('ventas-date-single', 'Fecha única ventas');
+    const trackVentasDateRange = useTrackModalApply('ventas-date-range', 'Rango fechas ventas');
+
     const supabase = createClient();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -351,6 +357,7 @@ export default function VentasPage() {
             setSelectedDate(dateStr);
             setFilterMode('single');
             setShowCalendar(null);
+            trackVentasDateSingle(formatYmdShort(dateStr), { selectedDate: dateStr });
         } else if (showCalendar === 'range') {
             if (!rangeStart || (rangeStart && rangeEnd)) {
                 setRangeStart(dateStr);
@@ -362,6 +369,10 @@ export default function VentasPage() {
                     setRangeEnd(dateStr);
                     setFilterMode('range');
                     setShowCalendar(null);
+                    trackVentasDateRange(periodRangeSummary(rangeStart, dateStr), {
+                        rangeStart,
+                        rangeEnd: dateStr,
+                    });
                 }
             }
         }
@@ -1103,6 +1114,7 @@ export default function VentasPage() {
                                                 setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                 setFilterMode('range');
                                                 setShowMonthPicker(false);
+                                                trackVentasMonthPicker(formatMonthYear(pickerYear, i));
                                             }}
                                             className={cn(
                                                 "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",

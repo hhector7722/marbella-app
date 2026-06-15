@@ -23,6 +23,8 @@ import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import * as XLSX from 'xlsx';
 import { importRecipes } from '@/app/actions/import-legacy';
 import { translateCaToEsTextAction } from '@/app/actions/translate-ca-es';
@@ -107,6 +109,10 @@ function RecipeDetailContent() {
         usageId: 'recipe-category',
         usageLabel: 'Categoría receta',
     });
+
+    const trackRecipeCategory = useTrackModalApply('recipe-category', 'Categoría receta');
+    const trackRecipeAddIngredient = useTrackModalApply('recipe-add-ingredient', 'Añadir ingrediente receta');
+    const trackRecipeIngredientWizard = useTrackModalApply('recipe-ingredient-wizard', 'Asistente ingrediente receta');
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -682,6 +688,7 @@ function RecipeDetailContent() {
             throw error;
         }
         setRecipe({ ...recipe, menu_category_id: menuCat.id, category: categoryDb });
+        trackRecipeCategory(namedEntitySummary(labelMenuCategoryForRecipesEs(menuCat, sortedMenuCategoryRows, mcoEsByCategoryId)));
         setShowCategoryModal(false);
         toast.success('Guardado');
         void fetchAllRecipes();
@@ -716,7 +723,7 @@ function RecipeDetailContent() {
         setSearchTerm('');
     };
 
-    const handleAddIngredient = async (ingredientId: string, unit: string) => {
+    const handleAddIngredient = async (ingredientId: string, unit: string, ingredientName?: string) => {
         await supabase.from('recipe_ingredients').insert({
             recipe_id: recipeId,
             ingredient_id: ingredientId,
@@ -724,6 +731,7 @@ function RecipeDetailContent() {
             quantity_half: 0.5,
             unit: unit || 'kg'
         });
+        trackRecipeAddIngredient(namedEntitySummary(ingredientName ?? ingredientId));
         await fetchRecipe();
         fetchBackendCost();
         closeAddIngredientModal();
@@ -1595,7 +1603,7 @@ function RecipeDetailContent() {
                                     <button
                                         key={ing.id}
                                         type="button"
-                                        onClick={() => handleAddIngredient(ing.id, unitToAdd)}
+                                        onClick={() => handleAddIngredient(ing.id, unitToAdd, ing.name)}
                                         className="w-full text-left p-2 hover:bg-gray-50 flex justify-between items-center gap-2 rounded text-xs min-h-12"
                                     >
                                         <span className="font-bold min-w-0 truncate">{ing.name}</span>
@@ -1619,6 +1627,9 @@ function RecipeDetailContent() {
                                 setIsModalOpen(false);
                                 void fetchAvailableIngredients();
                                 void fetchRecipe();
+                            }}
+                            onSaved={(ingredientId, meta) => {
+                                trackRecipeIngredientWizard(namedEntitySummary(meta?.name ?? ingredientId));
                             }}
                         />
                     </div>

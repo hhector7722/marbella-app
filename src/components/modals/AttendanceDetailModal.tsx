@@ -10,6 +10,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { formatMadridHmFromIso, madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort } from '@/lib/usage/modal-apply';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -48,6 +50,7 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
         usageId: 'attendance-edit-week',
         usageLabel: 'Editar semana asistencia',
     });
+    const trackEditWeekSave = useTrackModalApply('attendance-edit-week', 'Editar semana asistencia');
 
     const weekStart = date
         ? format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
@@ -93,6 +96,7 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
             });
             if (result.success) {
                 toast.success('Semana actualizada');
+                trackEditWeekSave(`Semana ${weekStart} · ${preferStock ? 'Bolsa horas' : 'Nómina'}`);
                 onSuccess();
                 onClose();
             } else {
@@ -208,6 +212,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
         usageId: 'attendance-detail',
         usageLabel: 'Detalle de asistencia',
     });
+    const trackAttendanceDaySave = useTrackModalApply('attendance-detail', 'Detalle de asistencia');
 
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -323,6 +328,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
 
             if (result.success) {
                 toast.success("Registros actualizados correctamente");
+                trackAttendanceDaySave(formatYmdShort(format(date, 'yyyy-MM-dd')), { userId });
                 onSuccess();
                 onClose();
             } else {

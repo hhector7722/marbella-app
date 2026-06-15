@@ -32,6 +32,7 @@ import {
   isDrinkConsumptionRecipe,
 } from '@/lib/staff-consumption-display';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 function sortByManualOrder(recipes: ConsumptionRecipeForOrder[]): ConsumptionRecipeForOrder[] {
   return [...recipes].sort((a, b) => {
@@ -99,6 +100,7 @@ export function ConsumptionRecipeOrderModal({
   onClose: () => void;
 }) {
   useModalUsageTracking({ open, usageId: 'consumption-order', usageLabel: 'Orden consumo' });
+  const trackConsumptionOrderSave = useTrackModalApply('consumption-order', 'Orden consumo');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<OrderStep>('drinks');
@@ -190,6 +192,7 @@ export function ConsumptionRecipeOrderModal({
       return;
     }
     toast.success('Orden guardado. El modal de fichaje usará este orden como base.');
+    trackConsumptionOrderSave(`${merged.length} productos · ${step === 'drinks' ? 'bebidas+comida' : 'comida+bebidas'}`);
     onClose();
   };
 

@@ -9,6 +9,7 @@ import { DefaultChatTransport } from 'ai';
 import { cn } from '@/lib/utils';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 // Helper para extraer texto del Vercel AI SDK
 function messageCombinedText(parts: unknown): string {
@@ -407,6 +408,7 @@ function BigMicOverlay({
 type TranscriptEvent = { role: 'user' | 'assistant'; text: string };
 
 function VoiceCallView({ onClose }: { onClose: () => void }) {
+  const trackVoiceCallStart = useTrackModalApply('chat-voice-call', 'Llamada voz chat');
   const [isActive, setIsActive] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptEvent[]>([]);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -425,6 +427,7 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
   }, []);
 
   async function startCall() {
+    trackVoiceCallStart('Iniciar llamada');
     setIsActive(true);
     setTranscripts([]);
     try {

@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-14 (Actividades pabellón — PDF Gmail + calendario)
+**Última actualización:** 2026-06-15 (Uso de la app — tracking selección/filtro en modales)
+
+- [x] **Uso de la app: `modal_apply` — qué se elige y filtra (2026-06-15)**: Nuevo evento `modal_apply` ([`types.ts`](src/lib/usage/types.ts), [`trackUsageModalApply`](src/lib/usage/client.ts), [`useTrackModalApply`](src/hooks/useTrackModalApply.ts), [`modal-apply.ts`](src/lib/usage/modal-apply.ts)). Feed: p. ej. `María García · Selección de plantilla`, `Mes 06/2026 · Filtro horario`. Instrumentación amplia: plantilla, filtros horarios, insights/historial/tesorería/ventas, albaranes, reservas, consumo, fichajes, propinas, carta, horarios, staff/admin dashboards, escáner, mapeos TPV/albarán, etc.
+
+**Última actualización anterior:** 2026-06-14 (Actividades pabellón — PDF Gmail + calendario)
 
 - [x] **Actividades pabellón: PDF diarios desde Gmail + `/staff/actividades` (2026-06-14)**: Migración [`20260614140000_pavilion_activities.sql`](supabase/migrations/20260614140000_pavilion_activities.sql) + [`20260614150000_pavilion_activities_multi_pdf.sql`](supabase/migrations/20260614150000_pavilion_activities_multi_pdf.sql) — varios PDF por email (dedup `gmail_message_id` + `original_filename`; fecha desde nombre de archivo). **Ingesta vía Google Apps Script** [`context/script_actividades.txt`](context/script_actividades.txt) → webhook [`/api/webhooks/pavilion-activities`](src/app/api/webhooks/pavilion-activities/route.ts). Página [`/staff/actividades`](src/app/staff/actividades/page.tsx); acceso en modal Horarios. Solo Hector: subida manual / pegar PDF.
 

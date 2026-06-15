@@ -16,6 +16,8 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort, namedEntitySummary } from '@/lib/usage/modal-apply';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
 const formatDisplay = (val: number, suffix: string = '') => {
@@ -88,6 +90,9 @@ export default function OvertimePage() {
     const [weeksData, setWeeksData] = useState<WeeklyStats[]>([]);
     const [loading, setLoading] = useState(true);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
+
+    const trackOvertimeWeekDetail = useTrackModalApply('overtime-week-detail', 'Detalle semana horas extras');
+    const trackOvertimeWorkerHistory = useTrackModalApply('overtime-worker-history', 'Historial trabajador horas extras');
 
     useModalUsageTracking({
         open: weekDetailModal !== null,
@@ -265,7 +270,10 @@ export default function OvertimePage() {
                                                 <button
                                                     key={week.weekId}
                                                     type="button"
-                                                    onClick={() => setWeekDetailModal({ week })}
+                                                    onClick={() => {
+                                                        trackOvertimeWeekDetail(`Semana ${getISOWeek(parseLocalYmd(week.weekId))}`, { weekId: week.weekId });
+                                                        setWeekDetailModal({ week });
+                                                    }}
                                                     className={cn(
                                                         'w-full h-6 md:h-7 min-h-[24px] md:min-h-[28px] flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
                                                         'bg-transparent border-0 hover:bg-purple-50/50'
@@ -332,7 +340,13 @@ export default function OvertimePage() {
                                         weekId={weekDetailModal.week.weekId}
                                         isPaid={paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid}
                                         onTogglePaid={handleTogglePaid}
-                                        onClick={() => setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId })}
+                                        onClick={() => {
+                                            trackOvertimeWorkerHistory(namedEntitySummary(s.name?.split?.(' ')[0] ?? s.name ?? ''), {
+                                                workerId: s.id,
+                                                weekId: weekDetailModal.week.weekId,
+                                            });
+                                            setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId });
+                                        }}
                                     />
                                 ))}
                                 {weekStaff.length === 0 && (

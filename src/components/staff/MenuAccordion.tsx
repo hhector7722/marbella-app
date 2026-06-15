@@ -20,6 +20,8 @@ import { subsWithVisibleProducts } from '@/lib/event-encargo-config'
 import { type EventEncargoEditControl, type EventOrderCartaControl } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { useTrackModalApply } from '@/hooks/useTrackModalApply'
+import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
 import {
     type CartaLang,
@@ -354,6 +356,9 @@ export function MenuAccordion({
         usageId: 'menu-accordion-section',
         usageLabel: 'Sección carta',
     })
+
+    const trackMenuSection = useTrackModalApply('menu-accordion-section', 'Sección carta')
+    const trackSubcategoryPick = useTrackModalApply('carta-subcategory-picker', 'Elegir subcategoría')
 
     useEffect(() => {
         setModalEditActive(false)
@@ -832,6 +837,10 @@ export function MenuAccordion({
     }
 
     const headerToggle = (groupKey: string) => {
+        if (openKey !== groupKey) {
+            const group = groupedRef.current.find((g) => g.key === groupKey);
+            if (group) trackMenuSection(namedEntitySummary(group.title));
+        }
         setOpenKey((prev) => {
             if (prev === groupKey) {
                 setSelectedSubKeyByGroup((p) => {
@@ -1095,12 +1104,21 @@ export function MenuAccordion({
                                             )}
                                             coverPhotoUrl={sub.coverPhotoUrl}
                                             coverPhotoScale={sub.coverPhotoScale}
-                                            onClick={() =>
+                                            onClick={() => {
+                                                trackSubcategoryPick(
+                                                    subPickerButtonLabel(
+                                                        sub,
+                                                        lang,
+                                                        openGroup.parentTitleRaw,
+                                                        tPublicUi(lang).uncategorized
+                                                    ),
+                                                    { groupKey: openGroup.key, subKey: sub.key }
+                                                );
                                                 setSelectedSubKeyByGroup((p) => ({
                                                     ...p,
                                                     [openGroup.key]: sub.key,
-                                                }))
-                                            }
+                                                }));
+                                            }}
                                             overlay={
                                                 encargoEditActive && eventEncargoEdit
                                                     ? encargoCategoryToggleOverlay(

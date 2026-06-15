@@ -27,6 +27,8 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort } from '@/lib/usage/modal-apply';
 
 type DayCell = { total: number };
 
@@ -124,6 +126,7 @@ export default function ConsumoPersonalDashboardPage() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const trackConsumoDayDetail = useTrackModalApply('consumo-day-detail', 'Detalle día consumo');
 
   const def = defaultFullMonthPeriod();
   const [periodStart, setPeriodStart] = useState<string>(def.start);
@@ -324,6 +327,7 @@ export default function ConsumoPersonalDashboardPage() {
   const openDayDetail = useCallback(
     async (day: Date) => {
       const key = format(day, 'yyyy-MM-dd');
+      trackConsumoDayDetail(formatYmdShort(key), { selectedDate: key });
       setSelectedDayStr(key);
       setDetailOpen(true);
       setDetailLoading(true);
@@ -385,7 +389,7 @@ export default function ConsumoPersonalDashboardPage() {
         setDetailLoading(false);
       }
     },
-    [supabase, workerFilterId],
+    [supabase, workerFilterId, trackConsumoDayDetail],
   );
 
   const closeDetail = () => {

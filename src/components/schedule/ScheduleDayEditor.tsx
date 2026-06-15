@@ -21,6 +21,8 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
@@ -208,6 +210,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         usageId: 'schedule-share',
         usageLabel: 'Compartir horario',
     });
+
+    const trackScheduleCalendarDay = useTrackModalApply('schedule-calendar-day', 'Día calendario horarios');
+    const trackScheduleDayNav = useTrackModalApply('schedule-day-nav', 'Navegación día horarios');
+    const trackScheduleShare = useTrackModalApply('schedule-share-apply', 'Acción compartir horario');
 
     useEffect(() => {
         if (!loading && hasUnsavedChanges) {
@@ -670,6 +676,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         const currentDate = new Date(`${date}T12:00:00`);
         const newDate = direction === 1 ? addDays(currentDate, 1) : subDays(currentDate, 1);
         const newDateStr = newDate.toISOString().split('T')[0];
+        trackScheduleDayNav(formatYmdShort(newDateStr), { selectedDate: newDateStr });
         setDate(newDateStr);
         fetchData(newDateStr);
     };
@@ -694,6 +701,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             await handleSave(true, isDayPublished);
         }
         setShowCalendarModal(false);
+        trackScheduleCalendarDay(formatYmdShort(dateStr), { selectedDate: dateStr });
         setDate(dateStr);
         fetchData(dateStr);
     };
@@ -1283,6 +1291,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                 <button
                                     onClick={async () => {
                                         setShowShareModal(false);
+                                        trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
                                         await handleSave(false, true);
                                     }}
                                     className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
@@ -1293,6 +1302,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                 <button
                                     onClick={async () => {
                                         setShowShareModal(false);
+                                        trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
                                         const saved = await handleSave(true, true);
                                         if (saved || isDayPublished) {
                                             // Solo usuarios con turno ese día (activo y con hora inicio/fin)

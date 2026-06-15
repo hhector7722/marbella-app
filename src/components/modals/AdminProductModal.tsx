@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 interface AdminProductModalProps {
     isOpen: boolean;
@@ -35,6 +36,8 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = useState(false);
 
+    const trackAdminProduct = useTrackModalApply('admin-product', 'Menú stock (admin)');
+
     const handleClose = () => {
         if (isNavigating) return;
         onClose();
@@ -61,6 +64,7 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                                 key={i}
                                 type="button"
                                 onClick={() => {
+                                    trackAdminProduct(item.title);
                                     onClose();
                                     setTimeout(() => onOpenSupplierModal(), 150);
                                 }}
@@ -92,7 +96,7 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                         isActive && 'ring-2 ring-[#36606F]/40 bg-white shadow-sm',
                     );
                     return (
-                        <Link key={i} href={item.href} onClick={() => setIsNavigating(true)} className={baseClass}>
+                        <Link key={i} href={item.href} onClick={() => { trackAdminProduct(item.title); setIsNavigating(true); }} className={baseClass}>
                             <div className="w-12 h-12 transition-transform group-hover:scale-110">
                                 <Image
                                     src={item.img}

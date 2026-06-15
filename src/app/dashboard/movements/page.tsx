@@ -43,6 +43,8 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -57,6 +59,10 @@ interface Movement {
 }
 
 export default function MovementsPage() {
+    const trackMovementsMonthPicker = useTrackModalApply('movements-month-picker', 'Selector de mes tesorería');
+    const trackMovementsDateSingle = useTrackModalApply('movements-date-single', 'Fecha única tesorería');
+    const trackMovementsDateRange = useTrackModalApply('movements-date-range', 'Rango fechas tesorería');
+
     const supabase = createClient();
     const router = useRouter();
     const tableRef = useRef<HTMLTableElement | null>(null);
@@ -772,6 +778,7 @@ export default function MovementsPage() {
             setSelectedDate(dateStr);
             setFilterMode('single');
             setShowCalendar(null);
+            trackMovementsDateSingle(formatYmdShort(dateStr), { selectedDate: dateStr });
         } else if (showCalendar === 'range') {
             if (!rangeStart || (rangeStart && rangeEnd)) {
                 setRangeStart(dateStr);
@@ -783,6 +790,10 @@ export default function MovementsPage() {
                     setRangeEnd(dateStr);
                     setFilterMode('range');
                     setShowCalendar(null);
+                    trackMovementsDateRange(periodRangeSummary(rangeStart, dateStr), {
+                        rangeStart,
+                        rangeEnd: dateStr,
+                    });
                 }
             }
         }
@@ -1183,6 +1194,7 @@ export default function MovementsPage() {
                                                 setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                 setFilterMode('range');
                                                 setShowMonthPicker(false);
+                                                trackMovementsMonthPicker(formatMonthYear(pickerYear, i));
                                             }}
                                             className={cn(
                                                 "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",

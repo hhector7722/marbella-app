@@ -33,6 +33,8 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
@@ -217,6 +219,9 @@ const CashBreakdownModal = ({
 export default function HistoryPage() {
     const supabase = createClient();
     const router = useRouter();
+    const trackHistoryMonthPicker = useTrackModalApply('history-month-picker', 'Selector de mes historial');
+    const trackHistoryDateSingle = useTrackModalApply('history-date-single', 'Calendario día historial');
+    const trackHistoryDateRange = useTrackModalApply('history-date-range', 'Calendario periodo historial');
 
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
@@ -255,7 +260,16 @@ export default function HistoryPage() {
     const [shareMenuOpen, setShareMenuOpen] = useState(false);
     const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
 
+    const trackHistoryClosingDetail = useTrackModalApply('history-closing-detail', 'Detalle cierre de caja');
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
+
+    const openClosingDetail = (closing: { id: string; closed_at?: string }) => {
+        const dateLabel = closing.closed_at
+            ? formatYmdShort(format(new Date(closing.closed_at), 'yyyy-MM-dd'))
+            : 'Cierre';
+        trackHistoryClosingDetail(dateLabel, { closingId: closing.id });
+        setSelectedClosing(closing);
+    };
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'table'>('calendar');
@@ -327,7 +341,7 @@ export default function HistoryPage() {
         const found = closings.find((c) => c.id === closingId);
         if (found) {
             deepLinkClosingRef.current = closingId;
-            setSelectedClosing(found);
+            openClosingDetail(found);
             return;
         }
 
@@ -344,7 +358,7 @@ export default function HistoryPage() {
             }
 
             deepLinkClosingRef.current = closingId;
-            setSelectedClosing(data);
+            openClosingDetail(data);
             const closedAt = new Date(data.closed_at);
             if (!Number.isNaN(closedAt.getTime())) {
                 setSelectedDate(format(closedAt, 'yyyy-MM-dd'));
@@ -629,6 +643,7 @@ export default function HistoryPage() {
             setSelectedDate(dateStr);
             setFilterMode('single');
             setShowCalendar(null);
+            trackHistoryDateSingle(formatYmdShort(dateStr), { selectedDate: dateStr });
         } else if (showCalendar === 'range') {
             if (!rangeStart || (rangeStart && rangeEnd)) {
                 setRangeStart(dateStr);
@@ -640,6 +655,10 @@ export default function HistoryPage() {
                     setRangeEnd(dateStr);
                     setFilterMode('range');
                     setShowCalendar(null);
+                    trackHistoryDateRange(periodRangeSummary(rangeStart, dateStr), {
+                        rangeStart,
+                        rangeEnd: dateStr,
+                    });
                 }
             }
         }
@@ -767,7 +786,7 @@ export default function HistoryPage() {
         const currentIndex = closings.findIndex(c => c.id === selectedClosing.id);
         const nextIndex = direction === 'next' ? currentIndex - 1 : currentIndex + 1;
         if (nextIndex >= 0 && nextIndex < closings.length) {
-            setSelectedClosing(closings[nextIndex]);
+            openClosingDetail(closings[nextIndex]);
             setIsEditing(false);
             setLightboxIndex(null);
         }
@@ -947,7 +966,7 @@ export default function HistoryPage() {
                                                             return (
                                                                 <tr
                                                                     key={c.id}
-                                                                    onClick={() => setSelectedClosing(c)}
+                                                                    onClick={() => openClosingDetail(c)}
                                                                     className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50/40 last:border-0"
                                                                 >
                                                                     <td className="py-2 px-0.5 md:px-1 whitespace-nowrap text-zinc-500 font-mono text-[8px] md:text-[9.5px]">
@@ -1058,7 +1077,7 @@ export default function HistoryPage() {
                                                         return (
                                                             <div
                                                                 key={closing.id}
-                                                                onClick={() => setSelectedClosing(closing)}
+                                                                onClick={() => openClosingDetail(closing)}
                                                                 className="group relative bg-white h-full min-h-[50px] md:min-h-[120px] rounded-lg md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
                                                             >
                                                                 <div className="bg-[#D64D5D] px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shadow-sm">
@@ -1530,6 +1549,7 @@ export default function HistoryPage() {
                                                 setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                 setFilterMode('range');
                                                 setShowMonthPicker(false);
+                                                trackHistoryMonthPicker(formatMonthYear(pickerYear, i));
                                             }}
                                             className={cn(
                                                 "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",

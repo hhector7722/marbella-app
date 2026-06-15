@@ -34,6 +34,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -192,6 +193,11 @@ export default function StaffDashboardView() {
         usageId: 'staff-treasury-out',
         usageLabel: 'Salida de caja',
     });
+
+    const trackStaffClockConfirm = useTrackModalApply('staff-clock-confirm', 'Confirmar fichaje');
+    const trackStaffCashOption = useTrackModalApply('staff-cash-options', 'Opciones de caja');
+    const trackStaffPurchaseMulti = useTrackModalApply('staff-purchase-multi-source', 'Compra multiorigen');
+    const trackStaffInfoMenu = useTrackModalApply('staff-info-menu', 'Menú información');
 
     useEffect(() => { initialize(); }, []);
 
@@ -541,6 +547,7 @@ export default function StaffDashboardView() {
             setShowPurchaseMultiSourceModal(false);
             setPurchaseInventoriesByBoxId({});
             initialize();
+            trackStaffPurchaseMulti(notesWithTpv || 'Compra registrada');
             toast.success('Compra registrada');
         } catch (error) {
             console.error(error);
@@ -551,6 +558,7 @@ export default function StaffDashboardView() {
     const handleClockAction = async (forcedAction?: 'in' | 'out') => {
         if (!userId) return;
         const action = forcedAction ?? modalAction;
+        trackStaffClockConfirm(action === 'in' ? 'Entrada' : 'Salida', { action: action ?? '' });
         setShowModal(false);
         setActionLoading(true);
         try {
@@ -1081,21 +1089,21 @@ export default function StaffDashboardView() {
                             <div className="p-8 space-y-2 overflow-y-auto">
                                 {!infoSubMenu && (
                                     <div className="space-y-1">
-                                        <button onClick={() => setInfoSubMenu('contactos')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                        <button onClick={() => { trackStaffInfoMenu('Contactos de Interés'); setInfoSubMenu('contactos'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
                                         </button>
 
-                                        <button onClick={() => setInfoSubMenu('convenio')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                        <button onClick={() => { trackStaffInfoMenu('Convenio Col·lectiu'); setInfoSubMenu('convenio'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
                                         </button>
 
-                                        <button onClick={() => setInfoSubMenu('conducta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                        <button onClick={() => { trackStaffInfoMenu('Código de Conducta'); setInfoSubMenu('conducta'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
@@ -1120,7 +1128,7 @@ export default function StaffDashboardView() {
                                             <span className="font-bold text-sm tracking-tight text-left">Página web</span>
                                         </a>
 
-                                        <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                        <button onClick={() => { trackStaffInfoMenu('Reservas'); setInfoSubMenu('reservas'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
                                             <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                                 <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
@@ -1140,6 +1148,7 @@ export default function StaffDashboardView() {
 
                                         <button
                                             onClick={() => {
+                                                trackStaffInfoMenu('Manuales');
                                                 setInfoSubMenu(null);
                                                 setActiveMenu(null);
                                                 setIsManualsModalOpen(true);
@@ -1535,6 +1544,7 @@ export default function StaffDashboardView() {
                             <div className="px-6 py-5 flex flex-col gap-5 bg-white">
                                 <button
                                     onClick={() => {
+                                        trackStaffCashOption('Cambio');
                                         if (!getCajaCambio1()) {
                                             toast.error('No hay caja de cambio configurada');
                                             return;
@@ -1552,6 +1562,7 @@ export default function StaffDashboardView() {
 
                                 <button
                                     onClick={() => {
+                                        trackStaffCashOption('Compra');
                                         const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv');
                                         if (cashBoxes.length === 0) {
                                             toast.error('No hay cajas configuradas');
@@ -1570,6 +1581,7 @@ export default function StaffDashboardView() {
 
                                 <button
                                     onClick={() => {
+                                        trackStaffCashOption('Cierre de caja');
                                         setIsCashOptionsModalOpen(false);
                                         setIsClosingModalOpen(true);
                                     }}

@@ -35,6 +35,8 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { formatYmdShort, namedEntitySummary } from '@/lib/usage/modal-apply';
 
 // Sub-components
 const StaffOvertimeRow = memo(({
@@ -234,6 +236,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         usageLabel: 'Detalle semana horas extras',
     });
 
+    const trackAdminTreasury = useTrackModalApply('admin-treasury-menu', 'Menú tesorería');
+    const trackAdminNewWorker = useTrackModalApply('admin-new-worker', 'Nuevo trabajador');
+    const trackAdminPurchaseMulti = useTrackModalApply('admin-purchase-multi-source', 'Compra multiorigen');
+    const trackAdminOvertimeWeek = useTrackModalApply('admin-overtime-week-detail', 'Detalle semana horas extras');
+    const trackAdminOvertimeWorker = useTrackModalApply('admin-overtime-worker-history', 'Historial trabajador horas extras');
+
     useEffect(() => {
         setIsDesktop(window.innerWidth >= 768);
         const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -281,6 +289,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             });
             if (error) throw error;
             toast.success(`${newWorkerData.first_name} añadido correctamente`);
+            trackAdminNewWorker(namedEntitySummary(newWorkerData.first_name.trim()));
             setIsNewWorkerModalOpen(false);
             setNewWorkerData({
                 first_name: '', last_name: '', email: '', role: 'staff',
@@ -474,6 +483,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             setShowPurchaseMultiSourceModal(false);
             setPurchaseInventoriesByBoxId({});
             fetchData();
+            trackAdminPurchaseMulti(notesWithTpv || 'Compra registrada');
             toast.success('Compra registrada');
         } catch (error) {
             console.error(error);
@@ -497,6 +507,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         data?.forEach(d => initial[Number(d.denomination)] = d.quantity);
         setBoxInventoryMap(initial);
         setBoxInventory(data || []);
+        const modeLabels: Record<CashModalMode, string> = {
+            none: 'Ninguno', menu: 'Menú', in: 'Entrada', out: 'Salida', audit: 'Arqueo', swap: 'Cambio', inventory: 'Inventario',
+        };
+        if (mode !== 'none') trackAdminTreasury(`${modeLabels[mode]} · ${namedEntitySummary(box?.name ?? box?.id ?? '')}`);
         setCashModalMode(mode);
     };
 
@@ -687,7 +701,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                     <button
                                                         key={week.weekId}
                                                         type="button"
-                                                        onClick={() => setWeekDetailModal({ week })}
+                                                        onClick={() => {
+                                                            trackAdminOvertimeWeek(`Semana ${getISOWeek(new Date(week.weekId))}`, { weekId: week.weekId });
+                                                            setWeekDetailModal({ week });
+                                                        }}
                                                         className={cn(
                                                             'w-full h-5 md:h-6 flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
                                                             'bg-transparent border-0 hover:bg-purple-50/50'
@@ -1106,7 +1123,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     isPaid={paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid}
                                     onTogglePaid={togglePaid}
                                     onTogglePreferStock={togglePreferStock}
-                                    onClick={() => setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId })}
+                                    onClick={() => {
+                                        trackAdminOvertimeWorker(namedEntitySummary(s.name?.split?.(' ')[0] ?? s.name ?? ''), {
+                                            workerId: s.id,
+                                            weekId: weekDetailModal.week.weekId,
+                                        });
+                                        setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId });
+                                    }}
                                 />
                             ))}
                             {weekStaff.length === 0 && (

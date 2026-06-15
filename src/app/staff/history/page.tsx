@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight
@@ -23,6 +23,7 @@ import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { trackUsageModalApply } from '@/lib/usage/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
@@ -95,6 +96,7 @@ type MonthlyTimesheetRpcWeek = Omit<WeekData, 'days'> & { days: MonthlyTimesheet
 export default function HistoryPage() {
     const supabase = createClient();
     const searchParams = useSearchParams();
+    const pathname = usePathname();
     const [loading, setLoading] = useState(true);
     const [weeksData, setWeeksData] = useState<WeekData[]>([]);
 
@@ -625,6 +627,12 @@ export default function HistoryPage() {
                                                 setFilterMonth(i);
                                                 setFilterYear(pickerYear);
                                                 setShowMonthPicker(false);
+                                                trackUsageModalApply(
+                                                    'staff-history-month-picker',
+                                                    'Selector de mes',
+                                                    pathname,
+                                                    format(date, 'MMMM yyyy', { locale: es })
+                                                );
                                             }}
                                             className={cn(
                                                 "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",

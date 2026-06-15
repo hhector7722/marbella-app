@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { ChevronLeft, ChevronRight, User, X } from 'lucide-react';
 import {
@@ -24,6 +25,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { trackUsageModalApply } from '@/lib/usage/client';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -195,6 +197,7 @@ type ProfileOption = {
 
 export default function LaborHistoryPage() {
     const supabase = createClient();
+    const pathname = usePathname();
 
     const def = defaultFullMonthPeriod();
     const [periodStart, setPeriodStart] = useState<string>(def.start);
@@ -384,6 +387,13 @@ export default function LaborHistoryPage() {
     const openDayDetail = useCallback(
         async (day: Date) => {
             const key = format(day, 'yyyy-MM-dd');
+            trackUsageModalApply(
+                'labor-day-detail',
+                'Detalle día laboral',
+                pathname,
+                format(day, 'd MMM yyyy', { locale: es }),
+                { selectedDate: key }
+            );
             setSelectedDayStr(key);
             setDetailOpen(true);
             setDetailLoading(true);
@@ -471,7 +481,7 @@ export default function LaborHistoryPage() {
                 setDetailLoading(false);
             }
         },
-        [supabase, workerFilterId],
+        [supabase, workerFilterId, pathname],
     );
 
     const closeDetail = () => {
