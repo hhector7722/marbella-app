@@ -838,11 +838,11 @@ export default function ReservasClient() {
                         <div
                           key={d}
                           className={cn(
-                            'h-5 flex items-center justify-center border-r border-gray-100 last:border-r-0',
-                            'bg-gradient-to-b from-red-500 to-red-600'
+                            'flex items-center justify-center border-r border-gray-100 last:border-r-0 py-1',
+                            'bg-gradient-to-b from-[#6B1F2E] to-[#4A1522]'
                           )}
                         >
-                          <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm">
+                          <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
                             <span className="hidden md:inline">{d}</span>
                             <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
                           </span>
@@ -882,13 +882,13 @@ export default function ReservasClient() {
                           >
                             <div
                               className={cn(
-                                'h-5 flex items-center justify-center shrink-0',
+                                'flex items-center justify-center shrink-0 py-px leading-none',
                                 headerTone === 'active' && 'bg-gradient-to-b from-red-500 to-red-600',
                                 headerTone === 'past' && 'bg-zinc-400',
                                 headerTone === 'muted' && 'bg-zinc-300'
                               )}
                             >
-                              <span className="text-[9px] font-bold text-white">
+                              <span className="text-[9px] font-bold text-white leading-none">
                                 {format(day, 'd')}
                               </span>
                             </div>
