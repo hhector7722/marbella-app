@@ -767,7 +767,7 @@ export default function ReservasClient() {
               rel="noopener noreferrer"
               className="shrink-0 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
             >
-              HACER RESERVA
+              + HACER RESERVA
             </a>
           </div>
 
