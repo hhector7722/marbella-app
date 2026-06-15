@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { firstNameOnly } from '@/lib/usage/display-name';
 import type { UsageUserSummary as UsageUserSummaryType } from '@/lib/usage/queries';
 
 function formatDateTimeMadrid(iso: string | null): string {
@@ -60,7 +61,7 @@ export function UsageUserSummary({ summaries }: UsageUserSummaryProps) {
                   className="flex min-h-12 items-center gap-2 py-2 text-xs"
                 >
                   <p className="min-w-0 flex-1 truncate font-semibold text-zinc-800">
-                    {user.displayName}
+                    {firstNameOnly(user.displayName)}
                   </p>
                   <p className="shrink-0 text-zinc-500">{user.pageViewCount} pag</p>
                   <p className="shrink-0 text-zinc-500">{user.actionCount} acc</p>

@@ -1,4 +1,5 @@
 import { fromZonedTime } from 'date-fns-tz';
+import { usageDisplayName } from '@/lib/usage/display-name';
 import { parseProfileIdsParam, USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
@@ -108,9 +109,7 @@ function madridDayRange(day: string): { start: string; end: string } {
 }
 
 function profileDisplayName(profile: UsageEventProfile | null, fallbackEmail = '?'): string {
-  if (!profile) return fallbackEmail;
-  const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
-  return name || profile.email || fallbackEmail;
+  return usageDisplayName(profile, fallbackEmail);
 }
 
 export function parseUsageDashboardFilters(searchParams: {

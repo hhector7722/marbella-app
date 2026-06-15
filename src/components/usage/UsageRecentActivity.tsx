@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { firstNameOnly } from '@/lib/usage/display-name';
 import { serializeProfileIdsForUrl, USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 import type { UsageDashboardFilters, UsageRecentEvent } from '@/lib/usage/queries';
 
@@ -75,7 +76,7 @@ export function UsageRecentActivity({
                     )}
                   >
                     <p className="truncate text-xs font-bold uppercase tracking-wide text-[#36606F]">
-                      {event.displayName}
+                      {firstNameOnly(event.displayName)}
                     </p>
                   </div>
                 ) : null}

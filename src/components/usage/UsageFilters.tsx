@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { firstNameOnly } from '@/lib/usage/display-name';
 import { serializeProfileIdsForUrl } from '@/lib/usage/filters';
 import type { UsageDashboardFilters, UsageFilterUser } from '@/lib/usage/queries';
 
@@ -165,7 +166,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
                     className="size-5 shrink-0 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30"
                   />
                   <span className="min-w-0 flex-1 truncate text-sm text-zinc-800">
-                    {user.displayName}
+                    {firstNameOnly(user.displayName)}
                   </span>
                 </label>
               );
