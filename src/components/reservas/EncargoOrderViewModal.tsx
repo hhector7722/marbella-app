@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { Pencil, Printer, X } from 'lucide-react'
 
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
@@ -26,14 +26,15 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
   const rows = items
     .map((it) => {
       const note = it.notes?.trim()
+      const noteCell = note
+        ? escapeHtml(note)
+        : '&nbsp;'
       const qty = it.quantity > 0 ? String(it.quantity) : ''
-      const noteRow = note
-        ? `<tr><td colspan="2" style="padding:0 12px 10px 28px;font-size:11px;color:#52525b;text-transform:lowercase;">${escapeHtml(note)}</td></tr>`
-        : ''
       return `<tr>
         <td style="padding:10px 12px;font-weight:700;color:#18181b;">${escapeHtml(it.name)}</td>
+        <td style="padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#3f3f46;text-transform:lowercase;">${noteCell}</td>
         <td style="padding:10px 12px;text-align:center;font-weight:700;font-family:monospace;">${qty}</td>
-      </tr>${noteRow}`
+      </tr>`
     })
     .join('')
 
@@ -78,7 +79,9 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     .meta-value { display: inline; font-weight: 800; color: #18181b; overflow: hidden; text-overflow: ellipsis; }
     table { width: 100%; border-collapse: collapse; border: none; }
     th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; padding: 10px 12px; text-align: left; }
-    th:last-child { text-align: center; width: 72px; }
+    th.col-qty { text-align: center; width: 72px; }
+    th.col-note { width: 38%; text-align: center; }
+    td.col-note { text-align: center; vertical-align: middle; }
     tr + tr { border-top: 1px solid #f4f4f5; }
     .print-chrome-mask {
       display: none;
@@ -128,7 +131,7 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
   </div>
   <table>
     <thead>
-      <tr><th>Producto</th><th>Cantidad</th></tr>
+      <tr><th>Producto</th><th class="col-note" aria-hidden="true">&nbsp;</th><th class="col-qty">Cantidad</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
@@ -282,6 +285,12 @@ export function EncargoOrderViewModal({
                     <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500">
                       Producto
                     </th>
+                    <th
+                      className="px-3 py-2.5 w-[38%] text-center"
+                      aria-hidden="true"
+                    >
+                      &nbsp;
+                    </th>
                     <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 w-20 text-center">
                       Cantidad
                     </th>
@@ -291,21 +300,15 @@ export function EncargoOrderViewModal({
                   {items.map((it, index) => {
                     const note = it.notes?.trim()
                     return (
-                      <Fragment key={`${it.product_id}-${index}`}>
-                        <tr className={note ? 'border-t border-zinc-100' : 'border-t border-zinc-100'}>
-                          <td className="px-3 py-2.5 font-bold text-zinc-800">{it.name}</td>
-                          <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums">
-                            {it.quantity > 0 ? it.quantity : ' '}
-                          </td>
-                        </tr>
-                        {note ? (
-                          <tr>
-                            <td colSpan={2} className="px-3 pb-2.5 pt-0 pl-7 text-[11px] font-medium text-zinc-600 lowercase">
-                              {note}
-                            </td>
-                          </tr>
-                        ) : null}
-                      </Fragment>
+                      <tr key={`${it.product_id}-${index}`} className="border-t border-zinc-100">
+                        <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle">{it.name}</td>
+                        <td className="px-3 py-2.5 text-center align-middle text-[14px] font-semibold text-zinc-600 lowercase">
+                          {note || ' '}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums align-middle">
+                          {it.quantity > 0 ? it.quantity : ' '}
+                        </td>
+                      </tr>
                     )
                   })}
                 </tbody>

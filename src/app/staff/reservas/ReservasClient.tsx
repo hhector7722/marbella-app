@@ -336,9 +336,8 @@ function ReservationDetailModal({
             </a>
 
             {reservation.notes ? (
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Notas</p>
-                <p className="mt-1 text-[12px] font-medium text-zinc-700 whitespace-pre-wrap">
+              <div className="px-4 py-4 text-center">
+                <p className="text-[15px] font-medium leading-snug text-zinc-700 whitespace-pre-wrap">
                   {reservation.notes}
                 </p>
               </div>
