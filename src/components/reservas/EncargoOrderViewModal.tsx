@@ -31,9 +31,9 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
         : '&nbsp;'
       const qty = it.quantity > 0 ? String(it.quantity) : ''
       return `<tr>
-        <td style="padding:10px 12px;font-weight:700;color:#000000;">${escapeHtml(it.name)}</td>
-        <td style="padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#000000;text-transform:lowercase;">${noteCell}</td>
-        <td style="padding:10px 12px;text-align:center;font-weight:700;font-family:monospace;color:#000000;">${qty}</td>
+        <td class="col-product">${escapeHtml(it.name)}</td>
+        <td class="col-note">${noteCell}</td>
+        <td class="col-qty">${qty}</td>
       </tr>`
     })
     .join('')
@@ -46,47 +46,67 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
   <title>Pedido</title>
   <style>
     * { box-sizing: border-box; }
-    @page { size: auto; margin: 8mm 10mm 0 10mm; }
+    @page { size: auto; margin: 4mm; }
     body {
       font-family: system-ui, sans-serif;
       margin: 0;
-      padding: 12mm 10mm;
+      padding: 2mm 3mm;
       color: #000000;
       background: #ffffff;
     }
-    h1 { font-size: 18px; margin: 0 0 14px; text-align: left; font-weight: 800; color: #000000; }
+    h1 { font-size: 16px; margin: 0 0 8px; text-align: left; font-weight: 800; color: #000000; }
     .meta-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      margin: 0 0 18px;
-      font-size: 11px;
-      line-height: 1.35;
+      display: table;
+      width: 100%;
+      table-layout: auto;
+      margin: 0 0 10px;
+      font-size: 10px;
+      line-height: 1.2;
+      white-space: nowrap;
     }
     .meta-item {
-      flex: 1 1 0;
-      min-width: 0;
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 6px;
+      display: table-cell;
+      padding-right: 10px;
+      vertical-align: baseline;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
-    .meta-label { display: inline; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #52525b; }
-    .meta-value { display: inline; font-weight: 800; color: #000000; overflow: hidden; text-overflow: ellipsis; }
-    table { width: 100%; border-collapse: collapse; border: none; color: #000000; }
-    th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #52525b; padding: 10px 12px; text-align: left; }
-    th.col-qty { text-align: center; width: 72px; }
-    th.col-note { width: 38%; text-align: center; }
-    td.col-note { text-align: center; vertical-align: middle; }
-    tr + tr { border-top: 1px solid #f4f4f5; }
+    .meta-item:last-child { padding-right: 0; }
+    .meta-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; margin-right: 4px; }
+    .meta-value { font-weight: 800; color: #000000; }
+    table { width: 100%; border-collapse: collapse; border: none; color: #000000; table-layout: auto; }
+    th {
+      background: #fafafa;
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #52525b;
+      padding: 4px 6px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th.col-qty { text-align: center; width: 1%; }
+    th.col-note { width: 1%; }
+    td {
+      padding: 4px 6px;
+      color: #000000;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    td.col-product { font-weight: 700; text-align: left; }
+    td.col-note {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: lowercase;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    td.col-qty { text-align: center; font-weight: 700; font-family: monospace; width: 1%; }
+    tr + tr { border-top: 1px solid #e4e4e7; }
     @media print {
       html, body {
         margin: 0;
-        padding: 12mm 10mm;
+        padding: 2mm 3mm;
         background: #ffffff !important;
         color: #000000 !important;
         -webkit-print-color-adjust: exact;
@@ -292,10 +312,7 @@ export function EncargoOrderViewModal({
                     <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500">
                       Producto
                     </th>
-                    <th
-                      className="px-3 py-2.5 w-[38%] text-center"
-                      aria-hidden="true"
-                    >
+                    <th className="px-3 py-2.5 text-left" aria-hidden="true">
                       &nbsp;
                     </th>
                     <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 w-20 text-center">
@@ -308,8 +325,10 @@ export function EncargoOrderViewModal({
                     const note = it.notes?.trim()
                     return (
                       <tr key={`${it.product_id}-${index}`} className="border-t border-zinc-100">
-                        <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle">{it.name}</td>
-                        <td className="px-3 py-2.5 text-center align-middle text-[14px] font-semibold text-zinc-600 lowercase">
+                        <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle whitespace-nowrap">
+                          {it.name}
+                        </td>
+                        <td className="px-3 py-2.5 text-left align-middle text-[14px] font-semibold text-zinc-600 lowercase whitespace-nowrap">
                           {note || ' '}
                         </td>
                         <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums align-middle">
