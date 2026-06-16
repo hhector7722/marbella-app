@@ -108,13 +108,13 @@ function statusLabel(status: ReservationStatus) {
 function statusTone(status: ReservationStatus) {
   switch (status) {
     case 'pending':
-      return 'text-amber-700'
+      return 'bg-amber-50 text-amber-700 border-amber-100'
     case 'confirmed':
-      return 'text-emerald-700'
+      return 'bg-emerald-50 text-emerald-700 border-emerald-100'
     case 'rejected':
-      return 'text-rose-700'
+      return 'bg-rose-50 text-rose-700 border-rose-100'
     case 'cancelled':
-      return 'text-zinc-500'
+      return 'bg-zinc-100 text-zinc-700 border-zinc-200'
   }
 }
 
@@ -164,16 +164,16 @@ function reservationDotClass(r: Reservation) {
 
 function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
   return (
-    <div className="flex flex-col min-w-0 w-full leading-tight gap-0.5">
-      <div className="flex items-center gap-1 min-w-0">
+    <div className="flex flex-col min-w-0 w-full leading-none">
+      <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
         <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#36606F]" aria-hidden />
         <span className="text-[9px] font-mono leading-none whitespace-nowrap text-[#36606F]">
           {timeShortHm(e.event_time)}
         </span>
-        <span className="text-[8px] font-semibold leading-none truncate text-[#36606F] min-w-0">
-          {e.name}
-        </span>
       </div>
+      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-[#36606F]">
+        {e.name}
+      </span>
     </div>
   )
 }
@@ -181,8 +181,8 @@ function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
 function ReservationCalendarEntry({ r }: { r: Reservation }) {
   const isPast = isReservationPast(r)
   return (
-    <div className="flex flex-col min-w-0 w-full leading-tight gap-0.5">
-      <div className="flex items-center gap-1 min-w-0">
+    <div className="flex flex-col min-w-0 w-full leading-none">
+      <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
         <div
           className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r))}
           aria-hidden
@@ -190,25 +190,20 @@ function ReservationCalendarEntry({ r }: { r: Reservation }) {
         <span
           className={cn(
             'text-[9px] font-mono leading-none whitespace-nowrap',
-            isPast ? 'text-zinc-400' : 'text-zinc-700'
+            isPast ? 'text-gray-400' : 'text-gray-700'
           )}
         >
           {timeShort(r.reservation_time)}
         </span>
-        <span
-          className={cn(
-            'text-[8px] font-semibold leading-none truncate min-w-0',
-            isPast ? 'text-zinc-400' : 'text-zinc-800'
-          )}
-        >
-          {r.customer_name}
-        </span>
       </div>
-      {r.pax > 0 ? (
-        <span className={cn('text-[8px] font-medium leading-none ml-[10px]', isPast ? 'text-zinc-400' : 'text-zinc-500')}>
-          {r.pax} pax
-        </span>
-      ) : null}
+      <span
+        className={cn(
+          'text-[8px] font-normal leading-none ml-[10px] truncate',
+          isPast ? 'text-gray-400' : 'text-gray-700'
+        )}
+      >
+        {r.customer_name}
+      </span>
     </div>
   )
 }
@@ -299,8 +294,8 @@ function ReservationDetailModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-zinc-100">
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
                 <div className="text-2xl font-black tracking-tight text-zinc-900">
@@ -314,28 +309,32 @@ function ReservationDetailModal({
                 {reservation.customer_name}
               </div>
             </div>
-            <span
+            <div
               className={cn(
-                'shrink-0 text-[10px] font-black uppercase tracking-wide',
+                'shrink-0 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide',
                 statusTone(reservation.status)
               )}
             >
               {statusLabel(reservation.status)}
-            </span>
+            </div>
           </div>
 
           <a
             href={`https://wa.me/${formatPhone(reservation.customer_phone)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-h-12 flex items-center gap-2 py-2 border-b border-zinc-100 text-zinc-700 font-bold text-[12px] hover:text-zinc-900 transition"
+            className={cn(
+              'min-h-12 flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3',
+              'text-zinc-700 font-bold text-[12px] transition',
+              'hover:text-zinc-900 active:scale-95'
+            )}
           >
             <Phone className="h-5 w-5 shrink-0 text-emerald-600" strokeWidth={2.5} />
             <span className="truncate">{reservation.customer_phone}</span>
           </a>
 
           {reservation.notes ? (
-            <div className="py-2 border-b border-zinc-100">
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
               <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Notas</div>
               <div className="mt-1 text-[12px] font-medium text-zinc-800 whitespace-pre-wrap">
                 {reservation.notes}
@@ -344,15 +343,15 @@ function ReservationDetailModal({
           ) : null}
 
           {linkedEncargos.length > 0 ? (
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-1">Encargos</div>
-              <div className="divide-y divide-zinc-100 border-t border-zinc-100">
+            <div className="rounded-xl border border-[#36606F]/15 bg-[#36606F]/5 p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#36606F]">Encargos</div>
+              <div className="mt-2 flex flex-col gap-2">
                 {linkedEncargos.map((e) => (
                   <button
                     key={e.id}
                     type="button"
                     onClick={() => onOpenEncargo(e.id)}
-                    className="min-h-12 w-full py-3 text-left text-[12px] font-bold text-zinc-800 hover:bg-zinc-50 active:bg-zinc-100/80 transition"
+                    className="min-h-12 rounded-xl border border-[#36606F]/20 bg-white px-3 text-left text-[12px] font-bold text-zinc-800 hover:bg-zinc-50"
                   >
                     {timeShortHm(e.event_time)} · {e.name}
                   </button>
@@ -362,11 +361,11 @@ function ReservationDetailModal({
           ) : null}
 
           {deleteConfirmOpen ? (
-            <div className="flex flex-col gap-3 shrink-0 mt-auto pt-3 border-t border-zinc-100">
+            <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 flex flex-col gap-3 shrink-0 mt-auto">
               <p className="text-[13px] font-black text-rose-900 text-center">
                 ¿Eliminar la reserva de {reservation.customer_name}?
               </p>
-              <p className="text-[11px] font-medium text-zinc-500 text-center">
+              <p className="text-[11px] font-medium text-rose-700 text-center">
                 Esta acción no se puede deshacer.
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -375,8 +374,8 @@ function ReservationDetailModal({
                   onClick={() => setDeleteConfirmOpen(false)}
                   disabled={isBusy}
                   className={cn(
-                    'min-h-12 font-black text-[11px] uppercase tracking-wide',
-                    'text-zinc-700 hover:bg-zinc-50 active:scale-95 transition',
+                    'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                    'bg-white text-zinc-700 border border-zinc-200 shadow-sm active:scale-95 transition',
                     'disabled:opacity-60 disabled:active:scale-100'
                   )}
                 >
@@ -387,8 +386,8 @@ function ReservationDetailModal({
                   onClick={() => onAction('delete')}
                   disabled={isBusy}
                   className={cn(
-                    'min-h-12 font-black text-[11px] uppercase tracking-wide',
-                    'text-rose-600 hover:bg-rose-50 active:scale-95 transition',
+                    'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                    'bg-rose-600 text-white shadow-sm active:scale-95 transition',
                     'disabled:opacity-60 disabled:active:scale-100'
                   )}
                 >
@@ -404,14 +403,14 @@ function ReservationDetailModal({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2 shrink-0 mt-auto pt-3 border-t border-zinc-100">
+            <div className="grid grid-cols-3 gap-2 shrink-0 mt-auto">
               <button
                 type="button"
                 onClick={() => onAction('confirm')}
                 disabled={isBusy}
                 className={cn(
-                  'min-h-12 font-black text-[11px] uppercase tracking-wide',
-                  'text-emerald-700 hover:bg-emerald-50 active:scale-95 transition',
+                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                  'bg-emerald-600 text-white shadow-sm active:scale-95 transition',
                   'disabled:opacity-60 disabled:active:scale-100'
                 )}
               >
@@ -429,8 +428,8 @@ function ReservationDetailModal({
                 onClick={() => onAction('reject')}
                 disabled={isBusy}
                 className={cn(
-                  'min-h-12 font-black text-[11px] uppercase tracking-wide',
-                  'text-rose-600 hover:bg-rose-50 active:scale-95 transition',
+                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                  'bg-rose-600 text-white shadow-sm active:scale-95 transition',
                   'disabled:opacity-60 disabled:active:scale-100'
                 )}
               >
@@ -448,8 +447,8 @@ function ReservationDetailModal({
                 onClick={() => setDeleteConfirmOpen(true)}
                 disabled={isBusy}
                 className={cn(
-                  'min-h-12 font-black text-[11px] uppercase tracking-wide',
-                  'text-zinc-600 hover:bg-zinc-50 active:scale-95 transition',
+                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
+                  'bg-zinc-200 text-zinc-800 shadow-sm active:scale-95 transition',
                   'disabled:opacity-60 disabled:active:scale-100'
                 )}
               >
@@ -896,147 +895,137 @@ export default function ReservasClient() {
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-10">
-      <div className="max-w-lg mx-auto px-4 py-4 md:py-6">
-        <div className="rounded-2xl border border-zinc-100 bg-white overflow-hidden">
-          <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-zinc-100 min-h-[52px]">
-            <div className="min-w-0">
-              <h1 className="text-lg font-black text-[#36606F] tracking-tight">Reservas y encargos</h1>
-              <p className="mt-0.5 text-[10px] font-semibold text-zinc-500">Toca un día para ver la agenda</p>
-            </div>
+    <div className="bg-[#5B8FB9] min-h-screen">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+          <div className="bg-[#36606F] rounded-t-2xl px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
+            <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
+              Reservas y encargos
+            </h1>
             <a
               href="https://marbella-web.vercel.app/reservas-interno"
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 min-h-12 flex items-center text-[10px] font-black uppercase tracking-widest text-[#36606F] hover:opacity-80 transition-opacity"
+              className="shrink-0 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
             >
-              + Reserva
+              + HACER RESERVA
             </a>
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[#36606F] text-white min-h-[52px]">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition"
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft size={20} strokeWidth={2.5} />
-            </button>
-            <span className="text-sm font-black capitalize text-center flex-1 truncate">
-              {format(viewMonth, 'MMMM yyyy', { locale: es })}
-            </span>
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition"
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight size={20} strokeWidth={2.5} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-4 px-3 py-2 border-b border-zinc-100 bg-zinc-50/80">
-            <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden />
-              Reserva
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-500">
-              <span className="w-2 h-2 rounded-full bg-[#36606F] shrink-0" aria-hidden />
-              Encargo
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <LoadingSpinner size="lg" className="text-[#36606F]" />
+          <div className="p-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
+            <div className="flex justify-center w-full">
+              <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                  aria-label="Mes anterior"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <span className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
+                  {format(viewMonth, 'MMMM yyyy', { locale: es })}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                  aria-label="Mes siguiente"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
             </div>
-          ) : rpcError ? (
-            <div className="px-4 py-3 border-t border-rose-200 text-rose-700">
-              <div className="text-sm font-black">Error</div>
-              <div className="text-xs font-medium">{rpcError}</div>
-            </div>
-          ) : (
-            <div className="w-full min-w-0">
-              <div className="grid grid-cols-7 border-b border-zinc-100 bg-zinc-50">
-                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d) => (
-                  <div
-                    key={d}
-                    className="h-8 flex items-center justify-center border-r border-zinc-100 last:border-r-0"
-                  >
-                    <span className="text-[10px] font-black uppercase text-zinc-400">{d}</span>
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <LoadingSpinner size="lg" className="text-[#36606F]" />
+              </div>
+            ) : rpcError ? (
+              <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-rose-700">
+                <div className="text-sm font-black">Error</div>
+                <div className="text-xs font-medium">{rpcError}</div>
+              </div>
+            ) : (
+              <div className="w-full min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
+                <div className="grid grid-cols-7 border-b border-gray-100">
+                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
+                    <div
+                      key={d}
+                      className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
+                    >
+                      <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
+                        <span className="hidden md:inline">{d}</span>
+                        <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {calendarWeeks.map((week, weekIdx) => (
+                  <div key={weekIdx} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
+                    {week.map((day) => {
+                      const key = format(day, 'yyyy-MM-dd')
+                      const isViewMonthDay = isSameMonth(day, viewMonth)
+                      const cellReservations = byDate[key] ?? []
+                      const cellEncargos = (encargosByDate[key] ?? []).filter((e) => !e.reservation_id)
+                      const maxEntries = 2
+                      const visibleRes = cellReservations.slice(0, maxEntries)
+                      const remainingSlots = Math.max(0, maxEntries - visibleRes.length)
+                      const visibleEnc = cellEncargos.slice(0, remainingSlots)
+                      const hiddenCount =
+                        cellReservations.length -
+                        visibleRes.length +
+                        (cellEncargos.length - visibleEnc.length)
+                      const hasCalendarEntries =
+                        cellReservations.length > 0 || cellEncargos.length > 0
+                      const today = isToday(day)
+
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => isViewMonthDay && handleDayClick(day)}
+                          disabled={!isViewMonthDay}
+                          className={cn(
+                            'group relative flex flex-col text-left min-h-[64px] md:min-h-[108px] transition-colors p-1',
+                            'border-r border-gray-100 last:border-r-0 bg-white',
+                            !isViewMonthDay && 'opacity-25 pointer-events-none',
+                            isViewMonthDay &&
+                              'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'absolute top-1 right-1 text-[9px] font-bold',
+                              today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                              !isViewMonthDay && 'opacity-50'
+                            )}
+                          >
+                            {format(day, 'd')}
+                          </span>
+                          <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px] gap-0.5 overflow-hidden">
+                            {isViewMonthDay && hasCalendarEntries ? (
+                              <>
+                                {visibleRes.map((r) => (
+                                  <ReservationCalendarEntry key={r.id} r={r} />
+                                ))}
+                                {visibleEnc.map((e) => (
+                                  <EncargoCalendarEntry key={e.id} e={e} />
+                                ))}
+                                {hiddenCount > 0 ? (
+                                  <span className="text-[8px] text-gray-400">+{hiddenCount} más</span>
+                                ) : null}
+                              </>
+                            ) : null}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 ))}
               </div>
-              {calendarWeeks.map((week, weekIdx) => (
-                <div
-                  key={weekIdx}
-                  className="grid grid-cols-7 border-b border-zinc-100 last:border-b-0"
-                >
-                  {week.map((day) => {
-                    const key = format(day, 'yyyy-MM-dd')
-                    const isViewMonthDay = isSameMonth(day, viewMonth)
-                    const cellReservations = byDate[key] ?? []
-                    const cellEncargos = (encargosByDate[key] ?? []).filter((e) => !e.reservation_id)
-                    const maxEntries = 2
-                    const visibleRes = cellReservations.slice(0, maxEntries)
-                    const remainingSlots = Math.max(0, maxEntries - visibleRes.length)
-                    const visibleEnc = cellEncargos.slice(0, remainingSlots)
-                    const hiddenCount =
-                      cellReservations.length -
-                      visibleRes.length +
-                      (cellEncargos.length - visibleEnc.length)
-                    const hasCalendarEntries =
-                      cellReservations.length > 0 || cellEncargos.length > 0
-                    const today = isToday(day)
-
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => isViewMonthDay && handleDayClick(day)}
-                        disabled={!isViewMonthDay}
-                        className={cn(
-                          'group relative flex flex-col text-left min-h-[72px] md:min-h-[88px] transition-colors p-1.5',
-                          'border-r border-zinc-100 last:border-r-0',
-                          !isViewMonthDay && 'opacity-30 pointer-events-none bg-zinc-50/50',
-                          isViewMonthDay && 'bg-white hover:bg-[#36606F]/5 active:bg-[#36606F]/10 cursor-pointer'
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'text-[10px] font-black leading-none',
-                            today && isViewMonthDay
-                              ? 'text-[#36606F]'
-                              : isViewMonthDay
-                                ? 'text-zinc-700'
-                                : 'text-zinc-400'
-                          )}
-                        >
-                          {format(day, 'd')}
-                        </span>
-                        <div className="flex-1 flex flex-col justify-start w-full mt-1 gap-1 overflow-hidden">
-                          {isViewMonthDay && hasCalendarEntries ? (
-                            <>
-                              {visibleRes.map((r) => (
-                                <ReservationCalendarEntry key={r.id} r={r} />
-                              ))}
-                              {visibleEnc.map((e) => (
-                                <EncargoCalendarEntry key={e.id} e={e} />
-                              ))}
-                              {hiddenCount > 0 ? (
-                                <span className="text-[8px] font-bold text-zinc-400">+{hiddenCount}</span>
-                              ) : null}
-                            </>
-                          ) : null}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
