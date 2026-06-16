@@ -31,9 +31,9 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
         : '&nbsp;'
       const qty = it.quantity > 0 ? String(it.quantity) : ''
       return `<tr>
-        <td style="padding:10px 12px;font-weight:700;color:#18181b;">${escapeHtml(it.name)}</td>
-        <td style="padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#3f3f46;text-transform:lowercase;">${noteCell}</td>
-        <td style="padding:10px 12px;text-align:center;font-weight:700;font-family:monospace;">${qty}</td>
+        <td style="padding:10px 12px;font-weight:700;color:#000000;">${escapeHtml(it.name)}</td>
+        <td style="padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#000000;text-transform:lowercase;">${noteCell}</td>
+        <td style="padding:10px 12px;text-align:center;font-weight:700;font-family:monospace;color:#000000;">${qty}</td>
       </tr>`
     })
     .join('')
@@ -50,11 +50,11 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     body {
       font-family: system-ui, sans-serif;
       margin: 0;
-      padding: 4mm 0 18mm;
-      color: #18181b;
-      background: #fff;
+      padding: 12mm 10mm;
+      color: #000000;
+      background: #ffffff;
     }
-    h1 { font-size: 18px; margin: 0 0 14px; text-align: left; font-weight: 800; }
+    h1 { font-size: 18px; margin: 0 0 14px; text-align: left; font-weight: 800; color: #000000; }
     .meta-row {
       display: flex;
       justify-content: space-between;
@@ -75,17 +75,25 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .meta-label { display: inline; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; }
-    .meta-value { display: inline; font-weight: 800; color: #18181b; overflow: hidden; text-overflow: ellipsis; }
-    table { width: 100%; border-collapse: collapse; border: none; }
-    th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; padding: 10px 12px; text-align: left; }
+    .meta-label { display: inline; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #52525b; }
+    .meta-value { display: inline; font-weight: 800; color: #000000; overflow: hidden; text-overflow: ellipsis; }
+    table { width: 100%; border-collapse: collapse; border: none; color: #000000; }
+    th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #52525b; padding: 10px 12px; text-align: left; }
     th.col-qty { text-align: center; width: 72px; }
     th.col-note { width: 38%; text-align: center; }
     td.col-note { text-align: center; vertical-align: middle; }
     tr + tr { border-top: 1px solid #f4f4f5; }
     @media print {
-      html, body { margin: 0; padding: 0; background: #fff !important; }
-      h1 { margin-top: 0; }
+      html, body {
+        margin: 0;
+        padding: 12mm 10mm;
+        background: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      h1, .meta-value, td, th, span { color: #000000 !important; }
+      .meta-label { color: #52525b !important; }
     }
   </style>
 </head>
@@ -129,58 +137,42 @@ function isIosDevice() {
 }
 
 function printHtmlDocument(html: string) {
-  const iframe = document.createElement('iframe')
-  iframe.setAttribute('title', 'Imprimir pedido')
-  iframe.setAttribute('aria-hidden', 'true')
-  iframe.style.position = 'fixed'
-  iframe.style.border = '0'
-  iframe.style.pointerEvents = 'none'
-  document.body.appendChild(iframe)
-
-  const cleanup = (blobUrl?: string) => {
-    try {
-      iframe.remove()
-    } catch {
-      /* iframe ya eliminado */
-    }
-    if (blobUrl) URL.revokeObjectURL(blobUrl)
-  }
-
-  const runPrint = (win: Window, blobUrl?: string) => {
+  const runPrint = (target: Window, onDone?: () => void) => {
     window.setTimeout(() => {
       try {
-        win.focus()
-        win.print()
+        target.focus()
+        target.print()
       } finally {
-        win.addEventListener('afterprint', () => cleanup(blobUrl), { once: true })
-        window.setTimeout(() => cleanup(blobUrl), 60_000)
+        window.setTimeout(() => onDone?.(), 500)
       }
-    }, 300)
+    }, 200)
   }
 
+  const writeAndPrint = (target: Window, onDone?: () => void) => {
+    target.document.open()
+    target.document.write(html)
+    target.document.close()
+    runPrint(target, onDone)
+  }
+
+  // iOS: blob/iframe suele imprimir la página padre en blanco; ventana aislada con el HTML.
   if (isIosDevice()) {
-    // iOS: documento aislado con tamaño real fuera de pantalla (sin opacity).
-    const blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }))
-    iframe.style.left = '-100vw'
-    iframe.style.top = '0'
-    iframe.style.width = '100vw'
-    iframe.style.height = '100vh'
-    iframe.src = blobUrl
-    iframe.onload = () => {
-      const win = iframe.contentWindow
-      if (!win) {
-        cleanup(blobUrl)
-        return
-      }
-      runPrint(win, blobUrl)
+    const popup = window.open('about:blank', '_blank')
+    if (popup) {
+      writeAndPrint(popup)
+      return
     }
-    return
   }
 
+  const iframe = document.createElement('iframe')
+  iframe.setAttribute('aria-hidden', 'true')
+  iframe.style.position = 'fixed'
   iframe.style.right = '0'
   iframe.style.bottom = '0'
   iframe.style.width = '0'
   iframe.style.height = '0'
+  iframe.style.border = '0'
+  document.body.appendChild(iframe)
 
   const win = iframe.contentWindow
   const doc = win?.document
@@ -189,15 +181,13 @@ function printHtmlDocument(html: string) {
     return
   }
 
-  doc.open()
-  doc.write(html)
-  doc.close()
-
-  if (doc.readyState === 'complete') {
-    runPrint(win)
-  } else {
-    iframe.onload = () => runPrint(win)
-  }
+  writeAndPrint(win, () => {
+    try {
+      iframe.remove()
+    } catch {
+      /* iframe ya eliminado */
+    }
+  })
 }
 
 export function EncargoOrderViewModal({
