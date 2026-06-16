@@ -113,13 +113,13 @@ function statusLabel(status: ReservationStatus) {
 function statusTone(status: ReservationStatus) {
   switch (status) {
     case 'pending':
-      return 'bg-amber-50 text-amber-700 border-amber-100'
+      return 'text-amber-700'
     case 'confirmed':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-100'
+      return 'text-emerald-700'
     case 'rejected':
-      return 'bg-rose-50 text-rose-700 border-rose-100'
+      return 'text-rose-700'
     case 'cancelled':
-      return 'bg-zinc-100 text-zinc-700 border-zinc-200'
+      return 'text-zinc-500'
   }
 }
 
@@ -299,90 +299,88 @@ function ReservationDetailModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-2">
-                <div className="text-2xl font-black tracking-tight text-zinc-900">
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="px-4 pt-4 pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[28px] font-black tabular-nums leading-none text-zinc-900">
                   {timeShort(reservation.reservation_time)}
-                </div>
-                <div className="text-[12px] font-black text-zinc-500">·</div>
-                <div className="text-xl font-black tracking-tight text-zinc-900">{reservation.pax}</div>
-                <div className="text-[11px] font-black uppercase tracking-wide text-zinc-500">PAX</div>
+                </p>
+                <p className="mt-2 text-[15px] font-black text-zinc-900 truncate">
+                  {reservation.customer_name}
+                </p>
+                <p className="mt-0.5 text-[12px] font-semibold text-zinc-500">
+                  {reservation.pax > 0 ? `${reservation.pax} pax` : ' '}
+                </p>
               </div>
-              <div className="mt-1 truncate text-[13px] font-black text-zinc-800">
-                {reservation.customer_name}
-              </div>
-            </div>
-            <div
-              className={cn(
-                'shrink-0 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide',
-                statusTone(reservation.status)
-              )}
-            >
-              {statusLabel(reservation.status)}
+              <span
+                className={cn(
+                  'shrink-0 text-[10px] font-black uppercase tracking-wide',
+                  statusTone(reservation.status)
+                )}
+              >
+                {statusLabel(reservation.status)}
+              </span>
             </div>
           </div>
 
-          <a
-            href={`https://wa.me/${formatPhone(reservation.customer_phone)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              'min-h-12 flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3',
-              'text-zinc-700 font-bold text-[12px] transition',
-              'hover:text-zinc-900 active:scale-95'
-            )}
-          >
-            <Phone className="h-5 w-5 shrink-0 text-emerald-600" strokeWidth={2.5} />
-            <span className="truncate">{reservation.customer_phone}</span>
-          </a>
+          <div className="divide-y divide-zinc-100 border-t border-zinc-100">
+            <a
+              href={`https://wa.me/${formatPhone(reservation.customer_phone)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-12 px-4 flex items-center gap-2 text-[12px] font-bold text-zinc-700 active:bg-zinc-50"
+            >
+              <Phone className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+              <span className="truncate">{reservation.customer_phone}</span>
+            </a>
 
-          {reservation.notes ? (
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Notas</div>
-              <div className="mt-1 text-[12px] font-medium text-zinc-800 whitespace-pre-wrap">
-                {reservation.notes}
+            {reservation.notes ? (
+              <div className="px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Notas</p>
+                <p className="mt-1 text-[12px] font-medium text-zinc-700 whitespace-pre-wrap">
+                  {reservation.notes}
+                </p>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {linkedEncargos.length > 0 ? (
-            <div className="rounded-xl border border-[#36606F]/15 bg-[#36606F]/5 p-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#36606F]">Encargos</div>
-              <div className="mt-2 flex flex-col gap-2">
-                {linkedEncargos.map((e) => (
-                  <button
-                    key={e.id}
-                    type="button"
-                    onClick={() => onOpenEncargo(e.id)}
-                    className="min-h-12 rounded-xl border border-[#36606F]/20 bg-white px-3 text-left text-[12px] font-bold text-zinc-800 hover:bg-zinc-50"
-                  >
-                    {timeShortHm(e.event_time)} · {e.name}
-                  </button>
-                ))}
+            {linkedEncargos.length > 0 ? (
+              <div>
+                <p className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                  Encargos
+                </p>
+                <div className="divide-y divide-zinc-100">
+                  {linkedEncargos.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => onOpenEncargo(e.id)}
+                      className="min-h-12 w-full px-4 flex items-center justify-between gap-2 text-left text-[12px] font-bold text-zinc-800 active:bg-zinc-50"
+                    >
+                      <span className="truncate">
+                        {timeShortHm(e.event_time)} · {e.name}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-zinc-300 shrink-0" />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
+        </div>
 
+        <div className="shrink-0 border-t border-zinc-100 bg-white px-4 py-3">
           {deleteConfirmOpen ? (
-            <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 flex flex-col gap-3 shrink-0 mt-auto">
-              <p className="text-[13px] font-black text-rose-900 text-center">
+            <div className="flex flex-col gap-2">
+              <p className="text-[12px] font-bold text-rose-700 text-center">
                 ¿Eliminar la reserva de {reservation.customer_name}?
-              </p>
-              <p className="text-[11px] font-medium text-rose-700 text-center">
-                Esta acción no se puede deshacer.
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmOpen(false)}
                   disabled={isBusy}
-                  className={cn(
-                    'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                    'bg-white text-zinc-700 border border-zinc-200 shadow-sm active:scale-95 transition',
-                    'disabled:opacity-60 disabled:active:scale-100'
-                  )}
+                  className="min-h-12 text-[10px] font-black uppercase text-zinc-600 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -390,11 +388,7 @@ function ReservationDetailModal({
                   type="button"
                   onClick={() => onAction('delete')}
                   disabled={isBusy}
-                  className={cn(
-                    'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                    'bg-rose-600 text-white shadow-sm active:scale-95 transition',
-                    'disabled:opacity-60 disabled:active:scale-100'
-                  )}
+                  className="min-h-12 text-[10px] font-black uppercase text-rose-600 disabled:opacity-50"
                 >
                   <span className="inline-flex items-center justify-center gap-1">
                     {actionBusy === 'delete' ? (
@@ -408,16 +402,12 @@ function ReservationDetailModal({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2 shrink-0 mt-auto">
+            <div className="grid grid-cols-3 gap-1">
               <button
                 type="button"
                 onClick={() => onAction('confirm')}
                 disabled={isBusy}
-                className={cn(
-                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                  'bg-emerald-600 text-white shadow-sm active:scale-95 transition',
-                  'disabled:opacity-60 disabled:active:scale-100'
-                )}
+                className="min-h-12 text-[10px] font-black uppercase text-emerald-700 disabled:opacity-50"
               >
                 <span className="inline-flex items-center justify-center gap-1">
                   {actionBusy === 'confirm' ? (
@@ -432,11 +422,7 @@ function ReservationDetailModal({
                 type="button"
                 onClick={() => onAction('reject')}
                 disabled={isBusy}
-                className={cn(
-                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                  'bg-rose-600 text-white shadow-sm active:scale-95 transition',
-                  'disabled:opacity-60 disabled:active:scale-100'
-                )}
+                className="min-h-12 text-[10px] font-black uppercase text-rose-600 disabled:opacity-50"
               >
                 <span className="inline-flex items-center justify-center gap-1">
                   {actionBusy === 'reject' ? (
@@ -451,11 +437,7 @@ function ReservationDetailModal({
                 type="button"
                 onClick={() => setDeleteConfirmOpen(true)}
                 disabled={isBusy}
-                className={cn(
-                  'min-h-12 rounded-xl font-black text-[11px] uppercase tracking-wide',
-                  'bg-zinc-200 text-zinc-800 shadow-sm active:scale-95 transition',
-                  'disabled:opacity-60 disabled:active:scale-100'
-                )}
+                className="min-h-12 text-[10px] font-black uppercase text-zinc-500 disabled:opacity-50"
               >
                 <span className="inline-flex items-center justify-center gap-1">
                   <CircleSlash2 className="h-4 w-4" strokeWidth={2.5} />

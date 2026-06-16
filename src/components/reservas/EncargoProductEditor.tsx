@@ -210,58 +210,45 @@ function ProductPickTile({
   const inCart = cartQty > 0
 
   return (
-    <div
-      className={cn(
-        'relative rounded-xl border bg-white px-2 py-2 min-h-[72px] flex flex-col',
-        inCart ? 'border-[#36606F]/30 bg-[#36606F]/[0.03]' : 'border-zinc-200'
-      )}
-    >
-      {inCart ? (
-        <span className="absolute right-0.5 top-0.5 z-10 min-h-5 min-w-5 rounded-full bg-[#36606F] px-1 text-[9px] font-black leading-5 text-white shadow-sm text-center">
-          ×{cartQty > 99 ? '99+' : cartQty}
+    <div className="flex w-full flex-col items-center gap-1">
+      <span className="block w-full text-center text-[10px] font-black leading-snug text-zinc-800 line-clamp-2 min-h-[2.4em]">
+        {product.name}
+      </span>
+      {showCategory && product.category ? (
+        <span className="block w-full truncate text-center text-[8px] font-semibold text-zinc-400">
+          {product.category}
         </span>
       ) : null}
 
-      <div className="flex-1 min-w-0 pr-6 text-left">
-        <span className="block text-[10px] font-bold text-zinc-900 leading-snug line-clamp-3">
-          {product.name}
-        </span>
-        {showCategory && product.category ? (
-          <span className="block text-[9px] font-semibold text-zinc-400 truncate mt-0.5">
-            {product.category}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-1.5 grid grid-cols-3 gap-1 shrink-0">
+      <div
+        className={cn(
+          'flex min-h-12 w-full items-stretch justify-between overflow-hidden rounded-xl border bg-white shadow-sm',
+          inCart
+            ? 'border-[#36606F]/30 shadow-md'
+            : 'border-zinc-200'
+        )}
+      >
         <button
           type="button"
           onClick={inCart ? onDecrement : undefined}
           disabled={!inCart}
           className={cn(
-            'min-h-12 min-w-12 rounded-xl border flex items-center justify-center font-black',
+            'flex w-8 shrink-0 items-center justify-center transition-colors',
             inCart
-              ? 'border-zinc-200 bg-white text-zinc-800 active:opacity-70'
-              : 'border-zinc-200 bg-zinc-50 text-zinc-300'
+              ? 'text-zinc-500 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100'
+              : 'text-zinc-300'
           )}
           aria-label="Quitar uno"
         >
           <Minus className="h-4 w-4" strokeWidth={3} />
         </button>
-        <div className="min-h-12 rounded-xl border border-zinc-200 bg-white flex items-center justify-center">
-          <span className="text-[12px] font-black tabular-nums text-zinc-900">
-            {inCart ? cartQty : ' '}
-          </span>
-        </div>
+        <span className="flex flex-1 items-center justify-center text-[11px] font-black tabular-nums text-zinc-800">
+          {inCart ? cartQty : ' '}
+        </span>
         <button
           type="button"
           onClick={onAdd}
-          className={cn(
-            'min-h-12 min-w-12 rounded-xl border flex items-center justify-center font-black',
-            inCart
-              ? 'border-[#36606F]/30 bg-[#36606F] text-white active:opacity-90'
-              : 'border-zinc-200 bg-white text-[#36606F] hover:bg-[#36606F]/5 active:opacity-70'
-          )}
+          className="flex w-8 shrink-0 items-center justify-center text-zinc-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100"
           aria-label="Añadir uno"
         >
           <Plus className="h-4 w-4" strokeWidth={3} />
@@ -285,7 +272,7 @@ function ProductPickGrid({
   showCategory?: boolean
 }) {
   return (
-    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+    <div className="grid grid-cols-3 gap-x-1.5 gap-y-3 sm:grid-cols-4">
       {products.map((p) => (
         <ProductPickTile
           key={p.product_id}

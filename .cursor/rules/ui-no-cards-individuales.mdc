@@ -1,0 +1,65 @@
+---
+description: Marbella UI — Bento de sección sí; cards individuales no
+globs: **/*.{tsx,jsx,css}
+alwaysApply: true
+---
+
+# Sin cards individuales (Marbella)
+
+Complementa el skill `arquitecto-ui-kiosco`: el **Bento Grid** (`rounded-xl`, `shadow-sm`, `border-zinc-100`) es para **bloques de sección**, no para envolver cada pieza suelta.
+
+## Sí — card / Bento de sección
+
+Un contenedor agrupa un **bloque lógico completo**:
+
+- Panel de KPIs, resumen, filtros, formulario con título.
+- Grid Bento del dashboard (una celda = un grupo de datos, no un ítem de lista).
+- Lista **dentro** de una sola card: filas planas con `divide-y divide-zinc-100` o `gap`.
+
+```tsx
+// ✅ Bento de sección; items flotantes dentro
+<section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4">
+  <h2 className="text-sm font-semibold text-zinc-900">Actividades</h2>
+  <ul className="mt-3 divide-y divide-zinc-100">
+    {items.map((item) => (
+      <li key={item.id} className="min-h-12 py-3 flex items-center">
+        {item.name}
+      </li>
+    ))}
+  </ul>
+</section>
+```
+
+## No — card por cada elemento
+
+No envolver en `border` / `bg-*` / `shadow-sm` / `rounded-xl` individualmente:
+
+- Cada fila de lista, tabla o feed.
+- Cada botón (usar `Button`; targets ≥48px / `min-h-12`).
+- Cada campo, chip o dato aislado.
+- Cada ítem de un `.map()` como si fuera su propia tarjeta Bento.
+
+```tsx
+// ❌ Bento por ítem
+{items.map((item) => (
+  <div key={item.id} className="rounded-xl border border-zinc-100 bg-white shadow-sm p-3">
+    {item.name}
+  </div>
+))}
+
+// ✅ Filas táctiles sin caja extra
+<div className="divide-y divide-zinc-100">
+  {items.map((item) => (
+    <div key={item.id} className="min-h-12 py-3 active:opacity-70">
+      {item.name}
+    </div>
+  ))}
+</div>
+```
+
+## Regla rápida
+
+1. ¿Agrupa **varios** elementos relacionados? → **Una** card/Bento de sección.
+2. ¿Es fila, botón o campo suelto? → **Sin card**; `divide-y`, `gap` o padding.
+
+Modales: ver regla `modals.mdc` (contenedor modal sí; no confundir con cards de listado).
