@@ -7,15 +7,11 @@ import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/P
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
-function formatEncargoDateLabel(ymd: string) {
+function formatEncargoPrintDate(ymd: string) {
   const parts = ymd.slice(0, 10).split('-').map(Number)
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return ymd
   const [y, m, d] = parts
-  return new Date(y, m - 1, d).toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  return `${d}/${String(m).padStart(2, '0')}/${String(y % 100).padStart(2, '0')}`
 }
 
 type EncargoPrintMeta = {
@@ -46,11 +42,17 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pedido encargado</title>
+  <title>Pedido</title>
   <style>
     * { box-sizing: border-box; }
-    @page { size: auto; margin: 14mm; }
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 0; color: #18181b; }
+    @page { size: auto; margin: 8mm 10mm 0 10mm; }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 4mm 0 18mm;
+      color: #18181b;
+      background: #fff;
+    }
     h1 { font-size: 18px; margin: 0 0 14px; text-align: left; font-weight: 800; }
     .meta-row {
       display: flex;
@@ -78,13 +80,37 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; padding: 10px 12px; text-align: left; }
     th:last-child { text-align: center; width: 72px; }
     tr + tr { border-top: 1px solid #f4f4f5; }
+    .print-chrome-mask {
+      display: none;
+    }
     @media print {
-      html, body { margin: 0; padding: 0; }
+      html, body { margin: 0; padding: 4mm 0 18mm; background: #fff !important; }
       h1 { margin-top: 0; }
+      .print-chrome-mask {
+        display: block;
+        position: fixed;
+        left: 0;
+        right: 0;
+        background: #fff;
+        z-index: 2147483647;
+        pointer-events: none;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-chrome-mask--top { top: 0; height: 9mm; }
+      .print-chrome-mask--bottom {
+        bottom: 0;
+        height: 16mm;
+        color: #fff;
+        font-size: 1px;
+        line-height: 1;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="print-chrome-mask print-chrome-mask--top" aria-hidden="true"></div>
+  <div class="print-chrome-mask print-chrome-mask--bottom" aria-hidden="true">&nbsp;</div>
   <h1>Pedido encargado</h1>
   <div class="meta-row">
     <div class="meta-item">
@@ -146,7 +172,7 @@ export function EncargoOrderViewModal({
   const handlePrint = useCallback(() => {
     const html = buildPrintHtml(
       {
-        encargoDate: formatEncargoDateLabel(encargoDate),
+        encargoDate: formatEncargoPrintDate(encargoDate),
         encargoTime,
         encargoName,
         contactPhone: contactPhone ?? null,
