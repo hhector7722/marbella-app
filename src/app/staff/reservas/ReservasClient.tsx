@@ -46,6 +46,7 @@ import type { EncargoOrderRow, EncargoRow } from '@/lib/reservas-encargos-calend
 import {
   encargosForReservation,
   groupEncargosByDate,
+  reservationIdsWithEncargo,
   timeShortHm,
 } from '@/lib/reservas-encargos-calendar'
 import {
@@ -161,52 +162,57 @@ function isReservationPast(r: Reservation, now = new Date()) {
   return getReservationDateTime(r) < now
 }
 
-function reservationDotClass(r: Reservation) {
-  if (isReservationPast(r)) return 'bg-gray-400'
+function reservationDotClass(r: Reservation, hasEncargo: boolean) {
+  if (isReservationPast(r)) {
+    return hasEncargo ? 'bg-gray-400 border border-black' : 'bg-gray-400'
+  }
   if (r.status === 'rejected') return 'bg-red-500'
-  return 'bg-green-500'
+  return hasEncargo ? 'bg-green-500 border border-black' : 'bg-green-500'
 }
 
 function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
   return (
     <div className="flex flex-col min-w-0 w-full leading-none">
       <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
-        <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#36606F]" aria-hidden />
-        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-[#36606F]">
+        <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-500" aria-hidden />
+        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-blue-600">
           {timeShortHm(e.event_time)}
         </span>
       </div>
-      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-[#36606F]">
+      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-blue-600">
         {e.name}
       </span>
     </div>
   )
 }
 
-function ReservationCalendarEntry({ r }: { r: Reservation }) {
+function ReservationCalendarEntry({
+  r,
+  hasEncargo,
+}: {
+  r: Reservation
+  hasEncargo: boolean
+}) {
   const isPast = isReservationPast(r)
+  const isRejected = r.status === 'rejected'
+  const textTone = isPast
+    ? 'text-gray-400'
+    : isRejected
+      ? 'text-red-600'
+      : 'text-green-700'
+
   return (
     <div className="flex flex-col min-w-0 w-full leading-none">
       <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
         <div
-          className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r))}
+          className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r, hasEncargo))}
           aria-hidden
         />
-        <span
-          className={cn(
-            'text-[9px] font-mono leading-none whitespace-nowrap',
-            isPast ? 'text-gray-400' : 'text-gray-700'
-          )}
-        >
+        <span className={cn('text-[9px] font-mono leading-none whitespace-nowrap', textTone)}>
           {timeShort(r.reservation_time)}
         </span>
       </div>
-      <span
-        className={cn(
-          'text-[8px] font-normal leading-none ml-[10px] truncate',
-          isPast ? 'text-gray-400' : 'text-gray-700'
-        )}
-      >
+      <span className={cn('text-[8px] font-normal leading-none ml-[10px] truncate', textTone)}>
         {r.pax > 0 ? `${r.pax} pax` : ' '}
       </span>
     </div>
@@ -517,6 +523,11 @@ export default function ReservasClient() {
     }
     return weeks
   }, [calendarDays])
+
+  const reservationIdsWithLinkedEncargo = useMemo(
+    () => reservationIdsWithEncargo(allEncargos),
+    [allEncargos]
+  )
 
   const fetchMonthData = useCallback(async () => {
     const seq = ++fetchSeqRef.current
@@ -991,7 +1002,11 @@ export default function ReservasClient() {
                             {isViewMonthDay && hasCalendarEntries ? (
                               <>
                                 {visibleRes.map((r) => (
-                                  <ReservationCalendarEntry key={r.id} r={r} />
+                                  <ReservationCalendarEntry
+                                    key={r.id}
+                                    r={r}
+                                    hasEncargo={reservationIdsWithLinkedEncargo.has(r.id)}
+                                  />
                                 ))}
                                 {visibleEnc.map((e) => (
                                   <EncargoCalendarEntry key={e.id} e={e} />
