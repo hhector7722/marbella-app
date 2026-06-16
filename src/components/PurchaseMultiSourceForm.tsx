@@ -8,6 +8,7 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 import { ScannerClient } from '@/app/dashboard/scanner/ScannerClient';
+import { ClosingPetrolInput, ClosingStepRow } from '@/components/cash-closing/ClosingStep1Parts';
 
 export interface PaymentSourceOption {
     id: string;
@@ -189,7 +190,7 @@ export function PurchaseMultiSourceForm({
                 />
                 <div className="flex items-center justify-end w-[120px] shrink-0">
                     {step === 'payment' && (
-                        <div className="px-2 py-1 rounded-xl bg-white/10 border border-white/10 text-right min-h-[48px] flex flex-col items-end justify-center">
+                        <div className="text-right min-h-[48px] flex flex-col items-end justify-center">
                             <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
                             <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
                                 {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
@@ -226,38 +227,31 @@ export function PurchaseMultiSourceForm({
             )}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {step === 'details' && (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-[1fr_auto] gap-2">
-                            <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm min-w-0">
-                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
+                    <div className="space-y-5 p-4 sm:p-6 bg-white">
+                        <ClosingStepRow title="Concepto">
+                            <div className="relative flex h-9 w-full items-center rounded-xl border border-[#36606F] bg-white transition-colors focus-within:bg-[#36606F]/5">
                                 <input
                                     type="text"
                                     value={notes}
                                     onChange={e => setNotes(e.target.value)}
                                     placeholder="Motivo..."
-                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs min-h-[48px]"
+                                    className="h-full w-full bg-transparent px-2 text-center text-sm font-black text-zinc-800 outline-none placeholder:font-bold placeholder:text-zinc-400"
                                 />
                             </div>
-                            <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm w-[120px] shrink-0">
-                                <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio (€)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={price}
-                                    onChange={e => {
-                                        const val = e.target.value;
-                                        setPrice(val === '' ? '' : parseFloat(val));
-                                    }}
-                                    placeholder="0.00"
-                                    className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none text-center min-h-[48px]"
-                                />
-                            </div>
-                        </div>
+                        </ClosingStepRow>
+
+                        <ClosingStepRow title="Precio">
+                            <ClosingPetrolInput
+                                value={price === '' ? 0 : price}
+                                onChange={(next) => setPrice(next)}
+                                showEuro
+                            />
+                        </ClosingStepRow>
 
                         {priceNum <= 0 && (
-                            <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-3">
-                                <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Falta precio</p>
-                            </div>
+                            <p className="text-center text-[10px] font-black uppercase tracking-widest text-rose-600">
+                                Falta precio
+                            </p>
                         )}
                     </div>
                 )}
