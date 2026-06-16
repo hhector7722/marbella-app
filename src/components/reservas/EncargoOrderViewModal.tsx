@@ -43,7 +43,7 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pedido</title>
+  <title>Pedido por encargo</title>
   <style>
     * { box-sizing: border-box; }
     @page { size: auto; margin: 4mm; }
@@ -54,12 +54,14 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
       color: #000000;
       background: #ffffff;
     }
-    h1 { font-size: 16px; margin: 0 0 8px; text-align: left; font-weight: 800; color: #000000; }
+    .doc-header { margin: 0 0 20px; }
+    h1 { font-size: 16px; margin: 0; text-align: left; font-weight: 800; color: #000000; }
+    .doc-meta { margin: 0 0 24px; }
     .meta-row {
       display: table;
       width: 100%;
       table-layout: auto;
-      margin: 0 0 10px;
+      margin: 0;
       font-size: 10px;
       line-height: 1.2;
       white-space: nowrap;
@@ -73,6 +75,7 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     .meta-item:last-child { padding-right: 0; }
     .meta-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; margin-right: 4px; }
     .meta-value { font-weight: 800; color: #000000; }
+    .doc-table { margin: 0; }
     table { width: 100%; border-collapse: collapse; border: none; color: #000000; table-layout: auto; }
     th {
       background: #fafafa;
@@ -80,14 +83,14 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: #52525b;
-      padding: 4px 6px;
+      padding: 8px 8px;
       text-align: left;
       white-space: nowrap;
     }
     th.col-qty { text-align: center; width: 1%; }
     th.col-note { width: 1%; }
     td {
-      padding: 4px 6px;
+      padding: 12px 8px;
       color: #000000;
       vertical-align: middle;
       white-space: nowrap;
@@ -118,27 +121,33 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
   </style>
 </head>
 <body>
-  <h1>Pedido encargado</h1>
-  <div class="meta-row">
-    <div class="meta-item">
-      <span class="meta-label">Fecha</span><span class="meta-value">${escapeHtml(meta.encargoDate)}</span>
+  <header class="doc-header">
+    <h1>Pedido por encargo</h1>
+  </header>
+  <section class="doc-meta">
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Fecha</span><span class="meta-value">${escapeHtml(meta.encargoDate)}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Hora</span><span class="meta-value">${escapeHtml(meta.encargoTime)}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Nombre</span><span class="meta-value">${escapeHtml(meta.encargoName)}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Contacto</span><span class="meta-value">${contactValue}</span>
+      </div>
     </div>
-    <div class="meta-item">
-      <span class="meta-label">Hora</span><span class="meta-value">${escapeHtml(meta.encargoTime)}</span>
-    </div>
-    <div class="meta-item">
-      <span class="meta-label">Nombre</span><span class="meta-value">${escapeHtml(meta.encargoName)}</span>
-    </div>
-    <div class="meta-item">
-      <span class="meta-label">Contacto</span><span class="meta-value">${contactValue}</span>
-    </div>
-  </div>
-  <table>
-    <thead>
-      <tr><th>Producto</th><th class="col-note" aria-hidden="true">&nbsp;</th><th class="col-qty">Cantidad</th></tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
+  </section>
+  <section class="doc-table">
+    <table>
+      <thead>
+        <tr><th>Producto</th><th class="col-note" aria-hidden="true">&nbsp;</th><th class="col-qty">Cantidad</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </section>
 </body>
 </html>`
 }
