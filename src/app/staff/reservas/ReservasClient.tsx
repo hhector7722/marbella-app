@@ -880,6 +880,16 @@ export default function ReservasClient() {
     : null
   const viewEncargoItems = parseOrderItems(viewEncargoOrder?.items ?? [])
 
+  const viewEncargoContactPhone = useMemo(() => {
+    const rid = viewEncargo?.reservation_id?.trim()
+    if (!rid) return null
+    for (const list of Object.values(byDate)) {
+      const res = list.find((r) => r.id === rid)
+      if (res) return res.customer_phone?.trim() || null
+    }
+    return null
+  }, [viewEncargo, byDate])
+
   const editEncargo = editEncargoId ? allEncargos.find((e) => e.id === editEncargoId) ?? null : null
   const editEncargoOrder = editEncargo ? primaryOrderForEncargo(editEncargo.id, ordersByEventId) : null
   const editEncargoInitialItems = orderItemsToStaffLines(parseOrderItems(editEncargoOrder?.items ?? []))
@@ -1079,7 +1089,9 @@ export default function ReservasClient() {
         createPortal(
           <EncargoOrderViewModal
             encargoName={viewEncargo.name}
+            encargoDate={viewEncargo.event_date}
             encargoTime={timeShortHm(viewEncargo.event_time)}
+            contactPhone={viewEncargoContactPhone}
             items={viewEncargoItems}
             onClose={() => setViewEncargoId(null)}
             onEdit={() => openEditEncargo(viewEncargo.id)}

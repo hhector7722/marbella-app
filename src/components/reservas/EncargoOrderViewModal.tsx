@@ -7,7 +7,26 @@ import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/P
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
-function buildPrintHtml(encargoName: string, encargoTime: string, items: EventOrderItem[]) {
+function formatEncargoDateLabel(ymd: string) {
+  const parts = ymd.slice(0, 10).split('-').map(Number)
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return ymd
+  const [y, m, d] = parts
+  return new Date(y, m - 1, d).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+type EncargoPrintMeta = {
+  encargoDate: string
+  encargoTime: string
+  encargoName: string
+  contactPhone: string | null
+}
+
+function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
+  const contactValue = meta.contactPhone?.trim() ? escapeHtml(meta.contactPhone.trim()) : '&nbsp;'
   const rows = items
     .map((it) => {
       const note = it.notes?.trim()
@@ -26,21 +45,58 @@ function buildPrintHtml(encargoName: string, encargoTime: string, items: EventOr
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Pedido · ${escapeHtml(encargoName)}</title>
+  <title>Pedido encargado</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; margin: 24px; color: #18181b; }
-    h1 { font-size: 16px; margin: 0 0 4px; }
-    p { margin: 0 0 16px; font-size: 12px; color: #71717a; }
-    table { width: 100%; border-collapse: collapse; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; }
+    @page { size: auto; margin: 14mm; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 0; color: #18181b; }
+    h1 { font-size: 18px; margin: 0 0 14px; text-align: center; font-weight: 800; }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0 0 18px;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .meta-item {
+      flex: 1 1 0;
+      min-width: 0;
+      text-align: center;
+    }
+    .meta-label { display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 2px; }
+    .meta-value { display: block; font-weight: 700; color: #18181b; word-break: break-word; }
+    table { width: 100%; border-collapse: collapse; border: 1px solid #e4e4e7; }
     th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; padding: 10px 12px; text-align: left; }
     th:last-child { text-align: center; width: 72px; }
     tr + tr { border-top: 1px solid #f4f4f5; }
+    @media print {
+      html, body { margin: 0; padding: 0; }
+      h1 { margin-top: 0; }
+    }
   </style>
 </head>
 <body>
-  <h1>${escapeHtml(encargoTime)} · ${escapeHtml(encargoName)}</h1>
-  <p>Pedido encargo</p>
+  <h1>Pedido encargado</h1>
+  <div class="meta-row">
+    <div class="meta-item">
+      <span class="meta-label">Fecha</span>
+      <span class="meta-value">${escapeHtml(meta.encargoDate)}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Hora</span>
+      <span class="meta-value">${escapeHtml(meta.encargoTime)}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Nombre</span>
+      <span class="meta-value">${escapeHtml(meta.encargoName)}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Contacto</span>
+      <span class="meta-value">${contactValue}</span>
+    </div>
+  </div>
   <table>
     <thead>
       <tr><th>Producto</th><th>Cantidad</th></tr>
@@ -61,13 +117,17 @@ function escapeHtml(value: string) {
 
 export function EncargoOrderViewModal({
   encargoName,
+  encargoDate,
   encargoTime,
+  contactPhone,
   items,
   onClose,
   onEdit,
 }: {
   encargoName: string
+  encargoDate: string
   encargoTime: string
+  contactPhone?: string | null
   items: EventOrderItem[]
   onClose: () => void
   onEdit: () => void
@@ -81,7 +141,15 @@ export function EncargoOrderViewModal({
   })
 
   const handlePrint = useCallback(() => {
-    const html = buildPrintHtml(encargoName, encargoTime, items)
+    const html = buildPrintHtml(
+      {
+        encargoDate: formatEncargoDateLabel(encargoDate),
+        encargoTime,
+        encargoName,
+        contactPhone: contactPhone ?? null,
+      },
+      items
+    )
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
     iframe.style.right = '0'
@@ -108,7 +176,7 @@ export function EncargoOrderViewModal({
       iframe.contentWindow?.print()
       setTimeout(() => document.body.removeChild(iframe), 500)
     }
-  }, [encargoName, encargoTime, items])
+  }, [encargoName, encargoDate, encargoTime, contactPhone, items])
 
   return (
     <div
