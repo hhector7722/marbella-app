@@ -54,11 +54,13 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
     const [stock, setStock] = useState<Record<number, number>>({});
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [didTrySave, setDidTrySave] = useState(false);
 
     const reset = useCallback(() => {
         setStep('importe');
         setStep1Counts({});
         setStep2Counts({});
+        setDidTrySave(false);
     }, []);
 
     useEffect(() => {
@@ -116,16 +118,17 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
 
     const handleGuardar = async () => {
         if (!changeBox?.id) return;
+        setDidTrySave(true);
         if (totalStep1 < 0.005 || totalStep2 < 0.005) {
             toast.error('Completa ambos desgloses');
             return;
         }
         if (!totalsMatch) {
-            toast.error('El importe retirado debe coincidir con el importe a cambiar');
+            toast.error('Los importes deben coincidir.');
             return;
         }
         if (hasStockIssueStep2) {
-            toast.error('No hay suficiente efectivo en caja para ese retiro');
+            toast.error('Cantidad insuficiente...');
             return;
         }
 
@@ -285,14 +288,14 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                                     <div className="text-lg font-bold text-gray-500">{totalStep1 > 0.005 ? `${totalStep1.toFixed(2)}€` : ' '}</div>
                                 </div>
                             </div>
-                            {(!totalsMatch && totalStep2 > 0.005) || hasStockIssueStep2 ? (
+                            {didTrySave && ((!totalsMatch && totalStep2 > 0.005) || hasStockIssueStep2) ? (
                                 <div className="shrink-0 border-b border-rose-100 bg-rose-50/90 px-4 py-2 sm:px-6">
-                                    {!totalsMatch && totalStep2 > 0.005 && (
-                                        <p className="text-xs font-bold text-rose-600">Los importes deben coincidir</p>
-                                    )}
-                                    {hasStockIssueStep2 && (
-                                        <p className="text-xs font-bold text-rose-600">Cantidad insuficiente en caja para el retiro</p>
-                                    )}
+                                    {!totalsMatch && totalStep2 > 0.005 ? (
+                                        <p className="text-xs font-bold text-rose-600">Los importes deben coincidir.</p>
+                                    ) : null}
+                                    {hasStockIssueStep2 ? (
+                                        <p className="text-xs font-bold text-rose-600">Cantidad insuficiente...</p>
+                                    ) : null}
                                 </div>
                             ) : null}
                             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4">
@@ -428,15 +431,10 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                                         <button
                                             type="button"
                                             onClick={handleGuardar}
-                                            disabled={
-                                                saving ||
-                                                !totalsMatch ||
-                                                totalStep2 < 0.005 ||
-                                                hasStockIssueStep2
-                                            }
+                                            disabled={saving}
                                             className={cn(
                                                 'min-h-[48px] shrink-0 rounded-2xl px-5 font-black uppercase tracking-widest text-white shadow-lg transition-all active:scale-[0.98] sm:px-6',
-                                                saving || !totalsMatch || totalStep2 < 0.005 || hasStockIssueStep2
+                                                saving
                                                     ? 'cursor-not-allowed bg-zinc-300 shadow-none'
                                                     : 'bg-emerald-600 shadow-emerald-200 hover:bg-emerald-700'
                                             )}
