@@ -207,7 +207,7 @@ function ReservationCalendarEntry({ r }: { r: Reservation }) {
           isPast ? 'text-gray-400' : 'text-gray-700'
         )}
       >
-        {r.customer_name}
+        {r.pax > 0 ? `${r.pax} pax` : ' '}
       </span>
     </div>
   )
