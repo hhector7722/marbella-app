@@ -260,7 +260,7 @@ export function PavilionActivityPdfModal({
               </div>
             </div>
 
-            <div className="flex flex-col min-h-0 overflow-hidden">
+            <div className="flex flex-col min-h-0 min-w-0 w-full overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center bg-zinc-50/60 py-16 px-6">
                   <LoadingSpinner className="text-[#36606F]" />
@@ -278,7 +278,7 @@ export function PavilionActivityPdfModal({
                   ) : null}
                 </div>
               ) : hasPdf && pdfUrl ? (
-                <PavilionActivityPdfViewer url={pdfUrl} />
+                <PavilionActivityPdfViewer url={pdfUrl} className="min-w-0 w-full" />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center gap-2">
                   <p className="text-sm font-black text-zinc-700">Sin hoja de actividades</p>
