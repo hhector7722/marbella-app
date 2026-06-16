@@ -194,21 +194,98 @@ function BrowseNavBar({
   )
 }
 
+function clampEncargoQty(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.max(0, Math.min(999, Math.floor(n)))
+}
+
+function EncargoQtyStepper({
+  quantity,
+  onQuantityChange,
+  onDecrement,
+  onIncrement,
+}: {
+  quantity: number
+  onQuantityChange: (qty: number) => void
+  onDecrement: () => void
+  onIncrement: () => void
+}) {
+  const [draft, setDraft] = useState('')
+  const [editing, setEditing] = useState(false)
+
+  const displayValue = editing ? draft : quantity > 0 ? String(quantity) : ''
+
+  return (
+    <div
+      className={cn(
+        'flex h-8 w-full items-stretch justify-between overflow-hidden rounded-lg border bg-white shadow-sm',
+        quantity > 0 ? 'border-[#36606F]/30 shadow-md' : 'border-zinc-200'
+      )}
+    >
+      <button
+        type="button"
+        onClick={quantity > 0 ? onDecrement : undefined}
+        disabled={quantity <= 0}
+        className={cn(
+          'flex h-8 w-7 shrink-0 items-center justify-center transition-colors',
+          quantity > 0
+            ? 'text-zinc-500 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100'
+            : 'text-zinc-300'
+        )}
+        aria-label="Quitar uno"
+      >
+        <Minus className="h-3.5 w-3.5" strokeWidth={3} />
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        value={quantity > 0 || editing ? displayValue : ' '}
+        onFocus={() => {
+          setEditing(true)
+          setDraft(quantity > 0 ? String(quantity) : '')
+        }}
+        onChange={(e) => {
+          const v = e.target.value.replace(/\D/g, '').slice(0, 3)
+          setDraft(v)
+          if (v === '') return
+          onQuantityChange(clampEncargoQty(parseInt(v, 10)))
+        }}
+        onBlur={() => {
+          setEditing(false)
+          if (draft === '0') onQuantityChange(0)
+          setDraft('')
+        }}
+        className="h-8 min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-black tabular-nums text-zinc-800 focus:outline-none focus:ring-0"
+        aria-label="Cantidad"
+      />
+      <button
+        type="button"
+        onClick={onIncrement}
+        className="flex h-8 w-7 shrink-0 items-center justify-center text-zinc-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100"
+        aria-label="Añadir uno"
+      >
+        <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+      </button>
+    </div>
+  )
+}
+
 function ProductPickTile({
   product,
   cartQty,
   onAdd,
   onDecrement,
+  onSetQuantity,
   showCategory,
 }: {
   product: EncargoEditorMenuProduct
   cartQty: number
   onAdd: () => void
   onDecrement: () => void
+  onSetQuantity: (qty: number) => void
   showCategory?: boolean
 }) {
-  const inCart = cartQty > 0
-
   return (
     <div className="flex w-full flex-col items-center gap-1">
       <span className="block w-full text-center text-[10px] font-black leading-snug text-zinc-800 line-clamp-2 min-h-[2.4em]">
@@ -220,40 +297,12 @@ function ProductPickTile({
         </span>
       ) : null}
 
-      <div
-        className={cn(
-          'flex min-h-12 w-full items-stretch justify-between overflow-hidden rounded-xl border bg-white shadow-sm',
-          inCart
-            ? 'border-[#36606F]/30 shadow-md'
-            : 'border-zinc-200'
-        )}
-      >
-        <button
-          type="button"
-          onClick={inCart ? onDecrement : undefined}
-          disabled={!inCart}
-          className={cn(
-            'flex w-8 shrink-0 items-center justify-center transition-colors',
-            inCart
-              ? 'text-zinc-500 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100'
-              : 'text-zinc-300'
-          )}
-          aria-label="Quitar uno"
-        >
-          <Minus className="h-4 w-4" strokeWidth={3} />
-        </button>
-        <span className="flex flex-1 items-center justify-center text-[11px] font-black tabular-nums text-zinc-800">
-          {inCart ? cartQty : ' '}
-        </span>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="flex w-8 shrink-0 items-center justify-center text-zinc-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100"
-          aria-label="Añadir uno"
-        >
-          <Plus className="h-4 w-4" strokeWidth={3} />
-        </button>
-      </div>
+      <EncargoQtyStepper
+        quantity={cartQty}
+        onQuantityChange={onSetQuantity}
+        onDecrement={onDecrement}
+        onIncrement={onAdd}
+      />
     </div>
   )
 }
@@ -263,12 +312,14 @@ function ProductPickGrid({
   qtyByProductId,
   onAdd,
   onDecrement,
+  onSetQuantity,
   showCategory,
 }: {
   products: EncargoEditorMenuProduct[]
   qtyByProductId: Map<string, number>
   onAdd: (product: EncargoEditorMenuProduct) => void
   onDecrement: (productId: string) => void
+  onSetQuantity: (productId: string, qty: number) => void
   showCategory?: boolean
 }) {
   return (
@@ -280,6 +331,7 @@ function ProductPickGrid({
           cartQty={qtyByProductId.get(p.product_id) ?? 0}
           onAdd={() => onAdd(p)}
           onDecrement={() => onDecrement(p.product_id)}
+          onSetQuantity={(qty) => onSetQuantity(p.product_id, qty)}
           showCategory={showCategory}
         />
       ))}
@@ -343,28 +395,21 @@ function EncargoCartModal({
                         <p className="text-[9px] font-medium text-zinc-500 lowercase truncate">{note}</p>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateLine(line.lineKey, { quantity: Math.max(1, line.quantity - 1) })
-                        }
-                        className="min-h-8 min-w-8 flex items-center justify-center rounded border border-zinc-200 bg-white"
-                        aria-label="Menos"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="w-6 text-center text-[11px] font-black tabular-nums">{line.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
+                    <div className="w-[5.5rem] shrink-0">
+                      <EncargoQtyStepper
+                        quantity={line.quantity}
+                        onQuantityChange={(qty) => {
+                          if (qty <= 0) onRemoveLine(line.lineKey)
+                          else onUpdateLine(line.lineKey, { quantity: qty })
+                        }}
+                        onDecrement={() => {
+                          if (line.quantity <= 1) onRemoveLine(line.lineKey)
+                          else onUpdateLine(line.lineKey, { quantity: line.quantity - 1 })
+                        }}
+                        onIncrement={() =>
                           onUpdateLine(line.lineKey, { quantity: Math.min(999, line.quantity + 1) })
                         }
-                        className="min-h-8 min-w-8 flex items-center justify-center rounded border border-zinc-200 bg-white"
-                        aria-label="Más"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
+                      />
                     </div>
                     <input
                       value={line.notes}
@@ -577,6 +622,38 @@ export function EncargoProductEditor({
     })
   }, [])
 
+  const setProductQuantity = useCallback(
+    (productId: string, rawQty: number) => {
+      const quantity = clampEncargoQty(rawQty)
+      setLines((prev) => {
+        const mergeTarget = prev.find((l) => l.product_id === productId && !l.notes.trim())
+        if (quantity === 0) {
+          if (mergeTarget) return prev.filter((l) => l.lineKey !== mergeTarget.lineKey)
+          return prev.filter((l) => !(l.product_id === productId && !l.notes.trim()))
+        }
+        if (mergeTarget) {
+          return prev.map((l) =>
+            l.lineKey === mergeTarget.lineKey ? { ...l, quantity } : l
+          )
+        }
+        const product = menuProducts.find((p) => p.product_id === productId)
+        if (!product) return prev
+        return [
+          ...prev,
+          {
+            lineKey: newLineKey(),
+            product_id: productId,
+            name: product.name,
+            quantity,
+            notes: '',
+          },
+        ]
+      })
+      setSearch('')
+    },
+    [menuProducts]
+  )
+
   const updateLine = useCallback((lineKey: string, patch: Partial<StaffEncargoLineItem>) => {
     setLines((prev) =>
       prev.map((l) => (l.lineKey === lineKey ? { ...l, ...patch, name: l.name } : l))
@@ -734,6 +811,7 @@ export function EncargoProductEditor({
               qtyByProductId={qtyByProductId}
               onAdd={addProduct}
               onDecrement={decrementProduct}
+              onSetQuantity={setProductQuantity}
             />
           </div>
         </div>
@@ -785,6 +863,7 @@ export function EncargoProductEditor({
                     qtyByProductId={qtyByProductId}
                     onAdd={addProduct}
                     onDecrement={decrementProduct}
+                    onSetQuantity={setProductQuantity}
                     showCategory
                   />
                 ) : (
