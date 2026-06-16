@@ -22,11 +22,40 @@ async function gateManager(): Promise<GateResult> {
   const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (error) return { ok: false, message: error.message }
 
-  const role = (profile as any)?.role ?? null
+  const role = (profile as { role?: string } | null)?.role ?? null
   const isManager = role === 'manager' || role === 'admin'
   if (!isManager) return { ok: false, message: 'Sin permiso (solo manager/admin)' }
 
   return { ok: true, supabase, userId: user.id, role }
+}
+
+async function gateStaffEncargo(): Promise<GateResult> {
+  const supabase = await createClient()
+  const {
+    data: { session },
+    error: sessionErr,
+  } = await supabase.auth.getSession()
+
+  if (sessionErr) return { ok: false, message: sessionErr.message }
+  const user = session?.user ?? null
+  if (!user) return { ok: false, message: 'No autenticado' }
+
+  const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  if (error) return { ok: false, message: error.message }
+
+  const role = (profile as { role?: string } | null)?.role ?? null
+  const allowed = role === 'staff' || role === 'supervisor' || role === 'manager' || role === 'admin'
+  if (!allowed) return { ok: false, message: 'Sin permiso' }
+
+  return { ok: true, supabase, userId: user.id, role }
+}
+
+function revalidateEncargoPaths(slug?: string) {
+  revalidatePath('/dashboard/eventos')
+  revalidatePath('/staff/reservas')
+  if (slug) {
+    revalidatePath(`/eventos/${slug}`)
+  }
 }
 
 const zProductId = z.string().min(1)
@@ -137,11 +166,24 @@ export async function updateDefaultPackAction(input: unknown): Promise<
   return { success: true }
 }
 
-const createEventSchema = z.object({
+const createEncargoSchema = z.object({
   contact_name: z.string().trim().min(2).max(120),
   event_date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
   event_time: z.string().trim().regex(/^\d{2}:\d{2}$/),
   guest_count: z.coerce.number().int().min(1).max(9999),
+  reservation_id: z.string().uuid().optional().nullable(),
+})
+
+const staffOrderItemSchema = z.object({
+  product_id: z.string().trim().min(1),
+  quantity: z.coerce.number().int().min(1).max(999),
+})
+
+const createStaffEventOrderSchema = z.object({
+  eventId: z.string().uuid(),
+  items: z.array(staffOrderItemSchema).min(1).max(200),
+  notes: z.string().trim().max(400).optional().nullable(),
+  responsible_name: z.string().trim().min(2).max(80).optional().nullable(),
 })
 
 const categoryLimitsSchema = z.object({
@@ -175,22 +217,18 @@ function randomSuffix4(): string {
   return Math.random().toString(36).slice(2, 6)
 }
 
-export async function createEventAction(input: unknown): Promise<
+export async function createEncargoAction(input: unknown): Promise<
   | { success: true; eventId: string; slug: string }
-  | {
-      success: false
-      message: string
-    }
+  | { success: false; message: string }
 > {
-  const parsed = createEventSchema.safeParse(input)
+  const parsed = createEncargoSchema.safeParse(input)
   if (!parsed.success) return { success: false, message: 'Datos inválidos' }
 
-  const gate = await gateManager()
+  const gate = await gateStaffEncargo()
   if (!gate.ok) return { success: false, message: gate.message }
 
   const data = parsed.data
   const ymd = data.event_date
-
   const base = slugifyBase(data.contact_name)
   let slug = `${base}-${ymd}-${randomSuffix4()}`
 
@@ -216,16 +254,87 @@ export async function createEventAction(input: unknown): Promise<
       enabled_product_ids: null,
       is_active: true,
       created_by: gate.userId,
+      reservation_id: data.reservation_id ?? null,
     })
     .select('id, slug')
     .maybeSingle()
 
   if (insErr) return { success: false, message: insErr.message }
-  if (!inserted) return { success: false, message: 'No se pudo crear el evento' }
+  if (!inserted) return { success: false, message: 'No se pudo crear el encargo' }
 
-  revalidatePath('/dashboard/eventos')
-  revalidatePath(`/eventos/${String((inserted as any).slug)}`)
-  return { success: true, eventId: String((inserted as any).id), slug: String((inserted as any).slug) }
+  revalidateEncargoPaths(String((inserted as { slug?: string }).slug))
+  return {
+    success: true,
+    eventId: String((inserted as { id: string }).id),
+    slug: String((inserted as { slug: string }).slug),
+  }
+}
+
+/** @deprecated Usar createEncargoAction */
+export async function createEventAction(input: unknown): Promise<
+  | { success: true; eventId: string; slug: string }
+  | { success: false; message: string }
+> {
+  return createEncargoAction(input)
+}
+
+export async function createStaffEventOrderAction(input: unknown): Promise<
+  | {
+      success: true
+      order: {
+        id: string
+        responsible_name: string
+        items: Array<{ product_id: string; name: string; quantity: number; unit_price: number }>
+        total_amount: number
+        status: string
+      }
+    }
+  | { success: false; message: string }
+> {
+  const parsed = createStaffEventOrderSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateStaffEncargo()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.rpc('create_staff_event_order', {
+    p_event_id: parsed.data.eventId,
+    p_items: parsed.data.items,
+    p_notes: parsed.data.notes ?? null,
+    p_responsible_name: parsed.data.responsible_name ?? null,
+  })
+
+  if (error) {
+    const msg = String(error.message ?? '')
+    if (/sin_permiso|no_autenticado/i.test(msg)) return { success: false, message: 'Sin permiso' }
+    if (/producto_no_disponible|producto_no_permitido/i.test(msg)) {
+      return { success: false, message: 'Hay productos no disponibles para este encargo.' }
+    }
+    if (/items_|quantity_invalida|product_id_requerido/i.test(msg)) {
+      return { success: false, message: 'Pedido inválido.' }
+    }
+    return { success: false, message: msg || 'Error guardando el pedido' }
+  }
+
+  const payload = data as { ok?: boolean; error?: string; id?: string; responsible_name?: string; items?: unknown[]; total_amount?: number; status?: string }
+  if (!payload?.ok) {
+    if (payload?.error === 'not_found') return { success: false, message: 'Encargo no encontrado.' }
+    return { success: false, message: 'No se pudo crear el pedido.' }
+  }
+
+  revalidateEncargoPaths()
+  revalidatePath(`/staff/reservas/encargo/${parsed.data.eventId}`)
+
+  return {
+    success: true,
+    order: {
+      id: String(payload.id),
+      responsible_name: String(payload.responsible_name ?? 'Personal'),
+      items: Array.isArray(payload.items) ? (payload.items as Array<{ product_id: string; name: string; quantity: number; unit_price: number }>) : [],
+      total_amount: Number(payload.total_amount) || 0,
+      status: String(payload.status ?? 'confirmed'),
+    },
+  }
 }
 
 export async function saveEventEncargoConfigAction(
@@ -234,7 +343,7 @@ export async function saveEventEncargoConfigAction(
   const parsed = saveEventEncargoSchema.safeParse(input)
   if (!parsed.success) return { success: false, message: 'Datos inválidos' }
 
-  const gate = await gateManager()
+  const gate = await gateStaffEncargo()
   if (!gate.ok) return { success: false, message: gate.message }
 
   const patch: Record<string, unknown> = {}
@@ -272,8 +381,8 @@ export async function saveEventEncargoConfigAction(
   if (!updated) return { success: false, message: 'Encargo no encontrado' }
 
   const slug = String((updated as { slug?: string }).slug ?? '')
-  revalidatePath('/dashboard/eventos')
-  if (slug) revalidatePath(`/eventos/${slug}`)
+  revalidateEncargoPaths(slug)
+  revalidatePath(`/staff/reservas/encargo/${parsed.data.eventId}`)
   return { success: true }
 }
 
@@ -351,6 +460,7 @@ export async function setEventOrderStatusAction(input: unknown): Promise<{ succe
   if (error) return { success: false, message: error.message }
   if (!updated) return { success: false, message: 'No se pudo actualizar (RLS o no existe)' }
 
+  revalidateEncargoPaths()
   return { success: true }
 }
 

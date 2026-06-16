@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import EventosAdminClient, { type AdminEventRow } from './EventosAdminClient'
 import { canManageEventos, canViewEventos } from './roles'
@@ -49,6 +50,9 @@ export default async function EventosAdminPage() {
   }
 
   const role = (profile as { role?: string } | null)?.role ?? null
+  if (role === 'staff' || role === 'supervisor') {
+    redirect('/staff/reservas')
+  }
   if (!canViewEventos(role)) {
     return (
       <DashboardDetailLayout title="Encargos" subtitle="Acceso restringido">

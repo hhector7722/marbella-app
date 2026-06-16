@@ -24,6 +24,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
+import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
@@ -105,6 +106,7 @@ export default function HistoryPage() {
     const [currentUserId, setCurrentUserId] = useState<string>('');
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+    const [selectedEmployeeLabel, setSelectedEmployeeLabel] = useState<string>('');
     const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
 
     const [filterYear, setFilterYear] = useState(new Date().getFullYear());
@@ -112,6 +114,12 @@ export default function HistoryPage() {
 
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
+    useModalUsageTracking({
+        open: showEmployeeDropdown,
+        usageId: 'staff-history-employee-filter',
+        usageLabel: 'Filtro empleado asistencia',
+    });
 
     useModalUsageTracking({
         open: showMonthPicker,
@@ -140,6 +148,7 @@ export default function HistoryPage() {
         if (profile) setUserRole(profile.role);
         if (profile?.role === 'manager') {
             setSelectedEmployeeId('');
+            setSelectedEmployeeLabel('');
         } else {
             setSelectedEmployeeId(user.id);
         }
@@ -162,8 +171,12 @@ export default function HistoryPage() {
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');
-        if (userRole === 'manager' && id && currentUserId) setSelectedEmployeeId(id);
-    }, [searchParams, userRole, currentUserId]);
+        if (userRole === 'manager' && id && currentUserId) {
+            setSelectedEmployeeId(id);
+            const emp = employees.find((e) => e.id === id);
+            if (emp) setSelectedEmployeeLabel(staffSelectionApplySummary(emp));
+        }
+    }, [searchParams, userRole, currentUserId, employees]);
 
     useEffect(() => {
         if (!currentUserId) return;
@@ -394,11 +407,16 @@ export default function HistoryPage() {
     const isManager = userRole === 'manager';
     const isPlantilla = isManager && selectedEmployeeId === '';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
-    const selectedEmployeeName = viewingOther
-        ? employees.find(e => e.id === selectedEmployeeId)?.first_name || ''
-        : '';
-
-    const headerLabel = isPlantilla ? 'Plantilla' : (employees.find(e => e.id === selectedEmployeeId)?.first_name || 'Plantilla');
+    const headerLabel = isPlantilla
+        ? 'Plantilla'
+        : selectedEmployeeLabel ||
+          staffSelectionApplySummary(
+              employees.find((e) => e.id === selectedEmployeeId) ?? {
+                  id: selectedEmployeeId,
+                  first_name: '',
+                  last_name: '',
+              }
+          );
 
     const summaryLogs = (() => {
         if (!summaryDate || !plantillaWeeksData.length) return [];
@@ -486,12 +504,22 @@ export default function HistoryPage() {
                                             viewingOther && !isPlantilla && "bg-white/20 border-white/30"
                                         )}
                                     >
-                                        <span className="max-w-[70px] truncate">{headerLabel}</span>
+                                        <span className="max-w-[120px] md:max-w-[160px] truncate">{headerLabel}</span>
                                         <ChevronDown size={10} className="ml-1.5 opacity-40 shrink-0" />
                                     </button>
                                     {!isPlantilla && selectedEmployeeId && (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(''); }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedEmployeeId('');
+                                                setSelectedEmployeeLabel('');
+                                                trackUsageModalApply(
+                                                    'staff-history-employee-filter',
+                                                    'Filtro empleado asistencia',
+                                                    pathname,
+                                                    'Plantilla (todos)'
+                                                );
+                                            }}
                                             className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
                                         >
                                             <X size={8} strokeWidth={4} />
@@ -592,9 +620,13 @@ export default function HistoryPage() {
                 isOpen={showEmployeeDropdown}
                 onClose={() => setShowEmployeeDropdown(false)}
                 employees={employees}
+                title="Empleado"
+                usageId="staff-history-employee-filter"
+                usageLabel="Filtro empleado asistencia"
                 allowPlantilla={isManager}
-                onSelect={(emp: { id: string; first_name: string; last_name: string }) => {
+                onSelect={(emp) => {
                     setSelectedEmployeeId(emp.id);
+                    setSelectedEmployeeLabel(staffSelectionApplySummary(emp));
                     setShowEmployeeDropdown(false);
                 }}
             />

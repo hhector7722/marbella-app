@@ -22,7 +22,7 @@ const STATIC_ROUTE_LABELS: Record<string, string> = {
   '/staff/history': 'Asistencia',
   '/staff/carta': 'Carta staff',
   '/staff/propinas': 'Mis propinas',
-  '/staff/reservas': 'Reservas',
+  '/staff/reservas': 'Reservas y encargos',
   '/staff/actividades': 'Actividades pabellón',
   '/recipes': 'Recetas',
   '/ingredients': 'Ingredientes',
@@ -66,6 +66,10 @@ export function deriveUsageLabel(
 
   if (/^\/dashboard\/eventos\/[^/]+/.test(pathname)) {
     return 'Pedidos evento';
+  }
+
+  if (/^\/staff\/reservas\/encargo\/[^/]+$/.test(pathname)) {
+    return 'Editor encargo staff';
   }
 
   if (/^\/recipes\/[^/]+$/.test(pathname)) {

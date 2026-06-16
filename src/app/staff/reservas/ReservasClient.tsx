@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import {
   addMonths,
@@ -22,10 +22,18 @@ import {
   CircleSlash2,
   Loader2,
   Phone,
+  Plus,
   X,
   XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
+
+import { createEncargoAction, setEventOrderStatusAction } from '@/app/dashboard/eventos/actions'
+import { canManageEventos } from '@/app/dashboard/eventos/roles'
+import {
+  CreateEncargoQuickModal,
+  DayAgendaModal,
+} from '@/components/reservas/DayAgendaModal'
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
@@ -33,6 +41,14 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { formatYmdShort, reservationApplySummary } from '@/lib/usage/modal-apply'
 import { createClient } from '@/utils/supabase/client'
+import type { EncargoOrderRow, EncargoRow } from '@/lib/reservas-encargos-calendar'
+import {
+  encargosForReservation,
+  groupEncargosByDate,
+  ordersForDay,
+  reservationIdsWithEncargo,
+  timeShortHm,
+} from '@/lib/reservas-encargos-calendar'
 
 type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'rejected'
 
@@ -147,6 +163,22 @@ function reservationDotClass(r: Reservation) {
   return 'bg-green-500'
 }
 
+function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
+  return (
+    <div className="flex flex-col min-w-0 w-full leading-none">
+      <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
+        <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#36606F]" aria-hidden />
+        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-[#36606F]">
+          {timeShortHm(e.event_time)}
+        </span>
+      </div>
+      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-[#36606F]">
+        {e.name}
+      </span>
+    </div>
+  )
+}
+
 function ReservationCalendarEntry({ r }: { r: Reservation }) {
   const isPast = isReservationPast(r)
   return (
@@ -197,14 +229,22 @@ function groupByDate(rows: Reservation[]): Record<string, Reservation[]> {
 
 function ReservationDetailModal({
   reservation,
+  linkedEncargos,
   actionBusy,
+  plusPedidoBusy,
   onClose,
   onAction,
+  onPlusPedido,
+  onOpenEncargo,
 }: {
   reservation: Reservation
+  linkedEncargos: EncargoRow[]
   actionBusy: ActionKind | null
+  plusPedidoBusy: boolean
   onClose: () => void
   onAction: (action: ActionKind) => void
+  onPlusPedido: () => void
+  onOpenEncargo: (encargoId: string) => void
 }) {
   const isBusy = Boolean(actionBusy)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -232,6 +272,19 @@ function ReservationDetailModal({
               {formatReservationDateLabel(reservation.reservation_date)}
             </h3>
           </div>
+          <button
+            type="button"
+            onClick={onPlusPedido}
+            disabled={plusPedidoBusy || isBusy}
+            className="shrink-0 min-h-12 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
+          >
+            {plusPedidoBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+            )}
+            Pedido
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -286,6 +339,24 @@ function ReservationDetailModal({
               <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Notas</div>
               <div className="mt-1 text-[12px] font-medium text-zinc-800 whitespace-pre-wrap">
                 {reservation.notes}
+              </div>
+            </div>
+          ) : null}
+
+          {linkedEncargos.length > 0 ? (
+            <div className="rounded-xl border border-[#36606F]/15 bg-[#36606F]/5 p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#36606F]">Encargos</div>
+              <div className="mt-2 flex flex-col gap-2">
+                {linkedEncargos.map((e) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={() => onOpenEncargo(e.id)}
+                    className="min-h-12 rounded-xl border border-[#36606F]/20 bg-white px-3 text-left text-[12px] font-bold text-zinc-800 hover:bg-zinc-50"
+                  >
+                    {timeShortHm(e.event_time)} · {e.name}
+                  </button>
+                ))}
               </div>
             </div>
           ) : null}
@@ -395,94 +466,32 @@ function ReservationDetailModal({
   )
 }
 
-function ReservationListModal({
-  dayYmd,
-  reservations,
-  onClose,
-  onSelect,
-}: {
-  dayYmd: string
-  reservations: Reservation[]
-  onClose: () => void
-  onSelect: (r: Reservation) => void
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-      role="presentation"
-    >
-      <div
-        className="bg-white rounded-[2rem] w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Reservas del día</p>
-            <h3 className="text-base font-black capitalize truncate">
-              {format(parseLocalSafe(dayYmd), 'EEEE d MMM', { locale: es })}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition"
-            aria-label="Cerrar"
-          >
-            <X size={20} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-          {reservations.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => onSelect(r)}
-              className={cn(
-                'min-h-12 w-full rounded-xl border border-zinc-100 bg-white px-4 py-3 text-left',
-                'shadow-sm hover:bg-zinc-50 active:scale-[0.99] transition flex items-center justify-between gap-3'
-              )}
-            >
-              <span className="text-[13px] font-black text-zinc-800 truncate">
-                {reservationLineWithName(r)}
-              </span>
-              <span
-                className={cn(
-                  'shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase',
-                  statusTone(r.status)
-                )}
-              >
-                {statusLabel(r.status)}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function ReservasClient() {
   const supabase = useMemo(() => createClient(), [])
+  const router = useRouter()
   const searchParams = useSearchParams()
   const deepLinkHandledRef = useRef<string | null>(null)
+  const [isPendingEncargo, startEncargoTransition] = useTransition()
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()))
   const [loading, setLoading] = useState(true)
   const [rpcError, setRpcError] = useState<string | null>(null)
   const [byDate, setByDate] = useState<Record<string, Reservation[]>>({})
+  const [encargosByDate, setEncargosByDate] = useState<Record<string, EncargoRow[]>>({})
+  const [allEncargos, setAllEncargos] = useState<EncargoRow[]>([])
+  const [ordersByEventId, setOrdersByEventId] = useState<Record<string, EncargoOrderRow[]>>({})
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   const [listModalDay, setListModalDay] = useState<string | null>(null)
+  const [createEncargoDay, setCreateEncargoDay] = useState<string | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [actionBusy, setActionBusy] = useState<Record<string, ActionKind | null>>({})
+  const [orderStatusBusyId, setOrderStatusBusyId] = useState<string | null>(null)
 
   useModalUsageTracking({
     open: listModalDay !== null,
-    usageId: 'reservas-day-list',
-    usageLabel: 'Reservas del día',
+    usageId: 'reservas-day-agenda',
+    usageLabel: 'Agenda del día',
   })
   useModalUsageTracking({
     open: selectedReservation !== null,
@@ -490,8 +499,16 @@ export default function ReservasClient() {
     usageLabel: 'Detalle de reserva',
   })
 
-  const trackReservasDayList = useTrackModalApply('reservas-day-list', 'Reservas del día')
+  const trackReservasDayList = useTrackModalApply('reservas-day-agenda', 'Agenda del día')
+  const trackReservasPlusPedido = useTrackModalApply('reservas-plus-pedido', 'Crear encargo')
   const trackReservasDetail = useTrackModalApply('reservas-detail', 'Detalle de reserva')
+
+  const linkedReservationIds = useMemo(
+    () => reservationIdsWithEncargo(allEncargos),
+    [allEncargos]
+  )
+
+  const canManageAdvanced = canManageEventos(userRole)
 
   const fetchSeqRef = useRef(0)
 
@@ -523,34 +540,83 @@ export default function ReservasClient() {
     return weeks
   }, [calendarDays])
 
-  const fetchMonthReservations = useCallback(async () => {
+  const fetchMonthData = useCallback(async () => {
     const seq = ++fetchSeqRef.current
     setRpcError(null)
 
     try {
-      const { data, error } = await supabase
-        .from('reservations')
-        .select(
-          'id, customer_name, customer_phone, reservation_date, reservation_time, pax, status, notes, created_at'
-        )
-        .gte('reservation_date', monthStart)
-        .lte('reservation_date', monthEnd)
-        .neq('status', 'cancelled')
-        .order('reservation_time', { ascending: true })
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle()
+        if (seq === fetchSeqRef.current) {
+          setUserRole((profile as { role?: string } | null)?.role ?? null)
+        }
+      }
 
-      if (error) throw error
+      const [resResult, evResult] = await Promise.all([
+        supabase
+          .from('reservations')
+          .select(
+            'id, customer_name, customer_phone, reservation_date, reservation_time, pax, status, notes, created_at'
+          )
+          .gte('reservation_date', monthStart)
+          .lte('reservation_date', monthEnd)
+          .neq('status', 'cancelled')
+          .order('reservation_time', { ascending: true }),
+        supabase
+          .from('events')
+          .select('id, slug, name, event_date, event_time, guest_count, reservation_id, is_active')
+          .gte('event_date', monthStart)
+          .lte('event_date', monthEnd)
+          .order('event_time', { ascending: true }),
+      ])
+
+      if (resResult.error) throw resResult.error
+      if (evResult.error) throw evResult.error
+
+      const encargos = (evResult.data ?? []) as EncargoRow[]
+      const eventIds = encargos.map((e) => e.id)
+
+      let ordersByEvent: Record<string, EncargoOrderRow[]> = {}
+      if (eventIds.length > 0) {
+        const { data: orders, error: ordersErr } = await supabase
+          .from('event_orders')
+          .select('id, event_id, responsible_name, items, status, created_at')
+          .in('event_id', eventIds)
+          .order('created_at', { ascending: false })
+
+        if (ordersErr) throw ordersErr
+
+        for (const row of (orders ?? []) as EncargoOrderRow[]) {
+          const eid = String(row.event_id)
+          if (!ordersByEvent[eid]) ordersByEvent[eid] = []
+          ordersByEvent[eid].push(row)
+        }
+      }
 
       if (seq === fetchSeqRef.current) {
-        setByDate(groupByDate((data ?? []) as Reservation[]))
+        setByDate(groupByDate((resResult.data ?? []) as Reservation[]))
+        setAllEncargos(encargos)
+        setEncargosByDate(groupEncargosByDate(encargos))
+        setOrdersByEventId(ordersByEvent)
       }
     } catch (e) {
       const msg =
         (e as { message?: string })?.message ||
         (e as { error_description?: string })?.error_description ||
         (e as { details?: string })?.details ||
-        'Error cargando reservas'
+        'Error cargando agenda'
       if (seq === fetchSeqRef.current) {
         setByDate({})
+        setAllEncargos([])
+        setEncargosByDate({})
+        setOrdersByEventId({})
         setRpcError(msg)
       }
       toast.error(msg)
@@ -617,12 +683,12 @@ export default function ReservasClient() {
         )
         setSelectedReservation(null)
         setListModalDay(null)
-        await fetchMonthReservations()
+        await fetchMonthData()
       } else if (action === 'reject') {
         toast.success('Reserva rechazada')
         setSelectedReservation(null)
         setListModalDay(null)
-        await fetchMonthReservations()
+        await fetchMonthData()
       } else {
         toast.success(data?.soft_deleted ? 'Reserva cancelada' : 'Reserva eliminada')
         removeReservationFromState(id)
@@ -643,8 +709,8 @@ export default function ReservasClient() {
 
   useEffect(() => {
     setLoading(true)
-    void fetchMonthReservations()
-  }, [fetchMonthReservations])
+    void fetchMonthData()
+  }, [fetchMonthData])
 
   useEffect(() => {
     const targetId = searchParams.get('id')?.trim()
@@ -699,7 +765,7 @@ export default function ReservasClient() {
     function handleReservationChange(payload: { new?: { reservation_date?: string } }) {
       const rowDate = payload?.new?.reservation_date
       if (shouldRefetch(rowDate)) {
-        void fetchMonthReservations()
+        void fetchMonthData()
       }
     }
 
@@ -731,7 +797,7 @@ export default function ReservasClient() {
           if (deletedId) removeReservationFromState(deletedId)
           const rowDate = payload?.old?.reservation_date
           if (shouldRefetch(rowDate)) {
-            void fetchMonthReservations()
+            void fetchMonthData()
           }
         }
       )
@@ -740,23 +806,96 @@ export default function ReservasClient() {
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [supabase, monthStart, monthEnd, fetchMonthReservations, removeReservationFromState])
+  }, [supabase, monthStart, monthEnd, fetchMonthData, removeReservationFromState])
+
+  const openEncargoEditor = useCallback(
+    (eventId: string) => {
+      router.push(`/staff/reservas/encargo/${eventId}`)
+    },
+    [router]
+  )
+
+  const submitCreateEncargo = useCallback(
+    (
+      dayYmd: string,
+      data: { contact_name: string; event_time: string; guest_count: number },
+      reservationId?: string | null
+    ) => {
+      startEncargoTransition(async () => {
+        const res = await createEncargoAction({
+          contact_name: data.contact_name,
+          event_date: dayYmd,
+          event_time: data.event_time,
+          guest_count: data.guest_count,
+          reservation_id: reservationId ?? null,
+        })
+        if (!res.success) {
+          toast.error(res.message)
+          return
+        }
+        trackReservasPlusPedido(data.contact_name)
+        setCreateEncargoDay(null)
+        setListModalDay(null)
+        setSelectedReservation(null)
+        toast.success('Encargo creado')
+        openEncargoEditor(res.eventId)
+      })
+    },
+    [openEncargoEditor, trackReservasPlusPedido]
+  )
+
+  const startEncargoFromReservation = useCallback(
+    (reservation: Reservation) => {
+      submitCreateEncargo(
+        reservation.reservation_date.slice(0, 10),
+        {
+          contact_name: reservation.customer_name,
+          event_time: timeShort(reservation.reservation_time),
+          guest_count: Math.max(1, reservation.pax || 1),
+        },
+        reservation.id
+      )
+    },
+    [submitCreateEncargo]
+  )
+
+  const handleOrderStatusChange = useCallback(
+    async (orderId: string, status: EncargoOrderRow['status']) => {
+      setOrderStatusBusyId(orderId)
+      try {
+        const res = await setEventOrderStatusAction({ orderId, status })
+        if (!res.success) {
+          toast.error(res.message)
+          return
+        }
+        setOrdersByEventId((prev) => {
+          const next: Record<string, EncargoOrderRow[]> = {}
+          for (const [eventId, list] of Object.entries(prev)) {
+            next[eventId] = list.map((o) => (o.id === orderId ? { ...o, status } : o))
+          }
+          return next
+        })
+        toast.success('Estado del pedido actualizado')
+      } catch (e) {
+        toast.error((e as Error)?.message ?? 'Error actualizando pedido')
+      } finally {
+        setOrderStatusBusyId(null)
+      }
+    },
+    []
+  )
 
   const handleDayClick = (day: Date) => {
     const key = format(day, 'yyyy-MM-dd')
-    const dayReservations = byDate[key] ?? []
-    if (dayReservations.length === 0) return
-    if (dayReservations.length === 1) {
-      const reservation = dayReservations[0]
-      trackReservasDetail(reservationApplySummary(reservation), { reservationId: reservation.id })
-      setSelectedReservation(reservation)
-      return
-    }
-    trackReservasDayList(`${formatYmdShort(key)} (${dayReservations.length} reservas)`, { day: key })
+    trackReservasDayList(formatYmdShort(key), { day: key })
     setListModalDay(key)
   }
 
   const listModalReservations = listModalDay ? (byDate[listModalDay] ?? []) : []
+  const listModalEncargos = listModalDay ? (encargosByDate[listModalDay] ?? []) : []
+  const listModalOrders = listModalDay
+    ? ordersForDay(listModalDay, encargosByDate, ordersByEventId)
+    : []
 
   const handlePrevMonth = () => setViewMonth((vm) => subMonths(vm, 1))
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
@@ -767,7 +906,7 @@ export default function ReservasClient() {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
           <div className="bg-[#36606F] rounded-t-2xl px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
             <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
-              Reservas
+              Reservas y encargos
             </h1>
             <a
               href="https://marbella-web.vercel.app/reservas-interno"
@@ -832,12 +971,21 @@ export default function ReservasClient() {
                       <div key={weekIdx} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
                         {week.map((day) => {
                         const key = format(day, 'yyyy-MM-dd')
-                        const dayReservations = byDate[key] ?? []
                         const isViewMonthDay = isSameMonth(day, viewMonth)
-                        const hasReservations = dayReservations.length > 0
+                        const cellReservations = (byDate[key] ?? []).filter(
+                          (r) => !linkedReservationIds.has(r.id)
+                        )
+                        const cellEncargos = (encargosByDate[key] ?? []).filter((e) => !e.reservation_id)
                         const maxEntries = 2
-                        const visible = dayReservations.slice(0, maxEntries)
-                        const hiddenCount = dayReservations.length - visible.length
+                        const visibleRes = cellReservations.slice(0, maxEntries)
+                        const remainingSlots = Math.max(0, maxEntries - visibleRes.length)
+                        const visibleEnc = cellEncargos.slice(0, remainingSlots)
+                        const hiddenCount =
+                          cellReservations.length -
+                          visibleRes.length +
+                          (cellEncargos.length - visibleEnc.length)
+                        const hasCalendarEntries =
+                          cellReservations.length > 0 || cellEncargos.length > 0
                         const today = isToday(day)
 
                         return (
@@ -845,15 +993,13 @@ export default function ReservasClient() {
                             key={key}
                             type="button"
                             onClick={() => isViewMonthDay && handleDayClick(day)}
-                            disabled={!isViewMonthDay || !hasReservations}
+                            disabled={!isViewMonthDay}
                             className={cn(
                               'group relative flex flex-col text-left min-h-[64px] md:min-h-[108px] transition-colors p-1',
                               'border-r border-gray-100 last:border-r-0 bg-white',
                               !isViewMonthDay && 'opacity-25 pointer-events-none',
                               isViewMonthDay &&
-                                hasReservations &&
-                                'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
-                              isViewMonthDay && !hasReservations && 'cursor-default'
+                                'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer'
                             )}
                           >
                             <span
@@ -866,15 +1012,16 @@ export default function ReservasClient() {
                               {format(day, 'd')}
                             </span>
                             <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px] gap-0.5 overflow-hidden">
-                              {isViewMonthDay && hasReservations ? (
+                              {isViewMonthDay && hasCalendarEntries ? (
                                 <>
-                                  {visible.map((r) => (
+                                  {visibleRes.map((r) => (
                                     <ReservationCalendarEntry key={r.id} r={r} />
                                   ))}
+                                  {visibleEnc.map((e) => (
+                                    <EncargoCalendarEntry key={e.id} e={e} />
+                                  ))}
                                   {hiddenCount > 0 ? (
-                                    <span className="text-[8px] text-gray-400">
-                                      +{hiddenCount} más
-                                    </span>
+                                    <span className="text-[8px] text-gray-400">+{hiddenCount} más</span>
                                   ) : null}
                                 </>
                               ) : null}
@@ -893,15 +1040,40 @@ export default function ReservasClient() {
       {typeof document !== 'undefined' &&
         listModalDay &&
         createPortal(
-          <ReservationListModal
+          <DayAgendaModal
             dayYmd={listModalDay}
             reservations={listModalReservations}
+            encargos={listModalEncargos}
+            orders={listModalOrders}
+            canManageAdvanced={canManageAdvanced}
+            canManageOrders={canManageAdvanced}
+            orderStatusBusyId={orderStatusBusyId}
+            plusPedidoBusy={isPendingEncargo}
             onClose={() => setListModalDay(null)}
-            onSelect={(r) => {
-              trackReservasDetail(reservationApplySummary(r), { reservationId: r.id })
-              setListModalDay(null)
-              setSelectedReservation(r)
+            onSelectReservation={(r) => {
+              const full = listModalReservations.find((x) => x.id === r.id)
+              if (!full) return
+              trackReservasDetail(reservationApplySummary(full), { reservationId: full.id })
+              setSelectedReservation(full)
             }}
+            onOpenEncargo={openEncargoEditor}
+            onPlusPedido={() => {
+              trackReservasPlusPedido(formatYmdShort(listModalDay), { day: listModalDay })
+              setCreateEncargoDay(listModalDay)
+            }}
+            onOrderStatusChange={(orderId, status) => void handleOrderStatusChange(orderId, status)}
+          />,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        createEncargoDay &&
+        createPortal(
+          <CreateEncargoQuickModal
+            dayYmd={createEncargoDay}
+            busy={isPendingEncargo}
+            onClose={() => setCreateEncargoDay(null)}
+            onSubmit={(data) => submitCreateEncargo(createEncargoDay, data, null)}
           />,
           document.body
         )}
@@ -911,9 +1083,13 @@ export default function ReservasClient() {
         createPortal(
           <ReservationDetailModal
             reservation={selectedReservation}
+            linkedEncargos={encargosForReservation(selectedReservation.id, allEncargos)}
             actionBusy={actionBusy[selectedReservation.id] ?? null}
+            plusPedidoBusy={isPendingEncargo}
             onClose={() => setSelectedReservation(null)}
             onAction={(action) => void mutateReservation(selectedReservation, action)}
+            onPlusPedido={() => startEncargoFromReservation(selectedReservation)}
+            onOpenEncargo={openEncargoEditor}
           />,
           document.body
         )}

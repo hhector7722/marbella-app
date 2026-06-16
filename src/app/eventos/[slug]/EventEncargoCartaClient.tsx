@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, Loader2, X } from 'lucide-react'
+import { CheckCircle2, Copy, Loader2, X } from 'lucide-react'
 import {
   EventEncargoCartFooter,
   type EventEncargoCartLine,
@@ -25,7 +26,7 @@ import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
-import { saveEventEncargoConfigAction } from '@/app/dashboard/eventos/actions'
+import { saveEventEncargoConfigAction, createStaffEventOrderAction } from '@/app/dashboard/eventos/actions'
 import { submitEventOrderAction } from './actions'
 
 export type EncargoCartaEvent = {
@@ -71,6 +72,7 @@ export default function EventEncargoCartaClient({
   initialCategoryLimits,
   canManage = false,
   backHref = null,
+  variant = 'public',
 }: {
   event: EncargoCartaEvent
   allMenuItems: PublicMenuRow[]
@@ -83,7 +85,10 @@ export default function EventEncargoCartaClient({
   initialCategoryLimits: EventCategoryLimits
   canManage?: boolean
   backHref?: string | null
+  variant?: 'public' | 'staff'
 }) {
+  const router = useRouter()
+  const isStaff = variant === 'staff'
   const allProductIds = useMemo(() => productIdsFromMenuItems(allMenuItems), [allMenuItems])
 
   const [editMode, setEditMode] = useState(false)
@@ -119,6 +124,7 @@ export default function EventEncargoCartaClient({
 
   const trackEncargoConfigSave = useTrackModalApply('event-encargo-config-save', 'Guardar configuración encargo')
   const trackEncargoOrderSave = useTrackModalApply('event-encargo-save', 'Confirmar encargo')
+  const trackStaffInternalOrder = useTrackModalApply('staff-encargo-internal-order', 'Guardar pedido interno')
 
   const enabledIdsForClient = useMemo(
     () => normalizeEnabledProductIdsForSave(enabledSet, allProductIds),
@@ -292,8 +298,61 @@ export default function EventEncargoCartaClient({
   const openSaveModal = useCallback(() => {
     const warnings = validateEventOrderLimits(qtyById, clientMenuItems, categoryLimits, enabledIdsForClient)
     setLimitWarnings(warnings)
+    if (isStaff) {
+      startTransition(async () => {
+        if (warnings.length > 0) {
+          toast.error('Revisa los límites del pedido antes de guardar.')
+          return
+        }
+        const items = Object.entries(qtyById)
+          .map(([product_id, quantity]) => ({ product_id, quantity }))
+          .filter((it) => Number(it.quantity) > 0)
+        if (items.length === 0) {
+          toast.error('Añade al menos un producto.')
+          return
+        }
+        const res = await createStaffEventOrderAction({
+          eventId: event.id,
+          items,
+          responsible_name: event.name,
+        })
+        if (!res.success) {
+          toast.error(res.message)
+          return
+        }
+        trackStaffInternalOrder(`${event.name} · ${items.length} productos`)
+        toast.success('Pedido guardado')
+        router.push(backHref ?? '/staff/reservas')
+      })
+      return
+    }
     setSaveModalOpen(true)
-  }, [qtyById, clientMenuItems, categoryLimits, enabledIdsForClient])
+  }, [
+    qtyById,
+    clientMenuItems,
+    categoryLimits,
+    enabledIdsForClient,
+    isStaff,
+    event.id,
+    event.name,
+    router,
+    backHref,
+    trackStaffInternalOrder,
+    startTransition,
+  ])
+
+  const copyPublicLink = useCallback(async () => {
+    const url =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/eventos/${event.slug}`
+        : `/eventos/${event.slug}`
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('Enlace copiado')
+    } catch {
+      toast.error('No se pudo copiar el enlace')
+    }
+  }, [event.slug])
 
   if (orderDone) {
     return (
@@ -302,7 +361,9 @@ export default function EventEncargoCartaClient({
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" strokeWidth={2.25} />
             <p className="mt-3 text-lg font-black text-zinc-900">Pedido enviado</p>
-            <p className="mt-2 text-sm font-bold text-zinc-700">Gracias, {responsibleName}.</p>
+            <p className="mt-2 text-sm font-bold text-zinc-700">
+              {isStaff ? 'Pedido registrado correctamente.' : `Gracias, ${responsibleName}.`}
+            </p>
           </div>
         </div>
       </main>
@@ -343,14 +404,29 @@ export default function EventEncargoCartaClient({
       </button>
     </div>
   ) : (
-    <EventEncargoCartFooter
-      lines={cartLines}
-      totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
-      onIncrement={addOneToCart}
-      onDecrement={removeOneFromCart}
-      onSave={openSaveModal}
-      isPending={isPending}
-    />
+    <div className="space-y-2 px-0 py-3">
+      {isStaff ? (
+        <button
+          type="button"
+          className={cn(btnBase, 'w-full bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+          onClick={() => void copyPublicLink()}
+        >
+          <span className="inline-flex items-center justify-center gap-2">
+            <Copy className="h-4 w-4" strokeWidth={2.5} />
+            Copiar enlace
+          </span>
+        </button>
+      ) : null}
+      <EventEncargoCartFooter
+        lines={cartLines}
+        totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
+        onIncrement={addOneToCart}
+        onDecrement={removeOneFromCart}
+        onSave={openSaveModal}
+        isPending={isPending}
+        saveLabel={isStaff ? 'Guardar pedido' : 'Guardar'}
+      />
+    </div>
   )
 
   return (

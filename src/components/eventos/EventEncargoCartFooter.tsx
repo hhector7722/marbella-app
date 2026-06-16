@@ -19,6 +19,7 @@ export function EventEncargoCartFooter({
   onSave,
   saveDisabled = false,
   isPending = false,
+  saveLabel = 'Guardar',
 }: {
   lines: EventEncargoCartLine[]
   totalLabel?: string
@@ -28,6 +29,7 @@ export function EventEncargoCartFooter({
   onSave: () => void
   saveDisabled?: boolean
   isPending?: boolean
+  saveLabel?: string
 }) {
   return (
     <div className="shrink-0 border-t border-zinc-200 bg-white px-4 py-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] pb-safe md:px-5">
@@ -99,7 +101,7 @@ export function EventEncargoCartFooter({
         disabled={saveDisabled || lines.length <= 0 || isPending}
         onClick={onSave}
       >
-        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Guardar'}
+        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : saveLabel}
       </button>
     </div>
   )

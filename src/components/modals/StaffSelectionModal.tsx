@@ -23,6 +23,10 @@ interface StaffSelectionModalProps {
     onSelect: (employee: Employee) => void;
     employees: Employee[];
     title?: string;
+    /** Identificador de uso para tracking (por pantalla). */
+    usageId?: string;
+    /** Etiqueta legible del modal en tracking de uso. */
+    usageLabel?: string;
     /** 'grid' = cuadrícula compacta (registros, historial). 'profile-list' = lista tipo ficha perfil (Plantilla → /profile) */
     variant?: 'grid' | 'profile-list';
     children?: React.ReactNode;
@@ -46,6 +50,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     onSelect,
     employees,
     title = "Plantilla",
+    usageId = 'staff-selection',
+    usageLabel = 'Selección de plantilla',
     variant = 'grid',
     children,
     onOpenTips,
@@ -58,8 +64,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
     const handleSelect = (employee: Employee) => {
         trackUsageModalApply(
-            'staff-selection',
-            'Selección de plantilla',
+            usageId,
+            usageLabel,
             pathname,
             staffSelectionApplySummary(employee),
             employee.id ? { selectedUserId: employee.id } : { selectedUserId: null }
@@ -104,8 +110,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             onClose={onClose}
             title={title}
             headerVariant="petroleum"
-            usageId="staff-selection"
-            usageLabel="Selección de plantilla"
+            usageId={usageId}
+            usageLabel={usageLabel}
             wrapperClassName={variant === 'profile-list' ? 'max-w-xl' : 'max-w-md'}
             className="rounded-[2rem]"
             scrollContent={false}

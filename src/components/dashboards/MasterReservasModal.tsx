@@ -21,13 +21,13 @@ export default function MasterReservasModal({ isOpen, onClose }: MasterReservasM
         <Modal
             open={isOpen}
             onClose={onClose}
-            title="Reservas"
+            title="Reservas y encargos"
             headerVariant="petroleum"
             className="max-h-[85vh]"
             wrapperClassName="max-w-md"
             zIndexClass="z-[200]"
             usageId="master-reservas"
-            usageLabel="Reservas master"
+            usageLabel="Reservas y encargos master"
         >
             <div className="p-4 space-y-3 bg-white overflow-y-auto">
                 <button
@@ -38,30 +38,13 @@ export default function MasterReservasModal({ isOpen, onClose }: MasterReservasM
                     <div className="w-12 h-12 shrink-0 flex items-center justify-center">
                         <Image
                             src="/icons/reservas.png"
-                            alt="Reservas"
+                            alt="Reservas y encargos"
                             width={48}
                             height={48}
                             className="object-contain transition-transform group-hover:scale-110"
                         />
                     </div>
-                    <p className="min-w-0 flex-1 text-left text-sm font-black text-gray-800">Reservas</p>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => go('/dashboard/eventos')}
-                    className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 hover:bg-zinc-50 transition-all group active:scale-95 min-h-[56px]"
-                >
-                    <div className="w-12 h-12 shrink-0 flex items-center justify-center">
-                        <Image
-                            src="/icons/suppliers.png"
-                            alt="Encargos"
-                            width={48}
-                            height={48}
-                            className="object-contain transition-transform group-hover:scale-110"
-                        />
-                    </div>
-                    <p className="min-w-0 flex-1 text-left text-sm font-black text-gray-800">Encargos</p>
+                    <p className="min-w-0 flex-1 text-left text-sm font-black text-gray-800">Reservas y encargos</p>
                 </button>
             </div>
         </Modal>

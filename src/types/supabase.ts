@@ -120,6 +120,53 @@ export type Database = {
         }
         Relationships: []
       }
+      app_usage_events: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          event_type: Database["public"]["Enums"]["app_usage_event_type"]
+          id: string
+          label: string | null
+          metadata: Json
+          path: string | null
+          profile_id: string
+          referrer_path: string | null
+          search: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          event_type: Database["public"]["Enums"]["app_usage_event_type"]
+          id?: string
+          label?: string | null
+          metadata?: Json
+          path?: string | null
+          profile_id: string
+          referrer_path?: string | null
+          search?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          event_type?: Database["public"]["Enums"]["app_usage_event_type"]
+          id?: string
+          label?: string | null
+          metadata?: Json
+          path?: string | null
+          profile_id?: string
+          referrer_path?: string | null
+          search?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_usage_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bdp_articulos: {
         Row: {
           coste: number | null
@@ -215,6 +262,29 @@ export type Database = {
           nombre?: string
         }
         Relationships: []
+      }
+      carta_editors: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carta_editors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       carta_ui_labels: {
         Row: {
@@ -852,6 +922,7 @@ export type Database = {
           is_active: boolean
           name: string
           pack_items: Json | null
+          reservation_id: string | null
           slug: string
           updated_at: string
         }
@@ -868,6 +939,7 @@ export type Database = {
           is_active?: boolean
           name: string
           pack_items?: Json | null
+          reservation_id?: string | null
           slug: string
           updated_at?: string
         }
@@ -884,10 +956,19 @@ export type Database = {
           is_active?: boolean
           name?: string
           pack_items?: Json | null
+          reservation_id?: string | null
           slug?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fixed_monthly_costs: {
         Row: {
@@ -1528,6 +1609,50 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pavilion_activity_sheets: {
+        Row: {
+          activity_date: string
+          created_at: string
+          file_path: string
+          gmail_message_id: string | null
+          id: string
+          original_filename: string | null
+          source: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          activity_date: string
+          created_at?: string
+          file_path: string
+          gmail_message_id?: string | null
+          id?: string
+          original_filename?: string | null
+          source?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          file_path?: string
+          gmail_message_id?: string | null
+          id?: string
+          original_filename?: string | null
+          source?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pavilion_activity_sheets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2297,6 +2422,74 @@ export type Database = {
             foreignKeyName: "staff_consumption_recipe_display_order_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: true
+            referencedRelation: "v_public_menu_items"
+            referencedColumns: ["recipe_id"]
+          },
+        ]
+      }
+      staff_consumption_register_errors: {
+        Row: {
+          created_at: string
+          employee_id: string
+          error_message: string
+          id: string
+          is_drink: boolean
+          is_half: boolean
+          quantity: number
+          recipe_id: string
+          recipe_name: string
+          reference_doc: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          error_message: string
+          id?: string
+          is_drink?: boolean
+          is_half?: boolean
+          quantity?: number
+          recipe_id: string
+          recipe_name: string
+          reference_doc: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          error_message?: string
+          id?: string
+          is_drink?: boolean
+          is_half?: boolean
+          quantity?: number
+          recipe_id?: string
+          recipe_name?: string
+          reference_doc?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_consumption_register_errors_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_consumption_register_errors_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_consumption_register_errors_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "v_digital_menu_items"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "staff_consumption_register_errors_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
             referencedRelation: "v_public_menu_items"
             referencedColumns: ["recipe_id"]
           },
@@ -3202,6 +3395,8 @@ export type Database = {
         Returns: Json
       }
       calcular_cierre_dia: { Args: { fecha_objetivo: string }; Returns: Json }
+      can_manage_carta: { Args: never; Returns: boolean }
+      can_manage_encargos: { Args: never; Returns: boolean }
       cerrar_caja: { Args: { p_usuario_id: string }; Returns: Json }
       check_purchase_invoice_duplicate: {
         Args: {
@@ -3269,6 +3464,15 @@ export type Database = {
           p_notes?: string
           p_responsible_name: string
           p_slug: string
+        }
+        Returns: Json
+      }
+      create_staff_event_order: {
+        Args: {
+          p_event_id: string
+          p_items: Json
+          p_notes?: string
+          p_responsible_name?: string
         }
         Returns: Json
       }
@@ -3534,7 +3738,6 @@ export type Database = {
         Returns: Json
       }
       get_closing_sales_breakdown: { Args: { p_date: string }; Returns: Json }
-      get_period_card_payments: { Args: { p_end: string; p_start: string }; Returns: number }
       get_consumption_modal_recipes: {
         Args: never
         Returns: {
@@ -3608,6 +3811,10 @@ export type Database = {
           theoretical_balance: number
         }[]
       }
+      get_period_card_payments: {
+        Args: { p_end: string; p_start: string }
+        Returns: number
+      }
       get_product_margin_ranking: {
         Args: { p_date_from?: string; p_date_to?: string; p_limit?: number }
         Returns: {
@@ -3640,6 +3847,18 @@ export type Database = {
       get_staff_consumption_summary: {
         Args: { p_end_date: string; p_start_date: string; p_user_id?: string }
         Returns: Json
+      }
+      get_team_client_install_status: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          has_push: boolean
+          last_display_mode: string
+          last_display_mode_at: string
+          role: string
+          user_id: string
+        }[]
       }
       get_theoretical_balance: {
         Args: { target_date: string }
@@ -3678,18 +3897,6 @@ export type Database = {
           mesa: number
           numero_documento: string
           total_documento: number
-        }[]
-      }
-      get_team_client_install_status: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          email: string
-          full_name: string
-          has_push: boolean
-          last_display_mode: string
-          last_display_mode_at: string
-          role: string
-          user_id: string
         }[]
       }
       get_tip_pool_preview: {
@@ -3743,6 +3950,10 @@ export type Database = {
         Returns: Json
       }
       get_working_date: { Args: { ts: string }; Returns: string }
+      ingredient_prices_are_equal: {
+        Args: { a: number; b: number }
+        Returns: boolean
+      }
       invoice_line_price_to_purchase_unit: {
         Args: {
           p_fallback_factor: number
@@ -3753,9 +3964,14 @@ export type Database = {
         }
         Returns: number
       }
+      is_drink_consumption_recipe: {
+        Args: { p_category: string; p_name: string }
+        Returns: boolean
+      }
       is_hector_consumption_order_editor: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
       is_manager_or_admin: { Args: never; Returns: boolean }
+      is_usage_analyst: { Args: { p_user_id?: string }; Returns: boolean }
       kds_ingest_event: {
         Args: {
           p_articulo_id: number
@@ -3795,6 +4011,16 @@ export type Database = {
       }
       normalize_kds_name: { Args: { p: string }; Returns: string }
       normalize_pricing_unit: { Args: { p_unit: string }; Returns: string }
+      pack_price_for_target_current: {
+        Args: {
+          p_pack_unit_size_qty: number
+          p_pack_unit_size_unit: string
+          p_pack_units: number
+          p_purchase_unit: string
+          p_target_current: number
+        }
+        Returns: number
+      }
       process_cash_exchange: {
         Args: {
           p_dest_box_id: string
@@ -3808,7 +4034,7 @@ export type Database = {
       }
       process_staff_consumption: {
         Args: { p_employee_id: string; p_items: Json }
-        Returns: undefined
+        Returns: Json
       }
       process_ticket_stock_deduction: {
         Args: { p_numero_documento: string }
@@ -3956,9 +4182,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      validate_staff_consumption: {
+        Args: { p_items: Json }
+        Returns: {
+          error_message: string
+          recipe_id: string
+          recipe_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "staff"
+      app_usage_event_type: "login" | "session" | "page_view" | "action"
       kds_item_status: "pendiente" | "terminado" | "cancelado"
       kds_order_status: "activa" | "completada"
     }
@@ -4089,6 +4324,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "staff"],
+      app_usage_event_type: ["login", "session", "page_view", "action"],
       kds_item_status: ["pendiente", "terminado", "cancelado"],
       kds_order_status: ["activa", "completada"],
     },
