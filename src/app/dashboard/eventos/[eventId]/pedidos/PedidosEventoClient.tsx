@@ -19,6 +19,7 @@ export type EventOrderItem = {
   name: string
   quantity: number
   unit_price: number
+  notes?: string | null
 }
 
 export type EventOrderRow = {

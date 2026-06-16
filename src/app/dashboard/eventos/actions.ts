@@ -177,6 +177,7 @@ const createEncargoSchema = z.object({
 const staffOrderItemSchema = z.object({
   product_id: z.string().trim().min(1),
   quantity: z.coerce.number().int().min(1).max(999),
+  notes: z.string().trim().max(400).optional().nullable(),
 })
 
 const createStaffEventOrderSchema = z.object({
@@ -184,6 +185,11 @@ const createStaffEventOrderSchema = z.object({
   items: z.array(staffOrderItemSchema).min(1).max(200),
   notes: z.string().trim().max(400).optional().nullable(),
   responsible_name: z.string().trim().min(2).max(80).optional().nullable(),
+})
+
+const updateStaffEventOrderSchema = z.object({
+  orderId: z.string().uuid(),
+  items: z.array(staffOrderItemSchema).min(1).max(200),
 })
 
 const categoryLimitsSchema = z.object({
@@ -299,7 +305,11 @@ export async function createStaffEventOrderAction(input: unknown): Promise<
 
   const { data, error } = await gate.supabase.rpc('create_staff_event_order', {
     p_event_id: parsed.data.eventId,
-    p_items: parsed.data.items,
+    p_items: parsed.data.items.map((it) => ({
+      product_id: it.product_id,
+      quantity: it.quantity,
+      notes: it.notes ?? null,
+    })),
     p_notes: parsed.data.notes ?? null,
     p_responsible_name: parsed.data.responsible_name ?? null,
   })
@@ -330,11 +340,112 @@ export async function createStaffEventOrderAction(input: unknown): Promise<
     order: {
       id: String(payload.id),
       responsible_name: String(payload.responsible_name ?? 'Personal'),
-      items: Array.isArray(payload.items) ? (payload.items as Array<{ product_id: string; name: string; quantity: number; unit_price: number }>) : [],
+      items: Array.isArray(payload.items)
+        ? (payload.items as Array<{
+            product_id: string
+            name: string
+            quantity: number
+            unit_price: number
+            notes?: string | null
+          }>)
+        : [],
       total_amount: Number(payload.total_amount) || 0,
       status: String(payload.status ?? 'confirmed'),
     },
   }
+}
+
+export async function updateStaffEventOrderAction(input: unknown): Promise<
+  | {
+      success: true
+      order: {
+        id: string
+        items: Array<{
+          product_id: string
+          name: string
+          quantity: number
+          unit_price: number
+          notes?: string | null
+        }>
+        total_amount: number
+      }
+    }
+  | { success: false; message: string }
+> {
+  const parsed = updateStaffEventOrderSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateStaffEncargo()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.rpc('update_staff_event_order', {
+    p_order_id: parsed.data.orderId,
+    p_items: parsed.data.items.map((it) => ({
+      product_id: it.product_id,
+      quantity: it.quantity,
+      notes: it.notes ?? null,
+    })),
+  })
+
+  if (error) {
+    const msg = String(error.message ?? '')
+    if (/sin_permiso|no_autenticado/i.test(msg)) return { success: false, message: 'Sin permiso' }
+    if (/producto_no_disponible|producto_no_permitido/i.test(msg)) {
+      return { success: false, message: 'Hay productos no disponibles para este encargo.' }
+    }
+    return { success: false, message: msg || 'Error actualizando el pedido' }
+  }
+
+  const payload = data as {
+    ok?: boolean
+    error?: string
+    id?: string
+    event_id?: string
+    items?: unknown[]
+    total_amount?: number
+  }
+  if (!payload?.ok) {
+    if (payload?.error === 'not_found') return { success: false, message: 'Pedido no encontrado.' }
+    return { success: false, message: 'No se pudo actualizar el pedido.' }
+  }
+
+  revalidateEncargoPaths()
+  if (payload.event_id) {
+    revalidatePath(`/staff/reservas/encargo/${payload.event_id}`)
+  }
+
+  return {
+    success: true,
+    order: {
+      id: String(payload.id),
+      items: Array.isArray(payload.items)
+        ? (payload.items as Array<{
+            product_id: string
+            name: string
+            quantity: number
+            unit_price: number
+            notes?: string | null
+          }>)
+        : [],
+      total_amount: Number(payload.total_amount) || 0,
+    },
+  }
+}
+
+export async function deleteEncargoStaffAction(input: unknown): Promise<
+  { success: true } | { success: false; message: string }
+> {
+  const parsed = deleteEventSchema.safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateStaffEncargo()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { error } = await gate.supabase.from('events').delete().eq('id', parsed.data.eventId)
+  if (error) return { success: false, message: error.message }
+
+  revalidateEncargoPaths()
+  return { success: true }
 }
 
 export async function saveEventEncargoConfigAction(

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import {
   addMonths,
@@ -28,12 +28,13 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { createEncargoAction, setEventOrderStatusAction } from '@/app/dashboard/eventos/actions'
-import { canManageEventos } from '@/app/dashboard/eventos/roles'
+import { createEncargoAction } from '@/app/dashboard/eventos/actions'
 import {
   CreateEncargoQuickModal,
   DayAgendaModal,
 } from '@/components/reservas/DayAgendaModal'
+import { EncargoOrderViewModal } from '@/components/reservas/EncargoOrderViewModal'
+import { EncargoProductEditor } from '@/components/reservas/EncargoProductEditor'
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
@@ -45,9 +46,13 @@ import type { EncargoOrderRow, EncargoRow } from '@/lib/reservas-encargos-calend
 import {
   encargosForReservation,
   groupEncargosByDate,
-  ordersForDay,
   timeShortHm,
 } from '@/lib/reservas-encargos-calendar'
+import {
+  orderItemsToStaffLines,
+  parseOrderItems,
+  primaryOrderForEncargo,
+} from '@/lib/encargo-staff-helpers'
 
 type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'rejected'
 
@@ -467,7 +472,6 @@ function ReservationDetailModal({
 
 export default function ReservasClient() {
   const supabase = useMemo(() => createClient(), [])
-  const router = useRouter()
   const searchParams = useSearchParams()
   const deepLinkHandledRef = useRef<string | null>(null)
   const [isPendingEncargo, startEncargoTransition] = useTransition()
@@ -483,9 +487,10 @@ export default function ReservasClient() {
 
   const [listModalDay, setListModalDay] = useState<string | null>(null)
   const [createEncargoDay, setCreateEncargoDay] = useState<string | null>(null)
+  const [viewEncargoId, setViewEncargoId] = useState<string | null>(null)
+  const [editEncargoId, setEditEncargoId] = useState<string | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [actionBusy, setActionBusy] = useState<Record<string, ActionKind | null>>({})
-  const [orderStatusBusyId, setOrderStatusBusyId] = useState<string | null>(null)
 
   useModalUsageTracking({
     open: listModalDay !== null,
@@ -501,8 +506,6 @@ export default function ReservasClient() {
   const trackReservasDayList = useTrackModalApply('reservas-day-agenda', 'Agenda del día')
   const trackReservasPlusPedido = useTrackModalApply('reservas-plus-pedido', 'Crear encargo')
   const trackReservasDetail = useTrackModalApply('reservas-detail', 'Detalle de reserva')
-
-  const canManageOrders = canManageEventos(userRole)
 
   const fetchSeqRef = useRef(0)
 
@@ -802,12 +805,20 @@ export default function ReservasClient() {
     }
   }, [supabase, monthStart, monthEnd, fetchMonthData, removeReservationFromState])
 
-  const openEncargoEditor = useCallback(
-    (eventId: string) => {
-      router.push(`/staff/reservas/encargo/${eventId}`)
-    },
-    [router]
-  )
+  const openViewEncargo = useCallback((eventId: string) => {
+    setViewEncargoId(eventId)
+  }, [])
+
+  const openEditEncargo = useCallback((eventId: string) => {
+    setViewEncargoId(null)
+    setEditEncargoId(eventId)
+  }, [])
+
+  const refreshAfterEncargoChange = useCallback(() => {
+    void fetchMonthData()
+    setEditEncargoId(null)
+    setViewEncargoId(null)
+  }, [fetchMonthData])
 
   const submitCreateEncargo = useCallback(
     (
@@ -832,10 +843,11 @@ export default function ReservasClient() {
         setListModalDay(null)
         setSelectedReservation(null)
         toast.success('Encargo creado')
-        openEncargoEditor(res.eventId)
+        await fetchMonthData()
+        setEditEncargoId(res.eventId)
       })
     },
-    [openEncargoEditor, trackReservasPlusPedido]
+    [trackReservasPlusPedido, fetchMonthData]
   )
 
   const startEncargoFromReservation = useCallback(
@@ -853,32 +865,6 @@ export default function ReservasClient() {
     [submitCreateEncargo]
   )
 
-  const handleOrderStatusChange = useCallback(
-    async (orderId: string, status: EncargoOrderRow['status']) => {
-      setOrderStatusBusyId(orderId)
-      try {
-        const res = await setEventOrderStatusAction({ orderId, status })
-        if (!res.success) {
-          toast.error(res.message)
-          return
-        }
-        setOrdersByEventId((prev) => {
-          const next: Record<string, EncargoOrderRow[]> = {}
-          for (const [eventId, list] of Object.entries(prev)) {
-            next[eventId] = list.map((o) => (o.id === orderId ? { ...o, status } : o))
-          }
-          return next
-        })
-        toast.success('Estado del pedido actualizado')
-      } catch (e) {
-        toast.error((e as Error)?.message ?? 'Error actualizando pedido')
-      } finally {
-        setOrderStatusBusyId(null)
-      }
-    },
-    []
-  )
-
   const handleDayClick = (day: Date) => {
     const key = format(day, 'yyyy-MM-dd')
     trackReservasDayList(formatYmdShort(key), { day: key })
@@ -887,9 +873,16 @@ export default function ReservasClient() {
 
   const listModalReservations = listModalDay ? (byDate[listModalDay] ?? []) : []
   const listModalEncargos = listModalDay ? (encargosByDate[listModalDay] ?? []) : []
-  const listModalOrders = listModalDay
-    ? ordersForDay(listModalDay, encargosByDate, ordersByEventId)
-    : []
+
+  const viewEncargo = viewEncargoId ? allEncargos.find((e) => e.id === viewEncargoId) ?? null : null
+  const viewEncargoOrder = viewEncargo
+    ? primaryOrderForEncargo(viewEncargo.id, ordersByEventId)
+    : null
+  const viewEncargoItems = parseOrderItems(viewEncargoOrder?.items ?? [])
+
+  const editEncargo = editEncargoId ? allEncargos.find((e) => e.id === editEncargoId) ?? null : null
+  const editEncargoOrder = editEncargo ? primaryOrderForEncargo(editEncargo.id, ordersByEventId) : null
+  const editEncargoInitialItems = orderItemsToStaffLines(parseOrderItems(editEncargoOrder?.items ?? []))
 
   const handlePrevMonth = () => setViewMonth((vm) => subMonths(vm, 1))
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
@@ -1036,9 +1029,6 @@ export default function ReservasClient() {
             dayYmd={listModalDay}
             reservations={listModalReservations}
             encargos={listModalEncargos}
-            orders={listModalOrders}
-            canManageOrders={canManageOrders}
-            orderStatusBusyId={orderStatusBusyId}
             plusPedidoBusy={isPendingEncargo}
             onClose={() => setListModalDay(null)}
             onSelectReservation={(r) => {
@@ -1047,12 +1037,11 @@ export default function ReservasClient() {
               trackReservasDetail(reservationApplySummary(full), { reservationId: full.id })
               setSelectedReservation(full)
             }}
-            onOpenEncargo={openEncargoEditor}
+            onViewEncargoOrder={openViewEncargo}
             onPlusPedido={() => {
               trackReservasPlusPedido(formatYmdShort(listModalDay), { day: listModalDay })
               setCreateEncargoDay(listModalDay)
             }}
-            onOrderStatusChange={(orderId, status) => void handleOrderStatusChange(orderId, status)}
           />,
           document.body
         )}
@@ -1080,7 +1069,35 @@ export default function ReservasClient() {
             onClose={() => setSelectedReservation(null)}
             onAction={(action) => void mutateReservation(selectedReservation, action)}
             onPlusPedido={() => startEncargoFromReservation(selectedReservation)}
-            onOpenEncargo={openEncargoEditor}
+            onOpenEncargo={openViewEncargo}
+          />,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        viewEncargo &&
+        createPortal(
+          <EncargoOrderViewModal
+            encargoName={viewEncargo.name}
+            encargoTime={timeShortHm(viewEncargo.event_time)}
+            items={viewEncargoItems}
+            onClose={() => setViewEncargoId(null)}
+            onEdit={() => openEditEncargo(viewEncargo.id)}
+          />,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        editEncargo &&
+        createPortal(
+          <EncargoProductEditor
+            eventId={editEncargo.id}
+            eventName={editEncargo.name}
+            orderId={editEncargoOrder?.id ?? null}
+            initialItems={editEncargoInitialItems}
+            onClose={() => setEditEncargoId(null)}
+            onSaved={refreshAfterEncargoChange}
+            onDeleted={refreshAfterEncargoChange}
           />,
           document.body
         )}

@@ -1,14 +1,14 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import EventEncargoCartaClient from '@/app/eventos/[slug]/EventEncargoCartaClient'
 import { loadEncargoPageById } from '@/lib/load-event-encargo-page'
 import { canCreateEncargo } from '@/app/dashboard/eventos/roles'
+import StaffEncargoPageClient from './StaffEncargoPageClient'
 
 function ErrorView({ message }: { message: string }) {
   return (
-    <main className="flex min-h-[100dvh] flex-col bg-white text-zinc-900">
-      <div className="mx-auto w-full max-w-2xl px-5 pb-safe pt-safe md:px-8">
-        <div className="mt-6 rounded-xl border border-zinc-100 bg-white p-5 shadow-sm">
+    <main className="flex min-h-[100dvh] flex-col bg-zinc-50 text-zinc-900">
+      <div className="mx-auto w-full max-w-2xl px-5 py-8">
+        <div className="rounded-xl border border-zinc-100 bg-white p-5">
           <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Encargo</p>
           <p className="mt-2 text-sm font-bold text-zinc-900">{message}</p>
         </div>
@@ -40,28 +40,26 @@ export default async function StaffEncargoPage(props: { params: Promise<{ eventI
   const loaded = await loadEncargoPageById(supabase, eventId)
   if (!loaded.ok) return <ErrorView message={loaded.message} />
 
-  const { data } = loaded
+  const { data: orders } = await supabase
+    .from('event_orders')
+    .select('id, items, status, created_at')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+
+  const orderRows = (orders ?? []) as Array<{
+    id: string
+    items: unknown
+    status: string
+    created_at: string
+  }>
+
+  let primaryOrder = orderRows.find((o) => o.status === 'confirmed') ?? orderRows[0] ?? null
 
   return (
-    <EventEncargoCartaClient
-      variant="staff"
-      event={{
-        id: data.event.id,
-        slug: data.event.slug,
-        name: data.event.name,
-        event_date: data.event.event_date,
-        event_time: data.event.event_time,
-      }}
-      allMenuItems={data.allMenuItems}
-      clientMenuItems={data.clientMenuItems}
-      menuCategories={data.menuCategories}
-      categoryCoverById={data.categoryCoverById}
-      categoryCoverScaleById={data.categoryCoverScaleById}
-      startingPackItems={data.startingPackItems}
-      initialEnabledProductIds={data.initialEnabledProductIds}
-      initialCategoryLimits={data.initialCategoryLimits}
-      canManage
-      backHref="/staff/reservas"
+    <StaffEncargoPageClient
+      event={loaded.data.event}
+      orderId={primaryOrder?.id ?? null}
+      initialItems={primaryOrder?.items ?? []}
     />
   )
 }
