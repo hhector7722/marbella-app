@@ -92,6 +92,7 @@ export const CashDenominationForm = ({
     /** Entrada / salida / arqueo (caja inicial / movimientos) */
     const isInEntradaLayout = type === 'in' && !isAudit && variant === 'default';
     const isOutSalidaLayout = type === 'out' && !isAudit && variant === 'default';
+    const isEntradaSalidaFlow = isInEntradaLayout || isOutSalidaLayout;
     const isAuditLayout = isAudit && variant === 'default';
     const isSimplifiedHeader = isInEntradaLayout || isOutSalidaLayout || isAuditLayout;
     const isFloatingDateInput = isInEntradaLayout || isAuditLayout;
@@ -258,6 +259,15 @@ export const CashDenominationForm = ({
                                 <span className="text-xl font-black tabular-nums">{total > 0.005 ? total.toFixed(2) : " "}</span>
                                 <span className="text-xs font-black opacity-50">€</span>
                             </div>
+                        </div>
+                    )}
+
+                    {isEntradaSalidaFlow && !isPurchaseMode && (
+                        <div className="text-right min-h-[48px] flex flex-col items-end justify-center">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
+                            <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
+                                {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
+                            </span>
                         </div>
                     )}
 
@@ -568,73 +578,149 @@ export const CashDenominationForm = ({
                             ? "pb-[16px]" // Offset to align with h-10 input instead of the Disp: label
                             : "pb-1"
                     )}>
+                        {isEntradaSalidaFlow ? (
+                            <>
+                                <button
+                                    onClick={onCancel}
+                                    className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                                >
+                                    <X size={14} strokeWidth={3} />
+                                    Salir
+                                </button>
+                                <button
+                                    onClick={handleConfirm}
+                                    disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
+                                    className={cn(
+                                        "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
+                                        isPurchaseMode
+                                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                                            : (isTipPool
+                                                ? "bg-emerald-500 shadow-emerald-200"
+                                                : ((totalGiven === 0)
+                                                    ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
+                                                    : "bg-emerald-500 shadow-emerald-200"))
+                                    )}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <Save size={16} strokeWidth={3} />
+                                        {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
+                                    </div>
+                                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
+                                        <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
+                                            {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
+                                        </span>
+                                    )}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleConfirm}
+                                    disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
+                                    className={cn(
+                                        "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
+                                        isPurchaseMode
+                                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                                            : (isTipPool
+                                                ? "bg-emerald-500 shadow-emerald-200"
+                                                : ((totalGiven === 0)
+                                                    ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
+                                                    : "bg-emerald-500 shadow-emerald-200"))
+                                    )}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <Save size={16} strokeWidth={3} />
+                                        {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
+                                    </div>
+                                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
+                                        <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
+                                            {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={onCancel}
+                                    className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                                >
+                                    <X size={14} strokeWidth={3} />
+                                    Salir
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+            {/* DESKTOP FOOTER */}
+            <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
+                {isEntradaSalidaFlow ? (
+                    <>
+                        <button
+                            onClick={onCancel}
+                            className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                        >
+                            <X size={14} strokeWidth={3} />
+                            Salir
+                        </button>
                         <button
                             onClick={handleConfirm}
                             disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
                             className={cn(
-                                "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
+                                "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
                                 isPurchaseMode
-                                    ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                                    ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                                     : (isTipPool
-                                        ? "bg-emerald-500 shadow-emerald-200"
+                                        ? "bg-emerald-500 hover:brightness-110 shadow-emerald-200"
                                         : ((totalGiven === 0)
-                                            ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
-                                            : "bg-emerald-500 shadow-emerald-200"))
+                                            ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
+                                            : "bg-emerald-500 hover:brightness-110 shadow-emerald-200"))
                             )}
                         >
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-2">
                                 <Save size={16} strokeWidth={3} />
-                                {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
+                                {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
                             </div>
                             {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
+                                <span className="text-[7px] opacity-80">
+                                    {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
+                                </span>
+                            )}
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
+                            className={cn(
+                                "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
+                                isPurchaseMode
+                                    ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                                    : (isTipPool
+                                        ? "bg-emerald-500 hover:brightness-110 shadow-emerald-200"
+                                        : ((totalGiven === 0)
+                                            ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
+                                            : "bg-emerald-500 hover:brightness-110 shadow-emerald-200"))
+                            )}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Save size={16} strokeWidth={3} />
+                                {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
+                            </div>
+                            {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
+                                <span className="text-[7px] opacity-80">
                                     {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
                                 </span>
                             )}
                         </button>
                         <button
                             onClick={onCancel}
-                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                            className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
                         >
                             <X size={14} strokeWidth={3} />
                             Salir
                         </button>
-                    </div>
-                </div>
-            </div>
-            {/* DESKTOP FOOTER */}
-            <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
-                <button
-                    onClick={handleConfirm}
-                    disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
-                    className={cn(
-                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
-                        isPurchaseMode
-                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                            : (isTipPool
-                                ? "bg-emerald-500 hover:brightness-110 shadow-emerald-200"
-                                : ((totalGiven === 0)
-                                    ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
-                                    : "bg-emerald-500 hover:brightness-110 shadow-emerald-200"))
-                    )}
-                >
-                    <div className="flex items-center gap-2">
-                        <Save size={16} strokeWidth={3} />
-                        {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
-                    </div>
-                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                        <span className="text-[7px] opacity-80">
-                            {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
-                        </span>
-                    )}
-                </button>
-                <button
-                    onClick={onCancel}
-                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
-                >
-                    <X size={14} strokeWidth={3} />
-                    Salir
-                </button>
+                    </>
+                )}
             </div>
         </div >
     );
