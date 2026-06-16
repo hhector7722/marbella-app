@@ -223,15 +223,20 @@ export const CashDenominationForm = ({
         }
     };
 
+    const entradaSalidaGuardarDisabled = isPurchaseMode ? !canSubmitPurchase : totalGiven === 0;
+    const entradaSalidaGuardarClass = isPurchaseMode
+        ? (canSubmitPurchase ? 'bg-emerald-500 hover:brightness-110' : 'bg-zinc-300 opacity-50 cursor-not-allowed')
+        : (totalGiven === 0 ? 'bg-gray-300 opacity-50 cursor-not-allowed' : 'bg-emerald-500 hover:brightness-110');
+
     const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
 
     return (
         <div className={cn('flex flex-col h-full overflow-hidden bg-white relative', !isTipPool && 'rounded-2xl')}>
             <div className={cn(
-                'bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0',
+                'bg-[#36606F] px-6 py-2.5 flex items-center gap-3 text-white shrink-0',
                 isTipPool && 'rounded-t-xl md:rounded-t-[2.5rem]'
             )}>
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                     {!isSimplifiedHeader && (
                         <div className={cn(
                             "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shrink-0",
@@ -249,7 +254,7 @@ export const CashDenominationForm = ({
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 min-w-0">
                     {!isSimplifiedHeader && (
                         <div className="text-right">
                             <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black leading-none mb-0.5">
@@ -259,15 +264,6 @@ export const CashDenominationForm = ({
                                 <span className="text-xl font-black tabular-nums">{total > 0.005 ? total.toFixed(2) : " "}</span>
                                 <span className="text-xs font-black opacity-50">€</span>
                             </div>
-                        </div>
-                    )}
-
-                    {isEntradaSalidaFlow && !isPurchaseMode && (
-                        <div className="text-right min-h-[48px] flex flex-col items-end justify-center">
-                            <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
-                            <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
-                                {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
-                            </span>
                         </div>
                     )}
 
@@ -310,7 +306,19 @@ export const CashDenominationForm = ({
                             </button>
                         </div>
                     )}
-                    <span className="w-10 h-10 min-h-[48px] min-w-[48px]" aria-hidden />
+
+                    {isEntradaSalidaFlow && (
+                        <div className="text-right min-h-[48px] flex flex-col items-end justify-center shrink-0">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
+                            <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
+                                {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
+                            </span>
+                        </div>
+                    )}
+
+                    {!isEntradaSalidaFlow && (
+                        <span className="w-10 h-10 min-h-[48px] min-w-[48px]" aria-hidden />
+                    )}
                 </div>
             </div>
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
@@ -582,29 +590,20 @@ export const CashDenominationForm = ({
                             <>
                                 <button
                                     onClick={onCancel}
-                                    className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                                    className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1"
                                 >
                                     <X size={14} strokeWidth={3} />
                                     Salir
                                 </button>
                                 <button
                                     onClick={handleConfirm}
-                                    disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
+                                    disabled={entradaSalidaGuardarDisabled}
                                     className={cn(
-                                        "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
-                                        isPurchaseMode
-                                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                                            : (isTipPool
-                                                ? "bg-emerald-500 shadow-emerald-200"
-                                                : ((totalGiven === 0)
-                                                    ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
-                                                    : "bg-emerald-500 shadow-emerald-200"))
+                                        'flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl flex justify-center transition-all active:scale-95 flex-col items-center',
+                                        entradaSalidaGuardarClass,
                                     )}
                                 >
-                                    <div className="flex items-center gap-1.5">
-                                        <Save size={16} strokeWidth={3} />
-                                        {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
-                                    </div>
+                                    Guardar
                                     {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
                                         <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
                                             {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
@@ -656,29 +655,20 @@ export const CashDenominationForm = ({
                     <>
                         <button
                             onClick={onCancel}
-                            className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                            className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1"
                         >
                             <X size={14} strokeWidth={3} />
                             Salir
                         </button>
                         <button
                             onClick={handleConfirm}
-                            disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
+                            disabled={entradaSalidaGuardarDisabled}
                             className={cn(
-                                "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
-                                isPurchaseMode
-                                    ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                                    : (isTipPool
-                                        ? "bg-emerald-500 hover:brightness-110 shadow-emerald-200"
-                                        : ((totalGiven === 0)
-                                            ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
-                                            : "bg-emerald-500 hover:brightness-110 shadow-emerald-200"))
+                                'flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95',
+                                entradaSalidaGuardarClass,
                             )}
                         >
-                            <div className="flex items-center gap-2">
-                                <Save size={16} strokeWidth={3} />
-                                {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
-                            </div>
+                            {submitLabel || 'Guardar'}
                             {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
                                 <span className="text-[7px] opacity-80">
                                     {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
