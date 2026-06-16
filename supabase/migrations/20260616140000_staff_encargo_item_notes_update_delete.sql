@@ -299,8 +299,7 @@ BEGIN
 
   UPDATE public.event_orders
   SET items = v_items_out,
-      total_amount = v_total,
-      updated_at = now()
+      total_amount = v_total
   WHERE id = v_order_id;
 
   RETURN jsonb_build_object(

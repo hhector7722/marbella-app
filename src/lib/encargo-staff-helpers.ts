@@ -6,6 +6,7 @@ export type StaffEncargoLineItem = {
   product_id: string
   quantity: number
   notes: string
+  name?: string
 }
 
 export type DayAgendaReservationRow = {
@@ -67,6 +68,7 @@ export function orderItemsToStaffLines(items: EventOrderItem[]): StaffEncargoLin
     product_id: it.product_id,
     quantity: it.quantity,
     notes: String(it.notes ?? '').trim(),
+    name: it.name,
   }))
 }
 

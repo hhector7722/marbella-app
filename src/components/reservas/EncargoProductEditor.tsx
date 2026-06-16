@@ -152,7 +152,7 @@ export function EncargoProductEditor({
     const seed: EditorLine[] = initialItems.map((it) => ({
       ...it,
       lineKey: newLineKey(),
-      name: it.product_id,
+      name: it.name?.trim() || it.product_id,
     }))
     setLines(seed)
     setBrowseParent(null)
