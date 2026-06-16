@@ -134,14 +134,19 @@ export function DayAgendaModal({
 
   return (
     <div
-      className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
       role="presentation"
     >
       <div
-        className="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-lg max-h-[92vh] sm:max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
+        className={cn(
+          'bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden',
+          'w-full max-w-[min(32rem,calc(100vw-2rem))]',
+          'max-h-[calc(100dvh-2rem)]',
+          'animate-in zoom-in-95 duration-200'
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center justify-between gap-2">
