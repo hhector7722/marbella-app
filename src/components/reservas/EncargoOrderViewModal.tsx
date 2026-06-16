@@ -50,7 +50,7 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     * { box-sizing: border-box; }
     @page { size: auto; margin: 14mm; }
     body { font-family: system-ui, sans-serif; margin: 0; padding: 0; color: #18181b; }
-    h1 { font-size: 18px; margin: 0 0 14px; text-align: center; font-weight: 800; }
+    h1 { font-size: 18px; margin: 0 0 14px; text-align: left; font-weight: 800; }
     .meta-row {
       display: flex;
       justify-content: space-between;
@@ -63,11 +63,17 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     .meta-item {
       flex: 1 1 0;
       min-width: 0;
-      text-align: center;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .meta-label { display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 2px; }
-    .meta-value { display: block; font-weight: 700; color: #18181b; word-break: break-word; }
-    table { width: 100%; border-collapse: collapse; border: 1px solid #e4e4e7; }
+    .meta-label { display: inline; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; }
+    .meta-value { display: inline; font-weight: 800; color: #18181b; overflow: hidden; text-overflow: ellipsis; }
+    table { width: 100%; border-collapse: collapse; border: none; }
     th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; padding: 10px 12px; text-align: left; }
     th:last-child { text-align: center; width: 72px; }
     tr + tr { border-top: 1px solid #f4f4f5; }
@@ -81,20 +87,16 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
   <h1>Pedido encargado</h1>
   <div class="meta-row">
     <div class="meta-item">
-      <span class="meta-label">Fecha</span>
-      <span class="meta-value">${escapeHtml(meta.encargoDate)}</span>
+      <span class="meta-label">Fecha</span><span class="meta-value">${escapeHtml(meta.encargoDate)}</span>
     </div>
     <div class="meta-item">
-      <span class="meta-label">Hora</span>
-      <span class="meta-value">${escapeHtml(meta.encargoTime)}</span>
+      <span class="meta-label">Hora</span><span class="meta-value">${escapeHtml(meta.encargoTime)}</span>
     </div>
     <div class="meta-item">
-      <span class="meta-label">Nombre</span>
-      <span class="meta-value">${escapeHtml(meta.encargoName)}</span>
+      <span class="meta-label">Nombre</span><span class="meta-value">${escapeHtml(meta.encargoName)}</span>
     </div>
     <div class="meta-item">
-      <span class="meta-label">Contacto</span>
-      <span class="meta-value">${contactValue}</span>
+      <span class="meta-label">Contacto</span><span class="meta-value">${contactValue}</span>
     </div>
   </div>
   <table>
