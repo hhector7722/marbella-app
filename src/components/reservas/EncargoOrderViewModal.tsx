@@ -1,10 +1,63 @@
 'use client'
 
-import { Pencil, X } from 'lucide-react'
+import { Fragment, useCallback, useRef } from 'react'
+import { Pencil, Printer, X } from 'lucide-react'
 
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+
+function buildPrintHtml(encargoName: string, encargoTime: string, items: EventOrderItem[]) {
+  const rows = items
+    .map((it) => {
+      const note = it.notes?.trim()
+      const qty = it.quantity > 0 ? String(it.quantity) : ''
+      const noteRow = note
+        ? `<tr><td colspan="2" style="padding:0 12px 10px 28px;font-size:11px;color:#52525b;text-transform:lowercase;">${escapeHtml(note)}</td></tr>`
+        : ''
+      return `<tr>
+        <td style="padding:10px 12px;font-weight:700;color:#18181b;">${escapeHtml(it.name)}</td>
+        <td style="padding:10px 12px;text-align:center;font-weight:700;font-family:monospace;">${qty}</td>
+      </tr>${noteRow}`
+    })
+    .join('')
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Pedido · ${escapeHtml(encargoName)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 24px; color: #18181b; }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    p { margin: 0 0 16px; font-size: 12px; color: #71717a; }
+    table { width: 100%; border-collapse: collapse; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; }
+    th { background: #fafafa; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; padding: 10px 12px; text-align: left; }
+    th:last-child { text-align: center; width: 72px; }
+    tr + tr { border-top: 1px solid #f4f4f5; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(encargoTime)} · ${escapeHtml(encargoName)}</h1>
+  <p>Pedido encargo</p>
+  <table>
+    <thead>
+      <tr><th>Producto</th><th>Cantidad</th></tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 export function EncargoOrderViewModal({
   encargoName,
@@ -19,11 +72,43 @@ export function EncargoOrderViewModal({
   onClose: () => void
   onEdit: () => void
 }) {
+  const tableRef = useRef<HTMLDivElement>(null)
+
   useModalUsageTracking({
     open: true,
     usageId: 'encargo-order-view',
     usageLabel: 'Ver pedido encargo',
   })
+
+  const handlePrint = useCallback(() => {
+    const html = buildPrintHtml(encargoName, encargoTime, items)
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document
+    if (!doc) {
+      document.body.removeChild(iframe)
+      return
+    }
+    doc.open()
+    doc.write(html)
+    doc.close()
+    iframe.onload = () => {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+      setTimeout(() => document.body.removeChild(iframe), 500)
+    }
+    if (doc.readyState === 'complete') {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+      setTimeout(() => document.body.removeChild(iframe), 500)
+    }
+  }, [encargoName, encargoTime, items])
 
   return (
     <div
@@ -42,13 +127,22 @@ export function EncargoOrderViewModal({
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center gap-2">
+        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center gap-1">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Pedido</p>
             <h3 className="text-base font-black truncate">
               {encargoTime} · {encargoName}
             </h3>
           </div>
+          <button
+            type="button"
+            onClick={handlePrint}
+            disabled={items.length === 0}
+            className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 disabled:opacity-40"
+            aria-label="Imprimir pedido"
+          >
+            <Printer size={18} strokeWidth={2.5} />
+          </button>
           <button
             type="button"
             onClick={onEdit}
@@ -67,7 +161,7 @@ export function EncargoOrderViewModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
+        <div ref={tableRef} className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
           {items.length === 0 ? (
             <p className="py-10 text-center text-xs font-semibold text-zinc-500">
               Sin productos en el pedido.
@@ -83,23 +177,29 @@ export function EncargoOrderViewModal({
                     <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 w-20 text-center">
                       Cantidad
                     </th>
-                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500">
-                      Notas
-                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {items.map((it) => (
-                    <tr key={it.product_id}>
-                      <td className="px-3 py-2.5 font-bold text-zinc-800">{it.name}</td>
-                      <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums">
-                        {it.quantity > 0 ? it.quantity : ' '}
-                      </td>
-                      <td className="px-3 py-2.5 font-medium text-zinc-600 whitespace-pre-wrap">
-                        {it.notes?.trim() ? it.notes : ' '}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody>
+                  {items.map((it, index) => {
+                    const note = it.notes?.trim()
+                    return (
+                      <Fragment key={`${it.product_id}-${index}`}>
+                        <tr className={note ? 'border-t border-zinc-100' : 'border-t border-zinc-100'}>
+                          <td className="px-3 py-2.5 font-bold text-zinc-800">{it.name}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums">
+                            {it.quantity > 0 ? it.quantity : ' '}
+                          </td>
+                        </tr>
+                        {note ? (
+                          <tr>
+                            <td colSpan={2} className="px-3 pb-2.5 pt-0 pl-7 text-[11px] font-medium text-zinc-600 lowercase">
+                              {note}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

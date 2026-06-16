@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
-import { Loader2, Minus, Plus, Search, Trash2, X } from 'lucide-react'
+import { ChevronLeft, Loader2, Minus, Plus, Search, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -18,11 +18,34 @@ export type EncargoEditorMenuProduct = {
   product_id: string
   name: string
   category: string
+  parentName: string
+  childName: string
+  parentSort: number
+  childSort: number
   price: number
 }
 
 type EditorLine = StaffEncargoLineItem & {
+  lineKey: string
   name: string
+}
+
+type MenuChildGroup = {
+  key: string
+  label: string
+  sortOrder: number
+  products: EncargoEditorMenuProduct[]
+}
+
+type MenuDepartment = {
+  key: string
+  label: string
+  sortOrder: number
+  children: MenuChildGroup[]
+}
+
+function newLineKey() {
+  return crypto.randomUUID()
 }
 
 function modalShellClassName() {
@@ -31,6 +54,51 @@ function modalShellClassName() {
     'w-full max-w-[min(36rem,calc(100vw-2rem))]',
     'max-h-[calc(100dvh-2rem)]'
   )
+}
+
+function buildDepartments(products: EncargoEditorMenuProduct[]): MenuDepartment[] {
+  const byParent = new Map<string, MenuDepartment>()
+
+  for (const product of products) {
+    const parentKey = product.parentName || 'Otros'
+    const parentLabel = product.parentName || 'Otros'
+    let dept = byParent.get(parentKey)
+    if (!dept) {
+      dept = {
+        key: parentKey,
+        label: parentLabel,
+        sortOrder: product.parentSort,
+        children: [],
+      }
+      byParent.set(parentKey, dept)
+    }
+
+    const childKey = product.childName || '__general__'
+    const childLabel = product.childName || 'General'
+    let child = dept.children.find((c) => c.key === childKey)
+    if (!child) {
+      child = {
+        key: childKey,
+        label: childLabel,
+        sortOrder: product.childSort,
+        products: [],
+      }
+      dept.children.push(child)
+    }
+    child.products.push(product)
+  }
+
+  return [...byParent.values()]
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, 'es'))
+    .map((dept) => ({
+      ...dept,
+      children: dept.children
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, 'es'))
+        .map((child) => ({
+          ...child,
+          products: child.products.sort((a, b) => a.name.localeCompare(b.name, 'es')),
+        })),
+    }))
 }
 
 export function EncargoProductEditor({
@@ -59,13 +127,19 @@ export function EncargoProductEditor({
   const [search, setSearch] = useState('')
   const [lines, setLines] = useState<EditorLine[]>([])
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [browseParent, setBrowseParent] = useState<string | null>(null)
+  const [browseChild, setBrowseChild] = useState<string | null>(null)
 
   useEffect(() => {
     const seed: EditorLine[] = initialItems.map((it) => ({
       ...it,
+      lineKey: newLineKey(),
       name: it.product_id,
     }))
     setLines(seed)
+    setBrowseParent(null)
+    setBrowseChild(null)
+    setSearch('')
   }, [initialItems, eventId])
 
   useEffect(() => {
@@ -96,15 +170,20 @@ export function EncargoProductEditor({
           product_id: eventOrderProductId((row as { articulo_id: number }).articulo_id),
           name: String((row as { carta_nombre?: string }).carta_nombre ?? '').trim(),
           category,
+          parentName: parent,
+          childName: child,
+          parentSort: Number((row as { category_parent_sort_order?: number }).category_parent_sort_order) || 0,
+          childSort: Number((row as { category_child_sort_order?: number }).category_child_sort_order) || 0,
           price: Number((row as { precio?: number }).precio) || 0,
         }
       })
 
-      setMenuProducts(products.filter((p) => p.name))
+      const filtered = products.filter((p) => p.name)
+      setMenuProducts(filtered)
 
       setLines((prev) =>
         prev.map((line) => {
-          const found = products.find((p) => p.product_id === line.product_id)
+          const found = filtered.find((p) => p.product_id === line.product_id)
           return found ? { ...line, name: found.name } : line
         })
       )
@@ -115,38 +194,63 @@ export function EncargoProductEditor({
     }
   }, [supabase])
 
-  const lineIds = useMemo(() => new Set(lines.map((l) => l.product_id)), [lines])
+  const departments = useMemo(() => buildDepartments(menuProducts), [menuProducts])
+
+  const searchActive = search.trim().length >= 2
 
   const searchResults = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (q.length < 2) return []
     return menuProducts
-      .filter((p) => !lineIds.has(p.product_id))
       .filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.category.toLowerCase().includes(q) ||
           p.product_id.includes(q)
       )
-      .slice(0, 12)
-  }, [search, menuProducts, lineIds])
+      .slice(0, 16)
+  }, [search, menuProducts])
+
+  const activeDepartment = useMemo(
+    () => departments.find((d) => d.key === browseParent) ?? null,
+    [departments, browseParent]
+  )
+
+  const activeChildGroup = useMemo(
+    () => activeDepartment?.children.find((c) => c.key === browseChild) ?? null,
+    [activeDepartment, browseChild]
+  )
 
   const addProduct = useCallback((product: EncargoEditorMenuProduct) => {
-    setLines((prev) => [
-      ...prev,
-      { product_id: product.product_id, name: product.name, quantity: 1, notes: '' },
-    ])
+    setLines((prev) => {
+      const mergeTarget = prev.find((l) => l.product_id === product.product_id && !l.notes.trim())
+      if (mergeTarget) {
+        return prev.map((l) =>
+          l.lineKey === mergeTarget.lineKey ? { ...l, quantity: Math.min(999, l.quantity + 1) } : l
+        )
+      }
+      return [
+        ...prev,
+        {
+          lineKey: newLineKey(),
+          product_id: product.product_id,
+          name: product.name,
+          quantity: 1,
+          notes: '',
+        },
+      ]
+    })
     setSearch('')
   }, [])
 
-  const updateLine = useCallback((productId: string, patch: Partial<StaffEncargoLineItem>) => {
+  const updateLine = useCallback((lineKey: string, patch: Partial<StaffEncargoLineItem>) => {
     setLines((prev) =>
-      prev.map((l) => (l.product_id === productId ? { ...l, ...patch, name: l.name } : l))
+      prev.map((l) => (l.lineKey === lineKey ? { ...l, ...patch, name: l.name } : l))
     )
   }, [])
 
-  const removeLine = useCallback((productId: string) => {
-    setLines((prev) => prev.filter((l) => l.product_id !== productId))
+  const removeLine = useCallback((lineKey: string) => {
+    setLines((prev) => prev.filter((l) => l.lineKey !== lineKey))
   }, [])
 
   const handleSave = useCallback(() => {
@@ -194,6 +298,113 @@ export function EncargoProductEditor({
     })
   }, [eventId, onClose, onDeleted])
 
+  const browsePanel = (() => {
+    if (loadingMenu) return null
+
+    if (!browseParent) {
+      return (
+        <ul className="rounded-xl border border-zinc-100 divide-y divide-zinc-100 overflow-hidden">
+          {departments.map((dept) => (
+            <li key={dept.key}>
+              <button
+                type="button"
+                onClick={() => {
+                  setBrowseParent(dept.key)
+                  if (dept.children.length === 1) {
+                    setBrowseChild(dept.children[0].key)
+                  } else {
+                    setBrowseChild(null)
+                  }
+                }}
+                className="min-h-12 w-full px-4 py-3 text-left hover:bg-zinc-50 flex items-center justify-between gap-2"
+              >
+                <span className="text-[13px] font-bold text-zinc-800">{dept.label}</span>
+                <span className="text-[10px] font-semibold text-zinc-400">
+                  {dept.children.reduce((n, c) => n + c.products.length, 0)}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    if (!browseChild && activeDepartment) {
+      return (
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setBrowseParent(null)
+              setBrowseChild(null)
+            }}
+            className="min-h-12 flex items-center gap-2 text-[11px] font-black uppercase text-[#36606F] px-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Departamentos
+          </button>
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">
+            {activeDepartment.label}
+          </p>
+          <ul className="rounded-xl border border-zinc-100 divide-y divide-zinc-100 overflow-hidden">
+            {activeDepartment.children.map((child) => (
+              <li key={child.key}>
+                <button
+                  type="button"
+                  onClick={() => setBrowseChild(child.key)}
+                  className="min-h-12 w-full px-4 py-3 text-left hover:bg-zinc-50 flex items-center justify-between gap-2"
+                >
+                  <span className="text-[13px] font-bold text-zinc-800">{child.label}</span>
+                  <span className="text-[10px] font-semibold text-zinc-400">{child.products.length}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    if (activeChildGroup) {
+      return (
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (activeDepartment && activeDepartment.children.length === 1) {
+                setBrowseParent(null)
+                setBrowseChild(null)
+              } else {
+                setBrowseChild(null)
+              }
+            }}
+            className="min-h-12 flex items-center gap-2 text-[11px] font-black uppercase text-[#36606F] px-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {activeDepartment?.label ?? 'Volver'}
+          </button>
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">
+            {activeChildGroup.label}
+          </p>
+          <ul className="rounded-xl border border-zinc-100 divide-y divide-zinc-100 overflow-hidden">
+            {activeChildGroup.products.map((p) => (
+              <li key={p.product_id}>
+                <button
+                  type="button"
+                  onClick={() => addProduct(p)}
+                  className="min-h-12 w-full px-4 py-2.5 text-left hover:bg-zinc-50"
+                >
+                  <span className="block text-[13px] font-bold text-zinc-800">{p.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    return null
+  })()
+
   const body = (
     <>
       <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center justify-between gap-2">
@@ -223,7 +434,7 @@ export function EncargoProductEditor({
           />
         </div>
 
-        {searchResults.length > 0 ? (
+        {searchActive && searchResults.length > 0 ? (
           <ul className="rounded-xl border border-zinc-100 divide-y divide-zinc-100 overflow-hidden">
             {searchResults.map((p) => (
               <li key={p.product_id}>
@@ -240,15 +451,19 @@ export function EncargoProductEditor({
               </li>
             ))}
           </ul>
-        ) : null}
+        ) : searchActive ? (
+          <p className="text-center text-xs font-semibold text-zinc-500 py-2">Sin resultados.</p>
+        ) : (
+          browsePanel
+        )}
 
         {loadingMenu ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-[#36606F]" />
           </div>
         ) : lines.length === 0 ? (
-          <p className="py-6 text-center text-xs font-semibold text-zinc-500">
-            Busca y añade productos de la carta.
+          <p className="py-4 text-center text-xs font-semibold text-zinc-500">
+            Elige un departamento o busca productos para añadirlos.
           </p>
         ) : (
           <div className="overflow-x-auto border border-zinc-100 rounded-xl">
@@ -263,14 +478,14 @@ export function EncargoProductEditor({
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {lines.map((line) => (
-                  <tr key={line.product_id}>
+                  <tr key={line.lineKey}>
                     <td className="px-2 py-2 font-bold text-zinc-800 align-top">{line.name}</td>
                     <td className="px-2 py-2 align-top">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() =>
-                            updateLine(line.product_id, { quantity: Math.max(1, line.quantity - 1) })
+                            updateLine(line.lineKey, { quantity: Math.max(1, line.quantity - 1) })
                           }
                           className="min-h-10 min-w-10 flex items-center justify-center rounded-lg border border-zinc-200"
                           aria-label="Menos"
@@ -282,14 +497,14 @@ export function EncargoProductEditor({
                           value={String(line.quantity)}
                           onChange={(e) => {
                             const n = Math.max(1, Math.min(999, Number(e.target.value) || 1))
-                            updateLine(line.product_id, { quantity: n })
+                            updateLine(line.lineKey, { quantity: n })
                           }}
                           className="w-10 min-h-10 text-center rounded-lg border border-zinc-200 font-bold"
                         />
                         <button
                           type="button"
                           onClick={() =>
-                            updateLine(line.product_id, { quantity: Math.min(999, line.quantity + 1) })
+                            updateLine(line.lineKey, { quantity: Math.min(999, line.quantity + 1) })
                           }
                           className="min-h-10 min-w-10 flex items-center justify-center rounded-lg border border-zinc-200"
                           aria-label="Más"
@@ -301,7 +516,7 @@ export function EncargoProductEditor({
                     <td className="px-2 py-2 align-top">
                       <input
                         value={line.notes}
-                        onChange={(e) => updateLine(line.product_id, { notes: e.target.value })}
+                        onChange={(e) => updateLine(line.lineKey, { notes: e.target.value })}
                         placeholder="Notas…"
                         className="min-h-10 w-full min-w-[6rem] rounded-lg border border-zinc-200 px-2 text-[11px] font-medium"
                       />
@@ -309,7 +524,7 @@ export function EncargoProductEditor({
                     <td className="px-1 py-2 align-top">
                       <button
                         type="button"
-                        onClick={() => removeLine(line.product_id)}
+                        onClick={() => removeLine(line.lineKey)}
                         className="min-h-10 min-w-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-lg"
                         aria-label="Quitar"
                       >
