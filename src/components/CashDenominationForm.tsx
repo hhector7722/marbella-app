@@ -33,6 +33,9 @@ function inventoryFromStockMap(stock: Record<number, number>) {
     return DENOMINATIONS.map((d) => ({ denomination: d, quantity: stock[d] || 0 })).filter((r) => r.quantity > 0);
 }
 
+const ENTRADA_SALIDA_BTN_BASE =
+    'shrink-0 inline-flex items-center justify-center min-h-12 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95';
+
 export const CashDenominationForm = ({
     type,
     boxName,
@@ -589,23 +592,29 @@ export const CashDenominationForm = ({
                         {isEntradaSalidaFlow ? (
                             <>
                                 <button
+                                    type="button"
                                     onClick={onCancel}
-                                    className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1"
+                                    className={cn(
+                                        ENTRADA_SALIDA_BTN_BASE,
+                                        'gap-1 px-3 text-[10px] bg-rose-500 text-white active:bg-rose-600 hover:bg-rose-600',
+                                    )}
                                 >
                                     <X size={14} strokeWidth={3} />
                                     Salir
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handleConfirm}
                                     disabled={entradaSalidaGuardarDisabled}
                                     className={cn(
-                                        'flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl flex justify-center transition-all active:scale-95 flex-col items-center',
+                                        ENTRADA_SALIDA_BTN_BASE,
+                                        'px-4 text-[11px] text-white flex-col gap-0.5',
                                         entradaSalidaGuardarClass,
                                     )}
                                 >
                                     Guardar
                                     {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                        <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
+                                        <span className="text-[7px] leading-none font-bold tracking-tight normal-case">
                                             {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
                                         </span>
                                     )}
@@ -650,27 +659,36 @@ export const CashDenominationForm = ({
                 </div>
             </div>
             {/* DESKTOP FOOTER */}
-            <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
+            <div className={cn(
+                'hidden sm:flex p-3 bg-white border-t gap-2 shrink-0',
+                isEntradaSalidaFlow && 'justify-end',
+            )}>
                 {isEntradaSalidaFlow ? (
                     <>
                         <button
+                            type="button"
                             onClick={onCancel}
-                            className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1"
+                            className={cn(
+                                ENTRADA_SALIDA_BTN_BASE,
+                                'gap-1 px-3 text-[9px] bg-rose-500 text-white hover:bg-rose-600',
+                            )}
                         >
                             <X size={14} strokeWidth={3} />
                             Salir
                         </button>
                         <button
+                            type="button"
                             onClick={handleConfirm}
                             disabled={entradaSalidaGuardarDisabled}
                             className={cn(
-                                'flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95',
+                                ENTRADA_SALIDA_BTN_BASE,
+                                'px-4 text-[9px] text-white flex-col gap-0.5',
                                 entradaSalidaGuardarClass,
                             )}
                         >
                             {submitLabel || 'Guardar'}
                             {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                <span className="text-[7px] opacity-80">
+                                <span className="text-[7px] opacity-80 normal-case">
                                     {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
                                 </span>
                             )}
