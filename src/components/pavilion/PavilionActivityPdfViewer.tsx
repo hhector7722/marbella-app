@@ -15,7 +15,7 @@ import {
 } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { computeFitScale, renderPdfPageHiDpiCrop } from '@/lib/pdf/hidpi-render';
+import { computeFitScale, clearHost, renderPdfPageHiDpiCrop } from '@/lib/pdf/hidpi-render';
 import { detectCropRightThroughP4 } from '@/lib/pdf/pavilion-crop';
 
 if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
@@ -113,7 +113,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         const buffer = await res.arrayBuffer();
         const pdfDoc = await getDocument({ data: new Uint8Array(buffer) }).promise;
         if (cancelled) {
-          void pdfDoc.destroy();
+          if (typeof pdfDoc.destroy === 'function') pdfDoc.destroy();
           return;
         }
 
@@ -125,7 +125,10 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         setDocReady(true);
       } catch (err) {
         if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Error al cargar el PDF';
+          const raw = err instanceof Error ? err.message : String(err);
+          const msg = raw.includes('is not a function') || raw.includes('undefined')
+            ? 'No se pudo cargar el PDF en este dispositivo.'
+            : raw || 'Error al cargar el PDF';
           setError(msg);
         }
       } finally {
@@ -136,7 +139,8 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     void loadDocument();
     return () => {
       cancelled = true;
-      void pdfDocRef.current?.destroy();
+      const doc = pdfDocRef.current;
+      if (doc && typeof doc.destroy === 'function') doc.destroy();
       pdfDocRef.current = null;
     };
   }, [url, syncZoom]);
@@ -159,7 +163,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
       const fitScale = computeFitScale(cropRightPt, containerWidth);
       const renderScale = fitScale * zoomRef.current;
 
-      host.replaceChildren();
+      clearHost(host);
 
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         if (generation !== renderGenRef.current) return;
@@ -183,7 +187,10 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
       }
     } catch (err) {
       if (generation === renderGenRef.current) {
-        const msg = err instanceof Error ? err.message : 'Error al renderizar el PDF';
+        const raw = err instanceof Error ? err.message : String(err);
+        const msg = raw.includes('is not a function') || raw.includes('undefined')
+          ? 'No se pudo mostrar el PDF en este dispositivo.'
+          : raw || 'Error al renderizar el PDF';
         setError(msg);
       }
     } finally {

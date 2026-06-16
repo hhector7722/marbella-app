@@ -1,8 +1,6 @@
 import type { PDFPageProxy } from 'pdfjs-dist';
 
-/** Tope de DPR para equilibrar nitidez retina y memoria en móvil. */
 const DEFAULT_MAX_DPR = 3;
-/** Límite conservador de píxeles de canvas (Safari iOS). */
 const MAX_CANVAS_AREA = 14_000_000;
 
 export function getClampedDevicePixelRatio(max = DEFAULT_MAX_DPR): number {
@@ -15,11 +13,7 @@ export function computeFitScale(contentWidthAtScale1: number, containerWidth: nu
   return containerWidth / contentWidthAtScale1;
 }
 
-export function resolveOutputScale(
-  cssWidth: number,
-  cssHeight: number,
-  maxDpr = DEFAULT_MAX_DPR,
-): number {
+function resolveOutputScale(cssWidth: number, cssHeight: number, maxDpr = DEFAULT_MAX_DPR): number {
   let dpr = getClampedDevicePixelRatio(maxDpr);
   while (dpr > 1 && cssWidth * cssHeight * dpr * dpr > MAX_CANVAS_AREA) {
     dpr = Math.max(1, dpr - 0.5);
@@ -27,84 +21,84 @@ export function resolveOutputScale(
   return dpr;
 }
 
-async function renderFullPageHiDpi(
+function clearHost(host: HTMLElement): void {
+  if (typeof host.replaceChildren === 'function') {
+    host.replaceChildren();
+    return;
+  }
+  host.innerHTML = '';
+}
+
+/** Renderiza página completa en canvas (patrón retina PDF.js, compatible iOS). */
+async function renderFullPageToCanvas(
   page: PDFPageProxy,
   canvas: HTMLCanvasElement,
-  scale: number,
-): Promise<number> {
-  const viewport = page.getViewport({ scale });
-  const cssW = Math.floor(viewport.width);
-  const cssH = Math.floor(viewport.height);
-  const outputScale = resolveOutputScale(cssW, cssH);
+  cssScale: number,
+): Promise<{ outputScale: number; cssW: number; cssH: number }> {
+  const outputScale = resolveOutputScale(
+    page.getViewport({ scale: cssScale }).width,
+    page.getViewport({ scale: cssScale }).height,
+  );
 
-  canvas.width = Math.floor(cssW * outputScale);
-  canvas.height = Math.floor(cssH * outputScale);
+  const renderScale = cssScale * outputScale;
+  const viewport = page.getViewport({ scale: renderScale });
+  const cssW = Math.floor(viewport.width / outputScale);
+  const cssH = Math.floor(viewport.height / outputScale);
+
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
   canvas.style.width = `${cssW}px`;
   canvas.style.height = `${cssH}px`;
 
-  const ctx = canvas.getContext('2d', { alpha: false });
-  if (!ctx) throw new Error('No se pudo crear el contexto 2D');
+  await page.render({ canvas, viewport }).promise;
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  await page.render({
-    canvas,
-    canvasContext: ctx,
-    viewport,
-    transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined,
-  }).promise;
-
-  return outputScale;
+  return { outputScale, cssW, cssH };
 }
 
 /**
- * Renderiza una página PDF en canvas HiDPI, recortada a [0, cropRightPt) en coords PDF (escala 1).
- * `scale` = escala lógica sobre el ancho del recorte (fit-width × zoom).
+ * Render HiDPI recortado a [0, cropRightPt) en coords PDF (escala 1).
+ * `cssScale` = fit-width × zoom del usuario.
  */
 export async function renderPdfPageHiDpiCrop(
   page: PDFPageProxy,
   canvas: HTMLCanvasElement,
-  scale: number,
+  cssScale: number,
   cropRightPt: number,
 ): Promise<void> {
   const pageWidth = page.getViewport({ scale: 1 }).width;
   const cropRight = Math.max(1, Math.min(cropRightPt, pageWidth));
+  const cropRatio = cropRight / pageWidth;
 
   const offscreen = document.createElement('canvas');
-  const outputScale = await renderFullPageHiDpi(page, offscreen, scale);
-
-  const cssCropW = Math.floor(cropRight * scale);
-  const cssFullW = parseFloat(offscreen.style.width) || offscreen.width / outputScale;
-  const cssH = parseFloat(offscreen.style.height) || offscreen.height / outputScale;
-
-  const srcCropW = Math.min(
-    Math.floor((cssCropW / cssFullW) * offscreen.width),
-    offscreen.width,
+  const { outputScale, cssW: fullCssW, cssH: fullCssH } = await renderFullPageToCanvas(
+    page,
+    offscreen,
+    cssScale,
   );
 
-  const outW = Math.floor(cssCropW * outputScale);
-  const outH = Math.floor(cssH * outputScale);
+  const cssCropW = Math.max(1, Math.floor(fullCssW * cropRatio));
+  const srcCropW = Math.max(1, Math.floor(offscreen.width * cropRatio));
+  const outW = Math.max(1, Math.floor(cssCropW * outputScale));
+  const outH = Math.max(1, Math.floor(fullCssH * outputScale));
 
   canvas.width = outW;
   canvas.height = outH;
   canvas.style.width = `${cssCropW}px`;
-  canvas.style.height = `${cssH}px`;
+  canvas.style.height = `${fullCssH}px`;
 
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('No se pudo crear el contexto 2D');
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, outW, outH);
   ctx.drawImage(offscreen, 0, 0, srcCropW, offscreen.height, 0, 0, outW, outH);
 }
 
-/** Renderizado completo (sin recorte) — compatibilidad. */
 export async function renderPdfPageHiDpi(
   page: PDFPageProxy,
   canvas: HTMLCanvasElement,
-  scale: number,
+  cssScale: number,
 ): Promise<void> {
   const pageWidth = page.getViewport({ scale: 1 }).width;
-  await renderPdfPageHiDpiCrop(page, canvas, scale, pageWidth);
+  await renderPdfPageHiDpiCrop(page, canvas, cssScale, pageWidth);
 }
+
+export { clearHost };
