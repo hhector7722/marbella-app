@@ -163,11 +163,10 @@ function isReservationPast(r: Reservation, now = new Date()) {
 }
 
 function reservationDotClass(r: Reservation, hasEncargo: boolean) {
-  if (isReservationPast(r)) {
-    return hasEncargo ? 'bg-gray-400 border border-black' : 'bg-gray-400'
-  }
+  if (isReservationPast(r)) return 'bg-gray-400'
   if (r.status === 'rejected') return 'bg-red-500'
-  return hasEncargo ? 'bg-green-500 border border-black' : 'bg-green-500'
+  if (hasEncargo) return 'bg-orange-500'
+  return 'bg-green-500'
 }
 
 function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
@@ -175,11 +174,11 @@ function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
     <div className="flex flex-col min-w-0 w-full leading-none">
       <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
         <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-500" aria-hidden />
-        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-blue-600">
+        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-zinc-900">
           {timeShortHm(e.event_time)}
         </span>
       </div>
-      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-blue-600">
+      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-zinc-900">
         {e.name}
       </span>
     </div>
@@ -193,14 +192,6 @@ function ReservationCalendarEntry({
   r: Reservation
   hasEncargo: boolean
 }) {
-  const isPast = isReservationPast(r)
-  const isRejected = r.status === 'rejected'
-  const textTone = isPast
-    ? 'text-gray-400'
-    : isRejected
-      ? 'text-red-600'
-      : 'text-green-700'
-
   return (
     <div className="flex flex-col min-w-0 w-full leading-none">
       <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
@@ -208,11 +199,11 @@ function ReservationCalendarEntry({
           className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r, hasEncargo))}
           aria-hidden
         />
-        <span className={cn('text-[9px] font-mono leading-none whitespace-nowrap', textTone)}>
+        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-zinc-900">
           {timeShort(r.reservation_time)}
         </span>
       </div>
-      <span className={cn('text-[8px] font-normal leading-none ml-[10px] truncate', textTone)}>
+      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-zinc-900">
         {r.pax > 0 ? `${r.pax} pax` : ' '}
       </span>
     </div>
