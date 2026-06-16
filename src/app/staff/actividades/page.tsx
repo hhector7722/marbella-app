@@ -33,6 +33,19 @@ function parseLocalSafe(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
+function madridTodayIso(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === 'year')?.value ?? '1970';
+  const m = parts.find((p) => p.type === 'month')?.value ?? '01';
+  const d = parts.find((p) => p.type === 'day')?.value ?? '01';
+  return `${y}-${m}-${d}`;
+}
+
 export default function ActividadesPage() {
   usePageView();
 
@@ -47,6 +60,8 @@ export default function ActividadesPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
+
+  const todayStr = useMemo(() => madridTodayIso(), []);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(viewMonth);
@@ -237,6 +252,9 @@ export default function ActividadesPage() {
                         const key = format(day, 'yyyy-MM-dd');
                         const hasPdf = Boolean(byDate[key]);
                         const isViewMonthDay = isSameMonth(day, viewMonth);
+                        const isOutOfMonth = !isViewMonthDay;
+                        const isPastDay = isViewMonthDay && key < todayStr;
+                        const isMuted = isOutOfMonth || isPastDay;
                         const clickable = isViewMonthDay;
 
                         return (
@@ -247,20 +265,36 @@ export default function ActividadesPage() {
                             disabled={!clickable}
                             className={cn(
                               'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all',
-                              !isViewMonthDay &&
-                                'bg-transparent border-transparent opacity-25 pointer-events-none',
-                              isViewMonthDay &&
-                                'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99] cursor-pointer',
+                              isMuted &&
+                                'bg-transparent border-transparent opacity-25',
+                              isOutOfMonth && 'pointer-events-none',
+                              clickable &&
+                                !isOutOfMonth &&
+                                'cursor-pointer active:scale-[0.99]',
+                              !isMuted &&
+                                'bg-white border-zinc-100 shadow-sm hover:shadow-md',
                             )}
                           >
-                            <div className="px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0 bg-[#D64D5D]">
+                            <div
+                              className={cn(
+                                'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
+                                isMuted ? 'bg-zinc-400' : 'bg-[#D64D5D]',
+                              )}
+                            >
                               <span className="text-[8px] md:text-[10px] font-black text-white">
                                 {format(day, 'd')}
                               </span>
                             </div>
                             <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
                               {hasPdf && isViewMonthDay ? (
-                                <span className="inline-block leading-none px-[3px] py-px rounded-sm border border-zinc-700 bg-white text-[8px] md:text-[10px] font-black uppercase tracking-wide text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
+                                <span
+                                  className={cn(
+                                    'inline-block leading-none px-[3px] py-px rounded-sm border bg-white text-[8px] md:text-[10px] font-black uppercase tracking-wide shadow-[0_1px_2px_rgba(0,0,0,0.1)]',
+                                    isMuted
+                                      ? 'border-zinc-400 text-zinc-500'
+                                      : 'border-zinc-700 text-zinc-900',
+                                  )}
+                                >
                                   VER
                                 </span>
                               ) : (
