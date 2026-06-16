@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type TouchEvent as ReactTouchEvent,
@@ -24,7 +25,7 @@ if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
-const SCROLL_PADDING_PX = 24;
+const VIEWER_MIN_HEIGHT_PX = 420;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
@@ -43,11 +44,22 @@ function clampZoom(value: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
 }
 
+function measureContainerWidth(el: HTMLElement | null): number {
+  if (!el) return 0;
+  const w = el.clientWidth;
+  if (w > 0) return Math.max(1, w - 24);
+  const parent = el.parentElement;
+  if (parent && parent.clientWidth > 0) return Math.max(1, parent.clientWidth - 24);
+  if (typeof window !== 'undefined') {
+    return Math.max(1, Math.min(window.innerWidth, 512) - 48);
+  }
+  return 0;
+}
+
 export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPdfViewerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pagesHostRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
-  const cropRightPtRef = useRef<number | null>(null);
   const renderGenRef = useRef(0);
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const isPinchingRef = useRef(false);
@@ -59,6 +71,8 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [cropRightPt, setCropRightPt] = useState<number | null>(null);
+  const [docReady, setDocReady] = useState(false);
 
   zoomRef.current = zoom;
 
@@ -68,31 +82,31 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     setZoom(clamped);
   }, []);
 
-  useEffect(() => {
+  const updateWidth = useCallback(() => {
+    const w = measureContainerWidth(scrollRef.current);
+    if (w > 0) setContainerWidth(w);
+  }, []);
+
+  useLayoutEffect(() => {
+    updateWidth();
     const el = scrollRef.current;
     if (!el) return;
-
-    const measure = () => {
-      const w = el.clientWidth - SCROLL_PADDING_PX;
-      if (w > 0) setContainerWidth(w);
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => updateWidth());
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [updateWidth, url]);
 
   useEffect(() => {
     let cancelled = false;
     pdfDocRef.current = null;
-    cropRightPtRef.current = null;
+    setCropRightPt(null);
+    setDocReady(false);
     setHasRenderedPage(false);
+    setError(null);
     syncZoom(1);
 
     async function loadDocument() {
       setLoadingDoc(true);
-      setError(null);
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error('No se pudo descargar el PDF');
@@ -107,7 +121,8 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         const cropRight = await detectCropRightThroughP4(page1);
 
         pdfDocRef.current = pdfDoc;
-        cropRightPtRef.current = cropRight;
+        setCropRightPt(cropRight);
+        setDocReady(true);
       } catch (err) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : 'Error al cargar el PDF';
@@ -123,14 +138,18 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
       cancelled = true;
       void pdfDocRef.current?.destroy();
       pdfDocRef.current = null;
-      cropRightPtRef.current = null;
     };
   }, [url, syncZoom]);
+
+  useEffect(() => {
+    if (!loadingDoc) {
+      requestAnimationFrame(() => updateWidth());
+    }
+  }, [loadingDoc, updateWidth]);
 
   const renderAllPages = useCallback(async () => {
     const pdfDoc = pdfDocRef.current;
     const host = pagesHostRef.current;
-    const cropRightPt = cropRightPtRef.current;
     if (!pdfDoc || !host || containerWidth <= 0 || cropRightPt == null) return;
 
     const generation = ++renderGenRef.current;
@@ -153,6 +172,9 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         await renderPdfPageHiDpiCrop(page, canvas, renderScale, cropRightPt);
 
         if (generation !== renderGenRef.current) return;
+        if (canvas.height < 2) {
+          throw new Error('El PDF no se pudo mostrar correctamente');
+        }
         host.appendChild(canvas);
 
         if (pageNum === 1) {
@@ -169,12 +191,10 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         setRenderingPages(false);
       }
     }
-  }, [containerWidth]);
+  }, [containerWidth, cropRightPt]);
 
   useEffect(() => {
-    if (loadingDoc || containerWidth <= 0 || !pdfDocRef.current || cropRightPtRef.current == null) {
-      return;
-    }
+    if (loadingDoc || !docReady || containerWidth <= 0 || cropRightPt == null) return;
 
     const debounceMs = isPinchingRef.current ? 100 : 0;
     const timer = window.setTimeout(() => {
@@ -182,7 +202,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     }, debounceMs);
 
     return () => window.clearTimeout(timer);
-  }, [loadingDoc, containerWidth, zoom, url, renderAllPages]);
+  }, [loadingDoc, docReady, containerWidth, cropRightPt, zoom, url, renderAllPages]);
 
   const onTouchStart = (e: ReactTouchEvent) => {
     if (e.touches.length === 2) {
@@ -214,13 +234,16 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     }
   };
 
-  const showInitialSpinner = loadingDoc || (!hasRenderedPage && renderingPages);
+  const showSpinner = loadingDoc || (!hasRenderedPage && !error);
 
   return (
-    <div className={cn('flex flex-col min-h-0 min-w-0 w-full', className)}>
-      <div className="relative flex min-h-0 min-w-0 w-full max-h-[70vh]">
-        {showInitialSpinner ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/80 min-h-[200px]">
+    <div className={cn('flex flex-col w-full', className)}>
+      <div
+        className="relative w-full"
+        style={{ minHeight: VIEWER_MIN_HEIGHT_PX, maxHeight: '70vh' }}
+      >
+        {showSpinner ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/80">
             <LoadingSpinner className="text-[#36606F]" />
           </div>
         ) : null}
@@ -232,21 +255,26 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         ) : null}
 
         {error ? (
-          <p className="absolute inset-0 z-10 flex items-center justify-center text-center text-sm font-bold text-rose-600 px-4 min-h-[120px]">
+          <p className="absolute inset-0 z-10 flex items-center justify-center text-center text-sm font-bold text-rose-600 px-4">
             {error}
           </p>
         ) : null}
 
         <div
           ref={scrollRef}
-          className="w-full min-w-0 max-w-full min-h-0 max-h-[70vh] overflow-auto overscroll-contain bg-zinc-50/60 p-3"
-          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}
+          className="h-full w-full overflow-auto overscroll-contain bg-zinc-50/60 p-3"
+          style={{
+            minHeight: VIEWER_MIN_HEIGHT_PX,
+            maxHeight: '70vh',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x pan-y',
+          }}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
           onTouchCancel={onTouchEnd}
         >
-          <div ref={pagesHostRef} className="flex flex-col items-center w-full min-w-0" />
+          <div ref={pagesHostRef} className="flex flex-col items-center w-full" />
         </div>
       </div>
     </div>

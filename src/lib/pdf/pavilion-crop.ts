@@ -31,10 +31,10 @@ export async function detectCropRightThroughP4(page: PDFPageProxy): Promise<numb
   const textContent = await page.getTextContent();
   const items = textContent.items.flatMap((item) => (isTextItem(item) ? [item] : []));
 
-  const byLabel = (label: string) =>
-    items.filter((i) => i.str.trim().toUpperCase() === label);
+  const matchCol = (label: string) =>
+    items.filter((i) => i.str.trim().toUpperCase().replace(/\s+/g, '') === label);
 
-  const peixItems = byLabel('PEIX');
+  const peixItems = matchCol('PEIX');
   if (peixItems.length > 0) {
     const peixX = Math.min(...peixItems.map((i) => i.transform[4]!));
     if (peixX > 0 && peixX < pageWidth) {
@@ -42,10 +42,10 @@ export async function detectCropRightThroughP4(page: PDFPageProxy): Promise<numb
     }
   }
 
-  const p1 = byLabel('P1')[0];
-  const p2 = byLabel('P2')[0];
-  const p3 = byLabel('P3')[0];
-  const p4 = byLabel('P4')[0];
+  const p1 = matchCol('P1')[0];
+  const p2 = matchCol('P2')[0];
+  const p3 = matchCol('P3')[0];
+  const p4 = matchCol('P4')[0];
 
   if (p4) {
     const xs = [p1, p2, p3, p4]

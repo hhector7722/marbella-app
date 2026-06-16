@@ -260,7 +260,7 @@ export function PavilionActivityPdfModal({
               </div>
             </div>
 
-            <div className="flex flex-col min-h-0 min-w-0 w-full overflow-hidden">
+            <div className="flex flex-col min-h-0 w-full overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center bg-zinc-50/60 py-16 px-6">
                   <LoadingSpinner className="text-[#36606F]" />
