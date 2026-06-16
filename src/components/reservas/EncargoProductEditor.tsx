@@ -185,7 +185,9 @@ function BrowseNavBar({
         <span className="shrink-0 min-h-10 min-w-10" aria-hidden />
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-400">{eyebrow}</p>
+        {eyebrow.trim() ? (
+          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-400">{eyebrow}</p>
+        ) : null}
         <p className="text-[13px] font-black text-zinc-900 truncate leading-tight">{title}</p>
       </div>
     </div>
@@ -210,7 +212,7 @@ function ProductPickTile({
   return (
     <div
       className={cn(
-        'relative rounded-lg border bg-white p-2 min-h-[52px] flex flex-col',
+        'relative rounded-xl border bg-white px-2 py-2 min-h-[72px] flex flex-col',
         inCart ? 'border-[#36606F]/30 bg-[#36606F]/[0.03]' : 'border-zinc-200'
       )}
     >
@@ -220,53 +222,51 @@ function ProductPickTile({
         </span>
       ) : null}
 
-      <button
-        type="button"
-        onClick={inCart ? undefined : onAdd}
-        className={cn(
-          'flex-1 text-left min-w-0 pr-5',
-          !inCart && 'cursor-pointer active:opacity-70'
-        )}
-        disabled={inCart}
-      >
-        <span className="block text-[10px] font-bold text-zinc-800 leading-snug line-clamp-3">
+      <div className="flex-1 min-w-0 pr-6 text-left">
+        <span className="block text-[10px] font-bold text-zinc-900 leading-snug line-clamp-3">
           {product.name}
         </span>
         {showCategory && product.category ? (
-          <span className="block text-[9px] font-medium text-zinc-400 truncate mt-0.5">
+          <span className="block text-[9px] font-semibold text-zinc-400 truncate mt-0.5">
             {product.category}
           </span>
         ) : null}
-      </button>
+      </div>
 
-      {inCart ? (
-        <div className="mt-1 flex items-center justify-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={onDecrement}
-            className="min-h-8 min-w-8 flex items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700"
-            aria-label="Quitar uno"
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <button
-            type="button"
-            onClick={onAdd}
-            className="min-h-8 min-w-8 flex items-center justify-center rounded-md border border-[#36606F]/30 bg-[#36606F] text-white"
-            aria-label="Añadir uno"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
+      <div className="mt-1.5 grid grid-cols-3 gap-1 shrink-0">
+        <button
+          type="button"
+          onClick={inCart ? onDecrement : undefined}
+          disabled={!inCart}
+          className={cn(
+            'min-h-12 min-w-12 rounded-xl border flex items-center justify-center font-black',
+            inCart
+              ? 'border-zinc-200 bg-white text-zinc-800 active:opacity-70'
+              : 'border-zinc-200 bg-zinc-50 text-zinc-300'
+          )}
+          aria-label="Quitar uno"
+        >
+          <Minus className="h-4 w-4" strokeWidth={3} />
+        </button>
+        <div className="min-h-12 rounded-xl border border-zinc-200 bg-white flex items-center justify-center">
+          <span className="text-[12px] font-black tabular-nums text-zinc-900">
+            {inCart ? cartQty : ' '}
+          </span>
         </div>
-      ) : (
         <button
           type="button"
           onClick={onAdd}
-          className="mt-1 min-h-8 w-full rounded-md text-[9px] font-black uppercase tracking-wide text-[#36606F] hover:bg-[#36606F]/5"
+          className={cn(
+            'min-h-12 min-w-12 rounded-xl border flex items-center justify-center font-black',
+            inCart
+              ? 'border-[#36606F]/30 bg-[#36606F] text-white active:opacity-90'
+              : 'border-zinc-200 bg-white text-[#36606F] hover:bg-[#36606F]/5 active:opacity-70'
+          )}
+          aria-label="Añadir uno"
         >
-          Añadir
+          <Plus className="h-4 w-4" strokeWidth={3} />
         </button>
-      )}
+      </div>
     </div>
   )
 }
@@ -731,7 +731,7 @@ export function EncargoProductEditor({
       return (
         <div className="h-full flex flex-col min-h-0">
           <BrowseNavBar
-            eyebrow={activeDepartment?.label ?? 'Productos'}
+            eyebrow=""
             title={productsTitle}
             onBack={() => {
               if (activeDepartment && namedChildren(activeDepartment).length > 0) {
