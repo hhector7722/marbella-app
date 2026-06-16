@@ -1,12 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
-  LayoutGrid,
   Loader2,
   Minus,
   Plus,
@@ -57,6 +55,8 @@ type MenuDepartment = {
   children: MenuChildGroup[]
 }
 
+const DIRECT_CHILD_KEY = '__direct__'
+
 function newLineKey() {
   return crypto.randomUUID()
 }
@@ -67,6 +67,23 @@ function modalShellClassName() {
     'w-full max-w-[min(36rem,calc(100vw-2rem))]',
     'max-h-[calc(100dvh-2rem)]'
   )
+}
+
+function displaySubcategoryLabel(parentName: string, childName: string): string {
+  const child = childName.trim()
+  const parent = parentName.trim()
+  if (!child) return ''
+  const prefixes = parent
+    ? [`${parent} - `, `${parent} · `, `${parent} – `].map((p) => p.toLowerCase())
+    : []
+  const lowerChild = child.toLowerCase()
+  for (const prefix of prefixes) {
+    if (lowerChild.startsWith(prefix)) {
+      return child.slice(prefix.length).trim()
+    }
+  }
+  if (parent && lowerChild === parent.toLowerCase()) return ''
+  return child
 }
 
 function buildDepartments(products: EncargoEditorMenuProduct[]): MenuDepartment[] {
@@ -86,8 +103,9 @@ function buildDepartments(products: EncargoEditorMenuProduct[]): MenuDepartment[
       byParent.set(parentKey, dept)
     }
 
-    const childKey = product.childName || '__general__'
-    const childLabel = product.childName || 'General'
+    const rawChild = product.childName.trim()
+    const childKey = rawChild ? rawChild : DIRECT_CHILD_KEY
+    const childLabel = rawChild ? displaySubcategoryLabel(parentLabel, rawChild) : ''
     let child = dept.children.find((c) => c.key === childKey)
     if (!child) {
       child = {
@@ -114,8 +132,175 @@ function buildDepartments(products: EncargoEditorMenuProduct[]): MenuDepartment[
     }))
 }
 
-function departmentProductCount(dept: MenuDepartment) {
-  return dept.children.reduce((n, c) => n + c.products.length, 0)
+function namedChildren(dept: MenuDepartment): MenuChildGroup[] {
+  return dept.children.filter((c) => c.key !== DIRECT_CHILD_KEY && c.label.trim())
+}
+
+function resolveDepartmentEntry(dept: MenuDepartment): { parent: string; child: string | null } {
+  const named = namedChildren(dept)
+  if (named.length === 1) {
+    return { parent: dept.key, child: named[0].key }
+  }
+  if (named.length === 0) {
+    const direct = dept.children.find((c) => c.key === DIRECT_CHILD_KEY) ?? dept.children[0]
+    return { parent: dept.key, child: direct?.key ?? null }
+  }
+  return { parent: dept.key, child: null }
+}
+
+function BrowseNavBar({
+  eyebrow,
+  title,
+  onBack,
+}: {
+  eyebrow: string
+  title: string
+  onBack?: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-3 min-h-12">
+      {onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="shrink-0 min-h-12 min-w-12 rounded-xl border border-zinc-200 bg-white shadow-sm flex items-center justify-center text-[#36606F] hover:bg-zinc-50 active:scale-[0.98] transition-all"
+          aria-label="Volver"
+        >
+          <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
+        </button>
+      ) : (
+        <span className="shrink-0 min-h-12 min-w-12" aria-hidden />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-400">{eyebrow}</p>
+        <p className="text-[15px] font-black text-zinc-900 truncate leading-tight">{title}</p>
+      </div>
+    </div>
+  )
+}
+
+function EncargoCartModal({
+  lines,
+  lineCount,
+  unitCount,
+  onClose,
+  onUpdateLine,
+  onRemoveLine,
+}: {
+  lines: EditorLine[]
+  lineCount: number
+  unitCount: number
+  onClose: () => void
+  onUpdateLine: (lineKey: string, patch: Partial<StaffEncargoLineItem>) => void
+  onRemoveLine: (lineKey: string) => void
+}) {
+  const content = (
+    <div
+      className="fixed inset-0 z-[10080] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+      role="presentation"
+    >
+      <div className={modalShellClassName()} onClick={(e) => e.stopPropagation()}>
+        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Pedido actual</p>
+            <h3 className="text-base font-black truncate">
+              {lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Vacío'}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 shrink-0"
+            aria-label="Cerrar"
+          >
+            <X size={20} strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
+          {lines.length === 0 ? (
+            <p className="py-12 text-center text-sm font-semibold text-zinc-500">Sin productos aún.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {lines.map((line) => {
+                const note = line.notes.trim()
+                return (
+                  <div
+                    key={line.lineKey}
+                    className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-black text-zinc-900 leading-snug">{line.name}</p>
+                        {note ? (
+                          <p className="mt-1 text-[11px] font-medium text-zinc-500 lowercase">{note}</p>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveLine(line.lineKey)}
+                        className="shrink-0 min-h-10 min-w-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-xl"
+                        aria-label="Quitar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="flex items-center gap-1 shrink-0 rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateLine(line.lineKey, { quantity: Math.max(1, line.quantity - 1) })
+                          }
+                          className="min-h-10 min-w-10 flex items-center justify-center rounded-lg bg-white border border-zinc-200"
+                          aria-label="Menos"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="w-10 text-center text-sm font-black tabular-nums">{line.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateLine(line.lineKey, { quantity: Math.min(999, line.quantity + 1) })
+                          }
+                          className="min-h-10 min-w-10 flex items-center justify-center rounded-lg bg-white border border-zinc-200"
+                          aria-label="Más"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <input
+                        value={line.notes}
+                        onChange={(e) => onUpdateLine(line.lineKey, { notes: e.target.value })}
+                        placeholder="Notas…"
+                        className="min-h-12 flex-1 rounded-xl border border-zinc-200 px-3 text-[12px] font-medium bg-zinc-50"
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="shrink-0 border-t border-zinc-100 px-4 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 w-full rounded-xl bg-[#36606F] text-[11px] font-black uppercase text-white"
+          >
+            Continuar añadiendo
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (typeof document === 'undefined') return null
+  return createPortal(content, document.body)
 }
 
 export function EncargoProductEditor({
@@ -146,7 +331,7 @@ export function EncargoProductEditor({
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [browseParent, setBrowseParent] = useState<string | null>(null)
   const [browseChild, setBrowseChild] = useState<string | null>(null)
-  const [cartExpanded, setCartExpanded] = useState(false)
+  const [cartModalOpen, setCartModalOpen] = useState(false)
 
   useEffect(() => {
     const seed: EditorLine[] = initialItems.map((it) => ({
@@ -158,7 +343,7 @@ export function EncargoProductEditor({
     setBrowseParent(null)
     setBrowseChild(null)
     setSearch('')
-    setCartExpanded(false)
+    setCartModalOpen(false)
   }, [initialItems, eventId])
 
   useEffect(() => {
@@ -184,7 +369,8 @@ export function EncargoProductEditor({
       const products: EncargoEditorMenuProduct[] = (data ?? []).map((row) => {
         const parent = String((row as { category_parent_name?: string }).category_parent_name ?? '').trim()
         const child = String((row as { category_child_name?: string }).category_child_name ?? '').trim()
-        const category = [parent, child].filter(Boolean).join(' · ')
+        const displayChild = child ? displaySubcategoryLabel(parent, child) : ''
+        const category = [parent, displayChild].filter(Boolean).join(' · ')
         return {
           product_id: eventOrderProductId((row as { articulo_id: number }).articulo_id),
           name: String((row as { carta_nombre?: string }).carta_nombre ?? '').trim(),
@@ -278,6 +464,22 @@ export function EncargoProductEditor({
     setLines((prev) => prev.filter((l) => l.lineKey !== lineKey))
   }, [])
 
+  const goToDepartments = useCallback(() => {
+    setBrowseParent(null)
+    setBrowseChild(null)
+  }, [])
+
+  const goToSections = useCallback(() => {
+    if (!activeDepartment) return
+    setBrowseChild(null)
+  }, [activeDepartment])
+
+  const openDepartment = useCallback((dept: MenuDepartment) => {
+    const next = resolveDepartmentEntry(dept)
+    setBrowseParent(next.parent)
+    setBrowseChild(next.child)
+  }, [])
+
   const handleSave = useCallback(() => {
     const payload = lines
       .filter((l) => l.quantity > 0)
@@ -323,45 +525,15 @@ export function EncargoProductEditor({
     })
   }, [eventId, onClose, onDeleted])
 
-  const browseBreadcrumb = (
-    <div className="flex flex-wrap items-center gap-1.5 mb-3">
-      <button
-        type="button"
-        onClick={() => {
-          setBrowseParent(null)
-          setBrowseChild(null)
-        }}
-        className={cn(
-          'min-h-8 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider',
-          !browseParent ? 'bg-[#36606F] text-white' : 'bg-zinc-100 text-zinc-600'
-        )}
-      >
-        Carta
-      </button>
-      {activeDepartment ? (
-        <button
-          type="button"
-          onClick={() => setBrowseChild(null)}
-          className={cn(
-            'min-h-8 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider truncate max-w-[9rem]',
-            browseChild ? 'bg-zinc-100 text-zinc-600' : 'bg-[#36606F] text-white'
-          )}
-        >
-          {activeDepartment.label}
-        </button>
-      ) : null}
-      {activeChildGroup ? (
-        <span className="min-h-8 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[#36606F] text-white truncate max-w-[9rem] inline-flex items-center">
-          {activeChildGroup.label}
-        </span>
-      ) : null}
-    </div>
-  )
+  const productsTitle =
+    activeChildGroup && activeChildGroup.label.trim()
+      ? activeChildGroup.label
+      : activeDepartment?.label ?? 'Productos'
 
   const browsePanel = (() => {
     if (loadingMenu) {
       return (
-        <div className="flex justify-center py-10">
+        <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-[#36606F]" />
         </div>
       )
@@ -369,31 +541,18 @@ export function EncargoProductEditor({
 
     if (!browseParent) {
       return (
-        <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-zinc-50 to-white p-3 shadow-sm">
-          <div className="flex items-center gap-2 mb-3 px-1">
-            <LayoutGrid className="h-4 w-4 text-[#36606F]" strokeWidth={2.5} />
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F]">Departamentos</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-[1.35rem] border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50 p-3 shadow-sm">
+          <BrowseNavBar eyebrow="Carta" title="Departamentos" />
+          <div className="grid grid-cols-2 gap-2.5">
             {departments.map((dept) => (
               <button
                 key={dept.key}
                 type="button"
-                onClick={() => {
-                  setBrowseParent(dept.key)
-                  if (dept.children.length === 1) {
-                    setBrowseChild(dept.children[0].key)
-                  } else {
-                    setBrowseChild(null)
-                  }
-                }}
-                className="min-h-[56px] rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left shadow-sm hover:border-[#36606F]/35 hover:shadow-md active:scale-[0.98] transition-all"
+                onClick={() => openDepartment(dept)}
+                className="min-h-[58px] rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-center shadow-sm hover:border-[#36606F]/30 hover:shadow-md active:scale-[0.98] transition-all"
               >
-                <span className="block text-[12px] font-black text-zinc-900 leading-snug line-clamp-2">
+                <span className="block text-[12px] font-black text-zinc-900 leading-snug line-clamp-3">
                   {dept.label}
-                </span>
-                <span className="mt-1 inline-flex rounded-md bg-[#36606F]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#36606F]">
-                  {departmentProductCount(dept)} prod.
                 </span>
               </button>
             ))}
@@ -402,37 +561,24 @@ export function EncargoProductEditor({
       )
     }
 
-    if (!browseChild && activeDepartment) {
+    if (!browseChild && activeDepartment && namedChildren(activeDepartment).length > 0) {
       return (
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
-          {browseBreadcrumb}
-          <button
-            type="button"
-            onClick={() => {
-              setBrowseParent(null)
-              setBrowseChild(null)
-            }}
-            className="min-h-10 mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Volver
-          </button>
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1 mb-2">
-            Secciones · {activeDepartment.label}
-          </p>
+        <div className="rounded-[1.35rem] border border-zinc-200 bg-zinc-50/90 p-3 shadow-sm">
+          <BrowseNavBar
+            eyebrow="Departamento"
+            title={activeDepartment.label}
+            onBack={goToDepartments}
+          />
           <ul className="flex flex-col gap-2">
-            {activeDepartment.children.map((child) => (
+            {namedChildren(activeDepartment).map((child) => (
               <li key={child.key}>
                 <button
                   type="button"
                   onClick={() => setBrowseChild(child.key)}
-                  className="min-h-12 w-full rounded-xl border border-white bg-white px-4 py-3 text-left shadow-sm hover:border-[#36606F]/25 flex items-center justify-between gap-3"
+                  className="min-h-[52px] w-full rounded-2xl border border-white bg-white px-4 py-3 text-left shadow-sm hover:border-[#36606F]/20 flex items-center justify-between gap-3 active:scale-[0.99] transition-all"
                 >
-                  <span className="text-[13px] font-bold text-zinc-800">{child.label}</span>
-                  <span className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-semibold text-zinc-400">{child.products.length}</span>
-                    <ChevronRight className="h-4 w-4 text-zinc-400" />
-                  </span>
+                  <span className="text-[14px] font-black text-zinc-800">{child.label}</span>
+                  <ChevronRight className="h-4 w-4 text-zinc-300 shrink-0" />
                 </button>
               </li>
             ))}
@@ -443,36 +589,30 @@ export function EncargoProductEditor({
 
     if (activeChildGroup) {
       return (
-        <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/40 p-3 shadow-sm">
-          {browseBreadcrumb}
-          <button
-            type="button"
-            onClick={() => {
-              if (activeDepartment && activeDepartment.children.length === 1) {
-                setBrowseParent(null)
-                setBrowseChild(null)
+        <div className="rounded-[1.35rem] border border-[#36606F]/15 bg-[#36606F]/[0.04] p-3 shadow-sm">
+          <BrowseNavBar
+            eyebrow={activeDepartment?.label ?? 'Productos'}
+            title={productsTitle}
+            onBack={() => {
+              if (activeDepartment && namedChildren(activeDepartment).length > 0) {
+                goToSections()
               } else {
-                setBrowseChild(null)
+                goToDepartments()
               }
             }}
-            className="min-h-10 mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800/70"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Volver
-          </button>
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/80 px-1 mb-2">
-            Añadir producto
-          </p>
+          />
           <ul className="flex flex-col gap-1.5">
             {activeChildGroup.products.map((p) => (
               <li key={p.product_id}>
                 <button
                   type="button"
                   onClick={() => addProduct(p)}
-                  className="min-h-12 w-full rounded-xl border border-emerald-100 bg-white px-3 py-2.5 text-left flex items-center gap-3 hover:bg-emerald-50/80 active:scale-[0.99] transition-all"
+                  className="min-h-[52px] w-full rounded-2xl border border-white bg-white px-3 py-2.5 text-left flex items-center gap-3 shadow-sm hover:shadow-md active:scale-[0.99] transition-all"
                 >
-                  <span className="flex-1 min-w-0 text-[13px] font-bold text-zinc-800 truncate">{p.name}</span>
-                  <span className="shrink-0 min-h-10 min-w-10 rounded-full bg-[#36606F] text-white flex items-center justify-center shadow-sm">
+                  <span className="flex-1 min-w-0 text-[13px] font-bold text-zinc-800 leading-snug">
+                    {p.name}
+                  </span>
+                  <span className="shrink-0 min-h-11 min-w-11 rounded-full bg-[#36606F] text-white flex items-center justify-center shadow-sm">
                     <Plus className="h-4 w-4" strokeWidth={2.5} />
                   </span>
                 </button>
@@ -504,25 +644,23 @@ export function EncargoProductEditor({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
-        <div className="shrink-0 px-4 py-3 bg-zinc-50 border-b border-zinc-100">
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col bg-zinc-50/60">
+        <div className="shrink-0 px-4 py-3 border-b border-zinc-100 bg-white">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar producto…"
-              className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold shadow-sm focus:border-[#36606F]/40 focus:outline-none focus:ring-2 focus:ring-[#36606F]/15"
+              className="min-h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 pl-10 pr-3 text-sm font-semibold focus:border-[#36606F]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#36606F]/15"
             />
           </div>
         </div>
 
         <div className="flex-1 px-4 py-3 min-h-0">
           {searchActive ? (
-            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-3 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-amber-900/70 px-1 mb-2">
-                Búsqueda
-              </p>
+            <div className="rounded-[1.35rem] border border-amber-200/70 bg-amber-50/40 p-3 shadow-sm">
+              <BrowseNavBar eyebrow="Búsqueda" title={`“${search.trim()}”`} onBack={() => setSearch('')} />
               {searchResults.length > 0 ? (
                 <ul className="flex flex-col gap-1.5">
                   {searchResults.map((p) => (
@@ -530,15 +668,17 @@ export function EncargoProductEditor({
                       <button
                         type="button"
                         onClick={() => addProduct(p)}
-                        className="min-h-12 w-full rounded-xl border border-amber-100 bg-white px-3 py-2 text-left flex items-center gap-3 hover:bg-amber-50"
+                        className="min-h-[52px] w-full rounded-2xl border border-amber-100/80 bg-white px-3 py-2 text-left flex items-center gap-3 shadow-sm hover:bg-amber-50/60"
                       >
                         <div className="min-w-0 flex-1">
                           <span className="block text-[13px] font-bold text-zinc-800 truncate">{p.name}</span>
                           {p.category ? (
-                            <span className="block text-[10px] font-medium text-zinc-500 truncate">{p.category}</span>
+                            <span className="block text-[10px] font-semibold text-amber-900/50 truncate mt-0.5">
+                              {p.category}
+                            </span>
                           ) : null}
                         </div>
-                        <span className="shrink-0 min-h-10 min-w-10 rounded-full bg-amber-600 text-white flex items-center justify-center">
+                        <span className="shrink-0 min-h-11 min-w-11 rounded-full bg-amber-700 text-white flex items-center justify-center">
                           <Plus className="h-4 w-4" strokeWidth={2.5} />
                         </span>
                       </button>
@@ -546,7 +686,7 @@ export function EncargoProductEditor({
                   ))}
                 </ul>
               ) : (
-                <p className="text-center text-xs font-semibold text-amber-900/60 py-4">Sin resultados.</p>
+                <p className="text-center text-xs font-semibold text-amber-900/60 py-6">Sin resultados.</p>
               )}
             </div>
           ) : (
@@ -555,110 +695,29 @@ export function EncargoProductEditor({
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-zinc-200 bg-white">
-        <button
-          type="button"
-          onClick={() => setCartExpanded((open) => !open)}
-          className="min-h-12 w-full px-4 flex items-center justify-between gap-3 hover:bg-zinc-50"
-          aria-expanded={cartExpanded}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="min-h-9 min-w-9 rounded-xl bg-[#36606F]/10 text-[#36606F] flex items-center justify-center shrink-0">
-              <ShoppingBag className="h-4 w-4" strokeWidth={2.5} />
-            </span>
-            <div className="text-left min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Pedido actual</p>
-              <p className="text-[13px] font-bold text-zinc-900 truncate">
-                {lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Vacío'}
-              </p>
-            </div>
+      <button
+        type="button"
+        onClick={() => setCartModalOpen(true)}
+        className="shrink-0 min-h-[56px] w-full px-4 flex items-center justify-between gap-3 border-t border-zinc-200 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="relative min-h-11 min-w-11 rounded-2xl bg-[#36606F] text-white flex items-center justify-center shrink-0 shadow-sm">
+            <ShoppingBag className="h-4 w-4" strokeWidth={2.5} />
+            {lineCount > 0 ? (
+              <span className="absolute -top-1.5 -right-1.5 min-h-[18px] min-w-[18px] px-1 rounded-full bg-amber-500 text-[9px] font-black text-white flex items-center justify-center">
+                {lineCount > 9 ? '9+' : lineCount}
+              </span>
+            ) : null}
+          </span>
+          <div className="text-left min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pedido actual</p>
+            <p className="text-[14px] font-black text-zinc-900 truncate">
+              {lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Toca para revisar'}
+            </p>
           </div>
-          {cartExpanded ? (
-            <ChevronUp className="h-5 w-5 text-zinc-400 shrink-0" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-zinc-400 shrink-0" />
-          )}
-        </button>
-
-        {cartExpanded ? (
-          <div className="px-4 pb-3 border-t border-zinc-100 bg-zinc-50/80 max-h-[min(40vh,280px)] overflow-y-auto">
-            {lines.length === 0 ? (
-              <p className="py-6 text-center text-xs font-semibold text-zinc-500">Sin productos aún.</p>
-            ) : (
-              <div className="overflow-x-auto border border-zinc-200 rounded-xl bg-white mt-3">
-                <table className="w-full text-left text-[12px]">
-                  <thead>
-                    <tr className="border-b border-zinc-100 bg-zinc-50">
-                      <th className="px-2 py-2 font-black uppercase text-[9px] text-zinc-500">Producto</th>
-                      <th className="px-2 py-2 font-black uppercase text-[9px] text-zinc-500 w-24">Cant.</th>
-                      <th className="px-2 py-2 font-black uppercase text-[9px] text-zinc-500">Notas</th>
-                      <th className="w-10" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
-                    {lines.map((line) => (
-                      <tr key={line.lineKey}>
-                        <td className="px-2 py-2 font-bold text-zinc-800 align-top">{line.name}</td>
-                        <td className="px-2 py-2 align-top">
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateLine(line.lineKey, { quantity: Math.max(1, line.quantity - 1) })
-                              }
-                              className="min-h-10 min-w-10 flex items-center justify-center rounded-lg border border-zinc-200 bg-white"
-                              aria-label="Menos"
-                            >
-                              <Minus className="h-3.5 w-3.5" />
-                            </button>
-                            <input
-                              inputMode="numeric"
-                              value={String(line.quantity)}
-                              onChange={(e) => {
-                                const n = Math.max(1, Math.min(999, Number(e.target.value) || 1))
-                                updateLine(line.lineKey, { quantity: n })
-                              }}
-                              className="w-10 min-h-10 text-center rounded-lg border border-zinc-200 font-bold bg-white"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateLine(line.lineKey, { quantity: Math.min(999, line.quantity + 1) })
-                              }
-                              className="min-h-10 min-w-10 flex items-center justify-center rounded-lg border border-zinc-200 bg-white"
-                              aria-label="Más"
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-2 py-2 align-top">
-                          <input
-                            value={line.notes}
-                            onChange={(e) => updateLine(line.lineKey, { notes: e.target.value })}
-                            placeholder="Notas…"
-                            className="min-h-10 w-full min-w-[6rem] rounded-lg border border-zinc-200 px-2 text-[11px] font-medium bg-white"
-                          />
-                        </td>
-                        <td className="px-1 py-2 align-top">
-                          <button
-                            type="button"
-                            onClick={() => removeLine(line.lineKey)}
-                            className="min-h-10 min-w-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-lg"
-                            aria-label="Quitar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ) : null}
-      </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-zinc-300 shrink-0" />
+      </button>
 
       <div className="shrink-0 border-t border-zinc-100 px-4 py-3 flex flex-col gap-2 bg-white">
         {deleteConfirm ? (
@@ -712,6 +771,17 @@ export function EncargoProductEditor({
           </button>
         </div>
       </div>
+
+      {cartModalOpen ? (
+        <EncargoCartModal
+          lines={lines}
+          lineCount={lineCount}
+          unitCount={unitCount}
+          onClose={() => setCartModalOpen(false)}
+          onUpdateLine={updateLine}
+          onRemoveLine={removeLine}
+        />
+      ) : null}
     </>
   )
 
