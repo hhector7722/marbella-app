@@ -5,13 +5,14 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
   type TouchEvent,
 } from 'react'
 import { cn } from '@/lib/utils'
 
-const MIN_SCALE = 1
-const MAX_SCALE = 4
+const DEFAULT_MIN_SCALE = 0.65
+const DEFAULT_MAX_SCALE = 4
 
 function touchDistance(touches: TouchEvent['touches']) {
   if (touches.length < 2) return 0
@@ -19,14 +20,6 @@ function touchDistance(touches: TouchEvent['touches']) {
   const b = touches.item(1)
   if (!a || !b) return 0
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
-}
-
-type PinchZoomViewportProps = {
-  children: ReactNode
-  className?: string
-  style?: React.CSSProperties
-  /** Al cambiar (p. ej. hoja del carrusel), reinicia zoom y desplazamiento. */
-  resetKey?: string | number
 }
 
 function touchMidpoint(touches: TouchEvent['touches']) {
@@ -37,28 +30,111 @@ function touchMidpoint(touches: TouchEvent['touches']) {
   return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }
 }
 
-export function PinchZoomViewport({ children, className, style, resetKey }: PinchZoomViewportProps) {
+type PinchZoomViewportProps = {
+  children: ReactNode
+  className?: string
+  style?: CSSProperties
+  minScale?: number
+  maxScale?: number
+  /** Al cambiar (p. ej. hoja del carrusel), reinicia zoom y desplazamiento. */
+  resetKey?: string | number
+}
+
+export function PinchZoomViewport({
+  children,
+  className,
+  style,
+  minScale = DEFAULT_MIN_SCALE,
+  maxScale = DEFAULT_MAX_SCALE,
+  resetKey,
+}: PinchZoomViewportProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const scaleRef = useRef(1)
   const panRef = useRef({ x: 0, y: 0 })
   const pinchRef = useRef<{ distance: number; scale: number } | null>(null)
   const panDragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const pendingRef = useRef<{ scale: number; pan: { x: number; y: number } } | null>(null)
 
-  const syncRefs = useCallback((s: number, p: { x: number; y: number }) => {
-    scaleRef.current = s
-    panRef.current = p
-    setScale(s)
-    setPan(p)
+  const flushPending = useCallback(() => {
+    rafRef.current = null
+    const pending = pendingRef.current
+    if (!pending) return
+    pendingRef.current = null
+    scaleRef.current = pending.scale
+    panRef.current = pending.pan
+    setScale(pending.scale)
+    setPan(pending.pan)
   }, [])
 
+  const scheduleUpdate = useCallback(
+    (s: number, p: { x: number; y: number }) => {
+      pendingRef.current = { scale: s, pan: p }
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(flushPending)
+      }
+    },
+    [flushPending],
+  )
+
+  const syncRefs = useCallback(
+    (s: number, p: { x: number; y: number }, immediate = false) => {
+      if (immediate) {
+        scaleRef.current = s
+        panRef.current = p
+        setScale(s)
+        setPan(p)
+        return
+      }
+      scheduleUpdate(s, p)
+    },
+    [scheduleUpdate],
+  )
+
   useEffect(() => {
-    syncRefs(1, { x: 0, y: 0 })
+    syncRefs(1, { x: 0, y: 0 }, true)
     pinchRef.current = null
     panDragRef.current = null
   }, [resetKey, syncRefs])
 
-  const clampScale = (s: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s))
+  useEffect(() => {
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  const clampScale = useCallback(
+    (s: number) => Math.min(maxScale, Math.max(minScale, s)),
+    [maxScale, minScale],
+  )
+
+  const panForScaleAroundFocal = useCallback(
+    (nextScale: number, focalClientX: number, focalClientY: number) => {
+      const scrollEl = scrollRef.current
+      const contentEl = contentRef.current
+      if (!scrollEl || !contentEl) return panRef.current
+
+      const scrollRect = scrollEl.getBoundingClientRect()
+      const contentRect = contentEl.getBoundingClientRect()
+      const prevScale = scaleRef.current
+      const pan = panRef.current
+
+      const anchorX =
+        focalClientX - scrollRect.left + scrollEl.scrollLeft - (contentRect.left - scrollRect.left + scrollEl.scrollLeft)
+      const anchorY =
+        focalClientY - scrollRect.top + scrollEl.scrollTop - (contentRect.top - scrollRect.top + scrollEl.scrollTop)
+
+      const ratio = nextScale / prevScale
+      return {
+        x: anchorX - ratio * (anchorX - pan.x),
+        y: anchorY - ratio * (anchorY - pan.y),
+      }
+    },
+    [],
+  )
 
   const onTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 2) {
@@ -70,7 +146,7 @@ export function PinchZoomViewport({ children, className, style, resetKey }: Pinc
       }
       return
     }
-    if (e.touches.length === 1 && scaleRef.current > 1) {
+    if (e.touches.length === 1 && scaleRef.current > 1.01) {
       e.stopPropagation()
       panDragRef.current = {
         x: e.touches[0].clientX,
@@ -90,29 +166,20 @@ export function PinchZoomViewport({ children, className, style, resetKey }: Pinc
       const ratio = distance / pinchRef.current.distance
       const next = clampScale(pinchRef.current.scale * ratio)
       const mid = touchMidpoint(e.touches)
-      const prevScale = scaleRef.current
-      const scaleRatio = next / prevScale
-      const pan = panRef.current
-      const nextPan = {
-        x: mid.x - scaleRatio * (mid.x - pan.x),
-        y: mid.y - scaleRatio * (mid.y - pan.y),
-      }
+      const nextPan = panForScaleAroundFocal(next, mid.x, mid.y)
       syncRefs(next, nextPan)
       return
     }
-    if (e.touches.length === 1 && panDragRef.current && scaleRef.current > 1) {
+    if (e.touches.length === 1 && panDragRef.current) {
       e.preventDefault()
       e.stopPropagation()
       const dx = e.touches[0].clientX - panDragRef.current.x
       const dy = e.touches[0].clientY - panDragRef.current.y
-      setPan({
-        x: panDragRef.current.panX + dx,
-        y: panDragRef.current.panY + dy,
-      })
-      panRef.current = {
+      const nextPan = {
         x: panDragRef.current.panX + dx,
         y: panDragRef.current.panY + dy,
       }
+      syncRefs(scaleRef.current, nextPan)
     }
   }
 
@@ -121,27 +188,36 @@ export function PinchZoomViewport({ children, className, style, resetKey }: Pinc
       pinchRef.current = null
       if (e.touches.length === 0) {
         panDragRef.current = null
-        if (scaleRef.current <= 1.02) {
-          syncRefs(1, { x: 0, y: 0 })
+        flushPending()
+        if (scaleRef.current < 1.02) {
+          syncRefs(1, { x: 0, y: 0 }, true)
         }
       }
     }
   }
 
+  const canPan = scale > 1.01
+
   return (
     <div
-      className={cn('flex min-h-0 flex-1 overflow-auto overscroll-contain', className)}
-      style={{ touchAction: scale > 1 ? 'none' : 'pan-x pan-y', ...style }}
+      ref={scrollRef}
+      className={cn('min-h-0 flex-1 overflow-auto overscroll-contain', className)}
+      style={{
+        touchAction: canPan ? 'none' : 'pan-x pan-y',
+        WebkitOverflowScrolling: 'touch',
+        ...style,
+      }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
     >
-      <div className="flex min-h-full w-full min-w-0 flex-1 items-center justify-center p-1">
+      <div className="flex min-h-full w-full min-w-0 flex-col items-stretch justify-start">
         <div
-          className="inline-block max-w-full will-change-transform"
+          ref={contentRef}
+          className="w-full will-change-transform"
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+            transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${scale})`,
             transformOrigin: '0 0',
           }}
         >

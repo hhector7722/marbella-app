@@ -13,6 +13,20 @@ export function computeFitScale(contentWidthAtScale1: number, containerWidth: nu
   return containerWidth / contentWidthAtScale1;
 }
 
+/** Escala máxima para que el recorte quepa en ancho y alto del contenedor (object-fit: contain). */
+export function computeContainFitScale(
+  cropWidthPt: number,
+  cropHeightPt: number,
+  containerWidth: number,
+  containerHeight: number,
+): number {
+  if (containerWidth <= 0 || containerHeight <= 0) return 1;
+  if (cropWidthPt <= 0 || cropHeightPt <= 0) return 1;
+  const byWidth = containerWidth / cropWidthPt;
+  const byHeight = containerHeight / cropHeightPt;
+  return Math.min(byWidth, byHeight);
+}
+
 function resolveOutputScale(cssWidth: number, cssHeight: number, maxDpr = DEFAULT_MAX_DPR): number {
   let dpr = getClampedDevicePixelRatio(maxDpr);
   while (dpr > 1 && cssWidth * cssHeight * dpr * dpr > MAX_CANVAS_AREA) {
@@ -56,18 +70,21 @@ async function renderFullPageToCanvas(
 }
 
 /**
- * Render HiDPI recortado a [0, cropRightPt) en coords PDF (escala 1).
- * `cssScale` = fit-width × zoom del usuario.
+ * Render HiDPI recortado a [cropLeftPt, cropRightPt) en coords PDF (escala 1).
  */
 export async function renderPdfPageHiDpiCrop(
   page: PDFPageProxy,
   canvas: HTMLCanvasElement,
   cssScale: number,
   cropRightPt: number,
+  cropLeftPt = 0,
 ): Promise<void> {
   const pageWidth = page.getViewport({ scale: 1 }).width;
-  const cropRight = Math.max(1, Math.min(cropRightPt, pageWidth));
-  const cropRatio = cropRight / pageWidth;
+  const cropLeft = Math.max(0, Math.min(cropLeftPt, pageWidth - 1));
+  const cropRight = Math.max(cropLeft + 1, Math.min(cropRightPt, pageWidth));
+  const cropWidthPt = cropRight - cropLeft;
+  const cropRatio = cropWidthPt / pageWidth;
+  const cropOffsetRatio = cropLeft / pageWidth;
 
   const offscreen = document.createElement('canvas');
   const { outputScale, cssW: fullCssW, cssH: fullCssH } = await renderFullPageToCanvas(
@@ -77,6 +94,7 @@ export async function renderPdfPageHiDpiCrop(
   );
 
   const cssCropW = Math.max(1, Math.floor(fullCssW * cropRatio));
+  const srcX = Math.max(0, Math.floor(offscreen.width * cropOffsetRatio));
   const srcCropW = Math.max(1, Math.floor(offscreen.width * cropRatio));
   const outW = Math.max(1, Math.floor(cssCropW * outputScale));
   const outH = Math.max(1, Math.floor(fullCssH * outputScale));
@@ -89,7 +107,7 @@ export async function renderPdfPageHiDpiCrop(
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('No se pudo crear el contexto 2D');
 
-  ctx.drawImage(offscreen, 0, 0, srcCropW, offscreen.height, 0, 0, outW, outH);
+  ctx.drawImage(offscreen, srcX, 0, srcCropW, offscreen.height, 0, 0, outW, outH);
 }
 
 export async function renderPdfPageHiDpi(
