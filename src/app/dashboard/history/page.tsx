@@ -34,7 +34,12 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
+import {
+    closingDetailUsageLabel,
+    formatMonthYear,
+    formatYmdShort,
+    periodRangeSummary,
+} from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
@@ -260,14 +265,14 @@ export default function HistoryPage() {
     const [shareMenuOpen, setShareMenuOpen] = useState(false);
     const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
 
-    const trackHistoryClosingDetail = useTrackModalApply('history-closing-detail', 'Detalle cierre de caja');
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
 
-    const openClosingDetail = (closing: { id: string; closed_at?: string }) => {
-        const dateLabel = closing.closed_at
-            ? formatYmdShort(format(new Date(closing.closed_at), 'yyyy-MM-dd'))
-            : 'Cierre';
-        trackHistoryClosingDetail(dateLabel, { closingId: closing.id });
+    const closingDetailTrackingLabel = useMemo(() => {
+        if (!selectedClosing) return 'Detalle de cierre';
+        return closingDetailUsageLabel(selectedClosing);
+    }, [selectedClosing]);
+
+    const openClosingDetail = (closing: { id: string; closed_at?: string; closing_date?: string }) => {
         setSelectedClosing(closing);
     };
     const [showCashDetails, setShowCashDetails] = useState(false);
@@ -277,7 +282,7 @@ export default function HistoryPage() {
     useModalUsageTracking({
         open: selectedClosing !== null,
         usageId: 'history-closing-detail',
-        usageLabel: 'Detalle de cierre',
+        usageLabel: closingDetailTrackingLabel,
     });
     useModalUsageTracking({
         open: showCalendar !== null,

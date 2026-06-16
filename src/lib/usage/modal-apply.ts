@@ -28,6 +28,21 @@ export function formatYmdShort(ymd: string): string {
   return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
 }
 
+export function closingDetailUsageSummary(closing: {
+  closing_date?: string | null;
+  closed_at?: string | null;
+}): string {
+  const ymd = closing.closing_date?.split('T')[0] ?? closing.closed_at?.split('T')[0];
+  return ymd ? formatYmdShort(ymd) : 'Cierre';
+}
+
+export function closingDetailUsageLabel(closing: {
+  closing_date?: string | null;
+  closed_at?: string | null;
+}): string {
+  return `${closingDetailUsageSummary(closing)} · Detalle de cierre`;
+}
+
 export function formatMonthYear(year: number, monthIndex0: number): string {
   return format(new Date(year, monthIndex0, 1), 'MMMM yyyy', { locale: es });
 }
