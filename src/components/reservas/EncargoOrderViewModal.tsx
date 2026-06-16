@@ -76,7 +76,13 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     .meta-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; margin-right: 4px; }
     .meta-value { font-weight: 800; color: #000000; }
     .doc-table { margin: 0; }
-    table { width: 100%; border-collapse: collapse; border: none; color: #000000; table-layout: auto; }
+    table.order-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: none;
+      color: #000000;
+      table-layout: auto;
+    }
     th {
       background: #fafafa;
       font-size: 8px;
@@ -87,24 +93,37 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
       text-align: left;
       white-space: nowrap;
     }
-    th.col-qty { text-align: center; width: 1%; }
-    th.col-note { width: 1%; }
+    th.col-product,
+    td.col-product {
+      width: auto;
+      font-weight: 700;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th.col-note,
+    td.col-note {
+      width: auto;
+      text-align: left;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: lowercase;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+    th.col-qty,
+    td.col-qty {
+      width: 1%;
+      text-align: center;
+      font-weight: 700;
+      font-family: monospace;
+      white-space: nowrap;
+    }
     td {
       padding: 12px 8px;
       color: #000000;
       vertical-align: middle;
-      white-space: nowrap;
     }
-    td.col-product { font-weight: 700; text-align: left; }
-    td.col-note {
-      text-align: left;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: lowercase;
-      padding-left: 8px;
-      padding-right: 8px;
-    }
-    td.col-qty { text-align: center; font-weight: 700; font-family: monospace; width: 1%; }
     tr + tr { border-top: 1px solid #e4e4e7; }
     @media print {
       html, body {
@@ -141,9 +160,14 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     </div>
   </section>
   <section class="doc-table">
-    <table>
+    <table class="order-table">
+      <colgroup>
+        <col class="col-product" />
+        <col class="col-note" />
+        <col class="col-qty" />
+      </colgroup>
       <thead>
-        <tr><th>Producto</th><th class="col-note" aria-hidden="true">&nbsp;</th><th class="col-qty">Cantidad</th></tr>
+        <tr><th class="col-product">Producto</th><th class="col-note" aria-hidden="true">&nbsp;</th><th class="col-qty">Cantidad</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
@@ -315,16 +339,21 @@ export function EncargoOrderViewModal({
             </p>
           ) : (
             <div className="overflow-x-auto border border-zinc-100 rounded-xl">
-              <table className="w-full text-left text-[12px]">
+              <table className="w-full table-auto text-left text-[12px]">
+                <colgroup>
+                  <col className="w-auto" />
+                  <col className="w-auto" />
+                  <col className="w-px" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500">
+                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 whitespace-nowrap">
                       Producto
                     </th>
-                    <th className="px-3 py-2.5 text-left" aria-hidden="true">
+                    <th className="px-3 py-2.5 text-left whitespace-nowrap" aria-hidden="true">
                       &nbsp;
                     </th>
-                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 w-20 text-center">
+                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 w-px text-center whitespace-nowrap">
                       Cantidad
                     </th>
                   </tr>
@@ -334,13 +363,13 @@ export function EncargoOrderViewModal({
                     const note = it.notes?.trim()
                     return (
                       <tr key={`${it.product_id}-${index}`} className="border-t border-zinc-100">
-                        <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle whitespace-nowrap">
+                        <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle whitespace-nowrap w-auto">
                           {it.name}
                         </td>
-                        <td className="px-3 py-2.5 text-left align-middle text-[14px] font-semibold text-zinc-600 lowercase whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-left align-middle text-[14px] font-semibold text-zinc-600 lowercase whitespace-nowrap w-auto">
                           {note || ' '}
                         </td>
-                        <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums align-middle">
+                        <td className="px-3 py-2.5 font-mono font-bold text-zinc-700 text-center tabular-nums align-middle w-px whitespace-nowrap">
                           {it.quantity > 0 ? it.quantity : ' '}
                         </td>
                       </tr>
