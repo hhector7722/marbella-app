@@ -223,7 +223,7 @@ export function EncargoOrderViewModal({
 
   return (
     <div
-      className="fixed inset-0 z-[10060] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[10060] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -231,9 +231,9 @@ export function EncargoOrderViewModal({
     >
       <div
         className={cn(
-          'bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden',
-          'w-full max-w-[min(36rem,calc(100vw-2rem))]',
-          'max-h-[calc(100dvh-2rem)]',
+          'bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden',
+          'w-[min(26rem,calc(100vw-3rem))]',
+          'max-h-[min(30rem,calc(100dvh-4rem))]',
           'animate-in zoom-in-95 duration-200'
         )}
         onClick={(e) => e.stopPropagation()}
