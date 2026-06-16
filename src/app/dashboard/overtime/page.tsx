@@ -3,7 +3,7 @@
 import {
     ChevronLeft, ChevronRight, Check, Circle, X
 } from 'lucide-react';
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, subMonths, getISOWeek, addDays, eachDayOfInterval, isSameDay } from 'date-fns';
@@ -16,8 +16,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
-import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { formatYmdShort, namedEntitySummary } from '@/lib/usage/modal-apply';
+import { overtimeWeekDetailUsageLabel } from '@/lib/usage/modal-apply';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
 const formatDisplay = (val: number, suffix: string = '') => {
@@ -91,13 +90,16 @@ export default function OvertimePage() {
     const [loading, setLoading] = useState(true);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
 
-    const trackOvertimeWeekDetail = useTrackModalApply('overtime-week-detail', 'Detalle semana horas extras');
-    const trackOvertimeWorkerHistory = useTrackModalApply('overtime-worker-history', 'Historial trabajador horas extras');
+    const weekDetailTrackingLabel = useMemo(() => {
+        if (!weekDetailModal) return 'Detalle semana horas extras';
+        const weekStart = parseLocalYmd(weekDetailModal.week.weekId);
+        return overtimeWeekDetailUsageLabel(weekDetailModal.week.weekId, getISOWeek(weekStart));
+    }, [weekDetailModal]);
 
     useModalUsageTracking({
         open: weekDetailModal !== null,
         usageId: 'overtime-week-detail',
-        usageLabel: 'Detalle semana horas extras',
+        usageLabel: weekDetailTrackingLabel,
     });
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
@@ -271,7 +273,6 @@ export default function OvertimePage() {
                                                     key={week.weekId}
                                                     type="button"
                                                     onClick={() => {
-                                                        trackOvertimeWeekDetail(`Semana ${getISOWeek(parseLocalYmd(week.weekId))}`, { weekId: week.weekId });
                                                         setWeekDetailModal({ week });
                                                     }}
                                                     className={cn(
@@ -341,10 +342,6 @@ export default function OvertimePage() {
                                         isPaid={paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid}
                                         onTogglePaid={handleTogglePaid}
                                         onClick={() => {
-                                            trackOvertimeWorkerHistory(namedEntitySummary(s.name?.split?.(' ')[0] ?? s.name ?? ''), {
-                                                workerId: s.id,
-                                                weekId: weekDetailModal.week.weekId,
-                                            });
                                             setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId });
                                         }}
                                     />

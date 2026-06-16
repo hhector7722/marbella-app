@@ -43,6 +43,55 @@ export function closingDetailUsageLabel(closing: {
   return `${closingDetailUsageSummary(closing)} · Detalle de cierre`;
 }
 
+export function movementDetailUsageSummary(movement: {
+  type: string;
+  amount: number;
+  notes?: string | null;
+  original_type?: string | null;
+}): string {
+  const originalType = movement.original_type ?? movement.type;
+  const typeLabel =
+    originalType === 'SWAP' || movement.type === 'SWAP'
+      ? 'Intercambio'
+      : originalType === 'ADJUSTMENT' || movement.type === 'adjustment'
+        ? 'Arqueo'
+        : movement.type === 'income' || originalType === 'IN' || originalType === 'CLOSE_ENTRY'
+          ? 'Entrada'
+          : 'Salida';
+  const amount = Math.abs(Number(movement.amount ?? 0));
+  const amountStr = amount > 0.005 ? `${amount.toFixed(2)}€` : '';
+  const concept = movement.notes?.trim();
+  const parts = [typeLabel, amountStr, concept ? namedEntitySummary(concept, '') : ''].filter(Boolean);
+  return parts.join(' · ') || 'Movimiento';
+}
+
+export function movementDetailUsageLabel(movement: {
+  type: string;
+  amount: number;
+  notes?: string | null;
+  original_type?: string | null;
+}): string {
+  return `${movementDetailUsageSummary(movement)} · Detalle movimiento`;
+}
+
+export function overtimeWeekDetailUsageLabel(weekId: string, weekNumber?: number): string {
+  const weekLabel = weekNumber != null ? `Semana ${weekNumber}` : 'Semana';
+  const ymd = weekId.split('T')[0];
+  return ymd ? `${weekLabel} (${formatYmdShort(ymd)}) · Detalle horas extras` : `${weekLabel} · Detalle horas extras`;
+}
+
+export function overtimeWorkerHistoryUsageLabel(workerName: string, weekId: string, weekNumber?: number): string {
+  const worker = namedEntitySummary(workerName);
+  const weekLabel = weekNumber != null ? `Semana ${weekNumber}` : 'Semana';
+  const ymd = weekId.split('T')[0];
+  const weekPart = ymd ? `${weekLabel} (${formatYmdShort(ymd)})` : weekLabel;
+  return `${worker} · ${weekPart} · Historial horas extras`;
+}
+
+export function employeeFilterUsageLabel(employeeSummary: string): string {
+  return `${employeeSummary} · Filtro asistencia`;
+}
+
 export function formatMonthYear(year: number, monthIndex0: number): string {
   return format(new Date(year, monthIndex0, 1), 'MMMM yyyy', { locale: es });
 }

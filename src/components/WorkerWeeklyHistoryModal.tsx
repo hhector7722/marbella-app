@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
-import { format, isSameDay, addDays, parseISO, startOfWeek } from 'date-fns';
+import { format, isSameDay, addDays, parseISO, startOfWeek, getISOWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
 
 // --- TYPES ---
 interface DailyLog {
@@ -64,12 +65,28 @@ const fmtMoney = (val: number): string => {
 const formatWorked = (val: number) => fmtDecimal(Math.abs(val));
 
 export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, weekStart }: WorkerWeeklyHistoryModalProps) {
-    useModalUsageTracking({ open: isOpen, usageId: 'worker-weekly-history', usageLabel: 'Historial semanal' });
-    const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [weekData, setWeekData] = useState<WeeklyData | null>(null);
     const [workerName, setWorkerName] = useState('');
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+
+    const trackingLabel = useMemo(() => {
+        if (!isOpen || !weekStart) return 'Historial trabajador horas extras';
+        const weekNumber = (() => {
+            const [y, m, d] = weekStart.split('T')[0].split('-').map(Number);
+            if (!y || !m || !d) return undefined;
+            return getISOWeek(new Date(y, m - 1, d));
+        })();
+        return overtimeWorkerHistoryUsageLabel(workerName || 'Trabajador', weekStart, weekNumber);
+    }, [isOpen, weekStart, workerName]);
+
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: 'overtime-worker-history',
+        usageLabel: trackingLabel,
+    });
+
+    const supabase = createClient();
 
     useEffect(() => {
         if (isOpen && workerId && weekStart) {

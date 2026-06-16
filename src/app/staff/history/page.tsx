@@ -118,7 +118,7 @@ export default function HistoryPage() {
     useModalUsageTracking({
         open: showEmployeeDropdown,
         usageId: 'staff-history-employee-filter',
-        usageLabel: 'Filtro empleado asistencia',
+        usageLabel: 'Filtro asistencia',
     });
 
     useModalUsageTracking({
@@ -515,7 +515,7 @@ export default function HistoryPage() {
                                                 setSelectedEmployeeLabel('');
                                                 trackUsageModalApply(
                                                     'staff-history-employee-filter',
-                                                    'Filtro empleado asistencia',
+                                                    'Filtro asistencia',
                                                     pathname,
                                                     'Plantilla (todos)'
                                                 );
@@ -622,7 +622,7 @@ export default function HistoryPage() {
                 employees={employees}
                 title="Empleado"
                 usageId="staff-history-employee-filter"
-                usageLabel="Filtro empleado asistencia"
+                usageLabel="Filtro asistencia"
                 allowPlantilla={isManager}
                 onSelect={(emp) => {
                     setSelectedEmployeeId(emp.id);

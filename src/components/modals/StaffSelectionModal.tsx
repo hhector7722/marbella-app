@@ -63,11 +63,12 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     const pathname = usePathname();
 
     const handleSelect = (employee: Employee) => {
+        const summary = staffSelectionApplySummary(employee);
         trackUsageModalApply(
             usageId,
             usageLabel,
             pathname,
-            staffSelectionApplySummary(employee),
+            summary,
             employee.id ? { selectedUserId: employee.id } : { selectedUserId: null }
         );
         onSelect(employee);

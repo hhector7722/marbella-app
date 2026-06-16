@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
@@ -44,7 +44,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
+import { formatMonthYear, formatYmdShort, movementDetailUsageLabel, periodRangeSummary } from '@/lib/usage/modal-apply';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -183,6 +183,11 @@ export default function MovementsPage() {
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
+    const movementDetailTrackingLabel = useMemo(() => {
+        if (!selectedMovement) return 'Detalle movimiento';
+        return movementDetailUsageLabel(selectedMovement);
+    }, [selectedMovement]);
+
     useModalUsageTracking({
         open: showCalendar !== null,
         usageId: showCalendar === 'single' ? 'movements-date-single' : 'movements-date-range',
@@ -206,7 +211,7 @@ export default function MovementsPage() {
     useModalUsageTracking({
         open: selectedMovement !== null,
         usageId: 'movements-detail',
-        usageLabel: 'Detalle de movimiento',
+        usageLabel: movementDetailTrackingLabel,
     });
 
     // SALDO ACTUAL (KPI) = running_balance más reciente del libro (caja operativa).

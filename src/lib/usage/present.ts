@@ -94,6 +94,25 @@ function isDuplicateEvent(
       prev.event_type === candidate.event_type &&
       delta < 3000
     ) {
+      if (candidate.event_type === 'action') {
+        const prevAction = typeof prev.metadata?.action === 'string' ? prev.metadata.action : null;
+        const candidateAction =
+          typeof candidate.metadata?.action === 'string' ? candidate.metadata.action : null;
+        if (prevAction !== candidateAction) continue;
+
+        const prevModalId =
+          typeof prev.metadata?.modalId === 'string' ? prev.metadata.modalId : null;
+        const candidateModalId =
+          typeof candidate.metadata?.modalId === 'string' ? candidate.metadata.modalId : null;
+        if (prevModalId && candidateModalId && prevModalId !== candidateModalId) continue;
+
+        const prevApply =
+          typeof prev.metadata?.applySummary === 'string' ? prev.metadata.applySummary : null;
+        const candidateApply =
+          typeof candidate.metadata?.applySummary === 'string' ? candidate.metadata.applySummary : null;
+        if (prevApply !== candidateApply) continue;
+      }
+
       return true;
     }
 
