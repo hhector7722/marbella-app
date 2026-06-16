@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -55,15 +54,15 @@ function orderStatusLabel(status: EncargoOrderRow['status']) {
 function statusTone(status: string) {
   switch (status) {
     case 'pending':
-      return 'bg-amber-50 text-amber-700 border-amber-100'
+      return 'text-amber-700'
     case 'confirmed':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-100'
+      return 'text-emerald-700'
     case 'rejected':
-      return 'bg-rose-50 text-rose-700 border-rose-100'
+      return 'text-rose-700'
     case 'cancelled':
-      return 'bg-zinc-100 text-zinc-700 border-zinc-200'
+      return 'text-zinc-500'
     default:
-      return 'bg-zinc-100 text-zinc-700 border-zinc-200'
+      return 'text-zinc-500'
   }
 }
 
@@ -76,7 +75,6 @@ export function DayAgendaModal({
   reservations,
   encargos,
   orders,
-  canManageAdvanced,
   canManageOrders,
   orderStatusBusyId,
   plusPedidoBusy,
@@ -90,7 +88,6 @@ export function DayAgendaModal({
   reservations: Reservation[]
   encargos: EncargoRow[]
   orders: EncargoOrderRow[]
-  canManageAdvanced?: boolean
   canManageOrders?: boolean
   orderStatusBusyId?: string | null
   plusPedidoBusy?: boolean
@@ -145,7 +142,7 @@ export function DayAgendaModal({
             type="button"
             onClick={onPlusPedido}
             disabled={plusPedidoBusy}
-            className="shrink-0 min-h-12 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
+            className="shrink-0 min-h-12 px-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-white hover:text-white/75 disabled:opacity-50 transition-colors"
           >
             {plusPedidoBusy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -164,30 +161,31 @@ export function DayAgendaModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4">
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-2">Reservas</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-1">Reservas</p>
             {reservations.length === 0 ? (
-              <p className="text-xs font-semibold text-zinc-500">Sin reservas este día.</p>
+              <p className="text-xs font-semibold text-zinc-500 py-2">Sin reservas este día.</p>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="divide-y divide-zinc-100 border-t border-zinc-100">
                 {reservations.map((r) => (
                   <button
                     key={r.id}
                     type="button"
                     onClick={() => onSelectReservation(r)}
-                    className={cn(
-                      'min-h-12 w-full rounded-xl border border-zinc-100 bg-white px-4 py-3 text-left',
-                      'shadow-sm hover:bg-zinc-50 active:scale-[0.99] transition flex items-center justify-between gap-3'
-                    )}
+                    className="min-h-12 w-full py-3 text-left flex items-center justify-between gap-3 hover:bg-zinc-50 active:bg-zinc-100/80 transition"
                   >
-                    <span className="text-[13px] font-black text-zinc-800 truncate">
+                    <span className="text-[13px] font-bold text-zinc-800 truncate">
                       {reservationLineWithName(r)}
                     </span>
                     <span
                       className={cn(
-                        'shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase',
-                        statusTone(r.status)
+                        'shrink-0 text-[9px] font-black uppercase',
+                        r.status === 'confirmed'
+                          ? 'text-emerald-700'
+                          : r.status === 'pending'
+                            ? 'text-amber-700'
+                            : 'text-rose-700'
                       )}
                     >
                       {statusLabel(r.status)}
@@ -199,23 +197,20 @@ export function DayAgendaModal({
           </section>
 
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-2">Encargos</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-1">Encargos</p>
             {encargos.length === 0 ? (
-              <p className="text-xs font-semibold text-zinc-500">Sin encargos este día.</p>
+              <p className="text-xs font-semibold text-zinc-500 py-2">Sin encargos este día.</p>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="divide-y divide-zinc-100 border-t border-zinc-100">
                 {encargos.map((e) => (
                   <button
                     key={e.id}
                     type="button"
                     onClick={() => onOpenEncargo(e.id)}
-                    className={cn(
-                      'min-h-12 w-full rounded-xl border border-[#36606F]/20 bg-[#36606F]/5 px-4 py-3 text-left',
-                      'shadow-sm hover:bg-[#36606F]/10 active:scale-[0.99] transition'
-                    )}
+                    className="min-h-12 w-full py-3 text-left hover:bg-zinc-50 active:bg-zinc-100/80 transition"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-black text-zinc-800 truncate">
+                      <span className="text-[13px] font-bold text-zinc-800 truncate">
                         {timeShortHm(e.event_time)} · {e.name}
                       </span>
                       {!e.is_active ? (
@@ -223,10 +218,10 @@ export function DayAgendaModal({
                       ) : null}
                     </div>
                     {e.reservation_id ? (
-                      <p className="mt-1 text-[10px] font-bold text-[#36606F]">Vinculado a reserva</p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-[#36606F]">Vinculado a reserva</p>
                     ) : null}
                     {e.guest_count != null && e.guest_count > 0 ? (
-                      <p className="mt-0.5 text-[10px] font-semibold text-zinc-600">{e.guest_count} pers.</p>
+                      <p className="mt-0.5 text-[10px] font-medium text-zinc-500">{e.guest_count} pers.</p>
                     ) : null}
                   </button>
                 ))}
@@ -236,74 +231,61 @@ export function DayAgendaModal({
 
           {orders.length > 0 ? (
             <section>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-2">Pedidos</p>
-              <div className="rounded-xl border border-zinc-100 overflow-hidden">
-                <EventOrdersProductMatrix orders={matrixOrders} />
-              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#36606F] mb-1">Pedidos</p>
+              <EventOrdersProductMatrix orders={matrixOrders} />
 
               {canManageOrders ? (
-                <div className="mt-3 flex flex-col gap-3">
-                  <div className="flex flex-col gap-2">
-                    {orders.map((o) => {
-                      const ev = encargos.find((e) => e.id === o.event_id)
-                      const busy = orderStatusBusyId === o.id
-                      return (
-                        <div
-                          key={o.id}
-                          className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-[12px] font-black text-zinc-800 truncate">{o.responsible_name}</p>
-                            {ev ? (
-                              <p className="text-[10px] font-semibold text-zinc-500 truncate">
-                                {timeShortHm(ev.event_time)} · {ev.name}
-                              </p>
-                            ) : null}
-                          </div>
-                          <select
-                            value={o.status}
-                            disabled={busy || !onOrderStatusChange}
-                            onChange={(e) =>
-                              onOrderStatusChange?.(o.id, e.target.value as EncargoOrderRow['status'])
-                            }
-                            className="min-h-12 shrink-0 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-wide text-zinc-800 disabled:opacity-50"
-                            aria-label={`Estado pedido ${o.responsible_name}`}
-                          >
-                            <option value="pending">{orderStatusLabel('pending')}</option>
-                            <option value="confirmed">{orderStatusLabel('confirmed')}</option>
-                            <option value="cancelled">{orderStatusLabel('cancelled')}</option>
-                          </select>
+                <div className="mt-3 border-t border-zinc-100 divide-y divide-zinc-100">
+                  {orders.map((o) => {
+                    const ev = encargos.find((e) => e.id === o.event_id)
+                    const busy = orderStatusBusyId === o.id
+                    return (
+                      <div
+                        key={o.id}
+                        className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-bold text-zinc-800 truncate">{o.responsible_name}</p>
+                          {ev ? (
+                            <p className="text-[10px] font-medium text-zinc-500 truncate">
+                              {timeShortHm(ev.event_time)} · {ev.name}
+                            </p>
+                          ) : null}
                         </div>
-                      )
-                    })}
-                  </div>
-
-                  {encargosWithOrders.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {encargosWithOrders.map((e) => (
-                        <a
-                          key={e.id}
-                          href={`/api/eventos/${e.id}/export`}
-                          className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#36606F]/20 bg-white px-3 text-[10px] font-black uppercase tracking-wider text-[#36606F] hover:bg-[#36606F]/5"
+                        <select
+                          value={o.status}
+                          disabled={busy || !onOrderStatusChange}
+                          onChange={(e) =>
+                            onOrderStatusChange?.(o.id, e.target.value as EncargoOrderRow['status'])
+                          }
+                          className="min-h-12 shrink-0 border-0 border-b border-zinc-200 bg-transparent px-1 text-[11px] font-black uppercase tracking-wide text-zinc-800 disabled:opacity-50"
+                          aria-label={`Estado pedido ${o.responsible_name}`}
                         >
-                          <Download className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                          CSV · {e.name}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
+                          <option value="pending">{orderStatusLabel('pending')}</option>
+                          <option value="confirmed">{orderStatusLabel('confirmed')}</option>
+                          <option value="cancelled">{orderStatusLabel('cancelled')}</option>
+                        </select>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : null}
+
+              {canManageOrders && encargosWithOrders.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                  {encargosWithOrders.map((e) => (
+                    <a
+                      key={e.id}
+                      href={`/api/eventos/${e.id}/export`}
+                      className="inline-flex min-h-12 items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#36606F] hover:underline"
+                    >
+                      <Download className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                      CSV · {e.name}
+                    </a>
+                  ))}
                 </div>
               ) : null}
             </section>
-          ) : null}
-
-          {canManageAdvanced ? (
-            <Link
-              href="/dashboard/eventos"
-              className="min-h-12 flex items-center justify-center rounded-xl border border-zinc-200 text-[11px] font-black uppercase tracking-wider text-[#36606F] hover:bg-zinc-50"
-            >
-              Gestión avanzada
-            </Link>
           ) : null}
         </div>
       </div>

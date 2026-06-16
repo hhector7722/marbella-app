@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { getOvertimeData } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
-import MasterReservasModal from '@/components/dashboards/MasterReservasModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
@@ -38,7 +37,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     });
 
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
-    const [isReservasModalOpen, setIsReservasModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [scheduleFocusDate, setScheduleFocusDate] = useState<string | null>(null);
     const searchParams = useSearchParams();
@@ -265,7 +263,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     changeBoxes={changeBoxes}
                     overtimeSnapshot={overtimeSnapshot}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
-                    onOpenReservas={() => setIsReservasModalOpen(true)}
+                    onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenHorarios={() => setIsScheduleModalOpen(true)}
                     onOpenPlantilla={() => setIsStaffModalOpen(true)}
                     onOpenCierre={() => setIsClosingModalOpen(true)}
@@ -273,8 +271,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     pendingReservationsCount={pendingReservationsCount}
                 />
             </div>
-
-            <MasterReservasModal isOpen={isReservasModalOpen} onClose={() => setIsReservasModalOpen(false)} />
 
             <StaffScheduleModal
                 isOpen={isScheduleModalOpen}

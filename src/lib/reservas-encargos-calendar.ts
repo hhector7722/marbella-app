@@ -54,10 +54,9 @@ export function reservationIdsWithEncargo(encargos: EncargoRow[]): Set<string> {
 
 export function calendarReservationsForDay<T extends { id: string }>(
   dayYmd: string,
-  byDate: Record<string, T[]>,
-  linkedReservationIds: Set<string>
+  byDate: Record<string, T[]>
 ): T[] {
-  return (byDate[dayYmd] ?? []).filter((r) => !linkedReservationIds.has(r.id))
+  return byDate[dayYmd] ?? []
 }
 
 export function calendarOrphanEncargosForDay(dayYmd: string, encargosByDate: Record<string, EncargoRow[]>) {
@@ -71,12 +70,11 @@ export type CalendarCellEntry =
 export function buildCalendarCellEntries(
   dayYmd: string,
   reservationsByDate: Record<string, Array<{ id: string; reservation_time: string }>>,
-  encargosByDate: Record<string, EncargoRow[]>,
-  linkedReservationIds: Set<string>
+  encargosByDate: Record<string, EncargoRow[]>
 ): CalendarCellEntry[] {
   const entries: CalendarCellEntry[] = []
 
-  for (const r of calendarReservationsForDay(dayYmd, reservationsByDate, linkedReservationIds)) {
+  for (const r of calendarReservationsForDay(dayYmd, reservationsByDate)) {
     entries.push({
       kind: 'reservation',
       time: timeShortHm(r.reservation_time),
