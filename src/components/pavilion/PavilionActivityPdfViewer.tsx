@@ -6,7 +6,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type TouchEvent as ReactTouchEvent,
 } from 'react';
 import {
   getDocument,
@@ -15,6 +14,7 @@ import {
 } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport';
 import { computeFitScale, clearHost, renderPdfPageHiDpiCrop } from '@/lib/pdf/hidpi-render';
 import { detectCropRightThroughP4 } from '@/lib/pdf/pavilion-crop';
 
@@ -23,26 +23,14 @@ if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
     'https://unpkg.com/pdfjs-dist@5.5.207/legacy/build/pdf.worker.min.mjs';
 }
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 4;
+/** Raster extra para que el zoom CSS (pellizco) siga siendo nítido hasta ~2.5× */
+const ZOOM_HEADROOM = 2.5;
 const VIEWER_MIN_HEIGHT_PX = 420;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
   className?: string;
 };
-
-function touchDistance(touches: ReactTouchEvent['touches']) {
-  if (touches.length < 2) return 0;
-  const a = touches.item(0);
-  const b = touches.item(1);
-  if (!a || !b) return 0;
-  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-}
-
-function clampZoom(value: number): number {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
-}
 
 function measureContainerWidth(el: HTMLElement | null): number {
   if (!el) return 0;
@@ -57,39 +45,27 @@ function measureContainerWidth(el: HTMLElement | null): number {
 }
 
 export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPdfViewerProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
   const pagesHostRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderGenRef = useRef(0);
-  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
-  const isPinchingRef = useRef(false);
-  const zoomRef = useRef(1);
 
   const [loadingDoc, setLoadingDoc] = useState(true);
   const [renderingPages, setRenderingPages] = useState(false);
   const [hasRenderedPage, setHasRenderedPage] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
   const [containerWidth, setContainerWidth] = useState(0);
   const [cropRightPt, setCropRightPt] = useState<number | null>(null);
   const [docReady, setDocReady] = useState(false);
 
-  zoomRef.current = zoom;
-
-  const syncZoom = useCallback((next: number) => {
-    const clamped = clampZoom(next);
-    zoomRef.current = clamped;
-    setZoom(clamped);
-  }, []);
-
   const updateWidth = useCallback(() => {
-    const w = measureContainerWidth(scrollRef.current);
+    const w = measureContainerWidth(measureRef.current);
     if (w > 0) setContainerWidth(w);
   }, []);
 
   useLayoutEffect(() => {
     updateWidth();
-    const el = scrollRef.current;
+    const el = measureRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => updateWidth());
     ro.observe(el);
@@ -103,7 +79,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     setDocReady(false);
     setHasRenderedPage(false);
     setError(null);
-    syncZoom(1);
 
     async function loadDocument() {
       setLoadingDoc(true);
@@ -143,7 +118,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
       if (doc && typeof doc.destroy === 'function') doc.destroy();
       pdfDocRef.current = null;
     };
-  }, [url, syncZoom]);
+  }, [url]);
 
   useEffect(() => {
     if (!loadingDoc) {
@@ -161,7 +136,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
 
     try {
       const fitScale = computeFitScale(cropRightPt, containerWidth);
-      const renderScale = fitScale * zoomRef.current;
+      const rasterScale = fitScale * ZOOM_HEADROOM;
 
       clearHost(host);
 
@@ -170,15 +145,22 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
 
         const page = await pdfDoc.getPage(pageNum);
         const canvas = document.createElement('canvas');
-        canvas.className = 'mx-auto mb-3 block max-w-full rounded-lg shadow-sm bg-white';
+        canvas.className = 'mx-auto mb-3 block rounded-lg shadow-sm bg-white';
         canvas.dataset.pageNumber = String(pageNum);
 
-        await renderPdfPageHiDpiCrop(page, canvas, renderScale, cropRightPt);
+        await renderPdfPageHiDpiCrop(page, canvas, rasterScale, cropRightPt);
 
         if (generation !== renderGenRef.current) return;
         if (canvas.height < 2) {
           throw new Error('El PDF no se pudo mostrar correctamente');
         }
+
+        const cssW = parseFloat(canvas.style.width) / ZOOM_HEADROOM;
+        const cssH = parseFloat(canvas.style.height) / ZOOM_HEADROOM;
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+        canvas.style.maxWidth = '100%';
+
         host.appendChild(canvas);
 
         if (pageNum === 1) {
@@ -202,49 +184,13 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
 
   useEffect(() => {
     if (loadingDoc || !docReady || containerWidth <= 0 || cropRightPt == null) return;
-
-    const debounceMs = isPinchingRef.current ? 100 : 0;
-    const timer = window.setTimeout(() => {
-      void renderAllPages();
-    }, debounceMs);
-
-    return () => window.clearTimeout(timer);
-  }, [loadingDoc, docReady, containerWidth, cropRightPt, zoom, url, renderAllPages]);
-
-  const onTouchStart = (e: ReactTouchEvent) => {
-    if (e.touches.length === 2) {
-      const distance = touchDistance(e.touches);
-      if (distance > 0) {
-        isPinchingRef.current = true;
-        pinchRef.current = { distance, zoom: zoomRef.current };
-      }
-    }
-  };
-
-  const onTouchMove = (e: ReactTouchEvent) => {
-    if (e.touches.length === 2 && pinchRef.current) {
-      e.preventDefault();
-      const distance = touchDistance(e.touches);
-      if (distance <= 0) return;
-      const ratio = distance / pinchRef.current.distance;
-      syncZoom(pinchRef.current.zoom * ratio);
-    }
-  };
-
-  const onTouchEnd = (e: ReactTouchEvent) => {
-    if (e.touches.length < 2) {
-      pinchRef.current = null;
-      isPinchingRef.current = false;
-      if (e.touches.length === 0 && zoomRef.current <= 1.02) {
-        syncZoom(1);
-      }
-    }
-  };
+    void renderAllPages();
+  }, [loadingDoc, docReady, containerWidth, cropRightPt, url, renderAllPages]);
 
   const showSpinner = loadingDoc || (!hasRenderedPage && !error);
 
   return (
-    <div className={cn('flex flex-col w-full', className)}>
+    <div ref={measureRef} className={cn('flex flex-col w-full', className)}>
       <div
         className="relative w-full"
         style={{ minHeight: VIEWER_MIN_HEIGHT_PX, maxHeight: '70vh' }}
@@ -255,34 +201,19 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
           </div>
         ) : null}
 
-        {renderingPages && hasRenderedPage ? (
-          <div className="absolute top-2 right-2 z-10 rounded-full bg-white/90 p-1.5 shadow-sm">
-            <LoadingSpinner size="sm" className="text-[#36606F]" />
-          </div>
-        ) : null}
-
         {error ? (
           <p className="absolute inset-0 z-10 flex items-center justify-center text-center text-sm font-bold text-rose-600 px-4">
             {error}
           </p>
         ) : null}
 
-        <div
-          ref={scrollRef}
-          className="h-full w-full overflow-auto overscroll-contain bg-zinc-50/60 p-3"
-          style={{
-            minHeight: VIEWER_MIN_HEIGHT_PX,
-            maxHeight: '70vh',
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-x pan-y',
-          }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          onTouchCancel={onTouchEnd}
+        <PinchZoomViewport
+          resetKey={url}
+          className="w-full bg-zinc-50/60 p-3"
+          style={{ minHeight: VIEWER_MIN_HEIGHT_PX, maxHeight: '70vh' }}
         >
-          <div ref={pagesHostRef} className="flex flex-col items-center w-full" />
-        </div>
+          <div ref={pagesHostRef} className="flex flex-col items-center w-full min-w-0" />
+        </PinchZoomViewport>
       </div>
     </div>
   );

@@ -24,11 +24,20 @@ function touchDistance(touches: TouchEvent['touches']) {
 type PinchZoomViewportProps = {
   children: ReactNode
   className?: string
+  style?: React.CSSProperties
   /** Al cambiar (p. ej. hoja del carrusel), reinicia zoom y desplazamiento. */
   resetKey?: string | number
 }
 
-export function PinchZoomViewport({ children, className, resetKey }: PinchZoomViewportProps) {
+function touchMidpoint(touches: TouchEvent['touches']) {
+  if (touches.length < 2) return { x: 0, y: 0 }
+  const a = touches.item(0)
+  const b = touches.item(1)
+  if (!a || !b) return { x: 0, y: 0 }
+  return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }
+}
+
+export function PinchZoomViewport({ children, className, style, resetKey }: PinchZoomViewportProps) {
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const scaleRef = useRef(1)
@@ -80,7 +89,15 @@ export function PinchZoomViewport({ children, className, resetKey }: PinchZoomVi
       if (distance <= 0) return
       const ratio = distance / pinchRef.current.distance
       const next = clampScale(pinchRef.current.scale * ratio)
-      syncRefs(next, panRef.current)
+      const mid = touchMidpoint(e.touches)
+      const prevScale = scaleRef.current
+      const scaleRatio = next / prevScale
+      const pan = panRef.current
+      const nextPan = {
+        x: mid.x - scaleRatio * (mid.x - pan.x),
+        y: mid.y - scaleRatio * (mid.y - pan.y),
+      }
+      syncRefs(next, nextPan)
       return
     }
     if (e.touches.length === 1 && panDragRef.current && scaleRef.current > 1) {
@@ -114,7 +131,7 @@ export function PinchZoomViewport({ children, className, resetKey }: PinchZoomVi
   return (
     <div
       className={cn('flex min-h-0 flex-1 overflow-auto overscroll-contain', className)}
-      style={{ touchAction: scale > 1 ? 'none' : 'pan-x pan-y' }}
+      style={{ touchAction: scale > 1 ? 'none' : 'pan-x pan-y', ...style }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -125,7 +142,7 @@ export function PinchZoomViewport({ children, className, resetKey }: PinchZoomVi
           className="inline-block max-w-full will-change-transform"
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-            transformOrigin: 'center center',
+            transformOrigin: '0 0',
           }}
         >
           {children}
