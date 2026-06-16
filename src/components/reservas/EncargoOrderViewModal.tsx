@@ -83,37 +83,13 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
     th.col-note { width: 38%; text-align: center; }
     td.col-note { text-align: center; vertical-align: middle; }
     tr + tr { border-top: 1px solid #f4f4f5; }
-    .print-chrome-mask {
-      display: none;
-    }
     @media print {
-      html, body { margin: 0; padding: 4mm 0 18mm; background: #fff !important; }
+      html, body { margin: 0; padding: 0; background: #fff !important; }
       h1 { margin-top: 0; }
-      .print-chrome-mask {
-        display: block;
-        position: fixed;
-        left: 0;
-        right: 0;
-        background: #fff;
-        z-index: 2147483647;
-        pointer-events: none;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      .print-chrome-mask--top { top: 0; height: 9mm; }
-      .print-chrome-mask--bottom {
-        bottom: 0;
-        height: 16mm;
-        color: #fff;
-        font-size: 1px;
-        line-height: 1;
-      }
     }
   </style>
 </head>
 <body>
-  <div class="print-chrome-mask print-chrome-mask--top" aria-hidden="true"></div>
-  <div class="print-chrome-mask print-chrome-mask--bottom" aria-hidden="true">&nbsp;</div>
   <h1>Pedido encargado</h1>
   <div class="meta-row">
     <div class="meta-item">
@@ -147,51 +123,81 @@ function escapeHtml(value: string) {
     .replace(/"/g, '&quot;')
 }
 
+function isIosDevice() {
+  if (typeof navigator === 'undefined') return false
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+}
+
 function printHtmlDocument(html: string) {
-  const parsed = new DOMParser().parseFromString(html, 'text/html')
-  const sheetId = 'encargo-print-sheet'
-  const styleId = 'encargo-print-style'
+  const iframe = document.createElement('iframe')
+  iframe.setAttribute('title', 'Imprimir pedido')
+  iframe.setAttribute('aria-hidden', 'true')
+  iframe.style.position = 'fixed'
+  iframe.style.border = '0'
+  iframe.style.pointerEvents = 'none'
+  document.body.appendChild(iframe)
 
-  document.getElementById(styleId)?.remove()
-  document.getElementById(sheetId)?.remove()
-
-  const sheet = document.createElement('div')
-  sheet.id = sheetId
-  sheet.setAttribute(
-    'style',
-    'position:fixed;left:-99999px;top:0;width:210mm;background:#fff;color:#18181b;'
-  )
-  sheet.innerHTML = parsed.body.innerHTML
-
-  const style = document.createElement('style')
-  style.id = styleId
-  const embedded = parsed.head.querySelector('style')?.textContent ?? ''
-  style.textContent = `${embedded}
-@media print {
-  body > *:not(#${sheetId}) { display: none !important; }
-  #${sheetId} {
-    display: block !important;
-    position: static !important;
-    left: auto !important;
-    top: auto !important;
-    width: auto !important;
-    transform: none !important;
-  }
-}`
-
-  const cleanup = () => {
-    style.remove()
-    sheet.remove()
+  const cleanup = (blobUrl?: string) => {
+    try {
+      iframe.remove()
+    } catch {
+      /* iframe ya eliminado */
+    }
+    if (blobUrl) URL.revokeObjectURL(blobUrl)
   }
 
-  document.head.appendChild(style)
-  document.body.appendChild(sheet)
+  const runPrint = (win: Window, blobUrl?: string) => {
+    window.setTimeout(() => {
+      try {
+        win.focus()
+        win.print()
+      } finally {
+        win.addEventListener('afterprint', () => cleanup(blobUrl), { once: true })
+        window.setTimeout(() => cleanup(blobUrl), 60_000)
+      }
+    }, 300)
+  }
 
-  window.addEventListener('afterprint', cleanup, { once: true })
-  window.setTimeout(() => {
-    window.print()
-    window.setTimeout(cleanup, 60_000)
-  }, 150)
+  if (isIosDevice()) {
+    // iOS: documento aislado con tamaño real fuera de pantalla (sin opacity).
+    const blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }))
+    iframe.style.left = '-100vw'
+    iframe.style.top = '0'
+    iframe.style.width = '100vw'
+    iframe.style.height = '100vh'
+    iframe.src = blobUrl
+    iframe.onload = () => {
+      const win = iframe.contentWindow
+      if (!win) {
+        cleanup(blobUrl)
+        return
+      }
+      runPrint(win, blobUrl)
+    }
+    return
+  }
+
+  iframe.style.right = '0'
+  iframe.style.bottom = '0'
+  iframe.style.width = '0'
+  iframe.style.height = '0'
+
+  const win = iframe.contentWindow
+  const doc = win?.document
+  if (!doc || !win) {
+    iframe.remove()
+    return
+  }
+
+  doc.open()
+  doc.write(html)
+  doc.close()
+
+  if (doc.readyState === 'complete') {
+    runPrint(win)
+  } else {
+    iframe.onload = () => runPrint(win)
+  }
 }
 
 export function EncargoOrderViewModal({
