@@ -45,6 +45,7 @@ function buildPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
 <html lang="es">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pedido encargado</title>
   <style>
     * { box-sizing: border-box; }
@@ -152,32 +153,43 @@ export function EncargoOrderViewModal({
       },
       items
     )
+
     const iframe = document.createElement('iframe')
-    iframe.style.position = 'fixed'
-    iframe.style.right = '0'
-    iframe.style.bottom = '0'
-    iframe.style.width = '0'
-    iframe.style.height = '0'
-    iframe.style.border = '0'
+    iframe.setAttribute('aria-hidden', 'true')
+    // iOS/Safari: iframe 0×0 suele imprimir en blanco; oculto pero con tamaño real.
+    iframe.style.cssText =
+      'position:fixed;left:0;top:0;width:100%;height:100%;border:0;opacity:0;pointer-events:none;z-index:-1;'
     document.body.appendChild(iframe)
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document
-    if (!doc) {
-      document.body.removeChild(iframe)
+
+    const win = iframe.contentWindow
+    const doc = win?.document
+    if (!doc || !win) {
+      iframe.remove()
       return
     }
+
     doc.open()
     doc.write(html)
     doc.close()
-    iframe.onload = () => {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-      setTimeout(() => document.body.removeChild(iframe), 500)
+
+    const cleanup = () => {
+      try {
+        iframe.remove()
+      } catch {
+        /* iframe ya eliminado */
+      }
     }
-    if (doc.readyState === 'complete') {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-      setTimeout(() => document.body.removeChild(iframe), 500)
-    }
+
+    // Una sola llamada a print() tras maquetar (evita aviso de impresión automática en Safari).
+    window.setTimeout(() => {
+      try {
+        win.focus()
+        win.print()
+      } finally {
+        win.addEventListener('afterprint', cleanup, { once: true })
+        window.setTimeout(cleanup, 30_000)
+      }
+    }, 100)
   }, [encargoName, encargoDate, encargoTime, contactPhone, items])
 
   return (
