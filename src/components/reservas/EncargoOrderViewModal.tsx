@@ -147,6 +147,53 @@ function escapeHtml(value: string) {
     .replace(/"/g, '&quot;')
 }
 
+function printHtmlDocument(html: string) {
+  const parsed = new DOMParser().parseFromString(html, 'text/html')
+  const sheetId = 'encargo-print-sheet'
+  const styleId = 'encargo-print-style'
+
+  document.getElementById(styleId)?.remove()
+  document.getElementById(sheetId)?.remove()
+
+  const sheet = document.createElement('div')
+  sheet.id = sheetId
+  sheet.setAttribute(
+    'style',
+    'position:fixed;left:-99999px;top:0;width:210mm;background:#fff;color:#18181b;'
+  )
+  sheet.innerHTML = parsed.body.innerHTML
+
+  const style = document.createElement('style')
+  style.id = styleId
+  const embedded = parsed.head.querySelector('style')?.textContent ?? ''
+  style.textContent = `${embedded}
+@media print {
+  body > *:not(#${sheetId}) { display: none !important; }
+  #${sheetId} {
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    transform: none !important;
+  }
+}`
+
+  const cleanup = () => {
+    style.remove()
+    sheet.remove()
+  }
+
+  document.head.appendChild(style)
+  document.body.appendChild(sheet)
+
+  window.addEventListener('afterprint', cleanup, { once: true })
+  window.setTimeout(() => {
+    window.print()
+    window.setTimeout(cleanup, 60_000)
+  }, 150)
+}
+
 export function EncargoOrderViewModal({
   encargoName,
   encargoDate,
@@ -182,43 +229,7 @@ export function EncargoOrderViewModal({
       },
       items
     )
-
-    const iframe = document.createElement('iframe')
-    iframe.setAttribute('aria-hidden', 'true')
-    // iOS/Safari: iframe 0×0 suele imprimir en blanco; oculto pero con tamaño real.
-    iframe.style.cssText =
-      'position:fixed;left:0;top:0;width:100%;height:100%;border:0;opacity:0;pointer-events:none;z-index:-1;'
-    document.body.appendChild(iframe)
-
-    const win = iframe.contentWindow
-    const doc = win?.document
-    if (!doc || !win) {
-      iframe.remove()
-      return
-    }
-
-    doc.open()
-    doc.write(html)
-    doc.close()
-
-    const cleanup = () => {
-      try {
-        iframe.remove()
-      } catch {
-        /* iframe ya eliminado */
-      }
-    }
-
-    // Una sola llamada a print() tras maquetar (evita aviso de impresión automática en Safari).
-    window.setTimeout(() => {
-      try {
-        win.focus()
-        win.print()
-      } finally {
-        win.addEventListener('afterprint', cleanup, { once: true })
-        window.setTimeout(cleanup, 30_000)
-      }
-    }, 100)
+    printHtmlDocument(html)
   }, [encargoName, encargoDate, encargoTime, contactPhone, items])
 
   return (
