@@ -37,6 +37,8 @@ const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
 /** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla / inicio P1). */
 const DEFAULT_TOP_SKIP_RATIO = 0.23;
+/** Inicio horizontal: el visor empieza en el 10 % del ancho del documento. */
+const DEFAULT_LEFT_SKIP_RATIO = 0.1;
 /** Zoom fijo inicial (0,833 +3 % ≈ 0,858). */
 const DEFAULT_INITIAL_SCALE = 0.858;
 
@@ -189,7 +191,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         if (generation !== renderGenRef.current) return;
 
         const page = await pdfDoc.getPage(pageNum);
-        const pageWidthPt = page.getViewport({ scale: 1 }).width;
 
         const canvas = document.createElement('canvas');
         canvas.className = 'block max-w-none rounded-lg shadow-sm bg-white';
@@ -210,7 +211,6 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         host.appendChild(canvas);
 
         if (pageNum === 1) {
-          const pxPerPt = cssW / pageWidthPt;
           const minScale = Math.min(
             containerSize.width / cssW,
             containerSize.height / cssH,
@@ -219,7 +219,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
           setViewportFrame({
             initialScale: DEFAULT_INITIAL_SCALE,
             initialPan: {
-              x: -cropBounds.leftPt * pxPerPt * DEFAULT_INITIAL_SCALE,
+              x: -cssW * DEFAULT_LEFT_SKIP_RATIO * DEFAULT_INITIAL_SCALE,
               y: -cssH * DEFAULT_TOP_SKIP_RATIO * DEFAULT_INITIAL_SCALE,
             },
             minScale: Math.max(0.15, minScale),
