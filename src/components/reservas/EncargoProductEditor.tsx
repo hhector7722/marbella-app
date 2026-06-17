@@ -871,7 +871,7 @@ export function EncargoProductEditor({
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col bg-zinc-50/60 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
         <div className="shrink-0 px-3 py-2 border-b border-zinc-100 bg-white">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
@@ -879,12 +879,12 @@ export function EncargoProductEditor({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar producto…"
-              className="min-h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-sm font-semibold focus:border-[#36606F]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#36606F]/15"
+              className="min-h-10 w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-3 text-sm font-semibold focus:border-[#36606F]/40 focus:outline-none focus:ring-2 focus:ring-[#36606F]/15"
             />
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 px-3 py-2 overflow-hidden">
+        <div className="flex-1 min-h-0 px-3 py-2 overflow-hidden bg-white">
           {searchActive ? (
             <div className="h-full flex flex-col min-h-0">
               <BrowseNavBar eyebrow="Búsqueda" title={`“${search.trim()}”`} onBack={() => setSearch('')} />
