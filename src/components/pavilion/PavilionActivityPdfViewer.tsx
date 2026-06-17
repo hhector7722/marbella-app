@@ -37,8 +37,8 @@ const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
 /** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla / inicio P1). */
 const DEFAULT_TOP_SKIP_RATIO = 0.23;
-/** Zoom fijo inicial (0,945 en fbd3cec4; subido para reducir hueco inferior). */
-const DEFAULT_INITIAL_SCALE = 0.962;
+/** Zoom fijo inicial (alejado respecto a 0,945 para asomar fila 23:30). */
+const DEFAULT_INITIAL_SCALE = 0.935;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
