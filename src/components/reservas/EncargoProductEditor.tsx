@@ -180,13 +180,13 @@ function BrowseNavBar({
         <button
           type="button"
           onClick={onBack}
-          className="shrink-0 min-h-10 min-w-10 rounded-lg border border-zinc-200 bg-white flex items-center justify-center text-[#36606F] hover:bg-zinc-50"
+          className="shrink-0 min-h-12 min-w-12 flex items-center justify-center text-[#36606F] hover:text-[#2d505b] active:opacity-70"
           aria-label="Volver"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
         </button>
       ) : (
-        <span className="shrink-0 min-h-10 min-w-10" aria-hidden />
+        <span className="shrink-0 min-h-12 min-w-12" aria-hidden />
       )}
       <div className="min-w-0 flex-1">
         {hasEyebrow ? (
