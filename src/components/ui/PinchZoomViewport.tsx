@@ -11,8 +11,9 @@ import {
 } from 'react'
 import { cn } from '@/lib/utils'
 
-const DEFAULT_MIN_SCALE = 0.65
+const DEFAULT_MIN_SCALE = 0.2
 const DEFAULT_MAX_SCALE = 4
+const DEFAULT_INITIAL_SCALE = 1
 
 function touchDistance(touches: TouchEvent['touches']) {
   if (touches.length < 2) return 0
@@ -36,6 +37,8 @@ type PinchZoomViewportProps = {
   style?: CSSProperties
   minScale?: number
   maxScale?: number
+  initialScale?: number
+  initialPan?: { x: number; y: number }
   /** Al cambiar (p. ej. hoja del carrusel), reinicia zoom y desplazamiento. */
   resetKey?: string | number
 }
@@ -46,12 +49,19 @@ export function PinchZoomViewport({
   style,
   minScale = DEFAULT_MIN_SCALE,
   maxScale = DEFAULT_MAX_SCALE,
+  initialScale = DEFAULT_INITIAL_SCALE,
+  initialPan = { x: 0, y: 0 },
   resetKey,
 }: PinchZoomViewportProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const initialScaleRef = useRef(initialScale)
+  const initialPanRef = useRef(initialPan)
+  initialScaleRef.current = initialScale
+  initialPanRef.current = initialPan
+
+  const [scale, setScale] = useState(initialScale)
+  const [pan, setPan] = useState(initialPan)
   const scaleRef = useRef(1)
   const panRef = useRef({ x: 0, y: 0 })
   const pinchRef = useRef<{ distance: number; scale: number } | null>(null)
@@ -95,10 +105,10 @@ export function PinchZoomViewport({
   )
 
   useEffect(() => {
-    syncRefs(1, { x: 0, y: 0 }, true)
+    syncRefs(initialScale, initialPan, true)
     pinchRef.current = null
     panDragRef.current = null
-  }, [resetKey, syncRefs])
+  }, [resetKey, initialScale, initialPan.x, initialPan.y, syncRefs])
 
   useEffect(() => {
     return () => {
@@ -136,6 +146,17 @@ export function PinchZoomViewport({
     [],
   )
 
+  const isTransformed = useCallback(() => {
+    const base = initialScaleRef.current
+    const basePan = initialPanRef.current
+    const p = panRef.current
+    return (
+      Math.abs(scaleRef.current - base) > 0.02 ||
+      Math.abs(p.x - basePan.x) > 2 ||
+      Math.abs(p.y - basePan.y) > 2
+    )
+  }, [])
+
   const onTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 2) {
       e.stopPropagation()
@@ -146,7 +167,7 @@ export function PinchZoomViewport({
       }
       return
     }
-    if (e.touches.length === 1 && scaleRef.current > 1.01) {
+    if (e.touches.length === 1 && isTransformed()) {
       e.stopPropagation()
       panDragRef.current = {
         x: e.touches[0].clientX,
@@ -189,21 +210,18 @@ export function PinchZoomViewport({
       if (e.touches.length === 0) {
         panDragRef.current = null
         flushPending()
-        if (scaleRef.current < 1.02) {
-          syncRefs(1, { x: 0, y: 0 }, true)
-        }
       }
     }
   }
 
-  const canPan = scale > 1.01
+  const useGestureCapture = isTransformed() || scale < initialScale - 0.01 || scale > initialScale + 0.01
 
   return (
     <div
       ref={scrollRef}
-      className={cn('min-h-0 flex-1 overflow-auto overscroll-contain', className)}
+      className={cn('min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', className)}
       style={{
-        touchAction: canPan ? 'none' : 'pan-x pan-y',
+        touchAction: useGestureCapture ? 'none' : 'pan-x pan-y',
         WebkitOverflowScrolling: 'touch',
         ...style,
       }}

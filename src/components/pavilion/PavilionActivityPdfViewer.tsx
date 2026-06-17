@@ -18,7 +18,7 @@ import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport';
 import {
   clearHost,
   computeFitScale,
-  renderPdfPageHiDpiCrop,
+  renderPdfPageHiDpi,
 } from '@/lib/pdf/hidpi-render';
 import {
   detectCropBoundsThroughP4,
@@ -32,8 +32,8 @@ if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
 
 /** Raster extra para pellizco nítido hasta ~4× sobre el zoom base */
 const ZOOM_HEADROOM = 4;
-const VIEWER_MIN_HEIGHT_PX = 420;
-const VIEWER_MAX_HEIGHT_VH = 70;
+/** Altura compacta del visor: recorta por arriba/abajo sin bajar el zoom de columnas */
+const VIEWER_HEIGHT_PX = 300;
 const VIEWER_PADDING_PX = 24;
 
 type PavilionActivityPdfViewerProps = {
@@ -42,6 +42,12 @@ type PavilionActivityPdfViewerProps = {
 };
 
 type ContainerSize = { width: number; height: number };
+
+type ViewportFrame = {
+  initialScale: number;
+  initialPan: { x: number; y: number };
+  minScale: number;
+};
 
 function measureContainer(el: HTMLElement | null): ContainerSize {
   if (!el) return { width: 0, height: 0 };
@@ -58,21 +64,16 @@ function measureContainer(el: HTMLElement | null): ContainerSize {
 
   const parent = el.parentElement;
   if (parent && parent.clientWidth > 0) {
-    const maxH =
-      typeof window !== 'undefined'
-        ? Math.floor(window.innerHeight * (VIEWER_MAX_HEIGHT_VH / 100))
-        : VIEWER_MIN_HEIGHT_PX;
     return {
       width: Math.max(1, parent.clientWidth - VIEWER_PADDING_PX),
-      height: Math.max(VIEWER_MIN_HEIGHT_PX, maxH) - VIEWER_PADDING_PX,
+      height: Math.max(1, VIEWER_HEIGHT_PX - VIEWER_PADDING_PX),
     };
   }
 
   if (typeof window !== 'undefined') {
-    const maxH = Math.floor(window.innerHeight * (VIEWER_MAX_HEIGHT_VH / 100));
     return {
       width: Math.max(1, Math.min(window.innerWidth, 512) - 48),
-      height: Math.max(VIEWER_MIN_HEIGHT_PX, maxH) - VIEWER_PADDING_PX,
+      height: Math.max(1, VIEWER_HEIGHT_PX - VIEWER_PADDING_PX),
     };
   }
 
@@ -91,6 +92,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
   const [containerSize, setContainerSize] = useState<ContainerSize>({ width: 0, height: 0 });
   const [cropBounds, setCropBounds] = useState<PavilionCropBounds | null>(null);
   const [docReady, setDocReady] = useState(false);
+  const [viewportFrame, setViewportFrame] = useState<ViewportFrame | null>(null);
 
   const updateSize = useCallback(() => {
     const next = measureContainer(measureRef.current);
@@ -114,6 +116,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
     setCropBounds(null);
     setDocReady(false);
     setHasRenderedPage(false);
+    setViewportFrame(null);
     setError(null);
 
     async function loadDocument() {
@@ -182,19 +185,13 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         if (generation !== renderGenRef.current) return;
 
         const page = await pdfDoc.getPage(pageNum);
+        const pageWidthPt = page.getViewport({ scale: 1 }).width;
+
         const canvas = document.createElement('canvas');
-        canvas.className = 'block rounded-lg shadow-sm bg-white';
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
+        canvas.className = 'block max-w-none rounded-lg shadow-sm bg-white';
         canvas.dataset.pageNumber = String(pageNum);
 
-        await renderPdfPageHiDpiCrop(
-          page,
-          canvas,
-          rasterScale,
-          cropBounds.rightPt,
-          cropBounds.leftPt,
-        );
+        await renderPdfPageHiDpi(page, canvas, rasterScale);
 
         if (generation !== renderGenRef.current) return;
         if (canvas.height < 2) {
@@ -209,6 +206,20 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         host.appendChild(canvas);
 
         if (pageNum === 1) {
+          const pxPerPt = cssW / pageWidthPt;
+          const minScale = Math.min(
+            containerSize.width / cssW,
+            containerSize.height / cssH,
+          ) * 0.95;
+
+          setViewportFrame({
+            initialScale: 1,
+            initialPan: {
+              x: -cropBounds.leftPt * pxPerPt,
+              y: 0,
+            },
+            minScale: Math.max(0.15, minScale),
+          });
           setHasRenderedPage(true);
         }
       }
@@ -231,12 +242,17 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
 
   const showSpinner = loadingDoc || (!hasRenderedPage && !error);
 
+  const frameKey = viewportFrame
+    ? `${url}-${containerSize.width}-${Math.round(viewportFrame.initialPan.x)}`
+    : url;
+
   return (
-    <div ref={measureRef} className={cn('flex flex-col w-full min-h-0', className)}>
-      <div
-        className="relative w-full flex-1 min-h-0"
-        style={{ minHeight: VIEWER_MIN_HEIGHT_PX, maxHeight: `${VIEWER_MAX_HEIGHT_VH}vh` }}
-      >
+    <div
+      ref={measureRef}
+      className={cn('flex flex-col w-full min-h-0', className)}
+      style={{ height: VIEWER_HEIGHT_PX }}
+    >
+      <div className="relative w-full h-full min-h-0 overflow-hidden">
         {showSpinner ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/80">
             <LoadingSpinner className="text-[#36606F]" />
@@ -250,13 +266,14 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         ) : null}
 
         <PinchZoomViewport
-          resetKey={url}
-          minScale={0.65}
+          resetKey={frameKey}
+          initialScale={viewportFrame?.initialScale ?? 1}
+          initialPan={viewportFrame?.initialPan ?? { x: 0, y: 0 }}
+          minScale={viewportFrame?.minScale ?? 0.2}
           maxScale={4}
           className="h-full w-full bg-zinc-50/60 p-3"
-          style={{ minHeight: VIEWER_MIN_HEIGHT_PX, maxHeight: `${VIEWER_MAX_HEIGHT_VH}vh` }}
         >
-          <div ref={pagesHostRef} className="flex w-full min-w-0 flex-col gap-3" />
+          <div ref={pagesHostRef} className="flex w-max min-w-0 flex-col gap-3" />
         </PinchZoomViewport>
       </div>
     </div>
