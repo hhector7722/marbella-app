@@ -24,6 +24,10 @@ import {
   detectCropBoundsThroughP4,
   type PavilionCropBounds,
 } from '@/lib/pdf/pavilion-crop';
+import {
+  computeInitialScaleForScheduleRange,
+  detectScheduleBottomCssY,
+} from '@/lib/pdf/pavilion-schedule-range';
 
 if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
   GlobalWorkerOptions.workerSrc =
@@ -35,10 +39,8 @@ const ZOOM_HEADROOM = 4;
 /** Altura del visor: compacto pero un poco más alto que 300px */
 const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
-/** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla). */
+/** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla / inicio P1). */
 const DEFAULT_TOP_SKIP_RATIO = 0.23;
-/** Zoom inicial apenas por debajo de 1× para asomar las últimas filas del horario. */
-const DEFAULT_INITIAL_SCALE = 0.945;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
@@ -211,16 +213,30 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
 
         if (pageNum === 1) {
           const pxPerPt = cssW / pageWidthPt;
+          const contentTop = cssH * DEFAULT_TOP_SKIP_RATIO;
+          const contentBottom = await detectScheduleBottomCssY(page, cssH);
+          const initialScale = computeInitialScaleForScheduleRange({
+            containerWidth: containerSize.width,
+            containerHeight: containerSize.height,
+            cssW,
+            cssH,
+            pageWidthPt,
+            cropLeftPt: cropBounds.leftPt,
+            cropRightPt: cropBounds.rightPt,
+            contentTopCss: contentTop,
+            contentBottomCss: contentBottom,
+          });
+
           const minScale = Math.min(
             containerSize.width / cssW,
             containerSize.height / cssH,
           ) * 0.95;
 
           setViewportFrame({
-            initialScale: DEFAULT_INITIAL_SCALE,
+            initialScale,
             initialPan: {
-              x: -cropBounds.leftPt * pxPerPt * DEFAULT_INITIAL_SCALE,
-              y: -cssH * DEFAULT_TOP_SKIP_RATIO * DEFAULT_INITIAL_SCALE,
+              x: -cropBounds.leftPt * pxPerPt * initialScale,
+              y: -contentTop * initialScale,
             },
             minScale: Math.max(0.15, minScale),
           });
@@ -247,7 +263,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
   const showSpinner = loadingDoc || (!hasRenderedPage && !error);
 
   const frameKey = viewportFrame
-    ? `${url}-${containerSize.width}-${Math.round(viewportFrame.initialPan.x)}-${Math.round(viewportFrame.initialPan.y)}`
+    ? `${url}-${containerSize.width}-${viewportFrame.initialScale.toFixed(3)}-${Math.round(viewportFrame.initialPan.y)}`
     : url;
 
   return (
