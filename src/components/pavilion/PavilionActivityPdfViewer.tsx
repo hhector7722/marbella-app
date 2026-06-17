@@ -35,10 +35,10 @@ const ZOOM_HEADROOM = 4;
 /** Altura del visor: compacto pero un poco más alto que 300px */
 const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
-/** Por defecto ocultamos el 22 % superior del documento (cabecera/plantilla). */
-const DEFAULT_TOP_SKIP_RATIO = 0.22;
+/** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla). */
+const DEFAULT_TOP_SKIP_RATIO = 0.23;
 /** Zoom inicial apenas por debajo de 1× para asomar las últimas filas del horario. */
-const DEFAULT_INITIAL_SCALE = 0.945;
+const DEFAULT_INITIAL_SCALE = 0.958;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
