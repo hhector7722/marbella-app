@@ -37,8 +37,8 @@ const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
 /** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla / inicio P1). */
 const DEFAULT_TOP_SKIP_RATIO = 0.23;
-/** Inicio horizontal: el visor empieza en el 9 % del ancho del documento. */
-const DEFAULT_LEFT_SKIP_RATIO = 0.09;
+/** Inicio horizontal: el visor empieza en el 7 % del ancho del documento. */
+const DEFAULT_LEFT_SKIP_RATIO = 0.07;
 /** Zoom fijo inicial (0,833 +3 % ≈ 0,858). */
 const DEFAULT_INITIAL_SCALE = 0.858;
 
