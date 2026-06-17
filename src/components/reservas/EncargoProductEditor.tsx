@@ -166,10 +166,14 @@ function BrowseNavBar({
   title,
   onBack,
 }: {
-  eyebrow: string
-  title: string
+  eyebrow?: string
+  title?: string
   onBack?: () => void
 }) {
+  const hasEyebrow = Boolean(eyebrow?.trim())
+  const hasTitle = Boolean(title?.trim())
+  if (!onBack && !hasEyebrow && !hasTitle) return null
+
   return (
     <div className="flex items-center gap-2 mb-2 min-h-10 shrink-0">
       {onBack ? (
@@ -185,10 +189,12 @@ function BrowseNavBar({
         <span className="shrink-0 min-h-10 min-w-10" aria-hidden />
       )}
       <div className="min-w-0 flex-1">
-        {eyebrow.trim() ? (
+        {hasEyebrow ? (
           <p className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-400">{eyebrow}</p>
         ) : null}
-        <p className="text-[13px] font-black text-zinc-900 truncate leading-tight">{title}</p>
+        {hasTitle ? (
+          <p className="text-[13px] font-black text-zinc-900 truncate leading-tight">{title}</p>
+        ) : null}
       </div>
     </div>
   )
@@ -474,7 +480,6 @@ export function EncargoProductEditor({
   const [menuProducts, setMenuProducts] = useState<EncargoEditorMenuProduct[]>([])
   const [search, setSearch] = useState('')
   const [lines, setLines] = useState<EditorLine[]>([])
-  const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [browseParent, setBrowseParent] = useState<string | null>(null)
   const [browseChild, setBrowseChild] = useState<string | null>(null)
   const [cartModalOpen, setCartModalOpen] = useState(false)
@@ -725,7 +730,12 @@ export function EncargoProductEditor({
     })
   }, [eventId, onClose, onDeleted])
 
-  const productsTitle =
+  const handleDeleteRequest = useCallback(() => {
+    if (!window.confirm('¿Eliminar este encargo? Esta acción no se puede deshacer.')) return
+    handleDelete()
+  }, [handleDelete])
+
+  const subcategoryTitle =
     activeChildGroup && activeChildGroup.label.trim()
       ? activeChildGroup.label
       : activeDepartment?.label ?? 'Productos'
@@ -742,7 +752,6 @@ export function EncargoProductEditor({
     if (!browseParent) {
       return (
         <div className="h-full flex flex-col min-h-0">
-          <BrowseNavBar eyebrow="Carta" title="Departamentos" />
           <div className="flex-1 min-h-0 overflow-y-auto">
             <div className="grid grid-cols-2 gap-2">
               {departments.map((dept) => (
@@ -766,11 +775,7 @@ export function EncargoProductEditor({
     if (!browseChild && activeDepartment && namedChildren(activeDepartment).length > 0) {
       return (
         <div className="h-full flex flex-col min-h-0">
-          <BrowseNavBar
-            eyebrow="Departamento"
-            title={activeDepartment.label}
-            onBack={goToDepartments}
-          />
+          <BrowseNavBar title={activeDepartment.label} onBack={goToDepartments} />
           <div className="flex-1 min-h-0 overflow-y-auto">
             <ul className="flex flex-col gap-1.5">
               {namedChildren(activeDepartment).map((child) => (
@@ -792,11 +797,16 @@ export function EncargoProductEditor({
     }
 
     if (activeChildGroup) {
+      const showDeptAboveSub =
+        activeDepartment &&
+        namedChildren(activeDepartment).length > 0 &&
+        activeChildGroup.label.trim().length > 0
+
       return (
         <div className="h-full flex flex-col min-h-0">
           <BrowseNavBar
-            eyebrow=""
-            title={productsTitle}
+            eyebrow={showDeptAboveSub ? activeDepartment.label : undefined}
+            title={subcategoryTitle}
             onBack={() => {
               if (activeDepartment && namedChildren(activeDepartment).length > 0) {
                 goToSections()
@@ -823,19 +833,41 @@ export function EncargoProductEditor({
 
   const body = (
     <>
-      <div className="bg-[#36606F] px-4 py-2.5 text-white shrink-0 flex items-center justify-between gap-2">
-        <div className="min-w-0">
+      <div className="bg-[#36606F] px-4 py-2.5 text-white shrink-0 flex items-center gap-0.5">
+        <div className="min-w-0 flex-1">
           <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Editar encargo</p>
           <h3 className="text-sm font-black truncate">{eventName}</h3>
         </div>
         <button
           type="button"
+          onClick={() => setCartModalOpen(true)}
+          className="relative shrink-0 min-h-12 min-w-12 flex items-center justify-center text-white active:opacity-70"
+          aria-label={unitCount > 0 ? `Pedido actual, ${unitCount} unidades` : 'Pedido actual'}
+        >
+          <ShoppingBag size={20} strokeWidth={2.25} />
+          {unitCount > 0 ? (
+            <span className="absolute top-1.5 right-1.5 min-h-[16px] min-w-[16px] px-0.5 rounded-full bg-rose-500 text-[9px] font-black text-white flex items-center justify-center leading-none">
+              {unitCount > 99 ? '99+' : unitCount}
+            </span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          onClick={handleDeleteRequest}
+          disabled={isPending}
+          className="shrink-0 min-h-12 min-w-12 flex items-center justify-center text-white active:opacity-70 disabled:opacity-40"
+          aria-label="Eliminar encargo"
+        >
+          <Trash2 size={20} strokeWidth={2.25} />
+        </button>
+        <button
+          type="button"
           onClick={onClose}
           disabled={isPending}
-          className="min-h-10 min-w-10 flex items-center justify-center rounded-lg hover:bg-white/10 shrink-0"
+          className="shrink-0 min-h-12 min-w-12 flex items-center justify-center text-white active:opacity-70 disabled:opacity-40"
           aria-label="Cerrar"
         >
-          <X size={18} strokeWidth={2.5} />
+          <X size={20} strokeWidth={2.5} />
         </button>
       </div>
 
@@ -877,63 +909,7 @@ export function EncargoProductEditor({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setCartModalOpen(true)}
-        className="shrink-0 min-h-12 w-full px-3 flex items-center justify-between gap-2 border-t border-zinc-200 bg-white hover:bg-zinc-50"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="relative min-h-9 min-w-9 rounded-xl bg-[#36606F] text-white flex items-center justify-center shrink-0">
-            <ShoppingBag className="h-3.5 w-3.5" strokeWidth={2.5} />
-            {lineCount > 0 ? (
-              <span className="absolute -top-1 -right-1 min-h-[18px] min-w-[18px] px-1 rounded-full bg-rose-500 text-[9px] font-black text-white flex items-center justify-center ring-2 ring-white shadow-sm">
-                {lineCount > 9 ? '9+' : lineCount}
-              </span>
-            ) : null}
-          </span>
-          <div className="text-left min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Pedido actual</p>
-            <p className="text-[12px] font-black text-zinc-900 truncate">
-              {lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Toca para revisar'}
-            </p>
-          </div>
-        </div>
-        <ChevronRight className="h-4 w-4 text-zinc-300 shrink-0" />
-      </button>
-
-      <div className="shrink-0 border-t border-zinc-100 px-3 py-2 flex flex-col gap-1.5 bg-white">
-        {deleteConfirm ? (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-bold text-rose-700 text-center">¿Eliminar este encargo?</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => setDeleteConfirm(false)}
-                className="min-h-10 text-[10px] font-black uppercase text-zinc-600"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleDelete}
-                className="min-h-10 text-[10px] font-black uppercase text-rose-600"
-              >
-                Sí, eliminar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => setDeleteConfirm(true)}
-            className="min-h-10 text-[9px] font-black uppercase text-rose-600 hover:bg-rose-50 rounded-lg"
-          >
-            Eliminar encargo
-          </button>
-        )}
+      <div className="shrink-0 border-t border-zinc-100 px-3 py-2 bg-white">
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
