@@ -32,9 +32,11 @@ if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
 
 /** Raster extra para pellizco nítido hasta ~4× sobre el zoom base */
 const ZOOM_HEADROOM = 4;
-/** Altura compacta del visor: recorta por arriba/abajo sin bajar el zoom de columnas */
-const VIEWER_HEIGHT_PX = 300;
+/** Altura del visor: compacto pero un poco más alto que 300px */
+const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
+/** Por defecto ocultamos el 15 % superior del documento (cabecera/plantilla). */
+const DEFAULT_TOP_SKIP_RATIO = 0.15;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
@@ -216,7 +218,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
             initialScale: 1,
             initialPan: {
               x: -cropBounds.leftPt * pxPerPt,
-              y: 0,
+              y: -cssH * DEFAULT_TOP_SKIP_RATIO,
             },
             minScale: Math.max(0.15, minScale),
           });
@@ -243,7 +245,7 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
   const showSpinner = loadingDoc || (!hasRenderedPage && !error);
 
   const frameKey = viewportFrame
-    ? `${url}-${containerSize.width}-${Math.round(viewportFrame.initialPan.x)}`
+    ? `${url}-${containerSize.width}-${Math.round(viewportFrame.initialPan.x)}-${Math.round(viewportFrame.initialPan.y)}`
     : url;
 
   return (
