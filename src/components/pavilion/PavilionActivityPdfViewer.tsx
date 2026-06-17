@@ -37,6 +37,8 @@ const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
 /** Por defecto ocultamos el 22 % superior del documento (cabecera/plantilla). */
 const DEFAULT_TOP_SKIP_RATIO = 0.22;
+/** Zoom inicial apenas por debajo de 1× para asomar las últimas filas del horario. */
+const DEFAULT_INITIAL_SCALE = 0.945;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
@@ -215,10 +217,10 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
           ) * 0.95;
 
           setViewportFrame({
-            initialScale: 1,
+            initialScale: DEFAULT_INITIAL_SCALE,
             initialPan: {
-              x: -cropBounds.leftPt * pxPerPt,
-              y: -cssH * DEFAULT_TOP_SKIP_RATIO,
+              x: -cropBounds.leftPt * pxPerPt * DEFAULT_INITIAL_SCALE,
+              y: -cssH * DEFAULT_TOP_SKIP_RATIO * DEFAULT_INITIAL_SCALE,
             },
             minScale: Math.max(0.15, minScale),
           });
