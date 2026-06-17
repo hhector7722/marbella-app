@@ -35,8 +35,8 @@ const ZOOM_HEADROOM = 4;
 /** Altura del visor: compacto pero un poco más alto que 300px */
 const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
-/** Por defecto ocultamos el 15 % superior del documento (cabecera/plantilla). */
-const DEFAULT_TOP_SKIP_RATIO = 0.15;
+/** Por defecto ocultamos el 20 % superior del documento (cabecera/plantilla). */
+const DEFAULT_TOP_SKIP_RATIO = 0.2;
 
 type PavilionActivityPdfViewerProps = {
   url: string;
