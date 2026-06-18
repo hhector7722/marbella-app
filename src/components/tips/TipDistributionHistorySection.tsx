@@ -9,8 +9,13 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   formatLocalIsoDateLabel,
+  formatTipLossPct,
+  tipLossColorClass,
+  tipLossPctFromAmounts,
+  type StaffTipHistoryEntry,
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
+import { staffEntryPropinaSinPen } from '@/lib/staff-tip-entry-display';
 
 type DistributionLine = {
   id: string;
@@ -35,6 +40,31 @@ type DistributionLine = {
 type ProfileName = { id: string; first_name: string | null; last_name: string | null };
 
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${Number(val).toFixed(2)}€`);
+
+function distributionLineLoss(l: DistributionLine): { lossPct: number; label: string } {
+  const sinPen = staffEntryPropinaSinPen({
+    weekdayAmount: Number(l.weekday_amount),
+    weekendAmount: Number(l.weekend_amount),
+    weekdayHours: Number(l.weekday_hours),
+    weekendHours: Number(l.weekend_hours),
+    weekdayHoursEffective: Number(l.weekday_hours_effective),
+    weekendHoursEffective: Number(l.weekend_hours_effective),
+    penalizacionPct: Number(l.penalizacion_pct),
+    totalAmount: Number(l.total_amount),
+    isSanctioned: l.is_sanctioned,
+    jornadasTotales: Number(l.jornadas_totales),
+    jornadasConOlvido: Number(l.jornadas_con_olvido),
+    tjiPct: Number(l.tji_pct),
+    weekdayBonus: Number(l.weekday_bonus),
+    weekendBonus: Number(l.weekend_bonus),
+  } as StaffTipHistoryEntry);
+  const theoretical = sinPen.total;
+  const finalPaid = l.is_sanctioned ? 0 : Number(l.total_amount);
+  return {
+    lossPct: tipLossPctFromAmounts(theoretical, finalPaid),
+    label: formatTipLossPct(theoretical, finalPaid),
+  };
+}
 
 type Props = {
   refreshToken?: number;
@@ -201,15 +231,19 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
                           <thead>
                             <tr className="text-zinc-500 font-black uppercase tracking-wider">
                               <th className="text-left px-2 py-2">Staff</th>
-                              <th className="text-center px-1">TJI</th>
-                              <th className="text-center px-1" title="Descuento aplicado a las horas en el reparto">
-                                Dto h
+                              <th
+                                className="text-center px-1"
+                                title="% menos respecto a la propina sin penalización"
+                              >
+                                PEN
                               </th>
                               <th className="text-right px-2">Total</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {lines.map((l) => (
+                            {lines.map((l) => {
+                              const loss = distributionLineLoss(l);
+                              return (
                               <tr key={l.id} className="border-t border-zinc-100/80">
                                 <td className="px-2 py-2 font-black text-zinc-800 truncate max-w-[120px]">
                                   {(nameByUserId[l.user_id] ?? '—').split(/\s+/)[0]}
@@ -217,17 +251,20 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
                                     <span className="text-rose-500 ml-1">SIN</span>
                                   ) : null}
                                 </td>
-                                <td className="text-center px-1 py-2 tabular-nums">
-                                  {Number(l.tji_pct).toFixed(0)}%
-                                </td>
-                                <td className="text-center px-1 py-2 tabular-nums text-rose-600">
-                                  {l.penalizacion_pct > 0 ? `-${l.penalizacion_pct}%` : '—'}
+                                <td
+                                  className={cn(
+                                    'text-center px-1 py-2 tabular-nums',
+                                    tipLossColorClass(loss.lossPct)
+                                  )}
+                                >
+                                  {loss.label === ' ' ? '—' : loss.label}
                                 </td>
                                 <td className="text-right px-2 py-2 font-black tabular-nums text-emerald-700">
                                   {fmtMoney(Number(l.total_amount))}
                                 </td>
                               </tr>
-                            ))}
+                            );
+                            })}
                           </tbody>
                         </table>
                       )}

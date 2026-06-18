@@ -19,11 +19,12 @@ import { TipDistributionHistorySection } from '@/components/tips/TipDistribution
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColumnToggleBadge';
 import {
-  formatHorasDiscountPct,
   formatLocalIsoDateLabel,
   formatTipInt,
-  formatTjiMainValue,
+  formatTipLossPct,
   roundTipToHalfEuro,
+  tipLossColorClass,
+  tipLossPctFromAmounts,
   tjiColorClass,
   tipTheoreticalPoolAmounts,
   type TipDistributionHistoryRow,
@@ -600,10 +601,10 @@ export default function TipsDashboardView({
                           title={
                             showSinRegCol
                               ? 'Ocultar días sin fichar salida'
-                              : 'TJI: % de jornadas con salida no registrada. Toca para ver el nº de días.'
+                              : 'PEN: % menos respecto a la propina sin penalización. Toca para ver días sin fichar.'
                           }
                         >
-                          <span>TJI</span>
+                          <span>PEN</span>
                           <TipSinRegHeaderBadge size={8} />
                         </button>
                       </th>
@@ -704,14 +705,16 @@ export default function TipsDashboardView({
                         const isSanc = s.isSanctioned;
                         const strikeClass = isSanc ? 'opacity-40' : '';
                         const tji = s.tjiPct ?? 0;
-                        const pen = s.penalizacionPct ?? 0;
                         const teor = tipTheoreticalPoolAmounts(s);
                         const wdAmtTeor = teor.weekday;
                         const weAmtTeor = teor.weekend;
                         const totSinPen = teor.total;
                         const hTotal = (s.weekdayHoursRaw ?? 0) + (s.weekendHoursRaw ?? 0);
-                        const tjiLabel = formatTjiMainValue(tji, s.jornadasTotales ?? 0);
-                        const horasDiscount = formatHorasDiscountPct(pen);
+                        const theoreticalPayout =
+                          isSanc && (s.shadowAmount ?? 0) > 0.005 ? (s.shadowAmount ?? 0) : totSinPen;
+                        const finalPaid = isSanc ? 0 : s.totalAmount;
+                        const lossPct = tipLossPctFromAmounts(theoreticalPayout, finalPaid);
+                        const lossLabel = formatTipLossPct(theoreticalPayout, finalPaid);
                         const openRow = () => openOverride('weekday', s.id, s.name);
 
                         return (
@@ -770,26 +773,17 @@ export default function TipsDashboardView({
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'cursor-pointer',
+                                tipLossColorClass(lossPct),
                                 strikeClass
                               )}
                               onClick={openRow}
                               title={
-                                pen > 0
-                                  ? `Descuento en horas para el reparto: ${horasDiscount.trim()}`
+                                lossPct > 0.05
+                                  ? `Cobra un ${lossLabel.trim()} menos que sin penalización (${theoreticalPayout.toFixed(2)} € → ${finalPaid.toFixed(2)} €)`
                                   : undefined
                               }
                             >
-                              <div className="flex flex-col items-center gap-0.5 leading-none">
-                                <span className={cn(TIP_TABLE_BODY_TEXT, tjiColorClass(tji))}>
-                                  {tjiLabel}
-                                </span>
-                                {pen > 0 ? (
-                                  <span className="text-[8px] font-bold tabular-nums text-rose-600 md:text-[9px]">
-                                    {horasDiscount}
-                                    <span className="font-semibold text-rose-500/80"> h</span>
-                                  </span>
-                                ) : null}
-                              </div>
+                              {lossLabel}
                             </td>
                             {showSinRegCol && (
                               <td
@@ -890,11 +884,6 @@ export default function TipsDashboardView({
                   </tbody>
                 </table>
               </div>
-              <p className="border-t border-zinc-100 px-3 py-2.5 text-[9px] font-medium leading-relaxed text-zinc-500 md:px-4 md:text-[10px]">
-                <span className="font-bold text-zinc-600">TJI:</span> % de jornadas con salida no registrada.{' '}
-                <span className="font-bold text-rose-600">−X % h:</span> descuento en horas para el reparto (0 / 10 / 20 / 35 según TJI).{' '}
-                <span className="font-bold text-zinc-600">PROP F:</span> importe final redondeado a 0,50 €.
-              </p>
             </div>
           </div>
         </div>
