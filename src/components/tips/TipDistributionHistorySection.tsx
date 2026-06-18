@@ -15,7 +15,7 @@ import {
   type StaffTipHistoryEntry,
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
-import { staffEntryPropinaSinPen } from '@/lib/staff-tip-entry-display';
+import { staffEntryTheoreticalPayout } from '@/lib/staff-tip-entry-display';
 
 type DistributionLine = {
   id: string;
@@ -42,7 +42,7 @@ type ProfileName = { id: string; first_name: string | null; last_name: string | 
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${Number(val).toFixed(2)}€`);
 
 function distributionLineLoss(l: DistributionLine): { lossPct: number; label: string } {
-  const sinPen = staffEntryPropinaSinPen({
+  const entry = {
     weekdayAmount: Number(l.weekday_amount),
     weekendAmount: Number(l.weekend_amount),
     weekdayHours: Number(l.weekday_hours),
@@ -57,13 +57,20 @@ function distributionLineLoss(l: DistributionLine): { lossPct: number; label: st
     tjiPct: Number(l.tji_pct),
     weekdayBonus: Number(l.weekday_bonus),
     weekendBonus: Number(l.weekend_bonus),
-  } as StaffTipHistoryEntry);
-  const theoretical = sinPen.total;
+  } as StaffTipHistoryEntry;
+  const theoretical = staffEntryTheoreticalPayout(entry);
   const finalPaid = l.is_sanctioned ? 0 : Number(l.total_amount);
-  return {
-    lossPct: tipLossPctFromAmounts(theoretical, finalPaid),
-    label: formatTipLossPct(theoretical, finalPaid),
-  };
+  let lossPct = tipLossPctFromAmounts(theoretical, finalPaid);
+  let label = formatTipLossPct(theoretical, finalPaid);
+  if (
+    l.is_sanctioned &&
+    label === ' ' &&
+    Number(l.weekday_hours_effective) + Number(l.weekend_hours_effective) > 0.005
+  ) {
+    lossPct = 100;
+    label = '100%';
+  }
+  return { lossPct, label };
 }
 
 type Props = {

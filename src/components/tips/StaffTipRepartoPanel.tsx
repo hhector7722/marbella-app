@@ -15,6 +15,7 @@ import {
 import {
   staffEntryHoursTotal,
   staffEntryPropinaSinPen,
+  staffEntryTheoreticalPayout,
 } from '@/lib/staff-tip-entry-display';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
@@ -97,10 +98,18 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
   const sinPen = staffEntryPropinaSinPen(entry);
   const hTotal = staffEntryHoursTotal(entry);
   const finalAmount = entry.totalAmount ?? 0;
-  const theoreticalPayout = sinPen.total;
+  const theoreticalPayout = staffEntryTheoreticalPayout(entry);
   const finalPaid = entry.isSanctioned ? 0 : finalAmount;
-  const lossPct = tipLossPctFromAmounts(theoreticalPayout, finalPaid);
-  const lossLabel = formatTipLossPct(theoreticalPayout, finalPaid);
+  let lossPct = tipLossPctFromAmounts(theoreticalPayout, finalPaid);
+  let lossLabel = formatTipLossPct(theoreticalPayout, finalPaid);
+  if (
+    entry.isSanctioned &&
+    lossLabel === ' ' &&
+    entry.weekdayHoursEffective + entry.weekendHoursEffective > 0.005
+  ) {
+    lossPct = 100;
+    lossLabel = '100%';
+  }
 
   return (
     <>
@@ -135,9 +144,8 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
         />
         <MetricCell
           label="Penalización"
-          value={lossLabel === ' ' ? 'Sin penalización' : lossLabel}
-          valueTypography={lossLabel === ' ' ? 'descriptive' : 'metric'}
-          valueClassName={lossLabel === ' ' ? undefined : tipLossColorClass(lossPct)}
+          value={lossLabel}
+          valueClassName={lossLabel === ' ' ? 'text-zinc-500' : tipLossColorClass(lossPct)}
         />
         <MetricCell
           label="Propina final"

@@ -14,21 +14,57 @@ export function staffEntryPenaltyAmount(entry: {
   return (entry.totalAmount * pen) / (100 - pen);
 }
 
+/** Reconstruye horas raw desde efectivas + % penalización TJI (no persistidas en historial). */
+function reconstructRawHours(effective: number, penalizacionPct: number): number {
+  if (effective < 0.005) return 0;
+  if (penalizacionPct <= 0 || penalizacionPct >= 100) return effective;
+  return effective / (1 - penalizacionPct / 100);
+}
+
+/** Importe teórico sin penalización TJI (lo que debería cobrar antes del dto.). */
+export function staffEntryTheoreticalPayout(entry: StaffTipHistoryEntry): number {
+  const pen = entry.penalizacionPct ?? 0;
+
+  if (!entry.isSanctioned && pen > 0 && pen < 100) {
+    const byPenalty = staffEntryTheoreticalByPenalty(entry);
+    if (byPenalty.total >= 0.005) return byPenalty.total;
+  }
+
+  const wdEff = entry.weekdayHoursEffective;
+  const weEff = entry.weekendHoursEffective;
+  const wdRaw = reconstructRawHours(wdEff, pen);
+  const weRaw = reconstructRawHours(weEff, pen);
+  const byHours =
+    tipAmountWithoutPenalty(entry.weekdayAmount, wdRaw, wdEff) +
+    tipAmountWithoutPenalty(entry.weekendAmount, weRaw, weEff);
+
+  if (byHours >= 0.005) return byHours;
+
+  if (entry.isSanctioned && (wdEff + weEff) > 0.005) {
+    return Math.max(entry.totalAmount, 0.005);
+  }
+
+  return Math.max(entry.totalAmount, 0);
+}
+
 /** Importes del tramo sin penalización TJI (desde línea de historial). */
 export function staffEntryAmountsWithoutPenalty(entry: StaffTipHistoryEntry): {
   weekday: number;
   weekend: number;
   total: number;
 } {
+  const pen = entry.penalizacionPct ?? 0;
+  const wdEff = entry.weekdayHoursEffective;
+  const weEff = entry.weekendHoursEffective;
   const wd = tipAmountWithoutPenalty(
     entry.weekdayAmount,
-    entry.weekdayHours,
-    entry.weekdayHoursEffective
+    reconstructRawHours(wdEff, pen),
+    wdEff
   );
   const we = tipAmountWithoutPenalty(
     entry.weekendAmount,
-    entry.weekendHours,
-    entry.weekendHoursEffective
+    reconstructRawHours(weEff, pen),
+    weEff
   );
   return { weekday: wd, weekend: we, total: wd + we };
 }
@@ -55,6 +91,10 @@ export function staffEntryPropinaSinPen(entry: StaffTipHistoryEntry): {
   weekend: number;
   total: number;
 } {
+  const pen = entry.penalizacionPct ?? 0;
+  if (!entry.isSanctioned && pen > 0 && pen < 100) {
+    return staffEntryTheoreticalByPenalty(entry);
+  }
   const byHours = staffEntryAmountsWithoutPenalty(entry);
   if (byHours.total >= 0.005) return byHours;
   return staffEntryTheoreticalByPenalty(entry);
