@@ -185,6 +185,31 @@ function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
   )
 }
 
+const CALENDAR_LEGEND_ITEMS = [
+  { label: 'Reserva', color: 'bg-green-500' },
+  { label: 'Pedido', color: 'bg-blue-500' },
+  { label: 'Reserva con pedido', color: 'bg-orange-500' },
+] as const
+
+function ReservasCalendarLegend() {
+  return (
+    <div
+      className="flex flex-nowrap items-center justify-center gap-x-3 px-2 py-3 overflow-x-auto"
+      aria-label="Leyenda del calendario"
+    >
+      {CALENDAR_LEGEND_ITEMS.map((item) => (
+        <span
+          key={item.label}
+          className="inline-flex items-center gap-1 shrink-0 text-[10px] font-semibold text-zinc-600 whitespace-nowrap"
+        >
+          {item.label}
+          <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', item.color)} aria-hidden />
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function ReservationCalendarEntry({
   r,
   hasEncargo,
@@ -1015,6 +1040,8 @@ export default function ReservasClient() {
                 ))}
               </div>
             )}
+
+            {!loading && !rpcError ? <ReservasCalendarLegend /> : null}
           </div>
         </div>
       </div>
