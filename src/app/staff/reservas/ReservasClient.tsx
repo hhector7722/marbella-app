@@ -194,13 +194,13 @@ const CALENDAR_LEGEND_ITEMS = [
 function ReservasCalendarLegend() {
   return (
     <div
-      className="flex flex-nowrap items-center justify-center gap-x-3 px-2 py-3 overflow-x-auto"
+      className="flex flex-nowrap items-center justify-center gap-x-8 md:gap-x-12 px-4 py-3 overflow-x-auto"
       aria-label="Leyenda del calendario"
     >
       {CALENDAR_LEGEND_ITEMS.map((item) => (
         <span
           key={item.label}
-          className="inline-flex items-center gap-1 shrink-0 text-[10px] font-semibold text-zinc-600 whitespace-nowrap"
+          className="inline-flex items-center gap-2 shrink-0 text-[10px] font-semibold text-zinc-600 whitespace-nowrap"
         >
           {item.label}
           <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', item.color)} aria-hidden />
