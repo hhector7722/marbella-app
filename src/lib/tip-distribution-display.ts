@@ -42,29 +42,6 @@ export function formatPenalizacionPct(penalizacionPct: number): string {
   return `-${penalizacionPct}%`;
 }
 
-const TIP_LOSS_EPS = 0.05;
-
-/** % que cobra menos respecto al importe teórico sin penalización (0 si cobra igual o más). */
-export function tipLossPctFromAmounts(theoreticalTotal: number, finalTotal: number): number {
-  if (theoreticalTotal < 0.005) return 0;
-  return Math.max(0, ((theoreticalTotal - finalTotal) / theoreticalTotal) * 100);
-}
-
-export function formatTipLossPct(theoreticalTotal: number, finalTotal: number): string {
-  const pct = tipLossPctFromAmounts(theoreticalTotal, finalTotal);
-  if (pct < TIP_LOSS_EPS) return ' ';
-  return pct % 1 === 0 ? `${pct.toFixed(0)}%` : `${pct.toFixed(1)}%`;
-}
-
-/** Color según % perdido respecto a lo teórico. */
-export function tipLossColorClass(lossPct: number): string {
-  if (lossPct <= TIP_LOSS_EPS) return 'text-zinc-500';
-  if (lossPct <= 5) return 'text-emerald-600';
-  if (lossPct <= 15) return 'text-amber-500';
-  if (lossPct <= 25) return 'text-orange-500';
-  return 'text-rose-600';
-}
-
 export function formatEffectiveHours(weekday: number, weekend: number): string {
   const w = Math.abs(weekday) < 0.005 ? '' : (weekday % 1 === 0 ? weekday.toFixed(0) : weekday.toFixed(1));
   const we = Math.abs(weekend) < 0.005 ? '' : (weekend % 1 === 0 ? weekend.toFixed(0) : weekend.toFixed(1));

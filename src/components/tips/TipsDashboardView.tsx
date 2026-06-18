@@ -21,10 +21,8 @@ import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColum
 import {
   formatLocalIsoDateLabel,
   formatTipInt,
-  formatTipLossPct,
+  penalizacionColorClass,
   roundTipToHalfEuro,
-  tipLossColorClass,
-  tipLossPctFromAmounts,
   tjiColorClass,
   tipTheoreticalPoolAmounts,
   type TipDistributionHistoryRow,
@@ -598,11 +596,7 @@ export default function TipsDashboardView({
                             'justify-center',
                             TIP_TABLE_TH_TEXT
                           )}
-                          title={
-                            showSinRegCol
-                              ? 'Ocultar días sin fichar salida'
-                              : 'PEN: % menos respecto a la propina sin penalización. Toca para ver días sin fichar.'
-                          }
+                          title={showSinRegCol ? 'Ocultar Sin reg' : 'Mostrar jornadas sin registro'}
                         >
                           <span>PEN</span>
                           <TipSinRegHeaderBadge size={8} />
@@ -705,16 +699,13 @@ export default function TipsDashboardView({
                         const isSanc = s.isSanctioned;
                         const strikeClass = isSanc ? 'opacity-40' : '';
                         const tji = s.tjiPct ?? 0;
+                        const pen = s.penalizacionPct ?? 0;
                         const teor = tipTheoreticalPoolAmounts(s);
                         const wdAmtTeor = teor.weekday;
                         const weAmtTeor = teor.weekend;
                         const totSinPen = teor.total;
                         const hTotal = (s.weekdayHoursRaw ?? 0) + (s.weekendHoursRaw ?? 0);
-                        const theoreticalPayout =
-                          isSanc && (s.shadowAmount ?? 0) > 0.005 ? (s.shadowAmount ?? 0) : totSinPen;
-                        const finalPaid = isSanc ? 0 : s.totalAmount;
-                        const lossPct = tipLossPctFromAmounts(theoreticalPayout, finalPaid);
-                        const lossLabel = formatTipLossPct(theoreticalPayout, finalPaid);
+                        const penLabel = pen > 0 ? `${pen}%` : ' ';
                         const openRow = () => openOverride('weekday', s.id, s.name);
 
                         return (
@@ -773,17 +764,12 @@ export default function TipsDashboardView({
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'cursor-pointer',
-                                tipLossColorClass(lossPct),
+                                penalizacionColorClass(pen),
                                 strikeClass
                               )}
                               onClick={openRow}
-                              title={
-                                lossPct > 0.05
-                                  ? `Cobra un ${lossLabel.trim()} menos que sin penalización (${theoreticalPayout.toFixed(2)} € → ${finalPaid.toFixed(2)} €)`
-                                  : undefined
-                              }
                             >
-                              {lossLabel}
+                              {penLabel}
                             </td>
                             {showSinRegCol && (
                               <td

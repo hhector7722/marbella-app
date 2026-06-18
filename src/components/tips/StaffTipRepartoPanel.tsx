@@ -1,21 +1,25 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   formatLocalIsoDateLabel,
   formatRoundedTipMoney,
-  formatTipLossPct,
+  formatTipInt,
   formatTipMoney,
-  tipLossColorClass,
-  tipLossPctFromAmounts,
+  formatTipPct,
+  roundTipToHalfEuro,
+  tjiColorClass,
   type StaffTipHistoryEntry,
 } from '@/lib/tip-distribution-display';
 import {
+  formatTipAdjustmentValue,
+  getTipAdjustmentKind,
+  getTipAdjustmentLabel,
   staffEntryHoursTotal,
   staffEntryPropinaSinPen,
-  staffEntryTheoreticalPayout,
+  tipAdjustmentValueClass,
 } from '@/lib/staff-tip-entry-display';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
@@ -34,7 +38,7 @@ const METRIC_LABEL_SLOT =
   'flex min-h-[2.5rem] w-full min-w-0 shrink-0 items-start justify-center pt-0.5';
 const METRICS_GRID = 'mt-3 grid w-full grid-cols-4 gap-x-1 gap-y-0';
 
-type DetailKind = 'hours' | 'propina' | 'propinaFinal' | null;
+type DetailKind = 'hours' | 'propina' | 'penalizacion' | 'propinaFinal' | null;
 
 function MetricCell({
   label,
@@ -46,6 +50,7 @@ function MetricCell({
   label: ReactNode;
   value: ReactNode;
   valueClassName?: string;
+  /** Texto secundario (p. ej. «Sin penalización») en lugar de cifra principal. */
   valueTypography?: 'metric' | 'descriptive';
   onOpenDetail?: () => void;
 }) {
@@ -97,19 +102,16 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
   const periodLabel = `${formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} – ${formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}`;
   const sinPen = staffEntryPropinaSinPen(entry);
   const hTotal = staffEntryHoursTotal(entry);
+  const pen = entry.penalizacionPct ?? 0;
   const finalAmount = entry.totalAmount ?? 0;
-  const theoreticalPayout = staffEntryTheoreticalPayout(entry);
-  const finalPaid = entry.isSanctioned ? 0 : finalAmount;
-  let lossPct = tipLossPctFromAmounts(theoreticalPayout, finalPaid);
-  let lossLabel = formatTipLossPct(theoreticalPayout, finalPaid);
-  if (
-    entry.isSanctioned &&
-    lossLabel === ' ' &&
-    entry.weekdayHoursEffective + entry.weekendHoursEffective > 0.005
-  ) {
-    lossPct = 100;
-    lossLabel = '100%';
-  }
+
+  const adjustmentKind = useMemo(
+    () => getTipAdjustmentKind(sinPen.total, finalAmount),
+    [sinPen.total, finalAmount]
+  );
+  const adjustmentLabel = getTipAdjustmentLabel(adjustmentKind);
+  const adjustmentValue = formatTipAdjustmentValue(adjustmentKind, pen, sinPen.total, finalAmount);
+  const adjustmentValueClass = tipAdjustmentValueClass(adjustmentKind, pen);
 
   return (
     <>
@@ -143,9 +145,11 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           onOpenDetail={() => setDetail('propina')}
         />
         <MetricCell
-          label="Penalización"
-          value={lossLabel}
-          valueClassName={lossLabel === ' ' ? 'text-zinc-500' : tipLossColorClass(lossPct)}
+          label={adjustmentLabel}
+          value={adjustmentValue}
+          valueTypography={adjustmentKind === 'ninguna' ? 'descriptive' : 'metric'}
+          valueClassName={adjustmentKind === 'ninguna' ? undefined : adjustmentValueClass}
+          onOpenDetail={() => setDetail('penalizacion')}
         />
         <MetricCell
           label="Propina final"
@@ -190,6 +194,29 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
                 label: 'Sáb – Dom',
                 value: formatTipMoney(sinPen.weekend),
                 valueClassName: 'text-[#36606F]',
+              },
+            ]}
+          />
+        </StaffTipBreakdownModal>
+      ) : null}
+
+      {detail === 'penalizacion' ? (
+        <StaffTipBreakdownModal title={adjustmentLabel} onClose={() => setDetail(null)}>
+          <StaffTipModalColumnGrid
+            columns={[
+              {
+                label: 'Días trabajados',
+                value: formatTipInt(entry.jornadasTotales),
+              },
+              {
+                label: 'Días sin fichar',
+                value: formatTipInt(entry.jornadasConOlvido),
+                valueClassName: tjiColorClass(entry.tjiPct),
+              },
+              {
+                label: 'Tasa de error',
+                value: formatTipPct(entry.tjiPct),
+                valueClassName: tjiColorClass(entry.tjiPct),
               },
             ]}
           />
