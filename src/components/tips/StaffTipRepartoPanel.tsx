@@ -1,25 +1,22 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
+  formatHorasDiscountPct,
   formatLocalIsoDateLabel,
   formatRoundedTipMoney,
   formatTipInt,
   formatTipMoney,
   formatTipPct,
-  roundTipToHalfEuro,
+  formatTjiMainValue,
   tjiColorClass,
   type StaffTipHistoryEntry,
 } from '@/lib/tip-distribution-display';
 import {
-  formatTipAdjustmentValue,
-  getTipAdjustmentKind,
-  getTipAdjustmentLabel,
   staffEntryHoursTotal,
   staffEntryPropinaSinPen,
-  tipAdjustmentValueClass,
 } from '@/lib/staff-tip-entry-display';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
@@ -38,7 +35,7 @@ const METRIC_LABEL_SLOT =
   'flex min-h-[2.5rem] w-full min-w-0 shrink-0 items-start justify-center pt-0.5';
 const METRICS_GRID = 'mt-3 grid w-full grid-cols-4 gap-x-1 gap-y-0';
 
-type DetailKind = 'hours' | 'propina' | 'penalizacion' | 'propinaFinal' | null;
+type DetailKind = 'hours' | 'propina' | 'tji' | 'propinaFinal' | null;
 
 function MetricCell({
   label,
@@ -103,15 +100,11 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
   const sinPen = staffEntryPropinaSinPen(entry);
   const hTotal = staffEntryHoursTotal(entry);
   const pen = entry.penalizacionPct ?? 0;
+  const tji = entry.tjiPct ?? 0;
   const finalAmount = entry.totalAmount ?? 0;
-
-  const adjustmentKind = useMemo(
-    () => getTipAdjustmentKind(sinPen.total, finalAmount),
-    [sinPen.total, finalAmount]
-  );
-  const adjustmentLabel = getTipAdjustmentLabel(adjustmentKind);
-  const adjustmentValue = formatTipAdjustmentValue(adjustmentKind, pen, sinPen.total, finalAmount);
-  const adjustmentValueClass = tipAdjustmentValueClass(adjustmentKind, pen);
+  const sanctionBonus = (entry.weekdayBonus ?? 0) + (entry.weekendBonus ?? 0);
+  const tjiMain = formatTjiMainValue(tji, entry.jornadasTotales);
+  const horasDiscount = formatHorasDiscountPct(pen);
 
   return (
     <>
@@ -145,11 +138,25 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
           onOpenDetail={() => setDetail('propina')}
         />
         <MetricCell
-          label={adjustmentLabel}
-          value={adjustmentValue}
-          valueTypography={adjustmentKind === 'ninguna' ? 'descriptive' : 'metric'}
-          valueClassName={adjustmentKind === 'ninguna' ? undefined : adjustmentValueClass}
-          onOpenDetail={() => setDetail('penalizacion')}
+          label="TJI"
+          value={
+            tjiMain === ' ' ? (
+              'Sin incidencias'
+            ) : (
+              <span className="flex flex-col items-center gap-0.5">
+                <span>{tjiMain}</span>
+                {pen > 0 ? (
+                  <span className="text-[9px] font-bold tabular-nums text-rose-600 sm:text-[10px]">
+                    {horasDiscount}
+                    <span className="font-semibold text-rose-500/80"> h</span>
+                  </span>
+                ) : null}
+              </span>
+            )
+          }
+          valueTypography={tjiMain === ' ' ? 'descriptive' : 'metric'}
+          valueClassName={tjiMain === ' ' ? undefined : tjiColorClass(tji)}
+          onOpenDetail={() => setDetail('tji')}
         />
         <MetricCell
           label="Propina final"
@@ -200,8 +207,8 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
         </StaffTipBreakdownModal>
       ) : null}
 
-      {detail === 'penalizacion' ? (
-        <StaffTipBreakdownModal title={adjustmentLabel} onClose={() => setDetail(null)}>
+      {detail === 'tji' ? (
+        <StaffTipBreakdownModal title="Incidencias fichaje" onClose={() => setDetail(null)}>
           <StaffTipModalColumnGrid
             columns={[
               {
@@ -214,10 +221,24 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
                 valueClassName: tjiColorClass(entry.tjiPct),
               },
               {
-                label: 'Tasa de error',
+                label: 'TJI',
                 value: formatTipPct(entry.tjiPct),
                 valueClassName: tjiColorClass(entry.tjiPct),
               },
+              {
+                label: 'Dto. horas',
+                value: pen > 0 ? `${horasDiscount} h` : ' ',
+                valueClassName: pen > 0 ? 'text-rose-600' : undefined,
+              },
+              ...(sanctionBonus >= 0.005
+                ? [
+                    {
+                      label: 'Extra sanciones',
+                      value: formatTipMoney(sanctionBonus),
+                      valueClassName: 'text-emerald-600',
+                    },
+                  ]
+                : []),
             ]}
           />
         </StaffTipBreakdownModal>

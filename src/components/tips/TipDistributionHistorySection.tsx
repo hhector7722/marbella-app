@@ -202,7 +202,9 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
                             <tr className="text-zinc-500 font-black uppercase tracking-wider">
                               <th className="text-left px-2 py-2">Staff</th>
                               <th className="text-center px-1">TJI</th>
-                              <th className="text-center px-1">Pen</th>
+                              <th className="text-center px-1" title="Descuento aplicado a las horas en el reparto">
+                                Dto h
+                              </th>
                               <th className="text-right px-2">Total</th>
                             </tr>
                           </thead>

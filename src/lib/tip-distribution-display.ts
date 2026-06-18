@@ -42,6 +42,19 @@ export function formatPenalizacionPct(penalizacionPct: number): string {
   return `-${penalizacionPct}%`;
 }
 
+/** Descuento aplicado a las horas en el reparto (no confundir con el TJI). */
+export function formatHorasDiscountPct(penalizacionPct: number): string {
+  if (penalizacionPct <= 0) return ' ';
+  return `−${penalizacionPct}%`;
+}
+
+/** Valor principal de la columna TJI en tablas. */
+export function formatTjiMainValue(tjiPct: number, jornadasTotales = 0): string {
+  if (jornadasTotales <= 0) return ' ';
+  if (Math.abs(tjiPct) < 0.005) return '0%';
+  return `${tjiPct.toFixed(0)}%`;
+}
+
 export function formatEffectiveHours(weekday: number, weekend: number): string {
   const w = Math.abs(weekday) < 0.005 ? '' : (weekday % 1 === 0 ? weekday.toFixed(0) : weekday.toFixed(1));
   const we = Math.abs(weekend) < 0.005 ? '' : (weekend % 1 === 0 ? weekend.toFixed(0) : weekend.toFixed(1));

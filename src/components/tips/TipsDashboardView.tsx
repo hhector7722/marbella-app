@@ -19,9 +19,10 @@ import { TipDistributionHistorySection } from '@/components/tips/TipDistribution
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColumnToggleBadge';
 import {
+  formatHorasDiscountPct,
   formatLocalIsoDateLabel,
   formatTipInt,
-  penalizacionColorClass,
+  formatTjiMainValue,
   roundTipToHalfEuro,
   tjiColorClass,
   tipTheoreticalPoolAmounts,
@@ -596,9 +597,13 @@ export default function TipsDashboardView({
                             'justify-center',
                             TIP_TABLE_TH_TEXT
                           )}
-                          title={showSinRegCol ? 'Ocultar Sin reg' : 'Mostrar jornadas sin registro'}
+                          title={
+                            showSinRegCol
+                              ? 'Ocultar días sin fichar salida'
+                              : 'TJI: % de jornadas con salida no registrada. Toca para ver el nº de días.'
+                          }
                         >
-                          <span>PEN</span>
+                          <span>TJI</span>
                           <TipSinRegHeaderBadge size={8} />
                         </button>
                       </th>
@@ -705,7 +710,8 @@ export default function TipsDashboardView({
                         const weAmtTeor = teor.weekend;
                         const totSinPen = teor.total;
                         const hTotal = (s.weekdayHoursRaw ?? 0) + (s.weekendHoursRaw ?? 0);
-                        const penLabel = pen > 0 ? `${pen}%` : ' ';
+                        const tjiLabel = formatTjiMainValue(tji, s.jornadasTotales ?? 0);
+                        const horasDiscount = formatHorasDiscountPct(pen);
                         const openRow = () => openOverride('weekday', s.id, s.name);
 
                         return (
@@ -764,12 +770,26 @@ export default function TipsDashboardView({
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'cursor-pointer',
-                                penalizacionColorClass(pen),
                                 strikeClass
                               )}
                               onClick={openRow}
+                              title={
+                                pen > 0
+                                  ? `Descuento en horas para el reparto: ${horasDiscount.trim()}`
+                                  : undefined
+                              }
                             >
-                              {penLabel}
+                              <div className="flex flex-col items-center gap-0.5 leading-none">
+                                <span className={cn(TIP_TABLE_BODY_TEXT, tjiColorClass(tji))}>
+                                  {tjiLabel}
+                                </span>
+                                {pen > 0 ? (
+                                  <span className="text-[8px] font-bold tabular-nums text-rose-600 md:text-[9px]">
+                                    {horasDiscount}
+                                    <span className="font-semibold text-rose-500/80"> h</span>
+                                  </span>
+                                ) : null}
+                              </div>
                             </td>
                             {showSinRegCol && (
                               <td
@@ -870,6 +890,11 @@ export default function TipsDashboardView({
                   </tbody>
                 </table>
               </div>
+              <p className="border-t border-zinc-100 px-3 py-2.5 text-[9px] font-medium leading-relaxed text-zinc-500 md:px-4 md:text-[10px]">
+                <span className="font-bold text-zinc-600">TJI:</span> % de jornadas con salida no registrada.{' '}
+                <span className="font-bold text-rose-600">−X % h:</span> descuento en horas para el reparto (0 / 10 / 20 / 35 según TJI).{' '}
+                <span className="font-bold text-zinc-600">PROP F:</span> importe final redondeado a 0,50 €.
+              </p>
             </div>
           </div>
         </div>
