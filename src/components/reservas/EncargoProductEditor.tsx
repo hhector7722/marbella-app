@@ -34,6 +34,7 @@ export type EncargoEditorMenuProduct = {
   parentSort: number
   childSort: number
   price: number
+  isCartaActive: boolean
 }
 
 type EditorLine = StaffEncargoLineItem & {
@@ -159,6 +160,43 @@ function buildQtyByProductId(lines: EditorLine[]): Map<string, number> {
     map.set(line.product_id, (map.get(line.product_id) ?? 0) + line.quantity)
   }
   return map
+}
+
+function childKeyForProduct(product: EncargoEditorMenuProduct): string {
+  const rawChild = product.childName.trim()
+  return rawChild ? rawChild : DIRECT_CHILD_KEY
+}
+
+function productMatchesChildGroup(
+  product: EncargoEditorMenuProduct,
+  dept: MenuDepartment,
+  child: MenuChildGroup
+): boolean {
+  const parentKey = product.parentName || 'Otros'
+  if (parentKey !== dept.key) return false
+  return childKeyForProduct(product) === child.key
+}
+
+function mapEncargoMenuRow(row: Record<string, unknown>): EncargoEditorMenuProduct | null {
+  const name = String(row.carta_nombre ?? '').trim()
+  if (!name) return null
+
+  const parent = String(row.category_parent_name ?? '').trim()
+  const child = String(row.category_child_name ?? '').trim()
+  const displayChild = child ? displaySubcategoryLabel(parent, child) : ''
+  const category = [parent, displayChild].filter(Boolean).join(' · ')
+
+  return {
+    product_id: eventOrderProductId(row.articulo_id as number),
+    name,
+    category,
+    parentName: parent,
+    childName: child,
+    parentSort: Number(row.category_parent_sort_order) || 0,
+    childSort: Number(row.category_child_sort_order) || 0,
+    price: Number(row.precio) || 0,
+    isCartaActive: row.is_carta_active !== false,
+  }
 }
 
 function BrowseNavBar({
@@ -478,6 +516,8 @@ export function EncargoProductEditor({
   const [isPending, startTransition] = useTransition()
   const [loadingMenu, setLoadingMenu] = useState(true)
   const [menuProducts, setMenuProducts] = useState<EncargoEditorMenuProduct[]>([])
+  const [inactiveMenuProducts, setInactiveMenuProducts] = useState<EncargoEditorMenuProduct[]>([])
+  const [showInactiveInView, setShowInactiveInView] = useState(false)
   const [search, setSearch] = useState('')
   const [lines, setLines] = useState<EditorLine[]>([])
   const [browseParent, setBrowseParent] = useState<string | null>(null)
@@ -494,17 +534,22 @@ export function EncargoProductEditor({
     setBrowseParent(null)
     setBrowseChild(null)
     setSearch('')
+    setShowInactiveInView(false)
     setCartModalOpen(false)
   }, [initialItems, eventId])
+
+  useEffect(() => {
+    setShowInactiveInView(false)
+  }, [browseParent, browseChild])
 
   useEffect(() => {
     let cancelled = false
     void (async () => {
       setLoadingMenu(true)
       const { data, error } = await supabase
-        .from('v_public_menu_items')
+        .from('v_staff_encargo_menu_items')
         .select(
-          'articulo_id, carta_nombre, precio, category_parent_name, category_child_name, sort_order, category_parent_sort_order, category_child_sort_order'
+          'articulo_id, carta_nombre, precio, category_parent_name, category_child_name, sort_order, category_parent_sort_order, category_child_sort_order, is_carta_active'
         )
         .order('category_parent_sort_order', { ascending: true, nullsFirst: false })
         .order('category_child_sort_order', { ascending: true, nullsFirst: false })
@@ -517,29 +562,24 @@ export function EncargoProductEditor({
         return
       }
 
-      const products: EncargoEditorMenuProduct[] = (data ?? []).map((row) => {
-        const parent = String((row as { category_parent_name?: string }).category_parent_name ?? '').trim()
-        const child = String((row as { category_child_name?: string }).category_child_name ?? '').trim()
-        const displayChild = child ? displaySubcategoryLabel(parent, child) : ''
-        const category = [parent, displayChild].filter(Boolean).join(' · ')
-        return {
-          product_id: eventOrderProductId((row as { articulo_id: number }).articulo_id),
-          name: String((row as { carta_nombre?: string }).carta_nombre ?? '').trim(),
-          category,
-          parentName: parent,
-          childName: child,
-          parentSort: Number((row as { category_parent_sort_order?: number }).category_parent_sort_order) || 0,
-          childSort: Number((row as { category_child_sort_order?: number }).category_child_sort_order) || 0,
-          price: Number((row as { precio?: number }).precio) || 0,
-        }
-      })
+      const active: EncargoEditorMenuProduct[] = []
+      const inactive: EncargoEditorMenuProduct[] = []
+      const allById = new Map<string, EncargoEditorMenuProduct>()
 
-      const filtered = products.filter((p) => p.name)
-      setMenuProducts(filtered)
+      for (const row of data ?? []) {
+        const product = mapEncargoMenuRow(row as Record<string, unknown>)
+        if (!product) continue
+        allById.set(product.product_id, product)
+        if (product.isCartaActive) active.push(product)
+        else inactive.push(product)
+      }
+
+      setMenuProducts(active)
+      setInactiveMenuProducts(inactive)
 
       setLines((prev) =>
         prev.map((line) => {
-          const found = filtered.find((p) => p.product_id === line.product_id)
+          const found = allById.get(line.product_id)
           return found ? { ...line, name: found.name } : line
         })
       )
@@ -552,6 +592,13 @@ export function EncargoProductEditor({
 
   const departments = useMemo(() => buildDepartments(menuProducts), [menuProducts])
   const qtyByProductId = useMemo(() => buildQtyByProductId(lines), [lines])
+  const productById = useMemo(() => {
+    const map = new Map<string, EncargoEditorMenuProduct>()
+    for (const product of [...menuProducts, ...inactiveMenuProducts]) {
+      map.set(product.product_id, product)
+    }
+    return map
+  }, [menuProducts, inactiveMenuProducts])
 
   const searchActive = search.trim().length >= 2
 
@@ -577,6 +624,22 @@ export function EncargoProductEditor({
     () => activeDepartment?.children.find((c) => c.key === browseChild) ?? null,
     [activeDepartment, browseChild]
   )
+
+  const inactiveInCurrentView = useMemo(() => {
+    if (!activeDepartment || !activeChildGroup) return []
+    return inactiveMenuProducts
+      .filter((product) => productMatchesChildGroup(product, activeDepartment, activeChildGroup))
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  }, [inactiveMenuProducts, activeDepartment, activeChildGroup])
+
+  const productsInCurrentView = useMemo(() => {
+    if (!activeChildGroup) return []
+    const active = activeChildGroup.products
+    if (!showInactiveInView) return active
+    return [...active, ...inactiveInCurrentView].sort((a, b) =>
+      a.name.localeCompare(b.name, 'es')
+    )
+  }, [activeChildGroup, inactiveInCurrentView, showInactiveInView])
 
   const lineCount = lines.length
   const unitCount = useMemo(
@@ -641,7 +704,7 @@ export function EncargoProductEditor({
             l.lineKey === mergeTarget.lineKey ? { ...l, quantity } : l
           )
         }
-        const product = menuProducts.find((p) => p.product_id === productId)
+        const product = productById.get(productId)
         if (!product) return prev
         return [
           ...prev,
@@ -656,7 +719,7 @@ export function EncargoProductEditor({
       })
       setSearch('')
     },
-    [menuProducts]
+    [productById]
   )
 
   const updateLine = useCallback((lineKey: string, patch: Partial<StaffEncargoLineItem>) => {
@@ -816,8 +879,19 @@ export function EncargoProductEditor({
             }}
           />
           <div className="flex-1 min-h-0 overflow-y-auto">
+            {inactiveInCurrentView.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setShowInactiveInView((v) => !v)}
+                className="mb-2 min-h-12 w-full rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 text-[10px] font-black uppercase tracking-wider text-zinc-600 hover:border-[#36606F]/30 hover:text-[#36606F] active:opacity-80"
+              >
+                {showInactiveInView
+                  ? 'Ocultar no activos'
+                  : `Mostrar no activos (${inactiveInCurrentView.length})`}
+              </button>
+            ) : null}
             <ProductPickGrid
-              products={activeChildGroup.products}
+              products={productsInCurrentView}
               qtyByProductId={qtyByProductId}
               onAdd={addProduct}
               onDecrement={decrementProduct}
