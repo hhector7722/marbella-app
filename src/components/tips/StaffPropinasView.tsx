@@ -15,7 +15,7 @@ import {
 } from '@/lib/staff-tip-history';
 import {
   formatLocalIsoDateLabel,
-  formatRoundedTipMoney,
+  formatTipMoney,
   type StaffTipHistoryEntry,
 } from '@/lib/tip-distribution-display';
 import { StaffTipRepartoPanel } from '@/components/tips/StaffTipRepartoPanel';
@@ -212,7 +212,7 @@ export default function StaffPropinasView({
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <span className="text-base font-black tabular-nums text-emerald-600">
-                          {formatRoundedTipMoney(entry.totalAmount)}
+                          {formatTipMoney(entry.totalAmount)}
                         </span>
                         <ChevronRight size={18} className="text-zinc-300" strokeWidth={2.5} />
                       </div>

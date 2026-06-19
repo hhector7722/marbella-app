@@ -22,7 +22,6 @@ import {
   formatLocalIsoDateLabel,
   formatTipInt,
   penalizacionColorClass,
-  roundTipToHalfEuro,
   tjiColorClass,
   tipTheoreticalPoolAmounts,
   type TipDistributionHistoryRow,
@@ -110,7 +109,6 @@ type TipTableColKey =
   | 'hSd'
   | 'pen'
   | 'sinReg'
-  | 'propF'
   | 'prop'
   | 'eLv'
   | 'eSd'
@@ -131,9 +129,8 @@ function buildTipTableColWidths(flags: {
   }
   cols.push({ key: 'pen', weight: 1 });
   if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: 1 });
-  cols.push({ key: 'propF', weight: 1.2 });
+  cols.push({ key: 'prop', weight: 1.2 });
   if (flags.showPropDetail) {
-    cols.push({ key: 'prop', weight: 1.2 });
     cols.push({ key: 'sinPen', weight: 1 }, { key: 'eLv', weight: 1 }, { key: 'eSd', weight: 1 });
   }
   const total = cols.reduce((sum, c) => sum + c.weight, 0);
@@ -196,7 +193,7 @@ export default function TipsDashboardView({
   });
 
   const tableColCount =
-    5 + (showHoursDetail ? 2 : 0) + (showSinRegCol ? 1 : 0) + (showPropDetail ? 4 : 0);
+    4 + (showHoursDetail ? 2 : 0) + (showSinRegCol ? 1 : 0) + (showPropDetail ? 3 : 0);
 
   const colWidths = useMemo(
     () =>
@@ -615,7 +612,7 @@ export default function TipsDashboardView({
                           Sin reg
                         </th>
                       )}
-                      <th style={{ width: colWidths.propF }} className={cn('text-right', TIP_TABLE_TH)}>
+                      <th style={{ width: colWidths.prop }} className={cn('text-right', TIP_TABLE_TH)}>
                         <button
                           type="button"
                           onClick={() => setShowPropDetail((v) => !v)}
@@ -626,27 +623,16 @@ export default function TipsDashboardView({
                           )}
                           title={
                             showPropDetail
-                              ? 'Ocultar PROP, Sin pen, € Lun–Vie y € Sáb–Dom'
+                              ? 'Ocultar Sin pen, € Lun–Vie y € Sáb–Dom'
                               : 'Mostrar desglose de propinas'
                           }
                         >
-                          <span>PROP F</span>
+                          <span>PROP</span>
                           <TipExpandBadge size={8} />
                         </button>
                       </th>
                       {showPropDetail && (
                         <>
-                          <th
-                            style={{ width: colWidths.prop }}
-                            className={cn(
-                              'text-right',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
-                              TIP_EXPAND_TH
-                            )}
-                          >
-                            PROP
-                          </th>
                           <th
                             style={{ width: colWidths.sinPen }}
                             className={cn(
@@ -787,7 +773,7 @@ export default function TipsDashboardView({
                               </td>
                             )}
                             <td
-                              style={{ width: colWidths.propF }}
+                              style={{ width: colWidths.prop }}
                               className={cn(
                                 TIP_TABLE_DATA_CELL,
                                 'text-right text-emerald-600',
@@ -795,12 +781,8 @@ export default function TipsDashboardView({
                               )}
                             >
                               <SanctionedTipMoney
-                                amount={roundTipToHalfEuro(s.totalAmount)}
-                                shadowAmount={
-                                  isSanc && s.shadowAmount != null
-                                    ? roundTipToHalfEuro(s.shadowAmount)
-                                    : null
-                                }
+                                amount={s.totalAmount}
+                                shadowAmount={s.shadowAmount ?? null}
                                 isSanctioned={isSanc}
                                 className={cn(TIP_TABLE_BODY_TEXT, 'text-emerald-600')}
                                 formatFn={fmtMoney}
@@ -808,23 +790,6 @@ export default function TipsDashboardView({
                             </td>
                             {showPropDetail && (
                               <>
-                                <td
-                                  style={{ width: colWidths.prop }}
-                                  className={cn(
-                                    TIP_TABLE_DATA_CELL,
-                                    'text-right text-emerald-600',
-                                    TIP_EXPAND_TD,
-                                    strikeClass
-                                  )}
-                                >
-                                  <SanctionedTipMoney
-                                    amount={s.totalAmount}
-                                    shadowAmount={s.shadowAmount ?? null}
-                                    isSanctioned={isSanc}
-                                    className={cn(TIP_TABLE_BODY_TEXT, 'text-emerald-600')}
-                                    formatFn={fmtMoney}
-                                  />
-                                </td>
                                 <td
                                   style={{ width: colWidths.sinPen }}
                                   className={cn(
@@ -931,7 +896,7 @@ export default function TipsDashboardView({
         staff={staffWithWorkedHours.map((s) => ({
           id: s.id,
           name: s.name,
-          totalAmount: roundTipToHalfEuro(s.totalAmount),
+          totalAmount: s.totalAmount,
           weekdayAmount: s.weekdayAmount,
           weekendAmount: s.weekendAmount,
           isSanctioned: s.isSanctioned,

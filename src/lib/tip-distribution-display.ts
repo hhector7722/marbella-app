@@ -102,19 +102,9 @@ export function estimateTjiPenaltyCostEur(row: {
   return Math.max(0, amountWithout - row.totalAmount);
 }
 
-/** Redondea al múltiplo de 0,50 € más cercano (83,24→83,00 · 83,26→83,50 · 83,75→84,00). */
-export function roundTipToHalfEuro(amount: number): number {
-  if (!Number.isFinite(amount)) return 0;
-  return Math.round(amount * 2) / 2;
-}
-
 export function formatTipMoney(val: number): string {
   if (Math.abs(val) < 0.005) return ' ';
   return `${val.toFixed(2)} €`;
-}
-
-export function formatRoundedTipMoney(val: number): string {
-  return formatTipMoney(roundTipToHalfEuro(val));
 }
 
 /** Pagado vs importe teórico tachado cuando el empleado está sancionado. */
