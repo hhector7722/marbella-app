@@ -1,5 +1,5 @@
 import { formatDurationMs, formatNumber } from '@/lib/web-analytics/labels';
-import type { WebAnalyticsDashboardData } from '@/lib/web-analytics/queries';
+import type { WebAnalyticsDashboardData } from '@/lib/web-analytics/types';
 
 type WebAnalyticsKpisProps = {
   totals: WebAnalyticsDashboardData['totals'];

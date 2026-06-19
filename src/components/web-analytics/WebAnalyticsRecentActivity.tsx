@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { WEB_ANALYTICS_RECENT_PAGE_SIZE } from '@/lib/web-analytics/queries';
-import type { WebAnalyticsDashboardFilters, WebAnalyticsRecentEvent } from '@/lib/web-analytics/queries';
+import {
+  WEB_ANALYTICS_RECENT_PAGE_SIZE,
+  type WebAnalyticsDashboardFilters,
+  type WebAnalyticsRecentEvent,
+} from '@/lib/web-analytics/types';
 
 type WebAnalyticsRecentActivityProps = {
   initialEvents: WebAnalyticsRecentEvent[];

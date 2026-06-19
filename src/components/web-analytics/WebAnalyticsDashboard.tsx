@@ -4,7 +4,7 @@ import { WebAnalyticsBreakdown } from '@/components/web-analytics/WebAnalyticsBr
 import { WebAnalyticsFilters } from '@/components/web-analytics/WebAnalyticsFilters';
 import { WebAnalyticsKpis } from '@/components/web-analytics/WebAnalyticsKpis';
 import { WebAnalyticsRecentActivity } from '@/components/web-analytics/WebAnalyticsRecentActivity';
-import type { WebAnalyticsDashboardData } from '@/lib/web-analytics/queries';
+import type { WebAnalyticsDashboardData } from '@/lib/web-analytics/types';
 
 export function WebAnalyticsDashboard({ data }: { data: WebAnalyticsDashboardData }) {
   return (

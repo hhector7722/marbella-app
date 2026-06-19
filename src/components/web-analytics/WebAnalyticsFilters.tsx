@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
-import type { WebAnalyticsDashboardFilters } from '@/lib/web-analytics/queries';
+import type { WebAnalyticsDashboardFilters } from '@/lib/web-analytics/types';
 
 type WebAnalyticsFiltersProps = {
   filters: WebAnalyticsDashboardFilters;
