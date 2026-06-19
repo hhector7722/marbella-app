@@ -70,8 +70,38 @@ async function fetchWebAnalyticsRows(filters: WebAnalyticsDashboardFilters): Pro
   }
 
   const { data, error } = await query;
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[web-analytics] fetch error:', error);
+    throw new Error(
+      error.code === 'PGRST205'
+        ? 'La tabla web_analytics_events no existe en Supabase. Aplica la migración 20260619120000_web_analytics.sql.'
+        : error.message
+    );
+  }
   return (data ?? []) as WebAnalyticsEventRow[];
+}
+
+export function createEmptyWebAnalyticsDashboardData(
+  filters: WebAnalyticsDashboardFilters
+): WebAnalyticsDashboardData {
+  return {
+    filters,
+    recentEvents: [],
+    recentHasMore: false,
+    totals: {
+      visitors: 0,
+      sessions: 0,
+      pageViews: 0,
+      clicks: 0,
+      actions: 0,
+      avgSessionMs: 0,
+    },
+    topPages: [],
+    topReferrers: [],
+    topDevices: [],
+    topSources: [],
+    topLocales: [],
+  };
 }
 
 function computeTotals(rows: WebAnalyticsEventRow[]) {

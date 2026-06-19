@@ -3,7 +3,11 @@ import { redirect } from 'next/navigation';
 import { Globe } from 'lucide-react';
 import { WebAnalyticsDashboard } from '@/components/web-analytics/WebAnalyticsDashboard';
 import { canAccessWebAnalytics } from '@/lib/web-analytics/access';
-import { getWebAnalyticsDashboardData, parseWebAnalyticsFilters } from '@/lib/web-analytics/queries';
+import {
+  createEmptyWebAnalyticsDashboardData,
+  getWebAnalyticsDashboardData,
+  parseWebAnalyticsFilters,
+} from '@/lib/web-analytics/queries';
 import { createClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +40,14 @@ export default async function WebAnalyticsPage({ searchParams }: WebAnalyticsPag
     redirect('/dashboard');
   }
 
-  const data = await getWebAnalyticsDashboardData(filters);
+  let data = createEmptyWebAnalyticsDashboardData(filters);
+  let loadError: string | null = null;
+
+  try {
+    data = await getWebAnalyticsDashboardData(filters);
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : 'No se pudieron cargar los datos de analítica web.';
+  }
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl space-y-4 p-4">
@@ -59,6 +70,12 @@ export default async function WebAnalyticsPage({ searchParams }: WebAnalyticsPag
           Abrir web
         </Link>
       </div>
+      {loadError ? (
+        <section className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-800">
+          <p className="font-semibold">No se pudo cargar la analítica web</p>
+          <p className="mt-1 text-xs text-rose-700">{loadError}</p>
+        </section>
+      ) : null}
       <WebAnalyticsDashboard data={data} />
     </div>
   );
