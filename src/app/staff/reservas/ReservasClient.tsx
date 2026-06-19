@@ -913,8 +913,8 @@ export default function ReservasClient() {
 
   return (
     <div className="bg-[#5B8FB9] min-h-screen">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+      <div className="w-full px-3 sm:px-4 md:px-5 py-4 md:py-6">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
           <div className="bg-[#36606F] rounded-t-2xl px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
             <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
               Reservas y encargos
@@ -929,8 +929,8 @@ export default function ReservasClient() {
             </a>
           </div>
 
-          <div className="p-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
-            <div className="flex justify-center w-full">
+          <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
+            <div className="flex justify-center w-full px-4">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
@@ -964,7 +964,7 @@ export default function ReservasClient() {
                 <div className="text-xs font-medium">{rpcError}</div>
               </div>
             ) : (
-              <div className="w-full min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
+              <div className="w-full min-w-0 mx-auto max-w-full px-1 sm:px-2 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                 <div className="grid grid-cols-7 border-b border-gray-100">
                   {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                     <div
@@ -1004,7 +1004,7 @@ export default function ReservasClient() {
                           onClick={() => isViewMonthDay && handleDayClick(day)}
                           disabled={!isViewMonthDay}
                           className={cn(
-                            'group relative flex flex-col text-left min-h-[64px] md:min-h-[108px] transition-colors p-1',
+                            'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] transition-colors p-1 sm:p-1.5',
                             'border-r border-gray-100 last:border-r-0 bg-white',
                             !isViewMonthDay && 'opacity-25 pointer-events-none',
                             isViewMonthDay &&
