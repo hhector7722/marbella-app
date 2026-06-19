@@ -831,8 +831,12 @@ export default function ReservasClient() {
   const submitCreateEncargo = useCallback(
     (
       dayYmd: string,
-      data: { contact_name: string; event_time: string; guest_count: number },
-      reservationId?: string | null
+      data: {
+        contact_name: string
+        event_time: string
+        guest_count: number
+        reservation_id?: string | null
+      }
     ) => {
       startEncargoTransition(async () => {
         const res = await createEncargoAction({
@@ -840,7 +844,7 @@ export default function ReservasClient() {
           event_date: dayYmd,
           event_time: data.event_time,
           guest_count: data.guest_count,
-          reservation_id: reservationId ?? null,
+          reservation_id: data.reservation_id ?? null,
         })
         if (!res.success) {
           toast.error(res.message)
@@ -860,15 +864,12 @@ export default function ReservasClient() {
 
   const startEncargoFromReservation = useCallback(
     (reservation: Reservation) => {
-      submitCreateEncargo(
-        reservation.reservation_date.slice(0, 10),
-        {
-          contact_name: reservation.customer_name,
-          event_time: timeShort(reservation.reservation_time),
-          guest_count: Math.max(1, reservation.pax || 1),
-        },
-        reservation.id
-      )
+      submitCreateEncargo(reservation.reservation_date.slice(0, 10), {
+        contact_name: reservation.customer_name,
+        event_time: timeShort(reservation.reservation_time),
+        guest_count: Math.max(1, reservation.pax || 1),
+        reservation_id: reservation.id,
+      })
     },
     [submitCreateEncargo]
   )
@@ -881,6 +882,11 @@ export default function ReservasClient() {
 
   const listModalReservations = listModalDay ? (byDate[listModalDay] ?? []) : []
   const listModalEncargos = listModalDay ? (encargosByDate[listModalDay] ?? []) : []
+
+  const createEncargoAvailableReservations = useMemo(() => {
+    if (!createEncargoDay) return []
+    return (byDate[createEncargoDay] ?? []).filter((r) => !reservationIdsWithLinkedEncargo.has(r.id))
+  }, [createEncargoDay, byDate, reservationIdsWithLinkedEncargo])
 
   const viewEncargo = viewEncargoId ? allEncargos.find((e) => e.id === viewEncargoId) ?? null : null
   const viewEncargoOrder = viewEncargo
@@ -1075,9 +1081,10 @@ export default function ReservasClient() {
         createPortal(
           <CreateEncargoQuickModal
             dayYmd={createEncargoDay}
+            availableReservations={createEncargoAvailableReservations}
             busy={isPendingEncargo}
             onClose={() => setCreateEncargoDay(null)}
-            onSubmit={(data) => submitCreateEncargo(createEncargoDay, data, null)}
+            onSubmit={(data) => submitCreateEncargo(createEncargoDay, data)}
           />,
           document.body
         )}
