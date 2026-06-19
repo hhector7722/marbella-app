@@ -5,10 +5,6 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Loader2, Plus, X } from 'lucide-react'
 
-import {
-  ClosingPetrolInputWithAdjust,
-  ClosingStepRow,
-} from '@/components/cash-closing/ClosingStep1Parts'
 import { buildDayAgendaListRows } from '@/lib/encargo-staff-helpers'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
@@ -181,6 +177,28 @@ export function DayAgendaModal({
 const CLOSING_PETROL_FIELD =
   'h-9 w-full rounded-xl border border-[#36606F] bg-white px-2 text-center text-sm font-black text-zinc-800 outline-none transition-colors focus:bg-[#36606F]/5'
 
+const ENCARGO_FIELD_COL = 'w-[8.75rem] sm:w-[9.5rem]'
+
+const ENCARGO_ROW_TITLE =
+  'text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs'
+
+function EncargoFormStepRow({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="grid min-h-[40px] grid-cols-[7.25rem_1fr] items-center gap-x-2 sm:grid-cols-[8.25rem_1fr] sm:gap-x-3">
+      <span className={ENCARGO_ROW_TITLE}>{title}</span>
+      <div className="flex min-w-0 items-center justify-center">
+        <div className={ENCARGO_FIELD_COL}>{children}</div>
+      </div>
+    </div>
+  )
+}
+
 export function CreateEncargoQuickModal({
   dayYmd,
   availableReservations = [],
@@ -267,25 +285,25 @@ export function CreateEncargoQuickModal({
 
         <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-5">
           {availableReservations.length > 0 ? (
-            <ClosingStepRow title="Reserva">
+            <EncargoFormStepRow title="Enlazar a reserva">
               <select
                 value={linkedReservationId}
                 onChange={(e) => setLinkedReservationId(e.target.value)}
                 disabled={busy}
-                className={cn(CLOSING_PETROL_FIELD, 'text-left pl-3 pr-8')}
+                className={cn(CLOSING_PETROL_FIELD, 'text-center')}
               >
-                <option value="">Sin reserva</option>
+                <option value=""> </option>
                 {availableReservations.map((r) => (
                   <option key={r.id} value={r.id}>
                     {timeShortHm(r.reservation_time)} · {r.customer_name} · {r.pax} pax
                   </option>
                 ))}
               </select>
-            </ClosingStepRow>
+            </EncargoFormStepRow>
           ) : null}
 
           {!linkedReservation ? (
-            <ClosingStepRow title="Nombre">
+            <EncargoFormStepRow title="Nombre">
               <input
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
@@ -294,10 +312,10 @@ export function CreateEncargoQuickModal({
                 placeholder=" "
                 autoComplete="name"
               />
-            </ClosingStepRow>
+            </EncargoFormStepRow>
           ) : null}
 
-          <ClosingStepRow title="Hora">
+          <EncargoFormStepRow title="Hora">
             <input
               type="time"
               value={eventTime}
@@ -305,15 +323,19 @@ export function CreateEncargoQuickModal({
               disabled={busy}
               className={CLOSING_PETROL_FIELD}
             />
-          </ClosingStepRow>
+          </EncargoFormStepRow>
 
-          <ClosingStepRow title="PAX">
-            <ClosingPetrolInputWithAdjust
-              value={guestCount}
-              onChange={(next) => setGuestCount(Math.max(1, next))}
-              onAdjust={(delta) => setGuestCount((prev) => Math.max(1, prev + delta))}
+          <EncargoFormStepRow title="PAX">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={guestCount || ''}
+              onChange={(e) => setGuestCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+              disabled={busy}
+              className={CLOSING_PETROL_FIELD}
             />
-          </ClosingStepRow>
+          </EncargoFormStepRow>
         </div>
 
         <div className="shrink-0 border-t border-zinc-100 bg-white px-4 py-3 grid grid-cols-2 gap-2">
