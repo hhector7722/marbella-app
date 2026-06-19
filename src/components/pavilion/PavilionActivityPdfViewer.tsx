@@ -35,8 +35,10 @@ const ZOOM_HEADROOM = 4;
 /** Altura del visor: compacto pero un poco más alto que 300px */
 const VIEWER_HEIGHT_PX = 360;
 const VIEWER_PADDING_PX = 24;
-/** Por defecto ocultamos el 23 % superior del documento (cabecera/plantilla / inicio P1). */
-const DEFAULT_TOP_SKIP_RATIO = 0.23;
+/** Por defecto ocultamos el 24 % superior del documento (cabecera/plantilla / inicio P1). */
+const DEFAULT_TOP_SKIP_RATIO = 0.24;
+/** Margen inferior: la última fila no debe pegarse al borde de la card. */
+const DEFAULT_BOTTOM_MARGIN_RATIO = 0.018;
 /** Inicio horizontal: el visor empieza en el 7 % del ancho del documento. */
 const DEFAULT_LEFT_SKIP_RATIO = 0.07;
 /** Zoom fijo inicial (0,833 +3 % ≈ 0,858). */
@@ -220,7 +222,9 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
             initialScale: DEFAULT_INITIAL_SCALE,
             initialPan: {
               x: -cssW * DEFAULT_LEFT_SKIP_RATIO * DEFAULT_INITIAL_SCALE,
-              y: -cssH * DEFAULT_TOP_SKIP_RATIO * DEFAULT_INITIAL_SCALE,
+              y:
+                -cssH * DEFAULT_TOP_SKIP_RATIO * DEFAULT_INITIAL_SCALE +
+                cssH * DEFAULT_BOTTOM_MARGIN_RATIO * DEFAULT_INITIAL_SCALE,
             },
             minScale: Math.max(0.15, minScale),
           });
