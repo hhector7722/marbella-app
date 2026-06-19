@@ -190,6 +190,12 @@ export async function proxy(request: NextRequest) {
       return usoRedirect;
     }
 
+    if (path.startsWith("/dashboard/web") && !isMasterDashboardUser(email)) {
+      const webRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      copyResponseCookies(response, webRedirect);
+      return webRedirect;
+    }
+
     if (path.startsWith("/login")) {
       const home = getHomeHrefForUser(email, role);
       const loginHomeRedirect = NextResponse.redirect(new URL(home, request.url));
