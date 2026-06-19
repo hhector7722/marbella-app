@@ -7,9 +7,9 @@ import {
     Play, Square, CalendarDays,
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
     Check, Info, Package,
-    Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
+    Phone, Scale, ShoppingCart, Boxes, X, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
-    Plus, Minus, BookOpen, CalendarCheck, ExternalLink
+    Plus, Minus, BookOpen, CalendarCheck
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
@@ -109,7 +109,7 @@ export default function StaffDashboardView() {
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
     const [showConsumptionModal, setShowConsumptionModal] = useState(false);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
-    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'web' | null>(null);
+    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'web' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
     const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
@@ -151,8 +151,6 @@ export default function StaffDashboardView() {
         usageId: `staff-info-menu-${infoSubMenu ?? activeMenu ?? 'root'}`,
         usageLabel:
             infoSubMenu === 'contactos' ? 'Contactos'
-            : infoSubMenu === 'convenio' ? 'Convenio'
-            : infoSubMenu === 'conducta' ? 'Código conducta'
             : infoSubMenu === 'web' ? 'Página web'
             : activeMenu === 'pedidos' ? 'Pedidos'
             : 'Información',
@@ -1069,13 +1067,9 @@ export default function StaffDashboardView() {
                                     <h3 className="text-[10px] font-black uppercase tracking-widest">
                                         {infoSubMenu === 'contactos'
                                             ? 'Contactos'
-                                            : infoSubMenu === 'convenio'
-                                                ? 'Convenio'
-                                                : infoSubMenu === 'conducta'
-                                                    ? 'Código Conducta'
-                                                    : infoSubMenu === 'web'
-                                                        ? 'Página web'
-                                                        : 'Información'}
+                                            : infoSubMenu === 'web'
+                                                ? 'Página web'
+                                                : 'Información'}
                                     </h3>
                                 </div>
                                 <button onClick={closeMenus} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
@@ -1091,20 +1085,6 @@ export default function StaffDashboardView() {
                                                 <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
-                                        </button>
-
-                                        <button onClick={() => { trackStaffInfoMenu('Convenio Col·lectiu'); setInfoSubMenu('convenio'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
-                                        </button>
-
-                                        <button onClick={() => { trackStaffInfoMenu('Código de Conducta'); setInfoSubMenu('conducta'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
                                         </button>
 
                                         <a
@@ -1178,33 +1158,6 @@ export default function StaffDashboardView() {
                                                 </div>
                                             </div>
                                         ))}
-                                    </div>
-                                )}
-                                {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
-                                    <div className="flex flex-col items-center gap-6 py-4">
-                                        <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                            <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-base font-black text-gray-800 mb-1">
-                                                {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
-                                            </p>
-                                            <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
-                                        </div>
-                                        <button
-                                            onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
-                                            className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
-                                        >
-                                            <ExternalLink size={20} />
-                                            <span>Abrir Documento</span>
-                                        </button>
-                                        <a
-                                            href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
-                                            download
-                                            className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
-                                        >
-                                            Descargar PDF
-                                        </a>
                                     </div>
                                 )}
                             </div>

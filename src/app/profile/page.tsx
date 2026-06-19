@@ -14,6 +14,7 @@ import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
 import ContactoModal from '@/components/profile/ContactoModal';
 import DatosBancariosModal from '@/components/profile/DatosBancariosModal';
 import NominasMenuModal, { NominasMenuAction } from '@/components/profile/NominasMenuModal';
+import CompanyPdfDocumentModal, { CompanyPdfDocumentKind } from '@/components/profile/CompanyPdfDocumentModal';
 import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
@@ -42,7 +43,7 @@ const PROFILE_GRID = [
     { id: 'datos-personales', label: 'Datos personales', icon: '/icons/staff-card.png' },
     { id: 'contacto', label: 'Contacto', icon: '/icons/phone.png' },
     { id: 'datos-bancarios', label: 'Datos bancarios', icon: '/icons/visa.png' },
-    { id: 'nominas', label: 'Nóminas', icon: '/icons/admin.png' },
+    { id: 'nominas', label: 'Documentos', icon: '/icons/admin.png' },
     { id: 'cambiar-password', label: 'Cambiar contraseña', icon: '/icons/lock.png' },
     { id: 'cerrar-sesion', label: 'Cerrar sesión', icon: '/icons/log-out.png' },
 ] as const;
@@ -68,6 +69,7 @@ function ProfileContent() {
     const [nominasListOpen, setNominasListOpen] = useState(false);
     const [comunicadosOpen, setComunicadosOpen] = useState(false);
     const [contratoOpen, setContratoOpen] = useState(false);
+    const [companyPdfDoc, setCompanyPdfDoc] = useState<CompanyPdfDocumentKind | null>(null);
     const [logoutConfirm, setLogoutConfirm] = useState(false);
 
     useModalUsageTracking({
@@ -423,6 +425,7 @@ function ProfileContent() {
         if (action === 'nominas') setNominasListOpen(true);
         if (action === 'comunicados') setComunicadosOpen(true);
         if (action === 'contrato') setContratoOpen(true);
+        if (action === 'convenio' || action === 'conducta') setCompanyPdfDoc(action);
     };
     const showPersonalPurchasesAccountsButton =
         String(profile?.email || '').toLowerCase() === 'hhector7722@gmail.com';
@@ -663,6 +666,11 @@ function ProfileContent() {
             <NominasModal isOpen={nominasListOpen} onClose={() => setNominasListOpen(false)} targetUserId={viewingOtherProfile ? profile.id : undefined} isManager={isManager} />
             <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} isManager={isManager} />
             <ContratoModal isOpen={contratoOpen} onClose={() => setContratoOpen(false)} userId={profile.id} isManager={isManager} />
+            <CompanyPdfDocumentModal
+                isOpen={companyPdfDoc !== null}
+                onClose={() => setCompanyPdfDoc(null)}
+                documentKind={companyPdfDoc}
+            />
             {isPasswordModalOpen && (
                 <ChangePasswordModal
                     isOpen={isPasswordModalOpen}

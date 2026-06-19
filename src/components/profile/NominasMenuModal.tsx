@@ -3,7 +3,7 @@
 import { Modal } from '@/components/ui/modal';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
-export type NominasMenuAction = 'nominas' | 'comunicados' | 'contrato';
+export type NominasMenuAction = 'nominas' | 'comunicados' | 'contrato' | 'convenio' | 'conducta';
 
 interface NominasMenuModalProps {
     isOpen: boolean;
@@ -15,20 +15,22 @@ const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
     { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin.png' },
     { key: 'contrato', label: 'Contrato', iconPath: '/icons/contract.png' },
     { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
+    { key: 'convenio', label: 'Convenio', iconPath: '/icons/convenio.png' },
+    { key: 'conducta', label: 'Código de Conducta', iconPath: '/icons/ley.png' },
 ];
 
 export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasMenuModalProps) {
-    const trackNominasMenu = useTrackModalApply('nominas-menu', 'Menú nóminas');
+    const trackNominasMenu = useTrackModalApply('documentos-menu', 'Menú documentos');
 
     return (
         <Modal
             open={isOpen}
             onClose={onClose}
-            title="Nóminas y documentos"
+            title="Documentos"
             headerVariant="petroleum"
             className="rounded-3xl"
-            usageId="nominas-menu"
-            usageLabel="Menú nóminas"
+            usageId="documentos-menu"
+            usageLabel="Menú documentos"
         >
             <div className="p-6 grid grid-cols-1 gap-6">
                 {OPTIONS.map(({ key, label, iconPath }) => (
