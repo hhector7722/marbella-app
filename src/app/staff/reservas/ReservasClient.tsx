@@ -913,8 +913,8 @@ export default function ReservasClient() {
 
   return (
     <div className="bg-[#5B8FB9] min-h-screen">
-      <div className="w-full px-3 sm:px-4 md:px-5 py-4 md:py-6">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+      <div className="w-full max-w-none px-2 py-4 sm:px-3 md:px-4 md:py-6">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
           <div className="bg-[#36606F] rounded-t-2xl px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
             <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
               Reservas y encargos
@@ -930,7 +930,7 @@ export default function ReservasClient() {
           </div>
 
           <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
-            <div className="flex justify-center w-full px-4">
+            <div className="flex justify-center w-full px-3 sm:px-4">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
@@ -955,16 +955,16 @@ export default function ReservasClient() {
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="flex flex-col items-center justify-center py-20 gap-4 px-3 sm:px-4">
                 <LoadingSpinner size="lg" className="text-[#36606F]" />
               </div>
             ) : rpcError ? (
-              <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-rose-700">
+              <div className="mx-3 sm:mx-4 rounded-xl border border-rose-100 bg-rose-50 p-4 text-rose-700">
                 <div className="text-sm font-black">Error</div>
                 <div className="text-xs font-medium">{rpcError}</div>
               </div>
             ) : (
-              <div className="w-full min-w-0 mx-auto max-w-full px-1 sm:px-2 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
+              <div className="w-full min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                 <div className="grid grid-cols-7 border-b border-gray-100">
                   {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                     <div
