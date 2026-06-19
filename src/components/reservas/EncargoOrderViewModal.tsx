@@ -186,45 +186,76 @@ function escapeHtml(value: string) {
 
 function isIosDevice() {
   if (typeof navigator === 'undefined') return false
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  )
 }
 
-function printHtmlDocument(html: string) {
-  const runPrint = (target: Window, onDone?: () => void) => {
-    window.setTimeout(() => {
-      try {
-        target.focus()
-        target.print()
-      } finally {
-        window.setTimeout(() => onDone?.(), 500)
-      }
-    }, 200)
+const ENCARGO_PRINT_SHEET_ID = 'encargo-print-sheet'
+const ENCARGO_PRINT_STYLE_ID = 'encargo-print-style'
+
+/** iOS Safari: popup/iframe suelen generar vista previa en blanco; hoja en el documento principal. */
+function printViaMainDocumentSheet(html: string) {
+  const parsed = new DOMParser().parseFromString(html, 'text/html')
+
+  document.getElementById(ENCARGO_PRINT_STYLE_ID)?.remove()
+  document.getElementById(ENCARGO_PRINT_SHEET_ID)?.remove()
+
+  const sheet = document.createElement('div')
+  sheet.id = ENCARGO_PRINT_SHEET_ID
+  sheet.setAttribute('aria-hidden', 'true')
+  sheet.style.cssText =
+    'position:fixed;left:0;top:0;width:100%;max-width:210mm;visibility:hidden;pointer-events:none;z-index:-1;background:#fff;color:#000;'
+  sheet.innerHTML = parsed.body.innerHTML
+
+  const style = document.createElement('style')
+  style.id = ENCARGO_PRINT_STYLE_ID
+  const embedded = parsed.head.querySelector('style')?.textContent ?? ''
+  style.textContent = `${embedded}
+@media print {
+  body > *:not(#${ENCARGO_PRINT_SHEET_ID}) { display: none !important; }
+  #${ENCARGO_PRINT_SHEET_ID} {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    z-index: auto !important;
+    pointer-events: auto !important;
+  }
+}`
+
+  const cleanup = () => {
+    style.remove()
+    sheet.remove()
   }
 
-  const writeAndPrint = (target: Window, onDone?: () => void) => {
-    target.document.open()
-    target.document.write(html)
-    target.document.close()
-    runPrint(target, onDone)
+  document.head.appendChild(style)
+  document.body.appendChild(sheet)
+
+  window.addEventListener('afterprint', cleanup, { once: true })
+
+  const triggerPrint = () => {
+    window.focus()
+    window.print()
+    window.setTimeout(cleanup, 60_000)
   }
 
-  // iOS: blob/iframe suele imprimir la página padre en blanco; ventana aislada con el HTML.
-  if (isIosDevice()) {
-    const popup = window.open('about:blank', '_blank')
-    if (popup) {
-      writeAndPrint(popup)
-      return
-    }
-  }
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.setTimeout(triggerPrint, 150)
+    })
+  })
+}
 
+function printViaHiddenIframe(html: string) {
   const iframe = document.createElement('iframe')
   iframe.setAttribute('aria-hidden', 'true')
-  iframe.style.position = 'fixed'
-  iframe.style.right = '0'
-  iframe.style.bottom = '0'
-  iframe.style.width = '0'
-  iframe.style.height = '0'
-  iframe.style.border = '0'
+  iframe.style.cssText =
+    'position:fixed;left:0;top:0;width:100%;height:100%;border:0;opacity:0;pointer-events:none;z-index:-1;'
   document.body.appendChild(iframe)
 
   const win = iframe.contentWindow
@@ -234,13 +265,43 @@ function printHtmlDocument(html: string) {
     return
   }
 
-  writeAndPrint(win, () => {
+  const cleanup = () => {
     try {
       iframe.remove()
     } catch {
       /* iframe ya eliminado */
     }
-  })
+  }
+
+  const runPrint = () => {
+    window.setTimeout(() => {
+      try {
+        win.focus()
+        win.print()
+      } finally {
+        win.addEventListener('afterprint', cleanup, { once: true })
+        window.setTimeout(cleanup, 60_000)
+      }
+    }, 100)
+  }
+
+  doc.open()
+  doc.write(html)
+  doc.close()
+
+  if (doc.readyState === 'complete') {
+    runPrint()
+  } else {
+    iframe.addEventListener('load', runPrint, { once: true })
+  }
+}
+
+function printHtmlDocument(html: string) {
+  if (isIosDevice()) {
+    printViaMainDocumentSheet(html)
+    return
+  }
+  printViaHiddenIframe(html)
 }
 
 export function EncargoOrderViewModal({
