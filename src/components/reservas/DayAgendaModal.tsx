@@ -175,7 +175,18 @@ export function DayAgendaModal({
 }
 
 const CLOSING_PETROL_FIELD =
-  'h-9 w-full rounded-xl border border-[#36606F] bg-white px-2 text-center text-sm font-black text-zinc-800 outline-none transition-colors focus:bg-[#36606F]/5'
+  'box-border h-9 w-full min-w-0 max-w-full rounded-xl border border-[#36606F] bg-white px-2 text-center text-sm font-black text-zinc-800 outline-none transition-colors focus:bg-[#36606F]/5'
+
+const CLOSING_PETROL_TIME_FIELD = cn(
+  CLOSING_PETROL_FIELD,
+  'appearance-none',
+  '[&::-webkit-date-and-time-value]:min-w-0 [&::-webkit-date-and-time-value]:text-center',
+  '[&::-webkit-datetime-edit]:p-0 [&::-webkit-datetime-edit]:text-center',
+  '[&::-webkit-datetime-edit-fields-wrapper]:p-0',
+  '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0',
+  '[&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full',
+  '[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:bg-transparent',
+)
 
 const ENCARGO_FIELD_COL = 'w-[8.75rem] sm:w-[9.5rem]'
 
@@ -193,7 +204,7 @@ function EncargoFormStepRow({
     <div className="grid min-h-[40px] grid-cols-[7.25rem_1fr] items-center gap-x-2 sm:grid-cols-[8.25rem_1fr] sm:gap-x-3">
       <span className={ENCARGO_ROW_TITLE}>{title}</span>
       <div className="flex min-w-0 items-center justify-center">
-        <div className={ENCARGO_FIELD_COL}>{children}</div>
+        <div className={cn(ENCARGO_FIELD_COL, 'relative shrink-0')}>{children}</div>
       </div>
     </div>
   )
@@ -321,7 +332,7 @@ export function CreateEncargoQuickModal({
               value={eventTime}
               onChange={(e) => setEventTime(e.target.value)}
               disabled={busy}
-              className={CLOSING_PETROL_FIELD}
+              className={CLOSING_PETROL_TIME_FIELD}
             />
           </EncargoFormStepRow>
 
