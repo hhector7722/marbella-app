@@ -18,12 +18,13 @@ export async function generateEncargoOrderPdf(
   meta: EncargoPdfMeta,
   items: EncargoPdfItem[]
 ): Promise<Blob> {
-  const estimatedHeight = 36 + 18 + items.length * 9 + 16
+  // Ticket compacto: altura estimada al contenido (sin mínimo A4 que deja página vacía en iOS).
+  const estimatedHeight = 36 + 18 + items.length * 10 + 16
 
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
-    format: [210, Math.max(297, estimatedHeight)],
+    format: [210, estimatedHeight],
   }) as jsPDF & { lastAutoTable?: { finalY: number } }
 
   const margin = 8
@@ -67,6 +68,8 @@ export async function generateEncargoOrderPdf(
     ]),
     margin: { left: margin, right: margin },
     theme: 'plain',
+    pageBreak: 'avoid',
+    rowPageBreak: 'avoid',
     styles: {
       fontSize: 10,
       cellPadding: { top: 3.5, right: 2, bottom: 3.5, left: 2 },
@@ -86,6 +89,14 @@ export async function generateEncargoOrderPdf(
       2: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
     },
   })
+
+  // Ticket compacto: una sola página con altura exacta al contenido (sin A4 vacío ni página 2).
+  while (doc.getNumberOfPages() > 1) {
+    doc.deletePage(doc.getNumberOfPages())
+  }
+
+  const finalY = (doc.lastAutoTable?.finalY ?? metaY + 8) + 8
+  doc.internal.pageSize.height = finalY
 
   return doc.output('blob')
 }

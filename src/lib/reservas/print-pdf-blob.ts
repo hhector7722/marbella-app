@@ -7,7 +7,8 @@ function isMobileDevice() {
 }
 
 /**
- * Genera el PDF en cliente y abre el diálogo de impresión del visor nativo (más fiable que HTML en iOS).
+ * Imprime un PDF generado en cliente sin mostrarlo a pantalla completa.
+ * El iframe va fuera de pantalla; iOS usa el visor PDF del iframe, no la UI de la app.
  */
 export function printPdfBlob(blob: Blob): Promise<void> {
   const url = URL.createObjectURL(blob)
@@ -31,9 +32,8 @@ export function printPdfBlob(blob: Blob): Promise<void> {
     const iframe = document.createElement('iframe')
     iframe.setAttribute('title', 'Imprimir documento')
     iframe.setAttribute('aria-hidden', 'true')
-    iframe.style.cssText = mobile
-      ? 'position:fixed;inset:0;width:100%;height:100%;border:0;margin:0;padding:0;z-index:2147483647;background:#fff;'
-      : 'position:fixed;left:-10000px;top:0;width:800px;height:1200px;border:0;visibility:hidden;'
+    iframe.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;margin:0;padding:0;visibility:hidden;pointer-events:none;'
     document.body.appendChild(iframe)
 
     let started = false
@@ -53,11 +53,11 @@ export function printPdfBlob(blob: Blob): Promise<void> {
           win.addEventListener('afterprint', finish, { once: true })
           window.setTimeout(finish, 60_000)
         }
-      }, mobile ? 800 : 250)
+      }, mobile ? 450 : 200)
     }
 
     iframe.addEventListener('load', runPrint, { once: true })
     iframe.src = url
-    window.setTimeout(runPrint, 2500)
+    window.setTimeout(runPrint, 2000)
   })
 }
