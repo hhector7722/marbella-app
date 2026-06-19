@@ -15,7 +15,7 @@ import {
 } from '@/lib/tip-distribution-display';
 import {
   formatTipAdjustmentValue,
-  getTipAdjustmentKind,
+  getStaffTipAdjustmentKind,
   getTipAdjustmentLabel,
   staffEntryHoursTotal,
   staffEntryPropinaSinPen,
@@ -106,8 +106,8 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
   const finalAmount = entry.totalAmount ?? 0;
 
   const adjustmentKind = useMemo(
-    () => getTipAdjustmentKind(sinPen.total, finalAmount),
-    [sinPen.total, finalAmount]
+    () => getStaffTipAdjustmentKind(entry, sinPen.total, finalAmount),
+    [entry, sinPen.total, finalAmount]
   );
   const adjustmentLabel = getTipAdjustmentLabel(adjustmentKind);
   const adjustmentValue = formatTipAdjustmentValue(adjustmentKind, pen, sinPen.total, finalAmount);
