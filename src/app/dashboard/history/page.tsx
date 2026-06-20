@@ -65,15 +65,15 @@ const CLOSING_CALENDAR_LEGEND = [
 
 function formatClosingCellValue(val: number | null | undefined): string {
     const n = Number(val ?? 0);
-    if (!n || Math.abs(n) < 0.05) return '\u00a0';
-    return String(Math.round(n));
+    if (!n || Math.abs(n) < 0.005) return '\u00a0';
+    return `${n.toFixed(2)}€`;
 }
 
 function ClosingCalendarMetricRow({ dotClass, value }: { dotClass: string; value: string }) {
     return (
-        <div className="flex items-center gap-0.5 min-w-0 w-full">
-            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotClass)} aria-hidden />
-            <span className="text-[7px] sm:text-[8px] md:text-[9px] font-black text-zinc-900 tabular-nums leading-none truncate">
+        <div className="flex flex-1 items-center gap-1 sm:gap-1.5 min-w-0 w-full min-h-0">
+            <span className={cn('w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0', dotClass)} aria-hidden />
+            <span className="flex-1 min-w-0 text-[10px] sm:text-xs md:text-sm lg:text-base font-black text-zinc-900 tabular-nums leading-none truncate">
                 {value}
             </span>
         </div>
@@ -1140,7 +1140,7 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[88px] sm:min-h-[104px] md:min-h-[120px] lg:min-h-[132px] p-1 sm:p-1.5',
+                                                                            'relative flex flex-col min-h-[96px] sm:min-h-[112px] md:min-h-[128px] lg:min-h-[144px] p-1 sm:p-1.5',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
@@ -1166,7 +1166,7 @@ export default function HistoryPage() {
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[88px] sm:min-h-[104px] md:min-h-[120px] lg:min-h-[132px] transition-colors p-1 sm:p-1.5',
+                                                                        'group relative flex flex-col text-left min-h-[96px] sm:min-h-[112px] md:min-h-[128px] lg:min-h-[144px] transition-colors p-1 sm:p-1.5',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
@@ -1182,7 +1182,7 @@ export default function HistoryPage() {
                                                                     >
                                                                         {format(day, 'd')}
                                                                     </span>
-                                                                    <div className="flex-1 flex flex-col justify-center w-full mt-4 pb-0.5 min-h-[56px] gap-0.5 overflow-hidden">
+                                                                    <div className="flex flex-1 flex-col justify-between w-full h-full mt-5 pb-1 px-0.5 gap-1 sm:gap-1.5 md:gap-2 min-h-0 overflow-hidden">
                                                                         {CLOSING_CELL_ROWS.map((row) => (
                                                                             <ClosingCalendarMetricRow
                                                                                 key={row.field}
