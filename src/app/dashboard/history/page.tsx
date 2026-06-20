@@ -64,24 +64,21 @@ const CLOSING_CALENDAR_LEGEND = [
 ] as const;
 
 function ClosingCalendarMetricRow({ dotClass, amount }: { dotClass: string; amount: number | null | undefined }) {
-    const n = Number(amount ?? 0);
-    if (!n || Math.abs(n) < 0.005) {
+    const rounded = Math.round(Number(amount ?? 0));
+    if (!rounded) {
         return (
             <div className="relative flex flex-1 items-center w-full min-h-0 pl-[2px]">
                 <span className={cn('absolute left-[2px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full', dotClass)} aria-hidden />
-                <span className="pl-[9px] text-zinc-900 tabular-nums leading-none">{'\u00a0'}</span>
+                <span className="pl-[9px] text-zinc-900 tabular-nums leading-none text-[8px] sm:text-[9px] md:text-[10px]">{'\u00a0'}</span>
             </div>
         );
     }
 
-    const [integerPart, decimalPart] = n.toFixed(2).split('.');
-
     return (
         <div className="relative flex flex-1 items-center w-full min-h-0 pl-[2px]">
             <span className={cn('absolute left-[2px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full', dotClass)} aria-hidden />
-            <span className="pl-[9px] min-w-0 whitespace-nowrap overflow-visible font-normal text-zinc-900 tabular-nums leading-none">
-                <span className="text-[10px] sm:text-[11px] md:text-xs lg:text-sm">{integerPart}</span>
-                <span className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px]">.{decimalPart}€</span>
+            <span className="pl-[9px] min-w-0 whitespace-nowrap overflow-visible font-normal text-zinc-900 tabular-nums leading-none text-[8px] sm:text-[9px] md:text-[10px]">
+                {rounded}€
             </span>
         </div>
     );
@@ -90,12 +87,12 @@ function ClosingCalendarMetricRow({ dotClass, amount }: { dotClass: string; amou
 function ClosingCalendarLegend() {
     return (
         <div
-            className="grid grid-cols-4 gap-2 px-3 sm:px-4 py-3 bg-white print:hidden"
+            className="grid grid-cols-4 gap-1 px-2 sm:px-3 py-2 bg-white print:hidden"
             aria-label="Leyenda del calendario de cierres"
         >
             {CLOSING_CALENDAR_LEGEND.map((item) => (
-                <div key={item.label} className="flex items-center justify-center gap-1.5 min-w-0">
-                    <span className="text-[8px] sm:text-[9px] md:text-[10px] font-semibold text-zinc-600 whitespace-nowrap overflow-visible">
+                <div key={item.label} className="flex items-center justify-center gap-1 min-w-0">
+                    <span className="text-[7px] sm:text-[8px] md:text-[9px] font-semibold text-zinc-600 whitespace-nowrap overflow-visible">
                         {item.label}
                     </span>
                     <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', item.dotClass)} aria-hidden />
@@ -880,15 +877,15 @@ export default function HistoryPage() {
         <div className="min-h-screen pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
             <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 print:max-w-none">
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-none print:rounded-none print:shadow-none">
-                    <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
-                        <div className="relative flex items-center justify-between gap-1 min-w-0 min-h-[40px] md:min-h-[44px]">
-                            <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0 z-10">
-                                <div className="inline-flex rounded-lg overflow-hidden border border-white/30 shadow-sm">
+                    <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative print:hidden">
+                        <div className="relative flex items-center justify-between gap-1 min-w-0">
+                            <div className="flex items-center shrink-0 min-w-0 z-10">
+                                <div className="inline-flex w-fit rounded-md overflow-hidden border border-white/30 shadow-sm">
                                     <button
                                         type="button"
                                         onClick={() => setViewMode('table')}
                                         className={cn(
-                                            'min-h-[36px] px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none',
+                                            'px-1.5 py-1 text-[7px] font-black uppercase tracking-wide leading-none transition-colors outline-none',
                                             viewMode === 'table'
                                                 ? 'bg-white text-[#36606F]'
                                                 : 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
@@ -900,7 +897,7 @@ export default function HistoryPage() {
                                         type="button"
                                         onClick={() => setViewMode('calendar')}
                                         className={cn(
-                                            'min-h-[36px] px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none',
+                                            'px-1.5 py-1 text-[7px] font-black uppercase tracking-wide leading-none transition-colors outline-none',
                                             viewMode === 'calendar'
                                                 ? 'bg-white text-[#36606F]'
                                                 : 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
@@ -1007,7 +1004,7 @@ export default function HistoryPage() {
                     </div>
 
                     <div className="bg-white">
-                        <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 print:hidden">
+                        <div className="pt-2 md:pt-3 pb-0.5 px-3 grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -1022,9 +1019,9 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        <div className={cn('pb-2 md:pb-4 pt-1 md:pt-1.5', viewMode === 'table' ? 'px-1.5 md:px-3' : 'px-0')}>
+                        <div className={cn('pb-1 md:pb-2 pt-0.5', viewMode === 'table' ? 'px-1.5 md:px-2' : 'px-0')}>
                             {viewMode === 'table' ? (
-                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-4">
+                                <div className="p-2 md:p-3 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-4">
                                     <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">Cierres — Historial</div>
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -1038,21 +1035,21 @@ export default function HistoryPage() {
                                     ) : (
                                         <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-cierres">
                                             <table className="w-full text-left border-collapse table-fixed md:table-auto">
-                                                <thead className="bg-[#36606F] text-white text-[8px] md:text-[9.5px] font-black uppercase tracking-wider md:tracking-tight border-b border-[#36606F]">
+                                                <thead className="bg-[#36606F] text-white text-[7px] md:text-[8.5px] font-black uppercase tracking-wide md:tracking-tight border-b border-[#36606F]">
                                                     <tr>
-                                                        <th className="py-2.5 px-0.5 md:px-1 whitespace-nowrap">Fecha</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ventas €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Neta €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ticks</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">TM €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Cash €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Card €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Pend. €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Recup. €</th>
-                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Dif. €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 whitespace-nowrap">Fecha</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ventas €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Neta €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ticks</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">TM €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Cash €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Card €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Pend. €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Recup. €</th>
+                                                        <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Dif. €</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="text-[9.5px] font-bold text-zinc-600 bg-white">
+                                                <tbody className="text-[8px] md:text-[9px] font-bold text-zinc-600 bg-white">
                                                     {[...closings]
                                                         .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
                                                         .map((c) => {
@@ -1067,35 +1064,35 @@ export default function HistoryPage() {
                                                                     onClick={() => openClosingDetail(c)}
                                                                     className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50/40 last:border-0"
                                                                 >
-                                                                    <td className="py-2 px-0.5 md:px-1 whitespace-nowrap text-zinc-500 font-mono text-[8px] md:text-[9.5px]">
+                                                                    <td className="py-1 px-0.5 md:px-1 whitespace-nowrap text-zinc-500 font-mono text-[7px] md:text-[8.5px]">
                                                                         {format(d, 'd/M/yy', { locale: es })}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {formatCompact(c.tpv_sales)}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-emerald-600">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px] text-emerald-600">
                                                                         {formatCompact(c.net_sales)}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {c.tickets_count || 0}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-[#36606F]/80">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px] text-[#36606F]/80">
                                                                         {avgTicket === 0 ? ' ' : Math.round(avgTicket)}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {formatCompact(c.cash_counted)}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {formatCompact(c.sales_card)}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-orange-600/70">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px] text-orange-600/70">
                                                                         {formatCompact(c.sales_pending)}
                                                                     </td>
-                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-blue-600/70">
+                                                                    <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px] text-blue-600/70">
                                                                         {formatCompact(c.debt_recovered)}
                                                                     </td>
                                                                     <td className={cn(
-                                                                        "py-2 px-1 md:px-2 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]",
+                                                                        "py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]",
                                                                         diff > 0 ? "text-emerald-600" : diff < 0 ? "text-rose-600" : "text-zinc-400"
                                                                     )}>
                                                                         {diff === 0 ? ' ' : Math.round(diff)}
@@ -1116,7 +1113,7 @@ export default function HistoryPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
+                                            <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 shrink-0">
                                                 <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                                                 <div className="grid grid-cols-7 border-b border-gray-100">
                                                     {CALENDAR_WEEKDAYS.map((d, index) => (
@@ -1147,7 +1144,7 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[96px] sm:min-h-[112px] md:min-h-[128px] lg:min-h-[144px] p-1 sm:p-1.5',
+                                                                            'relative flex flex-col min-h-[80px] sm:min-h-[92px] md:min-h-[104px] lg:min-h-[116px] p-0.5 sm:p-1',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
@@ -1173,7 +1170,7 @@ export default function HistoryPage() {
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[96px] sm:min-h-[112px] md:min-h-[128px] lg:min-h-[144px] transition-colors p-1 sm:p-1.5',
+                                                                        'group relative flex flex-col text-left min-h-[80px] sm:min-h-[92px] md:min-h-[104px] lg:min-h-[116px] transition-colors p-0.5 sm:p-1',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
@@ -1189,7 +1186,7 @@ export default function HistoryPage() {
                                                                     >
                                                                         {format(day, 'd')}
                                                                     </span>
-                                                                    <div className="flex flex-1 flex-col justify-between w-[calc(100%+0.25rem)] sm:w-[calc(100%+0.375rem)] h-full mt-5 -ml-1 sm:-ml-1.5 pb-1 pl-[3px] pr-0.5 gap-1 sm:gap-1.5 md:gap-2 min-h-0 overflow-visible">
+                                                                    <div className="flex flex-1 flex-col justify-between w-[calc(100%+0.25rem)] sm:w-[calc(100%+0.375rem)] h-full mt-4 -ml-1 sm:-ml-1.5 pb-0.5 pl-[3px] pr-0.5 gap-0.5 sm:gap-1 min-h-0 overflow-visible">
                                                                         {CLOSING_CELL_ROWS.map((row) => (
                                                                             <ClosingCalendarMetricRow
                                                                                 key={row.field}
