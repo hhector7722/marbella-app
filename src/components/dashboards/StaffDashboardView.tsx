@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
-import { StaffCajaCambioModal } from '@/components/staff/StaffCajaCambioModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
@@ -117,7 +116,6 @@ export default function StaffDashboardView() {
     const [preferStock, setPreferStock] = useState(false);
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
-    const [showSwapModal, setShowSwapModal] = useState(false);
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -474,12 +472,6 @@ export default function StaffDashboardView() {
             list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         }
         return list;
-    };
-
-    const getCajaCambio1 = () => {
-        const changeBoxes = allBoxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        const b = changeBoxes[0];
-        return b ? { id: b.id as string, name: (b.name as string) || 'Caja cambio' } : null;
     };
 
     const openPurchaseMultiSourceModal = async () => {
@@ -1414,14 +1406,6 @@ export default function StaffDashboardView() {
                 initialFocusDate={scheduleFocusDate}
             />
 
-            {/* MODAL: Cambio (primera caja change): importe en billetes → desglose retirado; IN + OUT en BD */}
-            <StaffCajaCambioModal
-                isOpen={showSwapModal}
-                changeBox={getCajaCambio1()}
-                onClose={() => setShowSwapModal(false)}
-                onSuccess={() => { initialize(); setShowSwapModal(false); }}
-            />
-
             {/* MODAL: Opciones de Caja */}
             {
                 isCashOptionsModalOpen && (
@@ -1462,12 +1446,8 @@ export default function StaffDashboardView() {
                                 <button
                                     onClick={() => {
                                         trackStaffCashOption('Cambio');
-                                        if (!getCajaCambio1()) {
-                                            toast.error('No hay caja de cambio configurada');
-                                            return;
-                                        }
                                         setIsCashOptionsModalOpen(false);
-                                        setShowSwapModal(true);
+                                        setIsCashChangeModalOpen(true);
                                     }}
                                     className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
                                 >
