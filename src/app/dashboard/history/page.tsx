@@ -63,18 +63,25 @@ const CLOSING_CALENDAR_LEGEND = [
     { label: 'Tarjeta', dotClass: 'bg-red-500' },
 ] as const;
 
-function formatClosingCellValue(val: number | null | undefined): string {
-    const n = Number(val ?? 0);
-    if (!n || Math.abs(n) < 0.005) return '\u00a0';
-    return `${n.toFixed(2)}€`;
-}
+function ClosingCalendarMetricRow({ dotClass, amount }: { dotClass: string; amount: number | null | undefined }) {
+    const n = Number(amount ?? 0);
+    if (!n || Math.abs(n) < 0.005) {
+        return (
+            <div className="relative flex flex-1 items-center w-full min-h-0 pl-[2px]">
+                <span className={cn('absolute left-[2px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full', dotClass)} aria-hidden />
+                <span className="pl-[9px] text-zinc-900 tabular-nums leading-none">{'\u00a0'}</span>
+            </div>
+        );
+    }
 
-function ClosingCalendarMetricRow({ dotClass, value }: { dotClass: string; value: string }) {
+    const [integerPart, decimalPart] = n.toFixed(2).split('.');
+
     return (
-        <div className="flex flex-1 items-center gap-1 sm:gap-1.5 min-w-0 w-full min-h-0">
-            <span className={cn('w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0', dotClass)} aria-hidden />
-            <span className="flex-1 min-w-0 text-[10px] sm:text-xs md:text-sm lg:text-base font-black text-zinc-900 tabular-nums leading-none truncate">
-                {value}
+        <div className="relative flex flex-1 items-center w-full min-h-0 pl-[2px]">
+            <span className={cn('absolute left-[2px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full', dotClass)} aria-hidden />
+            <span className="pl-[9px] min-w-0 whitespace-nowrap overflow-visible font-normal text-zinc-900 tabular-nums leading-none">
+                <span className="text-[10px] sm:text-[11px] md:text-xs lg:text-sm">{integerPart}</span>
+                <span className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px]">.{decimalPart}€</span>
             </span>
         </div>
     );
@@ -88,7 +95,7 @@ function ClosingCalendarLegend() {
         >
             {CLOSING_CALENDAR_LEGEND.map((item) => (
                 <div key={item.label} className="flex items-center justify-center gap-1.5 min-w-0">
-                    <span className="text-[8px] sm:text-[9px] md:text-[10px] font-semibold text-zinc-600 whitespace-nowrap truncate">
+                    <span className="text-[8px] sm:text-[9px] md:text-[10px] font-semibold text-zinc-600 whitespace-nowrap overflow-visible">
                         {item.label}
                     </span>
                     <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', item.dotClass)} aria-hidden />
@@ -1182,12 +1189,12 @@ export default function HistoryPage() {
                                                                     >
                                                                         {format(day, 'd')}
                                                                     </span>
-                                                                    <div className="flex flex-1 flex-col justify-between w-full h-full mt-5 pb-1 px-0.5 gap-1 sm:gap-1.5 md:gap-2 min-h-0 overflow-hidden">
+                                                                    <div className="flex flex-1 flex-col justify-between w-[calc(100%+0.25rem)] sm:w-[calc(100%+0.375rem)] h-full mt-5 -ml-1 sm:-ml-1.5 pb-1 pl-[3px] pr-0.5 gap-1 sm:gap-1.5 md:gap-2 min-h-0 overflow-visible">
                                                                         {CLOSING_CELL_ROWS.map((row) => (
                                                                             <ClosingCalendarMetricRow
                                                                                 key={row.field}
                                                                                 dotClass={row.dotClass}
-                                                                                value={formatClosingCellValue(closing[row.field])}
+                                                                                amount={closing[row.field]}
                                                                             />
                                                                         ))}
                                                                     </div>
