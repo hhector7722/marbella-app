@@ -90,7 +90,7 @@ function ClosingCalendarMetricRow({ dotClass, amount }: { dotClass: string; amou
 function ClosingCalendarLegend() {
     return (
         <div
-            className="grid grid-cols-4 gap-2 px-3 sm:px-4 py-3 border-t border-zinc-100 bg-white print:hidden"
+            className="grid grid-cols-4 gap-2 px-3 sm:px-4 py-3 bg-white print:hidden"
             aria-label="Leyenda del calendario de cierres"
         >
             {CLOSING_CALENDAR_LEGEND.map((item) => (
@@ -883,7 +883,32 @@ export default function HistoryPage() {
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
                         <div className="relative flex items-center justify-between gap-1 min-w-0 min-h-[40px] md:min-h-[44px]">
                             <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0 z-10">
-                                <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+                                <div className="inline-flex rounded-lg overflow-hidden border border-white/30 shadow-sm">
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('table')}
+                                        className={cn(
+                                            'min-h-[36px] px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none',
+                                            viewMode === 'table'
+                                                ? 'bg-white text-[#36606F]'
+                                                : 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
+                                        )}
+                                    >
+                                        Tabla
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('calendar')}
+                                        className={cn(
+                                            'min-h-[36px] px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none',
+                                            viewMode === 'calendar'
+                                                ? 'bg-white text-[#36606F]'
+                                                : 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
+                                        )}
+                                    >
+                                        Calendario
+                                    </button>
+                                </div>
                             </div>
 
                             {viewMode === 'calendar' ? (
@@ -915,6 +940,45 @@ export default function HistoryPage() {
                             ) : null}
 
                             <div className="flex items-center gap-1 shrink-0 text-white ml-auto z-10">
+                                {viewMode === 'table' ? (
+                                    <div className="relative" data-history-share-root="true">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShareMenuOpen(v => !v)}
+                                            className={cn(
+                                                'p-2 rounded-xl text-white/90 hover:bg-white/10 hover:text-white transition-colors outline-none',
+                                                'min-h-[40px] min-w-[40px] flex items-center justify-center',
+                                                shareBusy ? 'opacity-60 pointer-events-none' : ''
+                                            )}
+                                            title="Compartir"
+                                            aria-label="Compartir"
+                                        >
+                                            <Share size={16} />
+                                        </button>
+
+                                        {shareMenuOpen ? (
+                                            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
+                                                <button
+                                                    type="button"
+                                                    onClick={exportTableToExcel}
+                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                                >
+                                                    <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
+                                                    <Download className="w-4 h-4 text-zinc-500" />
+                                                </button>
+                                                <div className="h-px bg-zinc-100" />
+                                                <button
+                                                    type="button"
+                                                    onClick={printTable}
+                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                                >
+                                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
+                                                    <Printer className="w-4 h-4 text-zinc-500" />
+                                                </button>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                ) : null}
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     showLabel={false}
@@ -943,7 +1007,7 @@ export default function HistoryPage() {
                     </div>
 
                     <div className="bg-white">
-                        <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50 print:hidden">
+                        <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -956,70 +1020,6 @@ export default function HistoryPage() {
                                 <span className="text-lg md:text-2xl font-black text-[#36606F] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">TICKET MEDIO</span>
                             </div>
-                        </div>
-
-                        <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center relative print:hidden">
-                            <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
-                                <button
-                                    onClick={() => setViewMode('table')}
-                                    className={cn(
-                                        "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
-                                        viewMode === 'table' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                    )}
-                                >
-                                    Tabla
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('calendar')}
-                                    className={cn(
-                                        "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
-                                        viewMode === 'calendar' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                    )}
-                                >
-                                    Calendario
-                                </button>
-                            </div>
-                            {viewMode === 'table' && (
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2" data-history-share-root="true">
-                                    <div className="relative" data-history-share-root="true">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShareMenuOpen(v => !v)}
-                                            className={cn(
-                                                "p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none",
-                                                "min-h-[48px] min-w-[48px] flex items-center justify-center",
-                                                shareBusy ? "opacity-60 pointer-events-none" : ""
-                                            )}
-                                            title="Compartir"
-                                            aria-label="Compartir"
-                                        >
-                                            <Share size={16} />
-                                        </button>
-
-                                        {shareMenuOpen && (
-                                            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden">
-                                                <button
-                                                    type="button"
-                                                    onClick={exportTableToExcel}
-                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                                                >
-                                                    <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
-                                                    <Download className="w-4 h-4 text-zinc-500" />
-                                                </button>
-                                                <div className="h-px bg-zinc-100" />
-                                                <button
-                                                    type="button"
-                                                    onClick={printTable}
-                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                                                >
-                                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
-                                                    <Printer className="w-4 h-4 text-zinc-500" />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
