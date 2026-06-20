@@ -260,12 +260,14 @@ export function ClosingPhotoField({
   onClear,
   ariaLabel,
   inputId,
+  onClickAdd,
 }: {
   previewUrl: string | null;
   onSelect: (file: File) => void;
   onClear: () => void;
   ariaLabel: string;
   inputId: string;
+  onClickAdd?: (trigger: () => void) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -307,7 +309,14 @@ export function ClosingPhotoField({
         <div className={cn(CLOSING_INPUT_HEIGHT, 'flex w-full items-center justify-center')}>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              const trigger = () => fileInputRef.current?.click();
+              if (onClickAdd) {
+                onClickAdd(trigger);
+              } else {
+                trigger();
+              }
+            }}
             className="flex h-7 min-w-[4.25rem] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-2.5 text-[10px] font-black text-white transition-all hover:bg-emerald-600 active:scale-95 sm:min-w-[4.5rem] sm:px-3 sm:text-xs"
             aria-label={ariaLabel}
           >

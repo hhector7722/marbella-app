@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { X, Calendar, Minus, Plus } from 'lucide-react';
+import { X, Calendar, Minus, Plus, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
@@ -87,11 +87,29 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const [step, setStep] = useState<ClosingStep>('tpv_data');
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
+    const [userFirstName, setUserFirstName] = useState<string | null>(null);
+    const [instructionModal, setInstructionModal] = useState<{
+        isOpen: boolean;
+        type: 'tpv' | 'tarjeta';
+        onContinue: () => void;
+    } | null>(null);
 
     // Fetch user on mount
     useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUserId(user?.id || null);
+        supabase.auth.getUser().then(async ({ data: { user } }) => {
+            if (!user) return;
+            setUserId(user.id);
+            try {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('first_name')
+                    .eq('id', user.id)
+                    .single();
+                const name = (profile?.first_name || user.user_metadata?.first_name || '').toLowerCase().trim();
+                setUserFirstName(name);
+            } catch (e) {
+                console.error("Error fetching user profile in CashClosingModal:", e);
+            }
         });
     }, []);
 
@@ -308,6 +326,48 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             ...prev,
             [value]: (prev[value] || 0) + delta
         }));
+    };
+
+    const handleAddTpvClick = (triggerCamera: () => void) => {
+        const isTargetUser = ['silvia', 'hector', 'héctor'].includes(userFirstName || '');
+        const hasSeen = localStorage.getItem(`cierre_warn_seen_tpv_${userId}`);
+        
+        if (isTargetUser && !hasSeen) {
+            setInstructionModal({
+                isOpen: true,
+                type: 'tpv',
+                onContinue: () => {
+                    localStorage.setItem(`cierre_warn_seen_tpv_${userId}`, 'true');
+                    setInstructionModal(null);
+                    setTimeout(() => {
+                        triggerCamera();
+                    }, 100);
+                }
+            });
+        } else {
+            triggerCamera();
+        }
+    };
+
+    const handleAddDataphoneClick = (triggerCamera: () => void) => {
+        const isTargetUser = ['silvia', 'hector', 'héctor'].includes(userFirstName || '');
+        const hasSeen = localStorage.getItem(`cierre_warn_seen_dataphone_${userId}`);
+        
+        if (isTargetUser && !hasSeen) {
+            setInstructionModal({
+                isOpen: true,
+                type: 'tarjeta',
+                onContinue: () => {
+                    localStorage.setItem(`cierre_warn_seen_dataphone_${userId}`, 'true');
+                    setInstructionModal(null);
+                    setTimeout(() => {
+                        triggerCamera();
+                    }, 100);
+                }
+            });
+        } else {
+            triggerCamera();
+        }
     };
 
     const ensureWeatherSelected = () => {
@@ -596,6 +656,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     ariaLabel="Informe TPV"
                                     onSelect={setBdpTicketPhoto}
                                     onClear={() => setBdpTicketPhoto(null)}
+                                    onClickAdd={handleAddTpvClick}
                                 />
                             </ClosingStepRow>
 
@@ -614,6 +675,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     ariaLabel="Totales datáfono"
                                     onSelect={setDataphonePhoto}
                                     onClear={() => setDataphonePhoto(null)}
+                                    onClickAdd={handleAddDataphoneClick}
                                 />
                             </ClosingStepRow>
                         </div>
@@ -720,6 +782,67 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 )}
             </div>
 
+            {instructionModal && instructionModal.isOpen && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 rounded-2xl shadow-2xl border border-zinc-100">
+                        {/* Content */}
+                        <div className="p-5 sm:p-6 flex-1 overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Left: NO */}
+                                <div className="flex flex-col items-center">
+                                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={instructionModal.type === 'tpv' ? '/images/tpv-no.jpeg' : '/images/tarjeta-no.jpeg'}
+                                            alt="Ejemplo incorrecto"
+                                            className="object-contain w-full h-full"
+                                        />
+                                    </div>
+                                    <div className="mt-3 flex items-start gap-1.5 text-rose-600">
+                                        <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white shrink-0 mt-0.5">
+                                            <X size={12} strokeWidth={4} />
+                                        </div>
+                                        <span className="text-[11px] sm:text-xs font-bold leading-snug">
+                                            Ejemplo de como NO debe ser.
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Right: SI */}
+                                <div className="flex flex-col items-center">
+                                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={instructionModal.type === 'tpv' ? '/images/tpv-si.jpeg' : '/images/tarjeta-si.jpeg'}
+                                            alt="Ejemplo correcto"
+                                            className="object-contain w-full h-full"
+                                        />
+                                    </div>
+                                    <div className="mt-3 flex items-start gap-1.5 text-emerald-600">
+                                        <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white shrink-0 mt-0.5">
+                                            <Check size={12} strokeWidth={4} />
+                                        </div>
+                                        <span className="text-[11px] sm:text-xs font-bold leading-snug">
+                                            Ejemplo de como SI debe ser.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex justify-end shrink-0">
+                            <button
+                                type="button"
+                                onClick={instructionModal.onContinue}
+                                className="w-full min-h-[48px] bg-[#36606F] hover:bg-[#2d4f5c] text-white font-black uppercase tracking-widest text-xs rounded-xl transition-colors active:scale-[0.99]"
+                            >
+                                continuar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }
