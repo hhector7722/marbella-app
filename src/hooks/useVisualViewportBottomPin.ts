@@ -14,7 +14,12 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
         node.style.bottom = '0px';
         return;
       }
-      const gap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      // Solo desplazar con teclado; en PWA iOS innerHeight > vv.height sin teclado
+      // generaba un gap falso y dejaba la barra flotando.
+      const keyboardOpen = vv.height < window.innerHeight * 0.82;
+      const gap = keyboardOpen
+        ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+        : 0;
       node.style.bottom = `${gap}px`;
     };
 
