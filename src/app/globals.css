@@ -3,6 +3,29 @@
 @tailwind utilities;
 
 @layer utilities {
+  /**
+   * Fondo de app: difuminado vertical — oscuro abajo, claro y morado arriba.
+   * `fixed` mantiene el degradado al hacer scroll en páginas largas.
+   */
+  .bg-marbella-shell {
+    background-color: #3d6288;
+    background-image:
+      radial-gradient(ellipse 130% 42% at 50% 102%, rgba(18, 38, 68, 0.72) 0%, transparent 68%),
+      radial-gradient(ellipse 95% 38% at 72% -4%, rgba(196, 178, 248, 0.55) 0%, transparent 62%),
+      radial-gradient(ellipse 70% 28% at 18% 8%, rgba(168, 198, 240, 0.35) 0%, transparent 58%),
+      linear-gradient(
+        to top,
+        #1a3352 0%,
+        #26466f 14%,
+        #3a5f88 32%,
+        #5b8fb9 52%,
+        #7da8d4 70%,
+        #a8c0ea 84%,
+        #c8b8f2 100%
+      );
+    background-attachment: fixed;
+  }
+
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }

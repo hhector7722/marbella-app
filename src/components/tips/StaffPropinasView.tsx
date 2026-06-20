@@ -125,7 +125,7 @@ export default function StaffPropinasView({
     : 'Sin repartos anteriores.';
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] pb-24">
+    <div className="min-h-screen pb-24">
       <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
         <section className="overflow-hidden rounded-2xl bg-white shadow-xl">
           <div className="border-b border-zinc-100 bg-[#36606F] px-4 py-3">

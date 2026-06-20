@@ -288,7 +288,7 @@ export const StaffScheduleModal = ({
     const navigationOverlay =
         navigatingToActividades && typeof document !== 'undefined'
             ? createPortal(
-                  <div className="fixed inset-0 z-[10100] flex items-center justify-center bg-[#5B8FB9]">
+                  <div className="fixed inset-0 z-[10100] flex items-center justify-center bg-marbella-shell">
                       <LoadingSpinner size="lg" className="text-white" />
                   </div>,
                   document.body,

@@ -912,7 +912,7 @@ export default function ReservasClient() {
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
 
   return (
-    <div className="bg-[#5B8FB9] min-h-screen">
+    <div className="min-h-screen">
       <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
           <div className="bg-[#36606F] rounded-t-2xl px-3 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">

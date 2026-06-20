@@ -283,18 +283,18 @@ export default function NewOrderPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#5B8FB9]">
+            <div className="flex items-center justify-center min-h-screen">
                 <LoadingSpinner size="xl" className="text-white" />
             </div>
         );
     }
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col bg-[#5B8FB9]">
+        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col">
             <Toaster position="top-right" />
 
             <div className="mx-auto flex h-full w-full max-w-7xl min-h-0 flex-col p-4 md:p-6">
-                <div className="z-10 shrink-0 bg-[#5B8FB9] pb-4 pt-0">
+                <div className="z-10 shrink-0 pb-4 pt-0">
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
                             <div className={cn(

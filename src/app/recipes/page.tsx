@@ -345,7 +345,7 @@ function RecipesContent() {
     };
 
     return (
-        <div className="p-4 md:p-6 w-full bg-[#5B8FB9] min-h-screen pb-24">
+        <div className="p-4 md:p-6 w-full min-h-screen pb-24">
             <Toaster position="top-right" />
             <ImageLightbox
                 open={isPhotoLightboxOpen}
@@ -713,7 +713,7 @@ function RecipesContent() {
 export default function RecipesPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#5B8FB9]"></div>
+            <div className="min-h-screen"></div>
         }>
             <RecipesContent />
         </Suspense>

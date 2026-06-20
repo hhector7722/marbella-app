@@ -151,7 +151,7 @@ export default function LoginPage() {
             : 'Enviar enlace de recuperación';
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
+        <div className="min-h-screen flex items-center justify-center p-4">
             <Toaster position="top-center" />
 
             {/* Tarjeta Flotante Estilo "La Marbella" */}

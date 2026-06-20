@@ -830,11 +830,11 @@ function RecipeDetailContent() {
         return <input {...props} type="number" step="0.01" className={className} value={localValue} onChange={handleChange} onBlur={handleBlurLocal} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />;
     };
 
-    if (loading) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white"><LoadingSpinner size="xl" className="text-white" /></div>;
-    if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center text-white"><LoadingSpinner size="xl" className="text-white" /></div>;
+    if (!recipe) return <div className="min-h-screen flex items-center justify-center text-white">No encontrada</div>;
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
+        <div className="min-h-screen p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
             <Toaster position="top-right" />
             <ImageLightbox
                 open={isPhotoLightboxOpen}
@@ -1689,7 +1689,7 @@ function RecipeDetailContent() {
 export default function RecipeDetailPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#5B8FB9]"></div>
+            <div className="min-h-screen"></div>
         }>
             <RecipeDetailContent />
         </Suspense>

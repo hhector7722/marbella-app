@@ -155,7 +155,7 @@ export default function ActividadesPage() {
   const selectedRow = selectedDayStr ? byDate[selectedDayStr] ?? null : null;
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] pb-6">
+    <div className="min-h-screen pb-6">
       <div className="max-w-3xl mx-auto px-3 pt-4 md:pt-8">
         <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-white/40">
           <div className="bg-[#36606F] px-4 py-4 flex items-center gap-3 shrink-0">

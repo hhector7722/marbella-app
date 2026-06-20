@@ -1144,7 +1144,7 @@ export default function InsightsClient({
   }, [weekday.data, dateFrom, dateTo])
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24 text-zinc-900">
+    <div className="min-h-screen p-2 md:p-6 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="sticky top-0 z-20 shadow-sm">

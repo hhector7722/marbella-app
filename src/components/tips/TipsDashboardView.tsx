@@ -411,7 +411,7 @@ export default function TipsDashboardView({
   );
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] p-2 sm:p-4 md:p-8 pb-24 text-zinc-900">
+    <div className="min-h-screen p-2 sm:p-4 md:p-8 pb-24 text-zinc-900">
       <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 min-w-0">
         <div className="bg-white rounded-xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl overflow-hidden min-w-0">
           <div className="bg-[#36606F] p-3 md:p-6 relative">

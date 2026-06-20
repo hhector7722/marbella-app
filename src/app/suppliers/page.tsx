@@ -506,7 +506,7 @@ export default function SuppliersPage() {
     });
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col bg-[#5B8FB9]">
+        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col">
             <Toaster position="top-right" />
 
             <div className="shrink-0 px-6 pb-4 pt-4 md:px-8 md:pb-6 md:pt-6">

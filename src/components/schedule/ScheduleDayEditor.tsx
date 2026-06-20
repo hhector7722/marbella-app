@@ -727,11 +727,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 </div>
             );
         }
-        return <div className="min-h-screen bg-[#5B8FB9]" />;
+        return <div className="min-h-screen" />;
     }
 
     return (
-        <div className={embedded ? 'flex flex-col flex-1 min-h-0 w-full text-gray-800 overflow-hidden' : 'min-h-[100dvh] w-full flex flex-col bg-[#5B8FB9] p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800'} onClick={() => setEditingIndex(null)}>
+        <div className={embedded ? 'flex flex-col flex-1 min-h-0 w-full text-gray-800 overflow-hidden' : 'min-h-[100dvh] w-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800'} onClick={() => setEditingIndex(null)}>
             <div className={cn('bg-[#36606F] shadow-xl flex flex-col shrink w-full relative overflow-hidden', embedded ? 'rounded-2xl flex-1 min-h-0' : 'rounded-[32px] max-w-7xl mx-auto')}>
 
                 {/* WRAPPER STICKY GLOBAL PARA TODA LA CABECERA */}
