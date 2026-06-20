@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-20 (Motion iOS — navegación y modales)
+**Última actualización:** 2026-06-20 (Motion iOS refinado — tabs swipe + dual-layer)
+
+- [x] **Motion iOS refinado: tabs swipe staff + push/pop dual-layer (2026-06-20)**: Tokens centralizados [`tokens.ts`](src/lib/motion/tokens.ts); tabs raíz swipeables [`main-tab-roots.ts`](src/lib/navigation/main-tab-roots.ts) + caché snapshot [`tab-snapshot-cache.ts`](src/lib/navigation/tab-snapshot-cache.ts); [`TabSwipeNavigator`](src/components/navigation/TabSwipeNavigator.tsx) en [`staff/layout`](src/app/staff/layout.tsx) y [`profile/layout`](src/app/profile/layout.tsx) (Asistencia ↔ Inicio ↔ Perfil; commit ~14% o velocidad; spinner discreto si falta snapshot). [`AppPageTransition`](src/components/navigation/AppPageTransition.tsx) y [`SwipeBackGesture`](src/components/navigation/SwipeBackGesture.tsx) ampliados con capa saliente + entrante; modales 260/220 ms; fondo fijo petróleo→azul en [`globals.css`](src/app/globals.css). Test: `npm run check:navigation-helpers`.
+
+**Última actualización anterior:** 2026-06-20 (Motion iOS — navegación y modales)
 
 - [x] **Motion iOS: transiciones de página, modales y swipe-back (2026-06-20)**: Sistema centralizado en [`globals.css`](src/app/globals.css), [`AppPageTransition`](src/components/navigation/AppPageTransition.tsx), [`SwipeBackGesture`](src/components/navigation/SwipeBackGesture.tsx), [`template.tsx`](src/app/template.tsx) y [`Modal`](src/components/ui/modal.tsx) con enter/exit. Curvas `cubic-bezier` estilo UIView; push/pop por profundidad de ruta o `popstate`; gesto desde borde izquierdo; utilidades `animate-in` activas en modales legacy.
 

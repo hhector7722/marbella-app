@@ -7,7 +7,7 @@ import { ChevronLeft, X } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { usePresenceMotion } from '@/hooks/usePresenceMotion';
 import { trackUsageModalDwell, trackUsageModalOpen } from '@/lib/usage/client';
-import { MODAL_TRANSITION_MS } from '@/lib/motion/constants';
+import { MODAL_ENTER_MS } from '@/lib/motion/constants';
 import { cn } from '@/lib/utils';
 
 type ModalHeaderVariant = 'white' | 'petroleum';
@@ -255,7 +255,7 @@ export function Modal({
   const trackedLabelRef = useRef<string | null>(null);
   const { mounted, isEntering, isExiting } = usePresenceMotion({
     open,
-    durationMs: MODAL_TRANSITION_MS,
+    durationMs: MODAL_ENTER_MS,
   });
 
   const resolvedUsageLabel =
