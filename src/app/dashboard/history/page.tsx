@@ -24,7 +24,7 @@ import {
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -53,6 +53,8 @@ const METRICS: { label: string; value: MetricType; icon: any }[] = [
     { label: 'Tickets', value: 'tickets_count', icon: Calendar },
     { label: 'Efectivo', value: 'cash_counted', icon: Banknote },
 ];
+
+const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 
 // --- MINI COMPONENTS ---
 
@@ -296,11 +298,31 @@ export default function HistoryPage() {
     });
 
     const calendarDays = useMemo(() => {
-        const base = filterMode === 'range' && rangeStart ? new Date(rangeStart) : new Date(selectedDate);
+        const base = filterMode === 'range' && rangeStart ? parseLocalSafe(rangeStart) : parseLocalSafe(selectedDate);
         const startVisible = startOfWeek(startOfMonth(base), { weekStartsOn: 1 });
         const endVisible = endOfWeek(endOfMonth(base), { weekStartsOn: 1 });
         return eachDayOfInterval({ start: startVisible, end: endVisible });
     }, [filterMode, rangeStart, selectedDate]);
+
+    const viewMonth = useMemo(() => {
+        const base = filterMode === 'range' && rangeStart ? parseLocalSafe(rangeStart) : parseLocalSafe(selectedDate);
+        return startOfMonth(base);
+    }, [filterMode, rangeStart, selectedDate]);
+
+    const calendarWeeks = useMemo(() => {
+        const weeks: Date[][] = [];
+        for (let i = 0; i < calendarDays.length; i += 7) {
+            weeks.push(calendarDays.slice(i, i + 7));
+        }
+        return weeks;
+    }, [calendarDays]);
+
+    const monthNavLabel =
+        filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+            ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
+            : filterMode === 'single'
+              ? format(parseLocalSafe(selectedDate), 'MMMM yyyy', { locale: es })
+              : 'Periodo personalizado';
 
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState<any>(null);
@@ -312,6 +334,15 @@ export default function HistoryPage() {
     const [closings, setClosings] = useState<any[]>([]);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
+
+    const closingsByDate = useMemo(() => {
+        const map = new Map<string, (typeof closings)[number]>();
+        closings.forEach((c) => {
+            const key = format(new Date(c.closed_at), 'yyyy-MM-dd');
+            map.set(key, c);
+        });
+        return map;
+    }, [closings]);
     const [closingPhotoUrls, setClosingPhotoUrls] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [closingPhotosLoading, setClosingPhotosLoading] = useState(false);
     const [closingPhotosError, setClosingPhotosError] = useState<string | null>(null);
@@ -807,21 +838,7 @@ export default function HistoryPage() {
                                 <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
                             </div>
 
-                            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
-                                    <ChevronLeft size={16} />
-                                </button>
-                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[90px] sm:max-w-[120px]">
-                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'MES'}
-                                </button>
-                                <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
-                                    <ChevronRight size={16} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 text-white">
+                            <div className="flex items-center gap-1 shrink-0 text-white ml-auto">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     showLabel={false}
@@ -928,6 +945,36 @@ export default function HistoryPage() {
                                 </div>
                             )}
                         </div>
+
+                        {viewMode === 'calendar' ? (
+                            <div className="flex justify-center w-full px-2 sm:px-3 py-3 bg-zinc-50/50 border-b border-zinc-100 print:hidden">
+                                <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                                    <button
+                                        type="button"
+                                        onClick={handlePrevMonth}
+                                        className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                                        aria-label="Mes anterior"
+                                    >
+                                        <ChevronLeft size={22} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTimeFilterOpen(true)}
+                                        className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:text-[#36606F]/80 transition-colors"
+                                    >
+                                        {monthNavLabel}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNextMonth}
+                                        className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                                        aria-label="Mes siguiente"
+                                    >
+                                        <ChevronRight size={22} />
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
 
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             {viewMode === 'table' ? (
@@ -1041,98 +1088,117 @@ export default function HistoryPage() {
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                                         </div>
-                                    ) : closings.length === 0 ? (
-                                        <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                            <Calendar size={32} />
-                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                        </div>
                                     ) : (
-                                        <div className="p-1 md:p-3 overflow-x-auto no-scrollbar">
-                                            <div className="min-w-0">
-                                                <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
-                                                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((d, index) => (
-                                                        <div key={d} className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.1em] md:tracking-[0.2em] text-center">
-                                                            <span className="hidden md:inline">{d}</span>
-                                                            <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
+                                        <div className="py-2 bg-zinc-50/50">
+                                            <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
+                                                <div className="grid grid-cols-7 border-b border-gray-100">
+                                                    {CALENDAR_WEEKDAYS.map((d, index) => (
+                                                        <div
+                                                            key={d}
+                                                            className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
+                                                        >
+                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
+                                                                <span className="hidden md:inline">{d}</span>
+                                                                <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
+                                                            </span>
                                                         </div>
                                                     ))}
                                                 </div>
 
-                                                <div className="grid grid-cols-7 gap-1 md:gap-3">
-                                                    {calendarDays.map((day, idx) => {
-                                                        const closing = closings.find(c => isSameDay(new Date(c.closed_at), day));
-                                                        const isCurrentMonth = filterMode === 'range' && rangeStart
-                                                            ? isSameMonth(day, new Date(rangeStart))
-                                                            : filterMode === 'single' ? isSameMonth(day, new Date(selectedDate)) : true;
+                                                {calendarWeeks.map((week) => (
+                                                    <div key={format(week[0], 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
+                                                        {week.map((day) => {
+                                                            const key = format(day, 'yyyy-MM-dd');
+                                                            const closing = closingsByDate.get(key);
+                                                            const isViewMonthDay = isSameMonth(day, viewMonth);
+                                                            const today = isToday(day);
 
-                                                        if (!closing) {
+                                                            if (!closing) {
+                                                                return (
+                                                                    <div
+                                                                        key={key}
+                                                                        className={cn(
+                                                                            'relative flex flex-col min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] p-1 sm:p-1.5',
+                                                                            'border-r border-gray-100 last:border-r-0 bg-white',
+                                                                            !isViewMonthDay && 'opacity-25'
+                                                                        )}
+                                                                    >
+                                                                        <span
+                                                                            className={cn(
+                                                                                'absolute top-1 right-1 text-[9px] font-bold',
+                                                                                today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                                                                                !isViewMonthDay && 'opacity-50'
+                                                                            )}
+                                                                        >
+                                                                            {format(day, 'd')}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            const mainVal = closing[selectedMetric] || 0;
+                                                            const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
+
                                                             return (
-                                                                <div key={idx} className={cn(
-                                                                    "h-[50px] md:h-32 rounded-lg md:rounded-2xl border border-zinc-100/50 flex flex-col p-1 md:p-3 transition-opacity",
-                                                                    isCurrentMonth ? "bg-white/40" : "bg-transparent opacity-10"
-                                                                )}>
-                                                                    <span className="text-[8px] md:text-[10px] font-black text-zinc-300">{format(day, 'd')}</span>
-                                                                </div>
+                                                                <button
+                                                                    key={closing.id}
+                                                                    type="button"
+                                                                    onClick={() => openClosingDetail(closing)}
+                                                                    className={cn(
+                                                                        'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] transition-colors p-1 sm:p-1.5',
+                                                                        'border-r border-gray-100 last:border-r-0 bg-white hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                                                                        !isViewMonthDay && 'opacity-25',
+                                                                        today && isViewMonthDay && 'bg-blue-50/10'
+                                                                    )}
+                                                                >
+                                                                    <span
+                                                                        className={cn(
+                                                                            'absolute top-1 right-1 text-[9px] font-bold',
+                                                                            today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                                                                            !isViewMonthDay && 'opacity-50'
+                                                                        )}
+                                                                    >
+                                                                        {format(day, 'd')}
+                                                                    </span>
+                                                                    <div className="flex-1 flex flex-col justify-center w-full mt-4 pb-1 min-h-[52px] overflow-hidden">
+                                                                        <div className="text-[10px] sm:text-xs md:text-base font-black text-zinc-900 tabular-nums leading-none text-center md:text-left">
+                                                                            {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
+                                                                            {selectedMetric !== 'tickets_count' ? (
+                                                                                <span className="text-[7px] md:text-[10px] ml-0.5 font-black">€</span>
+                                                                            ) : null}
+                                                                        </div>
+                                                                        <div className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight mt-0.5 text-center md:text-left truncate">
+                                                                            {METRICS.find((m) => m.value === selectedMetric)?.label}
+                                                                        </div>
+                                                                        <div
+                                                                            className={cn(
+                                                                                'hidden md:block text-[8px] font-black uppercase whitespace-nowrap mt-1',
+                                                                                parseFloat(diffPerc) >= 0 ? 'text-emerald-500' : 'text-[#D64D5D]'
+                                                                            )}
+                                                                        >
+                                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}
+                                                                            {Math.abs(Math.round(parseFloat(diffPerc)))}%
+                                                                        </div>
+                                                                        <div className="hidden lg:grid grid-cols-2 gap-1 mt-auto pt-1 border-t border-zinc-100">
+                                                                            <div className="text-center">
+                                                                                <span className="block text-[9px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                                    {Math.round(closing.tpv_sales)}
+                                                                                </span>
+                                                                                <span className="text-[6px] font-black text-zinc-400 uppercase">Ventas</span>
+                                                                            </div>
+                                                                            <div className="text-center">
+                                                                                <span className="block text-[9px] font-black text-emerald-600 tabular-nums leading-none">
+                                                                                    {(closing.cash_counted || 0).toFixed(0)}
+                                                                                </span>
+                                                                                <span className="text-[6px] font-black text-zinc-400 uppercase">Cash</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </button>
                                                             );
-                                                        }
-
-                                                        const mainVal = closing[selectedMetric] || 0;
-                                                        const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
-
-                                                        return (
-                                                            <div
-                                                                key={closing.id}
-                                                                onClick={() => openClosingDetail(closing)}
-                                                                className="group relative bg-white h-full min-h-[50px] md:min-h-[120px] rounded-lg md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
-                                                            >
-                                                                <div className="bg-[#D64D5D] px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shadow-sm">
-                                                                    <span className="text-[8px] md:text-[10px] font-black text-white">{format(day, 'd')}</span>
-                                                                </div>
-
-                                                                <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
-                                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-0 md:gap-1 mb-0.5 px-0.5 h-full">
-                                                                        <div className="flex flex-col h-full w-full justify-center md:block">
-                                                                            <div className="text-[8.5px] min-[370px]:text-[10px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter md:tracking-normal md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
-                                                                                {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                                {selectedMetric !== 'tickets_count' && <span className="text-[6px] md:text-[12px] ml-[1px] md:ml-0.5 font-black">€</span>}
-                                                                            </div>
-
-                                                                            <div className="text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-auto md:mt-0 mb-0.5 md:mb-2 leading-tight text-center md:text-left">
-                                                                                {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <div className={cn(
-                                                                            "hidden md:block text-[8px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto",
-                                                                            parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
-                                                                        )}>
-                                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(Math.round(parseFloat(diffPerc)))}%
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="hidden md:grid grid-cols-2 gap-y-1.5 gap-x-1.5 mt-auto w-full pt-1.5 border-t border-zinc-100">
-                                                                        <div className="flex flex-col items-center justify-center py-0.5">
-                                                                            <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
-                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Ventas</span>
-                                                                        </div>
-                                                                        <div className="flex flex-col items-center justify-center py-0.5">
-                                                                            <span className="text-[8px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
-                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Media</span>
-                                                                        </div>
-                                                                        <div className="flex flex-col items-center justify-center py-0.5">
-                                                                            <span className="text-[8px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
-                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Cash</span>
-                                                                        </div>
-                                                                        <div className="flex flex-col items-center justify-center py-0.5">
-                                                                            <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
-                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Tarjeta</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
+                                                        })}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
