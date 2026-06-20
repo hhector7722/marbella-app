@@ -877,9 +877,9 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen p-1 md:p-3 pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
-            <div className="max-w-5xl mx-auto print:max-w-none">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
+        <div className="min-h-screen pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
+            <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 print:max-w-none">
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-none print:rounded-none print:shadow-none">
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
                         <div className="relative flex items-center justify-between gap-1 min-w-0 min-h-[40px] md:min-h-[44px]">
                             <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0 z-10">
@@ -1022,7 +1022,7 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
+                        <div className={cn('pb-2 md:pb-4 pt-1 md:pt-1.5', viewMode === 'table' ? 'px-1.5 md:px-3' : 'px-0')}>
                             {viewMode === 'table' ? (
                                 <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-4">
                                     <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">Cierres — Historial</div>
@@ -1116,7 +1116,7 @@ export default function HistoryPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="py-2 bg-zinc-50/50">
+                                            <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
                                                 <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                                                 <div className="grid grid-cols-7 border-b border-gray-100">
                                                     {CALENDAR_WEEKDAYS.map((d, index) => (
@@ -1204,8 +1204,8 @@ export default function HistoryPage() {
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
-                                            <ClosingCalendarLegend />
+                                                <ClosingCalendarLegend />
+                                            </div>
                                         </>
                                     )}
                                 </div>
