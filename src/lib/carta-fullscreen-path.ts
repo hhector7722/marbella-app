@@ -20,8 +20,9 @@ export function isInternalScrollShellPath(pathname: string): boolean {
   return false
 }
 
-/** Rutas `/staff/*`: barra inferior en `staff/layout.tsx`; no duplicar padding en `MainWrapper`. */
+/** Rutas `/staff/*` con shell propio (barra en `staff/layout.tsx`). El dashboard staff comparte shell con `/dashboard`. */
 export function isStaffShellPath(pathname: string): boolean {
+  if (pathname === '/staff/dashboard') return false
   return pathname.startsWith('/staff')
 }
 
