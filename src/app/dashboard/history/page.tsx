@@ -47,14 +47,56 @@ import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
 
-const METRICS: { label: string; cellLabel: string; value: MetricType; icon: any }[] = [
-    { label: 'Venta Neta', cellLabel: 'V NETA', value: 'net_sales', icon: TrendingUp },
-    { label: 'Ventas', cellLabel: 'Ventas', value: 'tpv_sales', icon: TrendingUp },
-    { label: 'Tickets', cellLabel: 'Tickets', value: 'tickets_count', icon: Calendar },
-    { label: 'Efectivo', cellLabel: 'Efectivo', value: 'cash_counted', icon: Banknote },
+const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
+
+const CLOSING_CELL_ROWS = [
+    { field: 'net_sales' as const, dotClass: 'bg-emerald-500' },
+    { field: 'tpv_sales' as const, dotClass: 'bg-blue-500' },
+    { field: 'cash_counted' as const, dotClass: 'bg-amber-400' },
+    { field: 'sales_card' as const, dotClass: 'bg-red-500' },
 ];
 
-const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
+const CLOSING_CALENDAR_LEGEND = [
+    { label: 'Venta neta', dotClass: 'bg-emerald-500' },
+    { label: 'Ventas', dotClass: 'bg-blue-500' },
+    { label: 'Efectivo', dotClass: 'bg-amber-400' },
+    { label: 'Tarjeta', dotClass: 'bg-red-500' },
+] as const;
+
+function formatClosingCellValue(val: number | null | undefined): string {
+    const n = Number(val ?? 0);
+    if (!n || Math.abs(n) < 0.05) return '\u00a0';
+    return String(Math.round(n));
+}
+
+function ClosingCalendarMetricRow({ dotClass, value }: { dotClass: string; value: string }) {
+    return (
+        <div className="flex items-center gap-0.5 min-w-0 w-full">
+            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotClass)} aria-hidden />
+            <span className="text-[7px] sm:text-[8px] md:text-[9px] font-black text-zinc-900 tabular-nums leading-none truncate">
+                {value}
+            </span>
+        </div>
+    );
+}
+
+function ClosingCalendarLegend() {
+    return (
+        <div
+            className="grid grid-cols-4 gap-2 px-3 sm:px-4 py-3 border-t border-zinc-100 bg-white print:hidden"
+            aria-label="Leyenda del calendario de cierres"
+        >
+            {CLOSING_CALENDAR_LEGEND.map((item) => (
+                <div key={item.label} className="flex items-center justify-center gap-1.5 min-w-0">
+                    <span className="text-[8px] sm:text-[9px] md:text-[10px] font-semibold text-zinc-600 whitespace-nowrap truncate">
+                        {item.label}
+                    </span>
+                    <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', item.dotClass)} aria-hidden />
+                </div>
+            ))}
+        </div>
+    );
+}
 
 // --- MINI COMPONENTS ---
 
@@ -234,7 +276,6 @@ export default function HistoryPage() {
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
     const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [selectedMetric, setSelectedMetric] = useState<MetricType>('net_sales');
 
     const parseLocalSafe = (dateStr: string | null) => {
         if (!dateStr) return new Date();
@@ -1062,33 +1103,14 @@ export default function HistoryPage() {
                                 </div>
                             ) : (
                                 <div className="min-w-0">
-                                    <div className="bg-[#36606F] rounded-t-xl md:rounded-t-2xl px-2 py-1 md:px-2.5 md:py-1.5 flex items-center overflow-x-auto no-scrollbar">
-                                        <div className="flex gap-1.5 md:gap-2 w-full max-w-xl mx-auto justify-between">
-                                            {METRICS.map(m => (
-                                                <button
-                                                    key={m.value}
-                                                    onClick={() => setSelectedMetric(m.value)}
-                                                    className={cn(
-                                                        "flex-1 min-h-0 h-7 md:h-8 md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 px-1.5 whitespace-nowrap leading-none",
-                                                        selectedMetric === m.value
-                                                            ? "text-white md:bg-white md:text-[#36606F] md:shadow-lg"
-                                                            : "text-white/40 md:text-white/60 hover:text-white hover:bg-white/5"
-                                                    )}
-                                                >
-                                                    <m.icon size={10} className={cn("hidden sm:block shrink-0", selectedMetric === m.value ? "md:text-[#36606F] text-white" : "text-white/40")} />
-                                                    {m.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                                         </div>
                                     ) : (
-                                        <div className="py-2 bg-zinc-50/50">
-                                            <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
+                                        <>
+                                            <div className="py-2 bg-zinc-50/50">
+                                                <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                                                 <div className="grid grid-cols-7 border-b border-gray-100">
                                                     {CALENDAR_WEEKDAYS.map((d, index) => (
                                                         <div
@@ -1118,7 +1140,7 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] p-1 sm:p-1.5',
+                                                                            'relative flex flex-col min-h-[88px] sm:min-h-[104px] md:min-h-[120px] lg:min-h-[132px] p-1 sm:p-1.5',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
@@ -1138,16 +1160,13 @@ export default function HistoryPage() {
                                                                 );
                                                             }
 
-                                                            const mainVal = closing[selectedMetric] || 0;
-                                                            const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
-
                                                             return (
                                                                 <button
                                                                     key={closing.id}
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] transition-colors p-1 sm:p-1.5',
+                                                                        'group relative flex flex-col text-left min-h-[88px] sm:min-h-[104px] md:min-h-[120px] lg:min-h-[132px] transition-colors p-1 sm:p-1.5',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
@@ -1163,39 +1182,14 @@ export default function HistoryPage() {
                                                                     >
                                                                         {format(day, 'd')}
                                                                     </span>
-                                                                    <div className="flex-1 flex flex-col justify-center w-full mt-4 pb-1 min-h-[52px] overflow-hidden">
-                                                                        <div className="text-[10px] sm:text-xs md:text-base font-black text-zinc-900 tabular-nums leading-none text-center md:text-left">
-                                                                            {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                            {selectedMetric !== 'tickets_count' ? (
-                                                                                <span className="text-[7px] md:text-[10px] ml-0.5 font-black">€</span>
-                                                                            ) : null}
-                                                                        </div>
-                                                                        <div className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-tight mt-0.5 text-center md:text-left truncate leading-none">
-                                                                            {METRICS.find((m) => m.value === selectedMetric)?.cellLabel}
-                                                                        </div>
-                                                                        <div
-                                                                            className={cn(
-                                                                                'hidden md:block text-[8px] font-black uppercase whitespace-nowrap mt-1',
-                                                                                parseFloat(diffPerc) >= 0 ? 'text-emerald-500' : 'text-[#D64D5D]'
-                                                                            )}
-                                                                        >
-                                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}
-                                                                            {Math.abs(Math.round(parseFloat(diffPerc)))}%
-                                                                        </div>
-                                                                        <div className="hidden lg:grid grid-cols-2 gap-1 mt-auto pt-1 border-t border-zinc-100">
-                                                                            <div className="text-center">
-                                                                                <span className="block text-[9px] font-black text-zinc-900 tabular-nums leading-none">
-                                                                                    {Math.round(closing.tpv_sales)}
-                                                                                </span>
-                                                                                <span className="text-[6px] font-black text-zinc-400 uppercase">Ventas</span>
-                                                                            </div>
-                                                                            <div className="text-center">
-                                                                                <span className="block text-[9px] font-black text-emerald-600 tabular-nums leading-none">
-                                                                                    {(closing.cash_counted || 0).toFixed(0)}
-                                                                                </span>
-                                                                                <span className="text-[6px] font-black text-zinc-400 uppercase">Cash</span>
-                                                                            </div>
-                                                                        </div>
+                                                                    <div className="flex-1 flex flex-col justify-center w-full mt-4 pb-0.5 min-h-[56px] gap-0.5 overflow-hidden">
+                                                                        {CLOSING_CELL_ROWS.map((row) => (
+                                                                            <ClosingCalendarMetricRow
+                                                                                key={row.field}
+                                                                                dotClass={row.dotClass}
+                                                                                value={formatClosingCellValue(closing[row.field])}
+                                                                            />
+                                                                        ))}
                                                                     </div>
                                                                 </button>
                                                             );
@@ -1204,6 +1198,8 @@ export default function HistoryPage() {
                                                 ))}
                                             </div>
                                         </div>
+                                            <ClosingCalendarLegend />
+                                        </>
                                     )}
                                 </div>
                             )}
