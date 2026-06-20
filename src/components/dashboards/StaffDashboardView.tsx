@@ -756,7 +756,7 @@ export default function StaffDashboardView() {
 
                             <div className="p-4">
 
-                                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0 mx-auto w-[97%]">
                                     <div className="grid grid-cols-7">
                                         {weekDays.map((day, i) => (
                                             <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
