@@ -20,8 +20,14 @@ export function isInternalScrollShellPath(pathname: string): boolean {
   return false
 }
 
+/** Rutas `/staff/*`: barra inferior en `staff/layout.tsx`; no duplicar padding en `MainWrapper`. */
+export function isStaffShellPath(pathname: string): boolean {
+  return pathname.startsWith('/staff')
+}
+
 /** Páginas con barra inferior propia: el `main` no añade padding inferior extra. */
 export function isAppShellScrollPage(pathname: string): boolean {
   if (isFullscreenCartaPath(pathname)) return false
+  if (isStaffShellPath(pathname)) return true
   return isInternalScrollShellPath(pathname)
 }

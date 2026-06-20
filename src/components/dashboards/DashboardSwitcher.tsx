@@ -226,7 +226,7 @@ export default function DashboardSwitcher({
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
                             {shouldRenderPanel('admin') && <AdminDashboardView initialData={initialData} />}
                         </div>
-                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 mt-4 md:mt-0')}>
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
                             {shouldRenderPanel('master') && (
                                 <MasterDashboardView
                                     initialData={{
@@ -239,7 +239,7 @@ export default function DashboardSwitcher({
                                 />
                             )}
                         </div>
-                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 mt-4 md:mt-0')}>
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
                             {shouldRenderPanel('staff') && <StaffDashboardView />}
                         </div>
                     </>
@@ -248,12 +248,12 @@ export default function DashboardSwitcher({
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
                             {shouldRenderPanel('admin') && <AdminDashboardView initialData={initialData} />}
                         </div>
-                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 mt-4 md:mt-0')}>
+                        <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
                             {shouldRenderPanel('staff') && <StaffDashboardView />}
                         </div>
                     </>
                 ) : (
-                    <div className="w-full min-h-full flex-shrink-0 mt-4 md:mt-0">
+                    <div className="w-full min-h-full flex-shrink-0 -mt-0.5 md:mt-0">
                         <StaffDashboardView />
                     </div>
                 )}

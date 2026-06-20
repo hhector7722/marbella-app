@@ -735,8 +735,8 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-8 md:pb-32">
-            <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4 mt-1 md:mt-2">
+        <div className="pt-3 md:pt-2 animate-in fade-in duration-500 pb-8 md:pb-4">
+            <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4">
                 <div className="flex flex-col gap-4 md:gap-4 items-center">
                     <div className="w-full space-y-3 md:space-y-4">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
