@@ -4,25 +4,22 @@
 
 @layer utilities {
   /**
-   * Fondo de app: difuminado vertical — oscuro abajo, claro y morado arriba.
-   * `fixed` mantiene el degradado al hacer scroll en páginas largas.
+   * Fondo de app: azul corporativo (#5B8FB9) con difuminado sutil —
+   * un poco más claro arriba y más oscuro abajo.
    */
   .bg-marbella-shell {
-    background-color: #5a5298;
+    background-color: #5b8fb9;
     background-image:
-      radial-gradient(ellipse 130% 42% at 50% 102%, rgba(22, 18, 58, 0.78) 0%, transparent 68%),
-      radial-gradient(ellipse 105% 44% at 68% -5%, rgba(200, 165, 255, 0.72) 0%, transparent 58%),
-      radial-gradient(ellipse 80% 32% at 22% 4%, rgba(170, 130, 240, 0.52) 0%, transparent 54%),
+      radial-gradient(ellipse 130% 40% at 50% 100%, rgba(58, 105, 145, 0.5) 0%, transparent 65%),
+      radial-gradient(ellipse 90% 34% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 58%),
       linear-gradient(
         to top,
-        #181840 0%,
-        #2a2860 12%,
-        #443878 28%,
-        #5e52a0 44%,
-        #7868b8 58%,
-        #9888d0 72%,
-        #b8a8e8 86%,
-        #d8c8ff 100%
+        #46769c 0%,
+        #4f84ab 22%,
+        #5b8fb9 42%,
+        #5b8fb9 58%,
+        #68a0c7 80%,
+        #7eb0d4 100%
       );
     background-attachment: fixed;
   }
