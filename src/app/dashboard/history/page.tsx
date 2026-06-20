@@ -24,7 +24,7 @@ import {
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -47,11 +47,11 @@ import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
 
-const METRICS: { label: string; value: MetricType; icon: any }[] = [
-    { label: 'Venta Neta', value: 'net_sales', icon: TrendingUp },
-    { label: 'Ventas', value: 'tpv_sales', icon: TrendingUp },
-    { label: 'Tickets', value: 'tickets_count', icon: Calendar },
-    { label: 'Efectivo', value: 'cash_counted', icon: Banknote },
+const METRICS: { label: string; cellLabel: string; value: MetricType; icon: any }[] = [
+    { label: 'Venta Neta', cellLabel: 'V NETA', value: 'net_sales', icon: TrendingUp },
+    { label: 'Ventas', cellLabel: 'Ventas', value: 'tpv_sales', icon: TrendingUp },
+    { label: 'Tickets', cellLabel: 'Tickets', value: 'tickets_count', icon: Calendar },
+    { label: 'Efectivo', cellLabel: 'Efectivo', value: 'cash_counted', icon: Banknote },
 ];
 
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
@@ -833,12 +833,40 @@ export default function HistoryPage() {
             <div className="max-w-5xl mx-auto print:max-w-none">
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
-                        <div className="relative flex items-center justify-between gap-1 min-w-0">
-                            <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0">
+                        <div className="relative flex items-center justify-between gap-1 min-w-0 min-h-[40px] md:min-h-[44px]">
+                            <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0 z-10">
                                 <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
                             </div>
 
-                            <div className="flex items-center gap-1 shrink-0 text-white ml-auto">
+                            {viewMode === 'calendar' ? (
+                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 sm:gap-1 max-w-[min(100%,14rem)] sm:max-w-none px-1">
+                                    <button
+                                        type="button"
+                                        onClick={handlePrevMonth}
+                                        className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                        aria-label="Mes anterior"
+                                    >
+                                        <ChevronLeft size={18} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTimeFilterOpen(true)}
+                                        className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-1 truncate hover:text-white/80 transition-colors"
+                                    >
+                                        {monthNavLabel}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNextMonth}
+                                        className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                        aria-label="Mes siguiente"
+                                    >
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            ) : null}
+
+                            <div className="flex items-center gap-1 shrink-0 text-white ml-auto z-10">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     showLabel={false}
@@ -946,36 +974,6 @@ export default function HistoryPage() {
                             )}
                         </div>
 
-                        {viewMode === 'calendar' ? (
-                            <div className="flex justify-center w-full px-2 sm:px-3 py-3 bg-zinc-50/50 border-b border-zinc-100 print:hidden">
-                                <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                                    <button
-                                        type="button"
-                                        onClick={handlePrevMonth}
-                                        className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
-                                        aria-label="Mes anterior"
-                                    >
-                                        <ChevronLeft size={22} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsTimeFilterOpen(true)}
-                                        className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:text-[#36606F]/80 transition-colors"
-                                    >
-                                        {monthNavLabel}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleNextMonth}
-                                        className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
-                                        aria-label="Mes siguiente"
-                                    >
-                                        <ChevronRight size={22} />
-                                    </button>
-                                </div>
-                            </div>
-                        ) : null}
-
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             {viewMode === 'table' ? (
                                 <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-4">
@@ -1064,20 +1062,20 @@ export default function HistoryPage() {
                                 </div>
                             ) : (
                                 <div className="min-w-0">
-                                    <div className="bg-[#36606F] rounded-t-xl md:rounded-t-2xl p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                                        <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
+                                    <div className="bg-[#36606F] rounded-t-xl md:rounded-t-2xl px-2 py-1 md:px-2.5 md:py-1.5 flex items-center overflow-x-auto no-scrollbar">
+                                        <div className="flex gap-1.5 md:gap-2 w-full max-w-xl mx-auto justify-between">
                                             {METRICS.map(m => (
                                                 <button
                                                     key={m.value}
                                                     onClick={() => setSelectedMetric(m.value)}
                                                     className={cn(
-                                                        "flex-1 h-8 md:h-10 md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 whitespace-nowrap",
+                                                        "flex-1 min-h-0 h-7 md:h-8 md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 px-1.5 whitespace-nowrap leading-none",
                                                         selectedMetric === m.value
                                                             ? "text-white md:bg-white md:text-[#36606F] md:shadow-lg"
                                                             : "text-white/40 md:text-white/60 hover:text-white hover:bg-white/5"
                                                     )}
                                                 >
-                                                    <m.icon size={12} className={cn("hidden sm:block", selectedMetric === m.value ? "md:text-[#36606F] text-white" : "text-white/40")} />
+                                                    <m.icon size={10} className={cn("hidden sm:block shrink-0", selectedMetric === m.value ? "md:text-[#36606F] text-white" : "text-white/40")} />
                                                     {m.label}
                                                 </button>
                                             ))}
@@ -1112,6 +1110,8 @@ export default function HistoryPage() {
                                                             const closing = closingsByDate.get(key);
                                                             const isViewMonthDay = isSameMonth(day, viewMonth);
                                                             const today = isToday(day);
+                                                            const isPastDay = isViewMonthDay && isBefore(day, startOfDay(new Date()));
+                                                            const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
                                                             if (!closing) {
                                                                 return (
@@ -1119,8 +1119,10 @@ export default function HistoryPage() {
                                                                         key={key}
                                                                         className={cn(
                                                                             'relative flex flex-col min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] p-1 sm:p-1.5',
-                                                                            'border-r border-gray-100 last:border-r-0 bg-white',
-                                                                            !isViewMonthDay && 'opacity-25'
+                                                                            'border-r border-gray-100 last:border-r-0',
+                                                                            pastDayBg,
+                                                                            !isViewMonthDay && 'opacity-25',
+                                                                            today && isViewMonthDay && !isPastDay && 'bg-blue-50/10'
                                                                         )}
                                                                     >
                                                                         <span
@@ -1146,9 +1148,10 @@ export default function HistoryPage() {
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
                                                                         'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] transition-colors p-1 sm:p-1.5',
-                                                                        'border-r border-gray-100 last:border-r-0 bg-white hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                                                                        'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                                                                        pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
-                                                                        today && isViewMonthDay && 'bg-blue-50/10'
+                                                                        today && isViewMonthDay && !isPastDay && 'bg-blue-50/10'
                                                                     )}
                                                                 >
                                                                     <span
@@ -1167,8 +1170,8 @@ export default function HistoryPage() {
                                                                                 <span className="text-[7px] md:text-[10px] ml-0.5 font-black">€</span>
                                                                             ) : null}
                                                                         </div>
-                                                                        <div className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight mt-0.5 text-center md:text-left truncate">
-                                                                            {METRICS.find((m) => m.value === selectedMetric)?.label}
+                                                                        <div className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-tight mt-0.5 text-center md:text-left truncate leading-none">
+                                                                            {METRICS.find((m) => m.value === selectedMetric)?.cellLabel}
                                                                         </div>
                                                                         <div
                                                                             className={cn(
