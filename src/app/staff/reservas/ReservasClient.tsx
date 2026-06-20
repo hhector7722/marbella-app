@@ -964,7 +964,7 @@ export default function ReservasClient() {
                 <div className="text-xs font-medium">{rpcError}</div>
               </div>
             ) : (
-              <div className="w-full min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
+              <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
                 <div className="grid grid-cols-7 border-b border-gray-100">
                   {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                     <div
