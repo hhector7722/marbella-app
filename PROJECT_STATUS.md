@@ -1,8 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-20 (Motion iOS — navegación y modales)
+**Última actualización:** 2026-06-20 (Revert Motion iOS — navegación staff)
 
-- [x] **Motion iOS: transiciones de página, modales y swipe-back (2026-06-20)**: Sistema centralizado en [`globals.css`](src/app/globals.css), [`AppPageTransition`](src/components/navigation/AppPageTransition.tsx), [`SwipeBackGesture`](src/components/navigation/SwipeBackGesture.tsx), [`template.tsx`](src/app/template.tsx) y [`Modal`](src/components/ui/modal.tsx) con enter/exit. Curvas `cubic-bezier` estilo UIView; push/pop por profundidad de ruta o `popstate`; gesto desde borde izquierdo; utilidades `animate-in` activas en modales legacy.
+- [x] **Revert Motion iOS en navegación staff (2026-06-20)**: Eliminado `template.tsx` + `AppPageTransition` + `SwipeBackGesture` + hooks/tokens motion. El wrapper con `transform` desanclaba `StaffBottomNav` (`position: fixed`) y alteraba carga/transiciones en `/staff/dashboard`. Restaurados [`MainWrapper`](src/components/MainWrapper.tsx), [`Modal`](src/components/ui/modal.tsx) y [`globals.css`](src/app/globals.css) al comportamiento previo.
+
+**Última actualización anterior:** 2026-06-20 (Uso app/web — icono cruzado)
+
+- [x] **Uso app/web: icono cruzado y sin enlace a master (2026-06-20)**: [`WebAnalyticsDashboard`](src/components/web-analytics/WebAnalyticsDashboard.tsx), [`/dashboard/uso`](src/app/dashboard/uso/page.tsx), acceso master retirado de [`MasterShortcutGrid`](src/components/dashboards/MasterShortcutGrid.tsx).
 
 **Última actualización anterior:** 2026-06-15 (Reservas + encargos — calendario unificado staff)
 

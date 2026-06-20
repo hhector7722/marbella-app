@@ -5,9 +5,7 @@ import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, X } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { usePresenceMotion } from '@/hooks/usePresenceMotion';
 import { trackUsageModalDwell, trackUsageModalOpen } from '@/lib/usage/client';
-import { MODAL_TRANSITION_MS } from '@/lib/motion/constants';
 import { cn } from '@/lib/utils';
 
 type ModalHeaderVariant = 'white' | 'petroleum';
@@ -253,10 +251,6 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const openedAtRef = useRef<number | null>(null);
   const trackedLabelRef = useRef<string | null>(null);
-  const { mounted, isEntering, isExiting } = usePresenceMotion({
-    open,
-    durationMs: MODAL_TRANSITION_MS,
-  });
 
   const resolvedUsageLabel =
     usageLabel ??
@@ -312,7 +306,7 @@ export function Modal({
   }, [disableUsageTracking, open, pathname, resolvedUsageId, resolvedUsageLabel]);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!open) return;
 
     const unlockScroll = lockPageScroll();
 
@@ -329,16 +323,14 @@ export function Modal({
       unlockScroll();
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [mounted, onClose]);
+  }, [open, onClose]);
 
-  if (!mounted) return null;
+  if (!open) return null;
 
   return createPortal(
     <div
       className={cn(
-        'fixed inset-0 flex items-center justify-center p-4',
-        isEntering && 'marbella-modal-overlay-enter',
-        isExiting && 'marbella-modal-overlay-exit',
+        'fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-200',
         stackElevated ? 'z-[110]' : zIndexClass ?? 'z-[100]',
         containerClassName
       )}
@@ -371,12 +363,7 @@ export function Modal({
                 : undefined
           }
           tabIndex={-1}
-          className={cn(
-            'pointer-events-auto w-full outline-none',
-            isEntering && 'marbella-modal-panel-enter',
-            isExiting && 'marbella-modal-panel-exit',
-            panelHostClassName
-          )}
+          className={cn('pointer-events-auto w-full outline-none', panelHostClassName)}
         >
           <ModalPanelShell
             title={title}
