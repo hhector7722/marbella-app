@@ -228,20 +228,25 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             </div>
 
-            {/* ZONA INFERIOR OSCURA (Rígida e inamovible) */}
+            {/* ZONA INFERIOR OSCURA (Rígida e inamovible) — +/- estilo modal partidos (trincadores) */}
             <div className={cn(
                 "bg-[#36606F] flex flex-row items-center justify-between shrink-0 w-full",
-                isModal ? "px-6 py-4" : "p-1.5"
+                isModal ? "px-6 py-4 gap-3" : "p-1.5 gap-1.5"
             )}>
                 <button
+                    type="button"
                     onClick={handleDecrement}
                     disabled={quantity === 0}
+                    aria-label="Menos cantidad"
                     className={cn(
-                        "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
+                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgba(178,68,68,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
+                        isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
-                    <Minus size={isModal ? 24 : 14} strokeWidth={3} />
+                    <Minus
+                        className={cn(isModal ? "h-3 w-3 stroke-[2.75]" : "h-2 w-2 stroke-[2.75]")}
+                        aria-hidden="true"
+                    />
                 </button>
 
                 <input
@@ -265,13 +270,18 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 />
 
                 <button
+                    type="button"
                     onClick={handleIncrement}
+                    aria-label="Más cantidad"
                     className={cn(
-                        "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
+                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgba(62,138,82,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
+                        isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
-                    <Plus size={isModal ? 24 : 14} strokeWidth={3} />
+                    <Plus
+                        className={cn(isModal ? "h-3 w-3 stroke-[2.75]" : "h-2 w-2 stroke-[2.75]")}
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
 
