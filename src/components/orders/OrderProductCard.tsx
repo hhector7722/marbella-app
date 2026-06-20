@@ -230,16 +230,20 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
             {/* ZONA INFERIOR OSCURA (Rígida e inamovible) — +/- estilo modal partidos (trincadores) */}
             <div className={cn(
-                "bg-[#36606F] flex flex-row items-center justify-between shrink-0 w-full",
-                isModal ? "px-6 py-4 gap-3" : "p-1.5 gap-1.5"
+                "bg-[#36606F] flex flex-row items-center justify-center shrink-0 w-full",
+                isModal ? "px-6 py-4" : "p-1.5"
             )}>
+                <div className={cn(
+                    "flex items-center",
+                    isModal ? "gap-1 sm:gap-1.5" : "gap-0.5"
+                )}>
                 <button
                     type="button"
                     onClick={handleDecrement}
                     disabled={quantity === 0}
                     aria-label="Menos cantidad"
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgba(178,68,68,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
+                        "flex shrink-0 items-center justify-center rounded-[5px] border border-zinc-200/50 bg-[rgba(178,68,68,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
                         isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
@@ -274,7 +278,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     onClick={handleIncrement}
                     aria-label="Más cantidad"
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgba(62,138,82,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
+                        "flex shrink-0 items-center justify-center rounded-[5px] border border-zinc-200/50 bg-[rgba(62,138,82,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
                         isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
@@ -283,6 +287,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         aria-hidden="true"
                     />
                 </button>
+                </div>
             </div>
 
             {quantity > 0 && (
