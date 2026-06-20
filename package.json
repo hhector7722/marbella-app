@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "check:copilot-voice-schemas": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-copilot-voice-schemas.mjs",
-    "check:navigation-helpers": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-navigation-helpers.mjs",
     "sync:llm-prompt": "node scripts/sync-llm-prompt-from-project-status.mjs",
     "sync:llm-prompt:check": "node scripts/sync-llm-prompt-from-project-status.mjs --check",
     "setup:githooks": "node scripts/setup-githooks.mjs"

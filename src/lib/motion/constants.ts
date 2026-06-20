@@ -1,19 +1,12 @@
-export {
-  IOS_EASE,
-  IOS_EASE_OUT,
-  IOS_EASE_FADE_OUT,
-  PAGE_PUSH_MS,
-  PAGE_POP_MS,
-  PAGE_TRANSITION_MS,
-  MODAL_ENTER_MS,
-  MODAL_EXIT_MS,
-  MODAL_TRANSITION_MS,
-  TAB_SWIPE_COMMIT_RATIO,
-  SWIPE_BACK_EDGE_PX,
-  SWIPE_BACK_COMMIT_RATIO,
-  iosTransition,
-  syncMotionCssVars,
-} from '@/lib/motion/tokens';
+/** Curva estándar de animaciones iOS (UIView). */
+export const IOS_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+/** Salida rápida tipo spring iOS. */
+export const IOS_EASE_OUT = 'cubic-bezier(0, 0, 0.2, 1)';
+
+export const PAGE_TRANSITION_MS = 360;
+export const MODAL_TRANSITION_MS = 320;
+export const MODAL_BACKDROP_MS = 280;
 
 export type NavigationDirection = 'forward' | 'back' | 'fade';
 

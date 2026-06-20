@@ -1,8 +1,6 @@
 import type { NavigationDirection } from '@/lib/motion/constants';
-import { isStaffTabToTabNavigation } from '@/lib/navigation/main-tab-roots';
 
 let pendingDirection: NavigationDirection = 'fade';
-let skipNextPageMotion = false;
 
 export function markNavigationBack(): void {
   pendingDirection = 'back';
@@ -10,23 +8,6 @@ export function markNavigationBack(): void {
 
 export function markNavigationForward(): void {
   pendingDirection = 'forward';
-}
-
-/** Tab swipe horizontal: AppPageTransition no debe duplicar animación. */
-export function markTabSwipeTransition(): void {
-  skipNextPageMotion = true;
-}
-
-export function consumeSkipPageMotion(
-  prevPath: string,
-  nextPath: string
-): boolean {
-  if (skipNextPageMotion) {
-    skipNextPageMotion = false;
-    return true;
-  }
-
-  return isStaffTabToTabNavigation(prevPath, nextPath);
 }
 
 export function consumeNavigationDirection(
