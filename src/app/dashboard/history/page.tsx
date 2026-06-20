@@ -49,55 +49,71 @@ type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | '
 
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 
-const CLOSING_CELL_ROWS = [
-    { field: 'net_sales' as const, dotClass: 'bg-emerald-500' },
-    { field: 'tpv_sales' as const, dotClass: 'bg-blue-500' },
-    { field: 'cash_counted' as const, dotClass: 'bg-amber-400' },
-    { field: 'sales_card' as const, dotClass: 'bg-red-500' },
-];
-
-const CLOSING_CALENDAR_LEGEND = [
-    { label: 'Venta neta', dotClass: 'bg-emerald-500' },
-    { label: 'Ventas', dotClass: 'bg-blue-500' },
-    { label: 'Efectivo', dotClass: 'bg-amber-400' },
-    { label: 'Tarjeta', dotClass: 'bg-red-500' },
+const CLOSING_CELL_SECTIONS = [
+    { field: 'net_sales' as const, label: 'VENTA NETA' },
+    { field: 'tpv_sales' as const, label: 'VENTAS' },
+    { field: 'cash_counted' as const, label: 'EFECTIVO' },
+    { field: 'sales_card' as const, label: 'TARJETA' },
 ] as const;
 
-function ClosingCalendarMetricRow({ dotClass, amount }: { dotClass: string; amount: number | null | undefined }) {
+function ClosingCalendarAmount({ amount }: { amount: number | null | undefined }) {
     const rounded = Math.round(Number(amount ?? 0));
     if (!rounded) {
-        return (
-            <div className="relative flex flex-1 items-center w-full min-h-0 pl-[2px]">
-                <span className={cn('absolute left-[2px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full', dotClass)} aria-hidden />
-                <span className="pl-[9px] text-zinc-900 tabular-nums leading-none text-[8px] sm:text-[9px] md:text-[10px]">{'\u00a0'}</span>
-            </div>
-        );
+        return <span className="text-zinc-900 tabular-nums leading-none text-[8px] sm:text-[9px] md:text-[10px]">{'\u00a0'}</span>;
     }
 
     return (
-        <div className="relative flex flex-1 items-center w-full min-h-0 pl-[2px]">
-            <span className={cn('absolute left-[2px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full', dotClass)} aria-hidden />
-            <span className="pl-[9px] min-w-0 whitespace-nowrap overflow-visible font-normal text-zinc-900 tabular-nums leading-none text-[8px] sm:text-[9px] md:text-[10px]">
-                {rounded}€
-            </span>
+        <span className="inline-flex items-baseline text-zinc-900 tabular-nums leading-none font-normal">
+            <span className="text-[8px] sm:text-[9px] md:text-[10px]">{rounded}</span>
+            <span className="text-[5px] sm:text-[6px] md:text-[7px]">€</span>
+        </span>
+    );
+}
+
+function ClosingCalendarCellDivider() {
+    return (
+        <div className="flex w-full justify-center py-0.5 shrink-0" aria-hidden>
+            <div className="w-[70%] border-t border-zinc-200" />
         </div>
     );
 }
 
-function ClosingCalendarLegend() {
+function ClosingCalendarCellContent({ closing }: { closing: Record<(typeof CLOSING_CELL_SECTIONS)[number]['field'], number | null | undefined> }) {
     return (
-        <div
-            className="grid grid-cols-4 gap-1 px-2 sm:px-3 py-2 bg-white print:hidden"
-            aria-label="Leyenda del calendario de cierres"
-        >
-            {CLOSING_CALENDAR_LEGEND.map((item) => (
-                <div key={item.label} className="flex items-center justify-center gap-1 min-w-0">
-                    <span className="text-[7px] sm:text-[8px] md:text-[9px] font-semibold text-zinc-600 whitespace-nowrap overflow-visible">
-                        {item.label}
+        <div className="flex w-full flex-col items-center min-h-0">
+            {CLOSING_CELL_SECTIONS.map((section, index) => (
+                <div key={section.field} className="flex w-full flex-col items-center shrink-0">
+                    {index > 0 ? <ClosingCalendarCellDivider /> : null}
+                    <ClosingCalendarAmount amount={closing[section.field]} />
+                    <span className="mt-0.5 text-[5px] sm:text-[6px] md:text-[7px] font-black uppercase tracking-wide text-zinc-400 leading-none">
+                        {section.label}
                     </span>
-                    <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', item.dotClass)} aria-hidden />
                 </div>
             ))}
+        </div>
+    );
+}
+
+function ClosingCalendarDayLabel({
+    day,
+    today,
+    isViewMonthDay,
+}: {
+    day: Date;
+    today: boolean;
+    isViewMonthDay: boolean;
+}) {
+    return (
+        <div className="flex h-[11px] shrink-0 items-center justify-end leading-none">
+            <span
+                className={cn(
+                    'text-[8px] font-bold',
+                    today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                    !isViewMonthDay && 'opacity-50'
+                )}
+            >
+                {format(day, 'd')}
+            </span>
         </div>
     );
 }
@@ -1004,18 +1020,27 @@ export default function HistoryPage() {
                     </div>
 
                     <div className="bg-white">
-                        <div className="pt-2 md:pt-3 pb-0.5 px-3 grid grid-cols-3 print:hidden">
+                        <div className="pt-1.5 md:pt-2 pb-0.5 px-2 grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
+                                <span className="text-sm md:text-lg font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
+                                <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 font-bold">VENTAS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
-                                <span className="text-lg md:text-2xl font-black text-emerald-600 tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTA NETA</span>
+                                <span className="text-sm md:text-lg font-black text-emerald-600 tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
+                                <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 font-bold">VENTA NETA</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                                <span className="text-lg md:text-2xl font-black text-[#36606F] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">TICKET MEDIO</span>
+                                <span className="text-sm md:text-lg font-black text-[#36606F] tabular-nums leading-none">
+                                    {summary.avgTicket === 0 ? (
+                                        ' '
+                                    ) : (
+                                        <>
+                                            {Math.round(summary.avgTicket * 10) / 10}
+                                            <span className="text-[8px] md:text-[9px] not-italic">€</span>
+                                        </>
+                                    )}
+                                </span>
+                                <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 font-bold not-italic">TICKET MEDIO</span>
                             </div>
                         </div>
 
@@ -1144,22 +1169,14 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[80px] sm:min-h-[92px] md:min-h-[104px] lg:min-h-[116px] p-0.5 sm:p-1',
+                                                                            'relative flex flex-col min-h-[108px] sm:min-h-[124px] md:min-h-[140px] lg:min-h-[156px] p-0.5 sm:p-1',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
                                                                             today && isViewMonthDay && !isPastDay && 'bg-blue-50/10'
                                                                         )}
                                                                     >
-                                                                        <span
-                                                                            className={cn(
-                                                                                'absolute top-1 right-1 text-[9px] font-bold',
-                                                                                today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
-                                                                                !isViewMonthDay && 'opacity-50'
-                                                                            )}
-                                                                        >
-                                                                            {format(day, 'd')}
-                                                                        </span>
+                                                                        <ClosingCalendarDayLabel day={day} today={today} isViewMonthDay={isViewMonthDay} />
                                                                     </div>
                                                                 );
                                                             }
@@ -1170,30 +1187,16 @@ export default function HistoryPage() {
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[80px] sm:min-h-[92px] md:min-h-[104px] lg:min-h-[116px] transition-colors p-0.5 sm:p-1',
+                                                                        'group relative flex flex-col text-left min-h-[108px] sm:min-h-[124px] md:min-h-[140px] lg:min-h-[156px] transition-colors p-0.5 sm:p-1',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
                                                                         today && isViewMonthDay && !isPastDay && 'bg-blue-50/10'
                                                                     )}
                                                                 >
-                                                                    <span
-                                                                        className={cn(
-                                                                            'absolute top-1 right-1 text-[9px] font-bold',
-                                                                            today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
-                                                                            !isViewMonthDay && 'opacity-50'
-                                                                        )}
-                                                                    >
-                                                                        {format(day, 'd')}
-                                                                    </span>
-                                                                    <div className="flex flex-1 flex-col justify-between w-[calc(100%+0.25rem)] sm:w-[calc(100%+0.375rem)] h-full mt-4 -ml-1 sm:-ml-1.5 pb-0.5 pl-[3px] pr-0.5 gap-0.5 sm:gap-1 min-h-0 overflow-visible">
-                                                                        {CLOSING_CELL_ROWS.map((row) => (
-                                                                            <ClosingCalendarMetricRow
-                                                                                key={row.field}
-                                                                                dotClass={row.dotClass}
-                                                                                amount={closing[row.field]}
-                                                                            />
-                                                                        ))}
+                                                                    <ClosingCalendarDayLabel day={day} today={today} isViewMonthDay={isViewMonthDay} />
+                                                                    <div className="mt-0.5 flex min-h-0 flex-1 flex-col items-center px-0.5 pb-0.5">
+                                                                        <ClosingCalendarCellContent closing={closing} />
                                                                     </div>
                                                                 </button>
                                                             );
@@ -1201,7 +1204,6 @@ export default function HistoryPage() {
                                                     </div>
                                                 ))}
                                             </div>
-                                                <ClosingCalendarLegend />
                                             </div>
                                         </>
                                     )}
