@@ -70,20 +70,16 @@ function ClosingCalendarAmount({ amount }: { amount: number | null | undefined }
     );
 }
 
-function ClosingCalendarCellDivider() {
-    return (
-        <div className="flex w-full justify-center py-0.5 shrink-0" aria-hidden>
-            <div className="w-[70%] border-t border-zinc-200" />
-        </div>
-    );
-}
-
 function ClosingCalendarCellContent({ closing }: { closing: Record<(typeof CLOSING_CELL_SECTIONS)[number]['field'], number | null | undefined> }) {
     return (
-        <div className="flex w-full flex-col items-center min-h-0">
+        <div className="grid h-full min-h-0 w-full flex-1 grid-rows-4">
             {CLOSING_CELL_SECTIONS.map((section, index) => (
-                <div key={section.field} className="flex w-full flex-col items-center shrink-0">
-                    {index > 0 ? <ClosingCalendarCellDivider /> : null}
+                <div key={section.field} className="relative flex min-h-0 flex-col items-center justify-center">
+                    {index > 0 ? (
+                        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center" aria-hidden>
+                            <div className="w-[70%] border-t border-zinc-200" />
+                        </div>
+                    ) : null}
                     <ClosingCalendarAmount amount={closing[section.field]} />
                     <span className="mt-0.5 text-[5px] sm:text-[6px] md:text-[7px] font-black uppercase tracking-wide text-zinc-400 leading-none">
                         {section.label}
@@ -1044,21 +1040,21 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        <div className={cn('pb-1 md:pb-2 pt-0.5', viewMode === 'table' ? 'px-1.5 md:px-2' : 'px-0')}>
+                        <div className="pb-1 md:pb-2 pt-0.5 px-0">
                             {viewMode === 'table' ? (
-                                <div className="p-2 md:p-3 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-4">
-                                    <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">Cierres — Historial</div>
-                                    {loading ? (
-                                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                            <LoadingSpinner size="lg" className="text-[#36606F]" />
-                                        </div>
-                                    ) : closings.length === 0 ? (
-                                        <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                            <Calendar size={32} />
-                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                        </div>
-                                    ) : (
-                                        <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-cierres">
+                                <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 shrink-0 min-w-0">
+                                    <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print-table-cierres">
+                                        <div className="hidden print:block text-lg font-black text-zinc-800 p-4 pb-2">Cierres — Historial</div>
+                                        {loading ? (
+                                            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                                <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                            </div>
+                                        ) : closings.length === 0 ? (
+                                            <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                                <Calendar size={32} />
+                                                <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                            </div>
+                                        ) : (
                                             <table className="w-full text-left border-collapse table-fixed md:table-auto">
                                                 <thead className="bg-[#36606F] text-white text-[7px] md:text-[8.5px] font-black uppercase tracking-wide md:tracking-tight border-b border-[#36606F]">
                                                     <tr>
@@ -1127,8 +1123,8 @@ export default function HistoryPage() {
                                                         })}
                                                 </tbody>
                                             </table>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="min-w-0">
