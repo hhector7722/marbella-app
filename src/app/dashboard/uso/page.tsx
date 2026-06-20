@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { BarChart3, Smartphone } from 'lucide-react';
+import { BarChart3, Globe, Smartphone } from 'lucide-react';
 import { UsageDashboard } from '@/components/usage/UsageDashboard';
 import { canAccessUsageAnalytics } from '@/lib/usage/access';
 import { getUsageDashboardData, parseUsageDashboardFilters } from '@/lib/usage/queries';
@@ -47,13 +47,22 @@ export default async function UsoPage({ searchParams }: UsoPageProps) {
         <h1 className="min-w-0 flex-1 text-lg font-black uppercase tracking-wide text-zinc-800">
           Uso de la app
         </h1>
-        <Link
-          href="/dashboard/instalacion-app"
-          aria-label="Instalación de la app"
-          className="flex size-12 shrink-0 items-center justify-center text-[#36606F]"
-        >
-          <Smartphone className="size-6" strokeWidth={1.5} aria-hidden />
-        </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/dashboard/web"
+            aria-label="Uso web"
+            className="flex size-12 shrink-0 items-center justify-center text-[#36606F]"
+          >
+            <Globe className="size-6" strokeWidth={1.5} aria-hidden />
+          </Link>
+          <Link
+            href="/dashboard/instalacion-app"
+            aria-label="Instalación de la app"
+            className="flex size-12 shrink-0 items-center justify-center text-[#36606F]"
+          >
+            <Smartphone className="size-6" strokeWidth={1.5} aria-hidden />
+          </Link>
+        </div>
       </div>
       <UsageDashboard data={data} />
     </div>

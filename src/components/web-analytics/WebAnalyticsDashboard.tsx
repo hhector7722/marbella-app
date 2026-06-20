@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { WebAnalyticsBreakdown } from '@/components/web-analytics/WebAnalyticsBreakdown';
 import { WebAnalyticsFilters } from '@/components/web-analytics/WebAnalyticsFilters';
@@ -32,10 +31,6 @@ export function WebAnalyticsDashboard({ data }: { data: WebAnalyticsDashboardDat
         initialHasMore={data.recentHasMore}
         filters={data.filters}
       />
-
-      <Link href="/master/dashboard" className="inline-block text-xs font-medium text-[#36606F]">
-        Volver al hub master
-      </Link>
     </div>
   );
 }
