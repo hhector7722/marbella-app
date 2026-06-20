@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart3, Check, Globe } from 'lucide-react';
+import { BarChart3, Check } from 'lucide-react';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardIosIcon from '@/components/dashboards/DashboardIosIcon';
 import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
@@ -116,17 +116,6 @@ export default function MasterShortcutGrid({
         { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
         { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
         { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/link.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
-        {
-            key: 'web-analytics',
-            node: (
-                <DashboardIosIcon
-                    label="Uso web"
-                    icon={Globe}
-                    iconClassName="text-[#36606F]"
-                    onClick={() => router.push('/dashboard/web')}
-                />
-            ),
-        },
         {
             key: 'reservas',
             node: (
