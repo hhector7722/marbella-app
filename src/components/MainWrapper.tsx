@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { SwipeBackGesture } from '@/components/navigation/SwipeBackGesture';
 import {
     isAppShellScrollPage,
     isFullscreenCartaPath,
@@ -17,14 +18,17 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
     const appShellScroll = isAppShellScrollPage(pathname);
 
     return (
-        <main className={cn(
-            'min-h-screen transition-all duration-300',
-            !isLogin && !fullscreenCarta && 'pt-header-safe',
-            !isLogin && !fullscreenCarta && !appShellScroll && 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
-        )}>
-            <PullToRefresh enabled={!isLogin && !internalScrollShell}>
-                {children}
-            </PullToRefresh>
-        </main>
+        <>
+            <SwipeBackGesture />
+            <main className={cn(
+                'min-h-screen',
+                !isLogin && !fullscreenCarta && 'pt-header-safe',
+                !isLogin && !fullscreenCarta && !appShellScroll && 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
+            )}>
+                <PullToRefresh enabled={!isLogin && !internalScrollShell}>
+                    {children}
+                </PullToRefresh>
+            </main>
+        </>
     );
 }

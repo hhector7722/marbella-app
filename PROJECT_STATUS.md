@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-06-15 (Reservas + encargos — calendario unificado staff)
+**Última actualización:** 2026-06-20 (Motion iOS — navegación y modales)
+
+- [x] **Motion iOS: transiciones de página, modales y swipe-back (2026-06-20)**: Sistema centralizado en [`globals.css`](src/app/globals.css), [`AppPageTransition`](src/components/navigation/AppPageTransition.tsx), [`SwipeBackGesture`](src/components/navigation/SwipeBackGesture.tsx), [`template.tsx`](src/app/template.tsx) y [`Modal`](src/components/ui/modal.tsx) con enter/exit. Curvas `cubic-bezier` estilo UIView; push/pop por profundidad de ruta o `popstate`; gesto desde borde izquierdo; utilidades `animate-in` activas en modales legacy.
+
+**Última actualización anterior:** 2026-06-15 (Reservas + encargos — calendario unificado staff)
 
 - [x] **Reservas y encargos: calendario unificado `/staff/reservas` (2026-06-15)**: Migración [`20260615120000_events_reservation_link_staff_orders.sql`](supabase/migrations/20260615120000_events_reservation_link_staff_orders.sql) — `events.reservation_id`, RLS staff+ en `events`/`event_orders`, RPC `create_staff_event_order`. Server actions [`createEncargoAction`](src/app/dashboard/eventos/actions.ts), [`createStaffEventOrderAction`](src/app/dashboard/eventos/actions.ts), config encargo abierta a staff+. UI: [`ReservasClient.tsx`](src/app/staff/reservas/ReservasClient.tsx) — calendario con reservas sueltas + encargos huérfanos; modal día completo; «+ PEDIDO»; editor staff [`/staff/reservas/encargo/[eventId]`](src/app/staff/reservas/encargo/[eventId]/page.tsx) reutilizando [`EventEncargoCartaClient`](src/app/eventos/[slug]/EventEncargoCartaClient.tsx). Staff/supervisor redirigen desde [`/dashboard/eventos`](src/app/dashboard/eventos/page.tsx). **Aplicada en Supabase** (`events_reservation_link_staff_orders`, 2026-06-15).
 
