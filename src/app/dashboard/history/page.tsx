@@ -638,7 +638,7 @@ export default function HistoryPage() {
         return get8DayExpectedSalesDetails(targetDate).expectedSales;
     };
 
-    const { popPercent, popAbsolute, periodRendimiento, prevNetSum } = useMemo(() => {
+    const { popPercent, popAbsolute, periodRendimiento, prevNetSum, expectedSum, actualWithExpectedSum } = useMemo(() => {
         let startISO: string;
         let endISO: string;
 
@@ -647,7 +647,7 @@ export default function HistoryPage() {
             endISO = selectedDate;
         } else {
             if (!rangeStart || !rangeEnd) {
-                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0, prevNetSum: 0 };
+                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0, prevNetSum: 0, expectedSum: 0, actualWithExpectedSum: 0 };
             }
             startISO = rangeStart;
             endISO = rangeEnd;
@@ -688,7 +688,7 @@ export default function HistoryPage() {
             ? ((actualWithExpectedSum - expectedSum) / expectedSum) * 100 
             : 0;
             
-        return { popPercent, popAbsolute, periodRendimiento, prevNetSum };
+        return { popPercent, popAbsolute, periodRendimiento, prevNetSum, expectedSum, actualWithExpectedSum };
     }, [filterMode, rangeStart, rangeEnd, selectedDate, closings, historicalClosingsMap]);
 
     const closingsByDate = useMemo(() => {
@@ -2140,70 +2140,75 @@ export default function HistoryPage() {
                                 </h2>
                             </div>
                         </div>
-
+ 
                         <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-zinc-900">
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-6 place-items-center">
-                                    <div className="flex flex-col items-center justify-center text-center">
-                                        <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                            {formatValue(summary.totalNet, 'net_sales')}
-                                        </span>
-                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                            Periodo Actual
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center text-center">
-                                        <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                            {formatValue(prevNetSum, 'net_sales')}
-                                        </span>
-                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                            Periodo Anterior
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-zinc-100 grid grid-cols-2 gap-6 place-items-center">
-                                    <div className="flex flex-col items-center justify-center text-center">
-                                        <span className={cn(
-                                            "text-sm md:text-base font-black leading-none",
-                                            popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
-                                        )}>
-                                            {popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute).toLocaleString('es-ES')}€
-                                        </span>
-                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                            Diferencia Neta
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center text-center">
-                                        <div className="flex items-center gap-1 leading-none">
-                                            {periodRendimiento !== 0 && (
-                                                <TrendTriangle 
-                                                    type={getRendimientoScale(periodRendimiento).icon} 
-                                                    className={getRendimientoScale(periodRendimiento).color}
-                                                />
-                                            )}
-                                            <span className={cn(
-                                                "text-sm md:text-base font-black tabular-nums",
-                                                getRendimientoScale(periodRendimiento).color
-                                            )}>
-                                                {periodRendimiento >= 0 ? '+' : ''}{Math.round(periodRendimiento)}%
-                                            </span>
+                            {(() => {
+                                const diffEur = actualWithExpectedSum - expectedSum;
+                                return (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-6 place-items-center">
+                                            <div className="flex flex-col items-center justify-center text-center">
+                                                <span className="text-sm md:text-base font-black text-gray-900 leading-none">
+                                                    {formatValue(actualWithExpectedSum, 'net_sales')}
+                                                </span>
+                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    Real Acumulado
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-center justify-center text-center">
+                                                <span className="text-sm md:text-base font-black text-gray-900 leading-none">
+                                                    {formatValue(expectedSum, 'net_sales')}
+                                                </span>
+                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    Esperado Acumulado
+                                                </span>
+                                            </div>
                                         </div>
-                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                            Rendimiento PoP
-                                        </span>
+ 
+                                        <div className="pt-4 border-t border-zinc-100 grid grid-cols-2 gap-6 place-items-center">
+                                            <div className="flex flex-col items-center justify-center text-center">
+                                                <span className={cn(
+                                                    "text-sm md:text-base font-black leading-none",
+                                                    diffEur >= 0 ? "text-emerald-600" : "text-rose-600"
+                                                )}>
+                                                    {diffEur >= 0 ? '+' : ''}{Math.round(diffEur).toLocaleString('es-ES')}€
+                                                </span>
+                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    Diferencia €
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-center justify-center text-center">
+                                                <div className="flex items-center gap-1 leading-none">
+                                                    {periodRendimiento !== 0 && (
+                                                        <TrendTriangle 
+                                                            type={getRendimientoScale(periodRendimiento).icon} 
+                                                            className={getRendimientoScale(periodRendimiento).color}
+                                                        />
+                                                    )}
+                                                    <span className={cn(
+                                                        "text-sm md:text-base font-black tabular-nums",
+                                                        getRendimientoScale(periodRendimiento).color
+                                                    )}>
+                                                        {periodRendimiento >= 0 ? '+' : ''}{Math.round(periodRendimiento)}%
+                                                    </span>
+                                                </div>
+                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    Diferencia %
+                                                </span>
+                                            </div>
+                                        </div>
+ 
+                                        <div className="pt-4 border-t border-zinc-100 flex flex-col gap-2 text-zinc-500 text-[10px] md:text-[11px] leading-relaxed font-semibold text-center md:text-left">
+                                            <p>
+                                                El rendimiento global compara la venta neta acumulada del periodo contra la venta neta esperada acumulada obtenida a partir de los últimos 8 días equivalentes de cada fecha.
+                                            </p>
+                                            <p className="text-zinc-400 text-[9px] md:text-[10px] italic">
+                                                * Los días con esperado = 0€ se excluyen completamente de los cálculos.
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-zinc-100 flex flex-col gap-2 text-zinc-500 text-[10px] md:text-[11px] leading-relaxed font-semibold text-center md:text-left">
-                                    <p>
-                                        El indicador de <strong>Rendimiento</strong> compara la Venta Neta acumulada del rango de fechas seleccionado contra la Venta Neta del mismo número de días transcurridos en el mes anterior.
-                                    </p>
-                                    <p className="text-zinc-400 text-[9px] md:text-[10px] italic">
-                                        * Excluye los días con 0€ de venta en los cálculos.
-                                    </p>
-                                </div>
-                            </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
