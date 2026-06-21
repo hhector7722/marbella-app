@@ -349,6 +349,27 @@ const CashBreakdownModal = ({
 
 // --- HELPERS & CHARTS ---
 
+/** Shows an animated skeleton while the browser downloads the photo, then reveals it. */
+function PhotoWithSpinner({ src, alt }: { src: string | null; alt: string }) {
+    const [loaded, setLoaded] = useState(false);
+    if (!src) return null;
+    return (
+        <div className="relative h-28 w-full flex items-center justify-center">
+            {!loaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 rounded-xl border border-zinc-100 animate-pulse">
+                    <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                </div>
+            )}
+            <img
+                src={src}
+                alt={alt}
+                className={`h-28 w-auto max-w-full rounded-xl object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setLoaded(true)}
+            />
+        </div>
+    );
+}
+
 const parseLocalSafe = (dateStr: string | null) => {
     if (!dateStr) return new Date();
     const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
@@ -385,7 +406,7 @@ function DailySalesChart({
 
     const width = 800;
     const height = 65;
-    const paddingX = 20;
+    const paddingX = 52;  // wider left margin so y-axis labels are visible
     const paddingY = 5;
 
     const allValues = dataPoints.flatMap((d) => [d.actual, d.comparison]);
@@ -573,43 +594,66 @@ export default function HistoryPage() {
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
 
     // --- Real-time swipe drag state ---
+    // We use refs for values accessed inside touch event handlers to avoid stale-closure bugs.
     const modalCardRef = useRef<HTMLDivElement>(null);
-    const [swipeDragX, setSwipeDragX] = useState(0);
-    const [swipePhase, setSwipePhase] = useState<'idle' | 'dragging' | 'animating'>('idle');
     const [swipeNextClosing, setSwipeNextClosing] = useState<any>(null);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left');
 
+    // Refs (always current, never stale inside handlers)
+    const swipeDragXRef = useRef(0);
+    const swipePhaseRef = useRef<'idle' | 'dragging' | 'animating'>('idle');
+    const swipeNextClosingRef = useRef<any>(null);
+    const swipeDirectionRef = useRef<'left' | 'right'>('left');
+
+    // React state used only for rendering (driven from refs on key moments)
+    const [swipeDragX, setSwipeDragX] = useState(0);
+    const [swipePhase, setSwipePhase] = useState<'idle' | 'dragging' | 'animating'>('idle');
+
+    // Helper: update both ref and state atomically
+    const setDragX = (v: number) => { swipeDragXRef.current = v; setSwipeDragX(v); };
+    const setPhase = (v: 'idle' | 'dragging' | 'animating') => { swipePhaseRef.current = v; setSwipePhase(v); };
+    const setNextClosing = (v: any) => { swipeNextClosingRef.current = v; setSwipeNextClosing(v); };
+    const setDir = (v: 'left' | 'right') => { swipeDirectionRef.current = v; setSwipeDirection(v); };
+
     const swipeTouchStartX = useRef<number | null>(null);
     const swipeTouchStartY = useRef<number | null>(null);
-    const swipeAxisLocked = useRef<boolean | null>(null); // true = horizontal
+    const swipeAxisLocked = useRef<boolean | null>(null);
+
+    // Animate current card out, swap selectedClosing, animate new card in
+    const commitNav = (next: any, dir: 'left' | 'right') => {
+        const cardW = modalCardRef.current?.offsetWidth ?? 400;
+        setDir(dir);
+        setNextClosing(next);
+        setPhase('animating');
+        setDragX(dir === 'left' ? -cardW : cardW);
+        setTimeout(() => {
+            setSelectedClosing(next);
+            setIsEditing(false);
+            setLightboxIndex(null);
+            // Place new card on the opposite side (no transition)
+            swipeDragXRef.current = dir === 'left' ? cardW : -cardW;
+            setSwipeDragX(dir === 'left' ? cardW : -cardW);
+            // Animate in on next paint
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setDragX(0);
+                    setTimeout(() => {
+                        setPhase('idle');
+                        setNextClosing(null);
+                    }, 210);
+                });
+            });
+        }, 190);
+    };
 
     const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
         if (!nextClosing) return;
-        const cardW = modalCardRef.current?.offsetWidth ?? 400;
-        setSwipeDirection(dir);
-        setSwipeNextClosing(nextClosing);
-        setSwipePhase('animating');
-        setSwipeDragX(dir === 'left' ? -cardW : cardW);
-        setTimeout(() => {
-            setSelectedClosing(nextClosing);
-            setIsEditing(false);
-            setLightboxIndex(null);
-            setSwipeDragX(dir === 'left' ? cardW : -cardW);
-            // Next tick: animate back to 0
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    setSwipeDragX(0);
-                    setTimeout(() => {
-                        setSwipePhase('idle');
-                        setSwipeNextClosing(null);
-                    }, 220);
-                });
-            });
-        }, 200);
+        commitNav(nextClosing, dir);
     };
 
     const handleTouchStart = (e: React.TouchEvent) => {
         if (isEditing) return;
+        if (swipePhaseRef.current !== 'idle') return; // ignore new touch during animation
         swipeTouchStartX.current = e.touches[0].clientX;
         swipeTouchStartY.current = e.touches[0].clientY;
         swipeAxisLocked.current = null;
@@ -620,7 +664,7 @@ export default function HistoryPage() {
         if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
         const dx = e.touches[0].clientX - swipeTouchStartX.current;
         const dy = e.touches[0].clientY - swipeTouchStartY.current;
-        // Decide axis lock on first 8px of movement
+        // Decide axis lock on first 8 px of movement
         if (swipeAxisLocked.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
             swipeAxisLocked.current = Math.abs(dx) > Math.abs(dy);
         }
@@ -628,15 +672,19 @@ export default function HistoryPage() {
         e.preventDefault();
         const currentIndex = closings.findIndex(c => c.id === selectedClosing?.id);
         const dir: 'left' | 'right' = dx < 0 ? 'left' : 'right';
+        // Adjacent closing is the one that will slide IN:
+        // swiping left (dx<0) → current card moves left → next card (older, lower index) appears from right
         const adjIdx = dir === 'left' ? currentIndex - 1 : currentIndex + 1;
         const adjClosing = adjIdx >= 0 && adjIdx < closings.length ? closings[adjIdx] : null;
         const cardW = modalCardRef.current?.offsetWidth ?? 400;
-        const maxDrag = adjClosing ? cardW : cardW * 0.15;
-        const clampedDx = Math.max(-maxDrag, Math.min(maxDrag, dx)) * (adjClosing ? 1 : 0.25);
-        setSwipeDirection(dir);
-        setSwipeNextClosing(adjClosing);
+        const clampedDx = adjClosing
+            ? Math.max(-cardW * 0.98, Math.min(cardW * 0.98, dx))
+            : dx * 0.15; // rubber-band if no adjacent
+        setDir(dir);
+        setNextClosing(adjClosing);
+        swipeDragXRef.current = clampedDx;
         setSwipeDragX(clampedDx);
-        setSwipePhase('dragging');
+        setPhase('dragging');
     };
 
     const handleTouchEnd = (e: React.TouchEvent) => {
@@ -645,42 +693,28 @@ export default function HistoryPage() {
         swipeTouchStartX.current = null;
         swipeTouchStartY.current = null;
         swipeAxisLocked.current = null;
-        if (!wasHorizontal || swipePhase !== 'dragging') {
-            setSwipePhase('idle');
-            setSwipeDragX(0);
-            setSwipeNextClosing(null);
+        // Read from refs — never stale
+        const currentDragX = swipeDragXRef.current;
+        const currentPhase = swipePhaseRef.current;
+        const currentNext = swipeNextClosingRef.current;
+        const currentDir = swipeDirectionRef.current;
+        if (!wasHorizontal || currentPhase !== 'dragging') {
+            setPhase('idle');
+            setDragX(0);
+            setNextClosing(null);
             return;
         }
         const cardW = modalCardRef.current?.offsetWidth ?? 400;
-        const THRESHOLD = cardW * 0.3;
-        if (Math.abs(swipeDragX) > THRESHOLD && swipeNextClosing) {
-            // Commit navigation
-            const dir = swipeDirection;
-            const next = swipeNextClosing;
-            setSwipePhase('animating');
-            setSwipeDragX(dir === 'left' ? -cardW : cardW);
-            setTimeout(() => {
-                setSelectedClosing(next);
-                setIsEditing(false);
-                setLightboxIndex(null);
-                setSwipeDragX(dir === 'left' ? cardW : -cardW);
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        setSwipeDragX(0);
-                        setTimeout(() => {
-                            setSwipePhase('idle');
-                            setSwipeNextClosing(null);
-                        }, 220);
-                    });
-                });
-            }, 180);
+        const THRESHOLD = cardW * 0.28;
+        if (Math.abs(currentDragX) > THRESHOLD && currentNext) {
+            commitNav(currentNext, currentDir);
         } else {
             // Snap back
-            setSwipePhase('animating');
-            setSwipeDragX(0);
+            setPhase('animating');
+            setDragX(0);
             setTimeout(() => {
-                setSwipePhase('idle');
-                setSwipeNextClosing(null);
+                setPhase('idle');
+                setNextClosing(null);
             }, 230);
         }
     };
@@ -1747,16 +1781,20 @@ export default function HistoryPage() {
                 }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
-                        {/* Swipe drag: show adjacent card peeking from the side */}
+                        {/* Adjacent card — same size as main card, slides in from opposite side */}
                         {swipePhase !== 'idle' && swipeNextClosing && (() => {
                             const cardW = modalCardRef.current?.offsetWidth ?? 400;
+                            const cardH = modalCardRef.current?.offsetHeight ?? 500;
+                            // Adjacent card's offset: current card moves left → adj comes from right (+cardW)
                             const adjOffset = swipeDragX + (swipeDirection === 'left' ? cardW : -cardW);
                             return (
                                 <div
-                                    className="absolute top-0 bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
+                                    className="absolute top-0 left-0 bg-white rounded-[3rem] overflow-hidden shadow-2xl flex flex-col shrink-0"
                                     style={{
+                                        width: cardW,
+                                        height: cardH,
                                         transform: `translateX(${adjOffset}px)`,
-                                        transition: swipePhase === 'animating' ? 'transform 200ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                        transition: swipePhase === 'animating' ? 'transform 210ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
                                         zIndex: 1,
                                     }}
                                 >
@@ -1770,9 +1808,7 @@ export default function HistoryPage() {
                                             </h2>
                                         </div>
                                     </div>
-                                    <div className="flex-1 flex items-center justify-center opacity-30">
-                                        <span className="text-zinc-400 text-sm font-black uppercase tracking-widest">Cargando…</span>
-                                    </div>
+                                    <div className="flex-1" />
                                 </div>
                             );
                         })()}
@@ -1781,8 +1817,9 @@ export default function HistoryPage() {
                             className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
                             style={{
                                 transform: `translateX(${swipeDragX}px)`,
-                                transition: swipePhase === 'animating' ? 'transform 200ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                transition: swipePhase === 'animating' ? 'transform 210ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
                                 zIndex: 2,
+                                willChange: 'transform',
                             }}
                             onTouchStart={handleTouchStart}
                             onTouchMove={handleTouchMove}
@@ -1977,17 +2014,17 @@ export default function HistoryPage() {
                                                     }
                                                     return <CloudSun size={13} className="text-amber-500" />;
                                                 })()}
-                                                <span className="text-[9.5px] font-black uppercase text-zinc-500 tracking-wider">
+                                                <span className="text-[9.5px] font-medium uppercase text-zinc-500 tracking-wider">
                                                     {selectedClosing.weather || 'Clima N/A'}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
+                                                <span className="text-[9.5px] font-medium uppercase tracking-wider text-zinc-500">
                                                     {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
+                                                <span className="text-[9.5px] font-medium uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
                                                         ? `${formatCurrencyModal(avgTicketVal)} ` 
                                                         : ''}DE TICKET MEDIO
@@ -2135,10 +2172,9 @@ export default function HistoryPage() {
                                             onClick={() => openClosingPhotoLightbox('Totales datáfonos')}
                                             className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
-                                            <img
+                                            <PhotoWithSpinner
                                                 src={closingPhotoUrls.dataphoneUrl}
                                                 alt="Totales datáfonos"
-                                                className="h-28 w-auto max-w-full rounded-xl object-contain"
                                             />
                                             <span className="max-w-full text-center text-[9px] font-black uppercase leading-tight tracking-widest text-gray-400">
                                                 Totales datáfonos
@@ -2151,10 +2187,9 @@ export default function HistoryPage() {
                                             onClick={() => openClosingPhotoLightbox('Informe TPV')}
                                             className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
-                                            <img
+                                            <PhotoWithSpinner
                                                 src={closingPhotoUrls.bdpUrl}
                                                 alt="Informe TPV"
-                                                className="h-28 w-auto max-w-full rounded-xl object-contain"
                                             />
                                             <span className="max-w-full text-center text-[9px] font-black uppercase leading-tight tracking-widest text-gray-400">
                                                 Informe TPV
