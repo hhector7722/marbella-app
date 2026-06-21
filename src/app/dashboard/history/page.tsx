@@ -24,7 +24,7 @@ import {
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -49,43 +49,73 @@ type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | '
 
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 
-const CLOSING_CELL_SECTIONS = [
-    { field: 'net_sales' as const, label: 'VENTA NETA' },
-    { field: 'tpv_sales' as const, label: 'VENTAS' },
-    { field: 'cash_counted' as const, label: 'EFECTIVO' },
-    { field: 'sales_card' as const, label: 'TARJETA' },
-] as const;
-
-function ClosingCalendarAmount({ amount }: { amount: number | null | undefined }) {
-    const rounded = Math.round(Number(amount ?? 0));
-    if (!rounded) {
-        return <span className="text-zinc-900 tabular-nums leading-none text-[8px] sm:text-[9px] md:text-[10px]">{'\u00a0'}</span>;
-    }
-
-    return (
-        <span className="inline-flex items-baseline text-zinc-900 tabular-nums leading-none font-normal">
-            <span className="text-[8px] sm:text-[9px] md:text-[10px]">{rounded}</span>
-            <span className="text-[5px] sm:text-[6px] md:text-[7px]">€</span>
-        </span>
-    );
+interface RendimientoScale {
+    level: 1 | 2 | 3 | 4 | 5;
+    icon: '▲' | '▶' | '▼';
+    color: string;
+    label: string;
 }
 
-function ClosingCalendarCellContent({ closing }: { closing: Record<(typeof CLOSING_CELL_SECTIONS)[number]['field'], number | null | undefined> }) {
+function getRendimientoScale(diffPercent: number): RendimientoScale {
+    if (diffPercent > 15) {
+        return { level: 5, icon: '▲', color: 'text-emerald-800', label: 'Excelente' };
+    }
+    if (diffPercent >= 5) {
+        return { level: 4, icon: '▲', color: 'text-emerald-500', label: 'Bueno' };
+    }
+    if (diffPercent >= -5) {
+        return { level: 3, icon: '▶', color: 'text-zinc-400', label: 'Esperado' };
+    }
+    if (diffPercent >= -15) {
+        return { level: 2, icon: '▼', color: 'text-orange-500', label: 'Bajo' };
+    }
+    return { level: 1, icon: '▼', color: 'text-rose-600', label: 'Crítico' };
+}
+
+function ClosingCalendarCellContent({
+    closing,
+    expectedSales,
+}: {
+    closing: any;
+    expectedSales: number;
+}) {
+    const netSales = Number(closing.net_sales ?? 0);
+    const rounded = Math.round(netSales);
+    
+    const diffPercent = expectedSales > 0 && netSales > 0 
+        ? ((netSales - expectedSales) / expectedSales) * 100 
+        : 0;
+
+    const hasExpected = expectedSales > 0 && netSales > 0;
+    const scale = getRendimientoScale(hasExpected ? diffPercent : 0);
+
+    const roundedDiff = Math.round(diffPercent);
+    const displayPercent = (roundedDiff >= 0 ? '+' : '') + roundedDiff + '%';
+
     return (
-        <div className="grid h-full min-h-0 w-full flex-1 grid-rows-4">
-            {CLOSING_CELL_SECTIONS.map((section, index) => (
-                <div key={section.field} className="relative flex min-h-0 flex-col items-center justify-center">
-                    {index > 0 ? (
-                        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center" aria-hidden>
-                            <div className="w-[70%] border-t border-zinc-200" />
-                        </div>
-                    ) : null}
-                    <ClosingCalendarAmount amount={closing[section.field]} />
-                    <span className="mt-0.5 text-[5px] sm:text-[6px] md:text-[7px] font-black uppercase tracking-wide text-zinc-400 leading-none">
-                        {section.label}
-                    </span>
-                </div>
-            ))}
+        <div className="flex flex-col items-center justify-center gap-0.5 w-full text-center flex-1 h-full">
+            {rounded > 0 ? (
+                <>
+                    <div className="flex items-center justify-center gap-1 text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums">
+                        {hasExpected && (
+                            <span className={cn(scale.color, "text-[9.5px] md:text-[11px] shrink-0")}>
+                                {scale.icon}
+                            </span>
+                        )}
+                        <span className="text-zinc-950">
+                            {rounded}
+                            <span className="text-[8px] md:text-[10px] font-semibold ml-[0.5px] text-zinc-500">€</span>
+                        </span>
+                    </div>
+                    {hasExpected && (
+                        <span className={cn("text-[9.5px] md:text-[10px] font-black tracking-wider leading-none mt-1", scale.color)}>
+                            {displayPercent}
+                        </span>
+                    )}
+                </>
+            ) : (
+                <span className="text-transparent"> </span>
+            )}
         </div>
     );
 }
@@ -100,11 +130,11 @@ function ClosingCalendarDayLabel({
     isViewMonthDay: boolean;
 }) {
     return (
-        <div className="flex h-[11px] shrink-0 items-center justify-end leading-none">
+        <div className="flex h-[11px] shrink-0 items-center justify-center leading-none w-full">
             <span
                 className={cn(
-                    'text-[8px] font-bold',
-                    today && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                    'text-[8.5px] md:text-[10px] font-black',
+                    today && isViewMonthDay ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md' : 'text-gray-400',
                     !isViewMonthDay && 'opacity-50'
                 )}
             >
@@ -279,6 +309,126 @@ const CashBreakdownModal = ({
     );
 };
 
+// --- HELPERS & CHARTS ---
+
+const parseLocalSafe = (dateStr: string | null) => {
+    if (!dateStr) return new Date();
+    const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
+    return new Date(y, m - 1, d);
+};
+
+function DailySalesChart({
+    closings,
+    historicalClosingsMap,
+}: {
+    closings: any[];
+    historicalClosingsMap: Map<string, any>;
+}) {
+    const sortedActual = useMemo(() => {
+        return [...closings].sort((a, b) => new Date(a.closing_date).getTime() - new Date(b.closing_date).getTime());
+    }, [closings]);
+
+    if (sortedActual.length === 0) return null;
+
+    const dataPoints = sortedActual.map((c) => {
+        const actualDate = parseLocalSafe(c.closing_date);
+        const actualNet = Number(c.net_sales ?? 0);
+        const prevMonthDate = subMonths(actualDate, 1);
+        const prevKey = format(prevMonthDate, 'yyyy-MM-dd');
+        const prevClosing = historicalClosingsMap.get(prevKey);
+        const prevNet = prevClosing ? Number(prevClosing.net_sales ?? 0) : 0;
+
+        return {
+            dateLabel: format(actualDate, 'dd/MM'),
+            actual: actualNet,
+            comparison: prevNet,
+        };
+    });
+
+    const width = 800;
+    const height = 65;
+    const paddingX = 20;
+    const paddingY = 5;
+
+    const allValues = dataPoints.flatMap((d) => [d.actual, d.comparison]);
+    const maxVal = Math.max(...allValues, 100);
+    const minVal = Math.min(...allValues, 0);
+    const range = maxVal - minVal || 1;
+
+    const getX = (index: number) => {
+        if (dataPoints.length <= 1) return paddingX;
+        return paddingX + (index / (dataPoints.length - 1)) * (width - 2 * paddingX);
+    };
+
+    const getY = (val: number) => {
+        return height - paddingY - ((val - minVal) / range) * (height - 2 * paddingY);
+    };
+
+    const actualPath = dataPoints.reduce((acc, pt, i) => {
+        const x = getX(i);
+        const y = getY(pt.actual);
+        return acc + (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+    }, '');
+
+    const comparisonPath = dataPoints.reduce((acc, pt, i) => {
+        const x = getX(i);
+        const y = getY(pt.comparison);
+        return acc + (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+    }, '');
+
+    const firstDate = parseLocalSafe(sortedActual[0].closing_date);
+    const currentMonthLabel = format(firstDate, 'MMMM', { locale: es });
+    const prevMonthLabel = format(subMonths(firstDate, 1), 'MMMM', { locale: es });
+
+    return (
+        <div className="bg-white border-t border-b border-zinc-100/80 py-2.5 px-4 print:hidden">
+            <div className="max-w-[97%] mx-auto flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                            <span className="text-[10px] font-black text-zinc-900 uppercase tracking-wider">{currentMonthLabel}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-zinc-350" />
+                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">{prevMonthLabel}</span>
+                        </div>
+                    </div>
+                    <span className="text-[7.5px] font-bold tracking-widest text-zinc-400 uppercase">
+                        EVOLUCIÓN DIARIA VENTA NETA
+                    </span>
+                </div>
+                <div className="relative w-full h-[65px] mt-1 overflow-hidden">
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                        {comparisonPath && (
+                            <path
+                                d={comparisonPath}
+                                fill="none"
+                                stroke="#d4d4d8"
+                                strokeWidth="2.5"
+                                strokeDasharray="4 3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        )}
+                        {actualPath && (
+                            <path
+                                d={actualPath}
+                                fill="none"
+                                stroke="#10b981"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="drop-shadow-[0_1.5px_3px_rgba(16,185,129,0.2)]"
+                            />
+                        )}
+                    </svg>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // --- MAIN PAGE ---
 
 export default function HistoryPage() {
@@ -292,12 +442,6 @@ export default function HistoryPage() {
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
     const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
-
-    const parseLocalSafe = (dateStr: string | null) => {
-        if (!dateStr) return new Date();
-        const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
-        return new Date(y, m - 1, d);
-    };
 
     const handlePrevMonth = () => {
         const current = parseLocalSafe(rangeStart);
@@ -389,13 +533,114 @@ export default function HistoryPage() {
     const deepLinkClosingRef = useRef<string | null>(null);
 
     const [closings, setClosings] = useState<any[]>([]);
+    const [historicalClosings, setHistoricalClosings] = useState<any[]>([]);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
+    const [prevSummary, setPrevSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
+
+    const historicalClosingsMap = useMemo(() => {
+        const map = new Map<string, any>();
+        historicalClosings.forEach((c) => {
+            const key = format(new Date(c.closing_date), 'yyyy-MM-dd');
+            map.set(key, c);
+        });
+        return map;
+    }, [historicalClosings]);
+
+    const get8DayExpectedSalesDetails = (targetDate: Date) => {
+        let sum = 0;
+        let count = 0;
+        let daysExcluded = 0;
+
+        for (let i = 1; i <= 8; i++) {
+            const prevDate = subWeeks(targetDate, i);
+            const key = format(prevDate, 'yyyy-MM-dd');
+            const closing = historicalClosingsMap.get(key);
+            
+            if (closing) {
+                const sales = Number(closing.net_sales ?? 0);
+                if (sales > 0) {
+                    sum += sales;
+                    count++;
+                } else {
+                    daysExcluded++;
+                }
+            } else {
+                daysExcluded++;
+            }
+        }
+
+        const expectedSales = count > 0 ? sum / count : 0;
+        return {
+            expectedSales,
+            daysUsed: count,
+            daysExcluded,
+        };
+    };
+
+    const get8DayExpectedSales = (targetDate: Date) => {
+        return get8DayExpectedSalesDetails(targetDate).expectedSales;
+    };
+
+    const { popPercent, popAbsolute, periodRendimiento } = useMemo(() => {
+        let startISO: string;
+        let endISO: string;
+
+        if (filterMode === 'single') {
+            startISO = selectedDate;
+            endISO = selectedDate;
+        } else {
+            if (!rangeStart || !rangeEnd) {
+                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0 };
+            }
+            startISO = rangeStart;
+            endISO = rangeEnd;
+        }
+        
+        const start = parseLocalSafe(startISO);
+        const end = parseLocalSafe(endISO);
+        const diffDays = differenceInDays(end, start) + 1;
+        
+        const prevStart = subMonths(start, 1);
+        
+        const currentNetSum = closings.reduce((sum, c) => sum + Number(c.net_sales ?? 0), 0);
+        
+        let prevNetSum = 0;
+        for (let i = 0; i < diffDays; i++) {
+            const d = addDays(prevStart, i);
+            const key = format(d, 'yyyy-MM-dd');
+            const c = historicalClosingsMap.get(key);
+            if (c) {
+                prevNetSum += Number(c.net_sales ?? 0);
+            }
+        }
+        
+        const popAbsolute = currentNetSum - prevNetSum;
+        const popPercent = prevNetSum > 0 ? (popAbsolute / prevNetSum) * 100 : 0;
+        
+        let expectedSum = 0;
+        let actualWithExpectedSum = 0;
+        
+        closings.forEach((c) => {
+            const d = parseLocalSafe(c.closing_date);
+            const expected = get8DayExpectedSales(d);
+            if (expected > 0) {
+                expectedSum += expected;
+                actualWithExpectedSum += Number(c.net_sales ?? 0);
+            }
+        });
+        
+        const periodRendimiento = expectedSum > 0 
+            ? ((actualWithExpectedSum - expectedSum) / expectedSum) * 100 
+            : 0;
+            
+        return { popPercent, popAbsolute, periodRendimiento };
+    }, [filterMode, rangeStart, rangeEnd, selectedDate, closings, historicalClosingsMap]);
 
     const closingsByDate = useMemo(() => {
         const map = new Map<string, (typeof closings)[number]>();
         closings.forEach((c) => {
-            const key = format(new Date(c.closed_at), 'yyyy-MM-dd');
+            const key = format(new Date(c.closing_date), 'yyyy-MM-dd');
             map.set(key, c);
         });
         return map;
@@ -552,6 +797,17 @@ export default function HistoryPage() {
                 endISO = rangeEnd;
             }
 
+            const start = parseLocalSafe(startISO);
+            const end = parseLocalSafe(endISO);
+            const diffDays = differenceInDays(end, start) + 1;
+
+            const prevStart = subMonths(start, 1);
+            const prevEnd = filterMode === 'single' ? subMonths(end, 1) : addDays(prevStart, diffDays - 1);
+            
+            const prevStartISO = format(prevStart, 'yyyy-MM-dd');
+            const prevEndISO = format(prevEnd, 'yyyy-MM-dd');
+            const histStartISO = format(subMonths(start, 3), 'yyyy-MM-dd');
+
             const closingsPromise = supabase
                 .from('cash_closings')
                 .select('*')
@@ -559,16 +815,36 @@ export default function HistoryPage() {
                 .lte('closing_date', endISO)
                 .order('closing_date', { ascending: false });
 
+            const historicalPromise = supabase
+                .from('cash_closings')
+                .select('*')
+                .gte('closing_date', histStartISO)
+                .lte('closing_date', endISO);
+
             const summaryPromise = supabase.rpc('get_cash_closings_summary', {
                 p_start_date: startISO,
                 p_end_date: endISO
             });
 
-            const [closingsRes, summaryRes] = await Promise.all([closingsPromise, summaryPromise]);
+            const prevSummaryPromise = supabase.rpc('get_cash_closings_summary', {
+                p_start_date: prevStartISO,
+                p_end_date: prevEndISO
+            });
+
+            const [closingsRes, historicalRes, summaryRes, prevSummaryRes] = await Promise.all([
+                closingsPromise,
+                historicalPromise,
+                summaryPromise,
+                prevSummaryPromise
+            ]);
 
             if (closingsRes.error) throw closingsRes.error;
+            if (historicalRes.error) throw historicalRes.error;
+
             setClosings(closingsRes.data || []);
+            setHistoricalClosings(historicalRes.data || []);
             setSummary(summaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
+            setPrevSummary(prevSummaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
 
             try {
                 const { data: hourlyData, error: hourlyError } = await supabase
@@ -1018,27 +1294,58 @@ export default function HistoryPage() {
                     <div className="bg-white">
                         <div className="pt-1.5 md:pt-2 pb-0.5 px-2 grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-sm md:text-lg font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
-                                <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 font-bold">VENTAS</span>
+                                <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none">
+                                    {formatValue(summary.totalNet, 'net_sales')}
+                                </span>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <span className={cn(
+                                        "text-[9.5px] md:text-[10px] font-black flex items-center leading-none",
+                                        popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
+                                    )}>
+                                        {popAbsolute >= 0 ? '▲' : '▼'} {Math.abs(Math.round(popPercent))}%
+                                    </span>
+                                    <span className="text-[8px] md:text-[9px] font-bold text-zinc-400 tabular-nums leading-none">
+                                        ({popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute)}€)
+                                    </span>
+                                </div>
+                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
+                                    VENTA NETA
+                                </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
-                                <span className="text-sm md:text-lg font-black text-emerald-600 tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
-                                <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 font-bold">VENTA NETA</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                                <span className="text-sm md:text-lg font-black text-[#36606F] tabular-nums leading-none">
-                                    {summary.avgTicket === 0 ? (
-                                        ' '
-                                    ) : (
-                                        <>
-                                            {Math.round(summary.avgTicket * 10) / 10}
-                                            <span className="text-[8px] md:text-[9px] not-italic">€</span>
-                                        </>
+                                <div className="flex items-center gap-1 leading-none">
+                                    {periodRendimiento !== 0 && (
+                                        <span className={cn(
+                                            "text-[9.5px] md:text-[10px] font-black",
+                                            getRendimientoScale(periodRendimiento).color
+                                        )}>
+                                            {getRendimientoScale(periodRendimiento).icon}
+                                        </span>
                                     )}
+                                    <span className={cn(
+                                        "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums",
+                                        getRendimientoScale(periodRendimiento).color
+                                    )}>
+                                        {periodRendimiento >= 0 ? '+' : ''}{Math.round(periodRendimiento)}%
+                                    </span>
+                                </div>
+                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
+                                    RENDIMIENTO
                                 </span>
-                                <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 font-bold not-italic">TICKET MEDIO</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
+                                <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none">
+                                    {formatValue(summary.totalGross, 'tpv_sales')}
+                                </span>
+                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
+                                    VENTAS
+                                </span>
                             </div>
                         </div>
+
+                        {!loading && closings.length > 0 && (
+                            <DailySalesChart closings={closings} historicalClosingsMap={historicalClosingsMap} />
+                        )}
 
                         <div className="pb-1 md:pb-2 pt-0.5 px-0">
                             {viewMode === 'table' ? (
@@ -1192,7 +1499,10 @@ export default function HistoryPage() {
                                                                 >
                                                                     <ClosingCalendarDayLabel day={day} today={today} isViewMonthDay={isViewMonthDay} />
                                                                     <div className="mt-0.5 flex min-h-0 flex-1 flex-col items-center px-0.5 pb-0.5">
-                                                                        <ClosingCalendarCellContent closing={closing} />
+                                                                        <ClosingCalendarCellContent
+                                                                            closing={closing}
+                                                                            expectedSales={get8DayExpectedSales(day)}
+                                                                        />
                                                                     </div>
                                                                 </button>
                                                             );
@@ -1451,6 +1761,61 @@ export default function HistoryPage() {
                                                 </span>
                                             </div>
                                         </div>
+
+                                        {/* Fila 4: Venta Esperada, Rendimiento Detallado (solo lectura) */}
+                                        {!isEditing && (() => {
+                                            const targetDate = parseLocalSafe(selectedClosing.closing_date);
+                                            const details = get8DayExpectedSalesDetails(targetDate);
+                                            const netVal = getValue('net_sales');
+                                            const diffPercent = details.expectedSales > 0 && netVal > 0 
+                                                ? ((netVal - details.expectedSales) / details.expectedSales) * 100 
+                                                : 0;
+                                            const scale = getRendimientoScale(details.expectedSales > 0 ? diffPercent : 0);
+                                            
+                                            const weekdayName = format(targetDate, 'EEEE', { locale: es });
+                                            const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
+
+                                            return (
+                                                <div className="pt-4 border-t border-zinc-100 flex flex-col gap-3">
+                                                    <div className="grid grid-cols-2 gap-4 place-items-center">
+                                                       <div className="flex flex-col items-center justify-center text-center">
+                                                           <span className="text-sm md:text-base font-black text-gray-900 leading-none">
+                                                               {details.expectedSales > 0 ? `${Math.round(details.expectedSales)}€` : 'N/A'}
+                                                           </span>
+                                                           <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                               Esperado ({weekdayName})
+                                                           </span>
+                                                       </div>
+                                                       <div className="flex flex-col items-center justify-center text-center">
+                                                           <div className="flex items-center gap-1 leading-none">
+                                                               {details.expectedSales > 0 && (
+                                                                   <span className={cn("text-[10px] md:text-[12px] font-black", scale.color)}>
+                                                                       {scale.icon}
+                                                                   </span>
+                                                               )}
+                                                               <span className={cn(
+                                                                   "text-sm md:text-base font-black tabular-nums",
+                                                                   scale.color
+                                                               )}>
+                                                                   {details.expectedSales > 0 
+                                                                       ? `${diffPercent >= 0 ? '+' : ''}${Math.round(diffPercent)}%` 
+                                                                       : 'N/A'}
+                                                               </span>
+                                                           </div>
+                                                           <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                               Rendimiento
+                                                           </span>
+                                                       </div>
+                                                    </div>
+                                                    {details.expectedSales > 0 && (
+                                                       <p className="text-[8px] md:text-[9.5px] font-medium text-zinc-400 text-center leading-normal max-w-[85%] mx-auto mt-1">
+                                                           Cálculo de esperado basado en {details.daysUsed} {weekdayPlural} anteriores.
+                                                           {details.daysExcluded > 0 && ` Se excluyeron ${details.daysExcluded} días con 0€.`}
+                                                       </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 );
                             })()}
