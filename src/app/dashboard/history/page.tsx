@@ -461,15 +461,16 @@ function DailySalesChart({
                             }
                             const sortedIndices = Array.from(indices).sort((a, b) => a - b);
                             return sortedIndices.map((idx) => {
-                                const pt = dataPoints[idx];
-                                const dayStr = pt.dateLabel.split('/')[0];
+                                const pt = sortedActual[idx];
+                                const actualDate = parseLocalSafe(pt.closing_date);
+                                const dayStr = format(actualDate, 'd');
                                 return (
                                     <text
                                         key={idx}
                                         x={getX(idx)}
                                         y={80}
                                         textAnchor="middle"
-                                        className="text-[9px] md:text-[10px] font-black fill-zinc-450 tabular-nums"
+                                        className="text-[8px] md:text-[9px] font-medium fill-gray-400 tabular-nums"
                                     >
                                         {dayStr}
                                     </text>
@@ -637,7 +638,7 @@ export default function HistoryPage() {
         return get8DayExpectedSalesDetails(targetDate).expectedSales;
     };
 
-    const { popPercent, popAbsolute, periodRendimiento } = useMemo(() => {
+    const { popPercent, popAbsolute, periodRendimiento, prevNetSum } = useMemo(() => {
         let startISO: string;
         let endISO: string;
 
@@ -646,7 +647,7 @@ export default function HistoryPage() {
             endISO = selectedDate;
         } else {
             if (!rangeStart || !rangeEnd) {
-                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0 };
+                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0, prevNetSum: 0 };
             }
             startISO = rangeStart;
             endISO = rangeEnd;
@@ -654,21 +655,19 @@ export default function HistoryPage() {
         
         const start = parseLocalSafe(startISO);
         const end = parseLocalSafe(endISO);
-        const diffDays = differenceInDays(end, start) + 1;
-        
-        const prevStart = subMonths(start, 1);
         
         const currentNetSum = closings.reduce((sum, c) => sum + Number(c.net_sales ?? 0), 0);
         
         let prevNetSum = 0;
-        for (let i = 0; i < diffDays; i++) {
-            const d = addDays(prevStart, i);
-            const key = format(d, 'yyyy-MM-dd');
-            const c = historicalClosingsMap.get(key);
-            if (c) {
-                prevNetSum += Number(c.net_sales ?? 0);
+        closings.forEach((c) => {
+            const d = parseLocalSafe(c.closing_date);
+            const prevD = subMonths(d, 1);
+            const key = format(prevD, 'yyyy-MM-dd');
+            const prevClosing = historicalClosingsMap.get(key);
+            if (prevClosing) {
+                prevNetSum += Number(prevClosing.net_sales ?? 0);
             }
-        }
+        });
         
         const popAbsolute = currentNetSum - prevNetSum;
         const popPercent = prevNetSum > 0 ? (popAbsolute / prevNetSum) * 100 : 0;
@@ -689,7 +688,7 @@ export default function HistoryPage() {
             ? ((actualWithExpectedSum - expectedSum) / expectedSum) * 100 
             : 0;
             
-        return { popPercent, popAbsolute, periodRendimiento };
+        return { popPercent, popAbsolute, periodRendimiento, prevNetSum };
     }, [filterMode, rangeStart, rangeEnd, selectedDate, closings, historicalClosingsMap]);
 
     const closingsByDate = useMemo(() => {
@@ -1370,12 +1369,6 @@ export default function HistoryPage() {
                                 className="flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
                             >
                                 <div className="flex items-center gap-1 leading-none">
-                                    {periodRendimiento !== 0 && (
-                                        <TrendTriangle 
-                                            type={getRendimientoScale(periodRendimiento).icon} 
-                                            className={getRendimientoScale(periodRendimiento).color}
-                                        />
-                                    )}
                                     <span className={cn(
                                         "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums",
                                         getRendimientoScale(periodRendimiento).color
@@ -1438,7 +1431,7 @@ export default function HistoryPage() {
                                                             const d = new Date(c.closed_at);
                                                             const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
                                                             const diff = c.difference ?? 0;
-                                                            const formatCompact = (val: number) => Math.round(val || 0);
+                                                            const formatCompact = (val: number) => Math.round(val || 0).toLocaleString('es-ES');
 
                                                             return (
                                                                 <tr
@@ -1456,10 +1449,10 @@ export default function HistoryPage() {
                                                                         {formatCompact(c.net_sales)}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
-                                                                        {c.tickets_count || 0}
+                                                                        {(c.tickets_count || 0).toLocaleString('es-ES')}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px] text-[#36606F]/80">
-                                                                        {avgTicket === 0 ? ' ' : Math.round(avgTicket)}
+                                                                        {avgTicket === 0 ? ' ' : Math.round(avgTicket).toLocaleString('es-ES')}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {formatCompact(c.cash_counted)}
@@ -1477,7 +1470,7 @@ export default function HistoryPage() {
                                                                         "py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]",
                                                                         diff > 0 ? "text-emerald-600" : diff < 0 ? "text-rose-600" : "text-zinc-400"
                                                                     )}>
-                                                                        {diff === 0 ? ' ' : Math.round(diff)}
+                                                                        {diff === 0 ? ' ' : Math.round(diff).toLocaleString('es-ES')}
                                                                     </td>
                                                                 </tr>
                                                             );
@@ -1599,9 +1592,9 @@ export default function HistoryPage() {
                 }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 py-2.5 text-white relative shrink-0 text-center">
-                            <div className="relative flex items-center justify-between z-10 w-full gap-2">
-                                <div className="flex items-center justify-start gap-1">
+                        <div className="bg-[#36606F] px-4 py-2 text-white relative shrink-0 text-center">
+                            <div className="relative flex items-center justify-center z-10 w-full min-h-[32px]">
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-start gap-1">
                                     {isEditing && isManager && (
                                         <button
                                             onClick={handleDeleteClosing}
@@ -1613,7 +1606,7 @@ export default function HistoryPage() {
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-center gap-1 md:gap-2 max-w-[70%]">
+                                <div className="flex items-center justify-center gap-1 md:gap-2 max-w-[70%] mx-auto">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
                                         className="p-1 transition-all disabled:opacity-30 active:scale-90 text-white/60 hover:text-white shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
@@ -1643,7 +1636,7 @@ export default function HistoryPage() {
                                                 className="bg-transparent border-none text-white font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-0 w-auto cursor-pointer"
                                             />
                                         ) : (
-                                            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter break-words min-w-0">
+                                            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter break-words min-w-0 text-center">
                                                 {(() => {
                                                     const d = new Date(selectedClosing.closed_at);
                                                     return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
@@ -1661,7 +1654,7 @@ export default function HistoryPage() {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-end gap-1">
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-end gap-1">
                                     {!isEditing && isManager && (
                                         <button
                                             onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
@@ -1685,14 +1678,13 @@ export default function HistoryPage() {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="p-8 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
+                        <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {
                                 const current = isEditing ? editData : selectedClosing;
                                 const formatMoneyModal = (val: number) => val === 0 ? " " : val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
                                 const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
-
+ 
                                 const RowItem = ({
                                     label,
                                     value,
@@ -1724,21 +1716,15 @@ export default function HistoryPage() {
                                             ? 'text-emerald-500'
                                             : 'text-rose-500'
                                         : null;
-
+ 
                                     return (
-                                        <div className="grid min-h-[40px] grid-cols-[6rem_1fr] items-center gap-x-2 sm:grid-cols-[7.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
-                                            <span className="text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs">
+                                        <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                            <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
                                                 {label}
                                             </span>
                                             <div className="flex min-w-0 items-center justify-center">
-                                                <div 
-                                                    className={cn(
-                                                        "w-[8.75rem] sm:w-[9.5rem] h-9 border border-[#36606F] rounded-xl bg-white flex items-center justify-center relative",
-                                                        onClick && "cursor-pointer hover:bg-zinc-50"
-                                                    )}
-                                                    onClick={onClick}
-                                                >
-                                                    {isEditing && editable && fieldKey ? (
+                                                {isEditing && editable && fieldKey ? (
+                                                    <div className="w-[8.75rem] sm:w-[9.5rem] h-8 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm">
                                                         <input
                                                             type="number"
                                                             step="0.01"
@@ -1746,48 +1732,66 @@ export default function HistoryPage() {
                                                             value={value || ''}
                                                             onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
                                                         />
-                                                    ) : (
+                                                        {hasValue && (
+                                                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500">
+                                                                €
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div 
+                                                        className={cn(
+                                                            "w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative",
+                                                            onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4"
+                                                        )}
+                                                        onClick={onClick}
+                                                    >
                                                         <span className={cn(
                                                             "text-sm font-black tabular-nums",
                                                             diffTone ?? 'text-zinc-800'
                                                         )}>
                                                             {text}
+                                                            {hasValue && <span className="ml-1 text-xs font-bold text-zinc-500">€</span>}
                                                         </span>
-                                                    )}
-                                                    {hasValue && (
-                                                        <span className={cn(
-                                                            "pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm font-black",
-                                                            diffTone ?? "text-zinc-500"
-                                                        )}>
-                                                            €
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
                                 };
-
+ 
+                                const avgTicketVal = (current?.tickets_count || 0) > 0 
+                                    ? (current?.tpv_sales || 0) / current?.tickets_count 
+                                    : 0;
+ 
                                 return (
-                                    <div className="space-y-6">
-                                        {/* Clima y Tickets en el cuerpo */}
-                                        <div className="flex items-center justify-center gap-6 pb-4 border-b border-zinc-100">
-                                            <div className="flex items-center gap-1.5 opacity-85">
-                                                <CloudSun size={14} className="text-amber-500" />
-                                                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">
+                                    <div className="space-y-4">
+                                        {/* Clima, Tickets y Ticket Medio en el cuerpo */}
+                                        <div className="flex items-center justify-center gap-4 pb-2.5 border-b border-zinc-100">
+                                            <div className="flex items-center gap-1 opacity-85">
+                                                <CloudSun size={13} className="text-amber-500" />
+                                                <span className="text-[9.5px] font-black uppercase text-zinc-500 tracking-wider">
                                                     {selectedClosing.weather || 'Clima N/A'}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 opacity-85">
-                                                <Receipt size={14} className="text-blue-500" />
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                                                    {selectedClosing.tickets_count || 0} Tickets
+                                            <div className="flex items-center gap-1 opacity-85">
+                                                <Receipt size={13} className="text-blue-500" />
+                                                <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
+                                                    {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} Ticks
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-85">
+                                                <Banknote size={13} className="text-emerald-500" />
+                                                <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
+                                                    {avgTicketVal > 0 
+                                                        ? `${avgTicketVal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                                                        : '0,00'} T.Medio
                                                 </span>
                                             </div>
                                         </div>
-
+ 
                                         {/* Fila por fila con el estilo del paso 1 */}
-                                        <div className="flex flex-col gap-3">
+                                        <div className="flex flex-col gap-2">
                                             <RowItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
@@ -2150,7 +2154,7 @@ export default function HistoryPage() {
                                     </div>
                                     <div className="flex flex-col items-center justify-center text-center">
                                         <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                            {formatValue(summary.totalNet - popAbsolute, 'net_sales')}
+                                            {formatValue(prevNetSum, 'net_sales')}
                                         </span>
                                         <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                                             Periodo Anterior
@@ -2164,7 +2168,7 @@ export default function HistoryPage() {
                                             "text-sm md:text-base font-black leading-none",
                                             popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
                                         )}>
-                                            {popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute)}€
+                                            {popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute).toLocaleString('es-ES')}€
                                         </span>
                                         <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                                             Diferencia Neta
