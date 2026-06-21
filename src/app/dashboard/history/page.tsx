@@ -80,6 +80,11 @@ function TrendTriangle({ type, className, size = 'md' }: { type: 'up' | 'down' |
     );
 }
 
+function formatCurrencySpanish(val: number): string {
+    const rounded = Math.round(val);
+    return `${rounded.toLocaleString('es-ES')}€`;
+}
+
 function getRendimientoScale(diffPercent: number): RendimientoScale {
     if (diffPercent > 15) {
         return { level: 5, icon: 'up', color: 'text-emerald-600', label: 'Excelente' };
@@ -121,8 +126,7 @@ function ClosingCalendarCellContent({
             {rounded > 0 ? (
                 <>
                     <div className="text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums text-zinc-950">
-                        {rounded.toLocaleString('es-ES')}
-                        <span className="text-[8px] md:text-[10px] font-semibold ml-[0.5px] text-zinc-500">€</span>
+                        {formatCurrencySpanish(netSales)}
                     </div>
                     {hasExpected && (
                         <div className="flex items-center justify-center gap-[1px] mt-0.5 leading-none">
@@ -422,8 +426,8 @@ function DailySalesChart({
                         EVOLUCIÓN DIARIA VENTA NETA
                     </span>
                 </div>
-                <div className="relative w-full h-[82px] mt-1 overflow-visible">
-                    <svg viewBox={`0 0 ${width} 85`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                <div className="relative w-full h-[65px] mt-1">
+                    <svg viewBox={`0 0 ${width} 65`} className="w-full h-full" preserveAspectRatio="none">
                         {comparisonPath && (
                             <path
                                 d={comparisonPath}
@@ -446,38 +450,40 @@ function DailySalesChart({
                                 className="drop-shadow-[0_1.5px_3px_rgba(16,185,129,0.2)]"
                             />
                         )}
-                        {(() => {
-                            const len = dataPoints.length;
-                            if (len === 0) return null;
-                            const indices = new Set<number>();
-                            indices.add(0);
-                            indices.add(len - 1);
-                            if (len > 2) {
-                                indices.add(Math.floor(len / 2));
-                            }
-                            if (len > 4) {
-                                indices.add(Math.floor(len / 4));
-                                indices.add(Math.floor(3 * len / 4));
-                            }
-                            const sortedIndices = Array.from(indices).sort((a, b) => a - b);
-                            return sortedIndices.map((idx) => {
-                                const pt = sortedActual[idx];
-                                const actualDate = parseLocalSafe(pt.closing_date);
-                                const dayStr = format(actualDate, 'd');
-                                return (
-                                    <text
-                                        key={idx}
-                                        x={getX(idx)}
-                                        y={80}
-                                        textAnchor="middle"
-                                        className="text-[8px] md:text-[9px] font-medium fill-gray-400 tabular-nums"
-                                    >
-                                        {dayStr}
-                                    </text>
-                                );
-                            });
-                        })()}
                     </svg>
+                </div>
+                {/* Eje X (Días) sin deformación */}
+                <div className="relative w-full h-3.5 mt-0.5">
+                    {(() => {
+                        const len = dataPoints.length;
+                        if (len === 0) return null;
+                        const indices = new Set<number>();
+                        indices.add(0);
+                        indices.add(len - 1);
+                        if (len > 2) {
+                            indices.add(Math.floor(len / 2));
+                        }
+                        if (len > 4) {
+                            indices.add(Math.floor(len / 4));
+                            indices.add(Math.floor(3 * len / 4));
+                        }
+                        const sortedIndices = Array.from(indices).sort((a, b) => a - b);
+                        return sortedIndices.map((idx) => {
+                            const pt = sortedActual[idx];
+                            const actualDate = parseLocalSafe(pt.closing_date);
+                            const dayStr = format(actualDate, 'd');
+                            const leftPct = (getX(idx) / width) * 100;
+                            return (
+                                <span
+                                    key={idx}
+                                    style={{ left: `${leftPct}%` }}
+                                    className="absolute top-0 -translate-x-1/2 text-[9px] font-medium text-zinc-400 tabular-nums leading-none"
+                                >
+                                    {dayStr}
+                                </span>
+                            );
+                        });
+                    })()}
                 </div>
             </div>
         </div>
@@ -638,7 +644,7 @@ export default function HistoryPage() {
         return get8DayExpectedSalesDetails(targetDate).expectedSales;
     };
 
-    const { popPercent, popAbsolute, periodRendimiento, prevNetSum, expectedSum, actualWithExpectedSum } = useMemo(() => {
+    const { popPercent, popAbsolute, periodRendimiento, prevNetSum, expectedSum, actualWithExpectedSum, currentNetSum } = useMemo(() => {
         let startISO: string;
         let endISO: string;
 
@@ -647,7 +653,7 @@ export default function HistoryPage() {
             endISO = selectedDate;
         } else {
             if (!rangeStart || !rangeEnd) {
-                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0, prevNetSum: 0, expectedSum: 0, actualWithExpectedSum: 0 };
+                return { popPercent: 0, popAbsolute: 0, periodRendimiento: 0, prevNetSum: 0, expectedSum: 0, actualWithExpectedSum: 0, currentNetSum: 0 };
             }
             startISO = rangeStart;
             endISO = rangeEnd;
@@ -688,7 +694,7 @@ export default function HistoryPage() {
             ? ((actualWithExpectedSum - expectedSum) / expectedSum) * 100 
             : 0;
             
-        return { popPercent, popAbsolute, periodRendimiento, prevNetSum, expectedSum, actualWithExpectedSum };
+        return { popPercent, popAbsolute, periodRendimiento, prevNetSum, expectedSum, actualWithExpectedSum, currentNetSum };
     }, [filterMode, rangeStart, rangeEnd, selectedDate, closings, historicalClosingsMap]);
 
     const closingsByDate = useMemo(() => {
@@ -1089,9 +1095,9 @@ export default function HistoryPage() {
 
 
     const formatValue = (val: number, type: MetricType) => {
-        if (type === 'tickets_count') return val.toString();
+        if (type === 'tickets_count') return val.toLocaleString('es-ES');
         if (val === 0) return " ";
-        return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: val < 100 ? 2 : 0 }).format(val);
+        return formatCurrencySpanish(val);
     };
 
     // Solo actualizan estado local; la base de datos no se toca hasta que el usuario pulse "Guardar Cierre".
@@ -1371,9 +1377,9 @@ export default function HistoryPage() {
                                 <div className="flex items-center gap-1 leading-none">
                                     <span className={cn(
                                         "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums",
-                                        getRendimientoScale(periodRendimiento).color
+                                        getRendimientoScale(popPercent).color
                                     )}>
-                                        {periodRendimiento >= 0 ? '+' : ''}{Math.round(periodRendimiento)}%
+                                        {popPercent >= 0 ? '+' : ''}{popPercent.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                                     </span>
                                 </div>
                                 <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
@@ -1681,7 +1687,6 @@ export default function HistoryPage() {
                         <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {
                                 const current = isEditing ? editData : selectedClosing;
-                                const formatMoneyModal = (val: number) => val === 0 ? " " : val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
                                 const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
  
@@ -1704,9 +1709,9 @@ export default function HistoryPage() {
                                     let text = ' ';
                                     if (hasValue) {
                                         if (isDiff) {
-                                            text = `${value > 0 ? '+' : ''}${formatMoneyModal(value)}`;
+                                            text = `${value > 0 ? '+' : ''}${formatCurrencySpanish(value)}`;
                                         } else {
-                                            text = formatMoneyModal(value);
+                                            text = formatCurrencySpanish(value);
                                         }
                                     }
                                     const isNeg = value < -0.005;
@@ -1751,7 +1756,6 @@ export default function HistoryPage() {
                                                             diffTone ?? 'text-zinc-800'
                                                         )}>
                                                             {text}
-                                                            {hasValue && <span className="ml-1 text-xs font-bold text-zinc-500">€</span>}
                                                         </span>
                                                     </div>
                                                 )}
@@ -1784,8 +1788,8 @@ export default function HistoryPage() {
                                                 <Banknote size={13} className="text-emerald-500" />
                                                 <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
-                                                        ? `${avgTicketVal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                                                        : '0,00'} T.Medio
+                                                        ? formatCurrencySpanish(avgTicketVal) 
+                                                        : '0€'} T.Medio
                                                 </span>
                                             </div>
                                         </div>
@@ -1831,8 +1835,7 @@ export default function HistoryPage() {
                                                 isDiff={true}
                                             />
                                         </div>
-
-                                        {/* Fila 4: Venta Esperada, Rendimiento Detallado (solo lectura) */}
+                                         {/* Fila 4: Venta Esperada, Rendimiento Detallado (solo lectura) */}
                                         {!isEditing && (() => {
                                             const targetDate = parseLocalSafe(selectedClosing.closing_date);
                                             const details = get8DayExpectedSalesDetails(targetDate);
@@ -1850,7 +1853,7 @@ export default function HistoryPage() {
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         <span>Esperado ({weekdayName}):</span>
                                                         <span className="font-extrabold text-zinc-700">
-                                                            {details.expectedSales > 0 ? `${Math.round(details.expectedSales).toLocaleString('es-ES')} €` : 'N/A'}
+                                                            {details.expectedSales > 0 ? formatCurrencySpanish(details.expectedSales) : 'N/A'}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center justify-center gap-1.5">
@@ -2143,24 +2146,23 @@ export default function HistoryPage() {
  
                         <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-zinc-900">
                             {(() => {
-                                const diffEur = actualWithExpectedSum - expectedSum;
                                 return (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-2 gap-6 place-items-center">
                                             <div className="flex flex-col items-center justify-center text-center">
                                                 <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                                    {formatValue(actualWithExpectedSum, 'net_sales')}
+                                                    {formatCurrencySpanish(currentNetSum)}
                                                 </span>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                                    Real Acumulado
+                                                    Periodo Actual
                                                 </span>
                                             </div>
                                             <div className="flex flex-col items-center justify-center text-center">
                                                 <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                                    {formatValue(expectedSum, 'net_sales')}
+                                                    {formatCurrencySpanish(prevNetSum)}
                                                 </span>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                                    Esperado Acumulado
+                                                    Periodo Anterior
                                                 </span>
                                             </div>
                                         </div>
@@ -2169,9 +2171,9 @@ export default function HistoryPage() {
                                             <div className="flex flex-col items-center justify-center text-center">
                                                 <span className={cn(
                                                     "text-sm md:text-base font-black leading-none",
-                                                    diffEur >= 0 ? "text-emerald-600" : "text-rose-600"
+                                                    popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
                                                 )}>
-                                                    {diffEur >= 0 ? '+' : ''}{Math.round(diffEur).toLocaleString('es-ES')}€
+                                                    {popAbsolute >= 0 ? '+' : ''}{formatCurrencySpanish(popAbsolute)}
                                                 </span>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                                                     Diferencia €
@@ -2179,31 +2181,28 @@ export default function HistoryPage() {
                                             </div>
                                             <div className="flex flex-col items-center justify-center text-center">
                                                 <div className="flex items-center gap-1 leading-none">
-                                                    {periodRendimiento !== 0 && (
+                                                    {popPercent !== 0 && (
                                                         <TrendTriangle 
-                                                            type={getRendimientoScale(periodRendimiento).icon} 
-                                                            className={getRendimientoScale(periodRendimiento).color}
+                                                            type={getRendimientoScale(popPercent).icon} 
+                                                            className={getRendimientoScale(popPercent).color}
                                                         />
                                                     )}
                                                     <span className={cn(
                                                         "text-sm md:text-base font-black tabular-nums",
-                                                        getRendimientoScale(periodRendimiento).color
+                                                        getRendimientoScale(popPercent).color
                                                     )}>
-                                                        {periodRendimiento >= 0 ? '+' : ''}{Math.round(periodRendimiento)}%
+                                                        {popPercent >= 0 ? '+' : ''}{popPercent.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                                                     </span>
                                                 </div>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                                    Diferencia %
+                                                    Rendimiento
                                                 </span>
                                             </div>
                                         </div>
  
                                         <div className="pt-4 border-t border-zinc-100 flex flex-col gap-2 text-zinc-500 text-[10px] md:text-[11px] leading-relaxed font-semibold text-center md:text-left">
                                             <p>
-                                                El rendimiento global compara la venta neta acumulada del periodo contra la venta neta esperada acumulada obtenida a partir de los últimos 8 días equivalentes de cada fecha.
-                                            </p>
-                                            <p className="text-zinc-400 text-[9px] md:text-[10px] italic">
-                                                * Los días con esperado = 0€ se excluyen completamente de los cálculos.
+                                                El rendimiento global compara la venta neta acumulada del periodo actual contra la venta neta del mismo número de días transcurridos del periodo equivalente anterior.
                                             </p>
                                         </div>
                                     </div>
