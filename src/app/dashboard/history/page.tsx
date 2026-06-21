@@ -572,60 +572,116 @@ export default function HistoryPage() {
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
 
-    const [slideState, setSlideState] = useState<{
-        stage: 'idle' | 'out' | 'in';
-        direction: 'left' | 'right';
-        pendingClosing: any;
-    }>({ stage: 'idle', direction: 'left', pendingClosing: null });
+    // --- Real-time swipe drag state ---
+    const modalCardRef = useRef<HTMLDivElement>(null);
+    const [swipeDragX, setSwipeDragX] = useState(0);
+    const [swipePhase, setSwipePhase] = useState<'idle' | 'dragging' | 'animating'>('idle');
+    const [swipeNextClosing, setSwipeNextClosing] = useState<any>(null);
+    const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left');
+
+    const swipeTouchStartX = useRef<number | null>(null);
+    const swipeTouchStartY = useRef<number | null>(null);
+    const swipeAxisLocked = useRef<boolean | null>(null); // true = horizontal
 
     const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
         if (!nextClosing) return;
-        setSlideState({
-            stage: 'out',
-            direction: dir,
-            pendingClosing: nextClosing
-        });
+        const cardW = modalCardRef.current?.offsetWidth ?? 400;
+        setSwipeDirection(dir);
+        setSwipeNextClosing(nextClosing);
+        setSwipePhase('animating');
+        setSwipeDragX(dir === 'left' ? -cardW : cardW);
         setTimeout(() => {
             setSelectedClosing(nextClosing);
             setIsEditing(false);
             setLightboxIndex(null);
-            setSlideState({
-                stage: 'in',
-                direction: dir,
-                pendingClosing: null
+            setSwipeDragX(dir === 'left' ? cardW : -cardW);
+            // Next tick: animate back to 0
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setSwipeDragX(0);
+                    setTimeout(() => {
+                        setSwipePhase('idle');
+                        setSwipeNextClosing(null);
+                    }, 220);
+                });
             });
-            setTimeout(() => {
-                setSlideState(prev => ({
-                    ...prev,
-                    stage: 'idle'
-                }));
-            }, 30);
-        }, 150);
+        }, 200);
     };
 
-    const touchStartX = useRef<number | null>(null);
-    const touchStartY = useRef<number | null>(null);
-
     const handleTouchStart = (e: React.TouchEvent) => {
-        touchStartX.current = e.touches[0].clientX;
-        touchStartY.current = e.touches[0].clientY;
+        if (isEditing) return;
+        swipeTouchStartX.current = e.touches[0].clientX;
+        swipeTouchStartY.current = e.touches[0].clientY;
+        swipeAxisLocked.current = null;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (isEditing) return;
+        if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
+        const dx = e.touches[0].clientX - swipeTouchStartX.current;
+        const dy = e.touches[0].clientY - swipeTouchStartY.current;
+        // Decide axis lock on first 8px of movement
+        if (swipeAxisLocked.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+            swipeAxisLocked.current = Math.abs(dx) > Math.abs(dy);
+        }
+        if (!swipeAxisLocked.current) return;
+        e.preventDefault();
+        const currentIndex = closings.findIndex(c => c.id === selectedClosing?.id);
+        const dir: 'left' | 'right' = dx < 0 ? 'left' : 'right';
+        const adjIdx = dir === 'left' ? currentIndex - 1 : currentIndex + 1;
+        const adjClosing = adjIdx >= 0 && adjIdx < closings.length ? closings[adjIdx] : null;
+        const cardW = modalCardRef.current?.offsetWidth ?? 400;
+        const maxDrag = adjClosing ? cardW : cardW * 0.15;
+        const clampedDx = Math.max(-maxDrag, Math.min(maxDrag, dx)) * (adjClosing ? 1 : 0.25);
+        setSwipeDirection(dir);
+        setSwipeNextClosing(adjClosing);
+        setSwipeDragX(clampedDx);
+        setSwipePhase('dragging');
     };
 
     const handleTouchEnd = (e: React.TouchEvent) => {
         if (isEditing) return;
-        if (touchStartX.current === null || touchStartY.current === null) return;
-        const diffX = e.changedTouches[0].clientX - touchStartX.current;
-        const diffY = e.changedTouches[0].clientY - touchStartY.current;
-        
-        touchStartX.current = null;
-        touchStartY.current = null;
-
-        if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > 50) {
-            if (diffX > 0) {
-                handleNavigateClosing('prev');
-            } else {
-                handleNavigateClosing('next');
-            }
+        const wasHorizontal = swipeAxisLocked.current;
+        swipeTouchStartX.current = null;
+        swipeTouchStartY.current = null;
+        swipeAxisLocked.current = null;
+        if (!wasHorizontal || swipePhase !== 'dragging') {
+            setSwipePhase('idle');
+            setSwipeDragX(0);
+            setSwipeNextClosing(null);
+            return;
+        }
+        const cardW = modalCardRef.current?.offsetWidth ?? 400;
+        const THRESHOLD = cardW * 0.3;
+        if (Math.abs(swipeDragX) > THRESHOLD && swipeNextClosing) {
+            // Commit navigation
+            const dir = swipeDirection;
+            const next = swipeNextClosing;
+            setSwipePhase('animating');
+            setSwipeDragX(dir === 'left' ? -cardW : cardW);
+            setTimeout(() => {
+                setSelectedClosing(next);
+                setIsEditing(false);
+                setLightboxIndex(null);
+                setSwipeDragX(dir === 'left' ? cardW : -cardW);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        setSwipeDragX(0);
+                        setTimeout(() => {
+                            setSwipePhase('idle');
+                            setSwipeNextClosing(null);
+                        }, 220);
+                    });
+                });
+            }, 180);
+        } else {
+            // Snap back
+            setSwipePhase('animating');
+            setSwipeDragX(0);
+            setTimeout(() => {
+                setSwipePhase('idle');
+                setSwipeNextClosing(null);
+            }, 230);
         }
     };
 
@@ -1691,14 +1747,45 @@ export default function HistoryPage() {
                 }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
-                        <div 
-                            className={cn(
-                                "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0",
-                                slideState.stage === 'idle' && "transform translate-x-0 transition-transform duration-150 ease-out",
-                                slideState.stage === 'out' && (slideState.direction === 'left' ? "transform -translate-x-[120vw] transition-transform duration-150 ease-in" : "transform translate-x-[120vw] transition-transform duration-150 ease-in"),
-                                slideState.stage === 'in' && (slideState.direction === 'left' ? "transform translate-x-[120vw]" : "transform -translate-x-[120vw]")
-                            )}
+                        {/* Swipe drag: show adjacent card peeking from the side */}
+                        {swipePhase !== 'idle' && swipeNextClosing && (() => {
+                            const cardW = modalCardRef.current?.offsetWidth ?? 400;
+                            const adjOffset = swipeDragX + (swipeDirection === 'left' ? cardW : -cardW);
+                            return (
+                                <div
+                                    className="absolute top-0 bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
+                                    style={{
+                                        transform: `translateX(${adjOffset}px)`,
+                                        transition: swipePhase === 'animating' ? 'transform 200ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                        zIndex: 1,
+                                    }}
+                                >
+                                    <div className="bg-[#36606F] px-4 py-2 text-white shrink-0 text-center">
+                                        <div className="flex items-center justify-center min-h-[32px]">
+                                            <h2 className="text-xs sm:text-sm font-black uppercase tracking-tighter">
+                                                {(() => {
+                                                    const d = new Date(swipeNextClosing.closed_at);
+                                                    return isNaN(d.getTime()) ? '' : format(d, 'eeee d MMMM', { locale: es });
+                                                })()}
+                                            </h2>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 flex items-center justify-center opacity-30">
+                                        <span className="text-zinc-400 text-sm font-black uppercase tracking-widest">Cargando…</span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                        <div
+                            ref={modalCardRef}
+                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
+                            style={{
+                                transform: `translateX(${swipeDragX}px)`,
+                                transition: swipePhase === 'animating' ? 'transform 200ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                zIndex: 2,
+                            }}
                             onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
                             onTouchEnd={handleTouchEnd}
                             onClick={e => e.stopPropagation()}
                         >
@@ -1908,7 +1995,7 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="py-2">
+                                        <div className="pt-4 pb-2">
                                             <RowItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
