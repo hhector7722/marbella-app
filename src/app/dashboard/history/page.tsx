@@ -1851,7 +1851,7 @@ export default function HistoryPage() {
                                                             <img
                                                                 src={weatherOpt.icon}
                                                                 alt=""
-                                                                className="w-4.5 h-4.5 object-contain"
+                                                                className="w-3 h-3 object-contain"
                                                             />
                                                         );
                                                     }
