@@ -43,6 +43,7 @@ import {
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
+import { CLOSING_WEATHER_OPTIONS, weatherIdFromLabel } from '@/lib/cash-closing-weather';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -417,8 +418,16 @@ function DailySalesChart({
     const currentMonthLabel = format(firstDate, 'MMMM', { locale: es });
     const prevMonthLabel = format(subMonths(firstDate, 1), 'MMMM', { locale: es });
 
+    const y1k = getY(1000);
+    const y3k = getY(3000);
+    const y6k = getY(6000);
+
+    const show1k = maxVal >= 1000;
+    const show3k = maxVal >= 3000;
+    const show6k = maxVal >= 6000;
+
     return (
-        <div className="bg-white border-b border-zinc-100/80 py-2.5 px-4 print:hidden">
+        <div className="bg-white py-2.5 px-4 print:hidden">
             <div className="max-w-[97%] mx-auto flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -441,6 +450,24 @@ function DailySalesChart({
                 </div>
                 <div className="relative w-full h-[65px] mt-1">
                     <svg viewBox={`0 0 ${width} 65`} className="w-full h-full" preserveAspectRatio="none">
+                        {show1k && (
+                            <g>
+                                <line x1={paddingX} y1={y1k} x2={width - paddingX} y2={y1k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
+                                <text x={paddingX - 4} y={y1k + 2.5} textAnchor="end" className="fill-zinc-400 font-sans font-black" style={{ fontSize: '7px' }}>1k</text>
+                            </g>
+                        )}
+                        {show3k && (
+                            <g>
+                                <line x1={paddingX} y1={y3k} x2={width - paddingX} y2={y3k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
+                                <text x={paddingX - 4} y={y3k + 2.5} textAnchor="end" className="fill-zinc-400 font-sans font-black" style={{ fontSize: '7px' }}>3k</text>
+                            </g>
+                        )}
+                        {show6k && (
+                            <g>
+                                <line x1={paddingX} y1={y6k} x2={width - paddingX} y2={y6k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
+                                <text x={paddingX - 4} y={y6k + 2.5} textAnchor="end" className="fill-zinc-400 font-sans font-black" style={{ fontSize: '7px' }}>6k</text>
+                            </g>
+                        )}
                         {comparisonPath && (
                             <path
                                 d={comparisonPath}
@@ -544,6 +571,32 @@ export default function HistoryPage() {
 
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
+
+    const touchStartX = useRef<number | null>(null);
+    const touchStartY = useRef<number | null>(null);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (isEditing) return;
+        if (touchStartX.current === null || touchStartY.current === null) return;
+        const diffX = e.changedTouches[0].clientX - touchStartX.current;
+        const diffY = e.changedTouches[0].clientY - touchStartY.current;
+        
+        touchStartX.current = null;
+        touchStartY.current = null;
+
+        if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > 50) {
+            if (diffX > 0) {
+                handleNavigateClosing('prev');
+            } else {
+                handleNavigateClosing('next');
+            }
+        }
+    };
 
     const closingDetailTrackingLabel = useMemo(() => {
         if (!selectedClosing) return 'Detalle de cierre';
@@ -1362,7 +1415,7 @@ export default function HistoryPage() {
                     </div>
 
                     <div className="bg-white">
-                        <div className="pt-1.5 md:pt-2 pb-0.5 px-2 grid grid-cols-3 print:hidden">
+                        <div className="pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center gap-1.5 leading-none">
                                     <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums">
@@ -1608,7 +1661,12 @@ export default function HistoryPage() {
                     }
                 }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                    <div className="relative flex flex-col items-center gap-4 w-full max-w-lg animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div 
+                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0" 
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                        >
                         <div className="bg-[#36606F] px-4 py-2 text-white relative shrink-0 text-center">
                             <div className="relative flex items-center justify-center z-10 w-full min-h-[32px]">
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-start gap-1">
@@ -1778,73 +1836,99 @@ export default function HistoryPage() {
                                 const avgTicketVal = (current?.tickets_count || 0) > 0 
                                     ? (current?.tpv_sales || 0) / current?.tickets_count 
                                     : 0;
- 
+
                                 return (
                                     <div className="space-y-4">
                                         {/* Clima, Tickets y Ticket Medio en el cuerpo */}
                                         <div className="flex items-center justify-center gap-4 pb-2.5 border-b border-zinc-100">
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <CloudSun size={13} className="text-amber-500" />
+                                                {(() => {
+                                                    const weatherId = weatherIdFromLabel(selectedClosing.weather);
+                                                    const weatherOpt = CLOSING_WEATHER_OPTIONS.find(o => o.id === weatherId);
+                                                    if (weatherOpt) {
+                                                        return (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={weatherOpt.icon}
+                                                                alt=""
+                                                                className="w-4.5 h-4.5 object-contain"
+                                                            />
+                                                        );
+                                                    }
+                                                    return <CloudSun size={13} className="text-amber-500" />;
+                                                })()}
                                                 <span className="text-[9.5px] font-black uppercase text-zinc-500 tracking-wider">
                                                     {selectedClosing.weather || 'Clima N/A'}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <Receipt size={13} className="text-blue-500" />
                                                 <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
-                                                    {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} Ticks
+                                                    {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <Banknote size={13} className="text-emerald-500" />
                                                 <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
-                                                        ? formatCurrencyModal(avgTicketVal) 
-                                                        : ''} T.Medio
+                                                        ? `${formatCurrencyModal(avgTicketVal)} ` 
+                                                        : ''}DE TICKET MEDIO
                                                 </span>
                                             </div>
                                         </div>
- 
+
                                         {/* Fila por fila con el estilo del paso 1 */}
-                                        <div className="flex flex-col gap-2">
-                                            <RowItem
-                                                label="Ventas"
-                                                value={getValue('tpv_sales')}
-                                                fieldKey="tpv_sales"
-                                                editable={true}
-                                            />
-                                            <RowItem
-                                                label="Venta Neta"
-                                                value={getValue('net_sales')}
-                                            />
-                                            <RowItem
-                                                label="Tarjeta"
-                                                value={getValue('sales_card')}
-                                                fieldKey="sales_card"
-                                                editable={true}
-                                            />
-                                            <RowItem
-                                                label="Efectivo"
-                                                value={getValue('cash_counted')}
-                                                onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
-                                            />
-                                            <RowItem
-                                                label="Pendiente Pago"
-                                                value={getValue('sales_pending')}
-                                                fieldKey="sales_pending"
-                                                editable={true}
-                                            />
-                                            <RowItem
-                                                label="Cobros Pendientes"
-                                                value={collectionsValue}
-                                                fieldKey="debt_recovered"
-                                                editable={true}
-                                            />
-                                            <RowItem
-                                                label="Diferencia"
-                                                value={getValue('difference')}
-                                                isDiff={true}
-                                            />
+                                        <div className="flex flex-col divide-y divide-zinc-100">
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Ventas"
+                                                    value={getValue('tpv_sales')}
+                                                    fieldKey="tpv_sales"
+                                                    editable={true}
+                                                />
+                                            </div>
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Venta Neta"
+                                                    value={getValue('net_sales')}
+                                                />
+                                            </div>
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Tarjeta"
+                                                    value={getValue('sales_card')}
+                                                    fieldKey="sales_card"
+                                                    editable={true}
+                                                />
+                                            </div>
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Efectivo"
+                                                    value={getValue('cash_counted')}
+                                                    onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
+                                                />
+                                            </div>
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Pendiente Pago"
+                                                    value={getValue('sales_pending')}
+                                                    fieldKey="sales_pending"
+                                                    editable={true}
+                                                />
+                                            </div>
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Cobros Pendientes"
+                                                    value={collectionsValue}
+                                                    fieldKey="debt_recovered"
+                                                    editable={true}
+                                                />
+                                            </div>
+                                            <div className="py-2">
+                                                <RowItem
+                                                    label="Diferencia"
+                                                    value={getValue('difference')}
+                                                    isDiff={true}
+                                                />
+                                            </div>
                                         </div>
                                         {!isEditing && (() => {
                                             const targetDate = parseLocalSafe(selectedClosing.closing_date);
@@ -1863,7 +1947,7 @@ export default function HistoryPage() {
                                             return (
                                                 <div className="pt-4 border-t border-zinc-100 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
-                                                        <span>Esperado ({weekdayName}):</span>
+                                                        <span>Esperado:</span>
                                                         <span className="font-extrabold text-zinc-700">
                                                             {details.expectedSales > 0 ? formatCurrencyModal(details.expectedSales) : 'N/A'}
                                                         </span>
@@ -1883,8 +1967,7 @@ export default function HistoryPage() {
                                                     </div>
                                                     {details.expectedSales > 0 && (
                                                         <p className="text-[9px] text-zinc-400 font-normal italic mt-0.5 max-w-[85%] mx-auto">
-                                                            Cálculo de esperado basado en {details.daysUsed} {weekdayPlural} anteriores.
-                                                            {details.daysExcluded > 0 && ` Se excluyeron ${details.daysExcluded} días con 0€.`}
+                                                            Esperado basado en los {details.daysUsed} {weekdayPlural} anteriores.
                                                         </p>
                                                     )}
                                                 </div>
@@ -1948,7 +2031,73 @@ export default function HistoryPage() {
                             )}
                         </div>
                     </div>
+                    {/* 3 Pagination dots block */}
+                    {(() => {
+                        const currentIndex = closings.findIndex(c => c.id === selectedClosing.id);
+                        if (currentIndex === -1) return null;
+                        
+                        let activeDot = 1;
+                        if (currentIndex === 0) {
+                            activeDot = 2;
+                        } else if (currentIndex === closings.length - 1) {
+                            activeDot = 0;
+                        }
+                        
+                        return (
+                            <div className="flex justify-center gap-2.5 mt-2 select-none z-10">
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        if (isEditing) return;
+                                        if (currentIndex < closings.length - 1) {
+                                            openClosingDetail(closings[currentIndex + 1]);
+                                            setIsEditing(false);
+                                            setLightboxIndex(null);
+                                        }
+                                    }}
+                                    disabled={currentIndex === closings.length - 1}
+                                    className={cn(
+                                        "w-2 h-2 rounded-full transition-all duration-300 outline-none",
+                                        activeDot === 0 
+                                            ? "bg-white scale-125 shadow-sm" 
+                                            : "bg-white/40 hover:bg-white/60 disabled:opacity-30 disabled:pointer-events-none"
+                                    )}
+                                    aria-label="Cierre anterior"
+                                />
+                                <button 
+                                    type="button"
+                                    className={cn(
+                                        "w-2 h-2 rounded-full transition-all duration-300 outline-none pointer-events-none",
+                                        activeDot === 1 
+                                            ? "bg-white scale-125 shadow-sm" 
+                                            : "bg-white/40"
+                                    )}
+                                    aria-label="Cierre actual"
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        if (isEditing) return;
+                                        if (currentIndex > 0) {
+                                            openClosingDetail(closings[currentIndex - 1]);
+                                            setIsEditing(false);
+                                            setLightboxIndex(null);
+                                        }
+                                    }}
+                                    disabled={currentIndex === 0}
+                                    className={cn(
+                                        "w-2 h-2 rounded-full transition-all duration-300 outline-none",
+                                        activeDot === 2 
+                                            ? "bg-white scale-125 shadow-sm" 
+                                            : "bg-white/40 hover:bg-white/60 disabled:opacity-30 disabled:pointer-events-none"
+                                    )}
+                                    aria-label="Cierre siguiente"
+                                />
+                            </div>
+                        );
+                    })()}
                 </div>
+            </div>
             )}
 
             {selectedClosing && (
@@ -2131,31 +2280,30 @@ export default function HistoryPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowPeriodPerformanceModal(false)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-4 md:p-5 text-white relative shrink-0 text-center">
-                            <div className="relative flex items-center justify-between mb-2 z-10 w-full">
-                                <div className="flex-1" />
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/90">
-                                    Detalle de Rendimiento
-                                </h3>
-                                <div className="flex-1 flex justify-end">
-                                    <button
-                                        onClick={() => setShowPeriodPerformanceModal(false)}
-                                        className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                    >
-                                        <X size={20} strokeWidth={2.5} />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="mt-1">
-                                <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-tighter">
-                                    {filterMode === 'single'
-                                        ? format(parseLocalSafe(selectedDate), 'd MMMM yyyy', { locale: es })
-                                        : `${format(parseLocalSafe(rangeStart), 'd MMM', { locale: es })} — ${format(parseLocalSafe(rangeEnd), 'd MMM yyyy', { locale: es })}`
+                        <div className="bg-[#36606F] px-4 py-3 text-white relative shrink-0 text-center">
+                            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter mx-auto max-w-[80%] flex items-center justify-center min-h-[32px]">
+                                {(() => {
+                                    if (filterMode === 'single') {
+                                        return format(parseLocalSafe(selectedDate), "d 'de' MMMM", { locale: es });
                                     }
-                                </h2>
+                                    const start = parseLocalSafe(rangeStart);
+                                    const end = parseLocalSafe(rangeEnd);
+                                    const startMonth = format(start, 'MMMM', { locale: es });
+                                    const endDay = format(end, 'd');
+                                    const endMonth = format(end, 'MMMM', { locale: es });
+                                    return `1 ${startMonth} a ${endDay} ${endMonth}`;
+                                })()}
+                            </h2>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                <button
+                                    onClick={() => setShowPeriodPerformanceModal(false)}
+                                    className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                                >
+                                    <X size={18} strokeWidth={2.5} />
+                                </button>
                             </div>
                         </div>
- 
+
                         <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-zinc-900">
                             {(() => {
                                 return (
@@ -2174,7 +2322,7 @@ export default function HistoryPage() {
                                                     {formatCurrencySpanish(prevNetSum)}
                                                 </span>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                                    Periodo Anterior
+                                                    Periodo mes anterior
                                                 </span>
                                             </div>
                                         </div>
