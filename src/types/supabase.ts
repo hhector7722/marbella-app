@@ -3828,7 +3828,12 @@ export type Database = {
         }[]
       }
       get_product_sales_ranking: {
-        Args: { p_end_date: string; p_start_date: string }
+        Args: {
+          p_end_date: string
+          p_start_date: string
+          p_start_time?: string | null
+          p_end_time?: string | null
+        }
         Returns: {
           cantidad_total: number
           nombre_articulo: string

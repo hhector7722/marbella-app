@@ -58,7 +58,6 @@ interface RendimientoScale {
 
 function TrendTriangle({ type, className, size = 'md' }: { type: 'up' | 'down' | 'right'; className?: string; size?: 'sm' | 'md' }) {
     const s = size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5';
-    const sRight = size === 'sm' ? 'w-1.5 h-1.5' : 'w-2 h-2';
     if (type === 'up') {
         return (
             <svg className={cn("fill-current inline-block shrink-0 align-middle", s, className)} viewBox="0 0 24 24" aria-hidden="true">
@@ -73,11 +72,7 @@ function TrendTriangle({ type, className, size = 'md' }: { type: 'up' | 'down' |
             </svg>
         );
     }
-    return (
-        <svg className={cn("fill-current inline-block shrink-0 align-middle", sRight, className)} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20 12L5 3v18z" />
-        </svg>
-    );
+    return null;
 }
 
 function formatCurrencySpanish(val: number): string {
@@ -90,7 +85,7 @@ function formatCurrencySpanish(val: number): string {
 }
 
 function formatCurrencyModal(val: number): string {
-    if (Math.abs(val) < 0.005) return ' ';
+    if (Math.abs(val) < 0.005) return '';
     const formatted = val.toLocaleString('es-ES', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -143,7 +138,7 @@ function ClosingCalendarCellContent({
         <div className="flex flex-col items-center justify-center gap-0.5 w-full text-center flex-1 h-full">
             {rounded > 0 ? (
                 <>
-                    <div className="text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums text-zinc-950">
+                    <div className="text-[10px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums text-zinc-950">
                         {formatCurrencyCalendar(netSales)}
                     </div>
                     {hasExpected && (
@@ -1722,7 +1717,7 @@ export default function HistoryPage() {
                                     onClick?: () => void;
                                 }) => {
                                     const hasValue = Math.abs(value) >= 0.005;
-                                    let text = ' ';
+                                    let text = '';
                                     if (hasValue) {
                                         if (isDiff) {
                                             text = `${value > 0 ? '+' : ''}${formatCurrencyModal(value)}`;
@@ -1805,7 +1800,7 @@ export default function HistoryPage() {
                                                 <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
                                                         ? formatCurrencyModal(avgTicketVal) 
-                                                        : ' '} T.Medio
+                                                        : ''} T.Medio
                                                 </span>
                                             </div>
                                         </div>

@@ -294,7 +294,9 @@ export default function VentasPage() {
 
             const productsPromise = supabase.rpc('get_product_sales_ranking', {
                 p_start_date: productStartYmd,
-                p_end_date: productEndYmd
+                p_end_date: productEndYmd,
+                p_start_time: startTime,
+                p_end_time: endTime,
             });
 
             const [ticketsRes, productsRes, summaryRes] = await Promise.all([ticketsPromise, productsPromise, summaryPromise]);
