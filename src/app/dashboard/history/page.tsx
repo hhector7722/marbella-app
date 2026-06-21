@@ -81,8 +81,12 @@ function TrendTriangle({ type, className, size = 'md' }: { type: 'up' | 'down' |
 }
 
 function formatCurrencySpanish(val: number): string {
-    const rounded = Math.round(val);
-    return `${rounded.toLocaleString('es-ES')}€`;
+    const isWhole = Math.abs(val - Math.round(val)) < 0.005;
+    const formatted = val.toLocaleString('es-ES', {
+        minimumFractionDigits: isWhole ? 0 : 2,
+        maximumFractionDigits: 2
+    });
+    return `${formatted}€`;
 }
 
 function getRendimientoScale(diffPercent: number): RendimientoScale {
@@ -303,14 +307,14 @@ const CashBreakdownModal = ({
                                     ) : (
                                         <span className="text-xs font-black text-gray-400">x{qty as number}</span>
                                     )}
-                                    <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">{(parseFloat(den) * (qty as number || 0)).toFixed(2)}€</span>
+                                    <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">{formatCurrencySpanish(parseFloat(den) * (qty as number || 0))}</span>
                                 </div>
                             </div>
                         ))}
                     </div>
                     <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center px-2">
                         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Contado</span>
-                        <span className="text-2xl font-black text-[#36606F]">{total.toFixed(2)}€</span>
+                        <span className="text-2xl font-black text-[#36606F]">{formatCurrencySpanish(total)}</span>
                     </div>
                 </div>
                 {isEditing && (
@@ -477,7 +481,7 @@ function DailySalesChart({
                                 <span
                                     key={idx}
                                     style={{ left: `${leftPct}%` }}
-                                    className="absolute top-0 -translate-x-1/2 text-[9px] font-medium text-zinc-400 tabular-nums leading-none"
+                                    className="absolute top-0 -translate-x-1/2 text-[9px] font-medium text-zinc-400 font-sans whitespace-nowrap leading-none"
                                 >
                                     {dayStr}
                                 </span>
@@ -1255,34 +1259,31 @@ export default function HistoryPage() {
                                     </button>
                                 </div>
                             </div>
-
-                            {viewMode === 'calendar' ? (
-                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 sm:gap-1 max-w-[min(100%,14rem)] sm:max-w-none px-1">
-                                    <button
-                                        type="button"
-                                        onClick={handlePrevMonth}
-                                        className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
-                                        aria-label="Mes anterior"
-                                    >
-                                        <ChevronLeft size={18} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsTimeFilterOpen(true)}
-                                        className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-1 truncate hover:text-white/80 transition-colors"
-                                    >
-                                        {monthNavLabel}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleNextMonth}
-                                        className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
-                                        aria-label="Mes siguiente"
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
-                                </div>
-                            ) : null}
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 sm:gap-1 max-w-[min(100%,14rem)] sm:max-w-none px-1">
+                                <button
+                                    type="button"
+                                    onClick={handlePrevMonth}
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    aria-label="Mes anterior"
+                                >
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-1 truncate hover:text-white/80 transition-colors"
+                                >
+                                    {monthNavLabel}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleNextMonth}
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    aria-label="Mes siguiente"
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
 
                             <div className="flex items-center gap-1 shrink-0 text-white ml-auto z-10">
                                 {viewMode === 'table' ? (
@@ -1358,13 +1359,6 @@ export default function HistoryPage() {
                                     <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
-                                    <span className={cn(
-                                        "text-[9.5px] md:text-[10px] font-black flex items-center gap-0.5",
-                                        popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
-                                    )}>
-                                        <TrendTriangle type={popAbsolute >= 0 ? 'up' : 'down'} className={popAbsolute >= 0 ? 'text-emerald-600' : 'text-rose-600'} />
-                                        {Math.abs(Math.round(popPercent))}%
-                                    </span>
                                 </div>
                                 <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
                                     VENTA NETA
@@ -1375,12 +1369,19 @@ export default function HistoryPage() {
                                 className="flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
                             >
                                 <div className="flex items-center gap-1 leading-none">
-                                    <span className={cn(
-                                        "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums",
-                                        getRendimientoScale(popPercent).color
-                                    )}>
-                                        {popPercent >= 0 ? '+' : ''}{popPercent.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
-                                    </span>
+                                    {(() => {
+                                        const popScale = getRendimientoScale(popPercent);
+                                        const triangleSymbol = popScale.icon === 'up' ? '▲' : popScale.icon === 'down' ? '▼' : '▶';
+                                        return (
+                                            <span className={cn(
+                                                "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums flex items-center gap-1",
+                                                popScale.color
+                                            )}>
+                                                <span className="text-[9px] sm:text-[10px] md:text-xs leading-none">{triangleSymbol}</span>
+                                                <span>{Math.abs(popPercent).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%</span>
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                                 <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
                                     RENDIMIENTO
@@ -1437,7 +1438,7 @@ export default function HistoryPage() {
                                                             const d = new Date(c.closed_at);
                                                             const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
                                                             const diff = c.difference ?? 0;
-                                                            const formatCompact = (val: number) => Math.round(val || 0).toLocaleString('es-ES');
+                                                            const formatCompact = (val: number) => formatCurrencySpanish(val || 0);
 
                                                             return (
                                                                 <tr
@@ -1458,7 +1459,7 @@ export default function HistoryPage() {
                                                                         {(c.tickets_count || 0).toLocaleString('es-ES')}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px] text-[#36606F]/80">
-                                                                        {avgTicket === 0 ? ' ' : Math.round(avgTicket).toLocaleString('es-ES')}
+                                                                        {avgTicket === 0 ? ' ' : formatCurrencySpanish(avgTicket)}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {formatCompact(c.cash_counted)}
@@ -1476,7 +1477,7 @@ export default function HistoryPage() {
                                                                         "py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]",
                                                                         diff > 0 ? "text-emerald-600" : diff < 0 ? "text-rose-600" : "text-zinc-400"
                                                                     )}>
-                                                                        {diff === 0 ? ' ' : Math.round(diff).toLocaleString('es-ES')}
+                                                                        {diff === 0 ? ' ' : formatCurrencySpanish(diff)}
                                                                     </td>
                                                                 </tr>
                                                             );
