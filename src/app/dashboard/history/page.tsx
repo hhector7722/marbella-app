@@ -121,7 +121,7 @@ function ClosingCalendarCellContent({
             {rounded > 0 ? (
                 <>
                     <div className="text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums text-zinc-950">
-                        {rounded}
+                        {rounded.toLocaleString('es-ES')}
                         <span className="text-[8px] md:text-[10px] font-semibold ml-[0.5px] text-zinc-500">€</span>
                     </div>
                     {hasExpected && (
