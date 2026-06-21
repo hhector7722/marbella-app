@@ -1694,9 +1694,9 @@ export default function HistoryPage() {
                         <div 
                             className={cn(
                                 "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0",
-                                slideState.stage === 'idle' && "transform translate-x-0 opacity-100 transition-all duration-200 ease-out",
-                                slideState.stage === 'out' && (slideState.direction === 'left' ? "transform -translate-x-10 opacity-0 transition-all duration-150 ease-in" : "transform translate-x-10 opacity-0 transition-all duration-150 ease-in"),
-                                slideState.stage === 'in' && (slideState.direction === 'left' ? "transform translate-x-10 opacity-0" : "transform -translate-x-10 opacity-0")
+                                slideState.stage === 'idle' && "transform translate-x-0 transition-transform duration-150 ease-out",
+                                slideState.stage === 'out' && (slideState.direction === 'left' ? "transform -translate-x-[120vw] transition-transform duration-150 ease-in" : "transform translate-x-[120vw] transition-transform duration-150 ease-in"),
+                                slideState.stage === 'in' && (slideState.direction === 'left' ? "transform translate-x-[120vw]" : "transform -translate-x-[120vw]")
                             )}
                             onTouchStart={handleTouchStart}
                             onTouchEnd={handleTouchEnd}
