@@ -80,7 +80,7 @@ function TrendTriangle({ type, className }: { type: 'up' | 'down' | 'right'; cla
 
 function getRendimientoScale(diffPercent: number): RendimientoScale {
     if (diffPercent > 15) {
-        return { level: 5, icon: 'up', color: 'text-emerald-800', label: 'Excelente' };
+        return { level: 5, icon: 'up', color: 'text-emerald-600', label: 'Excelente' };
     }
     if (diffPercent >= 5) {
         return { level: 4, icon: 'up', color: 'text-emerald-500', label: 'Bueno' };
@@ -399,7 +399,7 @@ function DailySalesChart({
     const prevMonthLabel = format(subMonths(firstDate, 1), 'MMMM', { locale: es });
 
     return (
-        <div className="bg-white border-t border-b border-zinc-100/80 py-2.5 px-4 print:hidden">
+        <div className="bg-white border-b border-zinc-100/80 py-2.5 px-4 print:hidden">
             <div className="max-w-[97%] mx-auto flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -420,8 +420,8 @@ function DailySalesChart({
                         EVOLUCIÓN DIARIA VENTA NETA
                     </span>
                 </div>
-                <div className="relative w-full h-[65px] mt-1 overflow-hidden">
-                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                <div className="relative w-full h-[82px] mt-1 overflow-visible">
+                    <svg viewBox={`0 0 ${width} 85`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
                         {comparisonPath && (
                             <path
                                 d={comparisonPath}
@@ -444,6 +444,36 @@ function DailySalesChart({
                                 className="drop-shadow-[0_1.5px_3px_rgba(16,185,129,0.2)]"
                             />
                         )}
+                        {(() => {
+                            const len = dataPoints.length;
+                            if (len === 0) return null;
+                            const indices = new Set<number>();
+                            indices.add(0);
+                            indices.add(len - 1);
+                            if (len > 2) {
+                                indices.add(Math.floor(len / 2));
+                            }
+                            if (len > 4) {
+                                indices.add(Math.floor(len / 4));
+                                indices.add(Math.floor(3 * len / 4));
+                            }
+                            const sortedIndices = Array.from(indices).sort((a, b) => a - b);
+                            return sortedIndices.map((idx) => {
+                                const pt = dataPoints[idx];
+                                const dayStr = pt.dateLabel.split('/')[0];
+                                return (
+                                    <text
+                                        key={idx}
+                                        x={getX(idx)}
+                                        y={80}
+                                        textAnchor="middle"
+                                        className="text-[9px] md:text-[10px] font-black fill-zinc-450 tabular-nums"
+                                    >
+                                        {dayStr}
+                                    </text>
+                                );
+                            });
+                        })()}
                     </svg>
                 </div>
             </div>
@@ -491,6 +521,7 @@ export default function HistoryPage() {
     const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
 
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
+    const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
 
     const closingDetailTrackingLabel = useMemo(() => {
         if (!selectedClosing) return 'Detalle de cierre';
@@ -1327,15 +1358,15 @@ export default function HistoryPage() {
                                         <TrendTriangle type={popAbsolute >= 0 ? 'up' : 'down'} className={popAbsolute >= 0 ? 'text-emerald-600' : 'text-rose-600'} />
                                         {Math.abs(Math.round(popPercent))}%
                                     </span>
-                                    <span className="text-[8px] md:text-[9px] font-bold text-zinc-400 tabular-nums leading-none">
-                                        ({popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute)}€)
-                                    </span>
                                 </div>
                                 <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
                                     VENTA NETA
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
+                            <div 
+                                onClick={() => setShowPeriodPerformanceModal(true)}
+                                className="flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
+                            >
                                 <div className="flex items-center gap-1 leading-none">
                                     {periodRendimiento !== 0 && (
                                         <TrendTriangle 
@@ -1354,7 +1385,7 @@ export default function HistoryPage() {
                                     RENDIMIENTO
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
+                            <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none">
                                     {formatValue(summary.totalGross, 'tpv_sales')}
                                 </span>
@@ -2072,6 +2103,102 @@ export default function HistoryPage() {
                     }
                 }}
             />
+            {showPeriodPerformanceModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowPeriodPerformanceModal(false)}>
+                    <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
+                    <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] p-4 md:p-5 text-white relative shrink-0 text-center">
+                            <div className="relative flex items-center justify-between mb-2 z-10 w-full">
+                                <div className="flex-1" />
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/90">
+                                    Detalle de Rendimiento
+                                </h3>
+                                <div className="flex-1 flex justify-end">
+                                    <button
+                                        onClick={() => setShowPeriodPerformanceModal(false)}
+                                        className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                                    >
+                                        <X size={20} strokeWidth={2.5} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="mt-1">
+                                <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-tighter">
+                                    {filterMode === 'single'
+                                        ? format(parseLocalSafe(selectedDate), 'd MMMM yyyy', { locale: es })
+                                        : `${format(parseLocalSafe(rangeStart), 'd MMM', { locale: es })} — ${format(parseLocalSafe(rangeEnd), 'd MMM yyyy', { locale: es })}`
+                                    }
+                                </h2>
+                            </div>
+                        </div>
+
+                        <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-zinc-900">
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-6 place-items-center">
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                        <span className="text-sm md:text-base font-black text-gray-900 leading-none">
+                                            {formatValue(summary.totalNet, 'net_sales')}
+                                        </span>
+                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                            Periodo Actual
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                        <span className="text-sm md:text-base font-black text-gray-900 leading-none">
+                                            {formatValue(summary.totalNet - popAbsolute, 'net_sales')}
+                                        </span>
+                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                            Periodo Anterior
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-zinc-100 grid grid-cols-2 gap-6 place-items-center">
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                        <span className={cn(
+                                            "text-sm md:text-base font-black leading-none",
+                                            popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
+                                        )}>
+                                            {popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute)}€
+                                        </span>
+                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                            Diferencia Neta
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                        <div className="flex items-center gap-1 leading-none">
+                                            {periodRendimiento !== 0 && (
+                                                <TrendTriangle 
+                                                    type={getRendimientoScale(periodRendimiento).icon} 
+                                                    className={getRendimientoScale(periodRendimiento).color}
+                                                />
+                                            )}
+                                            <span className={cn(
+                                                "text-sm md:text-base font-black tabular-nums",
+                                                getRendimientoScale(periodRendimiento).color
+                                            )}>
+                                                {periodRendimiento >= 0 ? '+' : ''}{Math.round(periodRendimiento)}%
+                                            </span>
+                                        </div>
+                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                            Rendimiento PoP
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-zinc-100 flex flex-col gap-2 text-zinc-500 text-[10px] md:text-[11px] leading-relaxed font-semibold text-center md:text-left">
+                                    <p>
+                                        El indicador de <strong>Rendimiento</strong> compara la Venta Neta acumulada del rango de fechas seleccionado contra la Venta Neta del mismo número de días transcurridos en el mes anterior.
+                                    </p>
+                                    <p className="text-zinc-400 text-[9px] md:text-[10px] italic">
+                                        * Excluye los días con 0€ de venta en los cálculos.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
