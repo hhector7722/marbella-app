@@ -51,25 +51,47 @@ const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as
 
 interface RendimientoScale {
     level: 1 | 2 | 3 | 4 | 5;
-    icon: '▲' | '▶' | '▼';
+    icon: 'up' | 'right' | 'down';
     color: string;
     label: string;
 }
 
+function TrendTriangle({ type, className }: { type: 'up' | 'down' | 'right'; className?: string }) {
+    if (type === 'up') {
+        return (
+            <svg className={cn("w-2.5 h-2.5 fill-current inline-block shrink-0 align-middle", className)} viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4l9 15H3z" />
+            </svg>
+        );
+    }
+    if (type === 'down') {
+        return (
+            <svg className={cn("w-2.5 h-2.5 fill-current inline-block shrink-0 align-middle", className)} viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 20L3 5h18z" />
+            </svg>
+        );
+    }
+    return (
+        <svg className={cn("w-2 h-2 fill-current inline-block shrink-0 align-middle", className)} viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 12L5 3v18z" />
+        </svg>
+    );
+}
+
 function getRendimientoScale(diffPercent: number): RendimientoScale {
     if (diffPercent > 15) {
-        return { level: 5, icon: '▲', color: 'text-emerald-800', label: 'Excelente' };
+        return { level: 5, icon: 'up', color: 'text-emerald-800', label: 'Excelente' };
     }
     if (diffPercent >= 5) {
-        return { level: 4, icon: '▲', color: 'text-emerald-500', label: 'Bueno' };
+        return { level: 4, icon: 'up', color: 'text-emerald-500', label: 'Bueno' };
     }
     if (diffPercent >= -5) {
-        return { level: 3, icon: '▶', color: 'text-zinc-400', label: 'Esperado' };
+        return { level: 3, icon: 'right', color: 'text-zinc-400', label: 'Esperado' };
     }
     if (diffPercent >= -15) {
-        return { level: 2, icon: '▼', color: 'text-orange-500', label: 'Bajo' };
+        return { level: 2, icon: 'down', color: 'text-orange-500', label: 'Bajo' };
     }
-    return { level: 1, icon: '▼', color: 'text-rose-600', label: 'Crítico' };
+    return { level: 1, icon: 'down', color: 'text-rose-600', label: 'Crítico' };
 }
 
 function ClosingCalendarCellContent({
@@ -96,21 +118,17 @@ function ClosingCalendarCellContent({
         <div className="flex flex-col items-center justify-center gap-0.5 w-full text-center flex-1 h-full">
             {rounded > 0 ? (
                 <>
-                    <div className="flex items-center justify-center gap-1 text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums">
-                        {hasExpected && (
-                            <span className={cn(scale.color, "text-[9.5px] md:text-[11px] shrink-0")}>
-                                {scale.icon}
-                            </span>
-                        )}
-                        <span className="text-zinc-950">
-                            {rounded}
-                            <span className="text-[8px] md:text-[10px] font-semibold ml-[0.5px] text-zinc-500">€</span>
-                        </span>
+                    <div className="text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums text-zinc-950">
+                        {rounded}
+                        <span className="text-[8px] md:text-[10px] font-semibold ml-[0.5px] text-zinc-500">€</span>
                     </div>
                     {hasExpected && (
-                        <span className={cn("text-[9.5px] md:text-[10px] font-black tracking-wider leading-none mt-1", scale.color)}>
-                            {displayPercent}
-                        </span>
+                        <div className="flex items-center justify-center gap-1 mt-1 leading-none">
+                            <TrendTriangle type={scale.icon} className={scale.color} />
+                            <span className={cn("text-[9.5px] md:text-[10px] font-black tracking-wider leading-none", scale.color)}>
+                                {Math.abs(Math.round(diffPercent))}%
+                            </span>
+                        </div>
                     )}
                 </>
             ) : (
@@ -386,11 +404,15 @@ function DailySalesChart({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                            <svg className="w-4 h-2 shrink-0" viewBox="0 0 16 8" aria-hidden="true">
+                                <line x1="0" y1="4" x2="16" y2="4" stroke="#10b981" strokeWidth="3" strokeLinecap="round" />
+                            </svg>
                             <span className="text-[10px] font-black text-zinc-900 uppercase tracking-wider">{currentMonthLabel}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-zinc-350" />
+                            <svg className="w-4 h-2 shrink-0" viewBox="0 0 16 8" aria-hidden="true">
+                                <line x1="0" y1="4" x2="16" y2="4" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="3 2" strokeLinecap="round" />
+                            </svg>
                             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">{prevMonthLabel}</span>
                         </div>
                     </div>
@@ -404,7 +426,7 @@ function DailySalesChart({
                             <path
                                 d={comparisonPath}
                                 fill="none"
-                                stroke="#d4d4d8"
+                                stroke="#3b82f6"
                                 strokeWidth="2.5"
                                 strokeDasharray="4 3"
                                 strokeLinecap="round"
@@ -1299,10 +1321,11 @@ export default function HistoryPage() {
                                 </span>
                                 <div className="flex items-center gap-1.5 mt-1">
                                     <span className={cn(
-                                        "text-[9.5px] md:text-[10px] font-black flex items-center leading-none",
+                                        "text-[9.5px] md:text-[10px] font-black flex items-center gap-0.5 leading-none",
                                         popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
                                     )}>
-                                        {popAbsolute >= 0 ? '▲' : '▼'} {Math.abs(Math.round(popPercent))}%
+                                        <TrendTriangle type={popAbsolute >= 0 ? 'up' : 'down'} className={popAbsolute >= 0 ? 'text-emerald-600' : 'text-rose-600'} />
+                                        {Math.abs(Math.round(popPercent))}%
                                     </span>
                                     <span className="text-[8px] md:text-[9px] font-bold text-zinc-400 tabular-nums leading-none">
                                         ({popAbsolute >= 0 ? '+' : ''}{Math.round(popAbsolute)}€)
@@ -1315,12 +1338,10 @@ export default function HistoryPage() {
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
                                 <div className="flex items-center gap-1 leading-none">
                                     {periodRendimiento !== 0 && (
-                                        <span className={cn(
-                                            "text-[9.5px] md:text-[10px] font-black",
-                                            getRendimientoScale(periodRendimiento).color
-                                        )}>
-                                            {getRendimientoScale(periodRendimiento).icon}
-                                        </span>
+                                        <TrendTriangle 
+                                            type={getRendimientoScale(periodRendimiento).icon} 
+                                            className={getRendimientoScale(periodRendimiento).color}
+                                        />
                                     )}
                                     <span className={cn(
                                         "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums",
@@ -1789,9 +1810,7 @@ export default function HistoryPage() {
                                                        <div className="flex flex-col items-center justify-center text-center">
                                                            <div className="flex items-center gap-1 leading-none">
                                                                {details.expectedSales > 0 && (
-                                                                   <span className={cn("text-[10px] md:text-[12px] font-black", scale.color)}>
-                                                                       {scale.icon}
-                                                                   </span>
+                                                                   <TrendTriangle type={scale.icon} className={scale.color} />
                                                                )}
                                                                <span className={cn(
                                                                    "text-sm md:text-base font-black tabular-nums",
