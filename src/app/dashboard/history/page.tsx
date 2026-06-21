@@ -1693,7 +1693,7 @@ export default function HistoryPage() {
                     <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
                         <div 
                             className={cn(
-                                "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col h-[650px] max-h-[85vh] shrink-0",
+                                "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0",
                                 slideState.stage === 'idle' && "transform translate-x-0 opacity-100 transition-all duration-200 ease-out",
                                 slideState.stage === 'out' && (slideState.direction === 'left' ? "transform -translate-x-10 opacity-0 transition-all duration-150 ease-in" : "transform translate-x-10 opacity-0 transition-all duration-150 ease-in"),
                                 slideState.stage === 'in' && (slideState.direction === 'left' ? "transform translate-x-10 opacity-0" : "transform -translate-x-10 opacity-0")
@@ -1874,15 +1874,13 @@ export default function HistoryPage() {
 
                                 return (
                                     <div className="flex flex-col divide-y divide-zinc-100">
-                                        {/* Clima, Tickets y Ticket Medio en el cuerpo */}
-                                        <div className="flex items-center justify-center gap-4 pb-1">
+                                        <div className="flex items-center justify-center gap-4 pb-2">
                                             <div className="flex items-center gap-1 opacity-85">
                                                 {(() => {
                                                     const weatherId = weatherIdFromLabel(selectedClosing.weather);
                                                     const weatherOpt = CLOSING_WEATHER_OPTIONS.find(o => o.id === weatherId);
                                                     if (weatherOpt) {
                                                         return (
-                                                            // eslint-disable-next-line @next/next/no-img-element
                                                             <img
                                                                 src={weatherOpt.icon}
                                                                 alt=""
@@ -1910,8 +1908,7 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        {/* Fila por fila con el estilo del paso 1 */}
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
@@ -1919,13 +1916,13 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Venta Neta"
                                                 value={getValue('net_sales')}
                                             />
                                         </div>
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Tarjeta"
                                                 value={getValue('sales_card')}
@@ -1933,14 +1930,14 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Efectivo"
                                                 value={getValue('cash_counted')}
                                                 onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
                                             />
                                         </div>
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Pendiente Pago"
                                                 value={getValue('sales_pending')}
@@ -1948,7 +1945,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Cobros Pendientes"
                                                 value={collectionsValue}
@@ -1956,7 +1953,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-1">
+                                        <div className="py-2">
                                             <RowItem
                                                 label="Diferencia"
                                                 value={getValue('difference')}
@@ -1978,14 +1975,14 @@ export default function HistoryPage() {
                                             const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
 
                                             return (
-                                                <div className="pt-1 flex flex-col items-center justify-center gap-1 text-[11px] text-zinc-500 font-medium w-full text-center">
-                                                    <div className="flex items-center justify-center gap-1">
+                                                <div className="pt-2 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
+                                                    <div className="flex items-center justify-center gap-1.5">
                                                         <span>Esperado:</span>
                                                         <span className="font-extrabold text-zinc-700">
                                                             {details.expectedSales > 0 ? formatCurrencyModal(details.expectedSales) : 'N/A'}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center justify-center gap-1">
+                                                    <div className="flex items-center justify-center gap-1.5">
                                                         <span>Rendimiento:</span>
                                                         <div className="flex items-center gap-1 leading-none">
                                                             {details.expectedSales > 0 && (
@@ -2010,11 +2007,39 @@ export default function HistoryPage() {
                                 );
                             })()}
 
-                            {closingPhotosLoading ? (
-                                <div className="flex justify-center py-6">
-                                    <LoadingSpinner size="sm" className="text-[#36606F]" />
-                                </div>
-                            ) : null}
+                            {(() => {
+                                const hasDataphonePhoto = !!selectedClosing.dataphone_totals_photo_path;
+                                const hasBdpPhoto = !!selectedClosing.bdp_closing_ticket_photo_path;
+                                const hasAnyPhoto = hasDataphonePhoto || hasBdpPhoto;
+
+                                if (closingPhotosLoading && hasAnyPhoto) {
+                                    return (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {hasDataphonePhoto && (
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <div className="flex h-28 w-full items-center justify-center bg-zinc-50 rounded-xl border border-zinc-100 animate-pulse">
+                                                        <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                                    </div>
+                                                    <span className="text-center text-[9px] font-black uppercase leading-tight tracking-widest text-zinc-300">
+                                                        Totales datáfonos
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {hasBdpPhoto && (
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <div className="flex h-28 w-full items-center justify-center bg-zinc-50 rounded-xl border border-zinc-100 animate-pulse">
+                                                        <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                                    </div>
+                                                    <span className="text-center text-[9px] font-black uppercase leading-tight tracking-widest text-zinc-300">
+                                                        Informe TPV
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
                             {!closingPhotosLoading && (closingPhotoUrls.dataphoneUrl || closingPhotoUrls.bdpUrl) ? (
                                 <div className="grid grid-cols-2 gap-4">
                                     {closingPhotoUrls.dataphoneUrl ? (
@@ -2023,7 +2048,6 @@ export default function HistoryPage() {
                                             onClick={() => openClosingPhotoLightbox('Totales datáfonos')}
                                             className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={closingPhotoUrls.dataphoneUrl}
                                                 alt="Totales datáfonos"
@@ -2040,7 +2064,6 @@ export default function HistoryPage() {
                                             onClick={() => openClosingPhotoLightbox('Informe TPV')}
                                             className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
                                         >
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={closingPhotoUrls.bdpUrl}
                                                 alt="Informe TPV"
@@ -2308,7 +2331,7 @@ export default function HistoryPage() {
             {showPeriodPerformanceModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowPeriodPerformanceModal(false)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col h-[650px] max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                    <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 py-3 text-white relative shrink-0 text-center">
                             <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter mx-auto max-w-[80%] flex items-center justify-center min-h-[32px]">
                                 {(() => {
