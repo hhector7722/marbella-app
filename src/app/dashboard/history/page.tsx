@@ -572,6 +572,37 @@ export default function HistoryPage() {
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
 
+    const [slideState, setSlideState] = useState<{
+        stage: 'idle' | 'out' | 'in';
+        direction: 'left' | 'right';
+        pendingClosing: any;
+    }>({ stage: 'idle', direction: 'left', pendingClosing: null });
+
+    const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
+        if (!nextClosing) return;
+        setSlideState({
+            stage: 'out',
+            direction: dir,
+            pendingClosing: nextClosing
+        });
+        setTimeout(() => {
+            setSelectedClosing(nextClosing);
+            setIsEditing(false);
+            setLightboxIndex(null);
+            setSlideState({
+                stage: 'in',
+                direction: dir,
+                pendingClosing: null
+            });
+            setTimeout(() => {
+                setSlideState(prev => ({
+                    ...prev,
+                    stage: 'idle'
+                }));
+            }, 30);
+        }, 150);
+    };
+
     const touchStartX = useRef<number | null>(null);
     const touchStartY = useRef<number | null>(null);
 
@@ -1281,9 +1312,8 @@ export default function HistoryPage() {
         const currentIndex = closings.findIndex(c => c.id === selectedClosing.id);
         const nextIndex = direction === 'next' ? currentIndex - 1 : currentIndex + 1;
         if (nextIndex >= 0 && nextIndex < closings.length) {
-            openClosingDetail(closings[nextIndex]);
-            setIsEditing(false);
-            setLightboxIndex(null);
+            const dir = direction === 'next' ? 'left' : 'right';
+            triggerNavigate(closings[nextIndex], dir);
         }
     };
 
@@ -1663,7 +1693,12 @@ export default function HistoryPage() {
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative flex flex-col items-center gap-4 w-full max-w-lg animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div 
-                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0" 
+                            className={cn(
+                                "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0",
+                                slideState.stage === 'idle' && "transform translate-x-0 opacity-100 transition-all duration-200 ease-out",
+                                slideState.stage === 'out' && (slideState.direction === 'left' ? "transform -translate-x-10 opacity-0 transition-all duration-150 ease-in" : "transform translate-x-10 opacity-0 transition-all duration-150 ease-in"),
+                                slideState.stage === 'in' && (slideState.direction === 'left' ? "transform translate-x-10 opacity-0" : "transform -translate-x-10 opacity-0")
+                            )}
                             onTouchStart={handleTouchStart}
                             onTouchEnd={handleTouchEnd}
                         >
@@ -2050,9 +2085,7 @@ export default function HistoryPage() {
                                     onClick={() => {
                                         if (isEditing) return;
                                         if (currentIndex < closings.length - 1) {
-                                            openClosingDetail(closings[currentIndex + 1]);
-                                            setIsEditing(false);
-                                            setLightboxIndex(null);
+                                            triggerNavigate(closings[currentIndex + 1], 'right');
                                         }
                                     }}
                                     disabled={currentIndex === closings.length - 1}
@@ -2079,9 +2112,7 @@ export default function HistoryPage() {
                                     onClick={() => {
                                         if (isEditing) return;
                                         if (currentIndex > 0) {
-                                            openClosingDetail(closings[currentIndex - 1]);
-                                            setIsEditing(false);
-                                            setLightboxIndex(null);
+                                            triggerNavigate(closings[currentIndex - 1], 'left');
                                         }
                                     }}
                                     disabled={currentIndex === 0}
