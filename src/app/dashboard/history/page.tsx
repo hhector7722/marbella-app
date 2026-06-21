@@ -56,23 +56,25 @@ interface RendimientoScale {
     label: string;
 }
 
-function TrendTriangle({ type, className }: { type: 'up' | 'down' | 'right'; className?: string }) {
+function TrendTriangle({ type, className, size = 'md' }: { type: 'up' | 'down' | 'right'; className?: string; size?: 'sm' | 'md' }) {
+    const s = size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5';
+    const sRight = size === 'sm' ? 'w-1.5 h-1.5' : 'w-2 h-2';
     if (type === 'up') {
         return (
-            <svg className={cn("w-2.5 h-2.5 fill-current inline-block shrink-0 align-middle", className)} viewBox="0 0 24 24" aria-hidden="true">
+            <svg className={cn("fill-current inline-block shrink-0 align-middle", s, className)} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 4l9 15H3z" />
             </svg>
         );
     }
     if (type === 'down') {
         return (
-            <svg className={cn("w-2.5 h-2.5 fill-current inline-block shrink-0 align-middle", className)} viewBox="0 0 24 24" aria-hidden="true">
+            <svg className={cn("fill-current inline-block shrink-0 align-middle", s, className)} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 20L3 5h18z" />
             </svg>
         );
     }
     return (
-        <svg className={cn("w-2 h-2 fill-current inline-block shrink-0 align-middle", className)} viewBox="0 0 24 24" aria-hidden="true">
+        <svg className={cn("fill-current inline-block shrink-0 align-middle", sRight, className)} viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20 12L5 3v18z" />
         </svg>
     );
@@ -123,9 +125,9 @@ function ClosingCalendarCellContent({
                         <span className="text-[8px] md:text-[10px] font-semibold ml-[0.5px] text-zinc-500">€</span>
                     </div>
                     {hasExpected && (
-                        <div className="flex items-center justify-center gap-1 mt-1 leading-none">
-                            <TrendTriangle type={scale.icon} className={scale.color} />
-                            <span className={cn("text-[9.5px] md:text-[10px] font-black tracking-wider leading-none", scale.color)}>
+                        <div className="flex items-center justify-center gap-[1px] mt-0.5 leading-none">
+                            <TrendTriangle type={scale.icon} className={scale.color} size="sm" />
+                            <span className={cn("text-[7.5px] md:text-[8px] font-black tracking-wider leading-none", scale.color)}>
                                 {Math.abs(Math.round(diffPercent))}%
                             </span>
                         </div>
@@ -148,11 +150,11 @@ function ClosingCalendarDayLabel({
     isViewMonthDay: boolean;
 }) {
     return (
-        <div className="flex h-[11px] shrink-0 items-center justify-center leading-none w-full">
+        <div className="absolute top-1 right-1 flex items-center justify-end leading-none z-10">
             <span
                 className={cn(
-                    'text-[8.5px] md:text-[10px] font-black',
-                    today && isViewMonthDay ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md' : 'text-gray-400',
+                    'text-[8px] md:text-[9px] font-medium',
+                    today && isViewMonthDay ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md font-semibold' : 'text-gray-400',
                     !isViewMonthDay && 'opacity-50'
                 )}
             >
@@ -1347,12 +1349,12 @@ export default function HistoryPage() {
                     <div className="bg-white">
                         <div className="pt-1.5 md:pt-2 pb-0.5 px-2 grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none">
-                                    {formatValue(summary.totalNet, 'net_sales')}
-                                </span>
-                                <div className="flex items-center gap-1.5 mt-1">
+                                <div className="flex items-center gap-1.5 leading-none">
+                                    <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums">
+                                        {formatValue(summary.totalNet, 'net_sales')}
+                                    </span>
                                     <span className={cn(
-                                        "text-[9.5px] md:text-[10px] font-black flex items-center gap-0.5 leading-none",
+                                        "text-[9.5px] md:text-[10px] font-black flex items-center gap-0.5",
                                         popAbsolute >= 0 ? "text-emerald-600" : "text-rose-600"
                                     )}>
                                         <TrendTriangle type={popAbsolute >= 0 ? 'up' : 'down'} className={popAbsolute >= 0 ? 'text-emerald-600' : 'text-rose-600'} />
@@ -1524,7 +1526,7 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[108px] sm:min-h-[124px] md:min-h-[140px] lg:min-h-[156px] p-0.5 sm:p-1',
+                                                                            'relative flex flex-col min-h-[68px] sm:min-h-[76px] md:min-h-[84px] lg:min-h-[92px] p-0.5 sm:p-1',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
@@ -1542,7 +1544,7 @@ export default function HistoryPage() {
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[108px] sm:min-h-[124px] md:min-h-[140px] lg:min-h-[156px] transition-colors p-0.5 sm:p-1',
+                                                                        'group relative flex flex-col text-left min-h-[68px] sm:min-h-[76px] md:min-h-[84px] lg:min-h-[92px] transition-colors p-0.5 sm:p-1',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
