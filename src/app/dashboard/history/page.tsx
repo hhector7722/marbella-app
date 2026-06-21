@@ -89,6 +89,20 @@ function formatCurrencySpanish(val: number): string {
     return `${formatted}€`;
 }
 
+function formatCurrencyModal(val: number): string {
+    if (Math.abs(val) < 0.005) return ' ';
+    const formatted = val.toLocaleString('es-ES', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    return `${formatted}€`;
+}
+
+function formatCurrencyCalendar(val: number): string {
+    const rounded = Math.round(val);
+    return `${rounded.toLocaleString('es-ES')}€`;
+}
+
 function getRendimientoScale(diffPercent: number): RendimientoScale {
     if (diffPercent > 15) {
         return { level: 5, icon: 'up', color: 'text-emerald-600', label: 'Excelente' };
@@ -130,7 +144,7 @@ function ClosingCalendarCellContent({
             {rounded > 0 ? (
                 <>
                     <div className="text-[12px] sm:text-xs md:text-sm font-extrabold leading-none tabular-nums text-zinc-950">
-                        {formatCurrencySpanish(netSales)}
+                        {formatCurrencyCalendar(netSales)}
                     </div>
                     {hasExpected && (
                         <div className="flex items-center justify-center gap-[1px] mt-0.5 leading-none">
@@ -1371,13 +1385,14 @@ export default function HistoryPage() {
                                 <div className="flex items-center gap-1 leading-none">
                                     {(() => {
                                         const popScale = getRendimientoScale(popPercent);
-                                        const triangleSymbol = popScale.icon === 'up' ? '▲' : popScale.icon === 'down' ? '▼' : '▶';
+                                        const isNeutral = popPercent >= -5 && popPercent <= 5;
+                                        const triangleSymbol = isNeutral ? '' : (popPercent > 5 ? '▲' : '▼');
                                         return (
                                             <span className={cn(
                                                 "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums flex items-center gap-1",
                                                 popScale.color
                                             )}>
-                                                <span className="text-[9px] sm:text-[10px] md:text-xs leading-none">{triangleSymbol}</span>
+                                                {!isNeutral && <span className="text-[9px] sm:text-[10px] md:text-xs leading-none">{triangleSymbol}</span>}
                                                 <span>{Math.abs(popPercent).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%</span>
                                             </span>
                                         );
@@ -1710,9 +1725,9 @@ export default function HistoryPage() {
                                     let text = ' ';
                                     if (hasValue) {
                                         if (isDiff) {
-                                            text = `${value > 0 ? '+' : ''}${formatCurrencySpanish(value)}`;
+                                            text = `${value > 0 ? '+' : ''}${formatCurrencyModal(value)}`;
                                         } else {
-                                            text = formatCurrencySpanish(value);
+                                            text = formatCurrencyModal(value);
                                         }
                                     }
                                     const isNeg = value < -0.005;
@@ -1789,8 +1804,8 @@ export default function HistoryPage() {
                                                 <Banknote size={13} className="text-emerald-500" />
                                                 <span className="text-[9.5px] font-black uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
-                                                        ? formatCurrencySpanish(avgTicketVal) 
-                                                        : '0€'} T.Medio
+                                                        ? formatCurrencyModal(avgTicketVal) 
+                                                        : ' '} T.Medio
                                                 </span>
                                             </div>
                                         </div>
@@ -1836,10 +1851,11 @@ export default function HistoryPage() {
                                                 isDiff={true}
                                             />
                                         </div>
-                                         {/* Fila 4: Venta Esperada, Rendimiento Detallado (solo lectura) */}
                                         {!isEditing && (() => {
                                             const targetDate = parseLocalSafe(selectedClosing.closing_date);
                                             const details = get8DayExpectedSalesDetails(targetDate);
+                                            if (details.expectedSales <= 0.005) return null;
+                                            
                                             const netVal = getValue('net_sales');
                                             const diffPercent = details.expectedSales > 0 && netVal > 0 
                                                 ? ((netVal - details.expectedSales) / details.expectedSales) * 100 
@@ -1854,7 +1870,7 @@ export default function HistoryPage() {
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         <span>Esperado ({weekdayName}):</span>
                                                         <span className="font-extrabold text-zinc-700">
-                                                            {details.expectedSales > 0 ? formatCurrencySpanish(details.expectedSales) : 'N/A'}
+                                                            {details.expectedSales > 0 ? formatCurrencyModal(details.expectedSales) : 'N/A'}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center justify-center gap-1.5">
