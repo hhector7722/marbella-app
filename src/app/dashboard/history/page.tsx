@@ -1689,47 +1689,84 @@ export default function HistoryPage() {
                         <div className="p-8 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {
                                 const current = isEditing ? editData : selectedClosing;
-                                const formatMoneyModal = (val: number) => val === 0 ? " " : `${val.toFixed(2)}€`;
+                                const formatMoneyModal = (val: number) => val === 0 ? " " : val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
                                 const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
 
-                                const MetricItem = ({
+                                const RowItem = ({
                                     label,
                                     value,
                                     fieldKey,
                                     editable = false,
+                                    isDiff = false,
+                                    onClick,
                                 }: {
                                     label: string;
                                     value: number;
                                     fieldKey?: string;
                                     editable?: boolean;
-                                }) => (
-                                    <div className="flex flex-col items-center justify-center text-center min-w-[70px]">
-                                        {isEditing && editable && fieldKey ? (
-                                            <input
-                                                type="number"
-                                                className="bg-transparent text-sm md:text-base font-black text-gray-900 text-center outline-none border-none"
-                                                value={value || ''}
-                                                onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
-                                            />
-                                        ) : (
-                                            <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                                {formatMoneyModal(value)}
+                                    isDiff?: boolean;
+                                    onClick?: () => void;
+                                }) => {
+                                    const hasValue = Math.abs(value) >= 0.005;
+                                    let text = ' ';
+                                    if (hasValue) {
+                                        if (isDiff) {
+                                            text = `${value > 0 ? '+' : ''}${formatMoneyModal(value)}`;
+                                        } else {
+                                            text = formatMoneyModal(value);
+                                        }
+                                    }
+                                    const isNeg = value < -0.005;
+                                    const isPos = value > 0.005;
+                                    const diffTone = isDiff && hasValue
+                                        ? isPos
+                                            ? 'text-emerald-500'
+                                            : 'text-rose-500'
+                                        : null;
+
+                                    return (
+                                        <div className="grid min-h-[40px] grid-cols-[6rem_1fr] items-center gap-x-2 sm:grid-cols-[7.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                            <span className="text-[10px] font-black uppercase leading-tight text-[#36606F] sm:text-xs">
+                                                {label}
                                             </span>
-                                        )}
-                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
-                                            {label === 'Pendiente Pago' || label === 'Cobros Pendientes'
-                                                ? (
-                                                    <>
-                                                        {label.split(' ')[0]}
-                                                        <br />
-                                                        {label.split(' ').slice(1).join(' ')}
-                                                    </>
-                                                )
-                                                : label}
-                                        </span>
-                                    </div>
-                                );
+                                            <div className="flex min-w-0 items-center justify-center">
+                                                <div 
+                                                    className={cn(
+                                                        "w-[8.75rem] sm:w-[9.5rem] h-9 border border-[#36606F] rounded-xl bg-white flex items-center justify-center relative",
+                                                        onClick && "cursor-pointer hover:bg-zinc-50"
+                                                    )}
+                                                    onClick={onClick}
+                                                >
+                                                    {isEditing && editable && fieldKey ? (
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="h-full w-full bg-transparent px-2 text-center text-sm font-black tabular-nums text-zinc-800 outline-none border-none focus:ring-0"
+                                                            value={value || ''}
+                                                            onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
+                                                        />
+                                                    ) : (
+                                                        <span className={cn(
+                                                            "text-sm font-black tabular-nums",
+                                                            diffTone ?? 'text-zinc-800'
+                                                        )}>
+                                                            {text}
+                                                        </span>
+                                                    )}
+                                                    {hasValue && (
+                                                        <span className={cn(
+                                                            "pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm font-black",
+                                                            diffTone ?? "text-zinc-500"
+                                                        )}>
+                                                            €
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                };
 
                                 return (
                                     <div className="space-y-6">
@@ -1749,70 +1786,46 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        {/* Fila 1: solo Ventas */}
-                                        <div className="grid grid-cols-1 place-items-center">
-                                            <MetricItem
+                                        {/* Fila por fila con el estilo del paso 1 */}
+                                        <div className="flex flex-col gap-3">
+                                            <RowItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
                                                 fieldKey="tpv_sales"
                                                 editable={true}
                                             />
-                                        </div>
-
-                                        {/* Fila 2: Venta neta, Tarjeta, Efectivo */}
-                                        <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-center">
-                                            <MetricItem
+                                            <RowItem
                                                 label="Venta Neta"
                                                 value={getValue('net_sales')}
                                             />
-                                            <MetricItem
+                                            <RowItem
                                                 label="Tarjeta"
                                                 value={getValue('sales_card')}
                                                 fieldKey="sales_card"
                                                 editable={true}
                                             />
-                                            <div
-                                                className="flex flex-col items-center justify-center text-center min-w-[70px] cursor-pointer"
-                                                onClick={() => setShowCashDetails(true)}
-                                            >
-                                                <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                                    {formatMoneyModal(getValue('cash_counted'))}
-                                                </span>
-                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
-                                                    Efectivo
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Fila 3: Pendiente pago, Cobros pendientes, Diferencia */}
-                                        <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-center">
-                                            <MetricItem
+                                            <RowItem
+                                                label="Efectivo"
+                                                value={getValue('cash_counted')}
+                                                onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
+                                            />
+                                            <RowItem
                                                 label="Pendiente Pago"
                                                 value={getValue('sales_pending')}
                                                 fieldKey="sales_pending"
                                                 editable={true}
                                             />
-                                            <MetricItem
+                                            <RowItem
                                                 label="Cobros Pendientes"
                                                 value={collectionsValue}
                                                 fieldKey="debt_recovered"
                                                 editable={true}
                                             />
-                                            <div className="flex flex-col items-center justify-center text-center min-w-[70px]">
-                                                <span className={cn(
-                                                    "text-sm md:text-base font-black leading-none",
-                                                    getValue('difference') > 0
-                                                        ? "text-emerald-600"
-                                                        : getValue('difference') < 0
-                                                            ? "text-rose-600"
-                                                            : "text-gray-400"
-                                                )}>
-                                                    {formatMoneyModal(getValue('difference'))}
-                                                </span>
-                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
-                                                    Diferencia
-                                                </span>
-                                            </div>
+                                            <RowItem
+                                                label="Diferencia"
+                                                value={getValue('difference')}
+                                                isDiff={true}
+                                            />
                                         </div>
 
                                         {/* Fila 4: Venta Esperada, Rendimiento Detallado (solo lectura) */}
@@ -1829,40 +1842,31 @@ export default function HistoryPage() {
                                             const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
 
                                             return (
-                                                <div className="pt-4 border-t border-zinc-100 flex flex-col gap-3">
-                                                    <div className="grid grid-cols-2 gap-4 place-items-center">
-                                                       <div className="flex flex-col items-center justify-center text-center">
-                                                           <span className="text-sm md:text-base font-black text-gray-900 leading-none">
-                                                               {details.expectedSales > 0 ? `${Math.round(details.expectedSales)}€` : 'N/A'}
-                                                           </span>
-                                                           <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                                               Esperado ({weekdayName})
-                                                           </span>
-                                                       </div>
-                                                       <div className="flex flex-col items-center justify-center text-center">
-                                                           <div className="flex items-center gap-1 leading-none">
-                                                               {details.expectedSales > 0 && (
-                                                                   <TrendTriangle type={scale.icon} className={scale.color} />
-                                                               )}
-                                                               <span className={cn(
-                                                                   "text-sm md:text-base font-black tabular-nums",
-                                                                   scale.color
-                                                               )}>
-                                                                   {details.expectedSales > 0 
-                                                                       ? `${diffPercent >= 0 ? '+' : ''}${Math.round(diffPercent)}%` 
-                                                                       : 'N/A'}
-                                                               </span>
-                                                           </div>
-                                                           <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                                               Rendimiento
-                                                           </span>
-                                                       </div>
+                                                <div className="pt-4 border-t border-zinc-100 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <span>Esperado ({weekdayName}):</span>
+                                                        <span className="font-extrabold text-zinc-700">
+                                                            {details.expectedSales > 0 ? `${Math.round(details.expectedSales).toLocaleString('es-ES')} €` : 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <span>Rendimiento:</span>
+                                                        <div className="flex items-center gap-1 leading-none">
+                                                            {details.expectedSales > 0 && (
+                                                                <TrendTriangle type={scale.icon} className={scale.color} size="sm" />
+                                                            )}
+                                                            <span className={cn("font-extrabold", scale.color)}>
+                                                                {details.expectedSales > 0 
+                                                                    ? `${diffPercent >= 0 ? '+' : ''}${Math.round(diffPercent)}%` 
+                                                                    : 'N/A'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                     {details.expectedSales > 0 && (
-                                                       <p className="text-[8px] md:text-[9.5px] font-medium text-zinc-400 text-center leading-normal max-w-[85%] mx-auto mt-1">
-                                                           Cálculo de esperado basado en {details.daysUsed} {weekdayPlural} anteriores.
-                                                           {details.daysExcluded > 0 && ` Se excluyeron ${details.daysExcluded} días con 0€.`}
-                                                       </p>
+                                                        <p className="text-[9px] text-zinc-400 font-normal italic mt-0.5 max-w-[85%] mx-auto">
+                                                            Cálculo de esperado basado en {details.daysUsed} {weekdayPlural} anteriores.
+                                                            {details.daysExcluded > 0 && ` Se excluyeron ${details.daysExcluded} días con 0€.`}
+                                                        </p>
                                                     )}
                                                 </div>
                                             );
