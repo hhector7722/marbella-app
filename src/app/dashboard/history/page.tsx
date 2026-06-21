@@ -474,19 +474,19 @@ function DailySalesChart({
                         {show1k && (
                             <g>
                                 <line x1={paddingX} y1={y1k} x2={width - paddingX} y2={y1k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
-                                <text x={paddingX - 4} y={y1k + 2.5} textAnchor="end" className="fill-zinc-400 font-sans font-black" style={{ fontSize: '7px' }}>1k</text>
+                                <text x={paddingX - 4} y={y1k + 2.5} textAnchor="end" className="fill-zinc-600 font-sans font-semibold" style={{ fontSize: '9px' }}>1k</text>
                             </g>
                         )}
                         {show3k && (
                             <g>
                                 <line x1={paddingX} y1={y3k} x2={width - paddingX} y2={y3k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
-                                <text x={paddingX - 4} y={y3k + 2.5} textAnchor="end" className="fill-zinc-400 font-sans font-black" style={{ fontSize: '7px' }}>3k</text>
+                                <text x={paddingX - 4} y={y3k + 2.5} textAnchor="end" className="fill-zinc-600 font-sans font-semibold" style={{ fontSize: '9px' }}>3k</text>
                             </g>
                         )}
                         {show6k && (
                             <g>
                                 <line x1={paddingX} y1={y6k} x2={width - paddingX} y2={y6k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
-                                <text x={paddingX - 4} y={y6k + 2.5} textAnchor="end" className="fill-zinc-400 font-sans font-black" style={{ fontSize: '7px' }}>6k</text>
+                                <text x={paddingX - 4} y={y6k + 2.5} textAnchor="end" className="fill-zinc-600 font-sans font-semibold" style={{ fontSize: '9px' }}>6k</text>
                             </g>
                         )}
                         {comparisonPath && (
@@ -593,17 +593,34 @@ export default function HistoryPage() {
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
 
-    // --- Real-time swipe drag state ---
-    // We use refs for values accessed inside touch event handlers to avoid stale-closure bugs.
+    // --- Real-time swipe drag state (following trincadores-mundialistas pattern) ---
     const modalCardRef = useRef<HTMLDivElement>(null);
     const [swipeNextClosing, setSwipeNextClosing] = useState<any>(null);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left');
+
+    // Constants from trincadores-mundialistas
+    const COMMIT_RATIO = 0.14;
+    const VELOCITY_THRESHOLD = 0.28;
+    const EDGE_RESISTANCE = 0.58;
+    const LOCK_THRESHOLD_PX = 5;
+    const EDGE_ZONE_PX = 44;
+    const AXIS_Y_RATIO_CENTER = 1.65;
+    const AXIS_Y_RATIO_EDGE = 1.05;
+    const SWIPE_ANIMATION_MS = 360;
+    const SWIPE_EASING = "cubic-bezier(0.32, 0.72, 0, 1)";
 
     // Refs (always current, never stale inside handlers)
     const swipeDragXRef = useRef(0);
     const swipePhaseRef = useRef<'idle' | 'dragging' | 'animating'>('idle');
     const swipeNextClosingRef = useRef<any>(null);
     const swipeDirectionRef = useRef<'left' | 'right'>('left');
+    const pointerIdRef = useRef<number | null>(null);
+    const startXRef = useRef(0);
+    const startYRef = useRef(0);
+    const startTimeRef = useRef(0);
+    const edgeStartRef = useRef(false);
+    const lockedAxisRef = useRef<'none' | 'x' | 'y'>('none');
+    const cardWidthRef = useRef(0);
 
     // React state used only for rendering (driven from refs on key moments)
     const [swipeDragX, setSwipeDragX] = useState(0);
@@ -615,9 +632,92 @@ export default function HistoryPage() {
     const setNextClosing = (v: any) => { swipeNextClosingRef.current = v; setSwipeNextClosing(v); };
     const setDir = (v: 'left' | 'right') => { swipeDirectionRef.current = v; setSwipeDirection(v); };
 
-    const swipeTouchStartX = useRef<number | null>(null);
-    const swipeTouchStartY = useRef<number | null>(null);
-    const swipeAxisLocked = useRef<boolean | null>(null);
+    const pointerOffsetToSwipeDirection = (offset: number): 'left' | 'right' | null => {
+        if (offset < 0) return 'left';
+        if (offset > 0) return 'right';
+        return null;
+    };
+
+    const shouldApplyEdgeResistance = (currentIndex: number, direction: 'left' | 'right'): boolean => {
+        if (direction === 'left') return currentIndex === 0;
+        return currentIndex === closings.length - 1;
+    };
+
+    const edgeResistance = (offset: number, width: number): number => {
+        const ratio = Math.min(1, Math.abs(offset) / width);
+        return offset * (1 - ratio * (1 - EDGE_RESISTANCE));
+    };
+
+    const applyEdgeResistance = (currentIndex: number, offset: number, width: number): number => {
+        const direction = pointerOffsetToSwipeDirection(offset);
+        if (!direction || !shouldApplyEdgeResistance(currentIndex, direction)) {
+            return offset;
+        }
+        return edgeResistance(offset, width);
+    };
+
+    const getAdjacentClosing = (currentIndex: number, direction: 'left' | 'right'): any | null => {
+        if (direction === 'left') {
+            return currentIndex > 0 ? closings[currentIndex - 1] : null;
+        }
+        return currentIndex < closings.length - 1 ? closings[currentIndex + 1] : null;
+    };
+
+    const resolveSwipeCommit = (currentIndex: number, offset: number, velocity: number, width: number): number | null => {
+        const direction = pointerOffsetToSwipeDirection(offset);
+        if (!direction) return null;
+
+        const ratio = Math.abs(offset) / Math.max(width, 1);
+        const committed =
+            direction === 'left'
+                ? ratio >= COMMIT_RATIO || velocity < -VELOCITY_THRESHOLD
+                : ratio >= COMMIT_RATIO || velocity > VELOCITY_THRESHOLD;
+
+        if (!committed) return null;
+
+        return getAdjacentClosing(currentIndex, direction);
+    };
+
+    const isNearHorizontalEdge = (clientX: number, width: number): boolean => {
+        return clientX <= EDGE_ZONE_PX || clientX >= width - EDGE_ZONE_PX;
+    };
+
+    const syncDrag = (next: number) => {
+        swipeDragXRef.current = next;
+        setSwipeDragX(next);
+    };
+
+    const resetSwipe = () => {
+        swipeDragXRef.current = 0;
+        setSwipeDragX(0);
+        setSwipePhase('idle');
+        swipePhaseRef.current = 'idle';
+        setSwipeNextClosing(null);
+        swipeNextClosingRef.current = null;
+        lockedAxisRef.current = 'none';
+        pointerIdRef.current = null;
+        edgeStartRef.current = false;
+    };
+
+    const animateTo = (target: number, onDone?: () => void) => {
+        const from = swipeDragXRef.current;
+
+        if (Math.abs(target - from) < 0.5) {
+            syncDrag(target);
+            onDone?.();
+            return;
+        }
+
+        setSwipePhase('animating');
+        swipePhaseRef.current = 'animating';
+        syncDrag(target);
+
+        setTimeout(() => {
+            setSwipePhase('idle');
+            swipePhaseRef.current = 'idle';
+            onDone?.();
+        }, SWIPE_ANIMATION_MS + 50);
+    };
 
     // Animate current card out, swap selectedClosing, animate new card in
     const commitNav = (next: any, dir: 'left' | 'right') => {
@@ -640,10 +740,10 @@ export default function HistoryPage() {
                     setTimeout(() => {
                         setPhase('idle');
                         setNextClosing(null);
-                    }, 210);
+                    }, SWIPE_ANIMATION_MS + 50);
                 });
             });
-        }, 190);
+        }, SWIPE_ANIMATION_MS - 20);
     };
 
     const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
@@ -651,72 +751,99 @@ export default function HistoryPage() {
         commitNav(nextClosing, dir);
     };
 
-    const handleTouchStart = (e: React.TouchEvent) => {
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (isEditing) return;
-        if (swipePhaseRef.current !== 'idle') return; // ignore new touch during animation
-        swipeTouchStartX.current = e.touches[0].clientX;
-        swipeTouchStartY.current = e.touches[0].clientY;
-        swipeAxisLocked.current = null;
+        if (swipePhaseRef.current !== 'idle') return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+        const card = modalCardRef.current;
+        const width = card?.clientWidth ?? cardWidthRef.current;
+        cardWidthRef.current = width;
+        edgeStartRef.current = isNearHorizontalEdge(e.clientX, width);
+
+        pointerIdRef.current = e.pointerId;
+        startXRef.current = e.clientX;
+        startYRef.current = e.clientY;
+        startTimeRef.current = performance.now();
+        lockedAxisRef.current = 'none';
+
+        e.currentTarget.setPointerCapture(e.pointerId);
     };
 
-    const handleTouchMove = (e: React.TouchEvent) => {
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (pointerIdRef.current !== e.pointerId) return;
         if (isEditing) return;
-        if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
-        const dx = e.touches[0].clientX - swipeTouchStartX.current;
-        const dy = e.touches[0].clientY - swipeTouchStartY.current;
-        // Decide axis lock on first 8 px of movement
-        if (swipeAxisLocked.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-            swipeAxisLocked.current = Math.abs(dx) > Math.abs(dy);
+        if (swipePhaseRef.current !== 'idle') return;
+
+        const deltaX = e.clientX - startXRef.current;
+        const deltaY = e.clientY - startYRef.current;
+
+        if (lockedAxisRef.current === 'none') {
+            if (Math.hypot(deltaX, deltaY) < LOCK_THRESHOLD_PX) return;
+
+            const axisYRatio = edgeStartRef.current ? AXIS_Y_RATIO_EDGE : AXIS_Y_RATIO_CENTER;
+            if (Math.abs(deltaY) > Math.abs(deltaX) * axisYRatio) {
+                lockedAxisRef.current = 'y';
+                e.currentTarget.releasePointerCapture(e.pointerId);
+                pointerIdRef.current = null;
+                return;
+            }
+            lockedAxisRef.current = 'x';
+            setSwipePhase('dragging');
         }
-        if (!swipeAxisLocked.current) return;
-        e.preventDefault();
+
+        if (lockedAxisRef.current !== 'x') return;
+
+        if (e.cancelable) e.preventDefault();
+
         const currentIndex = closings.findIndex(c => c.id === selectedClosing?.id);
-        const dir: 'left' | 'right' = dx < 0 ? 'left' : 'right';
-        // Adjacent closing is the one that will slide IN:
-        // swiping left (dx<0) → current card moves left → next card (older, lower index) appears from right
-        const adjIdx = dir === 'left' ? currentIndex - 1 : currentIndex + 1;
-        const adjClosing = adjIdx >= 0 && adjIdx < closings.length ? closings[adjIdx] : null;
-        const cardW = modalCardRef.current?.offsetWidth ?? 400;
-        const clampedDx = adjClosing
-            ? Math.max(-cardW * 0.98, Math.min(cardW * 0.98, dx))
-            : dx * 0.15; // rubber-band if no adjacent
+        const dir: 'left' | 'right' = deltaX < 0 ? 'left' : 'right';
+        const adjClosing = getAdjacentClosing(currentIndex, dir);
+        const cardW = modalCardRef.current?.offsetWidth ?? cardWidthRef.current;
+        const next = adjClosing
+            ? applyEdgeResistance(currentIndex, deltaX, cardW)
+            : deltaX * EDGE_RESISTANCE; // rubber-band if no adjacent
+
         setDir(dir);
         setNextClosing(adjClosing);
-        swipeDragXRef.current = clampedDx;
-        setSwipeDragX(clampedDx);
-        setPhase('dragging');
+        syncDrag(next);
     };
 
-    const handleTouchEnd = (e: React.TouchEvent) => {
-        if (isEditing) return;
-        const wasHorizontal = swipeAxisLocked.current;
-        swipeTouchStartX.current = null;
-        swipeTouchStartY.current = null;
-        swipeAxisLocked.current = null;
-        // Read from refs — never stale
-        const currentDragX = swipeDragXRef.current;
-        const currentPhase = swipePhaseRef.current;
-        const currentNext = swipeNextClosingRef.current;
-        const currentDir = swipeDirectionRef.current;
-        if (!wasHorizontal || currentPhase !== 'dragging') {
-            setPhase('idle');
-            setDragX(0);
-            setNextClosing(null);
-            return;
+    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (pointerIdRef.current !== e.pointerId) return;
+
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
         }
-        const cardW = modalCardRef.current?.offsetWidth ?? 400;
-        const THRESHOLD = cardW * 0.28;
-        if (Math.abs(currentDragX) > THRESHOLD && currentNext) {
-            commitNav(currentNext, currentDir);
+
+        if (lockedAxisRef.current === 'x') {
+            const currentIndex = closings.findIndex(c => c.id === selectedClosing?.id);
+            const cardW = modalCardRef.current?.offsetWidth ?? cardWidthRef.current;
+            const offset = swipeDragXRef.current;
+            const elapsed = Math.max(performance.now() - startTimeRef.current, 1);
+            const velocity = offset / elapsed;
+
+            const targetClosing = resolveSwipeCommit(currentIndex, offset, velocity, cardW);
+
+            if (targetClosing) {
+                const dir = pointerOffsetToSwipeDirection(offset)!;
+                commitNav(targetClosing, dir);
+            } else {
+                animateTo(0, () => {
+                    resetSwipe();
+                });
+            }
         } else {
-            // Snap back
-            setPhase('animating');
-            setDragX(0);
-            setTimeout(() => {
-                setPhase('idle');
-                setNextClosing(null);
-            }, 230);
+            resetSwipe();
         }
+    };
+
+    const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (pointerIdRef.current !== e.pointerId) return;
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        resetSwipe();
     };
 
     const closingDetailTrackingLabel = useMemo(() => {
@@ -1787,6 +1914,12 @@ export default function HistoryPage() {
                             const cardH = modalCardRef.current?.offsetHeight ?? 500;
                             // Adjacent card's offset: current card moves left → adj comes from right (+cardW)
                             const adjOffset = swipeDragX + (swipeDirection === 'left' ? cardW : -cardW);
+                            const current = swipeNextClosing;
+                            const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
+                            const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
+                            const avgTicketVal = (current?.tickets_count || 0) > 0 
+                                ? (current?.tpv_sales || 0) / current?.tickets_count 
+                                : 0;
                             return (
                                 <div
                                     className="absolute top-0 left-0 bg-white rounded-[3rem] overflow-hidden shadow-2xl flex flex-col shrink-0"
@@ -1794,7 +1927,7 @@ export default function HistoryPage() {
                                         width: cardW,
                                         height: cardH,
                                         transform: `translateX(${adjOffset}px)`,
-                                        transition: swipePhase === 'animating' ? 'transform 210ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                        transition: swipePhase === 'animating' ? `transform ${SWIPE_ANIMATION_MS}ms ${SWIPE_EASING}` : 'none',
                                         zIndex: 1,
                                     }}
                                 >
@@ -1808,7 +1941,147 @@ export default function HistoryPage() {
                                             </h2>
                                         </div>
                                     </div>
-                                    <div className="flex-1" />
+                                    <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+                                        <div className="flex flex-col divide-y divide-zinc-100">
+                                            <div className="flex items-center justify-center gap-4 pb-2">
+                                                <div className="flex items-center gap-1 opacity-85">
+                                                    {(() => {
+                                                        const weatherId = weatherIdFromLabel(swipeNextClosing.weather);
+                                                        const weatherOpt = CLOSING_WEATHER_OPTIONS.find(o => o.id === weatherId);
+                                                        if (weatherOpt) {
+                                                            return (
+                                                                <img
+                                                                    src={weatherOpt.icon}
+                                                                    alt=""
+                                                                    className="w-3 h-3 object-contain"
+                                                                />
+                                                            );
+                                                        }
+                                                        return <CloudSun size={13} className="text-amber-500" />;
+                                                    })()}
+                                                    <span className="text-[9.5px] font-normal uppercase text-zinc-500 tracking-wider">
+                                                        {swipeNextClosing.weather || 'Clima N/A'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-85">
+                                                    <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
+                                                        {(swipeNextClosing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-85">
+                                                    <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
+                                                        {avgTicketVal > 0 
+                                                            ? `${formatCurrencyModal(avgTicketVal)} ` 
+                                                            : ''}DE TICKET MEDIO
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="pt-4 pb-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Ventas
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                                {formatCurrencyModal(getValue('tpv_sales'))}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Venta Neta
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                                {formatCurrencyModal(getValue('net_sales'))}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Tarjeta
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                                {formatCurrencyModal(getValue('sales_card'))}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Efectivo
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                                {formatCurrencyModal(getValue('cash_counted'))}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Pendiente Pago
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                                {formatCurrencyModal(getValue('sales_pending'))}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Cobros Pendientes
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                                {formatCurrencyModal(collectionsValue)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2">
+                                                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                        Diferencia
+                                                    </span>
+                                                    <div className="flex min-w-0 items-center justify-center">
+                                                        <div className="w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative">
+                                                            <span className={cn(
+                                                                "text-sm font-black tabular-nums",
+                                                                getValue('difference') > 0.005 ? 'text-emerald-500' : 
+                                                                getValue('difference') < -0.005 ? 'text-rose-500' : 'text-zinc-800'
+                                                            )}>
+                                                                {getValue('difference') > 0.005 || getValue('difference') < -0.005 
+                                                                    ? `${getValue('difference') > 0 ? '+' : ''}${formatCurrencyModal(getValue('difference'))}`
+                                                                    : ''}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })()}
@@ -1817,13 +2090,14 @@ export default function HistoryPage() {
                             className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
                             style={{
                                 transform: `translateX(${swipeDragX}px)`,
-                                transition: swipePhase === 'animating' ? 'transform 210ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                transition: swipePhase === 'animating' ? `transform ${SWIPE_ANIMATION_MS}ms ${SWIPE_EASING}` : 'none',
                                 zIndex: 2,
                                 willChange: 'transform',
                             }}
-                            onTouchStart={handleTouchStart}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
+                            onPointerDown={handlePointerDown}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerCancel={handlePointerCancel}
                             onClick={e => e.stopPropagation()}
                         >
                         <div className="bg-[#36606F] px-4 py-2 text-white relative shrink-0 text-center">
@@ -2014,17 +2288,17 @@ export default function HistoryPage() {
                                                     }
                                                     return <CloudSun size={13} className="text-amber-500" />;
                                                 })()}
-                                                <span className="text-[9.5px] font-medium uppercase text-zinc-500 tracking-wider">
+                                                <span className="text-[9.5px] font-normal uppercase text-zinc-500 tracking-wider">
                                                     {selectedClosing.weather || 'Clima N/A'}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <span className="text-[9.5px] font-medium uppercase tracking-wider text-zinc-500">
+                                                <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
                                                     {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <span className="text-[9.5px] font-medium uppercase tracking-wider text-zinc-500">
+                                                <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
                                                         ? `${formatCurrencyModal(avgTicketVal)} ` 
                                                         : ''}DE TICKET MEDIO
