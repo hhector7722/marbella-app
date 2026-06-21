@@ -765,27 +765,22 @@ export default function StaffDashboardView() {
                                                     <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
                                                     {/* Filas de altura fija para alinear círculos verde/rojo entre todos los días */}
                                                     <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px]">
-                                                        {day.eventType && day.eventType !== 'regular' ? (
+                                                        {day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' ? (
                                                             <>
                                                                 <div className="h-5 flex items-center justify-center shrink-0">
                                                                     <div className={cn(
                                                                         "w-5 h-5 rounded-full shadow-sm flex items-center justify-center leading-none",
-                                                                        day.eventType === 'no_registered' ? 'bg-red-600 text-white' :
-                                                                            day.eventType === 'holiday' ? 'bg-red-500 text-white' :
-                                                                                day.eventType === 'weekend' ? 'bg-yellow-400 text-white' :
-                                                                                    day.eventType === 'adjustment' ? 'bg-orange-500 text-white' :
-                                                                                        day.eventType === 'personal' ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'
+                                                                        day.eventType === 'holiday' ? 'bg-red-500 text-white' :
+                                                                            day.eventType === 'weekend' ? 'bg-yellow-400 text-white' :
+                                                                                day.eventType === 'adjustment' ? 'bg-orange-500 text-white' :
+                                                                                    day.eventType === 'personal' ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'
                                                                     )}>
-                                                                        {day.eventType === 'no_registered' ? (
-                                                                            <X size={12} strokeWidth={2.5} className="text-white shrink-0" />
-                                                                        ) : (
-                                                                            <span className="text-[9px] font-black">
-                                                                                {day.eventType === 'holiday' ? 'F' :
-                                                                                    day.eventType === 'weekend' ? 'E' :
-                                                                                        day.eventType === 'adjustment' ? 'B' :
-                                                                                            day.eventType === 'personal' ? 'P' : '?'}
-                                                                            </span>
-                                                                        )}
+                                                                        <span className="text-[9px] font-black">
+                                                                            {day.eventType === 'holiday' ? 'F' :
+                                                                                day.eventType === 'weekend' ? 'E' :
+                                                                                    day.eventType === 'adjustment' ? 'B' :
+                                                                                        day.eventType === 'personal' ? 'P' : '?'}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                                 <div className="h-5 shrink-0" aria-hidden />
@@ -803,7 +798,9 @@ export default function StaffDashboardView() {
                                                                 </div>
                                                                 {/* Fila salida: misma altura en todos los días para alinear círculos rojos */}
                                                                 <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                                    {day.hasLog && day.clockOut ? (
+                                                                    {day.eventType === 'no_registered' ? (
+                                                                        <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
+                                                                    ) : day.hasLog && day.clockOut ? (
                                                                         day.clock_out_show_no_registrada ? (
                                                                             <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
                                                                                 <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />

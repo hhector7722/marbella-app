@@ -14,7 +14,7 @@ const EVENT_TYPES = [
     { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
     { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
-    { value: 'no_registered', label: 'No registrado', initial: '', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
 ];
 
 const fmtHours = (val: number): string => {
@@ -151,7 +151,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
             <div className="grid grid-cols-7 border-b border-gray-100">
                 {week.days.map((day, di) => {
                     const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
-                    const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
+                    const isSpecial = day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' && eventConfig;
                     const isOtherMonth = day.date ? (() => {
                         const y = parseInt(day.date.slice(0, 4), 10);
                         const m = parseInt(day.date.slice(5, 7), 10) - 1;
@@ -199,7 +199,14 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                         </div>
                                         <div className="h-5 flex items-center justify-center gap-1 shrink-0">
                                             {day.hasLog && day.clockOut ? (
-                                                day.clock_out_show_no_registrada ? (
+                                                day.eventType === 'no_registered' ? (
+                                                    <>
+                                                        <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
+                                                            <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
+                                                        </span>
+                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
+                                                    </>
+                                                ) : day.clock_out_show_no_registrada ? (
                                                     <span
                                                         title="Salida no registrada (olvidó fichar)"
                                                         className="inline-flex items-center justify-center gap-1 shrink-0"

@@ -12,7 +12,7 @@ const EVENT_TYPES = [
     { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
     { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
-    { value: 'no_registered', label: 'No registrado', initial: '', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
 ];
 
 export type PlantillaDayLog = {
@@ -109,10 +109,10 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                             )}
                                         >
                                             <div className={cn(
-                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 flex-shrink-0",
-                                                eventConfig?.showCross ? "bg-red-600 text-white" : (isComplete ? "bg-emerald-600 text-white text-[6.5px] leading-none font-black" : "bg-rose-600 text-white text-[6.5px] leading-none font-black")
+                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 flex-shrink-0 text-[6.5px] leading-none font-black",
+                                                eventConfig?.showCross ? "bg-red-600 text-white" : (isComplete ? "bg-emerald-600 text-white" : "bg-rose-600 text-white")
                                             )}>
-                                                {eventConfig?.showCross ? <X size={8} strokeWidth={2.5} className="text-white" /> : initials}
+                                                {eventConfig?.showCross && log.event_type !== 'no_registered' ? <X size={8} strokeWidth={2.5} className="text-white" /> : initials}
                                             </div>
                                             <div className="min-w-0 flex-1 flex items-center gap-0.5 truncate">
                                                 {isRegular ? (
