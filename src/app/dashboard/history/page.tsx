@@ -1684,23 +1684,23 @@ export default function HistoryPage() {
 
             {selectedClosing && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => {
-                    if (!isEditing) {
-                        setSelectedClosing(null);
-                        setLightboxIndex(null);
-                        setClosingCalculatorOpen(false);
-                    }
+                    setSelectedClosing(null);
+                    setLightboxIndex(null);
+                    setClosingCalculatorOpen(false);
+                    setIsEditing(false);
                 }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative flex flex-col items-center gap-4 w-full max-w-lg animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
                         <div 
                             className={cn(
-                                "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0",
+                                "relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col h-[650px] max-h-[85vh] shrink-0",
                                 slideState.stage === 'idle' && "transform translate-x-0 opacity-100 transition-all duration-200 ease-out",
                                 slideState.stage === 'out' && (slideState.direction === 'left' ? "transform -translate-x-10 opacity-0 transition-all duration-150 ease-in" : "transform translate-x-10 opacity-0 transition-all duration-150 ease-in"),
                                 slideState.stage === 'in' && (slideState.direction === 'left' ? "transform translate-x-10 opacity-0" : "transform -translate-x-10 opacity-0")
                             )}
                             onTouchStart={handleTouchStart}
                             onTouchEnd={handleTouchEnd}
+                            onClick={e => e.stopPropagation()}
                         >
                         <div className="bg-[#36606F] px-4 py-2 text-white relative shrink-0 text-center">
                             <div className="relative flex items-center justify-center z-10 w-full min-h-[32px]">
@@ -1873,9 +1873,9 @@ export default function HistoryPage() {
                                     : 0;
 
                                 return (
-                                    <div className="space-y-4">
+                                    <div className="flex flex-col divide-y divide-zinc-100">
                                         {/* Clima, Tickets y Ticket Medio en el cuerpo */}
-                                        <div className="flex items-center justify-center gap-4 pb-2.5 border-b border-zinc-100">
+                                        <div className="flex items-center justify-center gap-4 pb-1">
                                             <div className="flex items-center gap-1 opacity-85">
                                                 {(() => {
                                                     const weatherId = weatherIdFromLabel(selectedClosing.weather);
@@ -1911,59 +1911,57 @@ export default function HistoryPage() {
                                         </div>
 
                                         {/* Fila por fila con el estilo del paso 1 */}
-                                        <div className="flex flex-col divide-y divide-zinc-100">
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Ventas"
-                                                    value={getValue('tpv_sales')}
-                                                    fieldKey="tpv_sales"
-                                                    editable={true}
-                                                />
-                                            </div>
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Venta Neta"
-                                                    value={getValue('net_sales')}
-                                                />
-                                            </div>
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Tarjeta"
-                                                    value={getValue('sales_card')}
-                                                    fieldKey="sales_card"
-                                                    editable={true}
-                                                />
-                                            </div>
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Efectivo"
-                                                    value={getValue('cash_counted')}
-                                                    onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
-                                                />
-                                            </div>
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Pendiente Pago"
-                                                    value={getValue('sales_pending')}
-                                                    fieldKey="sales_pending"
-                                                    editable={true}
-                                                />
-                                            </div>
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Cobros Pendientes"
-                                                    value={collectionsValue}
-                                                    fieldKey="debt_recovered"
-                                                    editable={true}
-                                                />
-                                            </div>
-                                            <div className="py-2">
-                                                <RowItem
-                                                    label="Diferencia"
-                                                    value={getValue('difference')}
-                                                    isDiff={true}
-                                                />
-                                            </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Ventas"
+                                                value={getValue('tpv_sales')}
+                                                fieldKey="tpv_sales"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Venta Neta"
+                                                value={getValue('net_sales')}
+                                            />
+                                        </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Tarjeta"
+                                                value={getValue('sales_card')}
+                                                fieldKey="sales_card"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Efectivo"
+                                                value={getValue('cash_counted')}
+                                                onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
+                                            />
+                                        </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Pendiente Pago"
+                                                value={getValue('sales_pending')}
+                                                fieldKey="sales_pending"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Cobros Pendientes"
+                                                value={collectionsValue}
+                                                fieldKey="debt_recovered"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-1">
+                                            <RowItem
+                                                label="Diferencia"
+                                                value={getValue('difference')}
+                                                isDiff={true}
+                                            />
                                         </div>
                                         {!isEditing && (() => {
                                             const targetDate = parseLocalSafe(selectedClosing.closing_date);
@@ -1980,14 +1978,14 @@ export default function HistoryPage() {
                                             const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
 
                                             return (
-                                                <div className="pt-4 border-t border-zinc-100 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
-                                                    <div className="flex items-center justify-center gap-1.5">
+                                                <div className="pt-1 flex flex-col items-center justify-center gap-1 text-[11px] text-zinc-500 font-medium w-full text-center">
+                                                    <div className="flex items-center justify-center gap-1">
                                                         <span>Esperado:</span>
                                                         <span className="font-extrabold text-zinc-700">
                                                             {details.expectedSales > 0 ? formatCurrencyModal(details.expectedSales) : 'N/A'}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center justify-center gap-1.5">
+                                                    <div className="flex items-center justify-center gap-1">
                                                         <span>Rendimiento:</span>
                                                         <div className="flex items-center gap-1 leading-none">
                                                             {details.expectedSales > 0 && (
@@ -2079,7 +2077,7 @@ export default function HistoryPage() {
                         }
                         
                         return (
-                            <div className="flex justify-center gap-2.5 mt-2 select-none z-10">
+                            <div className="flex justify-center gap-2.5 mt-2 select-none z-10" onClick={e => e.stopPropagation()}>
                                 <button 
                                     type="button"
                                     onClick={() => {
@@ -2310,7 +2308,7 @@ export default function HistoryPage() {
             {showPeriodPerformanceModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowPeriodPerformanceModal(false)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                    <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col h-[650px] max-h-[85vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 py-3 text-white relative shrink-0 text-center">
                             <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter mx-auto max-w-[80%] flex items-center justify-center min-h-[32px]">
                                 {(() => {
