@@ -624,18 +624,25 @@ export default function HistoryPage() {
         setDir(dir);
         setNextClosing(next);
         setPhase('animating');
-        // Trigger both cards to animate simultaneously on next frame
-        requestAnimationFrame(() => {
-            setDragX(dir === 'left' ? -cardW : cardW);
-        });
+        setDragX(dir === 'left' ? -cardW : cardW);
         setTimeout(() => {
             setSelectedClosing(next);
             setIsEditing(false);
             setLightboxIndex(null);
-            setDragX(0);
+            // Disable transition so new card jumps to opposite side instantly
             setPhase('idle');
-            setNextClosing(null);
-        }, 450);
+            swipeDragXRef.current = dir === 'left' ? cardW : -cardW;
+            setSwipeDragX(dir === 'left' ? cardW : -cardW);
+            // Re-enable transition and animate to center on next paint
+            requestAnimationFrame(() => {
+                setPhase('animating');
+                setDragX(0);
+                setTimeout(() => {
+                    setPhase('idle');
+                    setNextClosing(null);
+                }, 300);
+            });
+        }, 250);
     };
 
     const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
@@ -702,12 +709,12 @@ export default function HistoryPage() {
             commitNav(currentNext, currentDir);
         } else {
             // Snap back smoothly
-            setNextClosing(null);
             setPhase('animating');
             setDragX(0);
             setTimeout(() => {
                 setPhase('idle');
-            }, 350);
+                setNextClosing(null);
+            }, 250);
         }
     };
 
@@ -1399,171 +1406,6 @@ export default function HistoryPage() {
         }
     };
 
-    const renderClosingDataRows = (closing: any, opts?: { onCashClick?: () => void }) => {
-        const current = closing;
-        const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
-        const collectionsValue = Number(current?.collections ?? current?.debt_recovered ?? 0);
-
-        const avgTicketVal = (current?.tickets_count || 0) > 0
-            ? (current?.tpv_sales || 0) / current?.tickets_count
-            : 0;
-
-        const RowItem = ({
-            label,
-            value,
-            isDiff = false,
-            onClick,
-        }: {
-            label: string;
-            value: number;
-            isDiff?: boolean;
-            onClick?: () => void;
-        }) => {
-            const hasValue = Math.abs(value) >= 0.005;
-            let text = '';
-            if (hasValue) {
-                if (isDiff) {
-                    text = `${value > 0 ? '+' : ''}${formatCurrencyModal(value)}`;
-                } else {
-                    text = formatCurrencyModal(value);
-                }
-            }
-            const isPos = value > 0.005;
-            const diffTone = isDiff && hasValue
-                ? isPos
-                    ? 'text-emerald-500'
-                    : 'text-rose-500'
-                : null;
-
-            return (
-                <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
-                    <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
-                        {label}
-                    </span>
-                    <div className="flex min-w-0 items-center justify-center">
-                        <div
-                            className={cn(
-                                "w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative",
-                                onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4"
-                            )}
-                            onClick={onClick}
-                        >
-                            <span className={cn(
-                                "text-sm font-black tabular-nums",
-                                diffTone ?? 'text-zinc-800'
-                            )}>
-                                {text}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        return (
-            <>
-                <div className="flex items-center justify-center gap-4 pb-2">
-                    <div className="flex items-center gap-1 opacity-85">
-                        {(() => {
-                            const weatherId = weatherIdFromLabel(closing.weather);
-                            const weatherOpt = CLOSING_WEATHER_OPTIONS.find(o => o.id === weatherId);
-                            if (weatherOpt) {
-                                return (
-                                    <img
-                                        src={weatherOpt.icon}
-                                        alt=""
-                                        className="w-3 h-3 object-contain"
-                                    />
-                                );
-                            }
-                            return <CloudSun size={13} className="text-amber-500" />;
-                        })()}
-                        <span className="text-[9.5px] font-normal uppercase text-zinc-500 tracking-wider">
-                            {closing.weather || 'Clima N/A'}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-85">
-                        <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
-                            {(closing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-85">
-                        <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
-                            {avgTicketVal > 0
-                                ? `${formatCurrencyModal(avgTicketVal)} `
-                                : ''}DE TICKET MEDIO
-                        </span>
-                    </div>
-                </div>
-
-                <div className="pt-4 pb-2">
-                    <RowItem label="Ventas" value={getValue('tpv_sales')} />
-                </div>
-                <div className="py-2">
-                    <RowItem label="Venta Neta" value={getValue('net_sales')} />
-                </div>
-                <div className="py-2">
-                    <RowItem label="Tarjeta" value={getValue('sales_card')} />
-                </div>
-                <div className="py-2">
-                    <RowItem label="Efectivo" value={getValue('cash_counted')} onClick={opts?.onCashClick} />
-                </div>
-                <div className="py-2">
-                    <RowItem label="Pendiente Pago" value={getValue('sales_pending')} />
-                </div>
-                <div className="py-2">
-                    <RowItem label="Cobros Pendientes" value={collectionsValue} />
-                </div>
-                <div className="py-2">
-                    <RowItem label="Diferencia" value={getValue('difference')} isDiff={true} />
-                </div>
-                {(() => {
-                    const targetDate = parseLocalSafe(closing.closing_date);
-                    const details = get8DayExpectedSalesDetails(targetDate);
-                    if (details.expectedSales <= 0.005) return null;
-
-                    const netVal = getValue('net_sales');
-                    const diffPercent = details.expectedSales > 0 && netVal > 0
-                        ? ((netVal - details.expectedSales) / details.expectedSales) * 100
-                        : 0;
-                    const scale = getRendimientoScale(details.expectedSales > 0 ? diffPercent : 0);
-
-                    const weekdayName = format(targetDate, 'EEEE', { locale: es });
-                    const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
-
-                    return (
-                        <div className="pt-2 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                                <span>Esperado:</span>
-                                <span className="font-extrabold text-zinc-700">
-                                    {details.expectedSales > 0 ? formatCurrencyModal(details.expectedSales) : 'N/A'}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-center gap-1.5">
-                                <span>Rendimiento:</span>
-                                <div className="flex items-center gap-1 leading-none">
-                                    {details.expectedSales > 0 && (
-                                        <TrendTriangle type={scale.icon} className={scale.color} size="sm" />
-                                    )}
-                                    <span className={cn("font-extrabold", scale.color)}>
-                                        {details.expectedSales > 0
-                                            ? `${diffPercent >= 0 ? '+' : ''}${Math.round(diffPercent)}%`
-                                            : 'N/A'}
-                                    </span>
-                                </div>
-                            </div>
-                            {details.expectedSales > 0 && (
-                                <p className="text-[9px] text-zinc-400 font-normal italic mt-0.5 max-w-[85%] mx-auto">
-                                    Esperado basado en los {details.daysUsed} {weekdayPlural} anteriores.
-                                </p>
-                            )}
-                        </div>
-                    );
-                })()}
-            </>
-        );
-    };
-
     return (
         <div className="min-h-screen pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
             <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 print:max-w-none">
@@ -1938,47 +1780,20 @@ export default function HistoryPage() {
                 }}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
-                        <div className="relative w-full">
-                            {swipePhase === 'animating' && swipeNextClosing && (
-                                <div
-                                    className="absolute inset-0 bg-white rounded-[3rem] overflow-hidden shadow-2xl flex flex-col"
-                                    style={{
-                                        transform: `translateX(${swipeDragX + (swipeDirection === 'left' ? 1 : -1) * (modalCardRef.current?.offsetWidth ?? 400)}px)`,
-                                        transition: 'transform 350ms cubic-bezier(0.22, 1, 0.36, 1)',
-                                        willChange: 'transform',
-                                        zIndex: 1,
-                                    }}
-                                    onClick={e => e.stopPropagation()}
-                                >
-                                    <div className="bg-[#36606F] px-4 py-2 text-white shrink-0 text-center">
-                                        <div className="flex items-center justify-center min-h-[32px]">
-                                            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter">
-                                                {(() => {
-                                                    const d = new Date(swipeNextClosing.closed_at);
-                                                    return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
-                                                })()}
-                                            </h2>
-                                        </div>
-                                    </div>
-                                    <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-                                        {renderClosingDataRows(swipeNextClosing)}
-                                    </div>
-                                </div>
-                            )}
-                            <div
-                                ref={modalCardRef}
-                                className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
-                                style={{
-                                    transform: `translateX(${swipeDragX}px)`,
-                                    transition: swipePhase === 'animating' ? 'transform 350ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
-                                    willChange: 'transform',
-                                    zIndex: 2,
-                                }}
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
-                                onClick={e => e.stopPropagation()}
-                            >
+                        <div
+                            ref={modalCardRef}
+                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
+                            style={{
+                                transform: `translateX(${swipeDragX}px)`,
+                                transition: swipePhase === 'animating' ? 'transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1.0)' : 'none',
+                                willChange: 'transform',
+                                zIndex: 2,
+                            }}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onClick={e => e.stopPropagation()}
+                        >
                         <div className="bg-[#36606F] px-4 py-2 text-white relative shrink-0 text-center">
                             <div className="relative flex items-center justify-center z-10 w-full min-h-[32px]">
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-start gap-1">
@@ -2066,9 +1881,223 @@ export default function HistoryPage() {
                             </div>
                         </div>
                         <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-                            {renderClosingDataRows(isEditing ? editData : selectedClosing, {
-                                onCashClick: !isEditing ? () => setShowCashDetails(true) : undefined,
-                            })}
+                            {(() => {
+                                const current = isEditing ? editData : selectedClosing;
+                                const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
+                                const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
+ 
+                                const RowItem = ({
+                                    label,
+                                    value,
+                                    fieldKey,
+                                    editable = false,
+                                    isDiff = false,
+                                    onClick,
+                                }: {
+                                    label: string;
+                                    value: number;
+                                    fieldKey?: string;
+                                    editable?: boolean;
+                                    isDiff?: boolean;
+                                    onClick?: () => void;
+                                }) => {
+                                    const hasValue = Math.abs(value) >= 0.005;
+                                    let text = '';
+                                    if (hasValue) {
+                                        if (isDiff) {
+                                            text = `${value > 0 ? '+' : ''}${formatCurrencyModal(value)}`;
+                                        } else {
+                                            text = formatCurrencyModal(value);
+                                        }
+                                    }
+                                    const isNeg = value < -0.005;
+                                    const isPos = value > 0.005;
+                                    const diffTone = isDiff && hasValue
+                                        ? isPos
+                                            ? 'text-emerald-500'
+                                            : 'text-rose-500'
+                                        : null;
+ 
+                                    return (
+                                        <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                            <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                                {label}
+                                            </span>
+                                            <div className="flex min-w-0 items-center justify-center">
+                                                {isEditing && editable && fieldKey ? (
+                                                    <div className="w-[8.75rem] sm:w-[9.5rem] h-8 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm">
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="h-full w-full bg-transparent px-2 text-center text-sm font-black tabular-nums text-zinc-800 outline-none border-none focus:ring-0"
+                                                            value={value || ''}
+                                                            onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
+                                                        />
+                                                        {hasValue && (
+                                                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500">
+                                                                €
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div 
+                                                        className={cn(
+                                                            "w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative",
+                                                            onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4"
+                                                        )}
+                                                        onClick={onClick}
+                                                    >
+                                                        <span className={cn(
+                                                            "text-sm font-black tabular-nums",
+                                                            diffTone ?? 'text-zinc-800'
+                                                        )}>
+                                                            {text}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                };
+ 
+                                const avgTicketVal = (current?.tickets_count || 0) > 0 
+                                    ? (current?.tpv_sales || 0) / current?.tickets_count 
+                                    : 0;
+
+                                return (
+                                    <div className="flex flex-col divide-y divide-zinc-100">
+                                        <div className="flex items-center justify-center gap-4 pb-2">
+                                            <div className="flex items-center gap-1 opacity-85">
+                                                {(() => {
+                                                    const weatherId = weatherIdFromLabel(selectedClosing.weather);
+                                                    const weatherOpt = CLOSING_WEATHER_OPTIONS.find(o => o.id === weatherId);
+                                                    if (weatherOpt) {
+                                                        return (
+                                                            <img
+                                                                src={weatherOpt.icon}
+                                                                alt=""
+                                                                className="w-3 h-3 object-contain"
+                                                            />
+                                                        );
+                                                    }
+                                                    return <CloudSun size={13} className="text-amber-500" />;
+                                                })()}
+                                                <span className="text-[9.5px] font-normal uppercase text-zinc-500 tracking-wider">
+                                                    {selectedClosing.weather || 'Clima N/A'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-85">
+                                                <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
+                                                    {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-85">
+                                                <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
+                                                    {avgTicketVal > 0 
+                                                        ? `${formatCurrencyModal(avgTicketVal)} ` 
+                                                        : ''}DE TICKET MEDIO
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 pb-2">
+                                            <RowItem
+                                                label="Ventas"
+                                                value={getValue('tpv_sales')}
+                                                fieldKey="tpv_sales"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-2">
+                                            <RowItem
+                                                label="Venta Neta"
+                                                value={getValue('net_sales')}
+                                            />
+                                        </div>
+                                        <div className="py-2">
+                                            <RowItem
+                                                label="Tarjeta"
+                                                value={getValue('sales_card')}
+                                                fieldKey="sales_card"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-2">
+                                            <RowItem
+                                                label="Efectivo"
+                                                value={getValue('cash_counted')}
+                                                onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
+                                            />
+                                        </div>
+                                        <div className="py-2">
+                                            <RowItem
+                                                label="Pendiente Pago"
+                                                value={getValue('sales_pending')}
+                                                fieldKey="sales_pending"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-2">
+                                            <RowItem
+                                                label="Cobros Pendientes"
+                                                value={collectionsValue}
+                                                fieldKey="debt_recovered"
+                                                editable={true}
+                                            />
+                                        </div>
+                                        <div className="py-2">
+                                            <RowItem
+                                                label="Diferencia"
+                                                value={getValue('difference')}
+                                                isDiff={true}
+                                            />
+                                        </div>
+                                        {!isEditing && (() => {
+                                            const targetDate = parseLocalSafe(selectedClosing.closing_date);
+                                            const details = get8DayExpectedSalesDetails(targetDate);
+                                            if (details.expectedSales <= 0.005) return null;
+                                            
+                                            const netVal = getValue('net_sales');
+                                            const diffPercent = details.expectedSales > 0 && netVal > 0 
+                                                ? ((netVal - details.expectedSales) / details.expectedSales) * 100 
+                                                : 0;
+                                            const scale = getRendimientoScale(details.expectedSales > 0 ? diffPercent : 0);
+                                            
+                                            const weekdayName = format(targetDate, 'EEEE', { locale: es });
+                                            const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
+
+                                            return (
+                                                <div className="pt-2 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <span>Esperado:</span>
+                                                        <span className="font-extrabold text-zinc-700">
+                                                            {details.expectedSales > 0 ? formatCurrencyModal(details.expectedSales) : 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <span>Rendimiento:</span>
+                                                        <div className="flex items-center gap-1 leading-none">
+                                                            {details.expectedSales > 0 && (
+                                                                <TrendTriangle type={scale.icon} className={scale.color} size="sm" />
+                                                            )}
+                                                            <span className={cn("font-extrabold", scale.color)}>
+                                                                {details.expectedSales > 0 
+                                                                    ? `${diffPercent >= 0 ? '+' : ''}${Math.round(diffPercent)}%` 
+                                                                    : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {details.expectedSales > 0 && (
+                                                        <p className="text-[9px] text-zinc-400 font-normal italic mt-0.5 max-w-[85%] mx-auto">
+                                                            Esperado basado en los {details.daysUsed} {weekdayPlural} anteriores.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                );
+                            })()}
 
                             {(() => {
                                 const hasDataphonePhoto = !!selectedClosing.dataphone_totals_photo_path;
@@ -2147,7 +2176,6 @@ export default function HistoryPage() {
                                 </button>
                             )}
                         </div>
-                    </div>
                     </div>
                     {/* 3 Pagination dots block */}
                     {(() => {
