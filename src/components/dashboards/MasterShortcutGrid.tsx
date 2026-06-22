@@ -51,7 +51,7 @@ export default function MasterShortcutGrid({
                 <DashboardIosIcon
                     label="C INICIAL"
                     labelClassName="text-white/90"
-                    contentClassName="w-full h-12 md:h-11 flex-none items-center justify-center"
+                    contentClassName="w-full h-12 md:h-11 flex-none md:w-full items-center justify-center"
                     onClick={() => router.push('/dashboard/movements')}
                     className="bg-emerald-600 shadow-md border-2 border-white"
                 >
