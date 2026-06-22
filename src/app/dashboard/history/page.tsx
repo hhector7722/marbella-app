@@ -633,14 +633,16 @@ export default function HistoryPage() {
             setPhase('idle');
             swipeDragXRef.current = dir === 'left' ? cardW : -cardW;
             setSwipeDragX(dir === 'left' ? cardW : -cardW);
-            // Re-enable transition and animate to center on next paint
+            // Wait for the browser to paint the "jump" frame, then animate to center
             requestAnimationFrame(() => {
-                setPhase('animating');
-                setDragX(0);
                 setTimeout(() => {
-                    setPhase('idle');
-                    setNextClosing(null);
-                }, 300);
+                    setPhase('animating');
+                    setDragX(0);
+                    setTimeout(() => {
+                        setPhase('idle');
+                        setNextClosing(null);
+                    }, 300);
+                }, 0);
             });
         }, 250);
     };
