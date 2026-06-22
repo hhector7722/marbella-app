@@ -230,7 +230,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
             {/* ZONA INFERIOR OSCURA (Rígida e inamovible) — +/- estilo modal partidos (trincadores) */}
             <div className={cn(
-                "bg-[#36606F] flex flex-row items-center justify-center shrink-0 w-full",
+                "bg-white flex flex-row items-center justify-center shrink-0 w-full",
                 isModal ? "px-6 py-4" : "p-1.5"
             )}>
                 <div className={cn(
@@ -243,7 +243,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     disabled={quantity === 0}
                     aria-label="Menos cantidad"
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] border border-zinc-200/50 bg-[rgba(178,68,68,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
+                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgba(178,68,68,0.55)] text-white shadow-sm transition-all hover:opacity-90 hover:shadow active:opacity-75 active:shadow-none disabled:opacity-40",
                         isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
@@ -268,7 +268,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                     }}
                     className={cn(
-                        "font-black text-white tabular-nums text-center bg-transparent border-none outline-none w-10 min-w-0 rounded focus:ring-1 focus:ring-white/30",
+                        "font-black text-black tabular-nums text-center bg-transparent border-none outline-none w-10 min-w-0 rounded focus:ring-1 focus:ring-black/20",
                         isModal ? "text-lg sm:text-2xl px-1" : "text-[11px] md:text-xs px-0.5"
                     )}
                 />
@@ -278,7 +278,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     onClick={handleIncrement}
                     aria-label="Más cantidad"
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] border border-zinc-200/50 bg-[rgba(62,138,82,0.55)] text-white transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40",
+                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgba(62,138,82,0.55)] text-white shadow-sm transition-all hover:opacity-90 hover:shadow active:opacity-75 active:shadow-none disabled:opacity-40",
                         isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
