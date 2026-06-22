@@ -105,7 +105,7 @@ BEGIN
   FOR cart_rec IN
     SELECT
       cart.recipe_id,
-      cart.quantity,
+      LEAST(GREATEST(1, cart.quantity), 20) AS quantity,
       cart.is_half,
       r.name AS recipe_name,
       r.category AS recipe_category

@@ -243,7 +243,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     disabled={quantity === 0}
                     aria-label="Menos cantidad"
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgb(178,68,68)] text-white shadow-sm transition-all hover:opacity-90 hover:shadow active:opacity-75 active:shadow-none disabled:opacity-40",
+                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgb(178,68,68)] text-white shadow-sm opacity-90 transition-shadow hover:shadow active:shadow-none",
                         isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >
@@ -278,7 +278,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     onClick={handleIncrement}
                     aria-label="Más cantidad"
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgb(62,138,82)] text-white shadow-sm transition-all hover:opacity-90 hover:shadow active:opacity-75 active:shadow-none disabled:opacity-40",
+                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgb(62,138,82)] text-white shadow-sm opacity-90 transition-shadow hover:shadow active:shadow-none",
                         isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
                     )}
                 >

@@ -44,9 +44,14 @@ export async function submitPersonalConsumption(
     };
   }
 
+  const cappedItems = items.map((item) => ({
+    ...item,
+    quantity: Math.min(Math.max(Math.round(item.quantity), 1), 20),
+  }));
+
   const { data, error } = await supabase.rpc('process_staff_consumption', {
     p_employee_id: user.id,
-    p_items: items,
+    p_items: cappedItems,
   });
 
   if (error) {

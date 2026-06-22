@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { submitPersonalConsumption, getConsumptionRecipes } from './actions';
 import { toast } from 'sonner';
 import { X, Search, Loader2, Package, Minus, Plus } from 'lucide-react';
@@ -62,6 +62,7 @@ export function ConsumptionModal({
   const [racionPicker, setRacionPicker] = useState<Recipe | null>(null);
   const [showEmptyCartError, setShowEmptyCartError] = useState(false);
   const [step, setStep] = useState<ConsumptionStep>('drinks');
+  const lastAddTimeRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     getConsumptionRecipes().then((data) => {
@@ -71,9 +72,16 @@ export function ConsumptionModal({
   }, []);
 
   const handleAdd = useCallback((recipe: Recipe, is_half: boolean) => {
+    const key = `${recipe.id}:${is_half}`;
+    const now = Date.now();
+    const last = lastAddTimeRef.current.get(key) ?? 0;
+    if (now - last < 300) return;
+    lastAddTimeRef.current.set(key, now);
+
     setCart((prev) => {
       const existing = prev.find((item) => item.recipe.id === recipe.id && item.is_half === is_half);
       if (existing) {
+        if (existing.quantity >= 20) return prev;
         return prev.map((i) => (i === existing ? { ...i, quantity: i.quantity + 1 } : i));
       }
       return [...prev, { recipe, quantity: 1, is_half }];
@@ -231,7 +239,8 @@ export function ConsumptionModal({
                     key={recipe.id}
                     type="button"
                     onClick={() => onRecipeActivate(recipe)}
-                    className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98]"
+                    disabled={isSubmitting}
+                    className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   >
                     {badgeCount > 0 ? (
                       <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
@@ -276,9 +285,10 @@ export function ConsumptionModal({
                     <button
                       type="button"
                       onClick={() => handleDecrement(c.recipe.id, c.is_half)}
+                      disabled={isSubmitting}
                       className={cn(
                         'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                        'hover:text-zinc-600 active:scale-[0.98] transition-colors',
+                        'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
                       )}
                       aria-label={`Quitar una unidad de ${c.recipe.name}`}
                     >
@@ -299,9 +309,10 @@ export function ConsumptionModal({
                     <button
                       type="button"
                       onClick={() => handleAdd(c.recipe, c.is_half)}
+                      disabled={isSubmitting}
                       className={cn(
                         'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                        'hover:text-zinc-600 active:scale-[0.98] transition-colors',
+                        'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
                       )}
                       aria-label={`Añadir una unidad de ${c.recipe.name}`}
                     >
@@ -399,7 +410,8 @@ export function ConsumptionModal({
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="min-h-12 rounded-xl bg-[#36606F] py-3 text-sm font-bold text-white shadow-sm hover:opacity-95 active:scale-[0.98]"
+                disabled={isSubmitting}
+                className="min-h-12 rounded-xl bg-[#36606F] py-3 text-sm font-bold text-white shadow-sm hover:opacity-95 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                 onClick={() => {
                   handleAdd(racionPicker, false);
                   setRacionPicker(null);
@@ -409,7 +421,8 @@ export function ConsumptionModal({
               </button>
               <button
                 type="button"
-                className="min-h-12 rounded-xl border border-zinc-200 bg-zinc-50 py-3 text-sm font-bold text-zinc-800 hover:bg-zinc-100 active:scale-[0.98]"
+                disabled={isSubmitting}
+                className="min-h-12 rounded-xl border border-zinc-200 bg-zinc-50 py-3 text-sm font-bold text-zinc-800 hover:bg-zinc-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                 onClick={() => {
                   handleAdd(racionPicker, true);
                   setRacionPicker(null);
