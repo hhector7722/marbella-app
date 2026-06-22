@@ -639,10 +639,10 @@ export default function HistoryPage() {
                     setTimeout(() => {
                         setPhase('idle');
                         setNextClosing(null);
-                    }, 210);
+                    }, 300);
                 });
             });
-        }, 190);
+        }, 250);
     };
 
     const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
@@ -704,17 +704,17 @@ export default function HistoryPage() {
             return;
         }
         const cardW = modalCardRef.current?.offsetWidth ?? 400;
-        const THRESHOLD = cardW * 0.28;
+        const THRESHOLD = cardW * 0.20; // Lower threshold for easier commit (iOS-like)
         if (Math.abs(currentDragX) > THRESHOLD && currentNext) {
             commitNav(currentNext, currentDir);
         } else {
-            // Snap back
+            // Snap back smoothly
             setPhase('animating');
             setDragX(0);
             setTimeout(() => {
                 setPhase('idle');
                 setNextClosing(null);
-            }, 230);
+            }, 250);
         }
     };
 
@@ -1785,7 +1785,7 @@ export default function HistoryPage() {
                             className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
                             style={{
                                 transform: `translateX(${swipeDragX}px)`,
-                                transition: swipePhase === 'animating' ? 'transform 210ms cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
+                                transition: swipePhase === 'animating' ? 'transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1.0)' : 'none',
                                 zIndex: 2,
                                 willChange: 'transform',
                             }}
