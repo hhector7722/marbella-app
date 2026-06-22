@@ -59,7 +59,7 @@ export default function MasterShortcutGrid({
                         value={actualBalance}
                         suffix="€"
                         decimals={2}
-                        className="block w-full text-center text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
+                        className="text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
                     />
                 </DashboardIosIcon>
             ),
