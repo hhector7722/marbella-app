@@ -1,18 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, Check, EyeOff, Eye, Loader2 } from 'lucide-react';
+import { ChevronLeft, Check, EyeOff, Eye, Loader2, Trash2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ActivityReviewCard } from '@/components/pavilion/ActivityReviewCard';
+import { PavilionMatchingBadge } from '@/components/pavilion/PavilionMatchingBadge';
+import { PavilionTimeSlot } from '@/components/pavilion/PavilionTimeSlot';
 import {
   prepareReviewAction,
   confirmImportAction,
+  fetchVenuesAction,
   type ReviewData,
+  type VenueOption,
 } from '@/app/staff/actividades/revision/actions';
 import { createClient } from '@/utils/supabase/client';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -42,6 +45,10 @@ export default function PavilionRevisionPage() {
   const [error, setError] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [hideExisting, setHideExisting] = useState(false);
+  const [deletedIndices, setDeletedIndices] = useState<Set<number>>(new Set());
+  const [editedVenues, setEditedVenues] = useState<Map<number, string[]>>(new Map());
+  const [allVenues, setAllVenues] = useState<VenueOption[]>([]);
+  const [addingVenueFor, setAddingVenueFor] = useState<number | null>(null);
 
   useEffect(() => {
     async function checkAuth() {
@@ -51,6 +58,8 @@ export default function PavilionRevisionPage() {
       if (!isMasterDashboardUser(email)) {
         router.replace('/staff/actividades');
       } else {
+        const res = await fetchVenuesAction();
+        if (res.success) setAllVenues(res.data);
         setAuthChecking(false);
       }
     }
@@ -85,11 +94,19 @@ export default function PavilionRevisionPage() {
   const handleAccept = async () => {
     if (!reviewData) return;
 
+    const adjustedOccupations = [];
+    for (let i = 0; i < reviewData.occupations.length; i++) {
+      if (deletedIndices.has(i)) continue;
+      const occ = reviewData.occupations[i];
+      const edited = editedVenues.get(i);
+      adjustedOccupations.push(edited ? { ...occ, venues: edited } : occ);
+    }
+
     setState('importing');
 
     const res = await confirmImportAction({
       date: reviewData.date,
-      occupations: reviewData.occupations,
+      occupations: adjustedOccupations,
     });
 
     if (!res.success) {
@@ -116,21 +133,62 @@ export default function PavilionRevisionPage() {
     void loadReview();
   };
 
+  const toggleDelete = (index: number) => {
+    setDeletedIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const removeVenue = (occIndex: number, venueCode: string) => {
+    setEditedVenues((prev) => {
+      const next = new Map(prev);
+      const current = next.get(occIndex) ?? reviewData!.occupations[occIndex].venues;
+      next.set(occIndex, current.filter((v) => v !== venueCode));
+      return next;
+    });
+  };
+
+  const addVenue = (occIndex: number, venueCode: string) => {
+    setEditedVenues((prev) => {
+      const next = new Map(prev);
+      const current = next.get(occIndex) ?? reviewData!.occupations[occIndex].venues;
+      if (!current.includes(venueCode)) {
+        next.set(occIndex, [...current, venueCode]);
+      }
+      return next;
+    });
+    setAddingVenueFor(null);
+  };
+
+  const getVenues = (occIndex: number): string[] => {
+    return editedVenues.get(occIndex) ?? reviewData!.occupations[occIndex].venues;
+  };
+
+  const availableVenuesFor = (occIndex: number): VenueOption[] => {
+    const current = getVenues(occIndex);
+    return allVenues.filter((v) => !current.includes(v.code));
+  };
+
   const date = dateParam || reviewData?.date || null;
   const occupations = reviewData?.occupations ?? [];
   const matches = reviewData?.matches ?? [];
 
   const filteredIndices = occupations
     .map((_, i) => i)
+    .filter((i) => !deletedIndices.has(i))
     .filter((i) => !hideExisting || matches[i]?.status !== 'existing');
 
-  const existingCount = matches.filter((m) => m.status === 'existing').length;
-  const newCount = matches.filter((m) => m.status === 'new').length;
-  const uncertainCount = matches.filter((m) => m.status === 'uncertain').length;
+  const existingCount = matches.filter((m, i) => m.status === 'existing' && !deletedIndices.has(i)).length;
+  const newCount = matches.filter((m, i) => m.status === 'new' && !deletedIndices.has(i)).length;
+  const uncertainCount = matches.filter((m, i) => m.status === 'uncertain' && !deletedIndices.has(i)).length;
 
   const isImporting = state === 'importing';
-  const uniqueVenues = new Set(occupations.flatMap((o) => o.venues));
-  const uniqueActivities = occupations.length;
+  const visibleOccupationsIndices = occupations.map((_, i) => i).filter((i) => !deletedIndices.has(i));
+  const uniqueVenues = new Set(visibleOccupationsIndices.flatMap((i) => getVenues(i)));
+  const uniqueActivities = visibleOccupationsIndices.length;
 
   if (authChecking) {
     return (
@@ -286,13 +344,116 @@ export default function PavilionRevisionPage() {
                     </p>
                   </div>
                 ) : (
-                  filteredIndices.map((i) => (
-                    <ActivityReviewCard
-                      key={i}
-                      occupation={occupations[i]}
-                      match={matches[i]}
-                    />
-                  ))
+                  filteredIndices.map((i) => {
+                    const occ = occupations[i];
+                    const match = matches[i];
+                    const venues = getVenues(i);
+                    const availableVenues = availableVenuesFor(i);
+                    const isDeleted = deletedIndices.has(i);
+
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          'rounded-2xl border bg-white px-4 py-3 shadow-sm',
+                          isDeleted ? 'border-red-200 opacity-50' : 'border-zinc-100',
+                        )}
+                      >
+                        {/* Header */}
+                        <div className="mb-2 flex items-start justify-between gap-3">
+                          <h3 className="text-sm font-black text-zinc-900 uppercase tracking-tight leading-tight">
+                            {occ.activity}
+                          </h3>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <PavilionMatchingBadge status={match.status} confidence={match.confidence} />
+                            <button
+                              type="button"
+                              onClick={() => toggleDelete(i)}
+                              className={cn(
+                                'flex items-center justify-center rounded-lg p-1.5 transition-colors',
+                                isDeleted
+                                  ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                  : 'text-zinc-300 hover:bg-red-50 hover:text-red-500',
+                              )}
+                              aria-label={isDeleted ? 'Restaurar' : 'Eliminar'}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Time + Venues */}
+                        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <PavilionTimeSlot startTime={occ.start_time} endTime={occ.end_time} />
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {venues.map((v) => (
+                              <span
+                                key={v}
+                                className="inline-flex items-center gap-0.5 rounded-md bg-zinc-100 pl-2 pr-1 py-0.5 text-[10px] font-black uppercase tracking-wider text-zinc-600"
+                              >
+                                {v}
+                                <button
+                                  type="button"
+                                  onClick={() => removeVenue(i, v)}
+                                  className="ml-0.5 rounded p-0.5 text-zinc-400 hover:bg-red-100 hover:text-red-500"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </span>
+                            ))}
+                            {availableVenues.length > 0 && (
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setAddingVenueFor(addingVenueFor === i ? null : i)}
+                                  className="inline-flex items-center gap-0.5 rounded-md border border-dashed border-zinc-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:border-zinc-500 hover:text-zinc-600"
+                                >
+                                  <Plus size={10} />
+                                  Espai
+                                </button>
+                                {addingVenueFor === i && (
+                                  <div className="absolute left-0 top-full z-10 mt-1 max-h-48 w-40 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                                    {availableVenues.map((v) => (
+                                      <button
+                                        key={v.id}
+                                        type="button"
+                                        onClick={() => addVenue(i, v.code)}
+                                        className="block w-full rounded-lg px-3 py-1.5 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-100"
+                                      >
+                                        {v.code}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <hr className="my-2 border-zinc-100" />
+
+                        {/* OCR text */}
+                        <div className="text-[11px] leading-relaxed">
+                          <span className="font-bold text-zinc-400 uppercase tracking-wider">Text OCR</span>
+                          <span className="ml-2 font-bold text-zinc-500">{occ.activity}</span>
+                        </div>
+
+                        {match.status === 'uncertain' && match.matchedName && (
+                          <div className="mt-1 text-[11px] leading-relaxed">
+                            <span className="font-bold text-zinc-400 uppercase tracking-wider">Millor coincidència</span>
+                            <span className="ml-2 font-bold text-blue-600">{match.matchedName}</span>
+                          </div>
+                        )}
+
+                        {match.status === 'existing' && match.matchedName && match.matchedName !== occ.activity.trim() && (
+                          <div className="mt-1 text-[11px] leading-relaxed">
+                            <span className="font-bold text-zinc-400 uppercase tracking-wider">Existent com</span>
+                            <span className="ml-2 font-bold text-emerald-600">{match.matchedName}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
 

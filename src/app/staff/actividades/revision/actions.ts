@@ -7,6 +7,11 @@ import { parsePdf, type Occupation } from '@/lib/pavilion/parser';
 import { importOccupations, type ImportResult } from '@/lib/pavilion/importer';
 import { preMatchOccupations, type MatchResult } from '@/lib/pavilion/matching';
 
+export interface VenueOption {
+  id: string;
+  code: string;
+}
+
 export interface ReviewData {
   occupations: Occupation[];
   date: string;
@@ -88,6 +93,32 @@ export async function confirmImportAction(
     return { success: true, result };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error al confirmar importación';
+    return { success: false, error: message };
+  }
+}
+
+export async function fetchVenuesAction(): Promise<
+  { success: true; data: VenueOption[] } | { success: false; error: string }
+> {
+  try {
+    const supabase = await createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session?.user) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    const { data, error } = await supabase
+      .from('venues')
+      .select('id, code')
+      .order('code');
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as VenueOption[] };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error al obtener espacios';
     return { success: false, error: message };
   }
 }
