@@ -149,6 +149,237 @@ export async function uploadPavilionActivityAction(params: {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Calendar & Day Detail (nuevo calendario operativo)
+// ---------------------------------------------------------------------------
+
+export interface BarActivity {
+  activityName: string;
+  activityIcon: string | null;
+  startTime: string;
+  endTime: string;
+  venueCodes: string[];
+}
+
+export interface DayCalendarData {
+  date: string;
+  totalCount: number;
+  barActivities: BarActivity[];
+}
+
+export interface DayDetail {
+  date: string;
+  barActivities: BarActivity[];
+  hasPdf: boolean;
+  pdfFilePath: string | null;
+  pdfFilename: string | null;
+  summary: {
+    totalCount: number;
+    barCount: number;
+    uniqueVenues: number;
+    peakHour: string;
+    peakCount: number;
+    venueUsage: { code: string; hours: number }[];
+    hourlyBreakdown: { hour: string; count: number }[];
+  };
+}
+
+function buildHourlyBreakdown(
+  activities: BarActivity[],
+): { hour: string; count: number }[] {
+  const slots: Record<string, number> = {};
+  for (const act of activities) {
+    const startH = parseInt(act.startTime.split(':')[0] ?? '0', 10);
+    const endH = parseInt(act.endTime.split(':')[0] ?? '0', 10);
+    for (let h = startH; h < endH; h++) {
+      const key = `${String(h).padStart(2, '0')}:00-${String(h + 1).padStart(2, '0')}:00`;
+      slots[key] = (slots[key] ?? 0) + 1;
+    }
+  }
+  return Object.entries(slots)
+    .map(([hour, count]) => ({ hour, count }))
+    .sort((a, b) => a.hour.localeCompare(b.hour));
+}
+
+function buildVenueUsage(
+  activities: BarActivity[],
+): { code: string; hours: number }[] {
+  const usage: Record<string, number> = {};
+  for (const act of activities) {
+    const duration =
+      (parseInt(act.endTime.split(':')[0] ?? '0', 10) +
+        parseInt(act.endTime.split(':')[1] ?? '0', 10) / 60) -
+      (parseInt(act.startTime.split(':')[0] ?? '0', 10) +
+        parseInt(act.startTime.split(':')[1] ?? '0', 10) / 60);
+    for (const code of act.venueCodes) {
+      usage[code] = (usage[code] ?? 0) + Math.max(0, duration);
+    }
+  }
+  return Object.entries(usage)
+    .map(([code, hours]) => ({ code, hours: Math.round(hours * 10) / 10 }))
+    .sort((a, b) => b.hours - a.hours);
+}
+
+export async function fetchActivitiesForRangeAction(params: {
+  startDate: string;
+  endDate: string;
+}): Promise<
+  | { success: true; byDate: Record<string, DayCalendarData> }
+  | { success: false; error: string }
+> {
+  const auth = await requireAuthenticated();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const { startDate, endDate } = params;
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(endDate)
+  ) {
+    return { success: false, error: 'Rango de fechas no válido.' };
+  }
+
+  const { data, error } = await auth.supabase
+    .from('activity_occurrences')
+    .select(
+      `
+      activity_date,
+      start_time,
+      end_time,
+      activities ( name ),
+      activity_kinds ( icon ),
+      occurrence_venues ( venues ( code, affects_bar ) )
+    `,
+    )
+    .gte('activity_date', startDate)
+    .lte('activity_date', endDate)
+    .order('activity_date', { ascending: true })
+    .order('start_time', { ascending: true });
+
+  if (error) {
+    return { success: false, error: error.message ?? 'Error al cargar datos.' };
+  }
+
+  const byDate: Record<string, DayCalendarData> = {};
+
+  for (const row of data ?? []) {
+    const d = row.activity_date as string;
+    if (!byDate[d]) {
+      byDate[d] = { date: d, totalCount: 0, barActivities: [] };
+    }
+    byDate[d].totalCount++;
+
+    const venues =
+      (row.occurrence_venues as unknown as {
+        venues: { code: string; affects_bar: boolean };
+      }[])?.map((ov) => ov.venues) ?? [];
+
+    const barVenues = venues.filter((v) => v.affects_bar);
+    if (barVenues.length > 0) {
+      byDate[d].barActivities.push({
+        activityName: (row.activities as unknown as { name: string }).name,
+        activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
+        startTime: row.start_time as string,
+        endTime: row.end_time as string,
+        venueCodes: barVenues.map((v) => v.code),
+      });
+    }
+  }
+
+  return { success: true, byDate };
+}
+
+export async function fetchDayDetailAction(params: {
+  date: string;
+}): Promise<{ success: true; data: DayDetail } | { success: false; error: string }> {
+  const auth = await requireAuthenticated();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const { date } = params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { success: false, error: 'Fecha no válida.' };
+  }
+
+  const { data: occData, error: occError } = await auth.supabase
+    .from('activity_occurrences')
+    .select(
+      `
+      activity_date,
+      start_time,
+      end_time,
+      activities ( name ),
+      activity_kinds ( icon ),
+      occurrence_venues ( venues ( code, affects_bar ) )
+    `,
+    )
+    .eq('activity_date', date)
+    .order('start_time', { ascending: true });
+
+  if (occError) {
+    return { success: false, error: occError.message ?? 'Error al cargar el día.' };
+  }
+
+  const allActivities: BarActivity[] = [];
+  let totalCount = 0;
+
+  for (const row of occData ?? []) {
+    totalCount++;
+    const venues =
+      (row.occurrence_venues as unknown as {
+        venues: { code: string; affects_bar: boolean };
+      }[])?.map((ov) => ov.venues) ?? [];
+
+    const barVenues = venues.filter((v) => v.affects_bar);
+    if (barVenues.length > 0) {
+      allActivities.push({
+        activityName: (row.activities as unknown as { name: string }).name,
+        activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
+        startTime: row.start_time as string,
+        endTime: row.end_time as string,
+        venueCodes: barVenues.map((v) => v.code),
+      });
+    }
+  }
+
+  const hourlyBreakdown = buildHourlyBreakdown(allActivities);
+  const peakEntry = hourlyBreakdown.reduce(
+    (max, h) => (h.count > max.count ? h : max),
+    { hour: '', count: 0 },
+  );
+
+  const venueUsage = buildVenueUsage(allActivities);
+
+  // Check for PDF
+  const { data: sheetData } = await auth.supabase
+    .from('pavilion_activity_sheets')
+    .select('file_path, original_filename')
+    .eq('activity_date', date)
+    .maybeSingle();
+
+  const hasPdf = !!sheetData?.file_path;
+  const pdfFilePath = (sheetData?.file_path as string) ?? null;
+  const pdfFilename = (sheetData?.original_filename as string) ?? null;
+
+  return {
+    success: true,
+    data: {
+      date,
+      barActivities: allActivities,
+      hasPdf,
+      pdfFilePath,
+      pdfFilename,
+      summary: {
+        totalCount,
+        barCount: allActivities.length,
+        uniqueVenues: new Set(allActivities.flatMap((a) => a.venueCodes)).size,
+        peakHour: peakEntry.hour,
+        peakCount: peakEntry.count,
+        venueUsage,
+        hourlyBreakdown,
+      },
+    },
+  };
+}
+
 export async function deletePavilionActivityAction(params: {
   activityDate: string;
 }): Promise<{ success: true } | { success: false; error: string }> {

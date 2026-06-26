@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, Trash2, Upload, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, Trash2, Upload, X, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -55,6 +56,7 @@ export function PavilionActivityPdfModal({
   onUploaded,
   onNavigateDay,
 }: PavilionActivityPdfModalProps) {
+  const router = useRouter();
   useModalUsageTracking({
     open,
     usageId: 'pavilion-activity-pdf',
@@ -260,6 +262,22 @@ export function PavilionActivityPdfModal({
               </div>
             </div>
 
+            {filePath && canUpload && (
+              <div className="shrink-0 border-b border-zinc-100 bg-zinc-50 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    const params = new URLSearchParams({ filePath, date: activityDate ?? '' });
+                    router.push(`/staff/actividades/revision?${params.toString()}`);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 min-h-10 rounded-xl bg-[#36606F] px-4 font-black text-[11px] uppercase tracking-wider text-white transition-all hover:bg-[#2A4C58] active:scale-[0.99]"
+                >
+                  <FileText size={16} />
+                  Revisar importació OCR
+                </button>
+              </div>
+            )}
             <div className="flex flex-col min-h-0 w-full overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center bg-zinc-50/60 py-16 px-6">

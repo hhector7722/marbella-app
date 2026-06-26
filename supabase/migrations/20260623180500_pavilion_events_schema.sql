@@ -9,7 +9,7 @@ CREATE TABLE activities (
 );
 
 -- Catálogo Demográfico
-CREATE TABLE categories (
+CREATE TABLE participant_categories (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text UNIQUE NOT NULL,
     age_min integer,
@@ -78,7 +78,7 @@ CREATE INDEX idx_occurrence_venues_venue_id ON occurrence_venues(venue_id);
 CREATE TABLE occurrence_groups (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     occurrence_id uuid REFERENCES activity_occurrences(id) ON DELETE CASCADE,
-    category_id uuid REFERENCES categories(id) NOT NULL,
+    category_id uuid REFERENCES participant_categories(id) NOT NULL,
     
     group_label text, -- Opcional. Ej: 'Equipo A', 'Femenino', 'Reserva'
     notes text, -- Observaciones específicas de este grupo
@@ -93,7 +93,7 @@ CREATE INDEX idx_occurrence_groups_category_id ON occurrence_groups(category_id)
 
 -- Políticas RLS Básicas (Asumiendo que el acceso es por roles authenticated)
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE participant_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_kinds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_occurrences ENABLE ROW LEVEL SECURITY;
@@ -102,7 +102,7 @@ ALTER TABLE occurrence_groups ENABLE ROW LEVEL SECURITY;
 
 -- Políticas genéricas de lectura para usuarios autenticados
 CREATE POLICY "Enable read access for authenticated users on activities" ON activities FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Enable read access for authenticated users on categories" ON categories FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Enable read access for authenticated users on categories" ON participant_categories FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Enable read access for authenticated users on activity_kinds" ON activity_kinds FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Enable read access for authenticated users on venues" ON venues FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Enable read access for authenticated users on occurrences" ON activity_occurrences FOR SELECT TO authenticated USING (true);
@@ -114,7 +114,7 @@ CREATE POLICY "Enable write access for authenticated users on occurrences" ON ac
 CREATE POLICY "Enable write access for authenticated users on occurrence_venues" ON occurrence_venues FOR ALL TO authenticated USING (true);
 CREATE POLICY "Enable write access for authenticated users on occurrence_groups" ON occurrence_groups FOR ALL TO authenticated USING (true);
 CREATE POLICY "Enable write access for authenticated users on activities" ON activities FOR ALL TO authenticated USING (true);
-CREATE POLICY "Enable write access for authenticated users on categories" ON categories FOR ALL TO authenticated USING (true);
+CREATE POLICY "Enable write access for authenticated users on categories" ON participant_categories FOR ALL TO authenticated USING (true);
 CREATE POLICY "Enable write access for authenticated users on activity_kinds" ON activity_kinds FOR ALL TO authenticated USING (true);
 CREATE POLICY "Enable write access for authenticated users on venues" ON venues FOR ALL TO authenticated USING (true);
 
