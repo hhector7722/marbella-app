@@ -123,8 +123,8 @@ export default function ActividadesPage() {
 
   return (
     <div className="pb-10">
-      <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
-        <div className="overflow-hidden rounded-2xl bg-white shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
           {/* ── Header: centered month nav only ── */}
           <div className="flex items-center justify-center bg-[#36606F] px-4 py-2.5 min-h-[52px]">
             <div className="flex items-center gap-0.5">
