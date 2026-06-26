@@ -133,10 +133,13 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         let cancelled = false;
 
         async function fetchPendingReservationsCount(showErrorToast: boolean) {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            const now = format(new Date(), 'HH:mm:ss');
             const { count, error } = await supabase
                 .from('reservations')
                 .select('*', { count: 'exact', head: true })
-                .eq('status', 'pending');
+                .eq('status', 'pending')
+                .or(`reservation_date.gt.${today},and(reservation_date.eq.${today},reservation_time.gte.${now})`);
 
             if (cancelled) return;
 
