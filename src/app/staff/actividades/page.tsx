@@ -30,6 +30,10 @@ const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as
 const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 const MAX_VISIBLE = 4;
 
+function fmtHour(time: string): string {
+  return time.replace(/^0(\d):/, '$1:');
+}
+
 function madridTodayIso(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Madrid',
@@ -233,24 +237,24 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Activities */}
-                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-px">
+                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-[2px]">
                           {visible.map((act, i) => {
                             const isLast = i === visible.length - 1;
                             if (isLast) {
                               return (
-                                <div key={i} className="flex items-center gap-0.5 leading-tight md:gap-1">
+                                <div key={i} className="-mx-0.5 flex items-center gap-0.5 bg-zinc-50 px-0.5 py-[1px] leading-tight sm:-mx-1 sm:px-1 md:gap-1">
                                   <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
-                                  <span className="text-[8px] font-bold text-zinc-400 md:text-[9px]">{act.endTime.slice(0, 5)}</span>
+                                  <span className="text-[8px] font-bold text-zinc-400 md:text-[9px]">{fmtHour(act.endTime)}</span>
                                 </div>
                               );
                             }
                             return (
-                              <div key={i} className="flex flex-col gap-0">
-                                <div className="flex items-center gap-0.5 leading-tight md:gap-1">
+                              <div key={i} className="-mx-0.5 sm:-mx-1">
+                                <div className="flex items-center gap-0.5 bg-zinc-50 px-0.5 py-[1px] leading-tight sm:px-1 md:gap-1">
                                   <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
-                                  <span className="text-[8px] font-bold text-zinc-700 md:text-[9px]">{act.startTime.slice(0, 5)}</span>
+                                  <span className="text-[8px] font-bold text-zinc-700 md:text-[9px]">{fmtHour(act.startTime)}</span>
                                 </div>
-                                <span className="truncate text-[7px] font-semibold text-zinc-500 md:text-[8px] leading-tight">
+                                <span className="block truncate px-0.5 text-[8px] font-semibold text-zinc-600 leading-tight sm:px-1 md:text-[9px]">
                                   {act.activityName}
                                 </span>
                               </div>

@@ -95,7 +95,7 @@ export function PavilionDayModal({
           role="presentation"
         >
           <div
-            className="bg-white rounded-[2rem] w-full max-w-lg max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-[2rem] w-full max-w-lg max-h-[65vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ---- Header ---- */}
