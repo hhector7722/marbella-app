@@ -1,8 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import {
   addMonths,
   eachDayOfInterval,
@@ -17,8 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -54,11 +51,8 @@ function parseLocalSafe(dateStr: string): Date {
 export default function ActividadesPage() {
   usePageView();
 
-  const router = useRouter();
-
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [byDate, setByDate] = useState<Record<string, DayCalendarData>>({});
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -124,16 +118,6 @@ export default function ActividadesPage() {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await loadData();
-      toast.success('Calendari actualitzat');
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   const getMonthLabel = (date: Date) =>
     date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
@@ -141,71 +125,29 @@ export default function ActividadesPage() {
     <div className="pb-10">
       <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
         <div className="overflow-hidden rounded-2xl bg-white shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {/* ── Header ── */}
-          <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px]">
-            <div className="flex items-center gap-1">
+          {/* ── Header: centered month nav only ── */}
+          <div className="flex items-center justify-center bg-[#36606F] px-4 py-2.5 min-h-[52px]">
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
-                onClick={() => router.back()}
-                className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-white transition-colors hover:bg-white/10"
-                aria-label="Tornar"
+                onClick={() => setViewMonth((m) => subMonths(m, 1))}
+                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
+                aria-label="Mes anterior"
               >
-                <ChevronLeft size={22} strokeWidth={2.5} />
+                <ChevronLeft size={18} strokeWidth={2.5} />
               </button>
-              <div className="flex items-center gap-2">
-                <div className="relative h-7 w-7 shrink-0">
-                  <Image
-                    src="/icons/calendar.png"
-                    alt=""
-                    fill
-                    className="object-contain"
-                    sizes="28px"
-                  />
-                </div>
-                <h1 className="text-sm font-black uppercase tracking-widest text-white">
-                  Activitats
-                </h1>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-widest text-white select-none">
+                {getMonthLabel(viewMonth)}
+              </span>
               <button
                 type="button"
-                onClick={() => void handleRefresh()}
-                disabled={refreshing}
-                className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-white transition-colors hover:bg-white/10 disabled:opacity-50"
-                aria-label="Actualitzar"
+                onClick={() => setViewMonth((m) => addMonths(m, 1))}
+                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
+                aria-label="Mes siguiente"
               >
-                {refreshing ? (
-                  <LoadingSpinner size="sm" className="text-white" />
-                ) : (
-                  <RefreshCw size={18} strokeWidth={2.5} />
-                )}
+                <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-          </div>
-
-          {/* ── Month nav ── */}
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setViewMonth((m) => subMonths(m, 1))}
-              className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-100"
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="text-xs font-black uppercase tracking-widest text-zinc-700">
-              {getMonthLabel(viewMonth)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setViewMonth((m) => addMonths(m, 1))}
-              className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-100"
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight size={20} />
-            </button>
           </div>
 
           {/* ── Calendar ── */}
@@ -246,26 +188,27 @@ export default function ActividadesPage() {
                     const visible = barActs.slice(0, MAX_VISIBLE);
                     const overflow = barActs.length - MAX_VISIBLE;
 
+                    const cellCls = cn(
+                      'relative flex flex-col border-r border-gray-100 p-0.5 last:border-r-0 sm:p-1',
+                      'min-h-[80px] sm:min-h-[90px] md:min-h-[100px] lg:min-h-[110px]',
+                      pastDayBg,
+                      !isViewMonthDay && 'opacity-25',
+                      isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
+                    );
+
+                    const dayNumCls = cn(
+                      'text-[9px] md:text-[10px] font-bold leading-none',
+                      isToday && isViewMonthDay
+                        ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md font-semibold'
+                        : 'text-zinc-400',
+                    );
+
                     if (!dayData) {
                       return (
-                        <div
-                          key={key}
-                          className={cn(
-                            'relative flex min-h-[68px] flex-col border-r border-gray-100 p-0.5 last:border-r-0 sm:min-h-[76px] sm:p-1 md:min-h-[84px] lg:min-h-[92px]',
-                            pastDayBg,
-                            !isViewMonthDay && 'opacity-25',
-                            isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
-                          )}
-                        >
-                          <div className="flex items-start justify-between px-0.5">
-                            <span
-                              className={cn(
-                                'text-[11px] font-black leading-none md:text-xs',
-                                isToday && isViewMonthDay ? 'text-blue-600' : 'text-zinc-400',
-                              )}
-                            >
-                              {format(day, 'd')}
-                            </span>
+                        <div key={key} className={cellCls}>
+                          {/* Day number — top right */}
+                          <div className="absolute top-0.5 right-0.5 z-10 flex items-center gap-0.5">
+                            <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
                         </div>
                       );
@@ -277,33 +220,20 @@ export default function ActividadesPage() {
                         type="button"
                         onClick={() => isViewMonthDay && openDay(day)}
                         disabled={!isViewMonthDay}
-                        className={cn(
-                          'group relative flex min-h-[68px] flex-col border-r border-gray-100 p-0.5 text-left transition-colors last:border-r-0 sm:min-h-[76px] sm:p-1 md:min-h-[84px] lg:min-h-[92px]',
-                          'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
-                          pastDayBg,
-                          !isViewMonthDay && 'opacity-25',
-                          isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
-                        )}
+                        className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
                       >
-                        {/* Level 1 + 2: Day number + total */}
-                        <div className="flex items-start justify-between px-0.5">
-                          <span
-                            className={cn(
-                              'text-[11px] font-black leading-none md:text-xs',
-                              isToday && isViewMonthDay ? 'text-blue-600' : 'text-zinc-500',
-                            )}
-                          >
-                            {format(day, 'd')}
-                          </span>
+                        {/* Day number + total — top right */}
+                        <div className="absolute top-0.5 right-0.5 z-10 flex items-center gap-0.5">
+                          <span className={dayNumCls}>{format(day, 'd')}</span>
                           {totalCount > 0 && (
-                            <span className="text-[7px] font-bold leading-none text-zinc-300 md:text-[8px]">
+                            <span className="text-[6px] font-bold text-zinc-300 leading-none">
                               {totalCount}
                             </span>
                           )}
                         </div>
 
-                        {/* Level 3: Activities */}
-                        <div className="mt-px flex min-h-0 flex-1 flex-col gap-px">
+                        {/* Activities */}
+                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-px">
                           {visible.map((act, i) => {
                             const isLast = i === visible.length - 1;
                             if (isLast) {
