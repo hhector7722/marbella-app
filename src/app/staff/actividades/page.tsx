@@ -9,8 +9,10 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  isBefore,
   isSameDay,
   isSameMonth,
+  startOfDay,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -27,8 +29,9 @@ import {
 } from '@/app/staff/actividades/actions';
 import { usePageView } from '@/lib/usage/usePageView';
 
-const DAY_HEADERS = ['DL', 'DT', 'DC', 'DJ', 'DV', 'DS', 'DG'];
-const MAX_VISIBLE = 3;
+const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
+const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
+const MAX_VISIBLE = 4;
 
 function madridTodayIso(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -48,19 +51,6 @@ function parseLocalSafe(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
-function WeekSeparator() {
-  return (
-    <div className="flex justify-center" aria-hidden>
-      <div
-        className={cn(
-          'h-0.5 w-[70%] max-w-[280px]',
-          'bg-[linear-gradient(90deg,transparent_0%,rgb(220_38_38/0.3)_4%,rgb(220_38_38)_8%,rgb(220_38_38)_92%,rgb(220_38_38/0.3)_96%,transparent_100%)]',
-        )}
-      />
-    </div>
-  );
-}
-
 export default function ActividadesPage() {
   usePageView();
 
@@ -75,7 +65,7 @@ export default function ActividadesPage() {
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
 
   const todayStr = useMemo(() => madridTodayIso(), []);
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   const monthStart = useMemo(() => startOfMonth(viewMonth), [viewMonth]);
   const monthEnd = useMemo(() => endOfMonth(viewMonth), [viewMonth]);
@@ -88,14 +78,6 @@ export default function ActividadesPage() {
 
   const rangeStart = format(calendarDays[0]!, 'yyyy-MM-dd');
   const rangeEnd = format(calendarDays[calendarDays.length - 1]!, 'yyyy-MM-dd');
-
-  const weeks = useMemo(() => {
-    const result: Date[][] = [];
-    for (let i = 0; i < calendarDays.length; i += 7) {
-      result.push(calendarDays.slice(i, i + 7));
-    }
-    return result;
-  }, [calendarDays]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -220,7 +202,7 @@ export default function ActividadesPage() {
               type="button"
               onClick={() => setViewMonth((m) => addMonths(m, 1))}
               className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl text-[#36606F] transition-colors hover:bg-zinc-100"
-              aria-label="Mes seg\u00FCent"
+              aria-label="Mes siguiente"
             >
               <ChevronRight size={20} />
             </button>
@@ -232,128 +214,129 @@ export default function ActividadesPage() {
               <LoadingSpinner size="lg" className="text-[#36606F]" />
             </div>
           ) : (
-            <div className="bg-zinc-50/50 p-4">
-              {weeks.map((weekDays, weekIdx) => {
-                const anyInMonth = weekDays.some((d) => isSameMonth(d, viewMonth));
-                if (!anyInMonth && weeks.length > 1) return null;
+            <div className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] py-2 shrink-0">
+              <div className="mx-auto w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)]">
+                {/* Day headers */}
+                <div className="grid grid-cols-7 border-b border-gray-100">
+                  {CALENDAR_WEEKDAYS.map((d, index) => (
+                    <div
+                      key={d}
+                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0"
+                    >
+                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none">
+                        <span className="hidden md:inline">{d}</span>
+                        <span className="md:hidden">{MOBILE_HEADERS[index]}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-                return (
-                  <div key={weekIdx} className="space-y-0">
-                    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)]">
-                      {/* Day headers — only first week */}
-                      {weekIdx === 0 && (
-                        <div className="overflow-hidden rounded-t-xl">
-                          <div className="grid grid-cols-7 border-b border-gray-100">
-                            {DAY_HEADERS.map((d) => (
+                {/* Days grid */}
+                <div className="grid grid-cols-7">
+                  {calendarDays.map((day) => {
+                    const key = format(day, 'yyyy-MM-dd');
+                    const dayData = byDate[key];
+                    const barActs = dayData?.barActivities ?? [];
+                    const totalCount = dayData?.totalCount ?? 0;
+                    const isViewMonthDay = isSameMonth(day, viewMonth);
+                    const isPastDay = isViewMonthDay && isBefore(day, today);
+                    const isToday = isSameDay(day, today);
+                    const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
+
+                    const visible = barActs.slice(0, MAX_VISIBLE);
+                    const overflow = barActs.length - MAX_VISIBLE;
+
+                    if (!dayData) {
+                      return (
+                        <div
+                          key={key}
+                          className={cn(
+                            'relative flex min-h-[68px] flex-col border-r border-gray-100 p-0.5 last:border-r-0 sm:min-h-[76px] sm:p-1 md:min-h-[84px] lg:min-h-[92px]',
+                            pastDayBg,
+                            !isViewMonthDay && 'opacity-25',
+                            isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
+                          )}
+                        >
+                          <div className="flex items-start justify-between px-0.5">
+                            <span
+                              className={cn(
+                                'text-[11px] font-black leading-none md:text-xs',
+                                isToday && isViewMonthDay ? 'text-blue-600' : 'text-zinc-400',
+                              )}
+                            >
+                              {format(day, 'd')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => isViewMonthDay && openDay(day)}
+                        disabled={!isViewMonthDay}
+                        className={cn(
+                          'group relative flex min-h-[68px] flex-col border-r border-gray-100 p-0.5 text-left transition-colors last:border-r-0 sm:min-h-[76px] sm:p-1 md:min-h-[84px] lg:min-h-[92px]',
+                          'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                          pastDayBg,
+                          !isViewMonthDay && 'opacity-25',
+                          isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
+                        )}
+                      >
+                        {/* Level 1 + 2: Day number + total */}
+                        <div className="flex items-start justify-between px-0.5">
+                          <span
+                            className={cn(
+                              'text-[11px] font-black leading-none md:text-xs',
+                              isToday && isViewMonthDay ? 'text-blue-600' : 'text-zinc-500',
+                            )}
+                          >
+                            {format(day, 'd')}
+                          </span>
+                          {totalCount > 0 && (
+                            <span className="text-[7px] font-bold leading-none text-zinc-300 md:text-[8px]">
+                              {totalCount}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Level 3: Activities */}
+                        <div className="mt-0.5 flex min-h-0 flex-1 flex-col px-0.5 pb-0.5">
+                          <div className="flex flex-1 flex-col gap-0.5 md:gap-1">
+                            {visible.map((act, i) => (
                               <div
-                                key={d}
-                                className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0"
+                                key={i}
+                                className="flex items-center gap-0.5 leading-tight md:gap-1"
                               >
-                                <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm">
-                                  {d}
+                                <span className="shrink-0 text-[8px] md:text-[10px]">
+                                  {act.activityIcon || '\u25CB'}
+                                </span>
+                                <span className="shrink-0 text-[8px] font-bold text-zinc-700 md:text-[9px]">
+                                  {act.startTime.slice(0, 5)}
+                                </span>
+                                <span className="min-w-0 truncate text-[7px] font-semibold text-zinc-500 md:text-[8px]">
+                                  {act.activityName}
                                 </span>
                               </div>
                             ))}
                           </div>
+
+                          {/* Overflow */}
+                          {overflow > 0 && (
+                            <div className="mt-auto flex justify-end pr-0.5">
+                              <span className="text-[7px] font-bold text-zinc-300 md:text-[8px]">
+                                +{overflow} m\u00E9s
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-
-                      {/* Days grid */}
-                      <div className="grid grid-cols-7 border-b border-gray-100">
-                        {weekDays.map((day, di) => {
-                          const key = format(day, 'yyyy-MM-dd');
-                          const dayData = byDate[key];
-                          const barActs = dayData?.barActivities ?? [];
-                          const totalCount = dayData?.totalCount ?? 0;
-                          const isViewMonthDay = isSameMonth(day, viewMonth);
-                          const isPastDay = isViewMonthDay && key < todayStr;
-                          const isToday = isSameDay(day, today);
-                          const isMuted = !isViewMonthDay || isPastDay;
-
-                          const visible = barActs.slice(0, MAX_VISIBLE);
-                          const overflow = barActs.length - MAX_VISIBLE;
-
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => isViewMonthDay && openDay(day)}
-                              disabled={!isViewMonthDay}
-                              className={cn(
-                                'relative flex min-h-[76px] flex-col border-r border-gray-100 p-1 pb-1 text-left transition-colors last:border-r-0 md:min-h-[90px] md:p-1.5',
-                                'cursor-pointer bg-white hover:bg-zinc-50',
-                                isMuted && 'opacity-35',
-                                isToday && 'bg-blue-50/20',
-                              )}
-                            >
-                              {/* Level 1 + 2: Day number + total */}
-                              <div className="flex items-start justify-between px-0.5">
-                                <span
-                                  className={cn(
-                                    'text-[11px] font-black leading-none md:text-xs',
-                                    isToday ? 'text-blue-600' : 'text-zinc-500',
-                                  )}
-                                >
-                                  {format(day, 'd')}
-                                </span>
-                                {totalCount > 0 && (
-                                  <span className="text-[7px] font-bold leading-none text-zinc-300 md:text-[8px]">
-                                    {totalCount}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Level 3: Activities */}
-                              <div className="mt-1 flex flex-1 flex-col gap-0.5 md:mt-1.5 md:gap-1">
-                                {visible.map((act, i) => (
-                                  <div
-                                    key={i}
-                                    className="flex items-center gap-0.5 leading-tight md:gap-1"
-                                  >
-                                    <span className="shrink-0 text-[8px] md:text-[10px]">
-                                      {act.activityIcon || '\u25CB'}
-                                    </span>
-                                    <span className="shrink-0 text-[8px] font-bold text-zinc-700 md:text-[9px]">
-                                      {act.startTime.slice(0, 5)}
-                                    </span>
-                                    <span className="min-w-0 truncate text-[7px] font-semibold text-zinc-500 md:text-[8px]">
-                                      {act.activityName}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Overflow */}
-                              {overflow > 0 && (
-                                <div className="mt-auto flex justify-end pr-0.5">
-                                  <span className="text-[7px] font-bold text-zinc-300 md:text-[8px]">
-                                    +{overflow} m\u00E9s
-                                  </span>
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Week separator */}
-                    {weekIdx < weeks.length - 1 && (
-                      <div className="py-1.5 md:py-2">
-                        <WeekSeparator />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Empty state */}
-              {weeks.length > 0 &&
-                weeks.every((w) => w.every((d) => !isSameMonth(d, viewMonth))) && (
-                  <div className="py-20 text-center text-zinc-400">
-                    <p className="text-sm font-bold">No hi ha activitats aquest mes</p>
-                  </div>
-                )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
