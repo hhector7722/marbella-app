@@ -13,7 +13,7 @@ import { PdfTab } from '@/components/pavilion/PdfTab';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
 import { createClient } from '@/utils/supabase/client';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
-import type { DayDetail } from '@/app/staff/actividades/actions';
+import type { DayDetail } from '@/app/staff/actividades/unify';
 
 type PavilionDayModalProps = {
   open: boolean;

@@ -22,8 +22,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import {
   fetchActivitiesForRangeAction,
-  type DayCalendarData,
 } from '@/app/staff/actividades/actions';
+import type { DayCalendarData } from '@/app/staff/actividades/unify';
 import { usePageView } from '@/lib/usage/usePageView';
 
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
