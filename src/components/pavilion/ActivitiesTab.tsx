@@ -121,10 +121,10 @@ export function ActivitiesTab({ activities }: Props) {
             key={`${ci}`}
             rowSpan={rowSpan}
             colSpan={colSpan}
-            className="border-b border-zinc-100 p-1.5 align-top"
+            className="border-b border-zinc-100 p-1.5 text-center align-top"
           >
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1">
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="flex items-center justify-center gap-1">
                 <span className="shrink-0 text-[11px] md:text-[13px]">
                   {act.activityIcon || '\u25CB'}
                 </span>

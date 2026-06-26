@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -14,6 +14,8 @@ import {
   confirmImportAction,
   type ReviewData,
 } from '@/app/staff/actividades/revision/actions';
+import { createClient } from '@/utils/supabase/client';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
 type PageState = 'loading' | 'parsed' | 'importing' | 'error';
 
@@ -35,10 +37,25 @@ export default function PavilionRevisionPage() {
   const filePath = searchParams.get('filePath');
   const dateParam = searchParams.get('date');
 
+  const [authChecking, setAuthChecking] = useState(true);
   const [state, setState] = useState<PageState>('loading');
   const [error, setError] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [hideExisting, setHideExisting] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const email = session?.user?.email ?? '';
+      if (!isMasterDashboardUser(email)) {
+        router.replace('/staff/actividades');
+      } else {
+        setAuthChecking(false);
+      }
+    }
+    void checkAuth();
+  }, [router]);
 
   const loadReview = useCallback(async () => {
     if (!filePath) {
@@ -114,6 +131,14 @@ export default function PavilionRevisionPage() {
   const isImporting = state === 'importing';
   const uniqueVenues = new Set(occupations.flatMap((o) => o.venues));
   const uniqueActivities = occupations.length;
+
+  if (authChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+        <LoadingSpinner className="text-[#36606F]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 pb-6">

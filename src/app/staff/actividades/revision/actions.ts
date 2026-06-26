@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { PAVILION_ACTIVITIES_BUCKET } from '@/lib/pavilion-activities/ingest';
 import { parsePdf, type Occupation } from '@/lib/pavilion/parser';
 import { importOccupations, type ImportResult } from '@/lib/pavilion/importer';
@@ -19,8 +20,12 @@ export async function prepareReviewAction(params: {
   try {
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
+    const email = session?.user?.email ?? '';
     if (!session?.user) {
       return { success: false, error: 'No autorizado' };
+    }
+    if (!isMasterDashboardUser(email)) {
+      return { success: false, error: 'Solo Hector puede gestionar la importación de actividades.' };
     }
 
     const filePath = params.filePath?.trim();
@@ -66,8 +71,12 @@ export async function confirmImportAction(
   try {
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
+    const email = session?.user?.email ?? '';
     if (!session?.user) {
       return { success: false, error: 'No autorizado' };
+    }
+    if (!isMasterDashboardUser(email)) {
+      return { success: false, error: 'Solo Hector puede gestionar la importación de actividades.' };
     }
 
     if (!params.date || !params.occupations?.length) {

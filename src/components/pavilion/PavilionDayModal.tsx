@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, FileText, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
-import { TabBar, type Tab } from '@/components/pavilion/TabBar';
 import { ActivitiesTab } from '@/components/pavilion/ActivitiesTab';
-
 import { PdfTab } from '@/components/pavilion/PdfTab';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
+import { createClient } from '@/utils/supabase/client';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import type { DayDetail } from '@/app/staff/actividades/actions';
 
 type PavilionDayModalProps = {
@@ -26,8 +27,8 @@ function parseLocalSafe(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
-const headerIconBtn =
-  'min-h-[48px] min-w-[48px] flex items-center justify-center text-white hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 shrink-0';
+const headerBtn =
+  'min-h-[48px] min-w-[48px] flex items-center justify-center text-white hover:bg-white/10 rounded-xl transition-colors shrink-0';
 
 export function PavilionDayModal({
   open,
@@ -41,15 +42,27 @@ export function PavilionDayModal({
     usageLabel: 'Pavelló dia',
   });
 
+  const router = useRouter();
+  const [isHector, setIsHector] = useState(false);
   const [dayDetail, setDayDetail] = useState<DayDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('activities');
+  const [showPdf, setShowPdf] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsHector(isMasterDashboardUser(session?.user?.email ?? ''));
+    }
+    void checkAuth();
+  }, []);
 
   const loadDay = useCallback(async () => {
     if (!open || !date) return;
     setLoading(true);
     setError(null);
+    setShowPdf(false);
     const res = await fetchDayDetailAction({ date });
     if (!res.success) {
       setError(res.error);
@@ -64,16 +77,6 @@ export function PavilionDayModal({
   useEffect(() => {
     void loadDay();
   }, [loadDay]);
-
-  const tabs: Tab[] = useMemo(() => [
-    { id: 'activities', label: 'Activitats' },
-    {
-      id: 'pdf',
-      label: 'PDF original',
-      icon: <FileText size={14} />,
-      disabled: !dayDetail?.hasPdf,
-    },
-  ], [dayDetail?.hasPdf]);
 
   const formattedDate = date
     ? (() => {
@@ -124,33 +127,47 @@ export function PavilionDayModal({
 
               <div className="flex items-center shrink-0">
                 {dayDetail?.hasPdf && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('pdf')}
-                    className={headerIconBtn}
-                    aria-label="Veure PDF original"
-                    title="Veure PDF original"
-                  >
-                    <FileText size={20} />
-                  </button>
+                  <>
+                    {showPdf && dayDetail.pdfFilePath && isHector && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            filePath: dayDetail.pdfFilePath!,
+                            date: date!,
+                          });
+                          router.push(`/staff/actividades/revision?${params.toString()}`);
+                        }}
+                        className={headerBtn}
+                        aria-label="Revisar importació OCR"
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          OCR
+                        </span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPdf((p) => !p)}
+                      className={headerBtn}
+                      aria-label={showPdf ? 'Veure activitats' : 'Veure PDF original'}
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-wider">
+                        {showPdf ? 'ACT' : 'PDF'}
+                      </span>
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
                   onClick={onClose}
-                  className={headerIconBtn}
+                  className={headerBtn}
                   aria-label="Tancar"
                 >
                   <X size={20} />
                 </button>
               </div>
             </div>
-
-            {/* ---- Tabs ---- */}
-            <TabBar
-              tabs={tabs}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
 
             {/* ---- Content ---- */}
             <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
@@ -165,13 +182,13 @@ export function PavilionDayModal({
                   </p>
                   <p className="text-xs font-bold text-zinc-400">{error}</p>
                 </div>
-              ) : activeTab === 'activities' ? (
+              ) : showPdf ? (
+                <PdfTab filePath={dayDetail?.pdfFilePath ?? null} />
+              ) : (
                 <ActivitiesTab
                   activities={dayDetail?.barActivities ?? []}
                 />
-              ) : activeTab === 'pdf' ? (
-                <PdfTab filePath={dayDetail?.pdfFilePath ?? null} />
-              ) : null}
+              )}
             </div>
           </div>
         </div>,

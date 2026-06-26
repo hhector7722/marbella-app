@@ -34,6 +34,26 @@ function fmtHour(time: string): string {
   return time.replace(/^0(\d):/, '$1:');
 }
 
+function mergeConsecutive(
+  acts: { activityName: string; activityIcon: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
+) {
+  if (acts.length === 0) return acts;
+  const merged: typeof acts = [];
+  let cur = { ...acts[0], venueCodes: [...acts[0].venueCodes] };
+  for (let i = 1; i < acts.length; i++) {
+    const a = acts[i];
+    if (a.activityName === cur.activityName) {
+      cur.endTime = a.endTime;
+      for (const v of a.venueCodes) if (!cur.venueCodes.includes(v)) cur.venueCodes.push(v);
+    } else {
+      merged.push(cur);
+      cur = { ...a, venueCodes: [...a.venueCodes] };
+    }
+  }
+  merged.push(cur);
+  return merged;
+}
+
 function madridTodayIso(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Madrid',
@@ -189,7 +209,8 @@ export default function ActividadesPage() {
                     const isToday = isSameDay(day, today);
                     const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
-                    const visible = barActs.slice(0, MAX_VISIBLE);
+                    const merged = mergeConsecutive(barActs);
+                    const visible = merged.slice(0, MAX_VISIBLE);
                     const overflow = barActs.length - MAX_VISIBLE;
 
                     const cellCls = cn(
@@ -210,7 +231,6 @@ export default function ActividadesPage() {
                     if (!dayData) {
                       return (
                         <div key={key} className={cellCls}>
-                          {/* Day number — top right */}
                           <div className="absolute top-0.5 right-0.5 z-10 flex items-center gap-0.5">
                             <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
@@ -242,21 +262,23 @@ export default function ActividadesPage() {
                             const isLast = i === visible.length - 1;
                             if (isLast) {
                               return (
-                                <div key={i} className="-mx-0.5 flex items-center gap-0.5 bg-zinc-50 px-0.5 py-[1px] leading-tight sm:-mx-1 sm:px-1 md:gap-1">
+                                <div key={i} className="-mx-0.5 flex items-center gap-0.5 bg-blue-50/60 px-0.5 py-[1px] leading-tight sm:-mx-1 sm:px-1 md:gap-1">
                                   <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
-                                  <span className="text-[8px] font-bold text-zinc-400 md:text-[9px]">{fmtHour(act.endTime)}</span>
+                                  <span className="font-bold text-zinc-500 md:text-[9px]" style={{ fontSize: '7px' }}>{fmtHour(act.endTime)}</span>
                                 </div>
                               );
                             }
                             return (
                               <div key={i} className="-mx-0.5 sm:-mx-1">
-                                <div className="flex items-center gap-0.5 bg-zinc-50 px-0.5 py-[1px] leading-tight sm:px-1 md:gap-1">
+                                <div className="flex items-center justify-center gap-0.5 bg-blue-50/60 px-0.5 py-[1px] leading-tight sm:px-1 md:gap-1">
                                   <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
-                                  <span className="text-[8px] font-bold text-zinc-700 md:text-[9px]">{fmtHour(act.startTime)}</span>
+                                  <span className="shrink-0 text-[8px] font-bold text-zinc-700 md:text-[9px]">{fmtHour(act.startTime)}</span>
                                 </div>
-                                <span className="block truncate px-0.5 text-[8px] font-semibold text-zinc-600 leading-tight sm:px-1 md:text-[9px]">
-                                  {act.activityName}
-                                </span>
+                                <div className="flex justify-center px-0.5 sm:px-1">
+                                  <span className="truncate text-[8px] font-semibold text-zinc-600 leading-tight text-center md:text-[9px]">
+                                    {act.activityName}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })}
