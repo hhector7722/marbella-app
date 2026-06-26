@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { TabBar, type Tab } from '@/components/pavilion/TabBar';
 import { ActivitiesTab } from '@/components/pavilion/ActivitiesTab';
-import { SummaryTab } from '@/components/pavilion/SummaryTab';
+
 import { PdfTab } from '@/components/pavilion/PdfTab';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
 import type { DayDetail } from '@/app/staff/actividades/actions';
@@ -67,7 +67,6 @@ export function PavilionDayModal({
 
   const tabs: Tab[] = useMemo(() => [
     { id: 'activities', label: 'Activitats' },
-    { id: 'summary', label: 'Resum' },
     {
       id: 'pdf',
       label: 'PDF original',
@@ -169,16 +168,6 @@ export function PavilionDayModal({
               ) : activeTab === 'activities' ? (
                 <ActivitiesTab
                   activities={dayDetail?.barActivities ?? []}
-                />
-              ) : activeTab === 'summary' ? (
-                <SummaryTab
-                  totalActivities={dayDetail?.summary.totalCount ?? 0}
-                  barActivities={dayDetail?.summary.barCount ?? 0}
-                  uniqueVenues={dayDetail?.summary.uniqueVenues ?? 0}
-                  peakHour={dayDetail?.summary.peakHour ?? ''}
-                  peakCount={dayDetail?.summary.peakCount ?? 0}
-                  venueUsage={dayDetail?.summary.venueUsage ?? []}
-                  hourlyBreakdown={dayDetail?.summary.hourlyBreakdown ?? []}
                 />
               ) : activeTab === 'pdf' ? (
                 <PdfTab filePath={dayDetail?.pdfFilePath ?? null} />

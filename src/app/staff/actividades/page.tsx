@@ -303,33 +303,33 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Level 3: Activities */}
-                        <div className="mt-0.5 flex min-h-0 flex-1 flex-col px-0.5 pb-0.5">
-                          <div className="flex flex-1 flex-col gap-0.5 md:gap-1">
-                            {visible.map((act, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center gap-0.5 leading-tight md:gap-1"
-                              >
-                                <span className="shrink-0 text-[8px] md:text-[10px]">
-                                  {act.activityIcon || '\u25CB'}
-                                </span>
-                                <span className="shrink-0 text-[8px] font-bold text-zinc-700 md:text-[9px]">
-                                  {act.startTime.slice(0, 5)}
-                                </span>
-                                <span className="min-w-0 truncate text-[7px] font-semibold text-zinc-500 md:text-[8px]">
+                        <div className="mt-px flex min-h-0 flex-1 flex-col gap-px">
+                          {visible.map((act, i) => {
+                            const isLast = i === visible.length - 1;
+                            if (isLast) {
+                              return (
+                                <div key={i} className="flex items-center gap-0.5 leading-tight md:gap-1">
+                                  <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
+                                  <span className="text-[8px] font-bold text-zinc-400 md:text-[9px]">{act.endTime.slice(0, 5)}</span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div key={i} className="flex flex-col gap-0">
+                                <div className="flex items-center gap-0.5 leading-tight md:gap-1">
+                                  <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
+                                  <span className="text-[8px] font-bold text-zinc-700 md:text-[9px]">{act.startTime.slice(0, 5)}</span>
+                                </div>
+                                <span className="truncate text-[7px] font-semibold text-zinc-500 md:text-[8px] leading-tight">
                                   {act.activityName}
                                 </span>
                               </div>
-                            ))}
-                          </div>
-
-                          {/* Overflow */}
+                            );
+                          })}
                           {overflow > 0 && (
-                            <div className="mt-auto flex justify-end pr-0.5">
-                              <span className="text-[7px] font-bold text-zinc-300 md:text-[8px]">
-                                +{overflow} m\u00E9s
-                              </span>
-                            </div>
+                            <span className="mt-auto self-end text-[7px] font-bold text-zinc-300 md:text-[8px] leading-none">
+                              +{overflow} m\u00E9s
+                            </span>
                           )}
                         </div>
                       </button>
