@@ -37,11 +37,11 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    "src/types" // <--- AÑADE ESTO AQUÍ
+    "**/*.mts"
   ],
   "exclude": [
     "node_modules",
-    "ai-voice-worker"
+    "ai-voice-worker",
+    "scripts"
   ]
 }
