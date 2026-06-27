@@ -294,7 +294,7 @@ export default function PavilionRevisionPage() {
             </div>
           )}
 
-          {state === 'parsed' && (
+          {(state === 'parsed' || state === 'importing') && (
             <>
               {/* ---- Info ---- */}
               <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
