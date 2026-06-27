@@ -1,4 +1,3 @@
-// src/app/staff/actividades/actions.ts
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
@@ -8,181 +7,14 @@ import {
   PAVILION_ACTIVITIES_BUCKET,
 } from '@/lib/pavilion-activities/ingest';
 
-// ---------------------------------------------------------------------------
-// Types and Interfaces (extending existing ones)
-// ---------------------------------------------------------------------------
+const MAX_BYTES = 10 * 1024 * 1024;
 
-export type { BarActivity, DayCalendarData, DayDetail } from './types';
-
-export interface VenueOption {
-  id: string;
-  code: string;
-  name?: string;
-}
-
-export interface UnifiedActivity extends BarActivity {
-  isUnified?: boolean;
-  originalNames?: string[];
-  modified?: boolean;
-}
-
-export interface ActivityConflict {
-  activity1: UnifiedActivity;
-  activity2: UnifiedActivity;
-  similarity: number;
-}
-
-export interface UnifyResult {
-  unified: UnifiedActivity[];
-  conflicts?: ActivityConflict[];
-}
-
-export interface UpdateHoursParams {
-  activityId: string;
-  date?: string;
-  startTime?: string;
-  endTime?: string;
-  activityName?: string;
-  activityIcon?: string | null;
-}
-
-// ---------------------------------------------------------------------------
-// Utility Functions
-// ---------------------------------------------------------------------------
-
-function normalizeForMatch(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/[^a-z0-9\s]/g, '');
-}
-
-function similarityScore(a: string, b: string): number {
-  const normA = normalizeForMatch(a);
-  const normB = normalizeForMatch(b);
-  
-  if (normA === normB) return 1.0;
-  if (!normA || !normB) return 0;
-
-  const maxLen = Math.max(normA.length, normB.length);
-  const longer = normA.length >= normB.length ? normA : normB;
-  const shorter = normA.length < normB.length ? normA : normB;
-
-  let matches = 0;
-  for (let i = 0; i < shorter.length; i++) {
-    for (let j = 0; j < longer.length; j++) {
-      if (shorter[i] === longer[j]) {
-        matches++;
-        break;
-      }
-    }
-  }
-
-  return matches / maxLen;
-}
-
-function parseTime(timeStr: string): { hours: number; minutes: number } {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return { hours, minutes };
-}
-
-function formatTime(hours: number, minutes: number): string {
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
-// ---------------------------------------------------------------------------
-// Unification Logic
-// ---------------------------------------------------------------------------
-
-export function unifyActivities(
-  activities: BarActivity[],
-  similarityThreshold: number = 0.8,
-  venueOverlapThreshold: number = 0.5
-): UnifyResult {
-  const unified: UnifiedActivity[] = [];
-  const conflicts: ActivityConflict[] = [];
-  const processed = new Set<number>();
-
-  for (let i = 0; i < activities.length; i++) {
-    if (processed.has(i)) continue;
-
-    const current = activities[i];
-    const group = [current];
-    processed.add(i);
-
-    // Find similar activities
-    for (let j = i + 1; j < activities.length; j++) {
-      if (processed.has(j)) continue;
-
-      const other = activities[j];
-      const nameSim = similarityScore(current.activityName, other.activityName);
-      
-      // Check if activities share at least one venue
-      const sharedVenues = current.venueCodes.filter(vc => other.venueCodes.includes(vc));
-      const venueOverlap = sharedVenues.length / Math.max(current.venueCodes.length, other.venueCodes.length);
-
-      if (nameSim >= similarityThreshold && venueOverlap >= venueOverlapThreshold) {
-        // Merge activities - update the current one with merged data
-        current.venueCodes = [...new Set([...current.venueCodes, ...other.venueCodes])];
-
-        // Merge time ranges
-        const curStart = parseTime(current.startTime);
-        const curEnd = parseTime(current.endTime);
-        const otherStart = parseTime(other.startTime);
-        const otherEnd = parseTime(other.endTime);
-
-        const startH = Math.min(curStart.hours, otherStart.hours);
-        const startM = curStart.hours === otherStart.hours ? Math.min(curStart.minutes, otherStart.minutes) : 
-          (curStart.hours < otherStart.hours ? curStart.minutes : otherStart.minutes);
-
-        const endH = Math.max(curEnd.hours, otherEnd.hours);
-        const endM = curEnd.hours === otherEnd.hours ? Math.max(curEnd.minutes, otherEnd.minutes) : 
-          (curEnd.hours > otherEnd.hours ? curEnd.minutes : otherEnd.minutes);
-
-        // Ensure minimum duration of 30 minutes and round to nearest 30 min
-        const totalMinutes = endH * 60 + endM - (startH * 60 + startM);
-        const roundedMinutes = Math.ceil(totalMinutes / 30) * 30;
-        const newEndH = startH + Math.floor(roundedMinutes / 60);
-        const newEndM = roundedMinutes % 60;
-
-        current.startTime = formatTime(startH, startM);
-        current.endTime = formatTime(newEndH, newEndM);
-
-        // Keep the non-null icon if one is null
-        if (current.activityIcon === null && other.activityIcon !== null) {
-          current.activityIcon = other.activityIcon;
-        }
-
-        processed.add(j);
-      } else {
-        // Check if it's a potential conflict (high name similarity but no venue overlap)
-        if (nameSim > 0.6 && sharedVenues.length === 0) {
-          conflicts.push({
-            activity1: { ...current, originalNames: [current.activityName] },
-            activity2: { ...other, originalNames: [other.activityName] },
-            similarity: nameSim,
-          });
-        }
-      }
-    }
-
-    unified.push({
-      ...current,
-      isUnified: group.length > 1,
-      originalNames: group.map(g => g.activityName),
-      modified: false,
-    });
-  }
-
-  return { unified, conflicts };
-}
-
-// ---------------------------------------------------------------------------
-// Authentication Helper Functions
-// ---------------------------------------------------------------------------
+export type PavilionActivityRow = {
+  activityDate: string;
+  filePath: string;
+  source: 'email' | 'manual';
+  originalFilename: string | null;
+};
 
 async function requireAuthenticated() {
   const supabase = await createClient();
@@ -215,10 +47,6 @@ async function requireMasterUpload() {
 
   return auth;
 }
-
-// ---------------------------------------------------------------------------
-// Existing Activity Actions (unified and improved)
-// ---------------------------------------------------------------------------
 
 export async function fetchPavilionActivitiesForRangeAction(params: {
   startDate: string;
@@ -321,53 +149,75 @@ export async function uploadPavilionActivityAction(params: {
   }
 }
 
-export async function deletePavilionActivityAction(params: {
-  activityDate: string;
-}): Promise<{ success: true } | { success: false; error: string }> {
-  const auth = await requireMasterUpload();
-  if (!auth.ok) return { success: false, error: auth.error };
+// ---------------------------------------------------------------------------
+// Calendar & Day Detail (nuevo calendario operativo)
+// ---------------------------------------------------------------------------
 
-  const { activityDate } = params;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(activityDate)) {
-    return { success: false, error: 'Fecha no válida.' };
+export interface BarActivity {
+  activityName: string;
+  activityIcon: string | null;
+  startTime: string;
+  endTime: string;
+  venueCodes: string[];
+}
+
+export interface DayCalendarData {
+  date: string;
+  totalCount: number;
+  barActivities: BarActivity[];
+}
+
+export interface DayDetail {
+  date: string;
+  barActivities: BarActivity[];
+  hasPdf: boolean;
+  pdfFilePath: string | null;
+  pdfFilename: string | null;
+  summary: {
+    totalCount: number;
+    barCount: number;
+    uniqueVenues: number;
+    peakHour: string;
+    peakCount: number;
+    venueUsage: { code: string; hours: number }[];
+    hourlyBreakdown: { hour: string; count: number }[];
+  };
+}
+
+function buildHourlyBreakdown(
+  activities: BarActivity[],
+): { hour: string; count: number }[] {
+  const slots: Record<string, number> = {};
+  for (const act of activities) {
+    const startH = parseInt(act.startTime.split(':')[0] ?? '0', 10);
+    const endH = parseInt(act.endTime.split(':')[0] ?? '0', 10);
+    for (let h = startH; h < endH; h++) {
+      const key = `${String(h).padStart(2, '0')}:00-${String(h + 1).padStart(2, '0')}:00`;
+      slots[key] = (slots[key] ?? 0) + 1;
+    }
   }
+  return Object.entries(slots)
+    .map(([hour, count]) => ({ hour, count }))
+    .sort((a, b) => a.hour.localeCompare(b.hour));
+}
 
-  const { data: row, error: fetchError } = await auth.supabase
-    .from('pavilion_activity_sheets')
-    .select('file_path')
-    .eq('activity_date', activityDate)
-    .maybeSingle();
-
-  if (fetchError) {
-    return { success: false, error: fetchError.message ?? 'Error al buscar la hoja.' };
+function buildVenueUsage(
+  activities: BarActivity[],
+): { code: string; hours: number }[] {
+  const usage: Record<string, number> = {};
+  for (const act of activities) {
+    const duration =
+      (parseInt(act.endTime.split(':')[0] ?? '0', 10) +
+        parseInt(act.endTime.split(':')[1] ?? '0', 10) / 60) -
+      (parseInt(act.startTime.split(':')[0] ?? '0', 10) +
+        parseInt(act.startTime.split(':')[1] ?? '0', 10) / 60);
+    for (const code of act.venueCodes) {
+      usage[code] = (usage[code] ?? 0) + Math.max(0, duration);
+    }
   }
-  if (!row?.file_path) {
-    return { success: false, error: 'No hay PDF para este día.' };
-  }
-
-  const filePath = row.file_path as string;
-  if (filePath.includes('..')) {
-    return { success: false, error: 'Ruta de archivo no válida.' };
-  }
-
-  const { error: storageError } = await auth.supabase.storage
-    .from(PAVILION_ACTIVITIES_BUCKET)
-    .remove([filePath]);
-
-  if (storageError) {
-    return { success: false, error: storageError.message ?? 'Error al eliminar el archivo.' };
-  }
-
-  const { error: deleteError } = await auth.supabase
-    .from('pavilion_activity_sheets')
-    .delete()
-    .eq('activity_date', activityDate);
-
-  if (deleteError) {
-    return { success: false, error: deleteError.message ?? 'Error al eliminar el registro.' };
-  }
-
-  return { success: true };
+  return Object.entries(usage)
+    .map(([code, hours]) => ({ code, hours: Math.round(hours * 10) / 10 }))
+    .sort((a, b) => b.hours - a.hours);
 }
 
 export async function fetchActivitiesForRangeAction(params: {
@@ -391,7 +241,14 @@ export async function fetchActivitiesForRangeAction(params: {
   const { data, error } = await auth.supabase
     .from('activity_occurrences')
     .select(
-      `\n      activity_date,\n      start_time,\n      end_time,\n      activities ( name ),\n      activity_kinds ( icon ),\n      occurrence_venues ( venues ( code, affects_bar ) )\n    `,
+      `
+      activity_date,
+      start_time,
+      end_time,
+      activities ( name ),
+      activity_kinds ( icon ),
+      occurrence_venues ( venues ( code, affects_bar ) )
+    `,
     )
     .gte('activity_date', startDate)
     .lte('activity_date', endDate)
@@ -445,7 +302,14 @@ export async function fetchDayDetailAction(params: {
   const { data: occData, error: occError } = await auth.supabase
     .from('activity_occurrences')
     .select(
-      `\n      activity_date,\n      start_time,\n      end_time,\n      activities ( name ),\n      activity_kinds ( icon ),\n      occurrence_venues ( venues ( code, affects_bar ) )\n    `,
+      `
+      activity_date,
+      start_time,
+      end_time,
+      activities ( name ),
+      activity_kinds ( icon ),
+      occurrence_venues ( venues ( code, affects_bar ) )
+    `,
     )
     .eq('activity_date', date)
     .order('start_time', { ascending: true });
