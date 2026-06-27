@@ -31,7 +31,9 @@ const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 const MAX_VISIBLE = 4;
 
 function fmtHour(time: string): string {
-  return time.replace(/^0(\d):/, '$1:');
+  const parts = time.split(':');
+  if (parts.length < 2) return time;
+  return `${parseInt(parts[0], 10)}:${parts[1]}`;
 }
 
 function mergeConsecutive(
@@ -257,33 +259,32 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Activities */}
-                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-[2px]">
+                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
                           {visible.map((act, i) => {
                             const isLast = i === visible.length - 1;
-                            if (isLast) {
-                              return (
-                                <div key={i} className="-mx-0.5 flex items-center gap-0.5 bg-blue-50/60 px-0.5 py-[1px] leading-tight sm:-mx-1 sm:px-1 md:gap-1">
-                                  <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
-                                  <span className="font-bold text-zinc-500 md:text-[9px]" style={{ fontSize: '7px' }}>{fmtHour(act.endTime)}</span>
-                                </div>
-                              );
-                            }
                             return (
-                              <div key={i} className="-mx-0.5 sm:-mx-1">
-                                <div className="flex items-center justify-center gap-0.5 bg-blue-50/60 px-0.5 py-[1px] leading-tight sm:px-1 md:gap-1">
-                                  <span className="shrink-0 text-[8px] md:text-[10px]">{act.activityIcon || '\u25CB'}</span>
-                                  <span className="shrink-0 text-[8px] font-bold text-zinc-700 md:text-[9px]">{fmtHour(act.startTime)}</span>
-                                </div>
-                                <div className="flex justify-center px-0.5 sm:px-1">
-                                  <span className="truncate text-[8px] font-semibold text-zinc-600 leading-tight text-center md:text-[9px]">
+                              <div key={i} className="flex flex-col gap-[2px]">
+                                <span className="text-xs font-semibold text-zinc-800 text-left leading-none">
+                                  {fmtHour(act.startTime)}
+                                </span>
+                                <div className="pl-3 flex items-center gap-1 overflow-hidden">
+                                  <span className="shrink-0 flex items-center justify-center w-3 h-3 text-[10px] leading-none">
+                                    {act.activityIcon || '\u25CB'}
+                                  </span>
+                                  <span className="truncate text-[11px] whitespace-nowrap text-zinc-600 leading-tight">
                                     {act.activityName}
                                   </span>
                                 </div>
+                                {isLast && (
+                                  <span className="text-xs font-semibold text-zinc-800 text-left leading-none mt-1">
+                                    {fmtHour(act.endTime)}
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
                           {overflow > 0 && (
-                            <span className="mt-auto self-end text-[7px] font-bold text-zinc-300 md:text-[8px] leading-none">
+                            <span className="mt-auto self-end text-[10px] font-bold text-zinc-400 leading-none">
                               +{overflow} m\u00E9s
                             </span>
                           )}
@@ -295,24 +296,6 @@ export default function ActividadesPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* ── Today summary ── */}
-        {(() => {
-          const todayData = byDate[todayStr];
-          const todayBarCount = todayData?.barActivities.length ?? 0;
-          if (todayBarCount === 0) return null;
-          return (
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-[0_2px_10px_rgba(0,0,0,0.08)]">
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                Avui
-              </p>
-              <p className="mt-0.5 text-sm font-black text-zinc-900">
-                {todayBarCount} activitats a pistes
-              </p>
-            </div>
-          );
-        })()}
       </div>
 
       <PavilionDayModal

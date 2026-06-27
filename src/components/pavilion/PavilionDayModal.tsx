@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -98,7 +98,7 @@ export function PavilionDayModal({
           role="presentation"
         >
           <div
-            className="bg-white rounded-[2rem] w-full max-w-lg max-h-[65vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-[2rem] w-full max-w-full max-h-[65vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ---- Header ---- */}
@@ -157,6 +157,21 @@ export function PavilionDayModal({
                       </span>
                     </button>
                   </>
+                )}
+                {isHector && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        date: date!,
+                      });
+                      router.push(`/staff/actividades/revision?${params.toString()}`);
+                    }}
+                    className={headerBtn}
+                    aria-label="Editar horario"
+                  >
+                    <Edit2 size={16} />
+                  </button>
                 )}
                 <button
                   type="button"

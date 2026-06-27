@@ -122,3 +122,98 @@ export async function fetchVenuesAction(): Promise<
     return { success: false, error: message };
   }
 }
+
+export async function getActivitiesByDateAction(params: {
+  date: string;
+}): Promise<{ success: true; data: ReviewData } | { success: false; error: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user || !isMasterDashboardUser(session.user.email ?? '')) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    const { data: occData, error: occError } = await supabase
+      .from('activity_occurrences')
+      .select(`
+        activity_date,
+        start_time,
+        end_time,
+        activities ( name ),
+        occurrence_venues ( venues ( code ) )
+      `)
+      .eq('activity_date', params.date)
+      .order('start_time', { ascending: true });
+
+    if (occError) throw occError;
+
+    const occupationsMap = new Map<string, Occupation>();
+
+    for (const row of occData ?? []) {
+      const actName = (row.activities as any)?.name ?? '';
+      const start = row.start_time;
+      const end = row.end_time;
+      const key = `${actName}|${start}|${end}`;
+
+      const venues = ((row.occurrence_venues as any) ?? []).map((ov: any) => ov.venues.code);
+
+      if (!occupationsMap.has(key)) {
+        occupationsMap.set(key, {
+          activity: actName,
+          start_time: start.substring(0, 5),
+          end_time: end.substring(0, 5),
+          venues: [...venues],
+          date: params.date,
+        });
+      } else {
+        const existing = occupationsMap.get(key)!;
+        for (const v of venues) {
+          if (!existing.venues.includes(v)) existing.venues.push(v);
+        }
+      }
+    }
+
+    const occupations = Array.from(occupationsMap.values());
+    const matches = await preMatchOccupations(supabase, occupations);
+
+    return {
+      success: true,
+      data: { occupations, date: params.date, matches, filename: null },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error al obtener actividades';
+    return { success: false, error: message };
+  }
+}
+
+export async function saveActivitiesAction(
+  params: ConfirmImportParams,
+): Promise<{ success: true; result: ImportResult } | { success: false; error: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user || !isMasterDashboardUser(session.user.email ?? '')) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    if (!params.date || !params.occupations?.length) {
+      return { success: false, error: 'No hay datos para guardar. Agrega al menos una actividad.' };
+    }
+
+    // 1. Delete all occurrences for this date
+    const { error: deleteError } = await supabase
+      .from('activity_occurrences')
+      .delete()
+      .eq('activity_date', params.date);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Import the new ones
+    const result = await importOccupations(supabase, params.occupations);
+
+    return { success: true, result };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error al guardar actividades';
+    return { success: false, error: message };
+  }
+}

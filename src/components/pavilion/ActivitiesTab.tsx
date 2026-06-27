@@ -22,7 +22,16 @@ function hourNum(s: string) {
 }
 
 function fmtHour(time: string): string {
-  return time.replace(/^0(\d):/, '$1:');
+  const parts = time.split(':');
+  if (parts.length < 2) return time;
+  return `${parseInt(parts[0], 10)}:${parts[1]}`;
+}
+
+function isSameActivityBlock(a: ActivityItem | null, b: ActivityItem | null) {
+  if (!a || !b) return false;
+  return a.activityName.trim().toLowerCase() === b.activityName.trim().toLowerCase() &&
+         a.startTime === b.startTime &&
+         a.endTime === b.endTime;
 }
 
 export function ActivitiesTab({ activities }: Props) {
@@ -88,7 +97,7 @@ export function ActivitiesTab({ activities }: Props) {
         let rowSpan = 1;
         while (
           ri + rowSpan < hours.length &&
-          grid[ri + rowSpan][ci] === act
+          isSameActivityBlock(grid[ri + rowSpan][ci], act)
         ) {
           rowSpan++;
         }
@@ -98,7 +107,7 @@ export function ActivitiesTab({ activities }: Props) {
         while (ci + colSpan < venues.length) {
           let allMatch = true;
           for (let r = 0; r < rowSpan; r++) {
-            if (grid[ri + r][ci + colSpan] !== act) {
+            if (!isSameActivityBlock(grid[ri + r][ci + colSpan], act)) {
               allMatch = false;
               break;
             }
@@ -144,7 +153,7 @@ export function ActivitiesTab({ activities }: Props) {
         <tr key={hours[ri]}>
           <td
             className={cn(
-              'w-12 min-w-[48px] py-2 pr-2 align-top text-[11px] font-black leading-tight tabular-nums md:w-14 md:min-w-[56px]',
+              'w-12 py-2 pr-2 align-top text-[11px] font-black leading-tight tabular-nums md:w-14',
               cols.some((c) => c !== null) ? 'text-zinc-700' : 'text-zinc-200',
             )}
           >
@@ -177,7 +186,7 @@ export function ActivitiesTab({ activities }: Props) {
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <th className="w-12 min-w-[48px] border-b-2 border-[#36606F] pb-2 pr-2 text-left text-[9px] font-black uppercase tracking-wider text-zinc-400 md:w-14 md:min-w-[56px]">
+            <th className="w-12 border-b-2 border-[#36606F] pb-2 pr-2 text-left text-[9px] font-black uppercase tracking-wider text-zinc-400 md:w-14">
               Hora
             </th>
             {venues.map((v) => (
