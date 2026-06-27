@@ -19,6 +19,8 @@ export interface Occupation {
   end_time: string;
   venues: string[];
   date: string;
+  category?: string;
+  participants?: number;
 }
 
 export interface ParsePdfResult {

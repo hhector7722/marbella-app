@@ -128,7 +128,13 @@ export default function PavilionRevisionPage() {
     router.push('/staff/actividades');
   };
 
-  const handleCancel = () => router.back();
+  const handleCancel = () => {
+    if (dateStr) {
+      router.push(`/staff/actividades?date=${dateStr}`);
+    } else {
+      router.back();
+    }
+  };
   const handleRetry = () => void loadData();
 
   const updateOccupation = (index: number, field: keyof Occupation, value: any) => {
@@ -220,29 +226,29 @@ export default function PavilionRevisionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#36606F] pb-6">
+    <div className="min-h-screen bg-zinc-50 pb-6">
       <div className="mx-auto max-w-5xl px-3 pt-4 md:pt-8">
-        <div className="overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-xl">
+        <div className="overflow-hidden bg-zinc-50">
           {/* ---- Header bar ---- */}
-          <div className="flex shrink-0 items-center gap-3 bg-[#36606F] px-4 py-4">
+          <div className="flex shrink-0 items-center gap-3 bg-zinc-50 px-4 py-4">
             <button
               type="button"
               onClick={handleCancel}
-              className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-white transition-colors hover:bg-white/10"
+              className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-zinc-900 transition-colors hover:bg-zinc-200"
               aria-label="Tornar"
             >
               <ChevronLeft size={22} strokeWidth={2.5} />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="truncate text-sm font-black uppercase tracking-widest text-white">
-                Editar horario
+              <h1 className="truncate text-sm font-black uppercase tracking-widest text-zinc-900">
+                {dateStr ? format(parseLocalSafe(dateStr), 'EEEE d MMMM yyyy', { locale: es }) : ''}
               </h1>
             </div>
             {loadedFromDb && filePath && (
               <button
                 type="button"
                 onClick={() => void loadData(true)}
-                className="flex items-center gap-2 rounded-xl bg-white/20 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/30"
+                className="flex items-center gap-2 rounded-xl bg-zinc-200 px-3 py-2 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-300"
               >
                 <RefreshCw size={14} />
                 Re-procesar con OCR
@@ -297,10 +303,8 @@ export default function PavilionRevisionPage() {
           {(state === 'parsed' || state === 'importing') && (
             <>
               {/* ---- Info ---- */}
-              <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
-                <p className="text-sm font-black text-zinc-900">
-                  {dateStr ? formatDate(dateStr) : 'Data desconeguda'}
-                </p>
+              <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+                <div />
                 {selectedIndices.size > 1 && (
                   <button
                     type="button"
@@ -351,9 +355,36 @@ export default function PavilionRevisionPage() {
                         <Trash2 size={16} />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 pl-6">
-                      <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Pistas</span>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="flex items-center flex-wrap gap-2 pl-8">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">CAT</span>
+                        <input
+                          type="text"
+                          list={`categories-${i}`}
+                          value={occ.category || ''}
+                          onChange={(e) => updateOccupation(i, 'category', e.target.value)}
+                          className="w-20 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
+                        />
+                        <datalist id={`categories-${i}`}>
+                          <option value="Alevin" />
+                          <option value="Infantil" />
+                          <option value="Cadete" />
+                          <option value="Juvenil" />
+                          <option value="Senior" />
+                          <option value="Master" />
+                        </datalist>
+                      </div>
+                      <div className="flex items-center gap-1.5 ml-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PART</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={occ.participants || ''}
+                          onChange={(e) => updateOccupation(i, 'participants', e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          className="w-12 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1 ml-2">
                         {allVenues.map((v) => {
                           const active = occ.venues.includes(v.code);
                           return (
@@ -362,7 +393,7 @@ export default function PavilionRevisionPage() {
                               type="button"
                               onClick={() => toggleVenue(i, v.code)}
                               className={cn(
-                                'rounded px-2.5 py-1 text-xs font-bold transition-colors border',
+                                'rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors border',
                                 active
                                   ? 'bg-zinc-800 text-white border-zinc-800'
                                   : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100',

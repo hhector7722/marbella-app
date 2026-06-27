@@ -81,8 +81,10 @@ export function PavilionDayModal({
   const formattedDate = date
     ? (() => {
         const d = parseLocalSafe(date);
-        const raw = format(d, 'EEEE d MMMM yyyy', { locale: es });
-        return raw.charAt(0).toUpperCase() + raw.slice(1);
+        const dayName = format(d, 'EEEE', { locale: es });
+        const dd = format(d, 'dd');
+        const MM = format(d, 'MM');
+        return `${dayName.charAt(0).toUpperCase() + dayName.slice(1)} ${dd}/${MM}`;
       })()
     : '';
 
@@ -127,25 +129,6 @@ export function PavilionDayModal({
 
               <div className="flex items-center shrink-0">
                 {dayDetail?.hasPdf && (
-                  <>
-                    {showPdf && dayDetail.pdfFilePath && isHector && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const params = new URLSearchParams({
-                            filePath: dayDetail.pdfFilePath!,
-                            date: date!,
-                          });
-                          router.push(`/staff/actividades/revision?${params.toString()}`);
-                        }}
-                        className={headerBtn}
-                        aria-label="Revisar importació OCR"
-                      >
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          OCR
-                        </span>
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => setShowPdf((p) => !p)}
@@ -156,7 +139,6 @@ export function PavilionDayModal({
                         {showPdf ? 'ACT' : 'PDF'}
                       </span>
                     </button>
-                  </>
                 )}
                 {isHector && (
                   <button

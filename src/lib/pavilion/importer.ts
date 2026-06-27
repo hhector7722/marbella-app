@@ -176,6 +176,8 @@ export async function importOccupations(
     startTime: string;
     endTime: string;
     venueIds: string[];
+    category?: string;
+    participants?: number;
   }
 
   const resolved: ResolvedOccupation[] = [];
@@ -206,6 +208,8 @@ export async function importOccupations(
       startTime: occ.start_time,
       endTime: occ.end_time,
       venueIds,
+      category: occ.category,
+      participants: occ.participants,
     });
   }
 
@@ -222,6 +226,8 @@ export async function importOccupations(
       start_time: row.startTime,
       end_time: row.endTime,
       source_type: 'pdf',
+      category: row.category || null,
+      participants: row.participants || null,
     };
     if (sourcePdfId) {
       insertData.source_pdf_id = sourcePdfId;

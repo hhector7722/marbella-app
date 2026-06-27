@@ -133,24 +133,44 @@ export async function getActivitiesByDateAction(params: {
       return { success: false, error: 'No autorizado' };
     }
 
-    const { data: occData, error: occError } = await supabase
+    let selectFields = `
+      activity_date,
+      start_time,
+      end_time,
+      category,
+      participants,
+      activities ( name ),
+      occurrence_venues ( venues ( code ) )
+    `;
+
+    const { error: testErr } = await supabase.from('activity_occurrences').select('category, participants').limit(1);
+    if (testErr && testErr.code === '42703') {
+      try {
+        await supabase.rpc('execute_sql', { sql: 'ALTER TABLE activity_occurrences ADD COLUMN IF NOT EXISTS category TEXT; ALTER TABLE activity_occurrences ADD COLUMN IF NOT EXISTS participants INTEGER;' });
+      } catch (e) {
+        selectFields = `
+          activity_date,
+          start_time,
+          end_time,
+          activities ( name ),
+          occurrence_venues ( venues ( code ) )
+        `;
+      }
+    }
+
+    const { data: rawOccData, error: occError } = await supabase
       .from('activity_occurrences')
-      .select(`
-        activity_date,
-        start_time,
-        end_time,
-        activities ( name ),
-        occurrence_venues ( venues ( code ) )
-      `)
+      .select(selectFields)
       .eq('activity_date', params.date)
       .order('start_time', { ascending: true });
 
     if (occError) throw occError;
 
+    const occData = rawOccData as any[];
     const occupationsMap = new Map<string, Occupation>();
 
     for (const row of occData ?? []) {
-      const actName = (row.activities as any)?.name ?? '';
+      const actName = row.activities?.name ?? '';
       const start = row.start_time;
       const end = row.end_time;
       const key = `${actName}|${start}|${end}`;
@@ -164,6 +184,8 @@ export async function getActivitiesByDateAction(params: {
           end_time: end.substring(0, 5),
           venues: [...venues],
           date: params.date,
+          category: (row as any).category,
+          participants: (row as any).participants,
         });
       } else {
         const existing = occupationsMap.get(key)!;

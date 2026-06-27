@@ -16,13 +16,13 @@ interface Props {
 
 const VENUE_ORDER = ['P1', 'P2', 'P3', 'P4'];
 
-const PASTEL_COLORS = [
-  'bg-blue-50',
-  'bg-green-50',
-  'bg-yellow-50',
-  'bg-purple-50',
-  'bg-pink-50',
-  'bg-orange-50'
+const TEAL_COLORS = [
+  'bg-teal-50',
+  'bg-cyan-50',
+  'bg-emerald-50',
+  'bg-teal-100',
+  'bg-cyan-100',
+  'bg-emerald-100'
 ];
 
 function getColorForActivity(name: string) {
@@ -30,7 +30,7 @@ function getColorForActivity(name: string) {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return PASTEL_COLORS[Math.abs(hash) % PASTEL_COLORS.length];
+  return TEAL_COLORS[Math.abs(hash) % TEAL_COLORS.length];
 }
 
 function hourNum(s: string) {
@@ -146,15 +146,15 @@ export function ActivitiesTab({ activities }: Props) {
             rowSpan={rowSpan}
             colSpan={colSpan}
             className={cn(
-              "p-1.5 text-center align-middle border border-gray-200",
+              "p-0.5 text-center align-middle border border-gray-200",
               getColorForActivity(act.activityName)
             )}
           >
-            <div className="flex flex-col items-center justify-center">
-              <span className="text-[9px] font-extrabold text-zinc-800 leading-tight md:text-[10px]">
+            <div className="flex flex-col items-center justify-center min-h-[1.75rem]">
+              <span className="text-sm font-semibold text-zinc-900 leading-tight">
                 {act.activityName}
               </span>
-              <span className="text-[8px] font-semibold text-zinc-500 md:text-[9px] mt-0.5">
+              <span className="text-xs font-normal text-black mt-[1px]">
                 {startLabel} - {endLabel}
               </span>
             </div>
@@ -163,12 +163,9 @@ export function ActivitiesTab({ activities }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]}>
+        <tr key={hours[ri]} className="h-7">
           <td
-            className={cn(
-              'w-12 py-2 pr-2 align-top text-[11px] font-black leading-tight tabular-nums md:w-14 border-b border-zinc-100',
-              cols.some((c) => c !== null) ? 'text-zinc-700' : 'text-zinc-300',
-            )}
+            className="w-12 py-0.5 pr-2 align-top text-[10px] font-normal leading-tight tabular-nums text-black md:w-14 border-b border-zinc-100"
           >
             {`${hours[ri]}:00`}
           </td>

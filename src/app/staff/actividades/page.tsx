@@ -259,7 +259,7 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Activities */}
-                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+                        <div className="mt-4 flex min-h-0 flex-1 flex-col justify-evenly overflow-hidden">
                           {visible.map((act, i) => {
                             const isLast = i === visible.length - 1;
                             return (
