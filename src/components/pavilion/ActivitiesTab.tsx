@@ -16,6 +16,23 @@ interface Props {
 
 const VENUE_ORDER = ['P1', 'P2', 'P3', 'P4'];
 
+const PASTEL_COLORS = [
+  'bg-blue-50',
+  'bg-green-50',
+  'bg-yellow-50',
+  'bg-purple-50',
+  'bg-pink-50',
+  'bg-orange-50'
+];
+
+function getColorForActivity(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return PASTEL_COLORS[Math.abs(hash) % PASTEL_COLORS.length];
+}
+
 function hourNum(s: string) {
   const parts = s.split(':');
   return parseInt(parts[0] ?? '0', 10) + parseInt(parts[1] ?? '0', 10) / 60;
@@ -44,10 +61,8 @@ export function ActivitiesTab({ activities }: Props) {
   }, [activities]);
 
   const { hours, grid, hasAnyActivity } = useMemo(() => {
-    const minH = Math.floor(Math.min(...activities.map((a) => hourNum(a.startTime))));
-    const maxH = Math.ceil(Math.max(...activities.map((a) => hourNum(a.endTime))));
     const hrs: number[] = [];
-    for (let h = minH; h < maxH; h++) hrs.push(h);
+    for (let h = 7; h <= 23; h++) hrs.push(h);
 
     const g: (ActivityItem | null)[][] = hrs.map(() =>
       venues.map(() => null as ActivityItem | null),
@@ -102,7 +117,7 @@ export function ActivitiesTab({ activities }: Props) {
           rowSpan++;
         }
 
-        // colSpan — verify all rows in the span have same activity across cols
+        // colSpan
         let colSpan = 1;
         while (ci + colSpan < venues.length) {
           let allMatch = true;
@@ -130,19 +145,17 @@ export function ActivitiesTab({ activities }: Props) {
             key={`${ci}`}
             rowSpan={rowSpan}
             colSpan={colSpan}
-            className="border-b border-zinc-100 p-1.5 text-center align-top"
+            className={cn(
+              "p-1.5 text-center align-middle border border-gray-200",
+              getColorForActivity(act.activityName)
+            )}
           >
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="flex items-center justify-center gap-1">
-                <span className="shrink-0 text-[11px] md:text-[13px]">
-                  {act.activityIcon || '\u25CB'}
-                </span>
-                <span className="text-[9px] font-extrabold text-zinc-800 leading-tight md:text-[10px]">
-                  {act.activityName}
-                </span>
-              </div>
-              <span className="text-[8px] font-semibold text-zinc-400 md:text-[9px]">
-                {startLabel}\u2013{endLabel}
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-[9px] font-extrabold text-zinc-800 leading-tight md:text-[10px]">
+                {act.activityName}
+              </span>
+              <span className="text-[8px] font-semibold text-zinc-500 md:text-[9px] mt-0.5">
+                {startLabel} - {endLabel}
               </span>
             </div>
           </td>,
@@ -153,8 +166,8 @@ export function ActivitiesTab({ activities }: Props) {
         <tr key={hours[ri]}>
           <td
             className={cn(
-              'w-12 py-2 pr-2 align-top text-[11px] font-black leading-tight tabular-nums md:w-14',
-              cols.some((c) => c !== null) ? 'text-zinc-700' : 'text-zinc-200',
+              'w-12 py-2 pr-2 align-top text-[11px] font-black leading-tight tabular-nums md:w-14 border-b border-zinc-100',
+              cols.some((c) => c !== null) ? 'text-zinc-700' : 'text-zinc-300',
             )}
           >
             {`${hours[ri]}:00`}
@@ -170,12 +183,12 @@ export function ActivitiesTab({ activities }: Props) {
   if (!hasAnyActivity) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-        <span className="text-2xl mb-2">{'\uD83C\uDF1E'}</span>
+        <span className="text-2xl mb-2">{'🌞'}</span>
         <p className="text-sm font-black text-zinc-500">
           No hi ha activitats que afectin el bar avui
         </p>
         <p className="mt-1 text-xs font-bold text-zinc-400">
-          Totes les activitats s\u00F3n en espais sense impacte al bar
+          Totes les activitats són en espais sense impacte al bar
         </p>
       </div>
     );

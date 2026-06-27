@@ -220,9 +220,9 @@ export default function PavilionRevisionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-6">
+    <div className="min-h-screen bg-[#36606F] pb-6">
       <div className="mx-auto max-w-5xl px-3 pt-4 md:pt-8">
-        <div className="overflow-hidden rounded-[2rem] border border-white/40 bg-white shadow-xl">
+        <div className="overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-xl">
           {/* ---- Header bar ---- */}
           <div className="flex shrink-0 items-center gap-3 bg-[#36606F] px-4 py-4">
             <button
@@ -313,90 +313,69 @@ export default function PavilionRevisionPage() {
                 )}
               </div>
 
-              {/* ---- Table Editor ---- */}
-              <div className="w-full overflow-x-auto">
-                <table className="w-full table-auto border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-100 bg-zinc-50/50">
-                      <th className="w-10 px-3 py-2 text-center"></th>
-                      <th className="min-w-[150px] px-3 py-2 font-bold text-zinc-500">Actividad</th>
-                      <th className="w-24 px-3 py-2 font-bold text-zinc-500">Inicio</th>
-                      <th className="w-24 px-3 py-2 font-bold text-zinc-500">Fin</th>
-                      <th className="min-w-[200px] px-3 py-2 font-bold text-zinc-500">Pistas</th>
-                      <th className="w-12 px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {editableOccupations.map((occ, i) => (
-                      <tr key={i} className="border-b border-zinc-50 hover:bg-zinc-50/30">
-                        <td className="px-3 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedIndices.has(i)}
-                            onChange={() => toggleSelect(i)}
-                            className="rounded border-zinc-300"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={occ.activity}
-                            onChange={(e) => updateOccupation(i, 'activity', e.target.value)}
-                            className="w-full rounded-md border border-zinc-200 px-2 py-1 text-sm focus:border-[#36606F] focus:outline-none"
-                            placeholder="Nombre de la actividad"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="time"
-                            value={occ.start_time}
-                            onChange={(e) => updateOccupation(i, 'start_time', e.target.value)}
-                            className="w-full rounded-md border border-zinc-200 px-1 py-1 text-sm focus:border-[#36606F] focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="time"
-                            value={occ.end_time}
-                            onChange={(e) => updateOccupation(i, 'end_time', e.target.value)}
-                            className="w-full rounded-md border border-zinc-200 px-1 py-1 text-sm focus:border-[#36606F] focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex flex-wrap gap-1">
-                            {allVenues.map((v) => {
-                              const active = occ.venues.includes(v.code);
-                              return (
-                                <button
-                                  key={v.id}
-                                  type="button"
-                                  onClick={() => toggleVenue(i, v.code)}
-                                  className={cn(
-                                    'rounded px-2 py-0.5 text-xs font-bold transition-colors border',
-                                    active
-                                      ? 'bg-zinc-800 text-white border-zinc-800'
-                                      : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100',
-                                  )}
-                                >
-                                  {v.code}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => removeRow(i)}
-                            className="rounded p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* ---- List Editor ---- */}
+              <div className="w-full divide-y divide-zinc-100 px-4">
+                {editableOccupations.map((occ, i) => (
+                  <div key={i} className="py-4 flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIndices.has(i)}
+                        onChange={() => toggleSelect(i)}
+                        className="rounded border-zinc-300"
+                      />
+                      <input
+                        type="text"
+                        value={occ.activity}
+                        onChange={(e) => updateOccupation(i, 'activity', e.target.value)}
+                        className="flex-1 rounded-md border border-zinc-200 px-2 py-1.5 text-sm focus:border-[#36606F] focus:outline-none min-w-[120px]"
+                        placeholder="Nombre de la actividad"
+                      />
+                      <input
+                        type="time"
+                        value={occ.start_time}
+                        onChange={(e) => updateOccupation(i, 'start_time', e.target.value)}
+                        className="w-[85px] shrink-0 rounded-md border border-zinc-200 px-1 py-1.5 text-sm focus:border-[#36606F] focus:outline-none"
+                      />
+                      <input
+                        type="time"
+                        value={occ.end_time}
+                        onChange={(e) => updateOccupation(i, 'end_time', e.target.value)}
+                        className="w-[85px] shrink-0 rounded-md border border-zinc-200 px-1 py-1.5 text-sm focus:border-[#36606F] focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeRow(i)}
+                        className="rounded p-1.5 text-zinc-300 hover:bg-red-50 hover:text-red-500 shrink-0"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 pl-6">
+                      <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Pistas</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {allVenues.map((v) => {
+                          const active = occ.venues.includes(v.code);
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() => toggleVenue(i, v.code)}
+                              className={cn(
+                                'rounded px-2.5 py-1 text-xs font-bold transition-colors border',
+                                active
+                                  ? 'bg-zinc-800 text-white border-zinc-800'
+                                  : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100',
+                              )}
+                            >
+                              {v.code}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
               
               <div className="p-4">

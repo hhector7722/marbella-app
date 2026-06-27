@@ -264,19 +264,16 @@ export default function ActividadesPage() {
                             const isLast = i === visible.length - 1;
                             return (
                               <div key={i} className="flex flex-col gap-[2px]">
-                                <span className="text-xs font-semibold text-zinc-800 text-left leading-none">
+                                <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none">
                                   {fmtHour(act.startTime)}
                                 </span>
-                                <div className="pl-3 flex items-center gap-1 overflow-hidden">
-                                  <span className="shrink-0 flex items-center justify-center w-3 h-3 text-[10px] leading-none">
-                                    {act.activityIcon || '\u25CB'}
-                                  </span>
-                                  <span className="truncate text-[11px] whitespace-nowrap text-zinc-600 leading-tight">
+                                <div className="pl-2 overflow-hidden flex items-center">
+                                  <span className="text-[8px] sm:text-[9px] md:text-[10px] whitespace-nowrap overflow-hidden text-zinc-600 leading-tight tracking-tight">
                                     {act.activityName}
                                   </span>
                                 </div>
                                 {isLast && (
-                                  <span className="text-xs font-semibold text-zinc-800 text-left leading-none mt-1">
+                                  <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none mt-[2px]">
                                     {fmtHour(act.endTime)}
                                   </span>
                                 )}
