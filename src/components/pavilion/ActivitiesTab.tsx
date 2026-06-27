@@ -1,6 +1,5 @@
 
-import type { BarActivity } from '@/app/staff/actividades/unify';
-import { ActivityTimelineCard } from './ActivityTimelineCard';
+import { BarActivity } from './actions';
 
 export interface UnifiedActivity {
   activityName: string;
@@ -8,10 +7,9 @@ export interface UnifiedActivity {
   startTime: string;
   endTime: string;
   venueCodes: string[];
-  isUnified?: boolean;
+  isUnified: boolean;
   originalNames: string[];
   modified?: boolean;
-  name?: string;
 }
 
 export interface UnifyResult {
@@ -23,29 +21,6 @@ export interface ActivityConflict {
   activity1: UnifiedActivity;
   activity2: UnifiedActivity;
   similarity: number;
-}
-
-export function ActivitiesTab({ activities }: { activities: BarActivity[] }) {
-  if (activities.length === 0) {
-    return (
-      <div className="px-4 py-12 text-center">
-        <p className="text-xs font-bold text-zinc-400">
-          No hi ha activitats de bar per aquest dia.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 px-4 py-4">
-      {activities.map((activity, index) => (
-        <ActivityTimelineCard
-          key={`${activity.activityName}-${activity.startTime}-${activity.endTime}-${index}`}
-          activity={activity}
-        />
-      ))}
-    </div>
-  );
 }
 
 /**
@@ -128,8 +103,8 @@ export function unifyActivities(
         const startH = Math.min(curStartH, otherStartH);
         const startM = curStartH === otherStartH ? Math.min(curStartM, otherStartM) : (curStartH < otherStartH ? curStartM : otherStartM);
 
-        let endH = Math.max(curEndH, otherEndH);
-        let endM = curEndH === otherEndH ? Math.max(curEndM, otherEndM) : (curEndH > otherEndH ? curEndM : otherEndM);
+        const endH = Math.max(curEndH, otherEndH);
+        const endM = curEndH === otherEndH ? Math.max(curEndM, otherEndM) : (curEndH > otherEndH ? curEndM : otherEndM);
 
         // Ensure minimum duration of 30 minutes
         if (endM % 30 !== 0) {
