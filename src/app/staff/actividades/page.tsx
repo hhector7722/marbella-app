@@ -296,6 +296,7 @@ export default function ActividadesPage() {
               </div>
             </div>
           )}
+        </div>
       </div>
 
       <PavilionDayModal
