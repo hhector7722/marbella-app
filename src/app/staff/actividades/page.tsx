@@ -263,7 +263,7 @@ export default function ActividadesPage() {
                           {visible.map((act, i) => {
                             const isLast = i === visible.length - 1;
                             return (
-                              <div key={i} className="flex flex-col gap-[2px]">
+                              <div key={i} className="flex flex-col">
                                 <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none">
                                   {fmtHour(act.startTime)}
                                 </span>
@@ -273,7 +273,7 @@ export default function ActividadesPage() {
                                   </span>
                                 </div>
                                 {isLast && (
-                                  <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none mt-[2px]">
+                                  <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none">
                                     {fmtHour(act.endTime)}
                                   </span>
                                 )}
