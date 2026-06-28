@@ -217,7 +217,7 @@ export default function ActividadesPage() {
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 last:border-r-0 sm:p-1',
-                      'min-h-[80px] sm:min-h-[90px] md:min-h-[100px] lg:min-h-[110px]',
+                      'h-24 sm:h-28 md:h-32 lg:h-36',
                       pastDayBg,
                       !isViewMonthDay && 'opacity-25',
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
@@ -233,11 +233,40 @@ export default function ActividadesPage() {
                     if (!dayData) {
                       return (
                         <div key={key} className={cellCls}>
-                          <div className="absolute top-0.5 right-0.5 z-10 flex items-center gap-0.5">
+                          <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
                             <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
                         </div>
                       );
+                    }
+
+                    const items: React.ReactNode[] = [];
+                    if (visible.length > 0) {
+                      items.push(<div key="s0" className="flex-1" />);
+                      visible.forEach((act, i) => {
+                        items.push(
+                          <span key={`h${i}`} className="text-[9px] font-semibold text-zinc-800 text-left leading-none shrink-0">
+                            {fmtHour(act.startTime)}
+                          </span>
+                        );
+                        items.push(
+                          <div key={`n${i}`} className="pl-2 overflow-hidden flex items-center shrink-0">
+                            <span className="text-[8px] sm:text-[9px] md:text-[10px] whitespace-nowrap overflow-hidden text-zinc-600 leading-tight tracking-tight">
+                              {act.activityName}
+                            </span>
+                          </div>
+                        );
+                        if (i < visible.length - 1) {
+                          items.push(<div key={`s${i+1}`} className="flex-1" />);
+                        }
+                      });
+                      const lastAct = visible[visible.length - 1];
+                      items.push(
+                        <span key="hfin" className="text-[9px] font-semibold text-zinc-800 text-left leading-none shrink-0">
+                          {fmtHour(lastAct.endTime)}
+                        </span>
+                      );
+                      items.push(<div key="sfin" className="flex-1" />);
                     }
 
                     return (
@@ -249,7 +278,7 @@ export default function ActividadesPage() {
                         className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
                       >
                         {/* Day number + total — top right */}
-                        <div className="absolute top-0.5 right-0.5 z-10 flex items-center gap-0.5">
+                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                           {totalCount > 0 && (
                             <span className="text-[6px] font-bold text-zinc-300 leading-none">
@@ -259,30 +288,11 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Activities */}
-                        <div className="mt-4 flex min-h-0 flex-1 flex-col justify-evenly overflow-hidden">
-                          {visible.map((act, i) => {
-                            const isLast = i === visible.length - 1;
-                            return (
-                              <div key={i} className="flex flex-col">
-                                <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none">
-                                  {fmtHour(act.startTime)}
-                                </span>
-                                <div className="pl-2 overflow-hidden flex items-center">
-                                  <span className="text-[8px] sm:text-[9px] md:text-[10px] whitespace-nowrap overflow-hidden text-zinc-600 leading-tight tracking-tight">
-                                    {act.activityName}
-                                  </span>
-                                </div>
-                                {isLast && (
-                                  <span className="text-[9px] font-semibold text-zinc-800 text-left leading-none">
-                                    {fmtHour(act.endTime)}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
+                        <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden mt-1">
+                          {items}
                           {overflow > 0 && (
-                            <span className="mt-auto self-end text-[10px] font-bold text-zinc-400 leading-none">
-                              +{overflow} m\u00E9s
+                            <span className="mt-auto self-end text-[10px] font-bold text-zinc-400 leading-none shrink-0">
+                              +{overflow} más
                             </span>
                           )}
                         </div>
