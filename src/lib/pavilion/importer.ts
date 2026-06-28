@@ -241,16 +241,27 @@ export async function importOccupations(
       insertData.source_pdf_id = sourcePdfId;
     }
 
-    const { data: occData, error: occError } = await supabase
+    let { data: occData, error: occError } = await supabase
       .from('activity_occurrences')
       .insert(insertData)
       .select('id')
       .single();
 
+    if (occError && (occError.code === '42703' || occError.message?.includes('schema cache'))) {
+      // Fallback: column doesn't exist
+      delete insertData.category;
+      delete insertData.participants;
+      const res = await supabase
+        .from('activity_occurrences')
+        .insert(insertData)
+        .select('id')
+        .single();
+      occData = res.data;
+      occError = res.error;
+    }
+
     if (occError || !occData) {
-      throw new Error(
-        `Error inserint occurrence: ${occError?.message}`,
-      );
+      throw new Error(`Error inserint occurrence: ${occError?.message}`);
     }
 
     const occurrenceId = occData.id as string;
