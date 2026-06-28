@@ -331,6 +331,7 @@ export async function fetchDayDetailAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0) {
+      allActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
