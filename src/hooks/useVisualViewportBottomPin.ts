@@ -9,21 +9,46 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
     if (!node) return;
 
     const mountTime = Date.now();
+    const initialHeight = window.innerHeight;
 
     const pin = () => {
+      let keyboardOpen = false;
       const vv = window.visualViewport;
-      if (!vv) {
-        node.style.bottom = '0px';
-        return;
+
+      if (vv) {
+        if (vv.height < window.innerHeight * 0.82) {
+           keyboardOpen = true;
+        }
+      } else if (window.innerHeight < initialHeight * 0.85) {
+        keyboardOpen = true;
       }
-      // The gap calculation that shifted the bar UP when the keyboard was open has been disabled,
-      // as the expected behavior is for the keyboard to open overlaying the bar.
-      // We rely on interactiveWidget: "overlays-content" in the viewport config now.
+
+      if (Date.now() - mountTime < 1500) {
+        const activeTag = document.activeElement?.tagName.toLowerCase();
+        const isInputFocused = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+        if (!isInputFocused) {
+          keyboardOpen = false;
+        }
+      }
+
+      // Si el teclado está abierto, ocultamos la barra desplazándola hacia abajo
+      // para asegurar que quede cubierta por el teclado y no aparezca encima.
+      if (keyboardOpen) {
+        node.style.transform = 'translateY(150%)';
+        node.style.opacity = '0';
+        node.style.pointerEvents = 'none';
+        node.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+      } else {
+        node.style.transform = 'translateY(0px)';
+        node.style.opacity = '1';
+        node.style.pointerEvents = 'auto';
+        node.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+      }
+      
       node.style.bottom = '0px';
     };
 
     pin();
-    // Reevaluar después del periodo inicial para ajustar si la medida real cambió
     const timeoutId = setTimeout(pin, 1500);
     window.visualViewport?.addEventListener('resize', pin);
     window.visualViewport?.addEventListener('scroll', pin);
@@ -37,6 +62,9 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
       window.removeEventListener('resize', pin);
       window.removeEventListener('scroll', pin);
       node.style.bottom = '';
+      node.style.transform = '';
+      node.style.opacity = '';
+      node.style.pointerEvents = '';
     };
   }, [ref]);
 }

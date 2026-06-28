@@ -240,9 +240,20 @@ export default function ActividadesPage() {
                       );
                     }
 
+                    const gridRows = visible.length > 0 ? [
+                      '1fr',
+                      ...visible.flatMap((_, i) => [
+                        'auto',
+                        'auto',
+                        i < visible.length - 1 ? '1fr' : undefined
+                      ]).filter(Boolean),
+                      'auto',
+                      '1fr'
+                    ].join(' ') : '1fr';
+
                     const items: React.ReactNode[] = [];
                     if (visible.length > 0) {
-                      items.push(<div key="s0" className="flex-1" />);
+                      items.push(<div key="s0" />);
                       visible.forEach((act, i) => {
                         items.push(
                           <span key={`h${i}`} className="text-[9px] font-semibold text-zinc-800 text-left leading-none shrink-0">
@@ -257,7 +268,7 @@ export default function ActividadesPage() {
                           </div>
                         );
                         if (i < visible.length - 1) {
-                          items.push(<div key={`s${i+1}`} className="flex-1" />);
+                          items.push(<div key={`s${i+1}`} />);
                         }
                       });
                       const lastAct = visible[visible.length - 1];
@@ -266,7 +277,7 @@ export default function ActividadesPage() {
                           {fmtHour(lastAct.endTime)}
                         </span>
                       );
-                      items.push(<div key="sfin" className="flex-1" />);
+                      items.push(<div key="sfin" />);
                     }
 
                     return (
@@ -288,10 +299,13 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Activities */}
-                        <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden mt-1">
+                        <div 
+                          className="flex-1 w-full overflow-hidden mt-1" 
+                          style={{ display: 'grid', gridTemplateRows: gridRows }}
+                        >
                           {items}
                           {overflow > 0 && (
-                            <span className="mt-auto self-end text-[10px] font-bold text-zinc-400 leading-none shrink-0">
+                            <span className="mt-auto self-end text-[10px] font-bold text-zinc-400 leading-none shrink-0" style={{ gridRow: '-1 / span 1' }}>
                               +{overflow} más
                             </span>
                           )}
