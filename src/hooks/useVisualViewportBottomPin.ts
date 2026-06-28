@@ -16,24 +16,10 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
         node.style.bottom = '0px';
         return;
       }
-      // Solo desplazar con teclado; en PWA iOS innerHeight > vv.height sin teclado
-      // generaba un gap falso y dejaba la barra flotando.
-      let keyboardOpen = vv.height < window.innerHeight * 0.82;
-
-      // Al abrir la app (primeros 1.5s), damos por hecho que el teclado está cerrado
-      // para evitar que la barra suba por cálculos iniciales inestables del viewport.
-      if (Date.now() - mountTime < 1500) {
-        const activeTag = document.activeElement?.tagName.toLowerCase();
-        const isInputFocused = activeTag === 'input' || activeTag === 'textarea';
-        if (!isInputFocused) {
-          keyboardOpen = false;
-        }
-      }
-
-      const gap = keyboardOpen
-        ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-        : 0;
-      node.style.bottom = `${gap}px`;
+      // The gap calculation that shifted the bar UP when the keyboard was open has been disabled,
+      // as the expected behavior is for the keyboard to open overlaying the bar.
+      // We rely on interactiveWidget: "overlays-content" in the viewport config now.
+      node.style.bottom = '0px';
     };
 
     pin();
