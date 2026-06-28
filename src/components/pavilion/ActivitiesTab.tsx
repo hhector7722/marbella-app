@@ -164,10 +164,10 @@ export function ActivitiesTab({ activities }: Props) {
 
       rows.push(
         <tr key={hours[ri]} className="h-5">
-          <td
-            className="w-12 py-0 pr-2 align-middle text-[10px] font-bold leading-tight tabular-nums text-[#407080] md:w-14 border-b border-zinc-100"
-          >
-            {`${hours[ri]}:00`}
+          <td className="w-12 p-0 border-b border-zinc-100 md:w-14">
+            <div className="flex h-full w-full items-center pr-2">
+              <span className="text-[10px] font-bold leading-none tabular-nums text-[#407080]">{`${hours[ri]}:00`}</span>
+            </div>
           </td>
           {cols}
         </tr>,
