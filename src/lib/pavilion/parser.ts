@@ -21,6 +21,7 @@ export interface Occupation {
   date: string;
   category?: string;
   participants?: number;
+  color?: string;
 }
 
 export interface ParsePdfResult {

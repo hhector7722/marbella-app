@@ -139,7 +139,7 @@ export async function getActivitiesByDateAction(params: {
       end_time,
       category,
       participants,
-      activities ( name ),
+      activities ( name, color ),
       occurrence_venues ( venues ( code ) )
     `;
 
@@ -152,7 +152,7 @@ export async function getActivitiesByDateAction(params: {
           activity_date,
           start_time,
           end_time,
-          activities ( name ),
+          activities ( name, color ),
           occurrence_venues ( venues ( code ) )
         `;
       }
@@ -186,6 +186,7 @@ export async function getActivitiesByDateAction(params: {
           date: params.date,
           category: (row as any).category,
           participants: (row as any).participants,
+          color: row.activities?.color ?? undefined,
         });
       } else {
         const existing = occupationsMap.get(key)!;

@@ -94,7 +94,12 @@ export default function PavilionRevisionPage() {
       return;
     }
 
-    setEditableOccupations(res.data.occupations);
+    const occupationsWithColor = res.data.occupations.map((occ, i) => ({
+      ...occ,
+      color: res.data.matches[i]?.matchedColor || undefined,
+    }));
+
+    setEditableOccupations(occupationsWithColor);
     setDateStr(res.data.date);
     setLoadedFromDb(false);
     setState('parsed');
@@ -383,6 +388,21 @@ export default function PavilionRevisionPage() {
                           onChange={(e) => updateOccupation(i, 'participants', e.target.value ? parseInt(e.target.value, 10) : undefined)}
                           className="w-12 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
                         />
+                      </div>
+                      <div className="flex items-center gap-1.5 ml-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">COLOR</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            placeholder="#5a9a87"
+                            value={occ.color || ''}
+                            onChange={(e) => updateOccupation(i, 'color', e.target.value)}
+                            className="w-[60px] rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
+                          />
+                          {occ.color && (
+                            <div className="w-4 h-4 rounded-full border border-zinc-200" style={{ backgroundColor: occ.color }} />
+                          )}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-1 ml-2">
                         {allVenues.map((v) => {

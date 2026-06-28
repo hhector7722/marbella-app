@@ -7,6 +7,7 @@ export interface MatchResult {
   status: MatchStatus;
   matchedActivityId?: string;
   matchedName?: string;
+  matchedColor?: string;
   confidence?: number;
 }
 
@@ -50,10 +51,10 @@ export async function preMatchOccupations(
 ): Promise<MatchResult[]> {
   const { data: allActivities } = await supabase
     .from('activities')
-    .select('id, external_name')
+    .select('id, external_name, color')
     .not('external_name', 'is', null);
 
-  const activities = (allActivities ?? []) as { id: string; external_name: string }[];
+  const activities = (allActivities ?? []) as { id: string; external_name: string; color: string | null }[];
 
   return occupations.map((occ) => {
     const rawName = occ.activity.trim();
@@ -67,12 +68,13 @@ export async function preMatchOccupations(
         status: 'existing' as const,
         matchedActivityId: exactMatch.id,
         matchedName: exactMatch.external_name,
+        matchedColor: exactMatch.color || undefined,
         confidence: 1,
       };
     }
 
     let bestScore = 0;
-    let bestMatch: { id: string; external_name: string } | null = null;
+    let bestMatch: { id: string; external_name: string; color: string | null } | null = null;
     for (const a of activities) {
       const score = similarity(rawName, a.external_name);
       if (score > bestScore) {
@@ -86,6 +88,7 @@ export async function preMatchOccupations(
         status: 'uncertain' as const,
         matchedActivityId: bestMatch.id,
         matchedName: bestMatch.external_name,
+        matchedColor: bestMatch.color || undefined,
         confidence: Math.round(bestScore * 100) / 100,
       };
     }

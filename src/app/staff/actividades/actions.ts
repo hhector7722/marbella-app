@@ -156,6 +156,7 @@ export async function uploadPavilionActivityAction(params: {
 export interface BarActivity {
   activityName: string;
   activityIcon: string | null;
+  activityColor: string | null;
   startTime: string;
   endTime: string;
   venueCodes: string[];
@@ -245,7 +246,7 @@ export async function fetchActivitiesForRangeAction(params: {
       activity_date,
       start_time,
       end_time,
-      activities ( name ),
+      activities ( name, color ),
       activity_kinds ( icon ),
       occurrence_venues ( venues ( code, affects_bar ) )
     `,
@@ -267,7 +268,6 @@ export async function fetchActivitiesForRangeAction(params: {
       byDate[d] = { date: d, totalCount: 0, barActivities: [] };
     }
     byDate[d].totalCount++;
-
     const venues =
       (row.occurrence_venues as unknown as {
         venues: { code: string; affects_bar: boolean };
@@ -276,8 +276,9 @@ export async function fetchActivitiesForRangeAction(params: {
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0) {
       byDate[d].barActivities.push({
-        activityName: (row.activities as unknown as { name: string }).name,
+        activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
+        activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
         startTime: row.start_time as string,
         endTime: row.end_time as string,
         venueCodes: barVenues.map((v) => v.code),
@@ -306,7 +307,7 @@ export async function fetchDayDetailAction(params: {
       activity_date,
       start_time,
       end_time,
-      activities ( name ),
+      activities ( name, color ),
       activity_kinds ( icon ),
       occurrence_venues ( venues ( code, affects_bar ) )
     `,
@@ -330,9 +331,9 @@ export async function fetchDayDetailAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0) {
-      allActivities.push({
-        activityName: (row.activities as unknown as { name: string }).name,
+        activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
+        activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
         startTime: row.start_time as string,
         endTime: row.end_time as string,
         venueCodes: barVenues.map((v) => v.code),

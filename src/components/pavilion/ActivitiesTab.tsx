@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 interface ActivityItem {
   activityName: string;
   activityIcon: string | null;
+  activityColor?: string | null;
   startTime: string;
   endTime: string;
   venueCodes: string[];
@@ -131,8 +132,9 @@ export function ActivitiesTab({ activities }: Props) {
             rowSpan={rowSpan}
             colSpan={colSpan}
             className={cn(
-              "p-0.5 text-center align-middle border border-gray-200 bg-[#5a9a87] text-white"
+              "p-0.5 text-center align-middle border border-gray-200 text-white"
             )}
+            style={{ backgroundColor: act.activityColor || '#5a9a87' }}
           >
             <div className="flex flex-col items-center justify-center min-h-[1.25rem]">
               <span className="text-sm font-semibold leading-tight">

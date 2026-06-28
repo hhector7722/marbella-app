@@ -40,16 +40,22 @@ function normalizeForMatch(str: string): string {
 async function resolveActivity(
   supabase: SupabaseClient,
   rawName: string,
+  color?: string,
 ): Promise<{ id: string; wasCreated: boolean }> {
   const normalized = normalizeForMatch(rawName);
 
   const { data: existing } = await supabase
     .from('activities')
-    .select('id')
+    .select('id, color')
     .ilike('external_name', normalized)
     .maybeSingle();
 
-  if (existing) return { id: existing.id as string, wasCreated: false };
+  if (existing) {
+    if (color !== undefined && existing.color !== color) {
+      await supabase.from('activities').update({ color: color || null }).eq('id', existing.id);
+    }
+    return { id: existing.id as string, wasCreated: false };
+  }
 
   const trimmed = rawName.trim();
 
@@ -59,6 +65,7 @@ async function resolveActivity(
       name: trimmed,
       external_name: trimmed,
       active: true,
+      color: color || null,
     })
     .select('id')
     .single();
@@ -187,6 +194,7 @@ export async function importOccupations(
     const { id: activityId, wasCreated: actCreated } = await resolveActivity(
       supabase,
       occ.activity,
+      occ.color,
     );
     if (actCreated) activitiesCreated++;
 
