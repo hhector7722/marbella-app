@@ -16,22 +16,7 @@ interface Props {
 
 const VENUE_ORDER = ['P1', 'P2', 'P3', 'P4'];
 
-const TEAL_COLORS = [
-  'bg-teal-50',
-  'bg-cyan-50',
-  'bg-emerald-50',
-  'bg-teal-100',
-  'bg-cyan-100',
-  'bg-emerald-100'
-];
 
-function getColorForActivity(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return TEAL_COLORS[Math.abs(hash) % TEAL_COLORS.length];
-}
 
 function hourNum(s: string) {
   const parts = s.split(':');
@@ -146,15 +131,14 @@ export function ActivitiesTab({ activities }: Props) {
             rowSpan={rowSpan}
             colSpan={colSpan}
             className={cn(
-              "p-0.5 text-center align-middle border border-gray-200",
-              getColorForActivity(act.activityName)
+              "p-0.5 text-center align-middle border border-gray-200 bg-[#5a9a87] text-white"
             )}
           >
             <div className="flex flex-col items-center justify-center min-h-[1.25rem]">
-              <span className="text-sm font-semibold text-zinc-900 leading-tight">
+              <span className="text-sm font-semibold leading-tight">
                 {act.activityName}
               </span>
-              <span className="text-[10px] font-normal text-black">
+              <span className="text-[10px] font-normal text-white/90">
                 {startLabel} - {endLabel}
               </span>
             </div>
