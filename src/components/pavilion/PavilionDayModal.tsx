@@ -147,6 +147,9 @@ export function PavilionDayModal({
                       const params = new URLSearchParams({
                         date: date!,
                       });
+                      if (dayDetail?.pdfFilePath) {
+                        params.set('filePath', dayDetail.pdfFilePath);
+                      }
                       router.push(`/staff/actividades/revision?${params.toString()}`);
                     }}
                     className={headerBtn}

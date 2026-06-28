@@ -150,11 +150,11 @@ export function ActivitiesTab({ activities }: Props) {
               getColorForActivity(act.activityName)
             )}
           >
-            <div className="flex flex-col items-center justify-center min-h-[1.75rem]">
+            <div className="flex flex-col items-center justify-center min-h-[1.25rem]">
               <span className="text-sm font-semibold text-zinc-900 leading-tight">
                 {act.activityName}
               </span>
-              <span className="text-xs font-normal text-black mt-[1px]">
+              <span className="text-[10px] font-normal text-black">
                 {startLabel} - {endLabel}
               </span>
             </div>
@@ -163,9 +163,9 @@ export function ActivitiesTab({ activities }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]} className="h-7">
+        <tr key={hours[ri]} className="h-5">
           <td
-            className="w-12 py-0.5 pr-2 align-top text-[10px] font-normal leading-tight tabular-nums text-black md:w-14 border-b border-zinc-100"
+            className="w-12 py-0 pr-2 align-middle text-[10px] font-bold leading-tight tabular-nums text-[#407080] md:w-14 border-b border-zinc-100"
           >
             {`${hours[ri]}:00`}
           </td>
