@@ -18,6 +18,7 @@ export default function BottomNavWrapper() {
     if (isFullscreenCartaPath(pathname)) return null;
     // Rutas /staff/* usan la barra inferior de src/app/staff/layout.tsx
     if (pathname.startsWith('/staff')) return null;
+    if (pathname.startsWith('/reporte')) return null;
 
     // Portal a <body> para blindar el `fixed` ante wrappers con transform/overflow/contain
     return createPortal(<BottomNavStaff />, document.body);

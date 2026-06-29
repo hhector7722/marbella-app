@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+.reporte-container {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #22d3ee;
+
+    background: var(--bg);
+    background-image:
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(34, 211, 238, 0.1) 0px, transparent 50%);
+    color: var(--text-main);
+    font-family: 'Outfit', 'Inter', sans-serif;
+    min-height: 100vh;
+}
+
+.reporte-container .glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.reporte-container .form-input {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    transition: all 0.2s ease;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.reporte-container .btn-premium {
+    background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reporte-container .activity-card {
+    transition: all 0.3s ease;
+    padding: 1rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.reporte-container .activity-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.reporte-container .animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.reporte-container .animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hide interaction elements during capture */
+.capturing .add-activity-btn,
+.capturing .remove-btn {
+    display: none !important;
+}
+
+.capturing .activity-card {
+    margin-bottom: 12px !important;
+    animation: none !important;
+    transform: none !important;
+}
+
+/* Ensure input values are visible in canvas */
+.capturing input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+    border: none !important;
+}
