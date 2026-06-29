@@ -232,11 +232,17 @@ export default function ActividadesPage() {
 
                     if (!dayData) {
                       return (
-                        <div key={key} className={cellCls}>
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => isViewMonthDay && openDay(day)}
+                          disabled={!isViewMonthDay}
+                          className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
+                        >
                           <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
                             <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
-                        </div>
+                        </button>
                       );
                     }
 

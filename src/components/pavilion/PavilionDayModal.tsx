@@ -187,6 +187,8 @@ export function PavilionDayModal({
               ) : (
                 <ActivitiesTab
                   activities={dayDetail?.barActivities ?? []}
+                  date={date}
+                  isHector={isHector}
                 />
               )}
             </div>

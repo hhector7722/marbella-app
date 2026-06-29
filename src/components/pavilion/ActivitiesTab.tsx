@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface ActivityItem {
   activityName: string;
@@ -13,6 +14,8 @@ interface ActivityItem {
 
 interface Props {
   activities: ActivityItem[];
+  date?: string | null;
+  isHector?: boolean;
 }
 
 const VENUE_ORDER = ['P1', 'P2', 'P3', 'P4'];
@@ -37,7 +40,9 @@ function isSameActivityBlock(a: ActivityItem | null, b: ActivityItem | null) {
          a.endTime === b.endTime;
 }
 
-export function ActivitiesTab({ activities }: Props) {
+export function ActivitiesTab({ activities, date, isHector }: Props) {
+  const router = useRouter();
+
   const venues = useMemo(() => {
     const codes = new Set<string>();
     for (const a of activities) {
@@ -170,9 +175,18 @@ export function ActivitiesTab({ activities }: Props) {
         <p className="text-sm font-black text-zinc-500">
           No hi ha activitats que afectin el bar avui
         </p>
-        <p className="mt-1 text-xs font-bold text-zinc-400">
+        <p className={cn("mt-1 text-xs font-bold text-zinc-400", isHector && date ? "mb-6" : "")}>
           Totes les activitats són en espais sense impacte al bar
         </p>
+        {isHector && date && (
+          <button
+            type="button"
+            onClick={() => router.push(`/staff/actividades/revision?date=${date}`)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2.5 text-sm font-black uppercase tracking-wider text-white transition-all hover:bg-[#36606F]/90 active:scale-95"
+          >
+            Crear horari des de 0
+          </button>
+        )}
       </div>
     );
   }
