@@ -217,7 +217,7 @@ export default function ActividadesPage() {
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 last:border-r-0 sm:p-1',
-                      'h-24 sm:h-28 md:h-32 lg:h-36',
+                      'h-28 sm:h-32 md:h-36 lg:h-44',
                       pastDayBg,
                       !isViewMonthDay && 'opacity-25',
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
@@ -274,7 +274,7 @@ export default function ActividadesPage() {
                           </div>
                         );
                         if (i < visible.length - 1) {
-                          items.push(<div key={`s${i+1}`} />);
+                          items.push(<div key={`s${i+1}`} className="min-h-2 sm:min-h-3 md:min-h-4" />);
                         }
                       });
                       const lastAct = visible[visible.length - 1];

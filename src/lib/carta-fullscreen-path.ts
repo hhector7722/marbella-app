@@ -17,6 +17,13 @@ export function isInternalScrollShellPath(pathname: string): boolean {
   if (pathname === '/dashboard/uso' || pathname.startsWith('/dashboard/uso')) return true
   if (pathname === '/dashboard/web' || pathname.startsWith('/dashboard/web')) return true
   if (pathname === '/dashboard/instalacion-app') return true
+  
+  // Todas las páginas que usan DashboardDetailLayout (scroll interno acotado a 100vh)
+  if (pathname === '/dashboard/inventory' || pathname.startsWith('/dashboard/inventory/')) return true
+  if (pathname === '/dashboard/scanner') return true
+  if (pathname === '/dashboard/recetas-tpv') return true
+  if (pathname === '/dashboard/albaranes' || pathname.startsWith('/dashboard/albaranes/')) return true
+
   return false
 }
 

@@ -418,7 +418,7 @@ export function InventoryClient({
 
   return (
     <div className="flex flex-col gap-4 min-h-0 flex-1">
-      <div className="flex-1 min-h-0 pr-0.5">
+      <div className="flex-1 min-h-0 overflow-auto pr-0.5">
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2 w-full shrink-0 relative">
             <div className="relative flex-1 min-w-0">
@@ -585,7 +585,7 @@ export function InventoryClient({
       </div>
 
       {!visibilityEditMode && (
-        <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100 space-y-2 z-10">
+        <div className="sticky bottom-0 left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100 space-y-2">
           <div className="flex items-start gap-2 text-zinc-500 text-xs px-0.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
