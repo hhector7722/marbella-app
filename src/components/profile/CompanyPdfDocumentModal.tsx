@@ -49,7 +49,7 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
                 </div>
                 <button
                     type="button"
-                    onClick={() => window.open(doc.path, '_blank', 'noopener,noreferrer')}
+                    onClick={() => window.open(`/document-viewer?url=${encodeURIComponent(doc.path)}&title=${encodeURIComponent(doc.title)}`, '_blank', 'noopener,noreferrer')}
                     className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#5B8FB9] font-bold text-white shadow-lg shadow-blue-200 transition-all hover:bg-[#4a7a9e] active:scale-95"
                 >
                     <ExternalLink size={20} />

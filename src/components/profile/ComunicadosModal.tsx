@@ -71,7 +71,9 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             path: doc.storage_path,
             tipo: doc.tipo,
         });
-        window.open(`/api/employee-documents/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
+        const docUrl = `/api/employee-documents/open?${q.toString()}`;
+        const title = labelForRow(doc);
+        window.open(`/document-viewer?url=${encodeURIComponent(docUrl)}&title=${encodeURIComponent(title)}`, '_blank', 'noopener,noreferrer');
     };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, kind: 'comunicado' | 'sancion') => {
