@@ -251,7 +251,7 @@ export default function ActividadesPage() {
                       ...visible.flatMap((_, i) => [
                         'auto',
                         'auto',
-                        i < visible.length - 1 ? '1fr' : undefined
+                        i < visible.length - 1 ? 'minmax(8px, 2fr)' : undefined
                       ]).filter(Boolean),
                       'auto',
                       '1fr'
@@ -306,7 +306,7 @@ export default function ActividadesPage() {
 
                         {/* Activities */}
                         <div 
-                          className="flex-1 w-full overflow-hidden mt-1" 
+                          className="flex-1 w-full overflow-hidden mt-1 gap-y-1 md:gap-y-1.5" 
                           style={{ display: 'grid', gridTemplateRows: gridRows }}
                         >
                           {items}
