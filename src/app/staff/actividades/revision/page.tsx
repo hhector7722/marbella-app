@@ -82,6 +82,15 @@ export default function PavilionRevisionPage() {
     }
 
     if (!filePath) {
+      if (dateParam) {
+        // Permite crear desde cero si hay fecha pero no archivo
+        setEditableOccupations([]);
+        setDateStr(dateParam);
+        setLoadedFromDb(false);
+        setState('parsed');
+        return;
+      }
+      
       setState('error');
       setError('No hay datos para esta fecha y no se ha proporcionado un archivo PDF.');
       return;

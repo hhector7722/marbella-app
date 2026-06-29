@@ -59,6 +59,7 @@ export default function Navbar() {
     if (pathname === '/staff/carta') return null;
     if (pathname === '/dashboard/carta') return null;
     if (pathname.startsWith('/eventos')) return null;
+    if (pathname.startsWith('/reporte')) return null;
 
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
     const homePath = getHomeHrefForUser(userData?.email, userData?.role);
