@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -72,6 +72,52 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             tipo: doc.tipo,
         });
         window.open(`/api/employee-documents/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleShare = async (e: React.MouseEvent, doc: DocRow) => {
+        e.stopPropagation();
+        if (!navigator.share) {
+            toast.error('Tu navegador no soporta compartir nativamente');
+            return;
+        }
+
+        const q = new URLSearchParams({
+            owner: userId,
+            path: doc.storage_path,
+            tipo: doc.tipo,
+        });
+        const docUrl = `/api/employee-documents/open?${q.toString()}`;
+        const title = labelForRow(doc);
+
+        try {
+            toast.loading('Preparando archivo...', { id: 'share-doc' });
+            const res = await fetch(docUrl);
+            const blob = await res.blob();
+            const ext = doc.filename.split('.').pop() || 'pdf';
+            const type = ext.toLowerCase() === 'pdf' ? 'application/pdf' : 
+                         ext.toLowerCase().match(/jpe?g/) ? 'image/jpeg' : 
+                         ext.toLowerCase() === 'png' ? 'image/png' : 'application/octet-stream';
+            const file = new File([blob], `${title}.${ext}`, { type });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                toast.dismiss('share-doc');
+                await navigator.share({
+                    files: [file],
+                    title: title,
+                });
+            } else {
+                toast.dismiss('share-doc');
+                await navigator.share({
+                    title: title,
+                    url: window.location.origin + docUrl
+                });
+            }
+        } catch (err: any) {
+            toast.dismiss('share-doc');
+            if (err.name !== 'AbortError') {
+                console.error('Error sharing:', err);
+            }
+        }
     };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, kind: 'comunicado' | 'sancion') => {
@@ -228,6 +274,15 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                                             {labelForRow(row)}
                                         </p>
                                     </div>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleShare(e, row)}
+                                    className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                    title="Compartir"
+                                    aria-label="Compartir"
+                                >
+                                    <Share2 size={16} strokeWidth={2.5} />
                                 </button>
                                 {isManager && (
                                     <button

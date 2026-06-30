@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -79,6 +79,47 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             path: row.storage_path,
         });
         window.open(`/api/nominas/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleShare = async (e: React.MouseEvent, row: NominaRow) => {
+        e.stopPropagation();
+        if (!navigator.share) {
+            toast.error('Tu navegador no soporta compartir nativamente');
+            return;
+        }
+
+        const q = new URLSearchParams({
+            owner: row.user_id,
+            path: row.storage_path,
+        });
+        const docUrl = `/api/nominas/open?${q.toString()}`;
+        const title = labelPeriod(row);
+
+        try {
+            toast.loading('Preparando archivo...', { id: 'share-nomina' });
+            const res = await fetch(docUrl);
+            const blob = await res.blob();
+            const file = new File([blob], `${title}.pdf`, { type: 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                toast.dismiss('share-nomina');
+                await navigator.share({
+                    files: [file],
+                    title: title,
+                });
+            } else {
+                toast.dismiss('share-nomina');
+                await navigator.share({
+                    title: title,
+                    url: window.location.origin + docUrl
+                });
+            }
+        } catch (err: any) {
+            toast.dismiss('share-nomina');
+            if (err.name !== 'AbortError') {
+                console.error('Error sharing:', err);
+            }
+        }
     };
 
 
@@ -201,6 +242,15 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                                             <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{labelPeriod(row)}</p>
                                             <p className="text-[10px] text-zinc-400 truncate">{row.filename.replace('.pdf', '')}</p>
                                         </div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleShare(e, row)}
+                                        className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                        title="Compartir"
+                                        aria-label="Compartir nómina"
+                                    >
+                                        <Share2 size={16} strokeWidth={2.5} />
                                     </button>
                                     {isManager && (
                                         <button
