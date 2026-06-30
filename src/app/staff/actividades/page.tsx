@@ -36,24 +36,63 @@ function fmtHour(time: string): string {
   return `${parseInt(parts[0], 10)}:${parts[1]}`;
 }
 
-function mergeConsecutive(
+function groupActivities(
   acts: { activityName: string; activityIcon: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
 ) {
   if (acts.length === 0) return acts;
-  const merged: typeof acts = [];
-  let cur = { ...acts[0], venueCodes: [...acts[0].venueCodes] };
-  for (let i = 1; i < acts.length; i++) {
-    const a = acts[i];
-    if (a.activityName === cur.activityName) {
-      cur.endTime = a.endTime;
-      for (const v of a.venueCodes) if (!cur.venueCodes.includes(v)) cur.venueCodes.push(v);
+  const map = new Map<string, typeof acts[0]>();
+  for (const a of acts) {
+    const name = a.activityName.trim();
+    if (!map.has(name)) {
+      map.set(name, { ...a, venueCodes: [...a.venueCodes] });
     } else {
-      merged.push(cur);
-      cur = { ...a, venueCodes: [...a.venueCodes] };
+      const existing = map.get(name)!;
+      if (a.startTime < existing.startTime) existing.startTime = a.startTime;
+      if (a.endTime > existing.endTime) existing.endTime = a.endTime;
+      for (const v of a.venueCodes) {
+         if (!existing.venueCodes.includes(v)) existing.venueCodes.push(v);
+      }
     }
   }
-  merged.push(cur);
-  return merged;
+  return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+function stringToHslColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 70%, 55%)`;
+}
+
+function getContrastForHsl(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  
+  const l = 0.55;
+  const s = 0.70;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  
+  const r255 = Math.round((r + m) * 255);
+  const g255 = Math.round((g + m) * 255);
+  const b255 = Math.round((b + m) * 255);
+  
+  const yiq = ((r255 * 299) + (g255 * 587) + (b255 * 114)) / 1000;
+  return (yiq >= 135) ? '#000000' : '#ffffff';
 }
 
 function madridTodayIso(): string {
@@ -211,13 +250,13 @@ export default function ActividadesPage() {
                     const isToday = isSameDay(day, today);
                     const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
-                    const merged = mergeConsecutive(barActs);
-                    const visible = merged.slice(0, MAX_VISIBLE);
-                    const overflow = barActs.length - MAX_VISIBLE;
+                    const grouped = groupActivities(barActs);
+                    const visible = grouped.slice(0, MAX_VISIBLE);
+                    const overflow = grouped.length - MAX_VISIBLE;
 
                     const cellCls = cn(
-                      'relative flex flex-col border-r border-gray-100 p-0.5 last:border-r-0 sm:p-1',
-                      'h-28 sm:h-32 md:h-36 lg:h-44',
+                      'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0',
+                      'h-24 sm:h-28 md:h-32 lg:h-40',
                       pastDayBg,
                       !isViewMonthDay && 'opacity-25',
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
@@ -239,51 +278,11 @@ export default function ActividadesPage() {
                           disabled={!isViewMonthDay}
                           className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
                         >
-                          <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
+                          <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-1">
                             <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
                         </button>
                       );
-                    }
-
-                    const gridRows = visible.length > 0 ? [
-                      '1fr',
-                      ...visible.flatMap((_, i) => [
-                        'auto',
-                        'auto',
-                        i < visible.length - 1 ? 'minmax(8px, 2fr)' : undefined
-                      ]).filter(Boolean),
-                      'auto',
-                      '1fr'
-                    ].join(' ') : '1fr';
-
-                    const items: React.ReactNode[] = [];
-                    if (visible.length > 0) {
-                      items.push(<div key="s0" />);
-                      visible.forEach((act, i) => {
-                        items.push(
-                          <span key={`h${i}`} className="text-[6.5px] md:text-[7px] font-bold text-zinc-500 text-left leading-none shrink-0 tracking-tighter">
-                            {fmtHour(act.startTime)}
-                          </span>
-                        );
-                        items.push(
-                          <div key={`n${i}`} className="pl-1 overflow-hidden flex items-center w-full">
-                            <span className="text-[8px] md:text-[9px] truncate text-zinc-800 font-bold leading-tight">
-                              {act.activityName}
-                            </span>
-                          </div>
-                        );
-                        if (i < visible.length - 1) {
-                          items.push(<div key={`s${i+1}`} className="min-h-1 sm:min-h-1.5 md:min-h-2" />);
-                        }
-                      });
-                      const lastAct = visible[visible.length - 1];
-                      items.push(
-                        <span key="hfin" className="text-[6.5px] md:text-[7px] font-bold text-zinc-500 text-left leading-none shrink-0 tracking-tighter">
-                          {fmtHour(lastAct.endTime)}
-                        </span>
-                      );
-                      items.push(<div key="sfin" />);
                     }
 
                     return (
@@ -295,7 +294,7 @@ export default function ActividadesPage() {
                         className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
                       >
                         {/* Day number + total — top right */}
-                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
+                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                           {totalCount > 0 && (
                             <span className="text-[6px] font-bold text-zinc-300 leading-none">
@@ -305,13 +304,27 @@ export default function ActividadesPage() {
                         </div>
 
                         {/* Activities */}
-                        <div 
-                          className="flex-1 w-full overflow-hidden mt-1 gap-y-1 md:gap-y-1.5" 
-                          style={{ display: 'grid', gridTemplateRows: gridRows }}
-                        >
-                          {items}
+                        <div className="flex-1 w-full overflow-hidden flex flex-col gap-0.5">
+                          {visible.map((act, i) => {
+                            const bgColor = stringToHslColor(act.activityName);
+                            const textColor = getContrastForHsl(act.activityName);
+                            return (
+                              <div 
+                                key={i} 
+                                className="w-full rounded-[3px] px-1 py-0.5 overflow-hidden flex flex-col justify-center shrink-0 shadow-sm"
+                                style={{ backgroundColor: bgColor, color: textColor }}
+                              >
+                                <span className="text-[6px] md:text-[7px] font-black leading-none opacity-90 tracking-tight">
+                                  {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
+                                </span>
+                                <span className="text-[7.5px] md:text-[8.5px] font-bold truncate leading-tight mt-[1px]">
+                                  {act.activityName}
+                                </span>
+                              </div>
+                            );
+                          })}
                           {overflow > 0 && (
-                            <span className="mt-auto self-end text-[10px] font-bold text-zinc-400 leading-none shrink-0" style={{ gridRow: '-1 / span 1' }}>
+                            <span className="mt-auto self-end text-[8px] font-bold text-zinc-400 leading-none shrink-0 mb-0.5">
                               +{overflow} más
                             </span>
                           )}
