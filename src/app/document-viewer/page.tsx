@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { Printer, Download, FileText } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
+import printJS from 'print-js';
+
 function DocumentViewerContent() {
     const searchParams = useSearchParams();
     const docUrl = searchParams.get('url');
@@ -19,16 +21,16 @@ function DocumentViewerContent() {
     }, [docUrl]);
 
     const handlePrint = () => {
-        if (iframeRef.current && iframeRef.current.contentWindow) {
-            try {
-                iframeRef.current.contentWindow.focus();
-                iframeRef.current.contentWindow.print();
-            } catch (e) {
-                console.error("Print error, falling back to window.print()", e);
-                window.print();
-            }
-        } else {
-            // Fallback
+        if (!docUrl) return;
+        try {
+            printJS({
+                printable: docUrl,
+                type: 'pdf',
+                showModal: true,
+                modalMessage: 'Preparando documento...'
+            });
+        } catch (e) {
+            console.error("Print error, falling back to window.print()", e);
             window.print();
         }
     };
