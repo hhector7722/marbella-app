@@ -162,7 +162,6 @@ export default function ActividadesPage() {
 
   const openDay = (day: Date) => {
     const key = format(day, 'yyyy-MM-dd');
-    if (!isSameMonth(day, viewMonth)) return;
     setSelectedDayStr(key);
     setModalOpen(true);
   };
@@ -251,14 +250,12 @@ export default function ActividadesPage() {
                     const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
                     const grouped = groupActivities(barActs);
-                    const visible = grouped.slice(0, MAX_VISIBLE);
-                    const overflow = grouped.length - MAX_VISIBLE;
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0',
                       'h-24 sm:h-28 md:h-32 lg:h-40',
                       pastDayBg,
-                      !isViewMonthDay && 'opacity-25',
+                      isPastDay && 'opacity-65',
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
                     );
 
@@ -271,65 +268,59 @@ export default function ActividadesPage() {
 
                     if (!dayData) {
                       return (
-                        <button
+                        <div
                           key={key}
-                          type="button"
-                          onClick={() => isViewMonthDay && openDay(day)}
-                          disabled={!isViewMonthDay}
+                          onClick={() => openDay(day)}
+                          role="button"
+                          tabIndex={0}
                           className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
                         >
                           <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-1">
                             <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
-                        </button>
+                        </div>
                       );
                     }
 
                     return (
-                      <button
+                      <div
                         key={key}
-                        type="button"
-                        onClick={() => isViewMonthDay && openDay(day)}
-                        disabled={!isViewMonthDay}
-                        className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
+                        onClick={() => openDay(day)}
+                        role="button"
+                        tabIndex={0}
+                        className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left overflow-hidden')}
                       >
-                        {/* Day number + total — top right */}
+                        {/* Day number — top right */}
                         <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
-                          {totalCount > 0 && (
-                            <span className="text-[6px] font-bold text-zinc-300 leading-none">
-                              {totalCount}
-                            </span>
-                          )}
                         </div>
 
                         {/* Activities */}
-                        <div className="flex-1 w-full overflow-hidden flex flex-col gap-0.5">
-                          {visible.map((act, i) => {
+                        <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                          {grouped.map((act, i) => {
                             const bgColor = stringToHslColor(act.activityName);
                             const textColor = getContrastForHsl(act.activityName);
                             return (
                               <div 
                                 key={i} 
-                                className="w-full rounded-[3px] px-1 py-0.5 overflow-hidden flex flex-col justify-center shrink-0 shadow-sm"
+                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0 shadow-sm"
                                 style={{ backgroundColor: bgColor, color: textColor }}
                               >
-                                <span className="text-[6px] md:text-[7px] font-black leading-none opacity-90 tracking-tight">
-                                  {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
-                                </span>
-                                <span className="text-[7.5px] md:text-[8.5px] font-bold truncate leading-tight mt-[1px]">
-                                  {act.activityName}
-                                </span>
+                                <div className="px-1 py-[2px] bg-black/15">
+                                  <span className="block text-[6px] md:text-[7px] font-black leading-none opacity-90 tracking-tight">
+                                    {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
+                                  </span>
+                                </div>
+                                <div className="px-1 py-[2px]">
+                                  <span className="block text-[7.5px] md:text-[8.5px] font-bold truncate leading-tight mt-[1px]">
+                                    {act.activityName}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })}
-                          {overflow > 0 && (
-                            <span className="mt-auto self-end text-[8px] font-bold text-zinc-400 leading-none shrink-0 mb-0.5">
-                              +{overflow} más
-                            </span>
-                          )}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>

@@ -244,7 +244,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
                 key={v}
                 className="border-b-2 border-[#36606F] pb-1 px-1 text-center text-[9px] font-black uppercase tracking-wider text-[#36606F]"
               >
-                {v}
+                {v.replace('P', 'PISTA ')}
               </th>
             ))}
           </tr>
