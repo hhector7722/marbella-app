@@ -58,6 +58,28 @@ export async function POST(request: Request) {
       );
     }
 
+    // Extracción Autónoma
+    try {
+      const { parsePdf } = await import('@/lib/pavilion/parser');
+      const { importOccupations } = await import('@/lib/pavilion/importer');
+      
+      const { occupations } = await parsePdf(fileBase64, filename);
+      const dateToUse = result.activityDate;
+      const occupationsWithDate = occupations.map(o => ({ ...o, date: dateToUse }));
+      
+      // Borramos previamente si hubiera algo en esa fecha, para reemplazar
+      await supabase.from('activity_occurrences').delete().eq('activity_date', dateToUse);
+      
+      // Importamos las nuevas ocurrencias
+      if (occupationsWithDate.length > 0) {
+        await importOccupations(supabase, occupationsWithDate);
+      }
+    } catch (parseError) {
+      console.error('[webhooks/pavilion-activities] Error en extracción autónoma:', parseError);
+      // Fallamos silenciosamente aquí porque el PDF ya se guardó correctamente.
+      // Así permitimos que el administrador lo intente manualmente si la IA falla.
+    }
+
     return NextResponse.json(
       {
         success: true,

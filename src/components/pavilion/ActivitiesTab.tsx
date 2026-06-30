@@ -40,6 +40,45 @@ function isSameActivityBlock(a: ActivityItem | null, b: ActivityItem | null) {
          a.endTime === b.endTime;
 }
 
+function stringToHslColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  // Use a fixed saturation and lightness that is pleasant and colorful
+  return `hsl(${h}, 70%, 55%)`;
+}
+
+function getContrastForHsl(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  
+  const l = 0.55;
+  const s = 0.70;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  
+  const r255 = Math.round((r + m) * 255);
+  const g255 = Math.round((g + m) * 255);
+  const b255 = Math.round((b + m) * 255);
+  
+  const yiq = ((r255 * 299) + (g255 * 587) + (b255 * 114)) / 1000;
+  return (yiq >= 135) ? '#000000' : '#ffffff';
+}
+
 export function ActivitiesTab({ activities, date, isHector }: Props) {
   const router = useRouter();
 
@@ -131,21 +170,24 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
         const startLabel = fmtHour(act.startTime);
         const endLabel = fmtHour(act.endTime);
 
+        const bgColor = stringToHslColor(act.activityName);
+        const textColor = getContrastForHsl(act.activityName);
+
         cols.push(
           <td
             key={`${ci}`}
             rowSpan={rowSpan}
             colSpan={colSpan}
             className={cn(
-              "p-0.5 text-center align-middle border border-gray-200 text-white"
+              "p-0.5 text-center align-middle border border-gray-200 @container overflow-hidden"
             )}
-            style={{ backgroundColor: act.activityColor || '#5a9a87' }}
+            style={{ backgroundColor: bgColor, color: textColor }}
           >
-            <div className="flex flex-col items-center justify-center min-h-[1.25rem]">
-              <span className="text-sm font-semibold leading-tight">
+            <div className="flex flex-col items-center justify-center w-full h-full p-1" style={{ containerType: 'size' }}>
+              <span className="font-bold leading-tight text-center break-words line-clamp-3" style={{ fontSize: 'clamp(0.65rem, 15cqi, 1.1rem)' }}>
                 {act.activityName}
               </span>
-              <span className="text-[10px] font-normal text-white/90">
+              <span className="opacity-90 mt-0.5 tracking-tight" style={{ fontSize: 'clamp(0.55rem, 10cqi, 0.75rem)' }}>
                 {startLabel} - {endLabel}
               </span>
             </div>

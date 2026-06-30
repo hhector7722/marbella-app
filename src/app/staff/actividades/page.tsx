@@ -267,8 +267,8 @@ export default function ActividadesPage() {
                           </span>
                         );
                         items.push(
-                          <div key={`n${i}`} className="pl-2 overflow-hidden flex items-center shrink-0">
-                            <span className="text-[8px] sm:text-[9px] md:text-[10px] whitespace-nowrap overflow-hidden text-zinc-600 leading-tight tracking-tight">
+                          <div key={`n${i}`} className="pl-1 overflow-hidden flex items-center w-full">
+                            <span className="text-[8.5px] sm:text-[9.5px] md:text-[10px] truncate text-zinc-700 font-medium leading-tight">
                               {act.activityName}
                             </span>
                           </div>
