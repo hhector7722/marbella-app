@@ -183,11 +183,11 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
             )}
             style={{ backgroundColor: bgColor, color: textColor }}
           >
-            <div className="flex flex-col items-center justify-center w-full h-full p-0.5" style={{ containerType: 'size' }}>
-              <span className="font-bold leading-[1.1] text-center break-words line-clamp-2" style={{ fontSize: 'clamp(0.45rem, 15cqmin, 0.9rem)' }}>
+            <div className="flex flex-col items-center justify-center w-full h-full p-0.5 overflow-hidden" style={{ containerType: 'size' }}>
+              <span className="font-bold leading-[1.1] text-center" style={{ fontSize: 'clamp(5px, min(15cqi, 20cqh), 14px)', textWrap: 'balance' }}>
                 {act.activityName}
               </span>
-              <span className="opacity-90 mt-px tracking-tighter" style={{ fontSize: 'clamp(0.4rem, 10cqmin, 0.65rem)' }}>
+              <span className="opacity-90 mt-px tracking-tighter" style={{ fontSize: 'clamp(4.5px, min(12cqi, 15cqh), 10px)' }}>
                 {startLabel} - {endLabel}
               </span>
             </div>
@@ -196,10 +196,10 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]} className="h-8">
-          <td className="w-12 p-0 border-b border-zinc-100 md:w-14">
-            <div className="flex h-full w-full items-center pr-2">
-              <span className="text-[10px] font-bold leading-none tabular-nums text-[#407080]">{`${hours[ri]}:00`}</span>
+        <tr key={hours[ri]} className="border-b border-zinc-100">
+          <td className="w-10 sm:w-12 p-0 border-r border-zinc-100">
+            <div className="flex h-full w-full items-center justify-center pr-1">
+              <span className="text-[9px] font-bold leading-none tabular-nums text-zinc-400">{`${hours[ri]}:00`}</span>
             </div>
           </td>
           {cols}
@@ -212,7 +212,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
 
   if (!hasAnyActivity) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+      <div className="flex flex-col items-center justify-center py-16 text-center px-4 h-full">
         <span className="text-2xl mb-2">{'🌞'}</span>
         <p className="text-sm font-black text-zinc-500">
           No hi ha activitats que afectin el bar avui
@@ -234,24 +234,26 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
   }
 
   return (
-    <div className="px-2 py-4 md:px-4">
-      <table className="w-full table-fixed border-collapse">
+    <div className="px-1 sm:px-2 py-1 w-full h-full flex flex-col min-h-0">
+      <table className="w-full table-fixed border-collapse flex-1 h-full">
         <thead>
-          <tr>
-            <th className="w-12 border-b-2 border-[#36606F] pb-2 pr-2 text-left text-[9px] font-black uppercase tracking-wider text-zinc-400 md:w-14">
+          <tr className="h-6 shrink-0">
+            <th className="w-10 sm:w-12 border-b-2 border-[#36606F] pb-1 pr-1 text-center text-[9px] font-black uppercase tracking-wider text-zinc-400">
               Hora
             </th>
             {venues.map((v) => (
               <th
                 key={v}
-                className="border-b-2 border-[#36606F] pb-2 px-1 text-center text-[9px] font-black uppercase tracking-wider text-[#36606F]"
+                className="border-b-2 border-[#36606F] pb-1 px-1 text-center text-[9px] font-black uppercase tracking-wider text-[#36606F]"
               >
                 {v}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>{renderedCells.rows}</tbody>
+        <tbody className="h-full">
+          {renderedCells.rows}
+        </tbody>
       </table>
     </div>
   );
