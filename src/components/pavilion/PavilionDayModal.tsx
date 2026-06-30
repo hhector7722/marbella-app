@@ -170,7 +170,7 @@ export function PavilionDayModal({
             </div>
 
             {/* ---- Content ---- */}
-            <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
+            <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <LoadingSpinner className="text-[#36606F]" />

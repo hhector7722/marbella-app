@@ -133,7 +133,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
         const act = grid[ri][ci];
         if (!act) {
           cols.push(
-            <td key={`${ci}`} className="border-b border-zinc-100 p-0" />,
+            <td key={`${ci}`} className="border-b border-zinc-100 p-0 h-0 relative" />,
           );
           continue;
         }
@@ -178,16 +178,14 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
             key={`${ci}`}
             rowSpan={rowSpan}
             colSpan={colSpan}
-            className={cn(
-              "p-0.5 text-center align-middle border border-gray-200 @container overflow-hidden"
-            )}
+            className="p-0 border border-gray-200 relative h-0"
             style={{ backgroundColor: bgColor, color: textColor }}
           >
-            <div className="flex flex-col items-center justify-center w-full h-full p-0.5 overflow-hidden" style={{ containerType: 'size' }}>
-              <span className="font-bold leading-[1.1] text-center" style={{ fontSize: 'clamp(5px, min(15cqi, 20cqh), 14px)', textWrap: 'balance' }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-0.5 overflow-hidden" style={{ containerType: 'size' }}>
+              <span className="font-bold leading-[1.1] text-center" style={{ fontSize: 'clamp(5px, min(18cqi, 20cqh), 14px)', textWrap: 'balance' }}>
                 {act.activityName}
               </span>
-              <span className="opacity-90 mt-px tracking-tighter" style={{ fontSize: 'clamp(4.5px, min(12cqi, 15cqh), 10px)' }}>
+              <span className="opacity-90 mt-px tracking-tighter" style={{ fontSize: 'clamp(4px, min(12cqi, 14cqh), 10px)' }}>
                 {startLabel} - {endLabel}
               </span>
             </div>
@@ -196,9 +194,9 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]} className="border-b border-zinc-100">
-          <td className="w-10 sm:w-12 p-0 border-r border-zinc-100">
-            <div className="flex h-full w-full items-center justify-center pr-1">
+        <tr key={hours[ri]} className="border-b border-zinc-100 h-0">
+          <td className="w-10 sm:w-12 p-0 border-r border-zinc-100 h-0 relative">
+            <div className="absolute inset-0 flex items-center justify-center pr-1">
               <span className="text-[9px] font-bold leading-none tabular-nums text-zinc-400">{`${hours[ri]}:00`}</span>
             </div>
           </td>
