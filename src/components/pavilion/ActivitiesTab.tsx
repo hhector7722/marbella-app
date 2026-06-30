@@ -183,11 +183,11 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
             )}
             style={{ backgroundColor: bgColor, color: textColor }}
           >
-            <div className="flex flex-col items-center justify-center w-full h-full p-1" style={{ containerType: 'size' }}>
-              <span className="font-bold leading-tight text-center break-words line-clamp-3" style={{ fontSize: 'clamp(0.65rem, 15cqi, 1.1rem)' }}>
+            <div className="flex flex-col items-center justify-center w-full h-full p-0.5" style={{ containerType: 'size' }}>
+              <span className="font-bold leading-[1.1] text-center break-words line-clamp-2" style={{ fontSize: 'clamp(0.45rem, 15cqmin, 0.9rem)' }}>
                 {act.activityName}
               </span>
-              <span className="opacity-90 mt-0.5 tracking-tight" style={{ fontSize: 'clamp(0.55rem, 10cqi, 0.75rem)' }}>
+              <span className="opacity-90 mt-px tracking-tighter" style={{ fontSize: 'clamp(0.4rem, 10cqmin, 0.65rem)' }}>
                 {startLabel} - {endLabel}
               </span>
             </div>
@@ -196,7 +196,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]} className="h-5">
+        <tr key={hours[ri]} className="h-8">
           <td className="w-12 p-0 border-b border-zinc-100 md:w-14">
             <div className="flex h-full w-full items-center pr-2">
               <span className="text-[10px] font-bold leading-none tabular-nums text-[#407080]">{`${hours[ri]}:00`}</span>

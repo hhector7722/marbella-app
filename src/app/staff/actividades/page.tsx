@@ -262,24 +262,24 @@ export default function ActividadesPage() {
                       items.push(<div key="s0" />);
                       visible.forEach((act, i) => {
                         items.push(
-                          <span key={`h${i}`} className="text-[9px] font-semibold text-zinc-800 text-left leading-none shrink-0">
+                          <span key={`h${i}`} className="text-[6.5px] md:text-[7px] font-bold text-zinc-500 text-left leading-none shrink-0 tracking-tighter">
                             {fmtHour(act.startTime)}
                           </span>
                         );
                         items.push(
                           <div key={`n${i}`} className="pl-1 overflow-hidden flex items-center w-full">
-                            <span className="text-[8.5px] sm:text-[9.5px] md:text-[10px] truncate text-zinc-700 font-medium leading-tight">
+                            <span className="text-[8px] md:text-[9px] truncate text-zinc-800 font-bold leading-tight">
                               {act.activityName}
                             </span>
                           </div>
                         );
                         if (i < visible.length - 1) {
-                          items.push(<div key={`s${i+1}`} className="min-h-2 sm:min-h-3 md:min-h-4" />);
+                          items.push(<div key={`s${i+1}`} className="min-h-1 sm:min-h-1.5 md:min-h-2" />);
                         }
                       });
                       const lastAct = visible[visible.length - 1];
                       items.push(
-                        <span key="hfin" className="text-[9px] font-semibold text-zinc-800 text-left leading-none shrink-0">
+                        <span key="hfin" className="text-[6.5px] md:text-[7px] font-bold text-zinc-500 text-left leading-none shrink-0 tracking-tighter">
                           {fmtHour(lastAct.endTime)}
                         </span>
                       );
