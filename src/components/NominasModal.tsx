@@ -78,9 +78,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             owner: row.user_id,
             path: row.storage_path,
         });
-        const docUrl = `/api/nominas/open?${q.toString()}`;
-        const title = labelPeriod(row);
-        window.open(`/document-viewer?url=${encodeURIComponent(docUrl)}&title=${encodeURIComponent(title)}`, '_blank', 'noopener,noreferrer');
+        window.open(`/api/nominas/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
     };
 
 

@@ -68,9 +68,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
             path: doc.storage_path,
             tipo: 'contrato',
         });
-        const docUrl = `/api/employee-documents/open?${q.toString()}`;
-        const title = doc.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '') || 'Contrato';
-        window.open(`/document-viewer?url=${encodeURIComponent(docUrl)}&title=${encodeURIComponent(title)}`, '_blank', 'noopener,noreferrer');
+        window.open(`/api/employee-documents/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
     };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
