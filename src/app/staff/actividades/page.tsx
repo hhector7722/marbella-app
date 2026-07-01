@@ -134,7 +134,6 @@ export default function ActividadesPage() {
     });
   }, []);
 
-  const [isMaster, setIsMaster] = useState(false);
 
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
