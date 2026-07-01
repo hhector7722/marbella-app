@@ -90,7 +90,7 @@ export default function GestionActividadesPage() {
     setActivities(prev => prev.map(a => a.id === id ? { ...a, name: newName, color: newColor } : a));
     setEditAct(null);
 
-    const res = await updateActivityAction(id, { name: newName, color: newColor });
+    const res = await updateActivityAction(id, { name: newName, color: newColor ?? undefined });
     if (!res.success) {
       alert('Error al guardar: ' + res.error);
       // Revert on error

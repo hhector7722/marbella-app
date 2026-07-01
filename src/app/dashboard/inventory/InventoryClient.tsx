@@ -85,6 +85,7 @@ function QuantityStepper({
   onBlur,
   ariaLabel,
   hideUnitSuffix,
+  bottomText,
 }: {
   unit: string
   value: number
