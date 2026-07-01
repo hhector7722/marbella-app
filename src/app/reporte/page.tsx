@@ -36,6 +36,7 @@ export default function ReportePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [loadingText, setLoadingText] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   const captureAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -136,18 +137,27 @@ export default function ReportePage() {
 
       const file = new File([blob], 'report-marbella.png', { type: 'image/png' });
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Report Activitats Marbella',
-          text: 'Aquí tens el resum de les activitats del cap de setmana.',
-        });
+      const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      if (!isDesktop && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Report Activitats Marbella',
+            text: 'Aquí tens el resum de les activitats del cap de setmana.',
+          });
+        } catch (e) {
+          console.log('Share cancelled or failed', e);
+        }
       } else {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = 'report-marbella.png';
         link.click();
       }
+
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 3000);
     } catch (err) {
       console.error(err);
       alert("S'ha produït un error en generar la imatge.");
@@ -278,14 +288,20 @@ export default function ReportePage() {
           <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-lg z-[1000]">
             <button
               type="submit"
-              disabled={isCapturing}
-              className="w-full btn-premium py-2 rounded-xl flex items-center justify-center gap-2 text-base font-bold shadow-2xl uppercase tracking-widest disabled:opacity-70"
+              disabled={isCapturing || isSuccess}
+              className={`w-full btn-premium py-2 rounded-xl flex items-center justify-center gap-2 text-base font-bold shadow-2xl uppercase tracking-widest disabled:opacity-70 ${isSuccess ? '!bg-emerald-600 !text-white' : ''}`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
-                <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-                <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
-              </svg>
-              {loadingText || 'ENVIAR'}
+              {isSuccess ? (
+                <>✅ Datos enviados correctamente</>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+                  </svg>
+                  {loadingText || 'ENVIAR'}
+                </>
+              )}
             </button>
           </div>
         </form>

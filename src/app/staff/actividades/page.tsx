@@ -245,7 +245,7 @@ export default function ActividadesPage() {
                     const barActs = dayData?.barActivities ?? [];
                     const totalCount = dayData?.totalCount ?? 0;
                     const isViewMonthDay = isSameMonth(day, viewMonth);
-                    const isPastDay = isViewMonthDay && isBefore(day, today);
+                    const isPastDay = isBefore(day, today);
                     const isToday = isSameDay(day, today);
                     const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
@@ -306,12 +306,12 @@ export default function ActividadesPage() {
                                 className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0 shadow-sm"
                                 style={{ backgroundColor: bgColor, color: textColor }}
                               >
-                                <div className="px-1 py-[2px] bg-black/15">
+                                <div className="px-1 py-[2px]">
                                   <span className="block text-[6px] md:text-[7px] font-black leading-none opacity-90 tracking-tight">
                                     {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                   </span>
                                 </div>
-                                <div className="px-1 py-[2px]">
+                                <div className="px-1 py-[2px] bg-white/25">
                                   <span className="block text-[7.5px] md:text-[8.5px] font-bold truncate leading-tight mt-[1px]">
                                     {act.activityName}
                                   </span>
