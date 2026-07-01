@@ -142,16 +142,17 @@ export function PavilionDayModal({
   return typeof document !== 'undefined'
     ? createPortal(
         <div
-          className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[10050] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
           role="presentation"
         >
           <div
-            className="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-full sm:max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 touch-pan-y"
+            className="bg-white rounded-[2rem] w-full max-w-full shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 touch-pan-y"
             style={{
-              height: 'min(88vh, 700px)',
+              height: '65vh',
+              minHeight: 400,
               transform: `translateX(${clampedOffset}px)`,
               transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
             }}

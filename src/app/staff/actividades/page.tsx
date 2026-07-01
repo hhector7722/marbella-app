@@ -357,7 +357,7 @@ export default function ActividadesPage() {
                         <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                            const textColor = '#ffffff';
+                            const textColor = isPastDay ? '#374151' : '#ffffff';
                             return (
                               <div 
                                 key={i} 
@@ -365,7 +365,7 @@ export default function ActividadesPage() {
                                 style={{
                                   backgroundColor: bgColor,
                                   color: textColor,
-                                  ...(isPastDay ? { filter: 'grayscale(0.7) brightness(0.75)', opacity: 0.6 } : {}),
+                                  ...(isPastDay ? { filter: 'grayscale(0.7) brightness(0.82)', opacity: 0.75 } : {}),
                                 }}
                               >
                                 <div className="px-1 py-[2px]">
@@ -373,7 +373,7 @@ export default function ActividadesPage() {
                                     {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                   </span>
                                 </div>
-                                <div className="px-1 py-[2px] bg-white/25">
+                                <div className="px-1 py-[2px] bg-black/10">
                                   <span className="block text-[7.5px] md:text-[8.5px] font-bold truncate leading-tight mt-[1px]">
                                     {act.activityName}
                                   </span>
