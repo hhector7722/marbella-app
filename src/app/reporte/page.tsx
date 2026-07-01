@@ -284,8 +284,7 @@ export default function ReportePage() {
                       }}
                       className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50"
                     >
-                      <option value="" disabled>Selecciona una activitat...</option>
-                      <option value="_TEXTO_LIBRE_" className="font-bold text-indigo-400">[ + TEXTO LIBRE ]</option>
+                      <option value="_TEXTO_LIBRE_" className="font-bold text-indigo-400">Texto libre</option>
                       {(dailyActivitiesMap[act.data] || allGlobalActivities || []).map(opt => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
@@ -299,6 +298,7 @@ export default function ReportePage() {
                       type="time"
                       value={act.hora_convocatoria}
                       onChange={(e) => handleChange(act.id, 'hora_convocatoria', e.target.value)}
+                      step="1800"
                       className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white"
                     />
                     <span className="text-slate-600">-</span>
@@ -306,6 +306,7 @@ export default function ReportePage() {
                       type="time"
                       value={act.hora_finalitzacio}
                       onChange={(e) => handleChange(act.id, 'hora_finalitzacio', e.target.value)}
+                      step="1800"
                       className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white"
                     />
                   </div>

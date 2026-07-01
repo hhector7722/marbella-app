@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
+body:has(.reporte-container) {
+    background: #0f172a !important;
+    background-image: none !important;
+}
+
 .reporte-container {
     --primary: #6366f1;
     --primary-hover: #4f46e5;
@@ -16,7 +21,7 @@
         radial-gradient(at 100% 0%, rgba(34, 211, 238, 0.1) 0px, transparent 50%);
     color: var(--text-main);
     font-family: 'Outfit', 'Inter', sans-serif;
-    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .reporte-container .glass {

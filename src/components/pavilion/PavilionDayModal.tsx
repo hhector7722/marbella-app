@@ -151,7 +151,7 @@ export function PavilionDayModal({
           <div
             className="bg-white rounded-[2rem] w-full max-w-full shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 touch-pan-y"
             style={{
-              height: '65vh',
+              height: '85vh',
               minHeight: 400,
               transform: `translateX(${clampedOffset}px)`,
               transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
