@@ -14,6 +14,7 @@ interface Activity {
   participants: string;
   categoria: string;
   dayName: 'Dissabte' | 'Diumenge';
+  isFreeText?: boolean;
 }
 
 function getNextWeekend() {
@@ -38,6 +39,34 @@ export default function ReportePage() {
   const [loadingText, setLoadingText] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const captureAreaRef = useRef<HTMLDivElement>(null);
+  const [allGlobalActivities, setAllGlobalActivities] = useState<string[]>([]);
+  const [dailyActivitiesMap, setDailyActivitiesMap] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    import('./actions').then(m => m.getAllActivitiesAction()).then(globals => {
+      setAllGlobalActivities(globals);
+    });
+  }, []);
+
+  const fetchDailyActivities = async (date: string) => {
+    if (dailyActivitiesMap[date]) return; // already fetched
+    const m = await import('./actions');
+    const daily = await m.getDailyActivitiesAction(date);
+    const top = await m.getTopActivityAction(date);
+    
+    setDailyActivitiesMap(prev => ({
+      ...prev,
+      [date]: daily.length > 0 ? daily : allGlobalActivities
+    }));
+
+    // Auto-fill top activity if empty for this date
+    setActivities(prev => prev.map(a => {
+      if (a.data === date && !a.activitat && !a.isFreeText && top) {
+        return { ...a, activitat: top };
+      }
+      return a;
+    }));
+  };
 
   useEffect(() => {
     const { saturday, sunday } = getNextWeekend();
@@ -65,11 +94,26 @@ export default function ReportePage() {
     ]);
   }, []);
 
-  const handleChange = (id: string, field: keyof Activity, value: string) => {
+  const handleChange = (id: string, field: keyof Activity, value: any) => {
     setActivities((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
+      prev.map((a) => {
+        if (a.id !== id) return a;
+        const newA = { ...a, [field]: value };
+        if (field === 'data' && typeof value === 'string') {
+          fetchDailyActivities(value);
+        }
+        return newA;
+      })
     );
   };
+
+  // Pre-fetch initial dates
+  useEffect(() => {
+    const dates = new Set(activities.map(a => a.data));
+    dates.forEach(d => {
+      if (d) fetchDailyActivities(d);
+    });
+  }, [activities.map(a => a.data).join(',')]);
 
   const handleAddActivity = (dayName: 'Dissabte' | 'Diumenge') => {
     setActivities((prev) => {
@@ -206,12 +250,47 @@ export default function ReportePage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Activitat</label>
-                  <input
-                    type="text"
-                    value={act.activitat}
-                    onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
-                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
-                  />
+                  {act.isFreeText ? (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={act.activitat}
+                        onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
+                        placeholder="Nombre de la actividad..."
+                        className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          handleChange(act.id, 'isFreeText', false);
+                          handleChange(act.id, 'activitat', '');
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-indigo-400 hover:text-indigo-300"
+                        title="Volver a seleccionar"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={act.activitat}
+                      onChange={(e) => {
+                        if (e.target.value === '_TEXTO_LIBRE_') {
+                          handleChange(act.id, 'isFreeText', true);
+                          handleChange(act.id, 'activitat', '');
+                        } else {
+                          handleChange(act.id, 'activitat', e.target.value);
+                        }
+                      }}
+                      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50"
+                    >
+                      <option value="" disabled>Selecciona una activitat...</option>
+                      <option value="_TEXTO_LIBRE_" className="font-bold text-indigo-400">[ + TEXTO LIBRE ]</option>
+                      {(dailyActivitiesMap[act.data] || allGlobalActivities || []).map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>

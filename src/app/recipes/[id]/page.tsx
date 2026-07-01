@@ -739,8 +739,21 @@ function RecipeDetailContent() {
 
     const handleDeleteIngredient = async (id: string) => {
         if (!confirm('¿Eliminar?')) return;
-        await supabase.from('recipe_ingredients').delete().eq('id', id);
-        await fetchRecipe();
+        
+        // Optimistic update
+        setIngredients(prev => prev.filter(ing => ing.id !== id));
+        
+        const { error } = await supabase.from('recipe_ingredients').delete().eq('id', id);
+        
+        if (error) {
+            console.error('Error al eliminar ingrediente:', error);
+            toast.error('Error al eliminar ingrediente');
+            // Revert on failure
+            await fetchRecipe();
+            return;
+        }
+        
+        // No need to fetchRecipe again if successful, just update the cost
         fetchBackendCost();
     };
 

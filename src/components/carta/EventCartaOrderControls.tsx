@@ -7,39 +7,59 @@ export function EventCartaOrderControls({
   quantity,
   onIncrement,
   onDecrement,
+  onChange,
   className,
 }: {
   quantity: number
   onIncrement: () => void
   onDecrement: () => void
+  onChange?: (qty: number) => void
   className?: string
 }) {
   return (
-    <div className={cn('flex w-full shrink-0 items-center justify-center gap-2', className)}>
+    <div className={cn('flex items-center justify-between w-full min-h-11 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-[#5B8FB9]/40 focus-within:border-[#5B8FB9]/40', className)}>
       <button
         type="button"
-        className="flex min-h-12 min-w-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-800 transition-colors hover:bg-zinc-50 active:opacity-80"
+        className="w-10 h-11 flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
         aria-label="Restar"
         onClick={(e) => {
           e.stopPropagation()
           onDecrement()
         }}
       >
-        <Minus className="h-5 w-5" strokeWidth={2.5} />
+        <Minus size={18} strokeWidth={3} />
       </button>
-      <div className="flex min-h-12 min-w-[56px] shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-sm font-black text-zinc-900">
-        {quantity === 0 ? ' ' : quantity}
-      </div>
+      
+      <input
+        type="number"
+        min={0}
+        max={999}
+        value={quantity === 0 ? '' : quantity}
+        onChange={(e) => {
+          if (!onChange) return;
+          const val = e.target.value;
+          if (val === '') {
+            onChange(0);
+          } else {
+            const num = parseInt(val, 10);
+            if (!isNaN(num)) {
+              onChange(num);
+            }
+          }
+        }}
+        className="flex-1 w-0 h-11 bg-transparent text-center font-black text-zinc-700 text-sm tabular-nums outline-none p-0 focus:bg-blue-50/10 transition-colors"
+      />
+
       <button
         type="button"
-        className="flex min-h-12 min-w-[48px] shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-800 transition-colors hover:bg-zinc-50 active:opacity-80"
+        className="w-10 h-11 flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
         aria-label="Sumar"
         onClick={(e) => {
           e.stopPropagation()
           onIncrement()
         }}
       >
-        <Plus className="h-5 w-5" strokeWidth={2.5} />
+        <Plus size={18} strokeWidth={3} />
       </button>
     </div>
   )

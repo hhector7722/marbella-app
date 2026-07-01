@@ -40,36 +40,7 @@ type ModalProps = {
   zIndexClass?: string;
 };
 
-function lockPageScroll() {
-  const html = document.documentElement;
-  const main = document.querySelector('main');
-
-  html.setAttribute('data-modal-open', '');
-
-  const state = {
-    htmlOverflow: html.style.overflow,
-    bodyOverflow: document.body.style.overflow,
-    bodyTouchAction: document.body.style.touchAction,
-    mainOverflow: main instanceof HTMLElement ? main.style.overflow : '',
-  };
-
-  html.style.overflow = 'hidden';
-  document.body.style.overflow = 'hidden';
-  document.body.style.touchAction = 'none';
-  if (main instanceof HTMLElement) {
-    main.style.overflow = 'hidden';
-  }
-
-  return () => {
-    html.removeAttribute('data-modal-open');
-    html.style.overflow = state.htmlOverflow;
-    document.body.style.overflow = state.bodyOverflow;
-    document.body.style.touchAction = state.bodyTouchAction;
-    if (main instanceof HTMLElement) {
-      main.style.overflow = state.mainOverflow;
-    }
-  };
-}
+import { lockScrollGlobal } from '@/hooks/useScrollLock';
 
 function ModalPanelShell({
   title,
@@ -308,7 +279,7 @@ export function Modal({
   useEffect(() => {
     if (!open) return;
 
-    const unlockScroll = lockPageScroll();
+    const unlockScroll = lockScrollGlobal();
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {

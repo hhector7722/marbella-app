@@ -305,6 +305,7 @@ export function CartaStaffMenuProductCard({
                 Math.min(999, (eventOrder.qtyByProductId[productId] ?? 0) + 1)
               )
             }
+            onChange={(qty) => eventOrder.onQuantityChange(row.articulo_id, qty)}
           />
         ) : null}
       </div>

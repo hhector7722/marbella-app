@@ -117,3 +117,105 @@ export async function submitReporteAction(activities: ReportePayload[]) {
     return { success: false, error: 'Internal Server Error' };
   }
 }
+
+export async function getDailyActivitiesAction(date: string) {
+  try {
+    const supabase = getServiceSupabase();
+    
+    const { data, error } = await supabase
+      .from('activity_occurrences')
+      .select('activities(name)')
+      .eq('activity_date', date);
+
+    if (error) {
+      console.error('Error fetching daily activities:', error);
+      return [];
+    }
+
+    // Extract unique activity names
+    const names = new Set<string>();
+    data?.forEach(row => {
+      const name = (row.activities as any)?.name;
+      if (name) names.add(name);
+    });
+
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+export async function getTopActivityAction(date: string) {
+  try {
+    const supabase = getServiceSupabase();
+    
+    const { data, error } = await supabase
+      .from('activity_occurrences')
+      .select('activity_id, activities(name)')
+      .eq('activity_date', date);
+
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+
+    // Count occurrences per activity
+    const counts: Record<string, { count: number, name: string }> = {};
+    for (const row of data) {
+      const id = row.activity_id as string;
+      const name = (row.activities as any)?.name as string;
+      if (!id || !name) continue;
+      
+      if (!counts[id]) counts[id] = { count: 0, name };
+      counts[id].count++;
+    }
+
+    let topActivity: string | null = null;
+    let maxCount = 0;
+
+    for (const id in counts) {
+      if (counts[id].count > maxCount) {
+        maxCount = counts[id].count;
+        topActivity = counts[id].name;
+      }
+    }
+
+    return topActivity;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+}
+
+export async function getAllActivitiesAction() {
+  try {
+    const supabase = getServiceSupabase();
+    
+    // Fallback to is_active if it exists, but the query should be safe.
+    // Since we just added is_active, we will filter by it.
+    const { data, error } = await supabase
+      .from('activities')
+      .select('name')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      // Fallback if is_active column doesn't exist yet
+      if (error.code === '42703') {
+        const { data: dataFallback, error: errFallback } = await supabase
+          .from('activities')
+          .select('name')
+          .order('name');
+          
+        if (errFallback) return [];
+        return (dataFallback || []).map(r => r.name);
+      }
+      return [];
+    }
+
+    return (data || []).map(r => r.name);
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}

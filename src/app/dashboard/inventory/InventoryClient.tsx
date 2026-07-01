@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
 import { AlertCircle, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
+import { FloatingCalculatorFab, QuickCalculatorModal } from '@/components/ui/QuickCalculatorModal'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -164,6 +165,7 @@ function InventoryIngredientCard({
   visibilityMode,
   visibilityOn,
   onVisibilityToggle,
+  totalBothLocations,
 }: {
   item: Ingredient
   raw: string
@@ -174,6 +176,7 @@ function InventoryIngredientCard({
   visibilityMode: boolean
   visibilityOn: boolean
   onVisibilityToggle: () => void
+  totalBothLocations?: number
 }) {
   const u = normalizeUnit(item.unit)
   const label = abbreviateLabel(item.name)
@@ -228,6 +231,11 @@ function InventoryIngredientCard({
             ariaLabel={`Cantidad contada ${item.name}`}
             hideUnitSuffix
           />
+          {totalBothLocations !== undefined && (
+            <div className="text-center text-[9px] min-[380px]:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1 mb-0.5">
+              Total {totalBothLocations}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -244,8 +252,12 @@ export function InventoryClient({
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [savingVisibility, setSavingVisibility] = useState(false)
-  const [physicalCounts, setPhysicalCounts] = useState<Record<string, string>>({})
-  const [numericById, setNumericById] = useState<Record<string, number>>({})
+  const [physicalCountsBarra, setPhysicalCountsBarra] = useState<Record<string, string>>({})
+  const [numericByIdBarra, setNumericByIdBarra] = useState<Record<string, number>>({})
+  const [physicalCountsCamara, setPhysicalCountsCamara] = useState<Record<string, string>>({})
+  const [numericByIdCamara, setNumericByIdCamara] = useState<Record<string, number>>({})
+  const [locationMode, setLocationMode] = useState<'BARRA' | 'CAMARA'>('BARRA')
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
   const [draftVisibility, setDraftVisibility] = useState<Record<string, boolean>>({})
 
   const [ingredientQuery, setIngredientQuery] = useState('')
@@ -315,7 +327,11 @@ export function InventoryClient({
   const setQty = (id: string, item: Ingredient, n: number) => {
     const u = normalizeUnit(item.unit)
     const rounded = roundQty(n, u)
-    setNumericById((prev) => ({ ...prev, [id]: rounded }))
+    if (locationMode === 'BARRA') {
+      setNumericByIdBarra((prev) => ({ ...prev, [id]: rounded }))
+    } else {
+      setNumericByIdCamara((prev) => ({ ...prev, [id]: rounded }))
+    }
   }
 
   const toggleDraftVisibility = (id: string) => {
@@ -359,9 +375,12 @@ export function InventoryClient({
       const payload = initialIngredients
         .map((item) => {
           const u = normalizeUnit(item.unit)
-          if (numericById[item.id] === undefined) return null
-          const val = numericById[item.id]!
-          const safePhysical = roundQty(Number.isFinite(val) ? val : 0, u)
+          const valBarra = numericByIdBarra[item.id]
+          const valCamara = numericByIdCamara[item.id]
+          if (valBarra === undefined && valCamara === undefined) return null
+          
+          const total = (valBarra ?? 0) + (valCamara ?? 0)
+          const safePhysical = roundQty(Number.isFinite(total) ? total : 0, u)
           return {
             ingredient_id: item.id,
             physical_stock: safePhysical,
@@ -384,8 +403,10 @@ export function InventoryClient({
       const res = await processInventoryCounts(payload)
       if (res.success) {
         toast.success(res.message)
-        setPhysicalCounts({})
-        setNumericById({})
+        setPhysicalCountsBarra({})
+        setNumericByIdBarra({})
+        setPhysicalCountsCamara({})
+        setNumericByIdCamara({})
       }
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Error al procesar el recuento.')
@@ -395,8 +416,8 @@ export function InventoryClient({
   }
 
   const hasAnyCount = useMemo(
-    () => Object.keys(numericById).length > 0,
-    [numericById],
+    () => Object.keys(numericByIdBarra).length > 0 || Object.keys(numericByIdCamara).length > 0,
+    [numericByIdBarra, numericByIdCamara],
   )
 
   const submitDisabled = isSubmitting || !hasAnyCount
@@ -420,7 +441,35 @@ export function InventoryClient({
     <div className="flex flex-col gap-4 min-h-0 flex-1">
       <div className="flex-1 min-h-0 pr-0.5">
         <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-2 w-full shrink-0 relative">
+          <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full shrink-0 relative z-20">
+            {!visibilityEditMode && (
+              <div className="flex bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setLocationMode('BARRA')}
+                  className={cn(
+                    'flex-1 md:flex-none px-4 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px]',
+                    locationMode === 'BARRA'
+                      ? 'bg-white text-[#36606F] shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
+                  )}
+                >
+                  BARRA
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationMode('CAMARA')}
+                  className={cn(
+                    'flex-1 md:flex-none px-4 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px]',
+                    locationMode === 'CAMARA'
+                      ? 'bg-white text-[#36606F] shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
+                  )}
+                >
+                  CÁMARA
+                </button>
+              </div>
+            )}
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
               <input
@@ -517,11 +566,21 @@ export function InventoryClient({
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
                   {items.map((item) => {
                     const u = normalizeUnit(item.unit)
-                    const counted = numericById[item.id]
+                    const isBarra = locationMode === 'BARRA'
+                    const counted = isBarra ? numericByIdBarra[item.id] : numericByIdCamara[item.id]
                     const numeric = counted ?? 0
+                    
+                    const valB = numericByIdBarra[item.id]
+                    const valC = numericByIdCamara[item.id]
+                    let totalBothLocations: number | undefined
+                    if (valB !== undefined && valB >= 1 && valC !== undefined && valC >= 1) {
+                      totalBothLocations = valB + valC
+                    }
+
+                    const rawCounts = isBarra ? physicalCountsBarra : physicalCountsCamara
                     const raw =
-                      physicalCounts[item.id] !== undefined
-                        ? physicalCounts[item.id]!
+                      rawCounts[item.id] !== undefined
+                        ? rawCounts[item.id]!
                         : counted === undefined
                           ? ''
                           : String(counted)
@@ -537,11 +596,14 @@ export function InventoryClient({
                         raw={raw}
                         visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
                         visibilityOn={visibilityOn}
+                        totalBothLocations={totalBothLocations}
                         onVisibilityToggle={() => toggleDraftVisibility(item.id)}
                         onRawChange={(s) => {
-                          setPhysicalCounts((prev) => ({ ...prev, [item.id]: s }))
+                          const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
+                          const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
+                          setPhysical((prev) => ({ ...prev, [item.id]: s }))
                           if (s.trim() === '') {
-                            setNumericById((prev) => {
+                            setNumeric((prev) => {
                               const next = { ...prev }
                               delete next[item.id]
                               return next
@@ -551,14 +613,18 @@ export function InventoryClient({
                           }
                         }}
                         onBlur={() => {
-                          const rawStr = physicalCounts[item.id] ?? ''
+                          const rawCountsRef = isBarra ? physicalCountsBarra : physicalCountsCamara
+                          const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
+                          const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
+                          
+                          const rawStr = rawCountsRef[item.id] ?? ''
                           if (rawStr.trim() === '') {
-                            setNumericById((prev) => {
+                            setNumeric((prev) => {
                               const next = { ...prev }
                               delete next[item.id]
                               return next
                             })
-                            setPhysicalCounts((prev) => {
+                            setPhysical((prev) => {
                               const next = { ...prev }
                               delete next[item.id]
                               return next
@@ -567,7 +633,7 @@ export function InventoryClient({
                           }
                           const parsed = parseQuantity(rawStr, u)
                           setQty(item.id, item, parsed)
-                          setPhysicalCounts((prev) => {
+                          setPhysical((prev) => {
                             const next = { ...prev }
                             delete next[item.id]
                             return next
@@ -608,6 +674,19 @@ export function InventoryClient({
             {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
           </button>
         </div>
+      )}
+
+      {!visibilityEditMode && (
+        <>
+          <FloatingCalculatorFab
+            isOpen={isCalculatorOpen}
+            onToggle={() => setIsCalculatorOpen(true)}
+          />
+          <QuickCalculatorModal
+            isOpen={isCalculatorOpen}
+            onClose={() => setIsCalculatorOpen(false)}
+          />
+        </>
       )}
     </div>
   )
