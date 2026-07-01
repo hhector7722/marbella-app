@@ -134,11 +134,11 @@ export default function ActividadesPage() {
     });
   }, []);
 
+  const [isMaster, setIsMaster] = useState(false);
+
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
   const minSwipeDistance = 50;
-  const [filter, setFilter] = useState<'pistas' | 'all'>('pistas');
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -266,16 +266,7 @@ export default function ActividadesPage() {
                 <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="w-[100px] flex justify-end">
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as 'pistas' | 'all')}
-                className="bg-white/10 text-white text-[10px] md:text-xs px-2 py-1.5 rounded outline-none border-none hover:bg-white/20 transition-colors cursor-pointer"
-              >
-                <option value="pistas" className="text-slate-800">P1-P4</option>
-                <option value="all" className="text-slate-800">Todas</option>
-              </select>
-            </div>
+            <div className="w-[100px]"></div>
           </div>
 
           {/* ── Calendar ── */}
@@ -318,10 +309,7 @@ export default function ActividadesPage() {
                     const isToday = isSameDay(day, today);
                     const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
-                    const grouped = groupActivities(barActs).filter(act => {
-                      if (filter === 'all') return true;
-                      return act.venueCodes.some(code => ['p1', 'p2', 'p3', 'p4'].includes(code.toLowerCase()));
-                    });
+                    const grouped = groupActivities(barActs);
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0',

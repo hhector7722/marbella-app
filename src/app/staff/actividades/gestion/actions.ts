@@ -17,6 +17,20 @@ export async function getGestionActivitiesAction() {
       .order('name');
 
     if (error) {
+      const { data: occurrences } = await supabase
+        .from('activity_occurrences')
+        .select('activity_id, occurrence_venues(venues(code))');
+        
+      const pistaSet = new Set<string>();
+      if (occurrences) {
+        for (const occ of occurrences) {
+          const venues = (occ.occurrence_venues as any[] || []).map(v => v.venues?.code?.toUpperCase());
+          if (venues.some(code => ['P1', 'P2', 'P3', 'P4'].includes(code))) {
+            pistaSet.add(occ.activity_id);
+          }
+        }
+      }
+
       if (error.code === '42703') { // column is_active does not exist
         const { data: fallbackData, error: fallbackErr } = await supabase
           .from('activities')
@@ -24,12 +38,36 @@ export async function getGestionActivitiesAction() {
           .order('name');
           
         if (fallbackErr) return { success: false, error: fallbackErr.message };
-        return { success: true, data: fallbackData.map(d => ({ ...d, is_active: true })) };
+        const enhancedFallback = fallbackData.map((d: any) => ({
+          ...d,
+          is_active: true,
+          is_pista: pistaSet.has(d.id),
+        }));
+        return { success: true, data: enhancedFallback };
       }
       return { success: false, error: error.message };
     }
 
-    return { success: true, data };
+    const { data: occurrences } = await supabase
+      .from('activity_occurrences')
+      .select('activity_id, occurrence_venues(venues(code))');
+      
+    const pistaSet = new Set<string>();
+    if (occurrences) {
+      for (const occ of occurrences) {
+        const venues = (occ.occurrence_venues as any[] || []).map(v => v.venues?.code?.toUpperCase());
+        if (venues.some(code => ['P1', 'P2', 'P3', 'P4'].includes(code))) {
+          pistaSet.add(occ.activity_id);
+        }
+      }
+    }
+
+    const enhancedData = data.map((d: any) => ({
+      ...d,
+      is_pista: pistaSet.has(d.id),
+    }));
+
+    return { success: true, data: enhancedData };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };

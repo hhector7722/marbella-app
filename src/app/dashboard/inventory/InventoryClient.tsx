@@ -448,139 +448,140 @@ export function InventoryClient({
       <div className="flex-1 min-h-0 pr-0.5">
         <div className="flex flex-col gap-6 relative">
           <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-sm pb-4 pt-1 flex flex-col gap-3 -mx-2 px-2 border-b border-zinc-200/50">
-            <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full shrink-0 relative z-20">
             {!visibilityEditMode && (
-              <div className="flex bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center w-full md:w-auto">
+              <div className="flex items-center gap-2 w-full shrink-0">
+                <div className="flex flex-1 bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setLocationMode('BARRA')}
+                    className={cn(
+                      'flex-1 px-1 sm:px-2 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px] truncate',
+                      locationMode === 'BARRA'
+                        ? 'bg-white text-[#36606F] shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
+                    )}
+                  >
+                    BARRA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocationMode('CAMARA')}
+                    className={cn(
+                      'flex-1 px-1 sm:px-2 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px] truncate',
+                      locationMode === 'CAMARA'
+                        ? 'bg-white text-[#36606F] shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
+                    )}
+                  >
+                    CÁMARA
+                  </button>
+                </div>
+                
                 <button
                   type="button"
-                  onClick={() => setLocationMode('BARRA')}
+                  onClick={handleSubmit}
+                  disabled={submitDisabled}
                   className={cn(
-                    'flex-1 md:flex-none px-4 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px]',
-                    locationMode === 'BARRA'
-                      ? 'bg-white text-[#36606F] shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
+                    'flex-1 min-h-[48px] rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-sm min-w-0',
+                    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
+                    'disabled:opacity-45 disabled:cursor-not-allowed transition-colors shadow-sm',
+                    'flex items-center justify-center gap-1 sm:gap-2 shrink-0 px-2',
                   )}
                 >
-                  BARRA
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLocationMode('CAMARA')}
-                  className={cn(
-                    'flex-1 md:flex-none px-4 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px]',
-                    locationMode === 'CAMARA'
-                      ? 'bg-white text-[#36606F] shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
-                  )}
-                >
-                  CÁMARA
+                  <Save className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="truncate">{isSubmitting ? 'Guardando…' : 'Guardar recuento'}</span>
                 </button>
               </div>
             )}
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Buscar ingrediente…"
-                value={ingredientQuery}
-                onChange={(e) => setIngredientQuery(e.target.value)}
-                className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
-              />
-            </div>
 
-            {visibilityEditMode && managerFullList?.length ? (
-              <button
-                type="button"
-                onClick={handleSaveVisibility}
-                disabled={savingVisibility}
-                className={cn(
-                  'shrink-0 min-h-[48px] px-4 rounded-xl font-black uppercase tracking-wider text-xs sm:text-sm',
-                  'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-                  'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
-                  'flex items-center justify-center gap-2',
-                )}
-              >
-                <Save className="w-4 h-4 shrink-0" />
-                {savingVisibility ? 'Guardando…' : 'Guardar lista'}
-              </button>
-            ) : null}
+            <div className="flex items-center gap-2 w-full shrink-0 relative z-20">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Buscar ingrediente…"
+                  value={ingredientQuery}
+                  onChange={(e) => setIngredientQuery(e.target.value)}
+                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+                />
+              </div>
 
-            <div className="shrink-0 relative">
-              <button
-                type="button"
-                onClick={() => setIngredientFilterOpen((v) => !v)}
-                className={cn(
-                  'min-h-[48px] min-w-[48px] flex items-center justify-center',
-                  'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                  ingredientCategory ? 'text-[#36606F]' : 'text-zinc-400',
-                )}
-                aria-label="Filtrar por categoría"
-                title="Filtrar"
-                data-inventory-filter-root="true"
-              >
-                <Filter className="w-5 h-5" strokeWidth={2.5} />
-              </button>
+              {visibilityEditMode && managerFullList?.length ? (
+                <button
+                  type="button"
+                  onClick={handleSaveVisibility}
+                  disabled={savingVisibility}
+                  className={cn(
+                    'shrink-0 min-h-[48px] px-4 rounded-xl font-black uppercase tracking-wider text-xs sm:text-sm',
+                    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
+                    'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
+                    'flex items-center justify-center gap-2',
+                  )}
+                >
+                  <Save className="w-4 h-4 shrink-0" />
+                  {savingVisibility ? 'Guardando…' : 'Guardar lista'}
+                </button>
+              ) : null}
 
-              {ingredientFilterOpen ? (
-                <div
-                  className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
+              <div className="shrink-0 relative">
+                <button
+                  type="button"
+                  onClick={() => setIngredientFilterOpen((v) => !v)}
+                  className={cn(
+                    'min-h-[48px] min-w-[48px] flex items-center justify-center',
+                    'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
+                    ingredientCategory ? 'text-[#36606F]' : 'text-zinc-400',
+                  )}
+                  aria-label="Filtrar por categoría"
+                  title="Filtrar"
                   data-inventory-filter-root="true"
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIngredientCategory(null)
-                      setIngredientFilterOpen(false)
-                    }}
-                    className={cn(
-                      'w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                      !ingredientCategory && 'bg-zinc-50',
-                    )}
+                  <Filter className="w-5 h-5" strokeWidth={2.5} />
+                </button>
+
+                {ingredientFilterOpen ? (
+                  <div
+                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
+                    data-inventory-filter-root="true"
                   >
-                    <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                    <span className="text-[10px] font-black text-zinc-400">{countForFilterTotal}</span>
-                  </button>
-                  <div className="h-px bg-zinc-100" />
-                  <div className="max-h-72 overflow-auto">
-                    {ingredientCategories.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => {
-                          setIngredientCategory(c)
-                          setIngredientFilterOpen(false)
-                        }}
-                        className={cn(
-                          'w-full min-h-12 px-4 py-3 text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                          ingredientCategory === c && 'bg-zinc-50',
-                        )}
-                      >
-                        <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIngredientCategory(null)
+                        setIngredientFilterOpen(false)
+                      }}
+                      className={cn(
+                        'w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
+                        !ingredientCategory && 'bg-zinc-50',
+                      )}
+                    >
+                      <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
+                      <span className="text-[10px] font-black text-zinc-400">{countForFilterTotal}</span>
+                    </button>
+                    <div className="h-px bg-zinc-100" />
+                    <div className="max-h-72 overflow-auto">
+                      {ingredientCategories.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setIngredientCategory(c)
+                            setIngredientFilterOpen(false)
+                          }}
+                          className={cn(
+                            'w-full min-h-12 px-4 py-3 text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
+                            ingredientCategory === c && 'bg-zinc-50',
+                          )}
+                        >
+                          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
           </div>
-
-          {!visibilityEditMode && (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitDisabled}
-              className={cn(
-                'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
-                'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-                'disabled:opacity-45 disabled:cursor-not-allowed transition-colors shadow-sm',
-                'flex items-center justify-center gap-2 shrink-0',
-              )}
-            >
-              <Save className="w-5 h-5 shrink-0" />
-              {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
-            </button>
-          )}
-        </div>
 
         {Object.keys(grouped).length === 0 ? (
             <p className="text-sm text-zinc-500 text-center py-8">No hay ingredientes que coincidan.</p>

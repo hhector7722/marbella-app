@@ -133,10 +133,14 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         let cancelled = false;
 
         async function fetchPendingReservationsCount(showErrorToast: boolean) {
-            const { count, error } = await supabase
+            const now = new Date();
+            const todayYmd = format(now, 'yyyy-MM-dd');
+
+            const { data, error } = await supabase
                 .from('reservations')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'pending');
+                .select('reservation_date, reservation_time')
+                .eq('status', 'pending')
+                .gte('reservation_date', todayYmd);
 
             if (cancelled) return;
 
@@ -147,7 +151,24 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 return;
             }
 
-            setPendingReservationsCount(count ?? 0);
+            const futureCount = (data ?? []).filter((r) => {
+                if (r.reservation_date > todayYmd) return true;
+                // Mismo día: comparar hora
+                const timeStr = (r.reservation_time ?? '00:00').slice(0, 5);
+                const [hh, mm] = timeStr.split(':').map(Number);
+                const resDate = new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    now.getDate(),
+                    hh || 0,
+                    mm || 0,
+                    0,
+                    0
+                );
+                return resDate >= now;
+            }).length;
+
+            setPendingReservationsCount(futureCount);
         }
 
         void fetchPendingReservationsCount(true);

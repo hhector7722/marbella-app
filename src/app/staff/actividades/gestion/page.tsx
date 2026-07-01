@@ -8,6 +8,7 @@ interface GestionActivity {
   name: string;
   color: string | null;
   is_active: boolean;
+  is_pista?: boolean;
 }
 
 const PALETTE = [
@@ -22,6 +23,7 @@ export default function GestionActividadesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'pistas' | 'all'>('pistas');
 
   // Edit Modal State
   const [editAct, setEditAct] = useState<GestionActivity | null>(null);
@@ -104,16 +106,22 @@ export default function GestionActividadesPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#36606F] mb-2">Gestión de Catálogo de Actividades</h1>
-        <p className="text-slate-500 text-sm">
-          Aquí puedes ver todas las actividades que el sistema conoce. Puedes editar su nombre y asignarle un color único, o desactivarlas para que no aparezcan en los reportes.
-        </p>
+      <div className="flex justify-end gap-4">
+        <div className="shrink-0">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as 'pistas' | 'all')}
+            className="bg-white border border-gray-200 text-slate-700 text-sm px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-[#36606F]/50 shadow-sm cursor-pointer"
+          >
+            <option value="pistas">Solo Pistas (P1-P4)</option>
+            <option value="all">Todas las actividades</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full overflow-x-auto">
         <table className="w-full text-left text-sm text-slate-700 min-w-[320px]">
-          <thead className="bg-zinc-50 border-b border-gray-200 text-[10px] sm:text-xs uppercase font-semibold text-slate-500">
+          <thead className="bg-[#36606F] text-[10px] sm:text-xs uppercase font-semibold text-white/90">
             <tr>
               <th className="px-2 sm:px-4 py-2 sm:py-3 w-1/2">Nombre</th>
               <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">Estado</th>
@@ -121,7 +129,9 @@ export default function GestionActividadesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {activities.map(act => (
+            {activities
+              .filter(act => filter === 'all' || act.is_pista)
+              .map(act => (
               <tr key={act.id} className={`hover:bg-blue-50/30 transition-colors ${!act.is_active ? 'opacity-50' : ''}`}>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-slate-800 text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">
                   <div className="flex items-center gap-2">

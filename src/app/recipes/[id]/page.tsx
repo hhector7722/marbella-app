@@ -46,7 +46,8 @@ function RecipeDetailContent() {
     const params = useParams();
     const router = useRouter();
     const recipeId = params.id as string;
-    const supabase = createClient();
+    const supabaseRef = useRef(createClient());
+    const supabase = supabaseRef.current;
     const importInputRef = useRef<HTMLInputElement | null>(null);
     const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
     const [importScope, setImportScope] = useState<'all' | 'elaboration' | 'presentation'>('all');
@@ -146,7 +147,7 @@ function RecipeDetailContent() {
             }
             setMcoEsByCategoryId(m);
         })();
-    }, [supabase]);
+    }, []);
 
     const sortedMenuCategoryRows = useMemo(() => sortMenuCategoriesForRecipes(menuCategoryRows), [menuCategoryRows]);
 
