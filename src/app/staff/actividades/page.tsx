@@ -357,7 +357,7 @@ export default function ActividadesPage() {
                         <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                            const textColor = isPastDay ? '#a3a3a3' : '#ffffff';
+                            const textColor = '#ffffff';
                             return (
                               <div 
                                 key={i} 
@@ -366,7 +366,7 @@ export default function ActividadesPage() {
                                   backgroundColor: bgColor,
                                   color: textColor,
                                   containerType: 'inline-size',
-                                  ...(isPastDay ? { filter: 'grayscale(0.7) brightness(0.82)', opacity: 0.75 } : {}),
+                                  ...(isPastDay ? { opacity: 0.8 } : {}),
                                 }}
                               >
                                 <div className="px-1 py-[2px]">
@@ -377,7 +377,7 @@ export default function ActividadesPage() {
                                 </div>
                                 <div className="px-1 py-[2px] bg-black/10">
                                   <span className="block break-keep font-bold leading-tight mt-[1px]"
-                                    style={{ fontSize: 'clamp(6px, 18cqi, 18px)' }}>
+                                    style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}>
                                     {act.activityName}
                                   </span>
                                 </div>

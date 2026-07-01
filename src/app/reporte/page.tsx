@@ -33,6 +33,37 @@ function getNextWeekend() {
   };
 }
 
+function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parts = value ? value.split(':') : ['', ''];
+  const hour = parts[0] || '';
+  const minute = parts[1] || '';
+
+  return (
+    <div className="flex items-center gap-0.5 flex-1">
+      <select
+        value={hour}
+        onChange={(e) => onChange(`${e.target.value}:${minute || '00'}`)}
+        className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0"
+      >
+        <option value="" disabled>HH</option>
+        {Array.from({ length: 24 }, (_, i) => (
+          <option key={i} value={String(i).padStart(2, '0')}>{String(i).padStart(2, '0')}</option>
+        ))}
+      </select>
+      <span className="text-slate-500 text-xs shrink-0">:</span>
+      <select
+        value={minute}
+        onChange={(e) => onChange(`${hour || '00'}:${e.target.value}`)}
+        className="form-input w-14 rounded-xl px-0.5 py-1.5 outline-none text-[11px] text-white text-center shrink-0"
+      >
+        <option value="" disabled>MM</option>
+        <option value="00">00</option>
+        <option value="30">30</option>
+      </select>
+    </div>
+  );
+}
+
 export default function ReportePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -41,6 +72,18 @@ export default function ReportePage() {
   const captureAreaRef = useRef<HTMLDivElement>(null);
   const [allGlobalActivities, setAllGlobalActivities] = useState<string[]>([]);
   const [dailyActivitiesMap, setDailyActivitiesMap] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    const body = document.body;
+    const origBg = body.style.background;
+    const origBgImg = body.style.backgroundImage;
+    body.style.background = '#0f172a';
+    body.style.backgroundImage = 'none';
+    return () => {
+      body.style.background = origBg;
+      body.style.backgroundImage = origBgImg;
+    };
+  }, []);
 
   useEffect(() => {
     import('./actions').then(m => m.getAllActivitiesAction()).then(globals => {
@@ -294,20 +337,14 @@ export default function ReportePage() {
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>
                   <div className="flex items-center gap-1 h-[36px]">
-                    <input
-                      type="time"
+                    <TimePicker
                       value={act.hora_convocatoria}
-                      onChange={(e) => handleChange(act.id, 'hora_convocatoria', e.target.value)}
-                      step="1800"
-                      className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white"
+                      onChange={(v) => handleChange(act.id, 'hora_convocatoria', v)}
                     />
-                    <span className="text-slate-600">-</span>
-                    <input
-                      type="time"
+                    <span className="text-slate-600 shrink-0">-</span>
+                    <TimePicker
                       value={act.hora_finalitzacio}
-                      onChange={(e) => handleChange(act.id, 'hora_finalitzacio', e.target.value)}
-                      step="1800"
-                      className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white"
+                      onChange={(v) => handleChange(act.id, 'hora_finalitzacio', v)}
                     />
                   </div>
                 </div>
