@@ -109,3 +109,38 @@ export async function updateActivityAction(id: string, payload: { name?: string,
     return { success: false, error: msg };
   }
 }
+
+// Merge duplicates: redirect all occurrences from `fromIds` to `survivorId`, then delete the duplicates
+export async function mergeActivitiesAction(survivorId: string, fromIds: string[]) {
+  try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user || !isMasterDashboardUser(session.user.email ?? '')) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    if (!fromIds.length) return { success: false, error: 'Selecciona al menos una actividad a fusionar.' };
+    if (fromIds.includes(survivorId)) return { success: false, error: 'El superviviente no puede estar en la lista de duplicados.' };
+
+    // 1. Reasignar todas las ocurrencias al superviviente
+    const { error: updateErr } = await supabase
+      .from('activity_occurrences')
+      .update({ activity_id: survivorId })
+      .in('activity_id', fromIds);
+
+    if (updateErr) return { success: false, error: 'Error al reasignar ocurrencias: ' + updateErr.message };
+
+    // 2. Borrar las actividades duplicadas
+    const { error: deleteErr } = await supabase
+      .from('activities')
+      .delete()
+      .in('id', fromIds);
+
+    if (deleteErr) return { success: false, error: 'Error al borrar duplicados: ' + deleteErr.message };
+
+    return { success: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, error: msg };
+  }
+}
