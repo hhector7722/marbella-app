@@ -357,7 +357,7 @@ export default function ActividadesPage() {
                         <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                            const textColor = isPastDay ? '#374151' : '#ffffff';
+                            const textColor = isPastDay ? '#9ca3af' : '#ffffff';
                             return (
                               <div 
                                 key={i} 
