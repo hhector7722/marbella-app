@@ -10,11 +10,24 @@ interface GestionActivity {
   is_active: boolean;
 }
 
+const PALETTE = [
+  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', 
+  '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', 
+  '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b', 
+  '#78716c', '#334155', '#0f766e', '#4338ca', '#b91c1c',
+];
+
 export default function GestionActividadesPage() {
   const [activities, setActivities] = useState<GestionActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  // Edit Modal State
+  const [editAct, setEditAct] = useState<GestionActivity | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState<string | null>(null);
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     loadActivities();
@@ -42,67 +55,104 @@ export default function GestionActividadesPage() {
     setSavingId(null);
   }
 
-  async function handleUpdateName(id: string, currentName: string) {
-    const newName = prompt('Nuevo nombre para la actividad:', currentName);
-    if (!newName || newName === currentName) return;
+  function openEditModal(act: GestionActivity) {
+    setEditAct(act);
+    setEditName(act.name);
+    setEditColor(act.color);
+    setEditError('');
+  }
 
-    setSavingId(id);
-    const res = await updateActivityAction(id, { name: newName });
-    if (res.success) {
-      setActivities(prev => prev.map(a => a.id === id ? { ...a, name: newName } : a));
-    } else {
-      alert('Error: ' + res.error);
+  async function handleSaveEdit() {
+    if (!editAct) return;
+    if (!editName.trim()) {
+      setEditError('El nombre no puede estar vacío.');
+      return;
+    }
+
+    // Check color collision
+    if (editColor) {
+      const collision = activities.find(a => a.id !== editAct.id && a.color === editColor);
+      if (collision) {
+        setEditError(`El color ya está en uso por "${collision.name}". Elige otro.`);
+        return;
+      }
+    }
+
+    setEditError('');
+    setSavingId(editAct.id);
+    
+    // We optimistically close the modal to make it feel fast
+    const originalAct = { ...editAct };
+    const id = editAct.id;
+    const newName = editName.trim();
+    const newColor = editColor;
+    
+    setActivities(prev => prev.map(a => a.id === id ? { ...a, name: newName, color: newColor } : a));
+    setEditAct(null);
+
+    const res = await updateActivityAction(id, { name: newName, color: newColor });
+    if (!res.success) {
+      alert('Error al guardar: ' + res.error);
+      // Revert on error
+      setActivities(prev => prev.map(a => a.id === id ? originalAct : a));
     }
     setSavingId(null);
   }
 
-  if (loading) return <div className="p-8 text-white">Cargando catálogo...</div>;
-  if (error) return <div className="p-8 text-red-400">{error}</div>;
+  if (loading) return <div className="p-8 text-slate-700">Cargando catálogo...</div>;
+  if (error) return <div className="p-8 text-red-500">{error}</div>;
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-2">Gestión de Catálogo de Actividades</h1>
-        <p className="text-zinc-400 text-sm">
-          Aquí puedes ver todas las actividades que el sistema conoce. Puedes editar su nombre (útil para unificar errores tipográficos persistentes) o desactivarlas para que no aparezcan en los menús desplegables de los reportes.
+        <h1 className="text-2xl font-bold text-[#36606F] mb-2">Gestión de Catálogo de Actividades</h1>
+        <p className="text-slate-500 text-sm">
+          Aquí puedes ver todas las actividades que el sistema conoce. Puedes editar su nombre y asignarle un color único, o desactivarlas para que no aparezcan en los reportes.
         </p>
       </div>
 
-      <div className="bg-zinc-900/50 rounded-2xl border border-zinc-800/50 overflow-hidden">
-        <table className="w-full text-left text-sm text-zinc-300">
-          <thead className="bg-zinc-800/80 text-xs uppercase font-semibold text-zinc-500">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full overflow-x-auto">
+        <table className="w-full text-left text-sm text-slate-700 min-w-[320px]">
+          <thead className="bg-zinc-50 border-b border-gray-200 text-[10px] sm:text-xs uppercase font-semibold text-slate-500">
             <tr>
-              <th className="px-4 py-3">Nombre</th>
-              <th className="px-4 py-3 text-center">Estado</th>
-              <th className="px-4 py-3 text-right">Acciones</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 w-1/2">Nombre</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">Estado</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/50">
+          <tbody className="divide-y divide-gray-100">
             {activities.map(act => (
-              <tr key={act.id} className={`hover:bg-zinc-800/30 transition-colors ${!act.is_active ? 'opacity-50' : ''}`}>
-                <td className="px-4 py-3 font-medium text-white">
-                  {act.name}
+              <tr key={act.id} className={`hover:bg-blue-50/30 transition-colors ${!act.is_active ? 'opacity-50' : ''}`}>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-slate-800 text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">
+                  <div className="flex items-center gap-2">
+                    {act.color ? (
+                      <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: act.color }} />
+                    ) : (
+                      <span className="w-3 h-3 rounded-full shrink-0 shadow-sm border border-dashed border-gray-300" title="Color automático" />
+                    )}
+                    <span className="truncate">{act.name}</span>
+                  </div>
                 </td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${act.is_active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                  <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${act.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                     {act.is_active ? 'Activa' : 'Inactiva'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
+                  <div className="flex items-center justify-end gap-1 sm:gap-2">
                     <button
-                      onClick={() => handleUpdateName(act.id, act.name)}
+                      onClick={() => openEditModal(act)}
                       disabled={savingId === act.id}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 text-xs font-semibold transition-colors disabled:opacity-50"
+                      className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => handleToggleActive(act)}
                       disabled={savingId === act.id}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${act.is_active ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'}`}
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50 ${act.is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
                     >
-                      {act.is_active ? 'Desactivar' : 'Activar'}
+                      {act.is_active ? 'Quitar' : 'Activar'}
                     </button>
                   </div>
                 </td>
@@ -111,6 +161,76 @@ export default function GestionActividadesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit Modal */}
+      {editAct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div className="p-4 md:p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-slate-800">Editar Actividad</h2>
+            </div>
+            <div className="p-4 md:p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nombre</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F] text-sm text-slate-700"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Color (Único)</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setEditColor(null)}
+                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium bg-gray-50 transition-transform hover:scale-110 ${editColor === null ? 'border-[#36606F]' : 'border-gray-200 text-gray-400'}`}
+                    title="Automático"
+                  >
+                    Auto
+                  </button>
+                  {PALETTE.map(hex => {
+                    const isSelected = editColor === hex;
+                    const isUsed = activities.some(a => a.id !== editAct.id && a.color === hex);
+                    return (
+                      <button
+                        key={hex}
+                        onClick={() => {
+                          if (!isUsed) setEditColor(hex);
+                        }}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${isSelected ? 'border-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-110'} ${isUsed ? 'opacity-20 cursor-not-allowed' : ''}`}
+                        style={{ backgroundColor: hex }}
+                        title={isUsed ? 'Color ya en uso' : hex}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {editError && (
+                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold">
+                  {editError}
+                </div>
+              )}
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setEditAct(null)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#36606F] hover:bg-[#2A4B57] shadow-md transition-colors"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -94,6 +94,7 @@ function QuantityStepper({
   onBlur: () => void
   ariaLabel: string
   hideUnitSuffix?: boolean
+  bottomText?: string
 }) {
   const step = getStep(unit)
   const count = isCountUnit(unit)
@@ -119,25 +120,33 @@ function QuantityStepper({
       >
         <Minus className="w-4 h-4" strokeWidth={3} />
       </button>
-      <input
-        type="text"
-        inputMode={count ? 'numeric' : 'decimal'}
-        value={raw}
-        onChange={(e) => {
-          const nextRaw = e.target.value
-          onRawChange(nextRaw)
-          if (nextRaw.trim() !== '') {
-            onChange(parseQuantity(nextRaw, unit))
-          }
-        }}
-        onBlur={onBlur}
-        className={cn(
-          'flex-1 w-0 h-full bg-transparent text-center font-black tabular-nums outline-none p-0',
-          'text-[10px] sm:text-[11px] text-zinc-700 tracking-tighter',
-          'focus:bg-blue-50/20 transition-colors',
+      <div className="flex-1 flex flex-col items-center justify-center min-w-0">
+        <input
+          type="text"
+          inputMode={count ? 'numeric' : 'decimal'}
+          value={raw}
+          onChange={(e) => {
+            const nextRaw = e.target.value
+            onRawChange(nextRaw)
+            if (nextRaw.trim() !== '') {
+              onChange(parseQuantity(nextRaw, unit))
+            }
+          }}
+          onBlur={onBlur}
+          className={cn(
+            'w-full bg-transparent text-center font-black tabular-nums outline-none p-0',
+            'text-[10px] sm:text-[11px] text-zinc-700 tracking-tighter',
+            'focus:bg-blue-50/20 transition-colors',
+            bottomText ? 'mt-1 mb-0' : 'h-full'
+          )}
+          aria-label={ariaLabel}
+        />
+        {bottomText && (
+          <div className="text-[8px] text-zinc-400 font-normal pb-1 truncate px-1 w-full text-center">
+            {bottomText}
+          </div>
         )}
-        aria-label={ariaLabel}
-      />
+      </div>
       <button
         type="button"
         onClick={() => adjust(step)}
@@ -230,12 +239,8 @@ function InventoryIngredientCard({
             onBlur={onBlur}
             ariaLabel={`Cantidad contada ${item.name}`}
             hideUnitSuffix
+            bottomText={totalBothLocations !== undefined ? `Total ${totalBothLocations}` : undefined}
           />
-          {totalBothLocations !== undefined && (
-            <div className="text-center text-[9px] min-[380px]:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1 mb-0.5">
-              Total {totalBothLocations}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -440,8 +445,9 @@ export function InventoryClient({
   return (
     <div className="flex flex-col gap-4 min-h-0 flex-1">
       <div className="flex-1 min-h-0 pr-0.5">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full shrink-0 relative z-20">
+        <div className="flex flex-col gap-6 relative">
+          <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-sm pb-4 pt-1 flex flex-col gap-3 -mx-2 px-2 border-b border-zinc-200/50">
+            <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full shrink-0 relative z-20">
             {!visibilityEditMode && (
               <div className="flex bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center w-full md:w-auto">
                 <button
@@ -557,7 +563,25 @@ export function InventoryClient({
             </div>
           </div>
 
-          {Object.keys(grouped).length === 0 ? (
+          {!visibilityEditMode && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitDisabled}
+              className={cn(
+                'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
+                'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
+                'disabled:opacity-45 disabled:cursor-not-allowed transition-colors shadow-sm',
+                'flex items-center justify-center gap-2 shrink-0',
+              )}
+            >
+              <Save className="w-5 h-5 shrink-0" />
+              {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
+            </button>
+          )}
+        </div>
+
+        {Object.keys(grouped).length === 0 ? (
             <p className="text-sm text-zinc-500 text-center py-8">No hay ingredientes que coincidan.</p>
           ) : (
             Object.entries(grouped).map(([category, items]) => (
@@ -649,32 +673,6 @@ export function InventoryClient({
           )}
         </div>
       </div>
-
-      {!visibilityEditMode && (
-        <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100 space-y-2 z-10">
-          <div className="flex items-start gap-2 text-zinc-500 text-xs px-0.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              Introduce solo las cantidades que hayas contado. Lo que dejes en blanco no se envía al
-              guardar.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitDisabled}
-            className={cn(
-              'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
-              'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-              'disabled:opacity-45 disabled:cursor-not-allowed transition-colors',
-              'flex items-center justify-center gap-2 shrink-0',
-            )}
-          >
-            <Save className="w-5 h-5 shrink-0" />
-            {isSubmitting ? 'Guardando…' : 'Guardar recuento'}
-          </button>
-        </div>
-      )}
 
       {!visibilityEditMode && (
         <>

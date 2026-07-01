@@ -37,7 +37,7 @@ function fmtHour(time: string): string {
 }
 
 function groupActivities(
-  acts: { activityName: string; activityIcon: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
+  acts: { activityName: string; activityIcon: string | null; activityColor: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
 ) {
   if (acts.length === 0) return acts;
   const map = new Map<string, typeof acts[0]>();
@@ -134,6 +134,35 @@ export default function ActividadesPage() {
     });
   }, []);
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+  const [filter, setFilter] = useState<'pistas' | 'all'>('pistas');
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setViewMonth((m) => addMonths(m, 1));
+    }
+    if (isRightSwipe) {
+      setViewMonth((m) => subMonths(m, 1));
+    }
+  };
+
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
 
@@ -225,7 +254,7 @@ export default function ActividadesPage() {
               >
                 <ChevronLeft size={18} strokeWidth={2.5} />
               </button>
-              <span className="text-xs font-black uppercase tracking-widest text-white select-none">
+              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap">
                 {getMonthLabel(viewMonth)}
               </span>
               <button
@@ -237,7 +266,16 @@ export default function ActividadesPage() {
                 <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="w-[100px]"></div>
+            <div className="w-[100px] flex justify-end">
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as 'pistas' | 'all')}
+                className="bg-white/10 text-white text-[10px] md:text-xs px-2 py-1.5 rounded outline-none border-none hover:bg-white/20 transition-colors cursor-pointer"
+              >
+                <option value="pistas" className="text-slate-800">P1-P4</option>
+                <option value="all" className="text-slate-800">Todas</option>
+              </select>
+            </div>
           </div>
 
           {/* ── Calendar ── */}
@@ -246,7 +284,12 @@ export default function ActividadesPage() {
               <LoadingSpinner size="lg" className="text-[#36606F]" />
             </div>
           ) : (
-            <div className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] py-2 shrink-0">
+            <div 
+              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 shrink-0 touch-pan-y"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               <div className="mx-auto w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)]">
                 {/* Day headers */}
                 <div className="grid grid-cols-7 border-b border-gray-100">
@@ -275,7 +318,10 @@ export default function ActividadesPage() {
                     const isToday = isSameDay(day, today);
                     const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
-                    const grouped = groupActivities(barActs);
+                    const grouped = groupActivities(barActs).filter(act => {
+                      if (filter === 'all') return true;
+                      return act.venueCodes.some(code => ['p1', 'p2', 'p3', 'p4'].includes(code.toLowerCase()));
+                    });
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0',
@@ -324,8 +370,12 @@ export default function ActividadesPage() {
                         {/* Activities */}
                         <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
-                            const bgColor = stringToHslColor(act.activityName);
-                            const textColor = getContrastForHsl(act.activityName);
+                            const bgColor = act.activityColor || stringToHslColor(act.activityName);
+                            // If activityColor is a hex, getContrastForHsl works fine on hex if we adjust it, 
+                            // but wait, getContrastForHsl is currently a hacky string hash function. 
+                            // Let's just use white text since the palette is dark enough (500/600 tailwind colors).
+                            // Wait, stringToHslColor's getContrastForHsl was also string based.
+                            const textColor = '#ffffff'; // The professional palette colors (500/600) usually look good with white text.
                             return (
                               <div 
                                 key={i} 
@@ -350,6 +400,13 @@ export default function ActividadesPage() {
                     );
                   })}
                 </div>
+              </div>
+              
+              {/* Pagination Dots (Swipe Indicator) */}
+              <div className="flex justify-center items-center gap-1.5 py-2 w-full">
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
+                <div className="w-2 h-2 rounded-full bg-white shadow-sm border border-zinc-200"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
               </div>
             </div>
           )}

@@ -228,65 +228,67 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             </div>
 
-            {/* ZONA INFERIOR OSCURA (Rígida e inamovible) — +/- estilo modal partidos (trincadores) */}
+            {/* ZONA INFERIOR (Estilo desglose monetario unificado) */}
             <div className={cn(
-                "bg-white flex flex-row items-center justify-center shrink-0 w-full",
-                isModal ? "px-6 py-4" : "p-1.5"
+                "shrink-0 w-full flex items-center justify-center bg-white",
+                isModal ? "px-6 py-4" : "px-1.5 pb-1.5"
             )}>
                 <div className={cn(
-                    "flex items-center",
-                    isModal ? "gap-1 sm:gap-1.5" : "gap-0.5"
+                    "flex items-center justify-between w-full bg-white border border-zinc-200 overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-[#5B8FB9]/40 focus-within:border-[#5B8FB9]/40",
+                    isModal ? "h-14 rounded-xl" : "h-10 rounded-[10px]"
                 )}>
-                <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={quantity === 0}
-                    aria-label="Menos cantidad"
-                    className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgb(178,68,68)] text-white shadow-sm opacity-80 transition-shadow hover:shadow active:shadow-none",
-                        isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
-                    )}
-                >
-                    <Minus
-                        className={cn(isModal ? "h-3 w-3 stroke-[2.75]" : "h-2 w-2 stroke-[2.75]")}
-                        aria-hidden="true"
-                    />
-                </button>
+                    <button
+                        type="button"
+                        onClick={handleDecrement}
+                        disabled={quantity === 0}
+                        aria-label="Menos cantidad"
+                        className={cn(
+                            "flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors h-full shrink-0",
+                            isModal ? "w-14" : "w-10"
+                        )}
+                    >
+                        <Minus
+                            className={isModal ? "h-5 w-5" : "h-[18px] w-[18px]"}
+                            strokeWidth={3}
+                            aria-hidden="true"
+                        />
+                    </button>
 
-                <input
-                    type="text"
-                    inputMode="decimal"
-                    aria-label="Cantidad"
-                    value={displayQty}
-                    onChange={(e) => {
-                        const v = e.target.value;
-                        if (v === '' || /^\d*[,.]?\d*$/.test(v)) setEditingQty(v);
-                    }}
-                    onFocus={() => setEditingQty(quantity === 0 ? '' : String(quantity))}
-                    onBlur={commitQtyInput}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                    }}
-                    className={cn(
-                        "font-black text-black tabular-nums text-center bg-transparent border-none outline-none w-10 min-w-0 rounded focus:ring-1 focus:ring-black/20",
-                        isModal ? "text-lg sm:text-2xl px-1" : "text-[11px] md:text-xs px-0.5"
-                    )}
-                />
-
-                <button
-                    type="button"
-                    onClick={handleIncrement}
-                    aria-label="Más cantidad"
-                    className={cn(
-                        "flex shrink-0 items-center justify-center rounded-[5px] bg-[rgb(62,138,82)] text-white shadow-sm opacity-80 transition-shadow hover:shadow active:shadow-none",
-                        isModal ? "h-8 w-8 sm:h-9 sm:w-9" : "h-[1.125rem] w-[1.125rem]"
-                    )}
-                >
-                    <Plus
-                        className={cn(isModal ? "h-3 w-3 stroke-[2.75]" : "h-2 w-2 stroke-[2.75]")}
-                        aria-hidden="true"
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        aria-label="Cantidad"
+                        value={displayQty}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === '' || /^\d*[,.]?\d*$/.test(v)) setEditingQty(v);
+                        }}
+                        onFocus={() => setEditingQty(quantity === 0 ? '' : String(quantity))}
+                        onBlur={commitQtyInput}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                        }}
+                        className={cn(
+                            "flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 tracking-tighter tabular-nums transition-colors",
+                            isModal ? "text-xl" : "text-sm"
+                        )}
                     />
-                </button>
+
+                    <button
+                        type="button"
+                        onClick={handleIncrement}
+                        aria-label="Más cantidad"
+                        className={cn(
+                            "flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors h-full shrink-0",
+                            isModal ? "w-14" : "w-10"
+                        )}
+                    >
+                        <Plus
+                            className={isModal ? "h-5 w-5" : "h-[18px] w-[18px]"}
+                            strokeWidth={3}
+                            aria-hidden="true"
+                        />
+                    </button>
                 </div>
             </div>
 
