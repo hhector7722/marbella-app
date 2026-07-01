@@ -357,7 +357,7 @@ export default function ActividadesPage() {
                         <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                            const textColor = isPastDay ? '#9ca3af' : '#ffffff';
+                            const textColor = isPastDay ? '#a3a3a3' : '#ffffff';
                             return (
                               <div 
                                 key={i} 
@@ -365,16 +365,19 @@ export default function ActividadesPage() {
                                 style={{
                                   backgroundColor: bgColor,
                                   color: textColor,
+                                  containerType: 'inline-size',
                                   ...(isPastDay ? { filter: 'grayscale(0.7) brightness(0.82)', opacity: 0.75 } : {}),
                                 }}
                               >
                                 <div className="px-1 py-[2px]">
-                                  <span className="block text-[6px] md:text-[7px] font-black leading-none opacity-90 tracking-tight">
+                                  <span className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
+                                    style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}>
                                     {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                   </span>
                                 </div>
                                 <div className="px-1 py-[2px] bg-black/10">
-                                  <span className="block text-[7.5px] md:text-[8.5px] font-bold truncate leading-tight mt-[1px]">
+                                  <span className="block break-keep font-bold leading-tight mt-[1px]"
+                                    style={{ fontSize: 'clamp(5px, 8.5cqi, 8.5px)' }}>
                                     {act.activityName}
                                   </span>
                                 </div>

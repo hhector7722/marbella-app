@@ -133,7 +133,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
         const act = grid[ri][ci];
         if (!act) {
           cols.push(
-            <td key={`${ci}`} className="border-b border-zinc-100 p-0 h-0 relative" />,
+            <td key={`${ci}`} className="border-b border-zinc-100 p-0 h-0 relative"></td>,
           );
           continue;
         }
@@ -194,7 +194,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]} className="border-b border-zinc-100 h-0">
+        <tr key={hours[ri]} className="border-b border-zinc-100" style={{ height: `calc(100% / ${hours.length})` }}>
           <td className="w-10 sm:w-12 p-0 border-r border-zinc-100 h-0 relative">
             <div className="absolute inset-0 flex items-center justify-center pr-1">
               <span className="text-[9px] font-bold leading-none tabular-nums text-zinc-400">{`${hours[ri]}:00`}</span>
