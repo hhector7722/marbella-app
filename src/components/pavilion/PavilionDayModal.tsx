@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
+import { X, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -49,6 +49,13 @@ export function PavilionDayModal({
   const [error, setError] = useState<string | null>(null);
   const [showPdf, setShowPdf] = useState(false);
 
+  // Swipe state
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const MIN_SWIPE = 50;
+
   useEffect(() => {
     async function checkAuth() {
       const supabase = createClient();
@@ -78,6 +85,12 @@ export function PavilionDayModal({
     void loadDay();
   }, [loadDay]);
 
+  // Reset swipe on date change
+  useEffect(() => {
+    setSwipeOffset(0);
+    setIsSwiping(false);
+  }, [date]);
+
   const formattedDate = date
     ? (() => {
         const d = parseLocalSafe(date);
@@ -88,65 +101,115 @@ export function PavilionDayModal({
       })()
     : '';
 
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    setIsSwiping(true);
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    // Only track horizontal swipes (not vertical scrolls)
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dx) < 10) {
+      touchStartX.current = null;
+      setIsSwiping(false);
+      setSwipeOffset(0);
+      return;
+    }
+    setSwipeOffset(dx);
+  }
+
+  function handleTouchEnd() {
+    if (touchStartX.current === null) return;
+    if (swipeOffset < -MIN_SWIPE) {
+      onNavigateDay(1);
+    } else if (swipeOffset > MIN_SWIPE) {
+      onNavigateDay(-1);
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+    setSwipeOffset(0);
+    setIsSwiping(false);
+  }
+
   if (!open || !date) return null;
+
+  // Clamp offset for visual rubber-band feel
+  const clampedOffset = Math.sign(swipeOffset) * Math.min(Math.abs(swipeOffset) * 0.4, 60);
 
   return typeof document !== 'undefined'
     ? createPortal(
         <div
-          className="fixed inset-0 z-[10050] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
           role="presentation"
         >
           <div
-            className="bg-white rounded-[2rem] w-full max-w-full max-h-[65vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-full sm:max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 touch-pan-y"
+            style={{
+              height: 'min(88vh, 700px)',
+              transform: `translateX(${clampedOffset}px)`,
+              transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             onClick={(e) => e.stopPropagation()}
           >
             {/* ---- Header ---- */}
             <div className="bg-[#36606F] px-2 py-2 text-white shrink-0 flex items-center gap-0.5">
-              <div className="flex items-center justify-center gap-0 shrink-0 min-w-0 flex-1">
-                <button
-                  type="button"
-                  onClick={() => onNavigateDay(-1)}
-                  className="min-h-[48px] min-w-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors shrink-0"
-                  aria-label="Dia anterior"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-center capitalize px-0.5 truncate">
-                  {formattedDate}
-                </h3>
+              {/* Left: prev arrow — no fill, just icon */}
+              <button
+                type="button"
+                onClick={() => onNavigateDay(-1)}
+                className="min-h-[48px] min-w-[36px] flex items-center justify-center text-white/70 hover:text-white transition-colors shrink-0"
+                aria-label="Dia anterior"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+
+              {/* Center: date title */}
+              <h3 className="flex-1 text-sm sm:text-base font-black uppercase tracking-tight text-center capitalize px-0.5 truncate">
+                {formattedDate}
+              </h3>
+
+              {/* Right: PDF / edit / close */}
+              <div className="flex items-center shrink-0">
+                {/* Next arrow — no fill */}
                 <button
                   type="button"
                   onClick={() => onNavigateDay(1)}
-                  className="min-h-[48px] min-w-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors shrink-0"
+                  className="min-h-[48px] min-w-[36px] flex items-center justify-center text-white/70 hover:text-white transition-colors shrink-0"
                   aria-label="Dia següent"
                 >
-                  <ChevronRight size={20} />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
                 </button>
-              </div>
 
-              <div className="flex items-center shrink-0">
                 {dayDetail?.hasPdf && (
-                    <button
-                      type="button"
-                      onClick={() => setShowPdf((p) => !p)}
-                      className={headerBtn}
-                      aria-label={showPdf ? 'Veure activitats' : 'Veure PDF original'}
-                    >
-                      <span className="text-[10px] font-black uppercase tracking-wider">
-                        {showPdf ? 'ACT' : 'PDF'}
-                      </span>
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPdf((p) => !p)}
+                    className={headerBtn}
+                    aria-label={showPdf ? 'Veure activitats' : 'Veure PDF original'}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-wider">
+                      {showPdf ? 'ACT' : 'PDF'}
+                    </span>
+                  </button>
                 )}
                 {isHector && (
                   <button
                     type="button"
                     onClick={() => {
-                      const params = new URLSearchParams({
-                        date: date!,
-                      });
+                      const params = new URLSearchParams({ date: date! });
                       if (dayDetail?.pdfFilePath) {
                         params.set('filePath', dayDetail.pdfFilePath);
                       }
@@ -170,16 +233,14 @@ export function PavilionDayModal({
             </div>
 
             {/* ---- Content ---- */}
-            <div className="flex flex-col min-h-[400px] sm:min-h-[500px] h-[65vh] flex-1 overflow-hidden">
+            <div className="flex flex-col flex-1 overflow-hidden min-h-0">
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <LoadingSpinner className="text-[#36606F]" />
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-4">
-                  <p className="text-sm font-black text-zinc-700">
-                    Error en carregar el dia
-                  </p>
+                  <p className="text-sm font-black text-zinc-700">Error en carregar el dia</p>
                   <p className="text-xs font-bold text-zinc-400">{error}</p>
                 </div>
               ) : showPdf ? (
@@ -191,6 +252,13 @@ export function PavilionDayModal({
                   isHector={isHector}
                 />
               )}
+            </div>
+
+            {/* ---- iOS-style page dots ---- */}
+            <div className="flex justify-center items-center gap-[6px] py-2.5 bg-white shrink-0">
+              <div className="w-[7px] h-[7px] rounded-full bg-[#36606F]/25" />
+              <div className="w-[9px] h-[9px] rounded-full bg-[#36606F]" />
+              <div className="w-[7px] h-[7px] rounded-full bg-[#36606F]/25" />
             </div>
           </div>
         </div>,

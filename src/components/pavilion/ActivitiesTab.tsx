@@ -170,8 +170,8 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
         const startLabel = fmtHour(act.startTime);
         const endLabel = fmtHour(act.endTime);
 
-        const bgColor = stringToHslColor(act.activityName);
-        const textColor = getContrastForHsl(act.activityName);
+        const bgColor = act.activityColor || stringToHslColor(act.activityName);
+        const textColor = act.activityColor ? '#ffffff' : getContrastForHsl(act.activityName);
 
         cols.push(
           <td

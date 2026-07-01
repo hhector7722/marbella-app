@@ -306,7 +306,7 @@ export default function ActividadesPage() {
                     const isViewMonthDay = isSameMonth(day, viewMonth);
                     const isPastDay = isBefore(day, today);
                     const isToday = isSameDay(day, today);
-                    const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
+                    const pastDayBg = isPastDay ? 'bg-zinc-100' : 'bg-white';
 
                     const grouped = groupActivities(barActs);
 
@@ -314,7 +314,6 @@ export default function ActividadesPage() {
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0',
                       'h-24 sm:h-28 md:h-32 lg:h-40',
                       pastDayBg,
-                      isPastDay && 'opacity-65',
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
                     );
 
@@ -358,16 +357,16 @@ export default function ActividadesPage() {
                         <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                            // If activityColor is a hex, getContrastForHsl works fine on hex if we adjust it, 
-                            // but wait, getContrastForHsl is currently a hacky string hash function. 
-                            // Let's just use white text since the palette is dark enough (500/600 tailwind colors).
-                            // Wait, stringToHslColor's getContrastForHsl was also string based.
-                            const textColor = '#ffffff'; // The professional palette colors (500/600) usually look good with white text.
+                            const textColor = '#ffffff';
                             return (
                               <div 
                                 key={i} 
-                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0 shadow-sm"
-                                style={{ backgroundColor: bgColor, color: textColor }}
+                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
+                                style={{
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  ...(isPastDay ? { filter: 'grayscale(0.7) brightness(0.75)', opacity: 0.6 } : {}),
+                                }}
                               >
                                 <div className="px-1 py-[2px]">
                                   <span className="block text-[6px] md:text-[7px] font-black leading-none opacity-90 tracking-tight">
