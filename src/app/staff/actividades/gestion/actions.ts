@@ -62,7 +62,7 @@ export async function getGestionActivitiesAction() {
       }
     }
 
-    const enhancedData = data.map((d: any) => ({
+    const enhancedData = (data ?? []).map((d: any) => ({
       ...d,
       is_pista: pistaSet.has(d.id),
     }));
