@@ -34,33 +34,23 @@ function getNextWeekend() {
 }
 
 function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const parts = value ? value.split(':') : ['', ''];
-  const hour = parts[0] || '';
-  const minute = parts[1] || '';
+  const timeOptions: string[] = [];
+  for (let h = 0; h < 24; h++) {
+    timeOptions.push(`${String(h).padStart(2, '0')}:00`);
+    timeOptions.push(`${String(h).padStart(2, '0')}:30`);
+  }
 
   return (
-    <div className="flex items-center gap-0.5 flex-1">
-      <select
-        value={hour}
-        onChange={(e) => onChange(`${e.target.value}:${minute || '00'}`)}
-        className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0"
-      >
-        <option value="" disabled>HH</option>
-        {Array.from({ length: 24 }, (_, i) => (
-          <option key={i} value={String(i).padStart(2, '0')}>{String(i).padStart(2, '0')}</option>
-        ))}
-      </select>
-      <span className="text-slate-500 text-xs shrink-0">:</span>
-      <select
-        value={minute}
-        onChange={(e) => onChange(`${hour || '00'}:${e.target.value}`)}
-        className="form-input w-14 rounded-xl px-0.5 py-1.5 outline-none text-[11px] text-white text-center shrink-0"
-      >
-        <option value="" disabled>MM</option>
-        <option value="00">00</option>
-        <option value="30">30</option>
-      </select>
-    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0"
+    >
+      <option value="" disabled>--:--</option>
+      {timeOptions.map((t) => (
+        <option key={t} value={t}>{t}</option>
+      ))}
+    </select>
   );
 }
 

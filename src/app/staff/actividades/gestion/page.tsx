@@ -11,11 +11,24 @@ interface GestionActivity {
   is_pista?: boolean;
 }
 
-const PALETTE = [
-  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', 
-  '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', 
-  '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b', 
-  '#78716c', '#334155', '#0f766e', '#4338ca', '#b91c1c',
+const COLOR_FAMILIES: { label: string; base: string; shades: string[] }[] = [
+  { label: 'Rojo',      base: '#ef4444', shades: ['#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#7f1d1d'] },
+  { label: 'Naranja',   base: '#f97316', shades: ['#fdba74','#fb923c','#f97316','#ea580c','#c2410c','#7c2d12'] },
+  { label: 'Ámbar',     base: '#f59e0b', shades: ['#fcd34d','#fbbf24','#f59e0b','#d97706','#b45309','#78350f'] },
+  { label: 'Lima',      base: '#84cc16', shades: ['#bef264','#a3e635','#84cc16','#65a30d','#4d7c0f','#3f6212'] },
+  { label: 'Verde',     base: '#22c55e', shades: ['#86efac','#4ade80','#22c55e','#16a34a','#15803d','#14532d'] },
+  { label: 'Esmeralda', base: '#10b981', shades: ['#6ee7b7','#34d399','#10b981','#059669','#047857','#064e3b'] },
+  { label: 'Teal',      base: '#14b8a6', shades: ['#5eead4','#2dd4bf','#14b8a6','#0d9488','#0f766e','#134e4a'] },
+  { label: 'Cian',      base: '#06b6d4', shades: ['#67e8f9','#22d3ee','#06b6d4','#0891b2','#0e7490','#164e63'] },
+  { label: 'Azul',      base: '#3b82f6', shades: ['#93c5fd','#60a5fa','#3b82f6','#2563eb','#1d4ed8','#1e3a8a'] },
+  { label: 'Índigo',    base: '#6366f1', shades: ['#a5b4fc','#818cf8','#6366f1','#4f46e5','#4338ca','#312e81'] },
+  { label: 'Violeta',   base: '#8b5cf6', shades: ['#c4b5fd','#a78bfa','#8b5cf6','#7c3aed','#6d28d9','#4c1d95'] },
+  { label: 'Fucsia',    base: '#d946ef', shades: ['#f0abfc','#e879f9','#d946ef','#c026d3','#a21caf','#701a75'] },
+  { label: 'Rosa',      base: '#ec4899', shades: ['#f9a8d4','#f472b6','#ec4899','#db2777','#be185d','#831843'] },
+  { label: 'Coral',     base: '#f43f5e', shades: ['#fda4af','#fb7185','#f43f5e','#e11d48','#be123c','#881337'] },
+  { label: 'Petróleo',  base: '#36606F', shades: ['#a0c8d4','#7fb9c9','#549db0','#36606F','#2A4B57','#1e3640'] },
+  { label: 'Pizarra',   base: '#64748b', shades: ['#cbd5e1','#94a3b8','#64748b','#475569','#334155','#1e293b'] },
+  { label: 'Piedra',    base: '#78716c', shades: ['#d6d3d1','#a8a29e','#78716c','#57534e','#44403c','#1c1917'] },
 ];
 
 export default function GestionActividadesPage() {
@@ -36,6 +49,7 @@ export default function GestionActividadesPage() {
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState<string | null>(null);
   const [editError, setEditError] = useState('');
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
 
   useEffect(() => {
     loadActivities();
@@ -68,6 +82,15 @@ export default function GestionActividadesPage() {
     setEditName(act.name);
     setEditColor(act.color);
     setEditError('');
+    // Pre-select the family if the activity already has a color
+    if (act.color) {
+      const family = COLOR_FAMILIES.find(f =>
+        f.shades.some(s => s.toLowerCase() === act.color!.toLowerCase())
+      );
+      setSelectedFamily(family?.label ?? null);
+    } else {
+      setSelectedFamily(null);
+    }
   }
 
   async function handleSaveEdit() {
@@ -310,29 +333,68 @@ export default function GestionActividadesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Color (Único)</label>
-                <div className="flex flex-wrap gap-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Color</label>
+
+                {/* Row 1 – family base swatches */}
+                <div className="flex flex-wrap gap-1.5">
                   <button
-                    onClick={() => setEditColor(null)}
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-medium bg-gray-50 transition-transform hover:scale-110 ${editColor === null ? 'border-[#36606F]' : 'border-gray-200 text-gray-400'}`}
-                    title="Automático"
+                    type="button"
+                    onClick={() => { setEditColor(null); setSelectedFamily(null); }}
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[8px] font-bold bg-gray-100 transition-all hover:scale-110 ${editColor === null ? 'border-slate-700 scale-110 shadow' : 'border-gray-300 text-gray-400'}`}
+                    title="Sin color (automático)"
                   >
-                    Auto
+                    —
                   </button>
-                  {PALETTE.map(hex => {
-                    const isSelected = editColor === hex;
-                    const isUsed = activities.some(a => a.id !== editAct.id && a.color === hex);
+                  {COLOR_FAMILIES.map(fam => {
+                    const isFamilySelected = selectedFamily === fam.label;
+                    const isAnyShadeUsed = fam.shades.some(s => activities.some(a => a.id !== editAct.id && a.color?.toLowerCase() === s.toLowerCase()));
                     return (
                       <button
-                        key={hex}
-                        onClick={() => { if (!isUsed) setEditColor(hex); }}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${isSelected ? 'border-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-110'} ${isUsed ? 'opacity-20 cursor-not-allowed' : ''}`}
-                        style={{ backgroundColor: hex }}
-                        title={isUsed ? 'Color ya en uso' : hex}
-                      />
+                        type="button"
+                        key={fam.label}
+                        onClick={() => setSelectedFamily(isFamilySelected ? null : fam.label)}
+                        className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${isFamilySelected ? 'border-slate-800 scale-110 shadow-md ring-2 ring-offset-1 ring-slate-400' : 'border-transparent'}`}
+                        style={{ backgroundColor: fam.base }}
+                        title={fam.label}
+                      >
+                        {isAnyShadeUsed && (
+                          <span className="block w-2 h-2 rounded-full bg-white/70 mx-auto" />
+                        )}
+                      </button>
                     );
                   })}
                 </div>
+
+                {/* Row 2 – shades of selected family */}
+                {selectedFamily && (() => {
+                  const fam = COLOR_FAMILIES.find(f => f.label === selectedFamily)!;
+                  return (
+                    <div className="flex flex-wrap gap-1.5 pt-1 pl-1 border-l-2" style={{ borderColor: fam.base }}>
+                      {fam.shades.map(shade => {
+                        const isSelected = editColor?.toLowerCase() === shade.toLowerCase();
+                        const isUsed = activities.some(a => a.id !== editAct.id && a.color?.toLowerCase() === shade.toLowerCase());
+                        return (
+                          <button
+                            type="button"
+                            key={shade}
+                            onClick={() => { if (!isUsed) { setEditColor(shade); } }}
+                            className={`w-7 h-7 rounded-full border-2 transition-all ${isSelected ? 'border-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-110'} ${isUsed ? 'opacity-25 cursor-not-allowed' : ''}`}
+                            style={{ backgroundColor: shade }}
+                            title={isUsed ? 'Ya en uso' : shade}
+                          />
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* Current color preview */}
+                {editColor && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="w-4 h-4 rounded-full shrink-0 border border-gray-200" style={{ backgroundColor: editColor }} />
+                    <span className="text-xs text-slate-500 font-mono">{editColor}</span>
+                  </div>
+                )}
               </div>
               {editError && (
                 <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold">{editError}</div>
