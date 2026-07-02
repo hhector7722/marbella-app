@@ -151,8 +151,7 @@ export function PavilionDayModal({
           <div
             className="bg-white rounded-[2rem] w-full max-w-full shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 touch-pan-y"
             style={{
-              height: '85vh',
-              minHeight: 400,
+              height: '85dvh',
               transform: `translateX(${clampedOffset}px)`,
               transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
             }}
@@ -256,7 +255,7 @@ export function PavilionDayModal({
             </div>
 
             {/* ---- iOS-style page dots ---- */}
-            <div className="flex justify-center items-center gap-[6px] py-2.5 bg-white shrink-0">
+            <div className="flex justify-center items-center gap-[6px] py-1.5 bg-white shrink-0">
               <div className="w-[7px] h-[7px] rounded-full bg-[#36606F]/25" />
               <div className="w-[9px] h-[9px] rounded-full bg-[#36606F]" />
               <div className="w-[7px] h-[7px] rounded-full bg-[#36606F]/25" />

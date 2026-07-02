@@ -133,7 +133,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
         const act = grid[ri][ci];
         if (!act) {
           cols.push(
-            <td key={`${ci}`} className="border-b border-zinc-100 p-0 h-0 relative"></td>,
+            <td key={`${ci}`} className="border-b border-zinc-100 p-0 relative"></td>,
           );
           continue;
         }
@@ -178,14 +178,14 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
             key={`${ci}`}
             rowSpan={rowSpan}
             colSpan={colSpan}
-            className="p-0 border border-gray-200 relative h-0"
+            className="p-0 border border-gray-200 relative"
             style={{ backgroundColor: bgColor, color: textColor }}
           >
             <div className="absolute inset-0 flex flex-col items-center justify-center p-0.5 overflow-hidden" style={{ containerType: 'size' }}>
-              <span className="font-bold leading-[1.1] text-center" style={{ fontSize: 'clamp(5px, min(18cqi, 20cqh), 14px)', textWrap: 'balance' }}>
+              <span className="font-bold leading-[1.1] text-center break-words w-full" style={{ fontSize: 'clamp(5px, min(18cqi, 18cqh), 13px)', textWrap: 'balance', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {act.activityName}
               </span>
-              <span className="opacity-90 mt-px tracking-tighter" style={{ fontSize: 'clamp(4px, min(12cqi, 14cqh), 10px)' }}>
+              <span className="opacity-90 mt-px tracking-tighter whitespace-nowrap" style={{ fontSize: 'clamp(4px, min(11cqi, 12cqh), 9px)' }}>
                 {startLabel} - {endLabel}
               </span>
             </div>
@@ -194,10 +194,13 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       }
 
       rows.push(
-        <tr key={hours[ri]} className="border-b border-zinc-100" style={{ height: `calc(100% / ${hours.length})` }}>
-          <td className="w-10 sm:w-12 p-0 border-r border-zinc-100 h-0 relative">
-            <div className="absolute inset-0 flex items-center justify-center pr-1">
-              <span className="text-[9px] font-bold leading-none tabular-nums text-zinc-400">{`${hours[ri]}:00`}</span>
+        <tr
+          key={hours[ri]}
+          style={{ height: `${(1 / hours.length) * 100}%` }}
+        >
+          <td className="w-8 sm:w-10 p-0 border-r border-zinc-100 relative">
+            <div className="absolute inset-0 flex items-center justify-center pr-0.5">
+              <span className="text-[8px] sm:text-[9px] font-bold leading-none tabular-nums text-zinc-400">{`${hours[ri]}:00`}</span>
             </div>
           </td>
           {cols}
@@ -233,23 +236,23 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
 
   return (
     <div className="px-1 sm:px-2 py-1 w-full h-full flex flex-col min-h-0">
-      <table className="w-full table-fixed border-collapse flex-1 h-full">
+      <table className="w-full table-fixed border-collapse" style={{ height: '100%' }}>
         <thead>
-          <tr className="h-6 shrink-0">
-            <th className="w-10 sm:w-12 border-b-2 border-[#36606F] pb-1 pr-1 text-center text-[9px] font-black uppercase tracking-wider text-zinc-400">
+          <tr style={{ height: 20 }}>
+            <th className="w-8 sm:w-10 border-b-2 border-[#36606F] pb-0.5 pr-1 text-center text-[8px] font-black uppercase tracking-wider text-zinc-400">
               Hora
             </th>
             {venues.map((v) => (
               <th
                 key={v}
-                className="border-b-2 border-[#36606F] pb-1 px-1 text-center text-[9px] font-black uppercase tracking-wider text-[#36606F]"
+                className="border-b-2 border-[#36606F] pb-0.5 px-1 text-center text-[8px] font-black uppercase tracking-wider text-[#36606F]"
               >
-                {v.replace('P', 'PISTA ')}
+                {v.replace('P', 'P')}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="h-full">
+        <tbody style={{ height: 'calc(100% - 20px)' }}>
           {renderedCells.rows}
         </tbody>
       </table>
