@@ -151,7 +151,7 @@ export function PavilionDayModal({
           <div
             className="bg-white rounded-[2rem] w-full max-w-full shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 touch-pan-y"
             style={{
-              height: '85dvh',
+              maxHeight: '92dvh',
               transform: `translateX(${clampedOffset}px)`,
               transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
             }}
@@ -233,7 +233,7 @@ export function PavilionDayModal({
             </div>
 
             {/* ---- Content ---- */}
-            <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+            <div className="flex flex-col overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <LoadingSpinner className="text-[#36606F]" />

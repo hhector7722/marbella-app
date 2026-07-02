@@ -237,7 +237,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
   }
 
   return (
-    <div className="px-1 sm:px-2 py-1 w-full h-full overflow-y-auto min-h-0">
+    <div className="px-1 sm:px-2 py-1 w-full">
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr style={{ height: ROW_H }}>
