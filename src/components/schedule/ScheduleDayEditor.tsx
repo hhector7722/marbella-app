@@ -24,7 +24,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
-import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
+import { fetchDayDetailAction, BarActivity } from '@/app/staff/actividades/actions';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
@@ -286,7 +286,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const barActivities = dayDetailRes.data.barActivities;
                 if (barActivities && barActivities.length > 0) {
                     // Choose the activity that occupies the most rows * columns in the morning slot (using duration as proxy)
-                    const computeArea = (act) => {
+                    const computeArea = (act: BarActivity) => {
                       const startH = parseInt(act.startTime.split(':')[0] ?? '0', 10);
                       const endH = parseInt(act.endTime.split(':')[0] ?? '0', 10);
                       return Math.max(0, endH - startH);
