@@ -64,6 +64,7 @@ interface Props {
     userId?: string | null;
     /** yyyy-MM-dd desde notificación: abre el detalle de ese día al abrir el modal */
     initialFocusDate?: string | null;
+    userEmail?: string;
 }
 
 /* ─── Modal ─────────────────────────────────────────────── */
@@ -74,6 +75,7 @@ export const StaffScheduleModal = ({
     userRole,
     userId: propsUserId,
     initialFocusDate,
+    userEmail,
 }: Props) => {
     const router = useRouter();
     const pathname = usePathname();
@@ -384,7 +386,7 @@ export const StaffScheduleModal = ({
                             </div>
 
                             {/* Botón de Edición (Solo para Managers): abre editor dentro del modal */}
-                            {(userRole === 'manager' || userRole === 'supervisor') && (
+                            {(userEmail === 'hhector7722@gmail.com') && (
                                 <button
                                     type="button"
                                     onClick={() => setEditModeForDate(format(selectedDate!, 'yyyy-MM-dd'))}

@@ -49,27 +49,29 @@ export default function StaffBottomNav() {
 
     // Render the choice menu when open
     const scheduleChoiceMenu = isScheduleChoiceOpen ? (
-        <div className="absolute bottom-24 left-0 right-0 mx-auto w-48 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-zinc-200 z-50">
-            <ul className="flex flex-col">
-                <li>
-                    <Link
-                        href="/schedule"
-                        className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
-                        onClick={() => setIsScheduleChoiceOpen(false)}
-                    >
-                        Horarios
-                    </Link>
-                </li>
-                <li>
-                    <Link
-                        href="/staff/actividades"
-                        className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
-                        onClick={() => setIsScheduleChoiceOpen(false)}
-                    >
-                        Actividades
-                    </Link>
-                </li>
-            </ul>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
+            <div className="w-48 bg-white/90 rounded-xl shadow-lg border border-zinc-200 p-2">
+                <ul className="flex flex-col">
+                    <li>
+                        <Link
+                            href="/horario"
+                            className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
+                            onClick={() => setIsScheduleChoiceOpen(false)}
+                        >
+                            Horarios
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
+                            href="/staff/actividades"
+                            className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
+                            onClick={() => setIsScheduleChoiceOpen(false)}
+                        >
+                            Actividades
+                        </Link>
+                    </li>
+                </ul>
+            </div>
         </div>
     ) : null;
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -235,15 +237,5 @@ export default function StaffBottomNav() {
                 isOpen={isSupplierModalOpen}
                 onClose={() => setIsSupplierModalOpen(false)}
             />
-
-            <StaffScheduleModal
-                isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
-                shifts={monthShifts}
-                userName={userData?.name}
-                userRole={(userData?.role as 'staff' | 'manager' | 'supervisor') ?? 'staff'}
-                userId={userData?.id}
-            />
-        </>
     );
 }
