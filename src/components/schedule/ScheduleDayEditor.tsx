@@ -795,7 +795,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                         <div className="p-3 md:p-4 w-full shrink-0">
                             <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
                                 {/* Card actividad 1 */}
-                                <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0">
+                            
+                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0">
                                     {hasTwoActivities && (
                                         <div className="mb-1.5 w-full text-center">
                                             <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">MAÑANA</span>
@@ -913,7 +914,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 </>
                                             )}
                                         </div>
-                                    </div>
+
                                 </div>
 
                                 {hasSlot1Activity && !hasSlot2Activity && !secondSlotExpanded && (
