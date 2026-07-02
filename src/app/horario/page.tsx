@@ -156,7 +156,12 @@ export default function HorarioPage() {
           {/* ── Header ── */}
           <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px]">
             <div className="w-[100px] flex justify-start">
-              <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">Horarios</span>
+              <a
+                href="/staff/actividades"
+                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
+              >
+                Actividades
+              </a>
             </div>
             <div className="flex items-center gap-0.5">
               <button

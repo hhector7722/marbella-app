@@ -265,7 +265,14 @@ export default function ActividadesPage() {
                 <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="w-[100px]"></div>
+            <div className="w-[100px] flex justify-end">
+              <a
+                href="/horario"
+                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
+              >
+                Horarios
+              </a>
+            </div>
           </div>
 
           {/* ── Calendar ── */}

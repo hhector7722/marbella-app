@@ -39,7 +39,6 @@ export default function StaffBottomNav() {
 
   const [homeHref, setHomeHref] = useState('/staff/dashboard');
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
-  const [isScheduleChoiceOpen, setIsScheduleChoiceOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [monthShifts, setMonthShifts] = useState<
     { date: Date; startTime: string; endTime: string; activity?: string }[]
@@ -51,10 +50,7 @@ export default function StaffBottomNav() {
     email: string;
   } | null>(null);
 
-  // Close choice menu on route change
-  useEffect(() => {
-    setIsScheduleChoiceOpen(false);
-  }, [pathname]);
+
 
   // Load profile and shifts
   useEffect(() => {
@@ -152,36 +148,12 @@ export default function StaffBottomNav() {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
 
-  const scheduleChoiceMenu = isScheduleChoiceOpen ? (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-[200]">
-      <div className="w-48 bg-white/90 rounded-xl shadow-lg border border-zinc-200 p-2">
-        <ul className="flex flex-col">
-          <li>
-            <Link
-              href="/horario"
-              className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
-              onClick={() => setIsScheduleChoiceOpen(false)}
-            >
-              Horarios
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/staff/actividades"
-              className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
-              onClick={() => setIsScheduleChoiceOpen(false)}
-            >
-              Actividades
-            </Link>
-          </li>
-        </ul>
-      </div>
-    </div>
-  ) : null;
+  // Destination for the Horarios nav button depends on the user
+  const scheduleHref =
+    userData?.email === 'fogotorrat@gmail.com' ? '/staff/actividades' : '/horario';
 
   return (
     <>
-      {scheduleChoiceMenu}
       <nav
         ref={navRef}
         className="marbella-fixed-bottombar fixed bottom-0 left-0 right-0 z-[95] flex h-20 items-center justify-around border-t border-white/10 bg-[#46769c]/90 px-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-16 md:px-8 print:hidden"
@@ -190,7 +162,10 @@ export default function StaffBottomNav() {
         {STAFF_NAV_ITEMS.map((item) => {
           const active = isActive(item);
           const Icon = item.icon;
-          const linkHref = item.action === 'home' ? homeHref : item.href;
+          const linkHref =
+            item.action === 'home' ? homeHref
+            : item.action === 'scheduleModal' ? scheduleHref
+            : item.href;
           return (
             <Link
               key={item.name}
@@ -203,8 +178,8 @@ export default function StaffBottomNav() {
               onClick={(e) => {
                 if (item.action === 'scheduleModal') {
                   e.preventDefault();
-                  trackUsageTabSwitch(pathname, '#horarios', item.name);
-                  setIsScheduleChoiceOpen(true);
+                  trackUsageTabSwitch(pathname, scheduleHref, item.name);
+                  router.push(scheduleHref);
                 } else if (item.action === 'supplierModal') {
                   e.preventDefault();
                   trackUsageTabSwitch(pathname, '/orders/new', item.name);
