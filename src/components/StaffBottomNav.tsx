@@ -228,7 +228,7 @@ export default function StaffBottomNav() {
         <StaffScheduleModal
           isOpen={isScheduleModalOpen}
           onClose={() => setIsScheduleModalOpen(false)}
-          monthShifts={monthShifts}
+          shifts={monthShifts}
         />
       </nav>
       <SupplierSelectionModal
