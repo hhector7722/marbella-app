@@ -39,6 +39,39 @@ export default function StaffBottomNav() {
 
     const [homeHref, setHomeHref] = useState('/staff/dashboard');
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+    // State for schedule/actividades choice menu
+    const [isScheduleChoiceOpen, setIsScheduleChoiceOpen] = useState(false);
+
+    // Close menu on navigation change
+    useEffect(() => {
+        setIsScheduleChoiceOpen(false);
+    }, [pathname]);
+
+    // Render the choice menu when open
+    const scheduleChoiceMenu = isScheduleChoiceOpen ? (
+        <div className="absolute bottom-24 left-0 right-0 mx-auto w-48 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-zinc-200 z-50">
+            <ul className="flex flex-col">
+                <li>
+                    <Link
+                        href="/schedule"
+                        className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
+                        onClick={() => setIsScheduleChoiceOpen(false)}
+                    >
+                        Horarios
+                    </Link>
+                </li>
+                <li>
+                    <Link
+                        href="/staff/actividades"
+                        className="block px-4 py-2 text-center text-sm text-gray-800 hover:bg-gray-100"
+                        onClick={() => setIsScheduleChoiceOpen(false)}
+                    >
+                        Actividades
+                    </Link>
+                </li>
+            </ul>
+        </div>
+    ) : null;
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [monthShifts, setMonthShifts] = useState<
         { date: Date; startTime: string; endTime: string; activity?: string }[]
@@ -174,7 +207,7 @@ export default function StaffBottomNav() {
                                 if (item.action === 'scheduleModal') {
                                     e.preventDefault();
                                     trackUsageTabSwitch(pathname, '#horarios', item.name);
-                                    setIsScheduleModalOpen(true);
+                                    setIsScheduleChoiceOpen(true);
                                 } else if (item.action === 'supplierModal') {
                                     e.preventDefault();
                                     trackUsageTabSwitch(pathname, '/orders/new', item.name);
@@ -195,6 +228,7 @@ export default function StaffBottomNav() {
                         </Link>
                     );
                 })}
+            {scheduleChoiceMenu}
             </nav>
 
             <SupplierSelectionModal
