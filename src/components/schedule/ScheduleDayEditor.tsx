@@ -24,6 +24,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
+import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
@@ -273,6 +274,16 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 .lte('start_time', endOfDay)
                 .order('created_at', { ascending: false }); // Mas nuevos primero
 
+            // Fetch bar activities for the day to auto-fill primary activity
+            const dayDetailRes = await fetchDayDetailAction({ date: targetDate });
+            let autoActivity = '';
+            if (dayDetailRes.success) {
+                const barActivities = dayDetailRes.data.barActivities;
+                if (barActivities && barActivities.length > 0) {
+                    autoActivity = barActivities[0].activityName || '';
+                }
+            }
+
             // DEDUPLICACIÓN: Mapa por user_id, quedándonos con el primero (más reciente)
             const shiftMap = new Map();
             existingShifts?.forEach(s => {
@@ -345,7 +356,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const evStart2 = pickDayEventField((s) => s.event_start_time_2);
                 const evEnd2 = pickDayEventField((s) => s.event_end_time_2);
 
-                setActivity(fActivity);
+                // Set primary activity from fetched bar activities (auto) if available
+                setActivity(autoActivity);
 
                 const fCategoria = first.draft_categoria || first.categoria || '';
                 const fCategoria2 = first.draft_categoria_2 || first.categoria_2 || '';
