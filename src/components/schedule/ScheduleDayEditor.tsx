@@ -170,6 +170,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const [shifts, setShifts] = useState<any[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
+    // Flag to avoid overwriting manual edits after initial autofill
+    const [primaryFetched, setPrimaryFetched] = useState(false);
 
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isDayPublished, setIsDayPublished] = useState(false);
@@ -253,7 +255,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     }, [initialDate]);
 
     useEffect(() => {
+        // Reset secondary slot when date changes and refetch data
         setSecondSlotExpanded(false);
+        setPrimaryFetched(false);
+        fetchData(date);
     }, [date]);
 
     const fetchData = async (targetDate: string) => {
@@ -280,8 +285,25 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             if (dayDetailRes.success) {
                 const barActivities = dayDetailRes.data.barActivities;
                 if (barActivities && barActivities.length > 0) {
-                    autoActivity = barActivities[0].activityName || '';
+                    // Choose the activity that occupies the most rows * columns in the morning slot
+                    let best = barActivities[0];
+                    let maxArea = (best.rows ?? 1) * (best.columns ?? 1);
+                    for (const act of barActivities) {
+                        const rows = act.rows ?? 1;
+                        const cols = act.columns ?? 1;
+                        const area = rows * cols;
+                        if (area > maxArea) {
+                            best = act;
+                            maxArea = area;
+                        }
+                    }
+                    autoActivity = best.activityName || '';
                 }
+            }
+            // Set primary activity only once per date load (or if user hasn't edited yet)
+            if (!primaryFetched) {
+                setActivity(autoActivity);
+                setPrimaryFetched(true);
             }
 
             // DEDUPLICACIÓN: Mapa por user_id, quedándonos con el primero (más reciente)
@@ -796,7 +818,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                             <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
                                 {/* Card actividad 1 */}
                             
-                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0">
+
                                     {hasTwoActivities && (
                                         <div className="mb-1.5 w-full text-center">
                                             <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">MAÑANA</span>
