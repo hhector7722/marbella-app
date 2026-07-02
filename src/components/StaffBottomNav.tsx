@@ -181,6 +181,7 @@ export default function StaffBottomNav() {
 
   return (
     <>
+      {scheduleChoiceMenu}
       <nav
         ref={navRef}
         className="marbella-fixed-bottombar fixed bottom-0 left-0 right-0 z-[95] flex h-20 items-center justify-around border-t border-white/10 bg-[#46769c]/90 px-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-16 md:px-8 print:hidden"
@@ -224,7 +225,6 @@ export default function StaffBottomNav() {
             </Link>
           );
         })}
-        {scheduleChoiceMenu}
         <StaffScheduleModal
           isOpen={isScheduleModalOpen}
           onClose={() => setIsScheduleModalOpen(false)}
