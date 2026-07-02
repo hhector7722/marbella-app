@@ -153,7 +153,7 @@ export default function StaffBottomNav() {
   };
 
   const scheduleChoiceMenu = isScheduleChoiceOpen ? (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-[200]">
       <div className="w-48 bg-white/90 rounded-xl shadow-lg border border-zinc-200 p-2">
         <ul className="flex flex-col">
           <li>
