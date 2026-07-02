@@ -79,6 +79,8 @@ function getContrastForHsl(str: string): string {
   return (yiq >= 135) ? '#000000' : '#ffffff';
 }
 
+const ROW_H = 28;
+
 export function ActivitiesTab({ activities, date, isHector }: Props) {
   const router = useRouter();
 
@@ -196,9 +198,9 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       rows.push(
         <tr
           key={hours[ri]}
-          style={{ height: `${(1 / hours.length) * 100}%` }}
+          style={{ height: ROW_H }}
         >
-          <td className="w-8 sm:w-10 p-0 border-r border-zinc-100 relative">
+          <td className="w-8 sm:w-10 p-0 border-r border-b border-zinc-100 relative">
             <div className="absolute inset-0 flex items-center justify-center pr-0.5">
               <span className="text-[8px] sm:text-[9px] font-bold leading-none tabular-nums text-zinc-400">{`${hours[ri]}:00`}</span>
             </div>
@@ -235,24 +237,24 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
   }
 
   return (
-    <div className="px-1 sm:px-2 py-1 w-full h-full flex flex-col min-h-0">
-      <table className="w-full table-fixed border-collapse" style={{ height: '100%' }}>
+    <div className="px-1 sm:px-2 py-1 w-full h-full overflow-y-auto min-h-0">
+      <table className="w-full table-fixed border-collapse">
         <thead>
-          <tr style={{ height: 20 }}>
-            <th className="w-8 sm:w-10 border-b-2 border-[#36606F] pb-0.5 pr-1 text-center text-[8px] font-black uppercase tracking-wider text-zinc-400">
+          <tr style={{ height: ROW_H }}>
+            <th className="w-8 sm:w-10 border-b-2 border-[#36606F] pr-1 text-center text-[8px] font-black uppercase tracking-wider text-zinc-400">
               Hora
             </th>
             {venues.map((v) => (
               <th
                 key={v}
-                className="border-b-2 border-[#36606F] pb-0.5 px-1 text-center text-[8px] font-black uppercase tracking-wider text-[#36606F]"
+                className="border-b-2 border-[#36606F] px-1 text-center text-[8px] font-black uppercase tracking-wider text-[#36606F]"
               >
-                {v.replace('P', 'P')}
+                {v.replace(/^P(\d)$/, 'PISTA $1')}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody style={{ height: 'calc(100% - 20px)' }}>
+        <tbody>
           {renderedCells.rows}
         </tbody>
       </table>
