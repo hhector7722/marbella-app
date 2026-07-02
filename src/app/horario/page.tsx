@@ -32,6 +32,14 @@ interface DayShift {
   endTime: string;
   activity?: string;
   activityColor?: string | null;
+  activityStartTime?: string | null;
+  activityEndTime?: string | null;
+}
+
+function fmtHour(time: string): string {
+  const parts = time.split(':');
+  if (parts.length < 2) return time;
+  return `${parseInt(parts[0], 10)}:${parts[1]}`;
 }
 
 interface EmployeeOption {
@@ -173,20 +181,27 @@ export default function HorarioPage() {
         .lte('start_time', endIso)
         .order('start_time', { ascending: true });
 
-      // Fetch activity colors from activity_occurrences for this date range
       const { data: activityRows } = await supabase
         .from('activity_occurrences')
-        .select('activity_date, activities ( name, color )')
+        .select('activity_date, start_time, end_time, activities ( name, color )')
         .gte('activity_date', format(gridStart, 'yyyy-MM-dd'))
         .lte('activity_date', format(gridEnd, 'yyyy-MM-dd'));
 
-      const colorByNameByDate: Record<string, Record<string, string | null>> = {};
-      for (const row of activityRows ?? []) {
-        const d = row.activity_date as string;
-        const act = row.activities as unknown as { name: string; color: string | null } | null;
+      type ActRow = { activity_date: string; start_time: string; end_time: string; activities: { name: string; color: string | null } | null };
+      const colorByNameByDate: Record<string, Record<string, { color: string | null; startTime: string; endTime: string }>> = {};
+      for (const row of (activityRows ?? []) as unknown as ActRow[]) {
+        const d = row.activity_date;
+        const act = row.activities;
         if (!act) continue;
         if (!colorByNameByDate[d]) colorByNameByDate[d] = {};
-        colorByNameByDate[d][act.name] = act.color;
+        // keep first occurrence times per activity name per date
+        if (!colorByNameByDate[d][act.name]) {
+          colorByNameByDate[d][act.name] = {
+            color: act.color,
+            startTime: row.start_time?.substring(0, 5) ?? '',
+            endTime: row.end_time?.substring(0, 5) ?? '',
+          };
+        }
       }
 
       const byDate: Record<string, DayShift> = {};
@@ -201,11 +216,16 @@ export default function HorarioPage() {
         const activity = s.activity || s.activity_2 || undefined;
 
         let activityColor: string | null = null;
+        let activityStartTime: string | null = null;
+        let activityEndTime: string | null = null;
         if (activity) {
-          activityColor = colorByNameByDate[key]?.[activity] ?? null;
+          const meta = colorByNameByDate[key]?.[activity];
+          activityColor = meta?.color ?? null;
+          activityStartTime = meta?.startTime ?? null;
+          activityEndTime = meta?.endTime ?? null;
         }
 
-        byDate[key] = { startTime, endTime, activity, activityColor };
+        byDate[key] = { startTime, endTime, activity, activityColor, activityStartTime, activityEndTime };
         allArr.push({ date: start, startTime, endTime, activity });
       }
 
@@ -380,12 +400,12 @@ export default function HorarioPage() {
                             >
                               <ArrowRight
                                 className="shrink-0 text-white"
-                                style={{ width: 'clamp(6px,10cqi,10px)', height: 'clamp(6px,10cqi,10px)' }}
+                                style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
                                 strokeWidth={3}
                               />
                               <span
-                                className="font-black text-white leading-none"
-                                style={{ fontSize: 'clamp(6px, 11cqi, 11px)' }}
+                                className="font-black text-white leading-none whitespace-nowrap"
+                                style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
                               >
                                 {shift.startTime}
                               </span>
@@ -398,12 +418,12 @@ export default function HorarioPage() {
                             >
                               <ArrowLeft
                                 className="shrink-0 text-white"
-                                style={{ width: 'clamp(6px,10cqi,10px)', height: 'clamp(6px,10cqi,10px)' }}
+                                style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
                                 strokeWidth={3}
                               />
                               <span
-                                className="font-black text-white leading-none"
-                                style={{ fontSize: 'clamp(6px, 11cqi, 11px)' }}
+                                className="font-black text-white leading-none whitespace-nowrap"
+                                style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
                               >
                                 {shift.endTime}
                               </span>
@@ -415,13 +435,27 @@ export default function HorarioPage() {
                                 className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
                                 style={{
                                   backgroundColor: activityBg,
+                                  color: '#ffffff',
+                                  containerType: 'inline-size',
                                   opacity: isPastDay ? 0.8 : 1,
                                 }}
                               >
+                                {/* Time header */}
+                                {shift.activityStartTime && shift.activityEndTime && (
+                                  <div className="px-1 py-[2px]">
+                                    <span
+                                      className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
+                                      style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
+                                    >
+                                      {fmtHour(shift.activityStartTime)} - {fmtHour(shift.activityEndTime)}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Activity name */}
                                 <div className="px-1 py-[2px] bg-black/10">
                                   <span
-                                    className="block break-keep font-bold leading-tight text-white"
-                                    style={{ fontSize: 'clamp(5px, 12cqi, 11px)' }}
+                                    className="block break-keep font-bold leading-tight mt-[1px]"
+                                    style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
                                   >
                                     {shift.activity}
                                   </span>

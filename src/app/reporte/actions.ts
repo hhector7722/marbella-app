@@ -25,89 +25,85 @@ export async function submitReporteAction(activities: ReportePayload[]) {
     const supabase = getServiceSupabase();
 
     for (const item of activities) {
-      if (!item.data || !item.activitat || !item.hora_convocatoria || !item.hora_finalitzacio) {
-        continue; // Skip invalid entries
-      }
+      if (!item.data || !item.activitat) continue;
 
-      // 1. Get or create category
-      let categoryId = null;
-      if (item.categoria && item.categoria.trim() !== '') {
-        const catName = item.categoria.trim();
-        let { data: cat } = await supabase
-          .from('participant_categories')
-          .select('id')
-          .ilike('name', catName)
-          .maybeSingle();
-
-        if (!cat) {
-          const { data: newCat, error: catErr } = await supabase
-            .from('participant_categories')
-            .insert({ name: catName })
-            .select('id')
-            .single();
-          
-          if (!catErr && newCat) {
-            categoryId = newCat.id;
-          }
-        } else {
-          categoryId = cat.id;
-        }
-      }
-
-      // 2. Get or create activity
       const actName = item.activitat.trim();
+
+      // 1. Get or create activity
       let { data: act } = await supabase
         .from('activities')
         .select('id')
         .ilike('name', actName)
         .maybeSingle();
 
-      let activityId = null;
+      let activityId: string | null = null;
       if (!act) {
         const { data: newAct, error: actErr } = await supabase
           .from('activities')
           .insert({ name: actName })
           .select('id')
           .single();
-        
-        if (!actErr && newAct) {
-          activityId = newAct.id;
-        }
+        if (!actErr && newAct) activityId = newAct.id;
       } else {
         activityId = act.id;
       }
 
       if (!activityId) continue;
 
-      // 3. Create occurrence
-      // Use source_type = 'web_form' to distinguish from 'pdf'
-      const { data: occ, error: occErr } = await supabase
-        .from('activity_occurrences')
-        .insert({
-          activity_id: activityId,
-          activity_date: item.data,
-          start_time: item.hora_convocatoria.length === 5 ? `${item.hora_convocatoria}:00` : item.hora_convocatoria,
-          end_time: item.hora_finalitzacio.length === 5 ? `${item.hora_finalitzacio}:00` : item.hora_finalitzacio,
-          source_type: 'web_form'
-        })
-        .select('id')
-        .single();
+      const participants = item.participants ? parseInt(item.participants, 10) : null;
+      const category = item.categoria?.trim() || null;
 
-      if (occErr || !occ) {
-        console.error('Error inserting occurrence:', occErr);
-        continue;
-      }
+      const hasHours = item.hora_convocatoria && item.hora_finalitzacio;
 
-      // 4. Create occurrence group
-      if (categoryId) {
-        const participantsCount = parseInt(item.participants, 10);
-        await supabase
-          .from('occurrence_groups')
+      if (hasHours) {
+        // 2a. Insert a new occurrence with actual hours (source_type = 'web_form')
+        //     so it appears alongside the planned occurrence for comparison.
+        //     Also store participants + category directly on this occurrence.
+        const startTime = item.hora_convocatoria.length === 5
+          ? `${item.hora_convocatoria}:00`
+          : item.hora_convocatoria;
+        const endTime = item.hora_finalitzacio.length === 5
+          ? `${item.hora_finalitzacio}:00`
+          : item.hora_finalitzacio;
+
+        const { data: occ, error: occErr } = await supabase
+          .from('activity_occurrences')
           .insert({
-            occurrence_id: occ.id,
-            category_id: categoryId,
-            participants: isNaN(participantsCount) ? null : participantsCount
-          });
+            activity_id: activityId,
+            activity_date: item.data,
+            start_time: startTime,
+            end_time: endTime,
+            source_type: 'web_form',
+            ...(participants !== null && !isNaN(participants) ? { participants } : {}),
+            ...(category ? { category } : {}),
+          })
+          .select('id')
+          .single();
+
+        if (occErr) {
+          console.error('Error inserting web_form occurrence:', occErr);
+        }
+      } else {
+        // 2b. No hours provided → just update the existing planned occurrence(s)
+        //     for this activity on this date with participants + category.
+        if (participants !== null || category) {
+          const updateData: Record<string, unknown> = {};
+          if (participants !== null && !isNaN(participants)) updateData.participants = participants;
+          if (category) updateData.category = category;
+
+          if (Object.keys(updateData).length > 0) {
+            const { error: updErr } = await supabase
+              .from('activity_occurrences')
+              .update(updateData)
+              .eq('activity_id', activityId)
+              .eq('activity_date', item.data)
+              .neq('source_type', 'web_form'); // only update planned occurrences
+
+            if (updErr) {
+              console.error('Error updating planned occurrence:', updErr);
+            }
+          }
+        }
       }
     }
 
@@ -191,8 +187,6 @@ export async function getAllActivitiesAction() {
   try {
     const supabase = getServiceSupabase();
     
-    // Fallback to is_active if it exists, but the query should be safe.
-    // Since we just added is_active, we will filter by it.
     const { data, error } = await supabase
       .from('activities')
       .select('name')
