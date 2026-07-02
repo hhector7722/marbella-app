@@ -15,20 +15,37 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { createClient } from '@/utils/supabase/client';
 import { usePageView } from '@/lib/usage/usePageView';
 
+const MASTER_EMAIL = 'hhector7722@gmail.com';
+
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
 interface DayShift {
-  startTime: string; // HH:MM
-  endTime: string;   // HH:MM
+  startTime: string;
+  endTime: string;
   activity?: string;
+  activityColor?: string | null;
+}
+
+interface EmployeeOption {
+  id: string;
+  name: string;
+}
+
+function stringToHslColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 65%, 48%)`;
 }
 
 function madridTodayIso(): string {
@@ -53,13 +70,20 @@ export default function HorarioPage() {
   const [loading, setLoading] = useState(true);
   const [shiftsByDate, setShiftsByDate] = useState<Record<string, DayShift>>({});
 
-  // For modal
+  // Auth & profile
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [myEmail, setMyEmail] = useState<string>('');
+  const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
+
+  // Employee filter (master only)
+  const [isMaster, setIsMaster] = useState(false);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+
+  // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
   const [allShifts, setAllShifts] = useState<{ date: Date; startTime: string; endTime: string; activity?: string }[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
-  const [userEmail, setUserEmail] = useState<string>('');
 
   // Touch swipe
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -74,9 +98,7 @@ export default function HorarioPage() {
     if (distance < -minSwipeDistance) setViewMonth((m) => subMonths(m, 1));
   };
 
-  const todayStr = useMemo(() => madridTodayIso(), []);
   const today = useMemo(() => startOfDay(new Date()), []);
-
   const monthStart = useMemo(() => startOfMonth(viewMonth), [viewMonth]);
   const monthEnd = useMemo(() => endOfMonth(viewMonth), [viewMonth]);
   const gridStart = useMemo(() => startOfWeek(monthStart, { weekStartsOn: 1 }), [monthStart]);
@@ -86,13 +108,15 @@ export default function HorarioPage() {
     [gridStart, gridEnd],
   );
 
-  const loadShifts = useCallback(async () => {
-    setLoading(true);
-    try {
+  // Load profile + employee list (master only) once
+  useEffect(() => {
+    let cancelled = false;
+    async function init() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-      setUserEmail(user.email ?? '');
+      if (!user || cancelled) return;
+
+      setMyUserId(user.id);
+      setMyEmail(user.email ?? '');
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -100,23 +124,70 @@ export default function HorarioPage() {
         .eq('id', user.id)
         .single();
 
-      if (profile?.role) {
+      if (!cancelled && profile?.role) {
         const r = profile.role as string;
         if (r === 'manager' || r === 'supervisor') setUserRole(r);
-        else setUserRole('staff');
       }
 
+      const email = profile?.email ?? user.email ?? '';
+      const master = email === MASTER_EMAIL;
+      if (!cancelled) setIsMaster(master);
+
+      if (master) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name')
+          .order('first_name', { ascending: true });
+
+        if (!cancelled && profiles) {
+          setEmployees(
+            profiles.map((p: { id: string; first_name: string | null }) => ({
+              id: p.id,
+              name: p.first_name || 'Sin nombre',
+            }))
+          );
+        }
+      }
+    }
+    void init();
+    return () => { cancelled = true; };
+  }, [supabase]);
+
+  // Target user: selected employee (master) or self
+  const targetUserId = isMaster && selectedEmployeeId ? selectedEmployeeId : myUserId;
+
+  // Load shifts for the target user
+  const loadShifts = useCallback(async () => {
+    if (!targetUserId) return;
+    setLoading(true);
+    try {
       const startIso = format(gridStart, 'yyyy-MM-dd') + 'T00:00:00';
       const endIso = format(gridEnd, 'yyyy-MM-dd') + 'T23:59:59';
 
       const { data: rawShifts } = await supabase
         .from('shifts')
         .select('start_time, end_time, activity, activity_2')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .eq('is_published', true)
         .gte('start_time', startIso)
         .lte('start_time', endIso)
         .order('start_time', { ascending: true });
+
+      // Fetch activity colors from activity_occurrences for this date range
+      const { data: activityRows } = await supabase
+        .from('activity_occurrences')
+        .select('activity_date, activities ( name, color )')
+        .gte('activity_date', format(gridStart, 'yyyy-MM-dd'))
+        .lte('activity_date', format(gridEnd, 'yyyy-MM-dd'));
+
+      const colorByNameByDate: Record<string, Record<string, string | null>> = {};
+      for (const row of activityRows ?? []) {
+        const d = row.activity_date as string;
+        const act = row.activities as unknown as { name: string; color: string | null } | null;
+        if (!act) continue;
+        if (!colorByNameByDate[d]) colorByNameByDate[d] = {};
+        colorByNameByDate[d][act.name] = act.color;
+      }
 
       const byDate: Record<string, DayShift> = {};
       const allArr: { date: Date; startTime: string; endTime: string; activity?: string }[] = [];
@@ -127,8 +198,15 @@ export default function HorarioPage() {
         const key = format(start, 'yyyy-MM-dd');
         const startTime = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         const endTime = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-        byDate[key] = { startTime, endTime, activity: s.activity || s.activity_2 || undefined };
-        allArr.push({ date: start, startTime, endTime, activity: s.activity || s.activity_2 || undefined });
+        const activity = s.activity || s.activity_2 || undefined;
+
+        let activityColor: string | null = null;
+        if (activity) {
+          activityColor = colorByNameByDate[key]?.[activity] ?? null;
+        }
+
+        byDate[key] = { startTime, endTime, activity, activityColor };
+        allArr.push({ date: start, startTime, endTime, activity });
       }
 
       setShiftsByDate(byDate);
@@ -136,9 +214,11 @@ export default function HorarioPage() {
     } finally {
       setLoading(false);
     }
-  }, [gridStart, gridEnd, supabase]);
+  }, [targetUserId, gridStart, gridEnd, supabase]);
 
-  useEffect(() => { void loadShifts(); }, [loadShifts]);
+  useEffect(() => {
+    if (targetUserId) void loadShifts();
+  }, [loadShifts, targetUserId]);
 
   const openDay = (day: Date) => {
     setSelectedDayStr(format(day, 'yyyy-MM-dd'));
@@ -148,14 +228,20 @@ export default function HorarioPage() {
   const getMonthLabel = (date: Date) =>
     date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
+  // Effective userId & role for the modal
+  const modalUserId = targetUserId;
+  const modalRole = isMaster ? 'manager' : userRole;
+
   return (
     <div className="pb-24">
       <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
         <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
 
           {/* ── Header ── */}
-          <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px]">
-            <div className="w-[100px] flex justify-start">
+          <div className="flex items-center justify-between bg-[#36606F] px-3 py-2.5 min-h-[52px] gap-2">
+
+            {/* Left: Actividades link */}
+            <div className="flex-shrink-0">
               <a
                 href="/staff/actividades"
                 className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
@@ -163,28 +249,50 @@ export default function HorarioPage() {
                 Actividades
               </a>
             </div>
-            <div className="flex items-center gap-0.5">
+
+            {/* Center: month navigation */}
+            <div className="flex items-center gap-0.5 flex-1 justify-center min-w-0">
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => subMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
+                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0"
                 aria-label="Mes anterior"
               >
                 <ChevronLeft size={18} strokeWidth={2.5} />
               </button>
-              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap">
+              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap truncate">
                 {getMonthLabel(viewMonth)}
               </span>
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
+                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0"
                 aria-label="Mes siguiente"
               >
                 <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="w-[100px]"></div>
+
+            {/* Right: employee filter (master only) */}
+            <div className="flex-shrink-0 w-[90px] flex justify-end">
+              {isMaster && (
+                <select
+                  value={selectedEmployeeId ?? ''}
+                  onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
+                  className="w-full rounded bg-white/10 border border-white/20 text-white text-[10px] font-semibold px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer"
+                  style={{ color: 'white', backgroundColor: 'rgba(255,255,255,0.12)' }}
+                >
+                  <option value="" style={{ color: '#1a1a1a', backgroundColor: '#fff' }}>
+                    Yo (admin)
+                  </option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id} style={{ color: '#1a1a1a', backgroundColor: '#fff' }}>
+                      {emp.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           {/* ── Calendar ── */}
@@ -243,6 +351,10 @@ export default function HorarioPage() {
                         : 'text-zinc-400',
                     );
 
+                    const activityBg = shift?.activity
+                      ? (shift.activityColor || stringToHslColor(shift.activity))
+                      : '#36606F';
+
                     return (
                       <div
                         key={key}
@@ -257,40 +369,63 @@ export default function HorarioPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* Shift info */}
+                        {/* Shift rows */}
                         {shift && (
-                          <div className="flex-1 w-full flex flex-col gap-0.5 overflow-hidden">
-                            {/* Hora entrada */}
+                          <div className="flex-1 w-full flex flex-col gap-[2px] overflow-hidden">
+
+                            {/* Row 1: entry */}
                             <div
-                              className="w-full rounded-[3px] px-1 py-[2px] flex flex-col shrink-0"
-                              style={{ backgroundColor: '#34d399', color: '#fff', opacity: isPastDay ? 0.75 : 1 }}
+                              className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
+                              style={{ backgroundColor: '#22c55e', opacity: isPastDay ? 0.8 : 1 }}
                             >
+                              <ArrowRight
+                                className="shrink-0 text-white"
+                                style={{ width: 'clamp(6px,10cqi,10px)', height: 'clamp(6px,10cqi,10px)' }}
+                                strokeWidth={3}
+                              />
                               <span
-                                className="block font-black leading-none"
+                                className="font-black text-white leading-none"
                                 style={{ fontSize: 'clamp(6px, 11cqi, 11px)' }}
                               >
-                                ▲ {shift.startTime}
-                              </span>
-                              <span
-                                className="block font-black leading-none mt-[2px]"
-                                style={{ fontSize: 'clamp(6px, 11cqi, 11px)' }}
-                              >
-                                ▼ {shift.endTime}
+                                {shift.startTime}
                               </span>
                             </div>
 
-                            {/* Actividad */}
+                            {/* Row 2: exit */}
+                            <div
+                              className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
+                              style={{ backgroundColor: '#ef4444', opacity: isPastDay ? 0.8 : 1 }}
+                            >
+                              <ArrowLeft
+                                className="shrink-0 text-white"
+                                style={{ width: 'clamp(6px,10cqi,10px)', height: 'clamp(6px,10cqi,10px)' }}
+                                strokeWidth={3}
+                              />
+                              <span
+                                className="font-black text-white leading-none"
+                                style={{ fontSize: 'clamp(6px, 11cqi, 11px)' }}
+                              >
+                                {shift.endTime}
+                              </span>
+                            </div>
+
+                            {/* Row 3: activity */}
                             {shift.activity && (
                               <div
-                                className="w-full rounded-[3px] px-1 py-[2px] bg-[#36606F]/80 shrink-0"
-                                style={{ opacity: isPastDay ? 0.75 : 1 }}
+                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
+                                style={{
+                                  backgroundColor: activityBg,
+                                  opacity: isPastDay ? 0.8 : 1,
+                                }}
                               >
-                                <span
-                                  className="block break-keep font-bold leading-tight text-white"
-                                  style={{ fontSize: 'clamp(5px, 12cqi, 11px)' }}
-                                >
-                                  {shift.activity}
-                                </span>
+                                <div className="px-1 py-[2px] bg-black/10">
+                                  <span
+                                    className="block break-keep font-bold leading-tight text-white"
+                                    style={{ fontSize: 'clamp(5px, 12cqi, 11px)' }}
+                                  >
+                                    {shift.activity}
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -317,9 +452,9 @@ export default function HorarioPage() {
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setSelectedDayStr(null); }}
         shifts={allShifts}
-        userId={userId}
-        userRole={userRole}
-        userEmail={userEmail}
+        userId={modalUserId}
+        userRole={modalRole}
+        userEmail={myEmail}
         initialFocusDate={selectedDayStr}
       />
     </div>
