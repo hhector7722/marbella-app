@@ -285,17 +285,20 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             if (dayDetailRes.success) {
                 const barActivities = dayDetailRes.data.barActivities;
                 if (barActivities && barActivities.length > 0) {
-                    // Choose the activity that occupies the most rows * columns in the morning slot
+                    // Choose the activity that occupies the most rows * columns in the morning slot (using duration as proxy)
+                    const computeArea = (act) => {
+                      const startH = parseInt(act.startTime.split(':')[0] ?? '0', 10);
+                      const endH = parseInt(act.endTime.split(':')[0] ?? '0', 10);
+                      return Math.max(0, endH - startH);
+                    };
                     let best = barActivities[0];
-                    let maxArea = (best.rows ?? 1) * (best.columns ?? 1);
+                    let maxArea = computeArea(best);
                     for (const act of barActivities) {
-                        const rows = act.rows ?? 1;
-                        const cols = act.columns ?? 1;
-                        const area = rows * cols;
-                        if (area > maxArea) {
-                            best = act;
-                            maxArea = area;
-                        }
+                      const area = computeArea(act);
+                      if (area > maxArea) {
+                        best = act;
+                        maxArea = area;
+                      }
                     }
                     autoActivity = best.activityName || '';
                 }
