@@ -744,17 +744,27 @@ function RecipeDetailContent() {
         // Optimistic update
         setIngredients(prev => prev.filter(ing => ing.id !== id));
         
-        const { error } = await supabase.from('recipe_ingredients').delete().eq('id', id);
+        const { error, count } = await supabase
+            .from('recipe_ingredients')
+            .delete({ count: 'exact' })
+            .eq('id', id);
         
         if (error) {
             console.error('Error al eliminar ingrediente:', error);
             toast.error('Error al eliminar ingrediente');
-            // Revert on failure
+            await fetchRecipe();
+            return;
+        }
+
+        if (count === 0) {
+            // Supabase no borró nada (RLS silencioso u otro problema)
+            console.warn('DELETE no eliminó ninguna fila. id:', id, '| count:', count);
+            toast.error('No se pudo eliminar el ingrediente');
             await fetchRecipe();
             return;
         }
         
-        // No need to fetchRecipe again if successful, just update the cost
+        toast.success('Ingrediente eliminado');
         fetchBackendCost();
     };
 

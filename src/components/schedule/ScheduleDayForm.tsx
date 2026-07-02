@@ -1,6 +1,6 @@
 'use client';
 
-import ScheduleDayEditor from '@/components/schedule/ScheduleDayEditor';
+import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { type ReactNode } from 'react';
 
 /**
