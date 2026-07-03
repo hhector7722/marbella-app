@@ -54,7 +54,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0"
+      className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0 appearance-none text-center"
     >
       <option value=""></option>
       {timeOptions.map((t) => (
@@ -269,7 +269,7 @@ export default function ReportePage() {
       <div className="relative flex-1 h-[36px]" ref={dropdownRef}>
         <div
           onClick={() => setOpen(!open)}
-          className="form-input w-full h-full flex items-center px-2 rounded-xl cursor-pointer text-xs"
+          className="form-input w-full h-full flex items-center justify-center px-2 rounded-xl cursor-pointer text-xs"
         >
           <span className="flex-1 text-slate-400">
             {selectedCount > 0
@@ -278,13 +278,12 @@ export default function ReportePage() {
           </span>
         </div>
         {open && (
-          <div className="absolute z-20 mt-1 w-full rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
-            <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-slate-700/30">
-              <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Categories</span>
+          <div className="absolute z-40 mt-1 left-0 min-w-[280px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
+            <div className="flex items-center justify-between px-2 pb-1 mb-1">
               <button
                 type="button"
                 onClick={() => handleSelectAllCategories(act.id)}
-                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold"
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold ml-auto"
               >
                 {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
               </button>
@@ -324,9 +323,9 @@ export default function ReportePage() {
     const dayActivities = activities.filter((a) => a.dayName === dayName);
 
     return (
-      <div className="day-group mb-6" key={dayName}>
-        <h2 className="text-base font-bold text-white mb-2">{dayName}</h2>
-        <div className="activities-list space-y-3 relative">
+      <div className="day-group mb-3" key={dayName}>
+        <h2 className="text-sm font-bold text-white mb-1">{dayName}</h2>
+        <div className="activities-list space-y-2 relative">
           {dayActivities.map((act, index) => (
             <div key={act.id} className="activity-card glass rounded-2xl p-3 relative group animate-slide-up bg-slate-800/40">
               {index > 0 && (
@@ -340,7 +339,7 @@ export default function ReportePage() {
                   </svg>
                 </button>
               )}
-              <div className="grid grid-cols-[120px_1fr] gap-x-8 gap-y-2.5 items-start">
+              <div className="grid grid-cols-[120px_1fr] gap-x-6 gap-y-1.5 items-start">
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Data</label>
                   <input
@@ -355,7 +354,7 @@ export default function ReportePage() {
                   <select
                     value={act.activitat}
                     onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
-                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50"
+                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50 appearance-none text-center"
                   >
                     <option value="" disabled>Selecciona una activitat</option>
                     {(dailyActivitiesMap[act.data] || allGlobalActivities || []).map(opt => (
@@ -364,7 +363,7 @@ export default function ReportePage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-[120px_1fr_70px] gap-x-8 gap-y-2.5 items-start mt-2">
+              <div className="grid grid-cols-[120px_1fr_70px] gap-x-6 gap-y-2.5 items-start mt-1.5">
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>
                   <div className="flex items-center gap-1 h-[36px]">
@@ -415,10 +414,10 @@ export default function ReportePage() {
 
   return (
     <div className="reporte-container px-3 overflow-x-hidden">
-      <div className="max-w-lg mx-auto py-2">
-        <form id="reportForm" className="space-y-5" onSubmit={handleSubmit}>
-          <div className="flex justify-center mb-2">
-            <img src="/icons/logo-white.png" alt="Bar La Marbella" className="h-12 w-auto object-contain" />
+      <div className="max-w-lg mx-auto pt-0 pb-1">
+        <form id="reportForm" className="space-y-1" onSubmit={handleSubmit}>
+          <div className="flex justify-center mb-1">
+            <img src="/icons/logo-white.png" alt="Bar La Marbella" className="h-10 w-auto object-contain" />
           </div>
           <div id="daysContainer" className="space-y-4">
             {renderDayGroup('Dissabte')}

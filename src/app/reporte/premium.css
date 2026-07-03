@@ -19,7 +19,6 @@ body:has(.reporte-container) {
     color: var(--text-main);
     font-family: 'Outfit', 'Inter', sans-serif;
     min-height: 100dvh;
-    padding-top: 0.5rem;
 }
 
 .reporte-container .glass {
@@ -52,8 +51,8 @@ body:has(.reporte-container) {
 
 .reporte-container .activity-card {
     transition: all 0.3s ease;
-    padding: 1rem !important;
-    margin-bottom: 0.75rem !important;
+    padding: 0.6rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .reporte-container .activity-card:hover {

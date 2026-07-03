@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
+import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { createClient } from '@/utils/supabase/client';
 import { usePageView } from '@/lib/usage/usePageView';
 
@@ -93,6 +94,11 @@ function madridTodayIso(): string {
   const m = parts.find((p) => p.type === 'month')?.value ?? '01';
   const d = parts.find((p) => p.type === 'day')?.value ?? '01';
   return `${y}-${m}-${d}`;
+}
+
+function parseLocalSafe(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
@@ -254,6 +260,17 @@ export default function HorarioPage() {
   const openDay = (day: Date) => {
     setSelectedDayStr(format(day, 'yyyy-MM-dd'));
     setModalOpen(true);
+  };
+
+  const navigateDay = (delta: -1 | 1) => {
+    if (!selectedDayStr) return;
+    const d = parseLocalSafe(selectedDayStr);
+    d.setDate(d.getDate() + delta);
+    const key = format(d, 'yyyy-MM-dd');
+    setSelectedDayStr(key);
+    if (!isSameMonth(d, viewMonth)) {
+      setViewMonth(startOfMonth(d));
+    }
   };
 
   const getMonthLabel = (date: Date) =>
@@ -459,8 +476,9 @@ export default function HorarioPage() {
                               const dayData = byDate[key];
                               const barActs = dayData?.barActivities ?? [];
                               const grouped = groupActivities(barActs);
+                              if (grouped.length === 0) return null;
                               return (
-                                <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-[3px]">
+                                <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-0.5">
                                   {grouped.map((act, i) => {
                                     const bgColor = act.activityColor || stringToHslColor(act.activityName);
                                     return (
@@ -517,15 +535,24 @@ export default function HorarioPage() {
       </div>
 
       {/* Modal */}
-      <StaffScheduleModal
-        isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); setSelectedDayStr(null); }}
-        shifts={allShifts}
-        userId={targetUserId}
-        userRole={modalRole}
-        userEmail={myEmail}
-        initialFocusDate={selectedDayStr}
-      />
+      {viewMode === 'actividades' ? (
+        <PavilionDayModal
+          open={modalOpen}
+          onClose={() => { setModalOpen(false); setSelectedDayStr(null); }}
+          date={selectedDayStr}
+          onNavigateDay={navigateDay}
+        />
+      ) : (
+        <StaffScheduleModal
+          isOpen={modalOpen}
+          onClose={() => { setModalOpen(false); setSelectedDayStr(null); }}
+          shifts={allShifts}
+          userId={targetUserId}
+          userRole={modalRole}
+          userEmail={myEmail}
+          initialFocusDate={selectedDayStr}
+        />
+      )}
     </div>
   );
 }
