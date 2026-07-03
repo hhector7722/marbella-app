@@ -408,7 +408,7 @@ export default function HorarioPage() {
                                   className="font-black text-white leading-none whitespace-nowrap"
                                   style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
                                 >
-                                  {shift.startTime}
+                                  {fmtHour(shift.startTime)}
                                 </span>
                               </div>
                               <div
@@ -419,7 +419,7 @@ export default function HorarioPage() {
                                   className="font-black text-white leading-none whitespace-nowrap"
                                   style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
                                 >
-                                  {shift.endTime}
+                                  {fmtHour(shift.endTime)}
                                 </span>
                               </div>
                             </div>
