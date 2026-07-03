@@ -325,14 +325,7 @@ export default function ReportePage() {
 
     return (
       <div className="day-group mb-6" key={dayName}>
-        <h2 className="text-base font-bold text-white mb-2 flex items-center gap-2">
-          <span className="w-7 h-7 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </span>
-          {dayName}
-        </h2>
+        <h2 className="text-base font-bold text-white mb-2">{dayName}</h2>
         <div className="activities-list space-y-3 relative">
           {dayActivities.map((act, index) => (
             <div key={act.id} className="activity-card glass rounded-2xl p-3 relative group animate-slide-up bg-slate-800/40">
@@ -422,8 +415,11 @@ export default function ReportePage() {
 
   return (
     <div className="reporte-container px-3 overflow-x-hidden">
-      <div className="max-w-lg mx-auto py-4">
+      <div className="max-w-lg mx-auto py-2">
         <form id="reportForm" className="space-y-5" onSubmit={handleSubmit}>
+          <div className="flex justify-center mb-2">
+            <img src="/icons/logo-white.png" alt="Bar La Marbella" className="h-12 w-auto object-contain" />
+          </div>
           <div id="daysContainer" className="space-y-4">
             {renderDayGroup('Dissabte')}
             {renderDayGroup('Diumenge')}
