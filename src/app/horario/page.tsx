@@ -15,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
@@ -396,80 +396,69 @@ export default function HorarioPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {shift && (
-                          <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-                            {/* Row 1: entry time */}
-                            <div
-                              className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
-                              style={{ backgroundColor: '#22c55e', opacity: isPastDay ? 0.8 : 1 }}
-                            >
-                              <ArrowRight
-                                className="shrink-0 text-white"
-                                style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
-                                strokeWidth={3}
-                              />
-                              <span
-                                className="font-black text-white leading-none whitespace-nowrap"
-                                style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                          {shift && (
+                            <div className="w-full rounded-[3px] flex overflow-hidden shrink-0 mb-[2px]">
+                              <div
+                                className="flex-1 flex items-center justify-center px-1 py-[2px]"
+                                style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                               >
-                                {shift.startTime}
-                              </span>
-                            </div>
-
-                            {/* Row 2: exit time */}
-                            <div
-                              className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
-                              style={{ backgroundColor: '#ef4444', opacity: isPastDay ? 0.8 : 1 }}
-                            >
-                              <ArrowLeft
-                                className="shrink-0 text-white"
-                                style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
-                                strokeWidth={3}
-                              />
-                              <span
-                                className="font-black text-white leading-none whitespace-nowrap"
-                                style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
-                              >
-                                {shift.endTime}
-                              </span>
-                            </div>
-
-                            {/* Rows 3+: activity cards — EXACT COPY of /staff/actividades rendering */}
-                            {grouped.map((act, i) => {
-                              const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                              return (
-                                <div
-                                  key={i}
-                                  className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
-                                  style={{
-                                    backgroundColor: bgColor,
-                                    color: '#ffffff',
-                                    containerType: 'inline-size',
-                                    ...(isPastDay ? { opacity: 0.8 } : {}),
-                                  }}
+                                <span
+                                  className="font-black text-white leading-none whitespace-nowrap"
+                                  style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
                                 >
-                                  <div className="px-1 py-[2px]">
-                                    <span
-                                      className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
-                                      style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
-                                    >
-                                      {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
-                                    </span>
-                                  </div>
-                                  <div className="px-1 py-[2px] bg-black/10">
-                                    <span
-                                      className="block break-keep font-bold leading-tight mt-[1px]"
-                                      style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
-                                    >
-                                      {act.activityName}
-                                    </span>
-                                  </div>
+                                  {shift.startTime}
+                                </span>
+                              </div>
+                              <div
+                                className="flex-1 flex items-center justify-center px-1 py-[2px]"
+                                style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
+                              >
+                                <span
+                                  className="font-black text-white leading-none whitespace-nowrap"
+                                  style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                >
+                                  {shift.endTime}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Activity cards */}
+                          {grouped.map((act, i) => {
+                            const bgColor = act.activityColor || stringToHslColor(act.activityName);
+                            return (
+                              <div
+                                key={i}
+                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
+                                style={{
+                                  backgroundColor: bgColor,
+                                  color: '#ffffff',
+                                  containerType: 'inline-size',
+                                  ...(isPastDay ? { opacity: 0.8 } : {}),
+                                }}
+                              >
+                                <div className="px-1 py-[2px]">
+                                  <span
+                                    className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
+                                    style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
+                                  >
+                                    {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
+                                  </span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                                <div className="px-1 py-[2px] bg-black/10">
+                                  <span
+                                    className="block break-keep font-bold leading-tight mt-[1px]"
+                                    style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
+                                  >
+                                    {act.activityName}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
