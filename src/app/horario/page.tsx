@@ -262,9 +262,6 @@ export default function HorarioPage() {
   return (
     <div className="pb-24">
       <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
-        <div className="w-full bg-fuchsia-500 text-white text-center font-black text-lg py-4 rounded-t-2xl border-4 border-yellow-400 shadow-[0_0_30px_rgba(255,0,255,0.5)]">
-          🚨 TEST COMPONENT: HORARIO PAGE 🚨
-        </div>
         <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
 
           {/* ── Header ── */}
@@ -400,22 +397,22 @@ export default function HorarioPage() {
                         </div>
 
                         {/* Fixed 20px strip for shift indicator (always present for alignment) */}
-                        <div className="w-full shrink-0" style={{ height: '20px' }}>
+                        <div className="w-full shrink-0 grid grid-cols-2 rounded-[4px] overflow-hidden" style={{ height: '20px', backgroundColor: shift ? '#F5F5F5' : 'transparent' }}>
                           {shift && (
-                            <div className="w-full h-full flex items-center rounded-[4px] overflow-hidden" style={{ backgroundColor: '#F5F5F5' }}>
-                              <div className="flex-1 flex items-center justify-center gap-1.5">
+                            <>
+                              <div className="flex items-center justify-center gap-1">
                                 <span className="inline-block rounded-full shrink-0" style={{ width: '8px', height: '8px', backgroundColor: '#22a34a' }} />
-                                <span className="font-medium text-zinc-500 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
+                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
                                   {fmtHour(shift.startTime)}
                                 </span>
                               </div>
-                              <div className="flex-1 flex items-center justify-center gap-1.5">
+                              <div className="flex items-center justify-center gap-1">
                                 <span className="inline-block rounded-full shrink-0" style={{ width: '8px', height: '8px', backgroundColor: '#c0392b' }} />
-                                <span className="font-medium text-zinc-500 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
+                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
                                   {fmtHour(shift.endTime)}
                                 </span>
                               </div>
-                            </div>
+                            </>
                           )}
                         </div>
 
