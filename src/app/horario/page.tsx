@@ -392,16 +392,19 @@ export default function HorarioPage() {
                         className={cellCls}
                       >
                         {/* Day number */}
-                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
+                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* Shift row: always 20px reserved */}
+                        {/* Spacer: same height above and below the shift zone */}
+                        <div className="w-full shrink-0 h-[3px]" />
+
+                        {/* Shift zone: fixed 20px reserved for shift card */}
                         <div className="w-full shrink-0" style={{ height: '20px' }}>
                           {shift && (
                             <div className="w-full h-full rounded-[3px] flex overflow-hidden shrink-0">
                               <div
-                                className="flex-1 flex items-center justify-center px-[1px]"
+                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                 style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                               >
                                 <span
@@ -412,7 +415,7 @@ export default function HorarioPage() {
                                 </span>
                               </div>
                               <div
-                                className="flex-1 flex items-center justify-center px-[1px]"
+                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                 style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                               >
                                 <span
@@ -426,10 +429,8 @@ export default function HorarioPage() {
                           )}
                         </div>
 
-                        {/* Separator: fades out at edges */}
-                        <div className="w-full shrink-0 flex justify-center my-[2px]">
-                          <div className="w-4/5 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-                        </div>
+                        {/* Spacer: same height as the one above */}
+                        <div className="w-full shrink-0 h-[3px]" />
 
                         <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
