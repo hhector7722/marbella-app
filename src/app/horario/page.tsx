@@ -396,12 +396,12 @@ export default function HorarioPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-
+                        {/* Shift row: always 20px reserved */}
+                        <div className="w-full shrink-0" style={{ height: '20px' }}>
                           {shift && (
-                            <div className="w-full rounded-[3px] flex overflow-hidden shrink-0 mb-[2px]">
+                            <div className="w-full h-full rounded-[3px] flex overflow-hidden shrink-0">
                               <div
-                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
+                                className="flex-1 flex items-center justify-center px-[1px]"
                                 style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                               >
                                 <span
@@ -412,7 +412,7 @@ export default function HorarioPage() {
                                 </span>
                               </div>
                               <div
-                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
+                                className="flex-1 flex items-center justify-center px-[1px]"
                                 style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                               >
                                 <span
@@ -424,6 +424,14 @@ export default function HorarioPage() {
                               </div>
                             </div>
                           )}
+                        </div>
+
+                        {/* Separator: fades out at edges */}
+                        <div className="w-full shrink-0 flex justify-center my-[2px]">
+                          <div className="w-4/5 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+                        </div>
+
+                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
                           {/* Activity cards */}
                           {grouped.map((act, i) => {
