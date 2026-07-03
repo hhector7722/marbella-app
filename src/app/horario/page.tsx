@@ -21,20 +21,17 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { createClient } from '@/utils/supabase/client';
 import { usePageView } from '@/lib/usage/usePageView';
+import {
+  fetchActivitiesForRangeAction,
+  type DayCalendarData,
+} from '@/app/staff/actividades/actions';
 
 const MASTER_EMAIL = 'hhector7722@gmail.com';
 
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
-interface DayShift {
-  startTime: string;
-  endTime: string;
-  activity?: string;
-  activityColor?: string | null;
-  activityStartTime?: string | null;
-  activityEndTime?: string | null;
-}
+/* ── Exact copy of helpers from /staff/actividades ───────────────────────── */
 
 function fmtHour(time: string): string {
   const parts = time.split(':');
@@ -42,9 +39,25 @@ function fmtHour(time: string): string {
   return `${parseInt(parts[0], 10)}:${parts[1]}`;
 }
 
-interface EmployeeOption {
-  id: string;
-  name: string;
+function groupActivities(
+  acts: { activityName: string; activityIcon: string | null; activityColor: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
+) {
+  if (acts.length === 0) return acts;
+  const map = new Map<string, typeof acts[0]>();
+  for (const a of acts) {
+    const name = a.activityName.trim();
+    if (!map.has(name)) {
+      map.set(name, { ...a, venueCodes: [...a.venueCodes] });
+    } else {
+      const existing = map.get(name)!;
+      if (a.startTime < existing.startTime) existing.startTime = a.startTime;
+      if (a.endTime > existing.endTime) existing.endTime = a.endTime;
+      for (const v of a.venueCodes) {
+        if (!existing.venueCodes.includes(v)) existing.venueCodes.push(v);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 function stringToHslColor(str: string): string {
@@ -53,7 +66,19 @@ function stringToHslColor(str: string): string {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
   const h = Math.abs(hash) % 360;
-  return `hsl(${h}, 65%, 48%)`;
+  return `hsl(${h}, 70%, 55%)`;
+}
+
+/* ── Types ───────────────────────────────────────────────────────────────── */
+
+interface DayShift {
+  startTime: string;
+  endTime: string;
+}
+
+interface EmployeeOption {
+  id: string;
+  name: string;
 }
 
 function madridTodayIso(): string {
@@ -69,6 +94,8 @@ function madridTodayIso(): string {
   return `${y}-${m}-${d}`;
 }
 
+/* ── Page ────────────────────────────────────────────────────────────────── */
+
 export default function HorarioPage() {
   usePageView();
 
@@ -76,7 +103,12 @@ export default function HorarioPage() {
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
+
+  // User's shifts per date
   const [shiftsByDate, setShiftsByDate] = useState<Record<string, DayShift>>({});
+
+  // Activity calendar data (same as /staff/actividades)
+  const [byDate, setByDate] = useState<Record<string, DayCalendarData>>({});
 
   // Auth & profile
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -91,7 +123,7 @@ export default function HorarioPage() {
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
-  const [allShifts, setAllShifts] = useState<{ date: Date; startTime: string; endTime: string; activity?: string }[]>([]);
+  const [allShifts, setAllShifts] = useState<{ date: Date; startTime: string; endTime: string }[]>([]);
 
   // Touch swipe
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -115,6 +147,9 @@ export default function HorarioPage() {
     () => eachDayOfInterval({ start: gridStart, end: gridEnd }),
     [gridStart, gridEnd],
   );
+
+  const rangeStart = format(calendarDays[0]!, 'yyyy-MM-dd');
+  const rangeEnd = format(calendarDays[calendarDays.length - 1]!, 'yyyy-MM-dd');
 
   // Load profile + employee list (master only) once
   useEffect(() => {
@@ -164,81 +199,55 @@ export default function HorarioPage() {
   // Target user: selected employee (master) or self
   const targetUserId = isMaster && selectedEmployeeId ? selectedEmployeeId : myUserId;
 
-  // Load shifts for the target user
-  const loadShifts = useCallback(async () => {
+  // Load both shifts + activity calendar data in parallel
+  const loadData = useCallback(async () => {
     if (!targetUserId) return;
     setLoading(true);
     try {
-      const startIso = format(gridStart, 'yyyy-MM-dd') + 'T00:00:00';
-      const endIso = format(gridEnd, 'yyyy-MM-dd') + 'T23:59:59';
+      const startIso = rangeStart + 'T00:00:00';
+      const endIso = rangeEnd + 'T23:59:59';
 
-      const { data: rawShifts } = await supabase
-        .from('shifts')
-        .select('start_time, end_time, activity, activity_2')
-        .eq('user_id', targetUserId)
-        .eq('is_published', true)
-        .gte('start_time', startIso)
-        .lte('start_time', endIso)
-        .order('start_time', { ascending: true });
+      const [shiftsResult, activitiesResult] = await Promise.all([
+        supabase
+          .from('shifts')
+          .select('start_time, end_time')
+          .eq('user_id', targetUserId)
+          .eq('is_published', true)
+          .gte('start_time', startIso)
+          .lte('start_time', endIso)
+          .order('start_time', { ascending: true }),
+        fetchActivitiesForRangeAction({ startDate: rangeStart, endDate: rangeEnd }),
+      ]);
 
-      const { data: activityRows } = await supabase
-        .from('activity_occurrences')
-        .select('activity_date, start_time, end_time, activities ( name, color )')
-        .gte('activity_date', format(gridStart, 'yyyy-MM-dd'))
-        .lte('activity_date', format(gridEnd, 'yyyy-MM-dd'));
+      // Process shifts
+      const shiftMap: Record<string, DayShift> = {};
+      const allArr: { date: Date; startTime: string; endTime: string }[] = [];
 
-      type ActRow = { activity_date: string; start_time: string; end_time: string; activities: { name: string; color: string | null } | null };
-      const colorByNameByDate: Record<string, Record<string, { color: string | null; startTime: string; endTime: string }>> = {};
-      for (const row of (activityRows ?? []) as unknown as ActRow[]) {
-        const d = row.activity_date;
-        const act = row.activities;
-        if (!act) continue;
-        if (!colorByNameByDate[d]) colorByNameByDate[d] = {};
-        // keep first occurrence times per activity name per date
-        if (!colorByNameByDate[d][act.name]) {
-          colorByNameByDate[d][act.name] = {
-            color: act.color,
-            startTime: row.start_time?.substring(0, 5) ?? '',
-            endTime: row.end_time?.substring(0, 5) ?? '',
-          };
-        }
-      }
-
-      const byDate: Record<string, DayShift> = {};
-      const allArr: { date: Date; startTime: string; endTime: string; activity?: string }[] = [];
-
-      for (const s of rawShifts ?? []) {
+      for (const s of shiftsResult.data ?? []) {
         const start = new Date(s.start_time);
         const end = new Date(s.end_time);
         const key = format(start, 'yyyy-MM-dd');
         const startTime = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         const endTime = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-        const activity = s.activity || s.activity_2 || undefined;
-
-        let activityColor: string | null = null;
-        let activityStartTime: string | null = null;
-        let activityEndTime: string | null = null;
-        if (activity) {
-          const meta = colorByNameByDate[key]?.[activity];
-          activityColor = meta?.color ?? null;
-          activityStartTime = meta?.startTime ?? null;
-          activityEndTime = meta?.endTime ?? null;
-        }
-
-        byDate[key] = { startTime, endTime, activity, activityColor, activityStartTime, activityEndTime };
-        allArr.push({ date: start, startTime, endTime, activity });
+        shiftMap[key] = { startTime, endTime };
+        allArr.push({ date: start, startTime, endTime });
       }
 
-      setShiftsByDate(byDate);
+      setShiftsByDate(shiftMap);
       setAllShifts(allArr);
+
+      // Process activities (same data source as /staff/actividades)
+      if (activitiesResult.success) {
+        setByDate(activitiesResult.byDate);
+      }
     } finally {
       setLoading(false);
     }
-  }, [targetUserId, gridStart, gridEnd, supabase]);
+  }, [targetUserId, rangeStart, rangeEnd, supabase]);
 
   useEffect(() => {
-    if (targetUserId) void loadShifts();
-  }, [loadShifts, targetUserId]);
+    if (targetUserId) void loadData();
+  }, [loadData, targetUserId]);
 
   const openDay = (day: Date) => {
     setSelectedDayStr(format(day, 'yyyy-MM-dd'));
@@ -248,8 +257,6 @@ export default function HorarioPage() {
   const getMonthLabel = (date: Date) =>
     date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
-  // Effective userId & role for the modal
-  const modalUserId = targetUserId;
   const modalRole = isMaster ? 'manager' : userRole;
 
   return (
@@ -349,6 +356,10 @@ export default function HorarioPage() {
                   {calendarDays.map((day) => {
                     const key = format(day, 'yyyy-MM-dd');
                     const shift = shiftsByDate[key];
+                    const dayData = byDate[key];
+                    const barActs = dayData?.barActivities ?? [];
+                    const grouped = groupActivities(barActs);
+
                     const isViewMonthDay = isSameMonth(day, viewMonth);
                     const isPastDay = isBefore(day, today);
                     const isToday = isSameDay(day, today);
@@ -371,10 +382,6 @@ export default function HorarioPage() {
                         : 'text-zinc-400',
                     );
 
-                    const activityBg = shift?.activity
-                      ? (shift.activityColor || stringToHslColor(shift.activity))
-                      : '#36606F';
-
                     return (
                       <div
                         key={key}
@@ -389,11 +396,10 @@ export default function HorarioPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* Shift rows */}
                         {shift && (
-                          <div className="flex-1 w-full flex flex-col gap-[2px] overflow-hidden">
+                          <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-                            {/* Row 1: entry */}
+                            {/* Row 1: entry time */}
                             <div
                               className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
                               style={{ backgroundColor: '#22c55e', opacity: isPastDay ? 0.8 : 1 }}
@@ -411,7 +417,7 @@ export default function HorarioPage() {
                               </span>
                             </div>
 
-                            {/* Row 2: exit */}
+                            {/* Row 2: exit time */}
                             <div
                               className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
                               style={{ backgroundColor: '#ef4444', opacity: isPastDay ? 0.8 : 1 }}
@@ -429,39 +435,39 @@ export default function HorarioPage() {
                               </span>
                             </div>
 
-                            {/* Row 3: activity */}
-                            {shift.activity && (
-                              <div
-                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
-                                style={{
-                                  backgroundColor: activityBg,
-                                  color: '#ffffff',
-                                  containerType: 'inline-size',
-                                  opacity: isPastDay ? 0.8 : 1,
-                                }}
-                              >
-                                {/* Time header */}
-                                {shift.activityStartTime && shift.activityEndTime && (
+                            {/* Rows 3+: activity cards — EXACT COPY of /staff/actividades rendering */}
+                            {grouped.map((act, i) => {
+                              const bgColor = act.activityColor || stringToHslColor(act.activityName);
+                              return (
+                                <div
+                                  key={i}
+                                  className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
+                                  style={{
+                                    backgroundColor: bgColor,
+                                    color: '#ffffff',
+                                    containerType: 'inline-size',
+                                    ...(isPastDay ? { opacity: 0.8 } : {}),
+                                  }}
+                                >
                                   <div className="px-1 py-[2px]">
                                     <span
                                       className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
                                       style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
                                     >
-                                      {fmtHour(shift.activityStartTime)} - {fmtHour(shift.activityEndTime)}
+                                      {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                     </span>
                                   </div>
-                                )}
-                                {/* Activity name */}
-                                <div className="px-1 py-[2px] bg-black/10">
-                                  <span
-                                    className="block break-keep font-bold leading-tight mt-[1px]"
-                                    style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
-                                  >
-                                    {shift.activity}
-                                  </span>
+                                  <div className="px-1 py-[2px] bg-black/10">
+                                    <span
+                                      className="block break-keep font-bold leading-tight mt-[1px]"
+                                      style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
+                                    >
+                                      {act.activityName}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -481,12 +487,12 @@ export default function HorarioPage() {
         </div>
       </div>
 
-      {/* Modal de detalle del día */}
+      {/* Modal */}
       <StaffScheduleModal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setSelectedDayStr(null); }}
         shifts={allShifts}
-        userId={modalUserId}
+        userId={targetUserId}
         userRole={modalRole}
         userEmail={myEmail}
         initialFocusDate={selectedDayStr}
