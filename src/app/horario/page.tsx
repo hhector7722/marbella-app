@@ -398,17 +398,17 @@ export default function HorarioPage() {
                             <span className={dayNumCls}>{format(day, 'd')}</span>
                           </div>
 
-                          {/* Shift card: fixed 20px reserved */}
-                          <div className="w-full" style={{ height: '20px' }}>
+                          {/* Shift card: fixed 14px reserved */}
+                          <div className="w-full" style={{ height: '14px' }}>
                             {shift && (
-                              <div className="w-full h-full grid grid-cols-2 rounded-[4px] overflow-hidden">
+                              <div className="w-full h-full grid grid-cols-2 rounded-[3px] overflow-hidden">
                                 <div className="flex items-center justify-center bg-[#22a34a]">
-                                  <span className="text-white font-bold leading-none" style={{ fontSize: '10px' }}>
+                                  <span className="text-white font-bold leading-none" style={{ fontSize: '7px' }}>
                                     {fmtHour(shift.startTime)}
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-center bg-[#c0392b]">
-                                  <span className="text-white font-bold leading-none" style={{ fontSize: '10px' }}>
+                                  <span className="text-white font-bold leading-none" style={{ fontSize: '7px' }}>
                                     {fmtHour(shift.endTime)}
                                   </span>
                                 </div>
@@ -417,7 +417,7 @@ export default function HorarioPage() {
                           </div>
 
                           {/* Separator line */}
-                          <div className="w-full h-px bg-gray-200 mt-[3px] mb-[2px]" />
+                          <div className="w-full h-px bg-gray-200 mt-[2px]" />
                         </div>
 
                         {/* ─── Activities container ─── */}
