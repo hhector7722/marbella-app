@@ -391,33 +391,37 @@ export default function HorarioPage() {
                         onKeyDown={(e) => e.key === 'Enter' && isViewMonthDay && openDay(day)}
                         className={cellCls}
                       >
-                        {/* Day number */}
-                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-1">
-                          <span className={dayNumCls}>{format(day, 'd')}</span>
+                        {/* ─── Fixed Header: day + shift card + separator ─── */}
+                        <div className="w-full shrink-0">
+                          {/* Day number */}
+                          <div className="flex justify-end items-center gap-0.5 w-full mb-[2px]">
+                            <span className={dayNumCls}>{format(day, 'd')}</span>
+                          </div>
+
+                          {/* Shift card: fixed 20px reserved */}
+                          <div className="w-full" style={{ height: '20px' }}>
+                            {shift && (
+                              <div className="w-full h-full grid grid-cols-2 rounded-[4px] overflow-hidden">
+                                <div className="flex items-center justify-center bg-[#22a34a]">
+                                  <span className="text-white font-bold leading-none" style={{ fontSize: '10px' }}>
+                                    {fmtHour(shift.startTime)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-center bg-[#c0392b]">
+                                  <span className="text-white font-bold leading-none" style={{ fontSize: '10px' }}>
+                                    {fmtHour(shift.endTime)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Separator line */}
+                          <div className="w-full h-px bg-gray-200 mt-[3px] mb-[2px]" />
                         </div>
 
-                        {/* Fixed 20px strip for shift indicator (always present for alignment) */}
-                        <div className="w-full shrink-0 flex items-center justify-between rounded-[4px] px-[2px]" style={{ height: '20px', backgroundColor: shift ? '#F5F5F5' : 'transparent' }}>
-                          {shift && (
-                            <>
-                              <span className="flex items-center gap-[2px] flex-none">
-                                <span className="inline-block rounded-full shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#22a34a' }} />
-                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '10px' }}>
-                                  {fmtHour(shift.startTime)}
-                                </span>
-                              </span>
-                              <span className="flex items-center gap-[2px] flex-none">
-                                <span className="inline-block rounded-full shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#c0392b' }} />
-                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '10px' }}>
-                                  {fmtHour(shift.endTime)}
-                                </span>
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Activities */}
-                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-[4px]">
+                        {/* ─── Activities container ─── */}
+                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
                             return (
