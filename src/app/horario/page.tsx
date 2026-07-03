@@ -397,18 +397,18 @@ export default function HorarioPage() {
                         </div>
 
                         {/* Fixed 20px strip for shift indicator (always present for alignment) */}
-                        <div className="w-full shrink-0 flex items-center justify-between rounded-[4px] overflow-hidden px-1.5" style={{ height: '20px', backgroundColor: shift ? '#F5F5F5' : 'transparent' }}>
+                        <div className="w-full shrink-0 flex items-center justify-between rounded-[4px] px-[2px]" style={{ height: '20px', backgroundColor: shift ? '#F5F5F5' : 'transparent' }}>
                           {shift && (
                             <>
-                              <span className="flex items-center gap-1 min-w-0">
-                                <span className="inline-block rounded-full shrink-0" style={{ width: '8px', height: '8px', backgroundColor: '#22a34a' }} />
-                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
+                              <span className="flex items-center gap-[2px] flex-none">
+                                <span className="inline-block rounded-full shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#22a34a' }} />
+                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '10px' }}>
                                   {fmtHour(shift.startTime)}
                                 </span>
                               </span>
-                              <span className="flex items-center gap-1 min-w-0">
-                                <span className="inline-block rounded-full shrink-0" style={{ width: '8px', height: '8px', backgroundColor: '#c0392b' }} />
-                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
+                              <span className="flex items-center gap-[2px] flex-none">
+                                <span className="inline-block rounded-full shrink-0" style={{ width: '6px', height: '6px', backgroundColor: '#c0392b' }} />
+                                <span className="font-bold text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: '10px' }}>
                                   {fmtHour(shift.endTime)}
                                 </span>
                               </span>
