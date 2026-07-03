@@ -391,12 +391,12 @@ export default function HorarioPage() {
                         onKeyDown={(e) => e.key === 'Enter' && isViewMonthDay && openDay(day)}
                         className={cellCls}
                       >
-                        {/* Day number: absolute top-right */}
-                        <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 z-10">
+                        {/* Day number: top of cell */}
+                        <div className="flex justify-end items-center w-full shrink-0">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* Shift zone: auto-height, minimal */}
+                        {/* Shift zone: between day number and activity */}
                         <div className="w-full shrink-0">
                           {shift && (
                             <div className="w-full rounded-[3px] flex overflow-hidden shrink-0">
