@@ -392,30 +392,32 @@ export default function HorarioPage() {
                         className={cellCls}
                       >
                         {/* Day number */}
-                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
+                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-1">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-
+                        {/* Fixed 20px strip for shift indicator (always present for alignment) */}
+                        <div className="w-full shrink-0" style={{ height: '20px' }}>
                           {shift && (
-                            <div className="w-full flex rounded-[4px] shrink-0 mb-1" style={{ backgroundColor: '#F5F5F5', height: '20px' }}>
-                              <div className="flex-1 flex items-center justify-center gap-1">
-                                <span className="inline-block w-[6px] h-[6px] rounded-full shrink-0" style={{ backgroundColor: '#22a34a' }} />
-                                <span className="font-medium text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: 'clamp(7px, 9cqi, 11px)' }}>
+                            <div className="w-full h-full flex items-center rounded-[4px] overflow-hidden" style={{ backgroundColor: '#F5F5F5' }}>
+                              <div className="flex-1 flex items-center justify-center gap-1.5">
+                                <span className="inline-block rounded-full shrink-0" style={{ width: '8px', height: '8px', backgroundColor: '#22a34a' }} />
+                                <span className="font-medium text-zinc-500 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
                                   {fmtHour(shift.startTime)}
                                 </span>
                               </div>
-                              <div className="flex-1 flex items-center justify-center gap-1">
-                                <span className="inline-block w-[6px] h-[6px] rounded-full shrink-0" style={{ backgroundColor: '#c0392b' }} />
-                                <span className="font-medium text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: 'clamp(7px, 9cqi, 11px)' }}>
+                              <div className="flex-1 flex items-center justify-center gap-1.5">
+                                <span className="inline-block rounded-full shrink-0" style={{ width: '8px', height: '8px', backgroundColor: '#c0392b' }} />
+                                <span className="font-medium text-zinc-500 whitespace-nowrap leading-none" style={{ fontSize: '11px' }}>
                                   {fmtHour(shift.endTime)}
                                 </span>
                               </div>
                             </div>
                           )}
+                        </div>
 
-                          {/* Activity cards */}
+                        {/* Activities */}
+                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-[4px]">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
                             return (
