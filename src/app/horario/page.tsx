@@ -255,7 +255,7 @@ export default function HorarioPage() {
   };
 
   const getMonthLabel = (date: Date) =>
-    date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' ');
 
   const modalRole = isMaster ? 'manager' : userRole;
 
@@ -401,23 +401,23 @@ export default function HorarioPage() {
                           {shift && (
                             <div className="w-full rounded-[3px] flex overflow-hidden shrink-0 mb-[2px]">
                               <div
-                                className="flex-1 flex items-center justify-center px-1 py-[2px]"
+                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                 style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                               >
                                 <span
                                   className="font-black text-white leading-none whitespace-nowrap"
-                                  style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                  style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
                                 >
                                   {shift.startTime}
                                 </span>
                               </div>
                               <div
-                                className="flex-1 flex items-center justify-center px-1 py-[2px]"
+                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                 style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                               >
                                 <span
                                   className="font-black text-white leading-none whitespace-nowrap"
-                                  style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                  style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
                                 >
                                   {shift.endTime}
                                 </span>
