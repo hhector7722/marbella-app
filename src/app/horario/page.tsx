@@ -16,6 +16,10 @@ import {
   subMonths,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  fetchActivitiesForRangeAction,
+  type DayCalendarData,
+} from '@/app/staff/actividades/actions';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
@@ -34,6 +38,36 @@ function fmtHour(time: string): string {
   const parts = time.split(':');
   if (parts.length < 2) return time;
   return `${parseInt(parts[0], 10)}:${parts[1]}`;
+}
+
+function groupActivities(
+  acts: { activityName: string; activityIcon: string | null; activityColor: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
+) {
+  if (acts.length === 0) return acts;
+  const map = new Map<string, typeof acts[0]>();
+  for (const a of acts) {
+    const name = a.activityName.trim();
+    if (!map.has(name)) {
+      map.set(name, { ...a, venueCodes: [...a.venueCodes] });
+    } else {
+      const existing = map.get(name)!;
+      if (a.startTime < existing.startTime) existing.startTime = a.startTime;
+      if (a.endTime > existing.endTime) existing.endTime = a.endTime;
+      for (const v of a.venueCodes) {
+        if (!existing.venueCodes.includes(v)) existing.venueCodes.push(v);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+function stringToHslColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 70%, 55%)`;
 }
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
@@ -71,8 +105,14 @@ export default function HorarioPage() {
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
 
+  // View mode toggle
+  const [viewMode, setViewMode] = useState<'horarios' | 'actividades'>('horarios');
+
   // User's shifts per date
   const [shiftsByDate, setShiftsByDate] = useState<Record<string, DayShift>>({});
+
+  // Activity calendar data (same as /staff/actividades)
+  const [byDate, setByDate] = useState<Record<string, DayCalendarData>>({});
 
   // Auth & profile
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -171,19 +211,22 @@ export default function HorarioPage() {
       const startIso = rangeStart + 'T00:00:00';
       const endIso = rangeEnd + 'T23:59:59';
 
-      const { data: shiftsData } = await supabase
-        .from('shifts')
-        .select('start_time, end_time')
-        .eq('user_id', targetUserId)
-        .eq('is_published', true)
-        .gte('start_time', startIso)
-        .lte('start_time', endIso)
-        .order('start_time', { ascending: true });
+      const [shiftsResult, activitiesResult] = await Promise.all([
+        supabase
+          .from('shifts')
+          .select('start_time, end_time')
+          .eq('user_id', targetUserId)
+          .eq('is_published', true)
+          .gte('start_time', startIso)
+          .lte('start_time', endIso)
+          .order('start_time', { ascending: true }),
+        fetchActivitiesForRangeAction({ startDate: rangeStart, endDate: rangeEnd }),
+      ]);
 
       const shiftMap: Record<string, DayShift> = {};
       const allArr: { date: Date; startTime: string; endTime: string }[] = [];
 
-      for (const s of shiftsData ?? []) {
+      for (const s of shiftsResult.data ?? []) {
         const start = new Date(s.start_time);
         const end = new Date(s.end_time);
         const key = format(start, 'yyyy-MM-dd');
@@ -195,6 +238,10 @@ export default function HorarioPage() {
 
       setShiftsByDate(shiftMap);
       setAllShifts(allArr);
+
+      if (activitiesResult.success) {
+        setByDate(activitiesResult.byDate);
+      }
     } finally {
       setLoading(false);
     }
@@ -222,14 +269,28 @@ export default function HorarioPage() {
           {/* ── Header ── */}
           <div className="flex items-center justify-between bg-[#36606F] px-3 py-2.5 min-h-[52px] gap-2">
 
-            {/* Left: Actividades link */}
-            <div className="flex-shrink-0">
-              <a
-                href="/staff/actividades"
-                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
+            {/* Left: view toggle */}
+            <div className="flex-shrink-0 flex rounded-md overflow-hidden border border-white/20">
+              <button
+                onClick={() => setViewMode('horarios')}
+                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                  viewMode === 'horarios'
+                    ? 'bg-white text-[#36606F]'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                }`}
+              >
+                Horarios
+              </button>
+              <button
+                onClick={() => setViewMode('actividades')}
+                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                  viewMode === 'actividades'
+                    ? 'bg-white text-[#36606F]'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                }`}
               >
                 Actividades
-              </a>
+              </button>
             </div>
 
             {/* Center: month navigation */}
@@ -348,51 +409,94 @@ export default function HorarioPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {shift && (
+                        {viewMode === 'horarios' ? (
                           <>
-                            <div className="w-full shrink-0 h-[3px]" />
-
-                            {/* Entry row: green with right arrow */}
-                            <div
-                              className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
-                              style={{ backgroundColor: '#22c55e', opacity: isPastDay ? 0.8 : 1 }}
-                            >
-                              <ArrowRight
-                                className="shrink-0 text-white"
-                                style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
-                                strokeWidth={3}
-                              />
-                              <span
-                                className="font-black text-white leading-none whitespace-nowrap"
-                                style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
-                              >
-                                {fmtHour(shift.startTime)}
-                              </span>
-                            </div>
-
-                            <div className="w-full shrink-0 h-[3px]" />
-
-                            {/* Exit row: red with left arrow */}
-                            <div
-                              className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
-                              style={{ backgroundColor: '#ef4444', opacity: isPastDay ? 0.8 : 1 }}
-                            >
-                              <ArrowLeft
-                                className="shrink-0 text-white"
-                                style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
-                                strokeWidth={3}
-                              />
-                              <span
-                                className="font-black text-white leading-none whitespace-nowrap"
-                                style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
-                              >
-                                {fmtHour(shift.endTime)}
-                              </span>
-                            </div>
+                            {shift && (
+                              <>
+                                <div className="w-full shrink-0 h-[3px]" />
+                                <div
+                                  className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
+                                  style={{ backgroundColor: '#22c55e', opacity: isPastDay ? 0.8 : 1 }}
+                                >
+                                  <ArrowRight
+                                    className="shrink-0 text-white"
+                                    style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
+                                    strokeWidth={3}
+                                  />
+                                  <span
+                                    className="font-black text-white leading-none whitespace-nowrap"
+                                    style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                  >
+                                    {fmtHour(shift.startTime)}
+                                  </span>
+                                </div>
+                                <div className="w-full shrink-0 h-[3px]" />
+                                <div
+                                  className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
+                                  style={{ backgroundColor: '#ef4444', opacity: isPastDay ? 0.8 : 1 }}
+                                >
+                                  <ArrowLeft
+                                    className="shrink-0 text-white"
+                                    style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
+                                    strokeWidth={3}
+                                  />
+                                  <span
+                                    className="font-black text-white leading-none whitespace-nowrap"
+                                    style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                  >
+                                    {fmtHour(shift.endTime)}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {(() => {
+                              const dayData = byDate[key];
+                              const barActs = dayData?.barActivities ?? [];
+                              const grouped = groupActivities(barActs);
+                              return (
+                                <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-[3px]">
+                                  {grouped.map((act, i) => {
+                                    const bgColor = act.activityColor || stringToHslColor(act.activityName);
+                                    return (
+                                      <div
+                                        key={i}
+                                        className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
+                                        style={{
+                                          backgroundColor: bgColor,
+                                          color: '#ffffff',
+                                          containerType: 'inline-size',
+                                          ...(isPastDay ? { opacity: 0.8 } : {}),
+                                        }}
+                                      >
+                                        <div className="px-1 py-[2px]">
+                                          <span
+                                            className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
+                                            style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
+                                          >
+                                            {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
+                                          </span>
+                                        </div>
+                                        <div className="px-1 py-[2px] bg-black/10">
+                                          <span
+                                            className="block break-keep font-bold leading-tight mt-[1px]"
+                                            style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
+                                          >
+                                            {act.activityName}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
                           </>
                         )}
 
-                        <div className="flex-1 w-full" />
+                        {viewMode === 'horarios' && <div className="flex-1 w-full" />}
                       </div>
                     );
                   })}
