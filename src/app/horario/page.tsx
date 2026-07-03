@@ -15,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
@@ -399,26 +399,17 @@ export default function HorarioPage() {
                         <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
                           {shift && (
-                            <div className="w-full rounded-[3px] flex overflow-hidden shrink-0 mb-[2px]">
-                              <div
-                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
-                                style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
-                              >
-                                <span
-                                  className="font-black text-white leading-none whitespace-nowrap"
-                                  style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
-                                >
+                            <div className="w-full flex items-center gap-[3px] rounded-[4px] px-1.5 shrink-0 mb-1" style={{ backgroundColor: '#F5F5F5', height: '20px' }}>
+                              <Clock size={10} className="shrink-0 text-zinc-400" strokeWidth={2} />
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="inline-block w-[6px] h-[6px] rounded-full shrink-0" style={{ backgroundColor: '#22a34a' }} />
+                                <span className="font-medium text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: 'clamp(7px, 9cqi, 11px)' }}>
                                   {fmtHour(shift.startTime)}
                                 </span>
                               </div>
-                              <div
-                                className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
-                                style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
-                              >
-                                <span
-                                  className="font-black text-white leading-none whitespace-nowrap"
-                                  style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
-                                >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="inline-block w-[6px] h-[6px] rounded-full shrink-0" style={{ backgroundColor: '#c0392b' }} />
+                                <span className="font-medium text-zinc-600 whitespace-nowrap leading-none" style={{ fontSize: 'clamp(7px, 9cqi, 11px)' }}>
                                   {fmtHour(shift.endTime)}
                                 </span>
                               </div>
