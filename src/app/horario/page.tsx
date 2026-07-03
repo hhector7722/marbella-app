@@ -396,6 +396,9 @@ export default function HorarioPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
+                        {/* Spacer: same space above and below shift card */}
+                        <div className="w-full shrink-0 h-[4px]" />
+
                         {/* Shift zone: between day number and activity */}
                         <div className="w-full shrink-0">
                           {shift && (
@@ -425,6 +428,9 @@ export default function HorarioPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* Spacer: same space above and below shift card */}
+                        <div className="w-full shrink-0 h-[4px]" />
 
                         <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
 

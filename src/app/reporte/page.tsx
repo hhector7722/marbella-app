@@ -266,24 +266,17 @@ export default function ReportePage() {
     const allSelected = act.categories.every(c => c.selected);
 
     return (
-      <div className="relative flex-1" ref={dropdownRef}>
-        <button
-          type="button"
+      <div className="relative flex-1 h-[36px]" ref={dropdownRef}>
+        <div
           onClick={() => setOpen(!open)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/40 border border-slate-700/30 text-xs text-left transition-all hover:border-indigo-500/30"
+          className="form-input w-full h-full flex items-center px-2 rounded-xl cursor-pointer text-xs"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
           <span className="flex-1 text-slate-400">
             {selectedCount > 0
-              ? `${selectedCount} categoria${selectedCount !== 1 ? 's' : ''} seleccionada${selectedCount !== 1 ? 's' : ''}`
-              : 'Seleccionar categories'}
+              ? `${selectedCount} categoria${selectedCount !== 1 ? 's' : ''}`
+              : ''}
           </span>
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        </div>
         {open && (
           <div className="absolute z-20 mt-1 w-full rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
             <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-slate-700/30">
@@ -354,7 +347,7 @@ export default function ReportePage() {
                   </svg>
                 </button>
               )}
-              <div className="grid grid-cols-[140px_1fr] gap-x-8 gap-y-2.5 items-start">
+              <div className="grid grid-cols-[120px_1fr] gap-x-8 gap-y-2.5 items-start">
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Data</label>
                   <input
@@ -377,6 +370,8 @@ export default function ReportePage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div className="grid grid-cols-[120px_1fr_70px] gap-x-8 gap-y-2.5 items-start mt-2">
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>
                   <div className="flex items-center gap-1 h-[36px]">
@@ -393,21 +388,20 @@ export default function ReportePage() {
                     />
                   </div>
                 </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-700/50">
-                <div className="flex items-center gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Categoria</label>
                   <CategoryDropdown act={act} />
-                  <div className="w-24 shrink-0">
-                    <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">Participants</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={act.total_participants || ''}
-                      onChange={(e) => handleTotalParticipants(act.id, parseInt(e.target.value) || 0)}
-                      placeholder="0"
-                      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs text-white text-center"
-                    />
-                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Participants</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={act.total_participants || ''}
+                    onChange={(e) => handleTotalParticipants(act.id, parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs text-white text-center"
+                  />
                 </div>
               </div>
             </div>
