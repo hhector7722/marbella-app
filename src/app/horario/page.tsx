@@ -255,7 +255,7 @@ export default function HorarioPage() {
   };
 
   const getMonthLabel = (date: Date) =>
-    date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' ');
+    date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
   const modalRole = isMaster ? 'manager' : userRole;
 
@@ -391,37 +391,41 @@ export default function HorarioPage() {
                         onKeyDown={(e) => e.key === 'Enter' && isViewMonthDay && openDay(day)}
                         className={cellCls}
                       >
-                        {/* ─── Fixed Header: day + shift card + separator ─── */}
-                        <div className="w-full shrink-0">
-                          {/* Day number */}
-                          <div className="flex justify-end items-center gap-0.5 w-full mb-[2px]">
-                            <span className={dayNumCls}>{format(day, 'd')}</span>
-                          </div>
-
-                          {/* Shift card: fixed 14px reserved */}
-                          <div className="w-full" style={{ height: '14px' }}>
-                            {shift && (
-                              <div className="w-full h-full grid grid-cols-2 rounded-[3px] overflow-hidden">
-                                <div className="flex items-center justify-center bg-[#22a34a]">
-                                  <span className="text-white font-bold leading-none" style={{ fontSize: '7px' }}>
-                                    {fmtHour(shift.startTime)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-center bg-[#c0392b]">
-                                  <span className="text-white font-bold leading-none" style={{ fontSize: '7px' }}>
-                                    {fmtHour(shift.endTime)}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Separator line */}
-                          <div className="w-full h-px bg-gray-200 mt-[2px]" />
+                        {/* Day number */}
+                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
+                          <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* ─── Activities container ─── */}
                         <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+
+                          {shift && (
+                            <div className="w-full rounded-[3px] flex overflow-hidden shrink-0 mb-[2px]">
+                              <div
+                                className="flex-1 flex items-center justify-center px-1 py-[2px]"
+                                style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
+                              >
+                                <span
+                                  className="font-black text-white leading-none whitespace-nowrap"
+                                  style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                >
+                                  {shift.startTime}
+                                </span>
+                              </div>
+                              <div
+                                className="flex-1 flex items-center justify-center px-1 py-[2px]"
+                                style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
+                              >
+                                <span
+                                  className="font-black text-white leading-none whitespace-nowrap"
+                                  style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
+                                >
+                                  {shift.endTime}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Activity cards */}
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
                             return (
