@@ -432,14 +432,14 @@ export default function HorarioPage() {
                         {/* Spacer: same height as the one above */}
                         <div className="w-full shrink-0 h-[3px]" />
 
-                        <div className="flex-1 w-full flex flex-col gap-[2px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
 
-                          {/* Activity cards */}
-                          {grouped.map((act, i) => {
+                          {/* First activity only, centered */}
+                          {grouped.length > 0 && (() => {
+                            const act = grouped[0];
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
                             return (
                               <div
-                                key={i}
                                 className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
                                 style={{
                                   backgroundColor: bgColor,
@@ -466,7 +466,7 @@ export default function HorarioPage() {
                                 </div>
                               </div>
                             );
-                          })}
+                          })()}
                         </div>
                       </div>
                     );
