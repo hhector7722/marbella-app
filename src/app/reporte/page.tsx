@@ -1,9 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import './premium.css';
+
+interface CategoryEntry {
+  id: string;
+  name: string;
+  participants: number;
+  selected: boolean;
+}
 
 interface Activity {
   id: string;
@@ -11,17 +18,20 @@ interface Activity {
   activitat: string;
   hora_convocatoria: string;
   hora_finalitzacio: string;
-  participants: string;
-  categoria: string;
   dayName: 'Dissabte' | 'Diumenge';
-  isFreeText?: boolean;
+  categories: CategoryEntry[];
+}
+
+interface CategoryOption {
+  id: string;
+  name: string;
 }
 
 function getNextWeekend() {
   const today = new Date();
   const day = getDay(today);
   let sat = new Date(today);
-  if (day === 0) { // Sunday
+  if (day === 0) {
     sat = subDays(today, 1);
   } else {
     sat = addDays(today, (6 - day + 7) % 7);
@@ -35,9 +45,9 @@ function getNextWeekend() {
 
 function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const timeOptions: string[] = [];
-  for (let h = 0; h < 24; h++) {
+  for (let h = 7; h <= 23; h++) {
     timeOptions.push(`${String(h).padStart(2, '0')}:00`);
-    timeOptions.push(`${String(h).padStart(2, '0')}:30`);
+    if (h < 23) timeOptions.push(`${String(h).padStart(2, '0')}:30`);
   }
 
   return (
@@ -56,12 +66,11 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
 
 export default function ReportePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [loadingText, setLoadingText] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const captureAreaRef = useRef<HTMLDivElement>(null);
   const [allGlobalActivities, setAllGlobalActivities] = useState<string[]>([]);
   const [dailyActivitiesMap, setDailyActivitiesMap] = useState<Record<string, string[]>>({});
+  const [showModal, setShowModal] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
 
   useEffect(() => {
     const body = document.body;
@@ -79,29 +88,16 @@ export default function ReportePage() {
     import('./actions').then(m => m.getAllActivitiesAction()).then(globals => {
       setAllGlobalActivities(globals);
     });
+    import('./actions').then(m => m.getParticipantCategoriesAction()).then(cats => {
+      setCategoryOptions(cats);
+    });
   }, []);
 
-  const fetchDailyActivities = async (date: string) => {
-    if (dailyActivitiesMap[date]) return; // already fetched
-    const m = await import('./actions');
-    const daily = await m.getDailyActivitiesAction(date);
-    const top = await m.getTopActivityAction(date);
-    
-    setDailyActivitiesMap(prev => ({
-      ...prev,
-      [date]: daily.length > 0 ? daily : allGlobalActivities
-    }));
-
-    // Auto-fill top activity if empty for this date
-    setActivities(prev => prev.map(a => {
-      if (a.data === date && !a.activitat && !a.isFreeText && top) {
-        return { ...a, activitat: top };
-      }
-      return a;
-    }));
-  };
+  const buildDefaultCategories = (): CategoryEntry[] =>
+    categoryOptions.map(c => ({ id: c.id, name: c.name, participants: 0, selected: false }));
 
   useEffect(() => {
+    if (categoryOptions.length === 0) return;
     const { saturday, sunday } = getNextWeekend();
     setActivities([
       {
@@ -110,9 +106,8 @@ export default function ReportePage() {
         activitat: '',
         hora_convocatoria: '',
         hora_finalitzacio: '',
-        participants: '',
-        categoria: '',
         dayName: 'Dissabte',
+        categories: buildDefaultCategories(),
       },
       {
         id: crypto.randomUUID(),
@@ -120,12 +115,37 @@ export default function ReportePage() {
         activitat: '',
         hora_convocatoria: '',
         hora_finalitzacio: '',
-        participants: '',
-        categoria: '',
         dayName: 'Diumenge',
+        categories: buildDefaultCategories(),
       },
     ]);
-  }, []);
+  }, [categoryOptions]);
+
+  const fetchDailyActivities = async (date: string) => {
+    if (dailyActivitiesMap[date]) return;
+    const m = await import('./actions');
+    const daily = await m.getDailyActivitiesAction(date);
+    const top = await m.getTopActivityAction(date);
+
+    setDailyActivitiesMap(prev => ({
+      ...prev,
+      [date]: daily.length > 0 ? daily : allGlobalActivities,
+    }));
+
+    setActivities(prev => prev.map(a => {
+      if (a.data === date && !a.activitat && top) {
+        return { ...a, activitat: top };
+      }
+      return a;
+    }));
+  };
+
+  useEffect(() => {
+    const dates = new Set(activities.map(a => a.data));
+    dates.forEach(d => {
+      if (d) fetchDailyActivities(d);
+    });
+  }, [activities.map(a => a.data).join(','), allGlobalActivities]);
 
   const handleChange = (id: string, field: keyof Activity, value: any) => {
     setActivities((prev) =>
@@ -140,19 +160,51 @@ export default function ReportePage() {
     );
   };
 
-  // Pre-fetch initial dates
-  useEffect(() => {
-    const dates = new Set(activities.map(a => a.data));
-    dates.forEach(d => {
-      if (d) fetchDailyActivities(d);
-    });
-  }, [activities.map(a => a.data).join(',')]);
+  const handleCategoryToggle = (actId: string, catId: string) => {
+    setActivities(prev =>
+      prev.map(a => {
+        if (a.id !== actId) return a;
+        return {
+          ...a,
+          categories: a.categories.map(c =>
+            c.id === catId ? { ...c, selected: !c.selected } : c
+          ),
+        };
+      })
+    );
+  };
+
+  const handleSelectAllCategories = (actId: string) => {
+    setActivities(prev =>
+      prev.map(a => {
+        if (a.id !== actId) return a;
+        const allSelected = a.categories.every(c => c.selected);
+        return {
+          ...a,
+          categories: a.categories.map(c => ({ ...c, selected: !allSelected })),
+        };
+      })
+    );
+  };
+
+  const handleCategoryParticipants = (actId: string, catId: string, participants: number) => {
+    setActivities(prev =>
+      prev.map(a => {
+        if (a.id !== actId) return a;
+        return {
+          ...a,
+          categories: a.categories.map(c =>
+            c.id === catId ? { ...c, participants } : c
+          ),
+        };
+      })
+    );
+  };
 
   const handleAddActivity = (dayName: 'Dissabte' | 'Diumenge') => {
     setActivities((prev) => {
       const dayActs = prev.filter((a) => a.dayName === dayName);
       if (dayActs.length >= 2) return prev;
-      
       const firstAct = dayActs[0];
       return [
         ...prev,
@@ -162,9 +214,8 @@ export default function ReportePage() {
           activitat: '',
           hora_convocatoria: '',
           hora_finalitzacio: '',
-          participants: '',
-          categoria: '',
           dayName,
+          categories: buildDefaultCategories(),
         },
       ];
     });
@@ -176,77 +227,93 @@ export default function ReportePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!captureAreaRef.current) return;
+
+    setShowModal(true);
+    setSubmitStatus('sending');
 
     try {
-      setLoadingText('Generant imatge...');
-      setIsCapturing(true);
-
-      // Submit to DB in background
       const payload: ReportePayload[] = activities.map(a => ({
         data: a.data,
         activitat: a.activitat,
         hora_convocatoria: a.hora_convocatoria,
         hora_finalitzacio: a.hora_finalitzacio,
-        participants: a.participants,
-        categoria: a.categoria,
+        categories: a.categories
+          .filter(c => c.selected && c.participants > 0)
+          .map(c => ({ category_id: c.id, participants: c.participants })),
       }));
-      
-      // We don't await so the UI generates the image immediately
-      submitReporteAction(payload).catch(console.error);
 
-      // Generate Image
-      const htmlToImage = await import('html-to-image');
-      
-      await new Promise((r) => setTimeout(r, 100)); // allow DOM updates
-
-      // html-to-image might need to clone inputs, but usually it renders input values fine
-      // we'll use toBlob which is convenient
-      const blob = await htmlToImage.toBlob(captureAreaRef.current, {
-        backgroundColor: '#0f172a',
-        pixelRatio: 2,
-        style: { transform: 'scale(1)', margin: '0' },
-      });
-
-      setIsCapturing(false);
-
-      if (!blob) throw new Error('No blob generated');
-
-      const file = new File([blob], 'report-marbella.png', { type: 'image/png' });
-
-      const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-      if (!isDesktop && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: 'Report Activitats Marbella',
-            text: 'Aquí tens el resum de les activitats del cap de setmana.',
-          });
-        } catch (e) {
-          console.log('Share cancelled or failed', e);
-        }
-      } else {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'report-marbella.png';
-        link.click();
-      }
-
-      setIsSuccess(true);
-      setTimeout(() => setIsSuccess(false), 3000);
+      await submitReporteAction(payload);
+      setSubmitStatus('sent');
     } catch (err) {
       console.error(err);
-      alert("S'ha produït un error en generar la imatge.");
-    } finally {
-      setIsCapturing(false);
-      setLoadingText(null);
+      setShowModal(false);
+      setSubmitStatus('idle');
+      alert("S'ha produït un error en enviar l'informe.");
     }
+  };
+
+  const renderCategorySection = (act: Activity) => {
+    const allSelected = act.categories.every(c => c.selected);
+    return (
+      <div className="mt-3 pt-3 border-t border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Categories</label>
+          <button
+            type="button"
+            onClick={() => handleSelectAllCategories(act.id)}
+            className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold"
+          >
+            {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+          {act.categories.map(cat => (
+            <label
+              key={cat.id}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-xs ${
+                cat.selected
+                  ? 'bg-indigo-500/15 border border-indigo-500/30 text-white'
+                  : 'bg-slate-800/40 border border-slate-700/30 text-slate-400 hover:bg-slate-700/40'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={cat.selected}
+                onChange={() => handleCategoryToggle(act.id, cat.id)}
+                className="sr-only"
+              />
+              <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                cat.selected
+                  ? 'bg-indigo-500 border-indigo-500'
+                  : 'border-slate-600 bg-transparent'
+              }`}>
+                {cat.selected && (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </span>
+              <span className="flex-1 capitalize">{cat.name}</span>
+              {cat.selected && (
+                <input
+                  type="number"
+                  min="0"
+                  value={cat.participants || ''}
+                  onChange={(e) => handleCategoryParticipants(act.id, cat.id, parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-16 text-center rounded-lg bg-slate-900/60 border border-slate-600/50 py-0.5 text-[11px] text-white outline-none"
+                />
+              )}
+            </label>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const renderDayGroup = (dayName: 'Dissabte' | 'Diumenge') => {
     const dayActivities = activities.filter((a) => a.dayName === dayName);
-    
+
     return (
       <div className="day-group mb-6" key={dayName}>
         <h2 className="text-base font-bold text-white mb-2 flex items-center gap-2">
@@ -283,46 +350,16 @@ export default function ReportePage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Activitat</label>
-                  {act.isFreeText ? (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={act.activitat}
-                        onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
-                        placeholder="Nombre de la actividad..."
-                        className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          handleChange(act.id, 'isFreeText', false);
-                          handleChange(act.id, 'activitat', '');
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-indigo-400 hover:text-indigo-300"
-                        title="Volver a seleccionar"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <select
-                      value={act.activitat}
-                      onChange={(e) => {
-                        if (e.target.value === '_TEXTO_LIBRE_') {
-                          handleChange(act.id, 'isFreeText', true);
-                          handleChange(act.id, 'activitat', '');
-                        } else {
-                          handleChange(act.id, 'activitat', e.target.value);
-                        }
-                      }}
-                      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50"
-                    >
-                      <option value="_TEXTO_LIBRE_" className="font-bold text-indigo-400">Texto libre</option>
-                      {(dailyActivitiesMap[act.data] || allGlobalActivities || []).map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    value={act.activitat}
+                    onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
+                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50"
+                  >
+                    <option value="" disabled>Selecciona una activitat</option>
+                    {(dailyActivitiesMap[act.data] || allGlobalActivities || []).map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>
@@ -338,27 +375,8 @@ export default function ReportePage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                     <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Participants</label>
-                    <input
-                      type="number"
-                      value={act.participants}
-                      onChange={(e) => handleChange(act.id, 'participants', e.target.value)}
-                      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Categoria</label>
-                    <input
-                      type="text"
-                      value={act.categoria}
-                      onChange={(e) => handleChange(act.id, 'categoria', e.target.value)}
-                      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
-                    />
-                  </div>
-                </div>
               </div>
+              {renderCategorySection(act)}
             </div>
           ))}
         </div>
@@ -376,43 +394,47 @@ export default function ReportePage() {
   };
 
   return (
-    <div className={`reporte-container pb-20 px-3 overflow-x-hidden ${isCapturing ? 'capturing' : ''}`}>
-      <div className="max-w-lg mx-auto py-2">
+    <div className="reporte-container px-3 overflow-x-hidden">
+      <div className="max-w-lg mx-auto py-4">
         <form id="reportForm" className="space-y-5" onSubmit={handleSubmit}>
-          <div id="captureArea" ref={captureAreaRef} className="space-y-5 p-2 rounded-2xl">
-            <header className="mb-4 text-center flex justify-center">
-              <img src="/icons/logo-white.png" alt="Bar La Marbella" className="h-12 w-auto object-contain" />
-            </header>
-
-            <div id="daysContainer" className="space-y-4">
-              {renderDayGroup('Dissabte')}
-              {renderDayGroup('Diumenge')}
-            </div>
+          <div id="daysContainer" className="space-y-4">
+            {renderDayGroup('Dissabte')}
+            {renderDayGroup('Diumenge')}
           </div>
 
-          <div className="h-24"></div>
-
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-lg z-[1000]">
-            <button
-              type="submit"
-              disabled={isCapturing || isSuccess}
-              className={`w-full btn-premium py-2 rounded-xl flex items-center justify-center gap-2 text-base font-bold shadow-2xl uppercase tracking-widest disabled:opacity-70 ${isSuccess ? '!bg-emerald-600 !text-white' : ''}`}
-            >
-              {isSuccess ? (
-                <>✅ Datos enviados correctamente</>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
-                    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-                    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
-                  </svg>
-                  {loadingText || 'ENVIAR'}
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="w-full btn-premium py-3 rounded-xl text-base font-bold shadow-2xl uppercase tracking-widest"
+          >
+            ENVIAR
+          </button>
         </form>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => { if (submitStatus === 'sent') { setShowModal(false); setSubmitStatus('idle'); } }}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            {submitStatus === 'sending' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="modal-progress-bar">
+                  <div className="modal-progress-fill" />
+                </div>
+                <p className="text-sm text-slate-400">Enviant informació</p>
+              </div>
+            )}
+            {submitStatus === 'sent' && (
+              <div className="flex flex-col items-center gap-3 py-4" onClick={() => { setShowModal(false); setSubmitStatus('idle'); }}>
+                <div className="modal-success-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-white">Informe envia't</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

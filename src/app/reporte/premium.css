@@ -86,21 +86,62 @@ body:has(.reporte-container) {
     animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Hide interaction elements during capture */
-.capturing .add-activity-btn,
-.capturing .remove-btn {
-    display: none !important;
+/* Modal overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
 }
 
-.capturing .activity-card {
-    margin-bottom: 12px !important;
-    animation: none !important;
-    transform: none !important;
+.modal-card {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem 2.5rem;
+    min-width: 220px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }
 
-/* Ensure input values are visible in canvas */
-.capturing input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: white !important;
-    border: none !important;
+.modal-progress-bar {
+    width: 180px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.modal-progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 2px;
+    animation: progressAnim 1.5s ease-in-out infinite;
+}
+
+@keyframes progressAnim {
+    0% { width: 0; margin-left: 0; }
+    50% { width: 70%; margin-left: 0; }
+    100% { width: 0; margin-left: 100%; }
+}
+
+.modal-success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: successPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes successPop {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); }
 }

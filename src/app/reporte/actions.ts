@@ -11,98 +11,95 @@ function getServiceSupabase() {
   return createClient(url, key);
 }
 
+export interface ReporteCategoryEntry {
+  category_id: string;
+  participants: number;
+}
+
 export interface ReportePayload {
   data: string;
   activitat: string;
   hora_convocatoria: string;
   hora_finalitzacio: string;
-  participants: string;
-  categoria: string;
+  categories: ReporteCategoryEntry[];
 }
 
-export async function submitReporteAction(activities: ReportePayload[]) {
+export async function submitReporteAction(payloads: ReportePayload[]) {
   try {
     const supabase = getServiceSupabase();
 
-    for (const item of activities) {
+    for (const item of payloads) {
       if (!item.data || !item.activitat) continue;
 
       const actName = item.activitat.trim();
 
-      // 1. Get or create activity
-      let { data: act } = await supabase
+      const { data: act } = await supabase
         .from('activities')
         .select('id')
         .ilike('name', actName)
         .maybeSingle();
 
-      let activityId: string | null = null;
       if (!act) {
-        const { data: newAct, error: actErr } = await supabase
-          .from('activities')
-          .insert({ name: actName })
-          .select('id')
-          .single();
-        if (!actErr && newAct) activityId = newAct.id;
-      } else {
-        activityId = act.id;
+        console.warn(`Activity "${actName}" not found, skipping`);
+        continue;
       }
 
-      if (!activityId) continue;
+      const { data: existingOcc } = await supabase
+        .from('activity_occurrences')
+        .select('id')
+        .eq('activity_id', act.id)
+        .eq('activity_date', item.data)
+        .maybeSingle();
 
-      const participants = item.participants ? parseInt(item.participants, 10) : null;
-      const category = item.categoria?.trim() || null;
+      if (!existingOcc) {
+        console.warn(`No occurrence for "${actName}" on ${item.data}, skipping`);
+        continue;
+      }
 
-      const hasHours = item.hora_convocatoria && item.hora_finalitzacio;
+      const occurrenceId = existingOcc.id;
 
-      if (hasHours) {
-        // 2a. Insert a new occurrence with actual hours (source_type = 'web_form')
-        //     so it appears alongside the planned occurrence for comparison.
-        //     Also store participants + category directly on this occurrence.
-        const startTime = item.hora_convocatoria.length === 5
-          ? `${item.hora_convocatoria}:00`
-          : item.hora_convocatoria;
-        const endTime = item.hora_finalitzacio.length === 5
-          ? `${item.hora_finalitzacio}:00`
-          : item.hora_finalitzacio;
+      const startTime = item.hora_convocatoria.length === 5
+        ? `${item.hora_convocatoria}:00`
+        : item.hora_convocatoria;
+      const endTime = item.hora_finalitzacio.length === 5
+        ? `${item.hora_finalitzacio}:00`
+        : item.hora_finalitzacio;
 
-        const { data: occ, error: occErr } = await supabase
-          .from('activity_occurrences')
-          .insert({
-            activity_id: activityId,
-            activity_date: item.data,
-            start_time: startTime,
-            end_time: endTime,
-            source_type: 'web_form',
-            ...(participants !== null && !isNaN(participants) ? { participants } : {}),
-            ...(category ? { category } : {}),
-          })
-          .select('id')
-          .single();
+      const { error: updateErr } = await supabase
+        .from('activity_occurrences')
+        .update({ form_start_time: startTime, form_end_time: endTime })
+        .eq('id', occurrenceId);
 
-        if (occErr) {
-          console.error('Error inserting web_form occurrence:', occErr);
-        }
-      } else {
-        // 2b. No hours provided → just update the existing planned occurrence(s)
-        //     for this activity on this date with participants + category.
-        if (participants !== null || category) {
-          const updateData: Record<string, unknown> = {};
-          if (participants !== null && !isNaN(participants)) updateData.participants = participants;
-          if (category) updateData.category = category;
+      if (updateErr) {
+        console.error('Error updating occurrence:', updateErr);
+        continue;
+      }
 
-          if (Object.keys(updateData).length > 0) {
-            const { error: updErr } = await supabase
-              .from('activity_occurrences')
-              .update(updateData)
-              .eq('activity_id', activityId)
-              .eq('activity_date', item.data)
-              .neq('source_type', 'web_form'); // only update planned occurrences
+      const { error: deleteGroupsErr } = await supabase
+        .from('occurrence_groups')
+        .delete()
+        .eq('occurrence_id', occurrenceId);
 
-            if (updErr) {
-              console.error('Error updating planned occurrence:', updErr);
-            }
-          }
+      if (deleteGroupsErr) {
+        console.error('Error deleting occurrence_groups:', deleteGroupsErr);
+      }
+
+      const groupsToInsert = (item.categories || [])
+        .filter(cat => cat.category_id && cat.participants > 0)
+        .map(cat => ({
+          occurrence_id: occurrenceId,
+          category_id: cat.category_id,
+          participants: cat.participants,
+          group_label: null,
+        }));
+
+      if (groupsToInsert.length > 0) {
+        const { error: insertGroupsErr } = await supabase
+          .from('occurrence_groups')
+          .insert(groupsToInsert);
+
+        if (insertGroupsErr) {
+          console.error('Error inserting occurrence_groups:', insertGroupsErr);
         }
       }
     }
@@ -117,7 +114,6 @@ export async function submitReporteAction(activities: ReportePayload[]) {
 export async function getDailyActivitiesAction(date: string) {
   try {
     const supabase = getServiceSupabase();
-    
     const { data, error } = await supabase
       .from('activity_occurrences')
       .select('activities(name)')
@@ -128,7 +124,6 @@ export async function getDailyActivitiesAction(date: string) {
       return [];
     }
 
-    // Extract unique activity names
     const names = new Set<string>();
     data?.forEach(row => {
       const name = (row.activities as any)?.name;
@@ -145,7 +140,6 @@ export async function getDailyActivitiesAction(date: string) {
 export async function getTopActivityAction(date: string) {
   try {
     const supabase = getServiceSupabase();
-    
     const { data, error } = await supabase
       .from('activity_occurrences')
       .select('activity_id, activities(name)')
@@ -155,13 +149,11 @@ export async function getTopActivityAction(date: string) {
       return null;
     }
 
-    // Count occurrences per activity
-    const counts: Record<string, { count: number, name: string }> = {};
+    const counts: Record<string, { count: number; name: string }> = {};
     for (const row of data) {
       const id = row.activity_id as string;
       const name = (row.activities as any)?.name as string;
       if (!id || !name) continue;
-      
       if (!counts[id]) counts[id] = { count: 0, name };
       counts[id].count++;
     }
@@ -186,7 +178,6 @@ export async function getTopActivityAction(date: string) {
 export async function getAllActivitiesAction() {
   try {
     const supabase = getServiceSupabase();
-    
     const { data, error } = await supabase
       .from('activities')
       .select('name')
@@ -194,13 +185,11 @@ export async function getAllActivitiesAction() {
       .order('name');
 
     if (error) {
-      // Fallback if is_active column doesn't exist yet
       if (error.code === '42703') {
         const { data: dataFallback, error: errFallback } = await supabase
           .from('activities')
           .select('name')
           .order('name');
-          
         if (errFallback) return [];
         return (dataFallback || []).map(r => r.name);
       }
@@ -211,5 +200,48 @@ export async function getAllActivitiesAction() {
   } catch (err) {
     console.error(err);
     return [];
+  }
+}
+
+export async function getParticipantCategoriesAction() {
+  try {
+    const supabase = getServiceSupabase();
+    const { data, error } = await supabase
+      .from('participant_categories')
+      .select('id, name')
+      .order('name');
+
+    if (error) return [];
+    return data as { id: string; name: string }[];
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+export async function updatePreferredTimesAction(params: {
+  occurrenceId: string;
+  preferred_start_time: 'pdf' | 'form';
+  preferred_end_time: 'pdf' | 'form';
+}) {
+  try {
+    const supabase = getServiceSupabase();
+    const { error } = await supabase
+      .from('activity_occurrences')
+      .update({
+        preferred_start_time: params.preferred_start_time,
+        preferred_end_time: params.preferred_end_time,
+      })
+      .eq('id', params.occurrenceId);
+
+    if (error) {
+      console.error('Error updating preferred times:', error);
+      return { success: false as const, error: error.message };
+    }
+
+    return { success: true as const };
+  } catch (err) {
+    console.error(err);
+    return { success: false as const, error: 'Internal Server Error' };
   }
 }

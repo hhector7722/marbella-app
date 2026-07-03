@@ -246,6 +246,10 @@ export async function fetchActivitiesForRangeAction(params: {
       activity_date,
       start_time,
       end_time,
+      form_start_time,
+      form_end_time,
+      preferred_start_time,
+      preferred_end_time,
       activities ( name, color ),
       activity_kinds ( icon ),
       occurrence_venues ( venues ( code, affects_bar ) )
@@ -275,12 +279,16 @@ export async function fetchActivitiesForRangeAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0) {
+      const prefStart = (row as any).preferred_start_time as string;
+      const prefEnd = (row as any).preferred_end_time as string;
+      const formStart = (row as any).form_start_time as string | null;
+      const formEnd = (row as any).form_end_time as string | null;
       byDate[d].barActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: row.start_time as string,
-        endTime: row.end_time as string,
+        startTime: (prefStart === 'form' && formStart ? formStart : row.start_time) as string,
+        endTime: (prefEnd === 'form' && formEnd ? formEnd : row.end_time) as string,
         venueCodes: barVenues.map((v) => v.code),
       });
     }
@@ -307,6 +315,10 @@ export async function fetchDayDetailAction(params: {
       activity_date,
       start_time,
       end_time,
+      form_start_time,
+      form_end_time,
+      preferred_start_time,
+      preferred_end_time,
       activities ( name, color ),
       activity_kinds ( icon ),
       occurrence_venues ( venues ( code, affects_bar ) )
@@ -331,12 +343,16 @@ export async function fetchDayDetailAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0) {
+      const prefStart = (row as any).preferred_start_time as string;
+      const prefEnd = (row as any).preferred_end_time as string;
+      const formStart = (row as any).form_start_time as string | null;
+      const formEnd = (row as any).form_end_time as string | null;
       allActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: row.start_time as string,
-        endTime: row.end_time as string,
+        startTime: (prefStart === 'form' && formStart ? formStart : row.start_time) as string,
+        endTime: (prefEnd === 'form' && formEnd ? formEnd : row.end_time) as string,
         venueCodes: barVenues.map((v) => v.code),
       });
     }
