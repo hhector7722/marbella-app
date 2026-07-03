@@ -262,6 +262,9 @@ export default function HorarioPage() {
   return (
     <div className="pb-24">
       <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
+        <div className="w-full bg-fuchsia-500 text-white text-center font-black text-lg py-4 rounded-t-2xl border-4 border-yellow-400 shadow-[0_0_30px_rgba(255,0,255,0.5)]">
+          🚨 TEST COMPONENT: HORARIO PAGE 🚨
+        </div>
         <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
 
           {/* ── Header ── */}
