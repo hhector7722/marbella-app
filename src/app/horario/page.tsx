@@ -273,7 +273,7 @@ export default function HorarioPage() {
             <div className="flex-shrink-0 flex rounded-md overflow-hidden border border-white/20">
               <button
                 onClick={() => setViewMode('horarios')}
-                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                className={`px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
                   viewMode === 'horarios'
                     ? 'bg-white text-[#36606F]'
                     : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
@@ -283,7 +283,7 @@ export default function HorarioPage() {
               </button>
               <button
                 onClick={() => setViewMode('actividades')}
-                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                className={`px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
                   viewMode === 'actividades'
                     ? 'bg-white text-[#36606F]'
                     : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
@@ -411,12 +411,12 @@ export default function HorarioPage() {
 
                         {viewMode === 'horarios' ? (
                           <>
-                            {shift && (
+                            {shift ? (
                               <>
-                                <div className="w-full shrink-0 h-[3px]" />
+                                <div className="flex-1 w-full min-h-0" />
                                 <div
                                   className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
-                                  style={{ backgroundColor: '#22c55e', opacity: isPastDay ? 0.8 : 1 }}
+                                  style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                                 >
                                   <ArrowRight
                                     className="shrink-0 text-white"
@@ -433,7 +433,7 @@ export default function HorarioPage() {
                                 <div className="w-full shrink-0 h-[3px]" />
                                 <div
                                   className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
-                                  style={{ backgroundColor: '#ef4444', opacity: isPastDay ? 0.8 : 1 }}
+                                  style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                 >
                                   <ArrowLeft
                                     className="shrink-0 text-white"
@@ -447,7 +447,10 @@ export default function HorarioPage() {
                                     {fmtHour(shift.endTime)}
                                   </span>
                                 </div>
+                                <div className="flex-1 w-full min-h-0" />
                               </>
+                            ) : (
+                              <div className="flex-1 w-full" />
                             )}
                           </>
                         ) : (
@@ -496,7 +499,6 @@ export default function HorarioPage() {
                           </>
                         )}
 
-                        {viewMode === 'horarios' && <div className="flex-1 w-full" />}
                       </div>
                     );
                   })}
