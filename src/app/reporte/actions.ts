@@ -11,17 +11,13 @@ function getServiceSupabase() {
   return createClient(url, key);
 }
 
-export interface ReporteCategoryEntry {
-  category_id: string;
-  participants: number;
-}
-
 export interface ReportePayload {
   data: string;
   activitat: string;
   hora_convocatoria: string;
   hora_finalitzacio: string;
-  categories: ReporteCategoryEntry[];
+  selected_category_ids: string[];
+  total_participants: number;
 }
 
 export async function submitReporteAction(payloads: ReportePayload[]) {
@@ -67,7 +63,11 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
 
       const { error: updateErr } = await supabase
         .from('activity_occurrences')
-        .update({ form_start_time: startTime, form_end_time: endTime })
+        .update({
+          form_start_time: startTime,
+          form_end_time: endTime,
+          total_participants: item.total_participants || null,
+        })
         .eq('id', occurrenceId);
 
       if (updateErr) {
@@ -84,12 +84,12 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         console.error('Error deleting occurrence_groups:', deleteGroupsErr);
       }
 
-      const groupsToInsert = (item.categories || [])
-        .filter(cat => cat.category_id && cat.participants > 0)
-        .map(cat => ({
+      const groupsToInsert = (item.selected_category_ids || [])
+        .filter(catId => catId)
+        .map(catId => ({
           occurrence_id: occurrenceId,
-          category_id: cat.category_id,
-          participants: cat.participants,
+          category_id: catId,
+          participants: item.total_participants || 0,
           group_label: null,
         }));
 

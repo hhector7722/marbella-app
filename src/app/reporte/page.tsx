@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import './premium.css';
@@ -8,7 +8,6 @@ import './premium.css';
 interface CategoryEntry {
   id: string;
   name: string;
-  participants: number;
   selected: boolean;
 }
 
@@ -20,6 +19,7 @@ interface Activity {
   hora_finalitzacio: string;
   dayName: 'Dissabte' | 'Diumenge';
   categories: CategoryEntry[];
+  total_participants: number;
 }
 
 interface CategoryOption {
@@ -56,7 +56,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
       onChange={(e) => onChange(e.target.value)}
       className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0"
     >
-      <option value="" disabled>--:--</option>
+      <option value=""></option>
       {timeOptions.map((t) => (
         <option key={t} value={t}>{t}</option>
       ))}
@@ -94,7 +94,7 @@ export default function ReportePage() {
   }, []);
 
   const buildDefaultCategories = (): CategoryEntry[] =>
-    categoryOptions.map(c => ({ id: c.id, name: c.name, participants: 0, selected: false }));
+    categoryOptions.map(c => ({ id: c.id, name: c.name, selected: false }));
 
   useEffect(() => {
     if (categoryOptions.length === 0) return;
@@ -108,6 +108,7 @@ export default function ReportePage() {
         hora_finalitzacio: '',
         dayName: 'Dissabte',
         categories: buildDefaultCategories(),
+        total_participants: 0,
       },
       {
         id: crypto.randomUUID(),
@@ -117,6 +118,7 @@ export default function ReportePage() {
         hora_finalitzacio: '',
         dayName: 'Diumenge',
         categories: buildDefaultCategories(),
+        total_participants: 0,
       },
     ]);
   }, [categoryOptions]);
@@ -187,17 +189,11 @@ export default function ReportePage() {
     );
   };
 
-  const handleCategoryParticipants = (actId: string, catId: string, participants: number) => {
+  const handleTotalParticipants = (actId: string, total: number) => {
     setActivities(prev =>
-      prev.map(a => {
-        if (a.id !== actId) return a;
-        return {
-          ...a,
-          categories: a.categories.map(c =>
-            c.id === catId ? { ...c, participants } : c
-          ),
-        };
-      })
+      prev.map(a =>
+        a.id === actId ? { ...a, total_participants: total } : a
+      )
     );
   };
 
@@ -216,6 +212,7 @@ export default function ReportePage() {
           hora_finalitzacio: '',
           dayName,
           categories: buildDefaultCategories(),
+          total_participants: 0,
         },
       ];
     });
@@ -237,9 +234,8 @@ export default function ReportePage() {
         activitat: a.activitat,
         hora_convocatoria: a.hora_convocatoria,
         hora_finalitzacio: a.hora_finalitzacio,
-        categories: a.categories
-          .filter(c => c.selected && c.participants > 0)
-          .map(c => ({ category_id: c.id, participants: c.participants })),
+        selected_category_ids: a.categories.filter(c => c.selected).map(c => c.id),
+        total_participants: a.total_participants,
       }));
 
       await submitReporteAction(payload);
@@ -252,61 +248,81 @@ export default function ReportePage() {
     }
   };
 
-  const renderCategorySection = (act: Activity) => {
+  const CategoryDropdown = ({ act }: { act: Activity }) => {
+    const [open, setOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const selectedCount = act.categories.filter(c => c.selected).length;
+
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const allSelected = act.categories.every(c => c.selected);
+
     return (
-      <div className="mt-3 pt-3 border-t border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Categories</label>
-          <button
-            type="button"
-            onClick={() => handleSelectAllCategories(act.id)}
-            className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold"
-          >
-            {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-          {act.categories.map(cat => (
-            <label
-              key={cat.id}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-xs ${
-                cat.selected
-                  ? 'bg-indigo-500/15 border border-indigo-500/30 text-white'
-                  : 'bg-slate-800/40 border border-slate-700/30 text-slate-400 hover:bg-slate-700/40'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={cat.selected}
-                onChange={() => handleCategoryToggle(act.id, cat.id)}
-                className="sr-only"
-              />
-              <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
-                cat.selected
-                  ? 'bg-indigo-500 border-indigo-500'
-                  : 'border-slate-600 bg-transparent'
-              }`}>
-                {cat.selected && (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </span>
-              <span className="flex-1 capitalize">{cat.name}</span>
-              {cat.selected && (
+      <div className="relative flex-1" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/40 border border-slate-700/30 text-xs text-left transition-all hover:border-indigo-500/30"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+          <span className="flex-1 text-slate-400">
+            {selectedCount > 0
+              ? `${selectedCount} categoria${selectedCount !== 1 ? 's' : ''} seleccionada${selectedCount !== 1 ? 's' : ''}`
+              : 'Seleccionar categories'}
+          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {open && (
+          <div className="absolute z-20 mt-1 w-full rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
+            <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-slate-700/30">
+              <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Categories</span>
+              <button
+                type="button"
+                onClick={() => handleSelectAllCategories(act.id)}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold"
+              >
+                {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
+              </button>
+            </div>
+            {act.categories.map(cat => (
+              <label
+                key={cat.id}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-xs hover:bg-slate-700/40"
+              >
                 <input
-                  type="number"
-                  min="0"
-                  value={cat.participants || ''}
-                  onChange={(e) => handleCategoryParticipants(act.id, cat.id, parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-16 text-center rounded-lg bg-slate-900/60 border border-slate-600/50 py-0.5 text-[11px] text-white outline-none"
+                  type="checkbox"
+                  checked={cat.selected}
+                  onChange={() => handleCategoryToggle(act.id, cat.id)}
+                  className="sr-only"
                 />
-              )}
-            </label>
-          ))}
-        </div>
+                <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all shrink-0 ${
+                  cat.selected
+                    ? 'bg-indigo-500 border-indigo-500'
+                    : 'border-slate-600 bg-transparent'
+                }`}>
+                  {cat.selected && (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+                <span className="flex-1 capitalize text-slate-300">{cat.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -368,7 +384,9 @@ export default function ReportePage() {
                       value={act.hora_convocatoria}
                       onChange={(v) => handleChange(act.id, 'hora_convocatoria', v)}
                     />
-                    <span className="text-slate-600 shrink-0">-</span>
+                    {act.hora_convocatoria && act.hora_finalitzacio && (
+                      <span className="text-slate-600 shrink-0">-</span>
+                    )}
                     <TimePicker
                       value={act.hora_finalitzacio}
                       onChange={(v) => handleChange(act.id, 'hora_finalitzacio', v)}
@@ -376,7 +394,22 @@ export default function ReportePage() {
                   </div>
                 </div>
               </div>
-              {renderCategorySection(act)}
+              <div className="mt-3 pt-3 border-t border-slate-700/50">
+                <div className="flex items-center gap-3">
+                  <CategoryDropdown act={act} />
+                  <div className="w-24 shrink-0">
+                    <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">Participants</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={act.total_participants || ''}
+                      onChange={(e) => handleTotalParticipants(act.id, parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs text-white text-center"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
