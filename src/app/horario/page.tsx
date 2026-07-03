@@ -391,18 +391,15 @@ export default function HorarioPage() {
                         onKeyDown={(e) => e.key === 'Enter' && isViewMonthDay && openDay(day)}
                         className={cellCls}
                       >
-                        {/* Day number */}
-                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full">
+                        {/* Day number: absolute top-right */}
+                        <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 z-10">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* Spacer: same height above and below the shift zone */}
-                        <div className="w-full shrink-0 h-[3px]" />
-
-                        {/* Shift zone: fixed 20px reserved for shift card */}
-                        <div className="w-full shrink-0" style={{ height: '20px' }}>
+                        {/* Shift zone: auto-height, minimal */}
+                        <div className="w-full shrink-0">
                           {shift && (
-                            <div className="w-full h-full rounded-[3px] flex overflow-hidden shrink-0">
+                            <div className="w-full rounded-[3px] flex overflow-hidden shrink-0">
                               <div
                                 className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                 style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
@@ -428,9 +425,6 @@ export default function HorarioPage() {
                             </div>
                           )}
                         </div>
-
-                        {/* Spacer: same height as the one above */}
-                        <div className="w-full shrink-0 h-[3px]" />
 
                         <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
 
