@@ -15,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   fetchActivitiesForRangeAction,
   type DayCalendarData,
@@ -315,7 +315,7 @@ export default function HorarioPage() {
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => subMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0"
+                className="flex items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0 p-0.5"
                 aria-label="Mes anterior"
               >
                 <ChevronLeft size={18} strokeWidth={2.5} />
@@ -326,7 +326,7 @@ export default function HorarioPage() {
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0"
+                className="flex items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0 p-0.5"
                 aria-label="Mes siguiente"
               >
                 <ChevronRight size={18} strokeWidth={2.5} />
@@ -339,7 +339,7 @@ export default function HorarioPage() {
                 <select
                   value={selectedEmployeeId ?? ''}
                   onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
-                  className="w-full rounded bg-white/10 border border-white/20 text-white text-[10px] font-semibold px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer"
+                  className="w-full rounded bg-white/10 border border-white/20 text-white text-[10px] font-semibold text-center px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer appearance-none"
                   style={{ color: 'white', backgroundColor: 'rgba(255,255,255,0.12)' }}
                 >
                   <option value="" style={{ color: '#1a1a1a', backgroundColor: '#fff' }}>
@@ -429,51 +429,30 @@ export default function HorarioPage() {
                         {viewMode === 'horarios' ? (
                           <>
                             {shift ? (
-                              <>
-                                <div className="flex-1 w-full min-h-0" />
+                              <div className="w-full rounded-[3px] flex overflow-hidden shrink-0">
                                 <div
-                                  className="w-6 rounded-[3px] grid grid-cols-2 shrink-0"
+                                  className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                   style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                                 >
-                                  <div className="flex items-center justify-center py-[2px]">
-                                    <ArrowRight
-                                      className="text-white shrink-0"
-                                      style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
-                                      strokeWidth={4}
-                                    />
-                                  </div>
-                                  <div className="flex items-center justify-center py-[2px]">
-                                    <span
-                                      className="font-black text-white leading-none whitespace-nowrap"
-                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
-                                    >
-                                      {fmtHour(shift.startTime)}
-                                    </span>
-                                  </div>
+                                  <span
+                                    className="font-black text-white leading-none whitespace-nowrap"
+                                    style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
+                                  >
+                                    {fmtHour(shift.startTime)}
+                                  </span>
                                 </div>
-                                <div className="w-full shrink-0 h-[3px]" />
                                 <div
-                                  className="w-6 rounded-[3px] grid grid-cols-2 shrink-0"
+                                  className="flex-1 flex items-center justify-center px-[1px] py-[2px]"
                                   style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                 >
-                                  <div className="flex items-center justify-center py-[2px]">
-                                    <ArrowLeft
-                                      className="text-white shrink-0"
-                                      style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
-                                      strokeWidth={4}
-                                    />
-                                  </div>
-                                  <div className="flex items-center justify-center py-[2px]">
-                                    <span
-                                      className="font-black text-white leading-none whitespace-nowrap"
-                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
-                                    >
-                                      {fmtHour(shift.endTime)}
-                                    </span>
-                                  </div>
+                                  <span
+                                    className="font-black text-white leading-none whitespace-nowrap"
+                                    style={{ fontSize: 'clamp(3px, 4cqi, 7px)' }}
+                                  >
+                                    {fmtHour(shift.endTime)}
+                                  </span>
                                 </div>
-                                <div className="flex-1 w-full min-h-0" />
-                              </>
+                              </div>
                             ) : (
                               <div className="flex-1 w-full" />
                             )}
