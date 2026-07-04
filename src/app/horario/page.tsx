@@ -457,7 +457,7 @@ export default function HorarioPage() {
                                     className="w-full rounded-[3px] shrink-0 relative flex items-center justify-center py-[2px] overflow-hidden"
                                     style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                   >
-                                    <span className="absolute right-0 pr-[3px] flex items-center">
+                                    <span className="absolute left-0 pl-[3px] flex items-center">
                                       <svg
                                         viewBox="0 0 24 24"
                                         className="text-white shrink-0"
