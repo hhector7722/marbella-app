@@ -12,7 +12,7 @@ import { createPortal } from 'react-dom'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, Filter, RefreshCw, X } from 'lucide-react'
+import { ChevronDown, RefreshCw, X } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -38,14 +38,11 @@ import type {
   ProductMarginRow,
 } from './schemas'
 import {
-  FinancialMonthSelector,
   InsightsMainDateFilter,
 } from './insights-date-filter'
 import {
-  formatInsightsMonthLabel,
   mondayOfWeekContaining,
   monthBounds,
-  shiftInsightsMonth,
   type InsightsFilterMode,
   type InsightsMonth,
   weekBoundsFromMonday,

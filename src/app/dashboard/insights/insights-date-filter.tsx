@@ -123,12 +123,12 @@ export function InsightsMainDateFilter({
   onOpenPicker,
   onClosePicker,
   selectedWeekMonday,
-  selectedMonth,
+  selectedMonths,
   selectedDay,
   periodFrom,
   periodTo,
   onSelectWeek,
-  onSelectMonth,
+  onSelectMonths,
   onSelectDay,
   onApplyPeriod,
 }: {
@@ -137,25 +137,27 @@ export function InsightsMainDateFilter({
   onOpenPicker: (m: InsightsFilterMode) => void
   onClosePicker: () => void
   selectedWeekMonday: string
-  selectedMonth: InsightsMonth
+  selectedMonths: InsightsMonth[]
   selectedDay: string
   periodFrom: string
   periodTo: string
   onSelectWeek: (monday: string) => void
-  onSelectMonth: (fm: InsightsMonth) => void
+  onSelectMonths: (months: InsightsMonth[]) => void
   onSelectDay: (ymd: string) => void
   onApplyPeriod: (from: string, to: string) => void
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const trackWeekApply = useTrackModalApply('insights-date-week', 'Selector semana insights')
-  const trackMonthApply = useTrackModalApply('insights-date-month', 'Selector mes insights')
   const trackDayApply = useTrackModalApply('insights-date-day', 'Selector día insights')
   const trackPeriodApply = useTrackModalApply('insights-date-period', 'Selector periodo insights')
   useClickOutside(rootRef, onClosePicker, openPicker !== null)
 
   const [weekView, setWeekView] = useViewMonthFromYmd(selectedWeekMonday)
   const [dayView, setDayView] = useViewMonthFromYmd(selectedDay)
-  const [monthViewYear, setMonthViewYear] = useState(selectedMonth.year)
+  const [monthViewYear, setMonthViewYear] = useState(
+    selectedMonths[0]?.year ?? new Date().getFullYear()
+  )
+  const [draftMonths, setDraftMonths] = useState<InsightsMonth[]>(selectedMonths)
   const [periodDraftFrom, setPeriodDraftFrom] = useState(periodFrom)
   const [periodDraftTo, setPeriodDraftTo] = useState(periodTo)
 
@@ -167,8 +169,14 @@ export function InsightsMainDateFilter({
   }, [openPicker, periodFrom, periodTo])
 
   useEffect(() => {
-    setMonthViewYear(selectedMonth.year)
-  }, [selectedMonth.year])
+    if (openPicker === 'mes') setDraftMonths(selectedMonths)
+  }, [openPicker])
+
+  useEffect(() => {
+    if (selectedMonths.length > 0) {
+      setMonthViewYear(selectedMonths[0].year)
+    }
+  }, [selectedMonths])
 
   const weekRows = useMemo(
     () => buildWeekRows(weekView.year, weekView.month),
@@ -190,7 +198,11 @@ export function InsightsMainDateFilter({
       return m === 'sem' ? 'Sem' : m === 'mes' ? 'Mes' : m === 'dia' ? 'Día' : 'Periodo'
     }
     if (mode === 'sem') return `Sem ${isoWeekNumber(selectedWeekMonday)}`
-    if (mode === 'mes') return MONTH_NAMES_ES[selectedMonth.month - 1]!
+    if (mode === 'mes') {
+      if (selectedMonths.length === 0) return 'Mes'
+      if (selectedMonths.length === 1) return MONTH_NAMES_ES[selectedMonths[0].month - 1]!
+      return `${selectedMonths.length} meses`
+    }
     if (mode === 'dia') return formatDayLabel(selectedDay)
     return formatPeriodLabel(periodFrom, periodTo)
   }
@@ -305,18 +317,23 @@ export function InsightsMainDateFilter({
                 <div className="grid grid-cols-3 gap-2">
                   {MONTH_NAMES_ES.map((name, idx) => {
                     const fm = { year: monthViewYear, month: idx + 1 }
-                    const active =
-                      selectedMonth.year === fm.year && selectedMonth.month === fm.month
+                    const active = draftMonths.some(
+                      (pm) => pm.year === fm.year && pm.month === fm.month
+                    )
                     return (
                       <button
                         key={name}
                         type="button"
                         onClick={() => {
-                          trackMonthApply(formatMonthYearParts(fm.year, fm.month), {
-                            filterYear: String(fm.year),
-                            filterMonth: String(fm.month),
+                          setDraftMonths((prev) => {
+                            const exists = prev.some(
+                              (pm) => pm.year === fm.year && pm.month === fm.month
+                            )
+                            if (exists) return prev.filter(
+                              (pm) => pm.year !== fm.year || pm.month !== fm.month
+                            )
+                            return [...prev, fm]
                           })
-                          onSelectMonth(fm)
                         }}
                         className={cn(
                           'min-h-11 rounded-xl text-xs font-black border transition-colors',
@@ -329,6 +346,25 @@ export function InsightsMainDateFilter({
                       </button>
                     )
                   })}
+                </div>
+                <div className="flex items-center justify-end gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setDraftMonths([])}
+                    className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-zinc-600 active:scale-95 transition-colors"
+                  >
+                    Limpiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (draftMonths.length === 0) return
+                      onSelectMonths(draftMonths)
+                    }}
+                    className="min-h-9 px-4 rounded-xl bg-[#36606F] text-white text-[10px] font-black uppercase tracking-wide hover:bg-[#2a4d59] active:scale-95 transition-colors"
+                  >
+                    Aplicar
+                  </button>
                 </div>
               </>
             )}

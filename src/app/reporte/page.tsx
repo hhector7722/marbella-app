@@ -278,7 +278,7 @@ export default function ReportePage() {
           </span>
         </div>
         {open && (
-          <div className="absolute z-40 mt-1 left-0 min-w-[280px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
+          <div className="absolute z-40 bottom-full mb-1 left-0 min-w-[280px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
             <div className="flex items-center justify-between px-2 pb-1 mb-1">
               <button
                 type="button"
