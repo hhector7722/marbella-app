@@ -245,128 +245,6 @@ function FinancialDetailModal({
   )
 }
 
-function FinancialMonthFilterModal({
-  open,
-  onClose,
-  currentMonth,
-  selectedMonths,
-  onApply,
-}: {
-  open: boolean
-  onClose: () => void
-  currentMonth: InsightsMonth
-  selectedMonths: InsightsMonth[]
-  onApply: (months: InsightsMonth[]) => void
-}) {
-  const [mounted, setMounted] = useState(false)
-  const [pending, setPending] = useState<InsightsMonth[]>(selectedMonths)
-
-  useEffect(() => { setMounted(true) }, [])
-
-  useEffect(() => {
-    if (open) setPending(selectedMonths)
-  }, [open, selectedMonths])
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-
-  if (!open || !mounted || typeof document === 'undefined') return null
-
-  const months: InsightsMonth[] = []
-  for (let i = 0; i < 12; i++) {
-    months.push(shiftInsightsMonth(currentMonth, -i))
-  }
-
-  const isSelected = (m: InsightsMonth) =>
-    pending.some((pm) => pm.year === m.year && pm.month === m.month)
-
-  const toggle = (m: InsightsMonth) => {
-    setPending((prev) => {
-      const exists = prev.some((pm) => pm.year === m.year && pm.month === m.month)
-      if (exists) return prev.filter((pm) => pm.year !== m.year || pm.month !== m.month)
-      return [...prev, m]
-    })
-  }
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[10070] flex items-center justify-center bg-black/40 p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div
-        className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={cn(SECTION_HEADER_CLASS, 'gap-2')}>
-          <h3 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0">
-            Filtrar por meses
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="min-h-7 min-w-7 shrink-0 inline-flex items-center justify-center rounded-lg text-white/90 hover:bg-white/15 active:scale-95"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3 space-y-0.5">
-          {months.map((m) => (
-            <label
-              key={`${m.year}-${m.month}`}
-              className="flex items-center gap-3 py-2.5 px-2 rounded-lg cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-            >
-              <input
-                type="checkbox"
-                checked={isSelected(m)}
-                onChange={() => toggle(m)}
-                className="h-4 w-4 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]"
-              />
-              <span className="text-sm font-semibold text-zinc-800">
-                {formatInsightsMonthLabel(m)}
-              </span>
-            </label>
-          ))}
-        </div>
-        <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-zinc-100 shrink-0">
-          <button
-            type="button"
-            onClick={() => setPending([])}
-            className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-zinc-600 active:scale-95 transition-colors"
-          >
-            Limpiar
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider text-zinc-500 hover:bg-zinc-100 active:scale-95 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => onApply(pending)}
-              className="min-h-9 px-4 rounded-xl bg-[#36606F] text-[10px] font-black uppercase tracking-wider text-white hover:bg-[#2a4d59] active:scale-95 transition-colors"
-            >
-              Aplicar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}
-
 function FinancialDetailRow({
   label,
   amount,
@@ -835,20 +713,10 @@ export default function InsightsClient({
   const [selectedWeekMonday, setSelectedWeekMonday] = useState(() =>
     mondayOfWeekContaining(initialDateFrom)
   )
-  const [selectedMonth, setSelectedMonth] = useState<InsightsMonth>(initialFinancialMonth)
+  const [selectedMonths, setSelectedMonths] = useState<InsightsMonth[]>([initialFinancialMonth])
   const [selectedDay, setSelectedDay] = useState(initialDateTo)
   const [periodFrom, setPeriodFrom] = useState(initialDateFrom)
   const [periodTo, setPeriodTo] = useState(initialDateTo)
-  const [financialMonth, setFinancialMonth] = useState<InsightsMonth>(initialFinancialMonth)
-  const [selectedFinancialMonths, setSelectedFinancialMonths] = useState<InsightsMonth[]>([])
-  const [showMonthFilter, setShowMonthFilter] = useState(false)
-
-  const financialRange = useMemo(() => {
-    if (selectedFinancialMonths.length === 0) return monthBounds(financialMonth)
-    const froms = selectedFinancialMonths.map(m => monthBounds(m).from).sort()
-    const tos = selectedFinancialMonths.map(m => monthBounds(m).to).sort()
-    return { from: froms[0], to: tos[tos.length - 1] }
-  }, [financialMonth, selectedFinancialMonths])
 
   const [hourly, setHourly] = useState<SectionState<HourlyProfitabilityRow[]>>({
     data: initialHourly,
@@ -953,15 +821,20 @@ export default function InsightsClient({
     [refetchAnalytics]
   )
 
-  const handleSelectMonth = useCallback(
-    (fm: InsightsMonth) => {
-      const { from, to } = monthBounds(fm)
-      setSelectedMonth(fm)
+  const handleSelectMonths = useCallback(
+    (months: InsightsMonth[]) => {
+      if (months.length === 0) return
+      setSelectedMonths(months)
       setFilterMode('mes')
       setOpenPicker(null)
+      const froms = months.map(m => monthBounds(m).from).sort()
+      const tos = months.map(m => monthBounds(m).to).sort()
+      const from = froms[0]
+      const to = tos[tos.length - 1]
       refetchAnalytics(from, to)
+      void fetchFinancial(from, to)
     },
-    [refetchAnalytics]
+    [refetchAnalytics, fetchFinancial]
   )
 
   const handleSelectDay = useCallback(
@@ -985,33 +858,6 @@ export default function InsightsClient({
       refetchAnalytics(f, t)
     },
     [refetchAnalytics]
-  )
-
-  const handleFinancialMonthChange = useCallback(
-    (fm: InsightsMonth) => {
-      setFinancialMonth(fm)
-      setSelectedFinancialMonths([])
-      setShowMonthFilter(false)
-      const { from, to } = monthBounds(fm)
-      void fetchFinancial(from, to)
-    },
-    [fetchFinancial]
-  )
-
-  const handleMultiMonthSelect = useCallback(
-    (months: InsightsMonth[]) => {
-      setSelectedFinancialMonths(months)
-      if (months.length === 0) {
-        const { from, to } = monthBounds(financialMonth)
-        void fetchFinancial(from, to)
-      } else {
-        const froms = months.map(m => monthBounds(m).from).sort()
-        const tos = months.map(m => monthBounds(m).to).sort()
-        void fetchFinancial(froms[0], tos[tos.length - 1])
-      }
-      setShowMonthFilter(false)
-    },
-    [fetchFinancial, financialMonth]
   )
 
   const hourlyChartData = useMemo(() => {
@@ -1306,12 +1152,12 @@ export default function InsightsClient({
                 onOpenPicker={handleOpenPicker}
                 onClosePicker={() => setOpenPicker(null)}
                 selectedWeekMonday={selectedWeekMonday}
-                selectedMonth={selectedMonth}
+                selectedMonths={selectedMonths}
                 selectedDay={selectedDay}
                 periodFrom={periodFrom}
                 periodTo={periodTo}
                 onSelectWeek={handleSelectWeek}
-                onSelectMonth={handleSelectMonth}
+                onSelectMonths={handleSelectMonths}
                 onSelectDay={handleSelectDay}
                 onApplyPeriod={handleApplyPeriod}
               />
@@ -1320,7 +1166,95 @@ export default function InsightsClient({
 
           <div className="p-2 md:p-6 space-y-3 md:space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
-              {/* Sección 1 — ancho completo, gráfico protagonista */}
+              {/* Sección 1 — Resultado del periodo */}
+              <section className={cn(
+                'col-span-1 md:col-span-12 rounded-xl border bg-white shadow-md overflow-hidden',
+                filterMode === 'mes' ? 'border-zinc-200' : 'border-zinc-100 opacity-50'
+              )}>
+                <SectionTitleRow title="Resultado del periodo" />
+                <div className="relative p-2 lg:p-4">
+                {financial.error ? (
+                  <SectionErrorBanner message={financial.error} onRetry={() => {
+                    if (selectedMonths.length > 0) {
+                      const froms = selectedMonths.map(m => monthBounds(m).from).sort()
+                      const tos = selectedMonths.map(m => monthBounds(m).to).sort()
+                      void fetchFinancial(froms[0], tos[tos.length - 1])
+                    }
+                  }} />
+                ) : financial.loading ? (
+                  <SectionSkeleton rows={2} />
+                ) : !financial.data ? (
+                  <SectionErrorBanner
+                    message={financial.error ?? 'No se pudo cargar el estado financiero'}
+                    onRetry={() => {
+                      if (selectedMonths.length > 0) {
+                        const froms = selectedMonths.map(m => monthBounds(m).from).sort()
+                        const tos = selectedMonths.map(m => monthBounds(m).to).sort()
+                        void fetchFinancial(froms[0], tos[tos.length - 1])
+                      }
+                    }}
+                  />
+                ) : financialKpis ? (
+                  <div className={cn('space-y-2', filterMode !== 'mes' && 'pointer-events-none')}>
+                    <div className="grid grid-cols-3 gap-2">
+                      <FinancialKpiChip
+                        label="Venta neta"
+                        value={financialKpis.income}
+                        valueClassName={financialKpis.incomeTone}
+                        onClick={() => setFinancialModal('income')}
+                      />
+                      <FinancialKpiChip
+                        label="Gastos totales"
+                        value={financialKpis.expenses}
+                        valueClassName={financialKpis.expensesTone}
+                        onClick={() => setFinancialModal('expenses')}
+                      />
+                      <FinancialKpiChip
+                        label="Cobros totales"
+                        value={financialKpis.cobrosTotales}
+                        valueClassName={financialKpis.cobrosTone}
+                        onClick={() => setFinancialModal('cash')}
+                      />
+                    </div>
+                    <div className="flex justify-center">
+                      <div className="grid w-full max-w-md grid-cols-2 gap-2">
+                        <FinancialKpiChip
+                          label="Margen PyG"
+                          value={financialKpis.pygNet}
+                          valueClassName={financialKpis.pygNetTone}
+                          onClick={() => setFinancialModal('margin')}
+                        />
+                        <FinancialKpiChip
+                          label="Rentabilidad"
+                          value={financialKpis.marginBadge}
+                          valueClassName={financialKpis.rentabilidadTone}
+                          onClick={() => setFinancialModal('margin')}
+                        />
+                      </div>
+                    </div>
+                    {financialModalContent && (
+                      <FinancialDetailModal
+                        open={financialModal !== null}
+                        title={financialModalContent.title}
+                        footnote={financialModalContent.footnote}
+                        onClose={() => setFinancialModal(null)}
+                      >
+                        {financialModalContent.body}
+                      </FinancialDetailModal>
+                    )}
+                  </div>
+                ) : null}
+                {filterMode !== 'mes' && financial.data && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 bg-white/80 px-2 py-1 rounded-lg">
+                      Solo disponible en vista mensual
+                    </span>
+                  </div>
+                )}
+                </div>
+              </section>
+
+              {/* Sección 2 — ancho completo, gráfico protagonista */}
               <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden">
                 <SectionTitleRow
                   title="Venta vs. Coste por hora"
@@ -1766,110 +1700,9 @@ export default function InsightsClient({
                 )}
                 </div>
               </section>
-              </div>
             </div>
 
-            {/* Sección 4 — Resultado del periodo (ancho completo) */}
-            <section className="rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden">
-              <SectionTitleRow
-                title="Resultado del periodo"
-                actions={
-                  <div className="flex items-center gap-1">
-                    <FinancialMonthSelector
-                      month={financialMonth}
-                      onChange={handleFinancialMonthChange}
-                      tone="onDark"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowMonthFilter(true)}
-                      aria-label="Filtrar meses"
-                      className={cn(
-                        'inline-flex items-center justify-center rounded-lg active:scale-95 min-h-7 min-w-7 transition-colors',
-                        selectedFinancialMonths.length > 0
-                          ? 'text-white bg-white/20'
-                          : 'text-white/70 hover:bg-white/15'
-                      )}
-                    >
-                      <Filter className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                }
-              />
-              <div className="p-2 lg:p-4">
-              {financial.error ? (
-                <SectionErrorBanner
-                  message={financial.error}
-                  onRetry={() => void fetchFinancial(financialRange.from, financialRange.to)}
-                />
-              ) : financial.loading ? (
-                <SectionSkeleton rows={2} />
-              ) : !financial.data ? (
-                <SectionErrorBanner
-                  message={financial.error ?? 'No se pudo cargar el estado financiero'}
-                  onRetry={() => void fetchFinancial(financialRange.from, financialRange.to)}
-                />
-              ) : financialKpis ? (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2">
-                    <FinancialKpiChip
-                      label="Venta neta"
-                      value={financialKpis.income}
-                      valueClassName={financialKpis.incomeTone}
-                      onClick={() => setFinancialModal('income')}
-                    />
-                    <FinancialKpiChip
-                      label="Gastos totales"
-                      value={financialKpis.expenses}
-                      valueClassName={financialKpis.expensesTone}
-                      onClick={() => setFinancialModal('expenses')}
-                    />
-                    <FinancialKpiChip
-                      label="Cobros totales"
-                      value={financialKpis.cobrosTotales}
-                      valueClassName={financialKpis.cobrosTone}
-                      onClick={() => setFinancialModal('cash')}
-                    />
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="grid w-full max-w-md grid-cols-2 gap-2">
-                      <FinancialKpiChip
-                        label="Margen PyG"
-                        value={financialKpis.pygNet}
-                        valueClassName={financialKpis.pygNetTone}
-                        onClick={() => setFinancialModal('margin')}
-                      />
-                      <FinancialKpiChip
-                        label="Rentabilidad"
-                        value={financialKpis.marginBadge}
-                        valueClassName={financialKpis.rentabilidadTone}
-                        onClick={() => setFinancialModal('margin')}
-                      />
-                    </div>
-                  </div>
-                  {financialModalContent && (
-                    <FinancialDetailModal
-                      open={financialModal !== null}
-                      title={financialModalContent.title}
-                      footnote={financialModalContent.footnote}
-                      onClose={() => setFinancialModal(null)}
-                    >
-                      {financialModalContent.body}
-                    </FinancialDetailModal>
-                  )}
-                </div>
-              ) : null}
-              </div>
-              {showMonthFilter && (
-                <FinancialMonthFilterModal
-                  open={showMonthFilter}
-                  onClose={() => setShowMonthFilter(false)}
-                  currentMonth={financialMonth}
-                  selectedMonths={selectedFinancialMonths}
-                  onApply={handleMultiMonthSelect}
-                />
-              )}
-            </section>
+          </div>
           </div>
         </div>
       </div>
