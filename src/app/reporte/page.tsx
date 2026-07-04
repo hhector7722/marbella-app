@@ -278,8 +278,8 @@ export default function ReportePage() {
           </span>
         </div>
         {open && (
-          <div className="absolute z-40 bottom-full mb-1 left-0 min-w-[280px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-2 animate-fade-in">
-            <div className="flex items-center justify-between px-2 pb-1 mb-1">
+          <div className="absolute z-40 bottom-full mb-1 left-0 w-[400px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-3 animate-fade-in">
+            <div className="flex items-center justify-between px-2 pb-1 mb-2 border-b border-slate-700/50">
               <button
                 type="button"
                 onClick={() => handleSelectAllCategories(act.id)}
@@ -288,31 +288,33 @@ export default function ReportePage() {
                 {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
               </button>
             </div>
-            {act.categories.map(cat => (
-              <label
-                key={cat.id}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-xs hover:bg-slate-700/40"
-              >
-                <input
-                  type="checkbox"
-                  checked={cat.selected}
-                  onChange={() => handleCategoryToggle(act.id, cat.id)}
-                  className="sr-only"
-                />
-                <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all shrink-0 ${
-                  cat.selected
-                    ? 'bg-indigo-500 border-indigo-500'
-                    : 'border-slate-600 bg-transparent'
-                }`}>
-                  {cat.selected && (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </span>
-                <span className="flex-1 capitalize text-slate-300">{cat.name}</span>
-              </label>
-            ))}
+            <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
+              {act.categories.map(cat => (
+                <label
+                  key={cat.id}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-xs hover:bg-slate-700/40 whitespace-nowrap"
+                >
+                  <input
+                    type="checkbox"
+                    checked={cat.selected}
+                    onChange={() => handleCategoryToggle(act.id, cat.id)}
+                    className="sr-only"
+                  />
+                  <span className={`w-3 h-3 rounded border flex items-center justify-center transition-all shrink-0 ${
+                    cat.selected
+                      ? 'bg-indigo-500 border-indigo-500'
+                      : 'border-slate-600 bg-transparent'
+                  }`}>
+                    {cat.selected && (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-2 w-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="text-slate-300 truncate font-medium">{cat.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
         )}
       </div>
