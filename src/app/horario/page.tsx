@@ -432,10 +432,10 @@ export default function HorarioPage() {
                               <>
                                 <div className="flex-1 w-full min-h-0" />
                                   <div
-                                    className="w-full rounded-[3px] shrink-0 relative flex items-center justify-center py-[2px] overflow-hidden"
+                                    className="w-full h-[14px] rounded-[3px] shrink-0 relative flex items-center justify-center overflow-hidden"
                                     style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                                   >
-                                    <span className="absolute left-0 pl-[3px] flex items-center">
+                                    <div className="absolute left-0 pl-[3px] flex items-center h-full z-0 pointer-events-none">
                                       <svg
                                         viewBox="0 0 24 24"
                                         className="text-white shrink-0"
@@ -444,9 +444,9 @@ export default function HorarioPage() {
                                       >
                                         <path d="M0 10h14V6l10 6-10 6v-4H0z" />
                                       </svg>
-                                    </span>
+                                    </div>
                                     <span
-                                      className="font-black text-white leading-none whitespace-nowrap"
+                                      className="font-black text-white leading-none whitespace-nowrap z-10 pointer-events-none"
                                       style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
                                     >
                                       {fmtHour(shift.startTime)}
@@ -454,21 +454,21 @@ export default function HorarioPage() {
                                   </div>
                                   <div className="w-full shrink-0 h-[3px]" />
                                   <div
-                                    className="w-full rounded-[3px] shrink-0 relative flex items-center justify-center py-[2px] overflow-hidden"
+                                    className="w-full h-[14px] rounded-[3px] shrink-0 relative flex items-center justify-center overflow-hidden"
                                     style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                   >
-                                    <span className="absolute left-0 pl-[3px] flex items-center">
+                                    <div className="absolute left-0 pl-[3px] flex items-center h-full z-0 pointer-events-none">
                                       <svg
                                         viewBox="0 0 24 24"
-                                        className="text-white shrink-0"
+                                        className="text-white shrink-0 -scale-x-100"
                                         style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
                                         fill="currentColor"
                                       >
-                                        <path d="M24 10H10V6L0 12l10 6v-4h14z" />
+                                        <path d="M0 10h14V6l10 6-10 6v-4H0z" />
                                       </svg>
-                                    </span>
+                                    </div>
                                     <span
-                                      className="font-black text-white leading-none whitespace-nowrap"
+                                      className="font-black text-white leading-none whitespace-nowrap z-10 pointer-events-none"
                                       style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
                                     >
                                       {fmtHour(shift.endTime)}
