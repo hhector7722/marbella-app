@@ -432,7 +432,7 @@ export default function HorarioPage() {
                               <>
                                 <div className="flex-1 w-full min-h-0" />
                                 <div
-                                  className="w-6 rounded-[3px] grid grid-cols-2 shrink-0"
+                                  className="w-full rounded-[3px] grid grid-cols-2 shrink-0"
                                   style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                                 >
                                   <div className="flex items-center justify-center py-[2px]">
@@ -453,7 +453,7 @@ export default function HorarioPage() {
                                 </div>
                                 <div className="w-full shrink-0 h-[3px]" />
                                 <div
-                                  className="w-6 rounded-[3px] grid grid-cols-2 shrink-0"
+                                  className="w-full rounded-[3px] grid grid-cols-2 shrink-0"
                                   style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                 >
                                   <div className="flex items-center justify-center py-[2px]">
