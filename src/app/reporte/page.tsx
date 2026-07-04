@@ -251,7 +251,6 @@ export default function ReportePage() {
   const CategoryDropdown = ({ act }: { act: Activity }) => {
     const [open, setOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const selectedCount = act.categories.filter(c => c.selected).length;
 
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
@@ -264,18 +263,18 @@ export default function ReportePage() {
     }, []);
 
     const allSelected = act.categories.every(c => c.selected);
+    const selectedNames = act.categories.filter(c => c.selected).map(c => c.name);
+    const displayNames = selectedNames.length > 0
+      ? selectedNames.join(', ')
+      : '';
 
     return (
       <div className="relative flex-1 h-[36px]" ref={dropdownRef}>
         <div
           onClick={() => setOpen(!open)}
-          className="form-input w-full h-full flex items-center justify-center px-2 rounded-xl cursor-pointer text-xs"
+          className="form-input w-full h-full flex items-center justify-center px-2 rounded-xl cursor-pointer text-xs text-center"
         >
-          <span className="flex-1 text-slate-400">
-            {selectedCount > 0
-              ? `${selectedCount} categoria${selectedCount !== 1 ? 's' : ''}`
-              : ''}
-          </span>
+          <span className="truncate text-slate-400">{displayNames}</span>
         </div>
         {open && (
           <div className="absolute z-40 bottom-full mb-1 left-0 w-[400px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-3 animate-fade-in">
