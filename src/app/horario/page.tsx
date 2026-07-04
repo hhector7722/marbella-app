@@ -432,37 +432,45 @@ export default function HorarioPage() {
                               <>
                                 <div className="flex-1 w-full min-h-0" />
                                 <div
-                                  className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
+                                  className="w-full rounded-[3px] grid grid-cols-2 shrink-0"
                                   style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                                 >
-                                  <ArrowRight
-                                    className="shrink-0 text-white"
-                                    style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
-                                    strokeWidth={3}
-                                  />
-                                  <span
-                                    className="font-black text-white leading-none whitespace-nowrap"
-                                    style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
-                                  >
-                                    {fmtHour(shift.startTime)}
-                                  </span>
+                                  <div className="flex items-center justify-center py-[2px]">
+                                    <ArrowRight
+                                      className="text-white shrink-0"
+                                      style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
+                                      strokeWidth={4}
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-center py-[2px]">
+                                    <span
+                                      className="font-black text-white leading-none whitespace-nowrap"
+                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
+                                    >
+                                      {fmtHour(shift.startTime)}
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="w-full shrink-0 h-[3px]" />
                                 <div
-                                  className="w-full rounded-[3px] px-1 py-[2px] flex items-center gap-[2px] shrink-0"
+                                  className="w-full rounded-[3px] grid grid-cols-2 shrink-0"
                                   style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                 >
-                                  <ArrowLeft
-                                    className="shrink-0 text-white"
-                                    style={{ width: 'clamp(5px,8cqi,9px)', height: 'clamp(5px,8cqi,9px)' }}
-                                    strokeWidth={3}
-                                  />
-                                  <span
-                                    className="font-black text-white leading-none whitespace-nowrap"
-                                    style={{ fontSize: 'clamp(5px, 9cqi, 9px)' }}
-                                  >
-                                    {fmtHour(shift.endTime)}
-                                  </span>
+                                  <div className="flex items-center justify-center py-[2px]">
+                                    <ArrowLeft
+                                      className="text-white shrink-0"
+                                      style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
+                                      strokeWidth={4}
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-center py-[2px]">
+                                    <span
+                                      className="font-black text-white leading-none whitespace-nowrap"
+                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
+                                    >
+                                      {fmtHour(shift.endTime)}
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="flex-1 w-full min-h-0" />
                               </>
