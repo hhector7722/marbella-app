@@ -431,53 +431,49 @@ export default function HorarioPage() {
                             {shift ? (
                               <>
                                 <div className="flex-1 w-full min-h-0" />
-                                 <div
-                                   className="w-full rounded-[3px] grid grid-cols-[auto_1fr] shrink-0"
-                                   style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
-                                 >
-                                   <div className="flex items-center justify-center py-[2px]">
-                                     <svg
-                                       viewBox="0 0 24 24"
-                                       className="text-white shrink-0"
-                                       style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
-                                       fill="currentColor"
-                                     >
-                                       <path d="M0 10h14V6l10 6-10 6v-4H0z" />
-                                     </svg>
-                                   </div>
-                                   <div className="flex items-center justify-start pl-[2px] py-[2px]">
-                                     <span
-                                       className="font-black text-white leading-none whitespace-nowrap"
-                                       style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
-                                     >
-                                       {fmtHour(shift.startTime)}
-                                     </span>
-                                   </div>
-                                 </div>
-                                 <div className="w-full shrink-0 h-[3px]" />
-                                 <div
-                                   className="w-full rounded-[3px] grid grid-cols-[auto_1fr] shrink-0"
-                                   style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
-                                 >
-                                   <div className="flex items-center justify-center py-[2px]">
-                                     <svg
-                                       viewBox="0 0 24 24"
-                                       className="text-white shrink-0"
-                                       style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
-                                       fill="currentColor"
-                                     >
-                                       <path d="M24 10H10V6L0 12l10 6v-4h14z" />
-                                     </svg>
-                                   </div>
-                                   <div className="flex items-center justify-start pl-[2px] py-[2px]">
-                                     <span
-                                       className="font-black text-white leading-none whitespace-nowrap"
-                                       style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
-                                     >
-                                       {fmtHour(shift.endTime)}
-                                     </span>
-                                   </div>
-                                 </div>
+                                  <div
+                                    className="w-full rounded-[3px] shrink-0 relative flex items-center justify-center py-[2px] overflow-hidden"
+                                    style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
+                                  >
+                                    <span className="absolute left-0 pl-[3px] flex items-center">
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        className="text-white shrink-0"
+                                        style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
+                                        fill="currentColor"
+                                      >
+                                        <path d="M0 10h14V6l10 6-10 6v-4H0z" />
+                                      </svg>
+                                    </span>
+                                    <span
+                                      className="font-black text-white leading-none whitespace-nowrap"
+                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
+                                    >
+                                      {fmtHour(shift.startTime)}
+                                    </span>
+                                  </div>
+                                  <div className="w-full shrink-0 h-[3px]" />
+                                  <div
+                                    className="w-full rounded-[3px] shrink-0 relative flex items-center justify-center py-[2px] overflow-hidden"
+                                    style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
+                                  >
+                                    <span className="absolute right-0 pr-[3px] flex items-center">
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        className="text-white shrink-0"
+                                        style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
+                                        fill="currentColor"
+                                      >
+                                        <path d="M24 10H10V6L0 12l10 6v-4h14z" />
+                                      </svg>
+                                    </span>
+                                    <span
+                                      className="font-black text-white leading-none whitespace-nowrap"
+                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
+                                    >
+                                      {fmtHour(shift.endTime)}
+                                    </span>
+                                  </div>
                                 <div className="flex-1 w-full min-h-0" />
                               </>
                             ) : (
