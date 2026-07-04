@@ -452,6 +452,7 @@ export default function HorarioPage() {
                                   </div>
                                 </div>
                                 <div className="w-full shrink-0 h-[3px]" />
+                                <div
                                   className="w-6 rounded-[3px] grid grid-cols-2 shrink-0"
                                   style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                 >
