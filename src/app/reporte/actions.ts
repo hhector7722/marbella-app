@@ -47,13 +47,6 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         .eq('activity_date', item.data)
         .maybeSingle();
 
-      if (!existingOcc) {
-        console.warn(`No occurrence for "${actName}" on ${item.data}, skipping`);
-        continue;
-      }
-
-      const occurrenceId = existingOcc.id;
-
       const startTime = item.hora_convocatoria.length === 5
         ? `${item.hora_convocatoria}:00`
         : item.hora_convocatoria;
@@ -61,20 +54,50 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         ? `${item.hora_finalitzacio}:00`
         : item.hora_finalitzacio;
 
-      const { error: updateErr } = await supabase
-        .from('activity_occurrences')
-        .update({
-          form_start_time: startTime,
-          form_end_time: endTime,
-          preferred_start_time: 'form',
-          preferred_end_time: 'form',
-          total_participants: item.total_participants || null,
-        })
-        .eq('id', occurrenceId);
+      let occurrenceId: string;
 
-      if (updateErr) {
-        console.error('Error updating occurrence:', updateErr);
-        continue;
+      if (!existingOcc) {
+        const { data: newOcc, error: insertErr } = await supabase
+          .from('activity_occurrences')
+          .insert({
+            activity_id: act.id,
+            activity_date: item.data,
+            start_time: startTime || '00:00:00',
+            end_time: endTime || '00:00:00',
+            form_start_time: startTime || null,
+            form_end_time: endTime || null,
+            preferred_start_time: 'form',
+            preferred_end_time: 'form',
+            total_participants: item.total_participants || null,
+            source_type: 'form',
+          })
+          .select('id')
+          .single();
+
+        if (insertErr || !newOcc) {
+          console.error('Error creating occurrence:', insertErr);
+          continue;
+        }
+
+        occurrenceId = newOcc.id;
+      } else {
+        occurrenceId = existingOcc.id;
+
+        const { error: updateErr } = await supabase
+          .from('activity_occurrences')
+          .update({
+            form_start_time: startTime || null,
+            form_end_time: endTime || null,
+            preferred_start_time: 'form',
+            preferred_end_time: 'form',
+            total_participants: item.total_participants || null,
+          })
+          .eq('id', occurrenceId);
+
+        if (updateErr) {
+          console.error('Error updating occurrence:', updateErr);
+          continue;
+        }
       }
 
       const { error: deleteGroupsErr } = await supabase
