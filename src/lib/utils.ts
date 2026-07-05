@@ -31,6 +31,11 @@ export function formatDisplayValue(value: string | number): string | number {
 export function getHourFromTicketTime(horaCierre?: string | null, fecha?: string | null): number {
     const raw = horaCierre ?? fecha;
     if (!raw || typeof raw !== 'string') return 12;
+    const plainTimeMatch = raw.match(/^\d{2}:\d{2}(?::\d{2})?$/);
+    if (plainTimeMatch) {
+        const h = parseInt(raw.slice(0, 2), 10);
+        return Number.isFinite(h) ? Math.min(23, Math.max(0, h)) : 12;
+    }
     let d = parseRadiografiaTimestamp(raw) ?? parseDBDate(raw);
     if (Number.isNaN(d.getTime())) d = parseTPVDate(raw);
     if (Number.isNaN(d.getTime())) return 12;

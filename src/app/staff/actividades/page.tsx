@@ -25,6 +25,8 @@ import {
   type DayCalendarData,
 } from '@/app/staff/actividades/actions';
 import { usePageView } from '@/lib/usage/usePageView';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { createClient } from '@/utils/supabase/client';
 
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
@@ -122,16 +124,18 @@ export default function ActividadesPage() {
   const [isMaster, setIsMaster] = useState(false);
 
   useEffect(() => {
-    import('@/utils/supabase/client').then(({ createClient }) => {
-      const supabase = createClient();
-      supabase.auth.getSession().then(({ data }) => {
+    async function checkMaster() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
         if (data.session?.user?.email) {
-          import('@/lib/master-dashboard').then(({ isMasterDashboardUser }) => {
-            setIsMaster(isMasterDashboardUser(data.session!.user!.email));
-          });
+          setIsMaster(isMasterDashboardUser(data.session.user.email));
         }
-      });
-    });
+      } catch (err) {
+        console.error('Failed to check master status:', err);
+      }
+    }
+    checkMaster();
   }, []);
 
 
