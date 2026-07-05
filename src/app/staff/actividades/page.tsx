@@ -246,18 +246,7 @@ export default function ActividadesPage() {
         <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
           {/* ── Header: centered month nav only ── */}
           <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px]">
-            <div className="w-[100px] flex justify-start">
-              {isMaster && (
-                <button
-                  type="button"
-                  onClick={() => window.location.href = '/staff/actividades/gestion'}
-                  className="text-white hover:text-white/70 transition-colors"
-                  aria-label="Gestionar actividades"
-                >
-                  <Settings size={18} strokeWidth={1.5} />
-                </button>
-              )}
-            </div>
+            <div className="w-[100px]" />
             <div className="flex items-center gap-0.5">
               <button
                 type="button"
@@ -279,7 +268,17 @@ export default function ActividadesPage() {
                 <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="w-[100px] flex justify-end">
+            <div className="w-[100px] flex justify-end items-center gap-2">
+              {isMaster && (
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/staff/actividades/gestion'}
+                  className="text-white hover:text-white/70 transition-colors"
+                  aria-label="Gestionar actividades"
+                >
+                  <Settings size={18} strokeWidth={1.5} />
+                </button>
+              )}
               <a
                 href="/horario"
                 className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
