@@ -117,6 +117,7 @@ function parseLocalSafe(dateStr: string): Date {
 
 export default function ActividadesPage() {
   usePageView();
+  const supabase = createClient();
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
@@ -124,19 +125,27 @@ export default function ActividadesPage() {
   const [isMaster, setIsMaster] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     async function checkMaster() {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user?.email) {
-          setIsMaster(isMasterDashboardUser(data.session.user.email));
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled || !user) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const email = profile?.email ?? user.email ?? '';
+        if (!cancelled) setIsMaster(isMasterDashboardUser(email));
       } catch (err) {
         console.error('Failed to check master status:', err);
       }
     }
     checkMaster();
-  }, []);
+    return () => { cancelled = true; };
+  }, [supabase]);
 
 
   const [touchStart, setTouchStart] = useState<number | null>(null);
