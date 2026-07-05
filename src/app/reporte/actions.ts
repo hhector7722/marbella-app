@@ -66,6 +66,8 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         .update({
           form_start_time: startTime,
           form_end_time: endTime,
+          preferred_start_time: 'form',
+          preferred_end_time: 'form',
           total_participants: item.total_participants || null,
         })
         .eq('id', occurrenceId);
