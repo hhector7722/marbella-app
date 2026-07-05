@@ -15,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -238,9 +238,10 @@ export default function ActividadesPage() {
                 <button
                   type="button"
                   onClick={() => window.location.href = '/staff/actividades/gestion'}
-                  className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors"
+                  className="text-white hover:text-white/70 transition-colors"
+                  aria-label="Gestionar actividades"
                 >
-                  Catálogo
+                  <Settings size={18} strokeWidth={1.5} />
                 </button>
               )}
             </div>

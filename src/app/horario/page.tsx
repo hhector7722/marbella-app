@@ -333,9 +333,9 @@ export default function HorarioPage() {
               </button>
             </div>
 
-            {/* Right: employee filter (master only) */}
+            {/* Right: employee filter (master only, horarios mode) */}
             <div className="flex-shrink-0 w-[90px] flex justify-end">
-              {isMaster && (
+              {isMaster && viewMode === 'horarios' && (
                 <select
                   value={selectedEmployeeId ?? ''}
                   onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
