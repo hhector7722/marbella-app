@@ -1,5 +1,4 @@
 import {
-  penalizacionColorClass,
   tipAmountWithoutPenalty,
   tipTheoreticalPoolAmounts,
   type StaffTipHistoryEntry,
@@ -133,5 +132,5 @@ export function formatTipAdjustmentValue(
 export function tipAdjustmentValueClass(kind: TipAdjustmentKind, penalizacionPct: number): string {
   if (kind === 'ninguna') return 'text-zinc-500';
   if (kind === 'bonificacion') return 'text-emerald-600';
-  return penalizacionColorClass(penalizacionPct);
+  return 'text-rose-600';
 }
