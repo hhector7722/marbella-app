@@ -159,6 +159,10 @@ export interface BarActivity {
   activityColor: string | null;
   startTime: string;
   endTime: string;
+  formStartTime: string | null;
+  formEndTime: string | null;
+  totalParticipants: number | null;
+  categories: string[];
   venueCodes: string[];
 }
 
@@ -250,9 +254,11 @@ export async function fetchActivitiesForRangeAction(params: {
       form_end_time,
       preferred_start_time,
       preferred_end_time,
+      total_participants,
       activities ( name, color ),
       activity_kinds ( icon ),
-      occurrence_venues ( venues ( code, affects_bar ) )
+      occurrence_venues ( venues ( code, affects_bar ) ),
+      occurrence_groups ( participants, participant_categories ( name ) )
     `,
     )
     .gte('activity_date', startDate)
@@ -284,12 +290,20 @@ export async function fetchActivitiesForRangeAction(params: {
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
       const formEnd = (row as any).form_end_time as string | null;
+      const totalParticipants = (row as any).total_participants as number | null;
+      const occurrenceGroups = (row as any).occurrence_groups as any[] || [];
+      const categories = occurrenceGroups.map((g: any) => g.participant_categories?.name).filter(Boolean);
+
       byDate[d].barActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: (prefStart === 'form' && formStart ? formStart : row.start_time) as string,
-        endTime: (prefEnd === 'form' && formEnd ? formEnd : row.end_time) as string,
+        startTime: row.start_time as string,
+        endTime: row.end_time as string,
+        formStartTime: formStart,
+        formEndTime: formEnd,
+        totalParticipants,
+        categories,
         venueCodes: barVenues.map((v) => v.code),
       });
     }
@@ -320,9 +334,11 @@ export async function fetchDayDetailAction(params: {
       form_end_time,
       preferred_start_time,
       preferred_end_time,
+      total_participants,
       activities ( name, color ),
       activity_kinds ( icon ),
-      occurrence_venues ( venues ( code, affects_bar ) )
+      occurrence_venues ( venues ( code, affects_bar ) ),
+      occurrence_groups ( participants, participant_categories ( name ) )
     `,
     )
     .eq('activity_date', date)
@@ -349,12 +365,20 @@ export async function fetchDayDetailAction(params: {
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
       const formEnd = (row as any).form_end_time as string | null;
+      const totalParticipants = (row as any).total_participants as number | null;
+      const occurrenceGroups = (row as any).occurrence_groups as any[] || [];
+      const categories = occurrenceGroups.map((g: any) => g.participant_categories?.name).filter(Boolean);
+
       allActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: (prefStart === 'form' && formStart ? formStart : row.start_time) as string,
-        endTime: (prefEnd === 'form' && formEnd ? formEnd : row.end_time) as string,
+        startTime: row.start_time as string,
+        endTime: row.end_time as string,
+        formStartTime: formStart,
+        formEndTime: formEnd,
+        totalParticipants,
+        categories,
         venueCodes: barVenues.map((v) => v.code),
       });
     }

@@ -9,6 +9,10 @@ interface ActivityItem {
   activityColor?: string | null;
   startTime: string;
   endTime: string;
+  formStartTime?: string | null;
+  formEndTime?: string | null;
+  totalParticipants?: number | null;
+  categories?: string[];
   venueCodes: string[];
 }
 
@@ -175,6 +179,9 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
         const bgColor = act.activityColor || stringToHslColor(act.activityName);
         const textColor = act.activityColor ? '#ffffff' : getContrastForHsl(act.activityName);
 
+        const hasFormTime = act.formStartTime || act.formEndTime;
+        const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
+
         cols.push(
           <td
             key={`${ci}`}
@@ -187,9 +194,23 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
               <span className="font-bold leading-[1.1] text-center break-words w-full" style={{ fontSize: 'clamp(5px, min(18cqi, 18cqh), 13px)', textWrap: 'balance', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {act.activityName}
               </span>
-              <span className="opacity-90 mt-px tracking-tighter whitespace-nowrap" style={{ fontSize: 'clamp(4px, min(11cqi, 12cqh), 9px)' }}>
-                {startLabel} - {endLabel}
-              </span>
+              <div className="flex flex-col items-center mt-px opacity-90">
+                <span className="tracking-tighter whitespace-nowrap" style={{ fontSize: 'clamp(4px, min(11cqi, 12cqh), 9px)' }}>
+                  {startLabel} - {endLabel}
+                </span>
+                {hasFormTime && (
+                   <span className="tracking-tighter whitespace-nowrap font-semibold mt-[1px]" style={{ fontSize: 'clamp(4px, min(10cqi, 11cqh), 8px)' }}>
+                     (Real: {act.formStartTime ? fmtHour(act.formStartTime) : '?'} - {act.formEndTime ? fmtHour(act.formEndTime) : '?'})
+                   </span>
+                )}
+                {hasParticipants && (
+                   <span className="tracking-tighter whitespace-nowrap opacity-80 mt-[1px]" style={{ fontSize: 'clamp(4px, min(9cqi, 10cqh), 7px)' }}>
+                     {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
+                     {act.totalParticipants && act.categories?.length ? ' • ' : ''}
+                     {act.categories?.join(', ')}
+                   </span>
+                )}
+              </div>
             </div>
           </td>,
         );

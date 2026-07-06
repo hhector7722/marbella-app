@@ -42,18 +42,46 @@ function fmtHour(time: string): string {
 }
 
 function groupActivities(
-  acts: { activityName: string; activityIcon: string | null; activityColor: string | null; startTime: string; endTime: string; venueCodes: string[] }[],
+  acts: { 
+    activityName: string; 
+    activityIcon: string | null; 
+    activityColor: string | null; 
+    startTime: string; 
+    endTime: string; 
+    venueCodes: string[];
+    formStartTime?: string | null;
+    formEndTime?: string | null;
+    totalParticipants?: number | null;
+    categories?: string[];
+  }[],
 ) {
   if (acts.length === 0) return acts;
   const map = new Map<string, typeof acts[0]>();
   for (const a of acts) {
     const name = a.activityName.trim();
     if (!map.has(name)) {
-      map.set(name, { ...a, venueCodes: [...a.venueCodes] });
+      map.set(name, { 
+        ...a, 
+        venueCodes: [...a.venueCodes],
+        categories: a.categories ? [...a.categories] : []
+      });
     } else {
       const existing = map.get(name)!;
       if (a.startTime < existing.startTime) existing.startTime = a.startTime;
       if (a.endTime > existing.endTime) existing.endTime = a.endTime;
+      
+      if (a.formStartTime && (!existing.formStartTime || a.formStartTime < existing.formStartTime)) existing.formStartTime = a.formStartTime;
+      if (a.formEndTime && (!existing.formEndTime || a.formEndTime > existing.formEndTime)) existing.formEndTime = a.formEndTime;
+      
+      if (a.totalParticipants) existing.totalParticipants = (existing.totalParticipants || 0) + a.totalParticipants;
+      
+      if (a.categories) {
+        if (!existing.categories) existing.categories = [];
+        for (const c of a.categories) {
+          if (!existing.categories.includes(c)) existing.categories.push(c);
+        }
+      }
+
       for (const v of a.venueCodes) {
         if (!existing.venueCodes.includes(v)) existing.venueCodes.push(v);
       }
@@ -491,6 +519,9 @@ export default function HorarioPage() {
                                 <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-0.5">
                                   {grouped.map((act, i) => {
                                     const bgColor = act.activityColor || stringToHslColor(act.activityName);
+                                    const hasFormTime = act.formStartTime || act.formEndTime;
+                                    const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
+
                                     return (
                                       <div
                                         key={i}
@@ -509,6 +540,14 @@ export default function HorarioPage() {
                                           >
                                             {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                           </span>
+                                          {hasFormTime && (
+                                            <span
+                                              className="block whitespace-nowrap font-bold leading-none opacity-80 tracking-tight mt-[1px]"
+                                              style={{ fontSize: 'clamp(4px, 9cqi, 9px)' }}
+                                            >
+                                              (Real: {act.formStartTime ? fmtHour(act.formStartTime) : '?'} - {act.formEndTime ? fmtHour(act.formEndTime) : '?'})
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="px-1 py-[2px] bg-black/10">
                                           <span
@@ -517,6 +556,16 @@ export default function HorarioPage() {
                                           >
                                             {act.activityName}
                                           </span>
+                                          {hasParticipants && (
+                                            <span
+                                              className="block break-keep font-medium leading-tight opacity-90 mt-[1px]"
+                                              style={{ fontSize: 'clamp(4px, 10cqi, 10px)' }}
+                                            >
+                                              {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
+                                              {act.totalParticipants && act.categories?.length ? ' • ' : ''}
+                                              {act.categories?.join(', ')}
+                                            </span>
+                                          )}
                                         </div>
                                       </div>
                                     );
