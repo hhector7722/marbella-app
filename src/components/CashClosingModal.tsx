@@ -329,15 +329,15 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     };
 
     const handleAddTpvClick = (triggerCamera: () => void) => {
-        const isTargetUser = ['silvia', 'hector', 'héctor'].includes(userFirstName || '');
-        const hasSeen = localStorage.getItem(`cierre_warn_seen_tpv_${userId}`);
+        const isTargetUser = ['silvia', 'hector', 'héctor', 'pere'].includes(userFirstName || '');
+        const hasSeen = localStorage.getItem(`cierre_warn_seen_tpv_v2_${userId}`);
         
         if (isTargetUser && !hasSeen) {
             setInstructionModal({
                 isOpen: true,
                 type: 'tpv',
                 onContinue: () => {
-                    localStorage.setItem(`cierre_warn_seen_tpv_${userId}`, 'true');
+                    localStorage.setItem(`cierre_warn_seen_tpv_v2_${userId}`, 'true');
                     setInstructionModal(null);
                     setTimeout(() => {
                         triggerCamera();
@@ -350,15 +350,15 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     };
 
     const handleAddDataphoneClick = (triggerCamera: () => void) => {
-        const isTargetUser = ['silvia', 'hector', 'héctor'].includes(userFirstName || '');
-        const hasSeen = localStorage.getItem(`cierre_warn_seen_dataphone_${userId}`);
+        const isTargetUser = ['silvia', 'hector', 'héctor', 'pere'].includes(userFirstName || '');
+        const hasSeen = localStorage.getItem(`cierre_warn_seen_dataphone_v2_${userId}`);
         
         if (isTargetUser && !hasSeen) {
             setInstructionModal({
                 isOpen: true,
                 type: 'tarjeta',
                 onContinue: () => {
-                    localStorage.setItem(`cierre_warn_seen_dataphone_${userId}`, 'true');
+                    localStorage.setItem(`cierre_warn_seen_dataphone_v2_${userId}`, 'true');
                     setInstructionModal(null);
                     setTimeout(() => {
                         triggerCamera();
