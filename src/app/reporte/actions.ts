@@ -149,7 +149,7 @@ export async function getDailyActivitiesAction(date: string) {
     const supabase = getServiceSupabase();
     const { data, error } = await supabase
       .from('activity_occurrences')
-      .select('activities(name)')
+      .select('activities(name), occurrence_venues(venues(code))')
       .eq('activity_date', date);
 
     if (error) {
@@ -160,7 +160,25 @@ export async function getDailyActivitiesAction(date: string) {
     const names = new Set<string>();
     data?.forEach(row => {
       const name = (row.activities as any)?.name;
-      if (name) names.add(name);
+      if (!name) return;
+
+      const venues = (row.occurrence_venues as any[] || []).map(v => v.venues?.code?.toUpperCase() || '');
+      
+      // If no venues, it might be a manually added occurrence with no space assigned yet, allow it.
+      if (venues.length === 0) {
+        names.add(name);
+        return;
+      }
+      
+      // Check if it occupies P1, P2, P3, or P4
+      const allowed = venues.some(code => 
+        code.startsWith('P1') || code.startsWith('P2') || code.startsWith('P3') || code.startsWith('P4') ||
+        code.startsWith('PISTA 1') || code.startsWith('PISTA 2') || code.startsWith('PISTA 3') || code.startsWith('PISTA 4')
+      );
+      
+      if (allowed) {
+        names.add(name);
+      }
     });
 
     return Array.from(names).sort((a, b) => a.localeCompare(b));

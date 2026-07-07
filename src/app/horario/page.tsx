@@ -561,7 +561,7 @@ export default function HorarioPage() {
                                           {hasParticipants && (
                                             <span
                                               className="break-keep font-medium leading-tight opacity-90 mt-[1px]"
-                                              style={{ fontSize: 'clamp(4px, 10cqi, 10px)' }}
+                                              style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
                                             >
                                               {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
                                               {act.totalParticipants && act.categories?.length ? ' • ' : ''}
