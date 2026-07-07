@@ -133,7 +133,7 @@ export async function getActivitiesByDateAction(params: {
       return { success: false, error: 'No autorizado' };
     }
 
-    let selectFields = `
+    const selectFields = `
       activity_date,
       start_time,
       end_time,
@@ -141,26 +141,11 @@ export async function getActivitiesByDateAction(params: {
       form_end_time,
       preferred_start_time,
       preferred_end_time,
-      category,
-      participants,
+      total_participants,
       activities ( name, color ),
-      occurrence_venues ( venues ( code ) )
+      occurrence_venues ( venues ( code ) ),
+      occurrence_groups ( category_id )
     `;
-
-    const { error: testErr } = await supabase.from('activity_occurrences').select('category, participants').limit(1);
-    if (testErr && testErr.code === '42703') {
-      try {
-        await supabase.rpc('execute_sql', { sql: 'ALTER TABLE activity_occurrences ADD COLUMN IF NOT EXISTS category TEXT; ALTER TABLE activity_occurrences ADD COLUMN IF NOT EXISTS participants INTEGER;' });
-      } catch (e) {
-        selectFields = `
-          activity_date,
-          start_time,
-          end_time,
-          activities ( name, color ),
-          occurrence_venues ( venues ( code ) )
-        `;
-      }
-    }
 
     const { data: rawOccData, error: occError } = await supabase
       .from('activity_occurrences')
@@ -180,6 +165,10 @@ export async function getActivitiesByDateAction(params: {
       const key = `${actName}|${start}|${end}`;
 
       const venues = ((row.occurrence_venues as any) ?? []).map((ov: any) => ov.venues.code);
+      const groups = ((row.occurrence_groups as any) ?? []).map((g: any) => ({
+        category_id: g.category_id,
+        name: g.category_id, // We don't fetch name yet, so we just pass the ID as name for now, or just leave it since the UI just needs to know they exist.
+      }));
 
       if (!occupationsMap.has(key)) {
         occupationsMap.set(key, {
@@ -188,8 +177,12 @@ export async function getActivitiesByDateAction(params: {
           end_time: end.substring(0, 5),
           venues: [...venues],
           date: params.date,
-          category: (row as any).category,
-          participants: (row as any).participants,
+          form_start_time: (row as any).form_start_time,
+          form_end_time: (row as any).form_end_time,
+          preferred_start_time: (row as any).preferred_start_time,
+          preferred_end_time: (row as any).preferred_end_time,
+          total_participants: (row as any).total_participants,
+          occurrence_groups: groups,
           color: row.activities?.color ?? undefined,
         });
       } else {

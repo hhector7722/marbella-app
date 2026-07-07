@@ -198,11 +198,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
                 <span className="tracking-tighter whitespace-nowrap" style={{ fontSize: 'clamp(4px, min(11cqi, 12cqh), 9px)' }}>
                   {startLabel} - {endLabel}
                 </span>
-                {hasFormTime && (
-                   <span className="tracking-tighter whitespace-nowrap font-semibold mt-[1px]" style={{ fontSize: 'clamp(4px, min(10cqi, 11cqh), 8px)' }}>
-                     (Real: {act.formStartTime ? fmtHour(act.formStartTime) : '?'} - {act.formEndTime ? fmtHour(act.formEndTime) : '?'})
-                   </span>
-                )}
+                {/* Removed (Real: ...) display */}
                 {hasParticipants && (
                    <span className="tracking-tighter whitespace-nowrap opacity-80 mt-[1px]" style={{ fontSize: 'clamp(4px, min(9cqi, 10cqh), 7px)' }}>
                      {act.totalParticipants ? `${act.totalParticipants} pax` : ''}

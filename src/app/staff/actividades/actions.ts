@@ -294,12 +294,15 @@ export async function fetchActivitiesForRangeAction(params: {
       const occurrenceGroups = (row as any).occurrence_groups as any[] || [];
       const categories = occurrenceGroups.map((g: any) => g.participant_categories?.name).filter(Boolean);
 
+      const finalStart = (prefStart === 'form' && formStart) ? formStart : (row.start_time as string);
+      const finalEnd = (prefEnd === 'form' && formEnd) ? formEnd : (row.end_time as string);
+
       byDate[d].barActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: row.start_time as string,
-        endTime: row.end_time as string,
+        startTime: finalStart,
+        endTime: finalEnd,
         formStartTime: formStart,
         formEndTime: formEnd,
         totalParticipants,
@@ -369,12 +372,15 @@ export async function fetchDayDetailAction(params: {
       const occurrenceGroups = (row as any).occurrence_groups as any[] || [];
       const categories = occurrenceGroups.map((g: any) => g.participant_categories?.name).filter(Boolean);
 
+      const finalStart = (prefStart === 'form' && formStart) ? formStart : (row.start_time as string);
+      const finalEnd = (prefEnd === 'form' && formEnd) ? formEnd : (row.end_time as string);
+
       allActivities.push({
         activityName: (row.activities as unknown as { name: string; color: string | null }).name,
         activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
         activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: row.start_time as string,
-        endTime: row.end_time as string,
+        startTime: finalStart,
+        endTime: finalEnd,
         formStartTime: formStart,
         formEndTime: formEnd,
         totalParticipants,

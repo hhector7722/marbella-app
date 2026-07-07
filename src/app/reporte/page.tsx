@@ -71,6 +71,36 @@ export default function ReportePage() {
   const [showModal, setShowModal] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
+  
+  const [isLoadingGlobal, setIsLoadingGlobal] = useState(true);
+  const [loadingDaily, setLoadingDaily] = useState<Record<string, boolean>>({});
+
+  // We initialize activities synchronously so cards appear immediately
+  useEffect(() => {
+    const { saturday, sunday } = getNextWeekend();
+    setActivities([
+      {
+        id: crypto.randomUUID(),
+        data: saturday,
+        activitat: '',
+        hora_convocatoria: '',
+        hora_finalitzacio: '',
+        dayName: 'Dissabte',
+        categories: [],
+        total_participants: 0,
+      },
+      {
+        id: crypto.randomUUID(),
+        data: sunday,
+        activitat: '',
+        hora_convocatoria: '',
+        hora_finalitzacio: '',
+        dayName: 'Diumenge',
+        categories: [],
+        total_participants: 0,
+      },
+    ]);
+  }, []);
 
   useEffect(() => {
     const body = document.body;
@@ -87,6 +117,7 @@ export default function ReportePage() {
   useEffect(() => {
     import('./actions').then(m => m.getAllActivitiesAction()).then(globals => {
       setAllGlobalActivities(globals);
+      setIsLoadingGlobal(false);
     });
     import('./actions').then(m => m.getParticipantCategoriesAction()).then(cats => {
       setCategoryOptions(cats);
@@ -96,35 +127,20 @@ export default function ReportePage() {
   const buildDefaultCategories = (): CategoryEntry[] =>
     categoryOptions.map(c => ({ id: c.id, name: c.name, selected: false }));
 
+  // When categoryOptions load, apply them to existing activities that have empty categories
   useEffect(() => {
     if (categoryOptions.length === 0) return;
-    const { saturday, sunday } = getNextWeekend();
-    setActivities([
-      {
-        id: crypto.randomUUID(),
-        data: saturday,
-        activitat: '',
-        hora_convocatoria: '',
-        hora_finalitzacio: '',
-        dayName: 'Dissabte',
-        categories: buildDefaultCategories(),
-        total_participants: 0,
-      },
-      {
-        id: crypto.randomUUID(),
-        data: sunday,
-        activitat: '',
-        hora_convocatoria: '',
-        hora_finalitzacio: '',
-        dayName: 'Diumenge',
-        categories: buildDefaultCategories(),
-        total_participants: 0,
-      },
-    ]);
+    setActivities(prev => prev.map(a => {
+      if (a.categories.length === 0) {
+        return { ...a, categories: buildDefaultCategories() };
+      }
+      return a;
+    }));
   }, [categoryOptions]);
 
   const fetchDailyActivities = async (date: string) => {
     if (dailyActivitiesMap[date]) return;
+    setLoadingDaily(prev => ({ ...prev, [date]: true }));
     const m = await import('./actions');
     const daily = await m.getDailyActivitiesAction(date);
     const top = await m.getTopActivityAction(date);
@@ -140,6 +156,7 @@ export default function ReportePage() {
       }
       return a;
     }));
+    setLoadingDaily(prev => ({ ...prev, [date]: false }));
   };
 
   useEffect(() => {
@@ -248,6 +265,13 @@ export default function ReportePage() {
     }
   };
 
+  const isActivityAllowed = (name: string) => {
+    const upper = name.toUpperCase();
+    if (upper.startsWith('P1') || upper.startsWith('P2') || upper.startsWith('P3') || upper.startsWith('P4')) return true;
+    if (upper.startsWith('P5') || upper.startsWith('P6') || upper.startsWith('EXT') || upper.startsWith('PAB') || upper.startsWith('PISTA')) return false;
+    return true;
+  };
+
   const CategoryDropdown = ({ act }: { act: Activity }) => {
     const [open, setOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -269,50 +293,67 @@ export default function ReportePage() {
       : '';
 
     return (
-      <div className="relative flex-1 h-[36px]" ref={dropdownRef}>
+      <div className="relative flex-1 h-[36px]">
         <div
-          onClick={() => setOpen(!open)}
-          className="form-input w-full h-full flex items-center justify-center px-2 rounded-xl cursor-pointer text-xs text-center"
+          onClick={() => setOpen(true)}
+          className="form-input w-full h-full flex items-center justify-center px-2 rounded-xl cursor-pointer text-xs text-center border border-slate-700/50 hover:border-indigo-500/50 transition-colors"
         >
-          <span className="truncate text-slate-400">{displayNames}</span>
+          {categoryOptions.length === 0 ? (
+             <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+             <span className="truncate text-white font-medium">{displayNames || 'Selecciona'}</span>
+          )}
         </div>
         {open && (
-          <div className="absolute z-40 bottom-full mb-1 left-0 w-[400px] rounded-xl bg-slate-800 border border-slate-700/50 shadow-2xl p-3 animate-fade-in">
-            <div className="flex items-center justify-between px-2 pb-1 mb-2 border-b border-slate-700/50">
-              <button
-                type="button"
-                onClick={() => handleSelectAllCategories(act.id)}
-                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold ml-auto"
-              >
-                {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
-              {act.categories.map(cat => (
-                <label
-                  key={cat.id}
-                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-xs hover:bg-slate-700/40 whitespace-nowrap"
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setOpen(false)}>
+            <div 
+              className="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl p-4 animate-slide-up"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-700">
+                <h3 className="text-white font-bold text-sm">Categories</h3>
+                <button
+                  type="button"
+                  onClick={() => handleSelectAllCategories(act.id)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
                 >
-                  <input
-                    type="checkbox"
-                    checked={cat.selected}
-                    onChange={() => handleCategoryToggle(act.id, cat.id)}
-                    className="sr-only"
-                  />
-                  <span className={`w-3 h-3 rounded border flex items-center justify-center transition-all shrink-0 ${
-                    cat.selected
-                      ? 'bg-indigo-500 border-indigo-500'
-                      : 'border-slate-600 bg-transparent'
-                  }`}>
-                    {cat.selected && (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-2 w-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className="text-slate-300 truncate font-medium">{cat.name}</span>
-                </label>
-              ))}
+                  {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-1">
+                {act.categories.map(cat => (
+                  <label
+                    key={cat.id}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm hover:bg-slate-700/50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cat.selected}
+                      onChange={() => handleCategoryToggle(act.id, cat.id)}
+                      className="sr-only"
+                    />
+                    <span className={`w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0 ${
+                      cat.selected
+                        ? 'bg-indigo-500 border-indigo-500'
+                        : 'border-slate-600 bg-slate-700'
+                    }`}>
+                      {cat.selected && (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="text-slate-200 font-medium">{cat.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setOpen(false)}
+                className="w-full mt-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-colors"
+              >
+                Acceptar
+              </button>
             </div>
           </div>
         )}
@@ -352,16 +393,52 @@ export default function ReportePage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Activitat</label>
-                  <select
-                    value={act.activitat}
-                    onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
-                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50 appearance-none text-center"
-                  >
-                    <option value="" disabled>Selecciona una activitat</option>
-                    {(dailyActivitiesMap[act.data] || allGlobalActivities || []).map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    {loadingDaily[act.data] || isLoadingGlobal ? (
+                      <div className="form-input w-full h-[32px] rounded-xl flex items-center justify-center bg-slate-800 border border-slate-700/50">
+                        <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      act.activitat === 'Texto libre' ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            autoFocus
+                            placeholder="Nom de la nova activitat..."
+                            onChange={(e) => {
+                              // We just store it in 'activitat'. 
+                              // But wait, if they type, it will replace 'Texto libre'.
+                              // We need a way to know it's custom. We can just set 'activitat' to whatever they type.
+                              // If they clear it entirely, they can go back.
+                              handleChange(act.id, 'activitat', e.target.value);
+                            }}
+                            value={act.activitat === 'Texto libre' ? '' : act.activitat}
+                            className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-indigo-500"
+                          />
+                          <button type="button" onClick={() => handleChange(act.id, 'activitat', '')} className="text-slate-400 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <select
+                          value={act.activitat}
+                          onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
+                          className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50 appearance-none text-center"
+                        >
+                          <option value="" disabled>Selecciona una activitat</option>
+                          <option value="Texto libre" className="text-indigo-400 font-semibold">Texto libre...</option>
+                          <option disabled>──────────</option>
+                          {(dailyActivitiesMap[act.data] || allGlobalActivities || [])
+                            .filter(isActivityAllowed)
+                            .map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-[120px_1fr_70px] gap-x-6 gap-y-2.5 items-start mt-1.5">
@@ -446,13 +523,19 @@ export default function ReportePage() {
               </div>
             )}
             {submitStatus === 'sent' && (
-              <div className="flex flex-col items-center gap-3 py-4" onClick={() => { setShowModal(false); setSubmitStatus('idle'); }}>
+              <div className="flex flex-col items-center gap-3 py-4" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-success-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-base font-semibold text-white">Informe envia't</p>
+                <p className="text-base font-semibold text-white">Informe enviat</p>
+                <button 
+                  onClick={() => { setShowModal(false); setSubmitStatus('idle'); }} 
+                  className="mt-2 px-8 py-2.5 bg-green-500 hover:bg-green-400 text-white font-bold rounded-xl shadow-lg transition-all"
+                >
+                  OK
+                </button>
               </div>
             )}
           </div>

@@ -35,17 +35,27 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         .ilike('name', actName)
         .maybeSingle();
 
-      if (!act) {
-        console.warn(`Activity "${actName}" not found, skipping`);
-        continue;
+      let actId = act?.id;
+      if (!actId) {
+        // Create new manual activity
+        const { data: newAct, error: createErr } = await supabase
+          .from('activities')
+          .insert({ name: actName, is_active: true })
+          .select('id')
+          .single();
+          
+        if (createErr || !newAct) {
+          console.warn(`Could not create activity "${actName}"`, createErr);
+          continue;
+        }
+        actId = newAct.id;
       }
 
-      const { data: existingOcc } = await supabase
+      const { data: existingOccs } = await supabase
         .from('activity_occurrences')
         .select('id')
-        .eq('activity_id', act.id)
-        .eq('activity_date', item.data)
-        .maybeSingle();
+        .eq('activity_id', actId)
+        .eq('activity_date', item.data);
 
       const startTime = item.hora_convocatoria.length === 5
         ? `${item.hora_convocatoria}:00`
@@ -54,34 +64,32 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         ? `${item.hora_finalitzacio}:00`
         : item.hora_finalitzacio;
 
-      let occurrenceId: string;
+      let occurrenceIds = existingOccs?.map(o => o.id) || [];
 
-      if (!existingOcc) {
-        const { data: newOcc, error: insertErr } = await supabase
+      if (occurrenceIds.length === 0) {
+        // Create a new occurrence for manual entries
+        const { data: newOcc, error: occErr } = await supabase
           .from('activity_occurrences')
           .insert({
-            activity_id: act.id,
+            activity_id: actId,
             activity_date: item.data,
-            start_time: startTime || '00:00:00',
-            end_time: endTime || '00:00:00',
             form_start_time: startTime || null,
             form_end_time: endTime || null,
             preferred_start_time: 'form',
             preferred_end_time: 'form',
-            total_participants: item.total_participants || null,
-            source_type: 'form',
+            total_participants: item.total_participants || null
           })
           .select('id')
           .single();
 
-        if (insertErr || !newOcc) {
-          console.error('Error creating occurrence:', insertErr);
+        if (occErr || !newOcc) {
+          console.warn(`Could not create occurrence for "${actName}" on date ${item.data}`, occErr);
           continue;
         }
+        occurrenceIds = [newOcc.id];
+      }
 
-        occurrenceId = newOcc.id;
-      } else {
-        occurrenceId = existingOcc.id;
+      for (const occurrenceId of occurrenceIds) {
 
         const { error: updateErr } = await supabase
           .from('activity_occurrences')
@@ -98,33 +106,33 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
           console.error('Error updating occurrence:', updateErr);
           continue;
         }
-      }
 
-      const { error: deleteGroupsErr } = await supabase
-        .from('occurrence_groups')
-        .delete()
-        .eq('occurrence_id', occurrenceId);
-
-      if (deleteGroupsErr) {
-        console.error('Error deleting occurrence_groups:', deleteGroupsErr);
-      }
-
-      const groupsToInsert = (item.selected_category_ids || [])
-        .filter(catId => catId)
-        .map(catId => ({
-          occurrence_id: occurrenceId,
-          category_id: catId,
-          participants: item.total_participants || 0,
-          group_label: null,
-        }));
-
-      if (groupsToInsert.length > 0) {
-        const { error: insertGroupsErr } = await supabase
+        const { error: deleteGroupsErr } = await supabase
           .from('occurrence_groups')
-          .insert(groupsToInsert);
+          .delete()
+          .eq('occurrence_id', occurrenceId);
 
-        if (insertGroupsErr) {
-          console.error('Error inserting occurrence_groups:', insertGroupsErr);
+        if (deleteGroupsErr) {
+          console.error('Error deleting occurrence_groups:', deleteGroupsErr);
+        }
+
+        const groupsToInsert = (item.selected_category_ids || [])
+          .filter(catId => catId)
+          .map(catId => ({
+            occurrence_id: occurrenceId,
+            category_id: catId,
+            participants: item.total_participants || 0,
+            group_label: null,
+          }));
+
+        if (groupsToInsert.length > 0) {
+          const { error: insertGroupsErr } = await supabase
+            .from('occurrence_groups')
+            .insert(groupsToInsert);
+
+          if (insertGroupsErr) {
+            console.error('Error inserting occurrence_groups:', insertGroupsErr);
+          }
         }
       }
     }

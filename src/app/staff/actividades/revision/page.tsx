@@ -349,35 +349,68 @@ export default function PavilionRevisionPage() {
                         className="flex-1 rounded-md border border-zinc-200 px-2 py-1.5 text-sm focus:border-[#36606F] focus:outline-none min-w-[120px]"
                         placeholder="Nombre de la actividad"
                       />
-                      <input
-                        type="time"
-                        value={occ.start_time}
-                        onChange={(e) => updateOccupation(i, 'start_time', e.target.value)}
-                        className="w-[85px] shrink-0 rounded-md border border-zinc-200 px-1 py-1.5 text-sm focus:border-[#36606F] focus:outline-none"
-                      />
-                      <input
-                        type="time"
-                        value={occ.end_time}
-                        onChange={(e) => updateOccupation(i, 'end_time', e.target.value)}
-                        className="w-[85px] shrink-0 rounded-md border border-zinc-200 px-1 py-1.5 text-sm focus:border-[#36606F] focus:outline-none"
-                      />
+                      {/* TIME SELECTION */}
+                      <div className="flex flex-col gap-2 ml-2 border-l border-zinc-200 pl-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase w-10">INICIO</span>
+                          {occ.form_start_time ? (
+                            <>
+                              <label className="flex items-center gap-1 text-[11px] cursor-pointer">
+                                <input type="radio" checked={occ.preferred_start_time !== 'form'} onChange={() => updateOccupation(i, 'preferred_start_time', 'pdf')} className="accent-[#36606F]" />
+                                PDF:
+                                <input type="time" value={occ.start_time} onChange={(e) => updateOccupation(i, 'start_time', e.target.value)} className="w-[70px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none" />
+                              </label>
+                              <label className="flex items-center gap-1 text-[11px] cursor-pointer bg-[#36606F]/10 px-1.5 py-0.5 rounded text-[#36606F]">
+                                <input type="radio" checked={occ.preferred_start_time === 'form'} onChange={() => updateOccupation(i, 'preferred_start_time', 'form')} className="accent-[#36606F]" />
+                                Reporte: <span className="font-bold">{occ.form_start_time.substring(0, 5)}</span>
+                              </label>
+                            </>
+                          ) : (
+                            <input type="time" value={occ.start_time} onChange={(e) => updateOccupation(i, 'start_time', e.target.value)} className="w-[75px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none text-sm" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase w-10">FINAL</span>
+                          {occ.form_end_time ? (
+                            <>
+                              <label className="flex items-center gap-1 text-[11px] cursor-pointer">
+                                <input type="radio" checked={occ.preferred_end_time !== 'form'} onChange={() => updateOccupation(i, 'preferred_end_time', 'pdf')} className="accent-[#36606F]" />
+                                PDF:
+                                <input type="time" value={occ.end_time} onChange={(e) => updateOccupation(i, 'end_time', e.target.value)} className="w-[70px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none" />
+                              </label>
+                              <label className="flex items-center gap-1 text-[11px] cursor-pointer bg-[#36606F]/10 px-1.5 py-0.5 rounded text-[#36606F]">
+                                <input type="radio" checked={occ.preferred_end_time === 'form'} onChange={() => updateOccupation(i, 'preferred_end_time', 'form')} className="accent-[#36606F]" />
+                                Reporte: <span className="font-bold">{occ.form_end_time.substring(0, 5)}</span>
+                              </label>
+                            </>
+                          ) : (
+                            <input type="time" value={occ.end_time} onChange={(e) => updateOccupation(i, 'end_time', e.target.value)} className="w-[75px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none text-sm" />
+                          )}
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => removeRow(i)}
-                        className="rounded p-1.5 text-zinc-300 hover:bg-red-50 hover:text-red-500 shrink-0"
+                        className="rounded p-1.5 text-zinc-300 hover:bg-red-50 hover:text-red-500 shrink-0 ml-auto"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
-                    <div className="flex items-center flex-wrap gap-2 pl-8">
+
+                    <div className="flex items-center flex-wrap gap-3 pl-8">
+                      {/* CATEGORIES */}
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">CAT</span>
                         <input
                           type="text"
                           list={`categories-${i}`}
-                          value={occ.category || ''}
-                          onChange={(e) => updateOccupation(i, 'category', e.target.value)}
-                          className="w-20 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
+                          value={occ.occurrence_groups?.map(g => g.category_id).join(', ') || ''}
+                          onChange={(e) => {
+                            const cats = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                            updateOccupation(i, 'occurrence_groups', cats.map(c => ({ category_id: c, name: c })));
+                          }}
+                          className="w-24 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
                         />
                         <datalist id={`categories-${i}`}>
                           <option value="Alevin" />
@@ -388,17 +421,21 @@ export default function PavilionRevisionPage() {
                           <option value="Master" />
                         </datalist>
                       </div>
-                      <div className="flex items-center gap-1.5 ml-1">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PART</span>
+
+                      {/* PARTICIPANTS */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PAX</span>
                         <input
                           type="number"
                           min="0"
-                          value={occ.participants || ''}
-                          onChange={(e) => updateOccupation(i, 'participants', e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          value={occ.total_participants ?? ''}
+                          onChange={(e) => updateOccupation(i, 'total_participants', e.target.value ? parseInt(e.target.value, 10) : null)}
                           className="w-12 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
                         />
                       </div>
-                      <div className="flex items-center gap-1.5 ml-1">
+
+                      {/* COLOR */}
+                      <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-3">
                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">COLOR</span>
                         <div className="flex items-center gap-1">
                           <input
@@ -409,11 +446,13 @@ export default function PavilionRevisionPage() {
                             className="w-[60px] rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
                           />
                           {occ.color && (
-                            <div className="w-4 h-4 rounded-full border border-zinc-200" style={{ backgroundColor: occ.color }} />
+                            <div className="w-4 h-4 rounded-full border border-zinc-200 shrink-0" style={{ backgroundColor: occ.color }} />
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-1 ml-2">
+                      
+                      {/* VENUES */}
+                      <div className="flex flex-wrap gap-1 border-l border-zinc-200 pl-3">
                         {allVenues.map((v) => {
                           const active = occ.venues.includes(v.code);
                           return (

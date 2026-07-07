@@ -183,8 +183,12 @@ export async function importOccupations(
     startTime: string;
     endTime: string;
     venueIds: string[];
-    category?: string;
-    participants?: number;
+    formStartTime?: string | null;
+    formEndTime?: string | null;
+    preferredStartTime?: 'pdf' | 'form';
+    preferredEndTime?: 'pdf' | 'form';
+    totalParticipants?: number | null;
+    occurrenceGroups?: { category_id: string; name: string }[];
   }
 
   const resolved: ResolvedOccupation[] = [];
@@ -216,8 +220,12 @@ export async function importOccupations(
       startTime: occ.start_time,
       endTime: occ.end_time,
       venueIds,
-      category: occ.category,
-      participants: occ.participants,
+      formStartTime: occ.form_start_time,
+      formEndTime: occ.form_end_time,
+      preferredStartTime: occ.preferred_start_time,
+      preferredEndTime: occ.preferred_end_time,
+      totalParticipants: occ.total_participants,
+      occurrenceGroups: occ.occurrence_groups,
     });
   }
 
@@ -234,31 +242,21 @@ export async function importOccupations(
       start_time: row.startTime,
       end_time: row.endTime,
       source_type: 'pdf',
-      category: row.category || null,
-      participants: row.participants || null,
+      form_start_time: row.formStartTime || null,
+      form_end_time: row.formEndTime || null,
+      preferred_start_time: row.preferredStartTime || 'pdf',
+      preferred_end_time: row.preferredEndTime || 'pdf',
+      total_participants: row.totalParticipants || null,
     };
     if (sourcePdfId) {
       insertData.source_pdf_id = sourcePdfId;
     }
 
-    let { data: occData, error: occError } = await supabase
+    const { data: occData, error: occError } = await supabase
       .from('activity_occurrences')
       .insert(insertData)
       .select('id')
       .single();
-
-    if (occError && (occError.code === '42703' || occError.message?.includes('schema cache'))) {
-      // Fallback: column doesn't exist
-      delete insertData.category;
-      delete insertData.participants;
-      const res = await supabase
-        .from('activity_occurrences')
-        .insert(insertData)
-        .select('id')
-        .single();
-      occData = res.data;
-      occError = res.error;
-    }
 
     if (occError || !occData) {
       throw new Error(`Error inserint occurrence: ${occError?.message}`);
@@ -266,6 +264,27 @@ export async function importOccupations(
 
     const occurrenceId = occData.id as string;
     occurrencesInserted++;
+
+    // --------------------------------------------------
+    // Insert occurrence_groups (categories)
+    // --------------------------------------------------
+    if (row.occurrenceGroups && row.occurrenceGroups.length > 0) {
+      const groupRows = row.occurrenceGroups.map((g) => ({
+        occurrence_id: occurrenceId,
+        category_id: g.category_id,
+        participants: row.totalParticipants || 0,
+      }));
+
+      const { error: gError } = await supabase
+        .from('occurrence_groups')
+        .insert(groupRows);
+
+      if (gError) {
+        throw new Error(
+          `Error inserint occurrence_groups: ${gError.message}`,
+        );
+      }
+    }
 
     // --------------------------------------------------
     // 4. Inserir occurrence_venues

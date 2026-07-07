@@ -19,9 +19,13 @@ export interface Occupation {
   end_time: string;
   venues: string[];
   date: string;
-  category?: string;
-  participants?: number;
   color?: string;
+  form_start_time?: string | null;
+  form_end_time?: string | null;
+  preferred_start_time?: 'pdf' | 'form';
+  preferred_end_time?: 'pdf' | 'form';
+  total_participants?: number | null;
+  occurrence_groups?: { category_id: string; name: string }[];
 }
 
 export interface ParsePdfResult {
