@@ -63,6 +63,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Formulario público de reporte de actividades (sin login)
+  if (path === "/reporte" || path.startsWith("/reporte/")) {
+    return NextResponse.next();
+  }
+
   if (path === "/staff") {
     return NextResponse.redirect(new URL("/staff/dashboard", request.url));
   }
