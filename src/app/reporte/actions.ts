@@ -264,16 +264,46 @@ export async function getParticipantCategoriesAction() {
 
     if (error) return [];
     
-    // Process categories: rename 'joves' to 'Infantil' and capitalize first letter
-    return (data as { id: string; name: string }[]).map(cat => {
-      let updatedName = cat.name.trim();
-      if (updatedName.toLowerCase() === 'joves') {
-        updatedName = 'Infantil';
-      } else if (updatedName.length > 0) {
-        updatedName = updatedName.charAt(0).toUpperCase() + updatedName.slice(1).toLowerCase();
-      }
-      return { ...cat, name: updatedName };
+    // Normalize names to Catalan
+    const normalizedData = (data as { id: string; name: string }[]).map(cat => {
+      let n = cat.name.trim().toLowerCase();
+      
+      if (n === 'prebenjamin' || n === 'prebenjamí') n = 'Prebenjamí';
+      else if (n === 'benjamin' || n === 'benjamí') n = 'Benjamí';
+      else if (n === 'alevin' || n === 'aleví') n = 'Aleví';
+      else if (n === 'infantil' || n === 'joves') n = 'Infantil';
+      else if (n === 'cadete' || n === 'cadet') n = 'Cadet';
+      else if (n === 'juvenil') n = 'Juvenil';
+      else if (n === 'senior' || n === 'sènior') n = 'Senior';
+      else if (n === 'junior' || n === 'veterans' || n === 'master' || n === 'màster') n = 'Veterans';
+      else n = n.charAt(0).toUpperCase() + n.slice(1);
+
+      return { ...cat, name: n };
     });
+
+    const orderMap: Record<string, number> = {
+      'Prebenjamí': 1,
+      'Benjamí': 2,
+      'Aleví': 3,
+      'Infantil': 4,
+      'Cadet': 5,
+      'Juvenil': 6,
+      'Senior': 7,
+      'Veterans': 8,
+    };
+
+    // Filter duplicates if any got merged (e.g. junior and master both becoming Veterans)
+    // Wait, the IDs are unique. We should return all IDs. 
+    // If they select 'Veterans', it will check both IDs which is fine.
+    
+    normalizedData.sort((a, b) => {
+      const orderA = orderMap[a.name] || 99;
+      const orderB = orderMap[b.name] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
+    });
+
+    return normalizedData;
   } catch (err) {
     console.error(err);
     return [];
