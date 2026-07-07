@@ -15,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import {
   fetchActivitiesForRangeAction,
   type DayCalendarData,
@@ -361,8 +361,18 @@ export default function HorarioPage() {
               </button>
             </div>
 
-            {/* Right: employee filter (master only, horarios mode) */}
-            <div className="flex-shrink-0 w-[90px] flex justify-end">
+            {/* Right: employee filter and settings (master only) */}
+            <div className="flex-shrink-0 flex items-center justify-end gap-2 min-w-[90px]">
+              {isMaster && (
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/staff/actividades/gestion'}
+                  className="text-white hover:text-white/70 transition-colors"
+                  aria-label="Gestionar actividades"
+                >
+                  <Settings size={18} strokeWidth={1.5} />
+                </button>
+              )}
               {isMaster && viewMode === 'horarios' && (
                 <select
                   value={selectedEmployeeId ?? ''}
@@ -533,32 +543,32 @@ export default function HorarioPage() {
                                           ...(isPastDay ? { opacity: 0.8 } : {}),
                                         }}
                                       >
-                                        <div className="px-1 py-[2px]">
+                                        <div className="px-1 py-[2px] flex flex-col justify-center min-h-[16px]">
                                           <span
-                                            className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
+                                            className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
                                             style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
                                           >
                                             {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                           </span>
                                           {hasFormTime && (
                                             <span
-                                              className="block whitespace-nowrap font-bold leading-none opacity-80 tracking-tight mt-[1px]"
+                                              className="whitespace-nowrap font-bold leading-none opacity-80 tracking-tight mt-[2px]"
                                               style={{ fontSize: 'clamp(4px, 9cqi, 9px)' }}
                                             >
                                               (Real: {act.formStartTime ? fmtHour(act.formStartTime) : '?'} - {act.formEndTime ? fmtHour(act.formEndTime) : '?'})
                                             </span>
                                           )}
                                         </div>
-                                        <div className="px-1 py-[2px] bg-black/10">
+                                        <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center">
                                           <span
-                                            className="block break-keep font-bold leading-tight mt-[1px]"
+                                            className="break-keep font-bold leading-tight"
                                             style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
                                           >
                                             {act.activityName}
                                           </span>
                                           {hasParticipants && (
                                             <span
-                                              className="block break-keep font-medium leading-tight opacity-90 mt-[1px]"
+                                              className="break-keep font-medium leading-tight opacity-90 mt-[1px]"
                                               style={{ fontSize: 'clamp(4px, 10cqi, 10px)' }}
                                             >
                                               {act.totalParticipants ? `${act.totalParticipants} pax` : ''}

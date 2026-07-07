@@ -150,12 +150,6 @@ export default function ReportePage() {
       [date]: daily.length > 0 ? daily : allGlobalActivities,
     }));
 
-    setActivities(prev => prev.map(a => {
-      if (a.data === date && !a.activitat && top) {
-        return { ...a, activitat: top };
-      }
-      return a;
-    }));
     setLoadingDaily(prev => ({ ...prev, [date]: false }));
   };
 
@@ -267,9 +261,7 @@ export default function ReportePage() {
 
   const isActivityAllowed = (name: string) => {
     const upper = name.toUpperCase();
-    if (upper.startsWith('P1') || upper.startsWith('P2') || upper.startsWith('P3') || upper.startsWith('P4')) return true;
-    if (upper.startsWith('P5') || upper.startsWith('P6') || upper.startsWith('EXT') || upper.startsWith('PAB') || upper.startsWith('PISTA')) return false;
-    return true;
+    return upper.startsWith('P1') || upper.startsWith('P2') || upper.startsWith('P3') || upper.startsWith('P4');
   };
 
   const CategoryDropdown = ({ act }: { act: Activity }) => {
@@ -305,9 +297,9 @@ export default function ReportePage() {
           )}
         </div>
         {open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md" onClick={() => setOpen(false)}>
             <div 
-              className="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl p-4 animate-slide-up"
+              className="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl p-4"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-700">

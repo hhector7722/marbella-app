@@ -389,15 +389,15 @@ export default function ActividadesPage() {
                                   ...(isPastDay ? { opacity: 0.8 } : {}),
                                 }}
                               >
-                                <div className="px-1 py-[2px]">
-                                  <span className="block whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
-                                    style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}>
-                                    {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
-                                  </span>
-                                </div>
-                                <div className="px-1 py-[2px] bg-black/10">
-                                  <span className="block break-keep font-bold leading-tight mt-[1px]"
-                                    style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}>
+                                  <div className="px-1 py-[2px] flex flex-col justify-center min-h-[16px]">
+                                    <span className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
+                                      style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}>
+                                      {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
+                                    </span>
+                                  </div>
+                                  <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center">
+                                    <span className="break-keep font-bold leading-tight"
+                                      style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}>
                                     {act.activityName}
                                   </span>
                                 </div>

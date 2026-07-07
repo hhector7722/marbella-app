@@ -245,7 +245,17 @@ export async function getParticipantCategoriesAction() {
       .order('name');
 
     if (error) return [];
-    return data as { id: string; name: string }[];
+    
+    // Process categories: rename 'joves' to 'Infantil' and capitalize first letter
+    return (data as { id: string; name: string }[]).map(cat => {
+      let updatedName = cat.name.trim();
+      if (updatedName.toLowerCase() === 'joves') {
+        updatedName = 'Infantil';
+      } else if (updatedName.length > 0) {
+        updatedName = updatedName.charAt(0).toUpperCase() + updatedName.slice(1).toLowerCase();
+      }
+      return { ...cat, name: updatedName };
+    });
   } catch (err) {
     console.error(err);
     return [];
