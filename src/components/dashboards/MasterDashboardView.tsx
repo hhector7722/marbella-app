@@ -139,7 +139,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
             const { data, error } = await supabase
                 .from('reservations')
                 .select('reservation_date, reservation_time')
-                .eq('status', 'pending')
                 .gte('reservation_date', todayYmd);
 
             if (cancelled) return;

@@ -261,7 +261,10 @@ export default function ReportePage() {
 
   const isActivityAllowed = (name: string) => {
     const upper = name.toUpperCase();
-    return upper.startsWith('P1') || upper.startsWith('P2') || upper.startsWith('P3') || upper.startsWith('P4');
+    if (upper.startsWith('P1') || upper.startsWith('P2') || upper.startsWith('P3') || upper.startsWith('P4')) return true;
+    if (upper.startsWith('PISTA 1') || upper.startsWith('PISTA 2') || upper.startsWith('PISTA 3') || upper.startsWith('PISTA 4')) return true;
+    if (upper.startsWith('P') || upper.startsWith('EXT')) return false;
+    return true;
   };
 
   const CategoryDropdown = ({ act }: { act: Activity }) => {

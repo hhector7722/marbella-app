@@ -15,6 +15,7 @@ import {
   saveActivitiesAction,
   type VenueOption,
 } from '@/app/staff/actividades/revision/actions';
+import { getParticipantCategoriesAction } from '@/app/reporte/actions';
 import { createClient } from '@/utils/supabase/client';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import type { Occupation } from '@/lib/pavilion/parser';
@@ -47,6 +48,7 @@ export default function PavilionRevisionPage() {
   const [editableOccupations, setEditableOccupations] = useState<Occupation[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [allVenues, setAllVenues] = useState<VenueOption[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [loadedFromDb, setLoadedFromDb] = useState(false);
 
   useEffect(() => {
@@ -57,8 +59,12 @@ export default function PavilionRevisionPage() {
       if (!isMasterDashboardUser(email)) {
         router.replace('/staff/actividades');
       } else {
-        const res = await fetchVenuesAction();
-        if (res.success) setAllVenues(res.data);
+        const [venuesRes, cats] = await Promise.all([
+          fetchVenuesAction(),
+          getParticipantCategoriesAction(),
+        ]);
+        if (venuesRes.success) setAllVenues(venuesRes.data);
+        setCategories(cats);
         setAuthChecking(false);
       }
     }
@@ -402,24 +408,24 @@ export default function PavilionRevisionPage() {
                       {/* CATEGORIES */}
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">CAT</span>
-                        <input
-                          type="text"
-                          list={`categories-${i}`}
-                          value={occ.occurrence_groups?.map(g => g.category_id).join(', ') || ''}
+                        <select
+                          value={occ.occurrence_groups?.[0]?.category_id || ''}
                           onChange={(e) => {
-                            const cats = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-                            updateOccupation(i, 'occurrence_groups', cats.map(c => ({ category_id: c, name: c })));
+                            const val = e.target.value;
+                            if (!val) {
+                              updateOccupation(i, 'occurrence_groups', []);
+                            } else {
+                              const catName = categories.find(c => c.id === val)?.name || val;
+                              updateOccupation(i, 'occurrence_groups', [{ category_id: val, name: catName }]);
+                            }
                           }}
-                          className="w-24 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
-                        />
-                        <datalist id={`categories-${i}`}>
-                          <option value="Alevin" />
-                          <option value="Infantil" />
-                          <option value="Cadete" />
-                          <option value="Juvenil" />
-                          <option value="Senior" />
-                          <option value="Master" />
-                        </datalist>
+                          className="w-32 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none bg-white"
+                        >
+                          <option value="">Selecciona</option>
+                          {categories.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
                       </div>
 
                       {/* PARTICIPANTS */}

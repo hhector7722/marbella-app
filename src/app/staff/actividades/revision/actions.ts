@@ -144,7 +144,7 @@ export async function getActivitiesByDateAction(params: {
       total_participants,
       activities ( name, color ),
       occurrence_venues ( venues ( code ) ),
-      occurrence_groups ( category_id )
+      occurrence_groups ( category_id, participant_categories ( name ) )
     `;
 
     const { data: rawOccData, error: occError } = await supabase
@@ -167,7 +167,7 @@ export async function getActivitiesByDateAction(params: {
       const venues = ((row.occurrence_venues as any) ?? []).map((ov: any) => ov.venues.code);
       const groups = ((row.occurrence_groups as any) ?? []).map((g: any) => ({
         category_id: g.category_id,
-        name: g.category_id, // We don't fetch name yet, so we just pass the ID as name for now, or just leave it since the UI just needs to know they exist.
+        name: g.participant_categories?.name ?? g.category_id,
       }));
 
       if (!occupationsMap.has(key)) {

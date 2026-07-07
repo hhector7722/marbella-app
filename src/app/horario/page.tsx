@@ -550,14 +550,6 @@ export default function HorarioPage() {
                                           >
                                             {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                           </span>
-                                          {hasFormTime && (
-                                            <span
-                                              className="whitespace-nowrap font-bold leading-none opacity-80 tracking-tight mt-[2px]"
-                                              style={{ fontSize: 'clamp(4px, 9cqi, 9px)' }}
-                                            >
-                                              (Real: {act.formStartTime ? fmtHour(act.formStartTime) : '?'} - {act.formEndTime ? fmtHour(act.formEndTime) : '?'})
-                                            </span>
-                                          )}
                                         </div>
                                         <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center">
                                           <span
