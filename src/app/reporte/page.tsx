@@ -147,7 +147,7 @@ export default function ReportePage() {
 
     setDailyActivitiesMap(prev => ({
       ...prev,
-      [date]: daily.length > 0 ? daily : allGlobalActivities,
+      [date]: daily,
     }));
 
     setLoadingDaily(prev => ({ ...prev, [date]: false }));
@@ -259,12 +259,11 @@ export default function ReportePage() {
     }
   };
 
-  const isActivityAllowed = (name: string) => {
-    const upper = name.toUpperCase();
-    if (upper.startsWith('P1') || upper.startsWith('P2') || upper.startsWith('P3') || upper.startsWith('P4')) return true;
-    if (upper.startsWith('PISTA 1') || upper.startsWith('PISTA 2') || upper.startsWith('PISTA 3') || upper.startsWith('PISTA 4')) return true;
-    if (upper.startsWith('P') || upper.startsWith('EXT')) return false;
-    return true;
+  const handleCloseModal = () => {
+    setShowModal(false);
+    if (submitStatus === 'sent') {
+      window.location.reload();
+    }
   };
 
   const CategoryDropdown = ({ act }: { act: Activity }) => {
@@ -425,8 +424,7 @@ export default function ReportePage() {
                           <option value="" disabled>Selecciona una activitat</option>
                           <option value="Texto libre" className="text-indigo-400 font-semibold">Texto libre...</option>
                           <option disabled>──────────</option>
-                          {(dailyActivitiesMap[act.data] || allGlobalActivities || [])
-                            .filter(isActivityAllowed)
+                          {(dailyActivitiesMap[act.data] || [])
                             .map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
