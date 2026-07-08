@@ -49,7 +49,7 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         // Create new manual activity
         const { data: newAct, error: createErr } = await supabase
           .from('activities')
-          .insert({ name: actName, is_active: true })
+          .insert({ name: actName, active: true })
           .select('id')
           .single();
           
@@ -287,7 +287,7 @@ export async function getAllActivitiesAction() {
     const { data, error } = await supabase
       .from('activities')
       .select('name')
-      .eq('is_active', true)
+      .eq('active', true)
       .order('name');
 
     if (error) {

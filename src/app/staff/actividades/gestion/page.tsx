@@ -7,7 +7,7 @@ interface GestionActivity {
   id: string;
   name: string;
   color: string | null;
-  is_active: boolean;
+  active: boolean;
   is_pista?: boolean;
 }
 
@@ -68,9 +68,9 @@ export default function GestionActividadesPage() {
 
   async function handleToggleActive(act: GestionActivity) {
     setSavingId(act.id);
-    const res = await updateActivityAction(act.id, { is_active: !act.is_active });
+    const res = await updateActivityAction(act.id, { active: !act.active });
     if (res.success) {
-      setActivities(prev => prev.map(a => a.id === act.id ? { ...a, is_active: !a.is_active } : a));
+      setActivities(prev => prev.map(a => a.id === act.id ? { ...a, active: !a.active } : a));
     } else {
       alert('Error: ' + res.error);
     }
@@ -206,7 +206,7 @@ export default function GestionActividadesPage() {
             {visibleActivities.map(act => (
               <tr
                 key={act.id}
-                className={`transition-colors ${!act.is_active ? 'opacity-50' : ''} ${selected.has(act.id) ? 'bg-amber-50' : 'hover:bg-blue-50/30'}`}
+                className={`transition-colors ${!act.active ? 'opacity-50' : ''} ${selected.has(act.id) ? 'bg-amber-50' : 'hover:bg-blue-50/30'}`}
               >
                 <td className="px-2 sm:px-3 py-2 sm:py-3">
                   <input
@@ -227,8 +227,8 @@ export default function GestionActividadesPage() {
                   </div>
                 </td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                  <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${act.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                    {act.is_active ? 'Activa' : 'Inactiva'}
+                  <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${act.active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {act.active ? 'Activa' : 'Inactiva'}
                   </span>
                 </td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
@@ -243,9 +243,9 @@ export default function GestionActividadesPage() {
                     <button
                       onClick={() => handleToggleActive(act)}
                       disabled={savingId === act.id}
-                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50 ${act.is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50 ${act.active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
                     >
-                      {act.is_active ? 'Quitar' : 'Activar'}
+                      {act.active ? 'Quitar' : 'Activar'}
                     </button>
                   </div>
                 </td>

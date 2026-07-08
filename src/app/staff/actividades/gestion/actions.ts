@@ -13,7 +13,7 @@ export async function getGestionActivitiesAction() {
 
     let { data, error } = await supabase
       .from('activities')
-      .select('id, name, color, is_active')
+      .select('id, name, color, active')
       .order('name');
 
     if (error) {
@@ -31,16 +31,16 @@ export async function getGestionActivitiesAction() {
         }
       }
 
-      if (error.code === '42703') { // column is_active does not exist
+      if (error.code === '42703') { // column active does not exist
         const { data: fallbackData, error: fallbackErr } = await supabase
           .from('activities')
           .select('id, name, color')
           .order('name');
           
         if (fallbackErr) return { success: false, error: fallbackErr.message };
-        const enhancedFallback = fallbackData.map((d: any) => ({
+        const enhancedFallback = (fallbackData ?? []).map((d: any) => ({
           ...d,
-          is_active: true,
+          active: true,
           is_pista: pistaSet.has(d.id),
         }));
         return { success: true, data: enhancedFallback };
@@ -65,7 +65,7 @@ export async function getGestionActivitiesAction() {
     const enhancedData = (data ?? []).map((d: any) => ({
       ...d,
       is_pista: pistaSet.has(d.id),
-    }));
+    })); // `active` field is already included from the select
 
     return { success: true, data: enhancedData };
   } catch (err) {
@@ -74,7 +74,7 @@ export async function getGestionActivitiesAction() {
   }
 }
 
-export async function updateActivityAction(id: string, payload: { name?: string, color?: string, is_active?: boolean }) {
+export async function updateActivityAction(id: string, payload: { name?: string, color?: string, active?: boolean }) {
   try {
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
@@ -82,24 +82,12 @@ export async function updateActivityAction(id: string, payload: { name?: string,
       return { success: false, error: 'No autorizado' };
     }
 
-    // Try to update with is_active
     const { error } = await supabase
       .from('activities')
       .update(payload)
       .eq('id', id);
 
     if (error) {
-      if (error.code === '42703' && payload.is_active !== undefined) {
-        // Fallback: ignore is_active if column doesn't exist yet
-        const { is_active, ...restPayload } = payload;
-        const { error: fallbackErr } = await supabase
-          .from('activities')
-          .update(restPayload)
-          .eq('id', id);
-        
-        if (fallbackErr) return { success: false, error: fallbackErr.message };
-        return { success: true, message: 'Actualizado (is_active ignorado porque falta ejecutar el SQL)' };
-      }
       return { success: false, error: error.message };
     }
 
