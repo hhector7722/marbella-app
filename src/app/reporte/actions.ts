@@ -77,11 +77,15 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
 
       if (occurrenceIds.length === 0) {
         // Create a new occurrence for manual entries
+        const occStart = startTime || '00:00:00';
+        const occEnd = endTime || '00:00:00';
         const { data: newOcc, error: occErr } = await supabase
           .from('activity_occurrences')
           .insert({
             activity_id: actId,
             activity_date: item.data,
+            start_time: occStart,
+            end_time: occEnd,
             form_start_time: startTime || null,
             form_end_time: endTime || null,
             preferred_start_time: 'form',
