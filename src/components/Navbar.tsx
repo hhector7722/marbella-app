@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MessageSquare, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
+import { ReservationsBell } from '@/components/ReservationsBell';
 import { createClient } from "@/utils/supabase/client";
 import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
@@ -99,16 +100,16 @@ export default function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-3">
+                        <ReservationsBell />
                         <NotificationsBell />
 
-                        {/* BOTÓN IA RECTANGULAR CON EL ID AÑADIDO */}
+                        {/* BOTÓN IA RECTANGULAR - solo texto */}
                         <button
                             id="ia-button"
                             onClick={toggleChat}
-                            className="flex items-center gap-2 px-3 h-8 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95 group"
+                            className="flex items-center px-2.5 h-8 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95"
                         >
                             <span className="text-[9px] font-black tracking-[0.15em] text-white">IA</span>
-                            <MessageSquare size={16} fill="currentColor" className="text-white group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>

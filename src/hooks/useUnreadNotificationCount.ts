@@ -47,6 +47,7 @@ export function useUnreadNotificationCount(options: Options = {}) {
           .select(withItems ? '*' : 'id', { count: 'exact', head: !withItems })
           .eq('user_id', userId)
           .is('read_at', null)
+          .neq('type', 'reservation_new')
           .order('created_at', { ascending: false })
 
         if (withItems) {
