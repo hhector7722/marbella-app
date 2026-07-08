@@ -92,22 +92,19 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
   const selectedNames = act.categories.filter(c => c.selected).map(c => c.name);
   const displayNames = selectedNames.length > 0 ? selectedNames.join(', ') : '';
 
-  const getCategoryLabel = (name: string) => {
-    const ageMap: Record<string, string> = {
-      'Prebenjamí': ' (6–7)',
-      'Benjamí': ' (8–9)',
-      'Aleví': ' (10–11)',
-      'Infantil': ' (12–13)',
-      'Cadet': ' (14–15)',
-      'Juvenil': ' (16–18)',
-      'Senior': ' (+18)',
-      'Veterans': ' (+65)'
-    };
-    return `${name}${ageMap[name] || ''}`;
+  const ageMap: Record<string, string> = {
+    'Prebenjamí': ' (6–7)',
+    'Benjamí': ' (8–9)',
+    'Aleví': ' (10–11)',
+    'Infantil': ' (12–13)',
+    'Cadet': ' (14–15)',
+    'Juvenil': ' (16–18)',
+    'Senior': ' (+18)',
+    'Veterans': ' (+65)'
   };
 
   return (
-    <div className="relative flex-1 h-[36px]">
+    <div className="relative h-[36px] min-w-0">
       <div
         onClick={() => setOpen(true)}
         className="form-input w-full h-full flex items-center justify-center px-2 rounded-xl cursor-pointer text-xs text-center border border-slate-700/50 hover:border-indigo-500/50 transition-colors overflow-hidden"
@@ -119,7 +116,7 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
         )}
       </div>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg" onClick={() => setOpen(false)}>
           <div 
             ref={dropdownRef}
             className="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl p-4"
@@ -158,7 +155,12 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
                       </svg>
                     )}
                   </span>
-                  <span className="text-slate-200 font-medium">{getCategoryLabel(cat.name)}</span>
+                  <span className="text-slate-200 font-medium">
+                    {cat.name}
+                    {ageMap[cat.name] && (
+                      <span className="text-slate-400 text-[10px] font-normal ml-0.5">{ageMap[cat.name]}</span>
+                    )}
+                  </span>
                 </label>
               ))}
             </div>
@@ -475,7 +477,7 @@ export default function ReportePage() {
                     />
                   </div>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Categoria</label>
                   <CategoryDropdown
                     act={act}

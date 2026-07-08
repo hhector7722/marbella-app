@@ -18,7 +18,6 @@ body:has(.reporte-container) {
     background: var(--bg);
     color: var(--text-main);
     font-family: 'Outfit', 'Inter', sans-serif;
-    min-height: 100dvh;
 }
 
 .reporte-container .glass {
