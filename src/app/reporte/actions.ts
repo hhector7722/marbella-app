@@ -174,7 +174,7 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
                 webpush.sendNotification(
                   sub.subscription as any,
                   JSON.stringify({
-                    title: '📋 Nou informe d\'activitats',
+                    title: 'Activitats',
                     body: `${activityNames} — ${dates}`,
                     url: '/staff/actividades',
                   })

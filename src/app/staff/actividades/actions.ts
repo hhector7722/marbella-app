@@ -283,7 +283,7 @@ export async function fetchActivitiesForRangeAction(params: {
         venues: { code: string; affects_bar: boolean };
       }[])?.map((ov) => ov.venues) ?? [];
 
-    const hasFormTimes = (row as any).form_start_time !== null;
+    const hasFormTimes = (row as any).form_start_time !== null || (row as any).preferred_start_time === 'form';
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0 || hasFormTimes) {
       const prefStart = (row as any).preferred_start_time as string;
@@ -361,7 +361,7 @@ export async function fetchDayDetailAction(params: {
         venues: { code: string; affects_bar: boolean };
       }[])?.map((ov) => ov.venues) ?? [];
 
-    const hasFormTimes = (row as any).form_start_time !== null;
+    const hasFormTimes = (row as any).form_start_time !== null || (row as any).preferred_start_time === 'form';
     const barVenues = venues.filter((v) => v.affects_bar);
     if (barVenues.length > 0 || hasFormTimes) {
       const prefStart = (row as any).preferred_start_time as string;
