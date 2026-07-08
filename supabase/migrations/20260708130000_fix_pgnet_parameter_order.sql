@@ -1,32 +1,6 @@
--- Migration: 20260708120000_reservations_push_via_pgnet.sql
--- Descripción: Llama al webhook de push notifications desde el trigger de BD
--- usando pg_net, eliminando la dependencia del Database Webhook del Dashboard.
+-- Migration: 20260708130000_fix_pgnet_parameter_order.sql
+-- Descripción: Corrige el orden de parámetros de net.http_post en la función del trigger
 
--- 1. Activar pg_net si no está
-CREATE EXTENSION IF NOT EXISTS pg_net;
-
--- 2. Tabla de configuración interna
-CREATE TABLE IF NOT EXISTS public.app_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
-ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
-
--- Permitir lectura a authenticated (opcional, para debug)
-CREATE POLICY "app_settings_read_authenticated"
-    ON public.app_settings FOR SELECT TO authenticated
-    USING (true);
-
--- Insertar URL del webhook de push
-INSERT INTO public.app_settings (key, value)
-VALUES (
-    'push_webhook_url',
-    'https://marbella-app-git-main-hhector7722s-projects.vercel.app/api/webhooks/reservations-push'
-)
-ON CONFLICT (key) DO NOTHING;
-
--- 3. Actualizar la función del trigger para llamar al webhook via pg_net
 CREATE OR REPLACE FUNCTION public.fn_notify_reservation_insert()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -48,7 +22,6 @@ BEGIN
     to_char(NEW.reservation_time, 'HH24:MI')
   ));
 
-  -- Insertar notificaciones in-app (campana)
   INSERT INTO public.user_notifications (
     user_id, type, title, body, action_url, entity_type, entity_id
   )
@@ -68,7 +41,6 @@ BEGIN
     'hector'
   );
 
-  -- Llamar al webhook de push via pg_net (asíncrono)
   SELECT value INTO v_webhook_url FROM public.app_settings
   WHERE key = 'push_webhook_url';
 
