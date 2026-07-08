@@ -1,12 +1,13 @@
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 import webpush from 'web-push';
-import { NOTIFICATION_HECTOR_EMAIL } from '@/lib/notification-recipients';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:info@barmarbella.com';
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -26,7 +27,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
-        const supabase = await createClient();
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+            return NextResponse.json({ error: 'Missing database credentials' }, { status: 500 });
+        }
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
         // Obtener correos permitidos (Alba, Hector, Pere, Hernan)
         const { data: managers, error: managerError } = await supabase
