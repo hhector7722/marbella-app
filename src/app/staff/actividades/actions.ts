@@ -255,7 +255,7 @@ export async function fetchActivitiesForRangeAction(params: {
       preferred_start_time,
       preferred_end_time,
       total_participants,
-      activities ( name, color ),
+      activities ( name, color, active ),
       activity_kinds ( icon ),
       occurrence_venues ( venues ( code, affects_bar ) ),
       occurrence_groups ( participants, participant_categories ( name ) )
@@ -273,6 +273,8 @@ export async function fetchActivitiesForRangeAction(params: {
   const byDate: Record<string, DayCalendarData> = {};
 
   for (const row of data ?? []) {
+    const act = row.activities as unknown as { name: string; color: string | null; active: boolean | null } | null;
+    if (act && act.active === false) continue;
     const d = row.activity_date as string;
     if (!byDate[d]) {
       byDate[d] = { date: d, totalCount: 0, barActivities: [] };
@@ -285,8 +287,8 @@ export async function fetchActivitiesForRangeAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     const hasFormTimes = (row as any).form_start_time !== null;
-    const hasFormPref = (row as any).preferred_start_time === 'form';
-    if (barVenues.length > 0 || hasFormTimes || hasFormPref) {
+    const fromReportForm = (row as any).preferred_start_time === 'form' && venues.length === 0;
+    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
       const prefStart = (row as any).preferred_start_time as string;
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
@@ -339,7 +341,7 @@ export async function fetchDayDetailAction(params: {
       preferred_start_time,
       preferred_end_time,
       total_participants,
-      activities ( name, color ),
+      activities ( name, color, active ),
       activity_kinds ( icon ),
       occurrence_venues ( venues ( code, affects_bar ) ),
       occurrence_groups ( participants, participant_categories ( name ) )
@@ -356,6 +358,8 @@ export async function fetchDayDetailAction(params: {
   let totalCount = 0;
 
   for (const row of occData ?? []) {
+    const act = row.activities as unknown as { name: string; color: string | null; active: boolean | null } | null;
+    if (act && act.active === false) continue;
     totalCount++;
     const venues =
       (row.occurrence_venues as unknown as {
@@ -364,8 +368,8 @@ export async function fetchDayDetailAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     const hasFormTimes = (row as any).form_start_time !== null;
-    const hasFormPref = (row as any).preferred_start_time === 'form';
-    if (barVenues.length > 0 || hasFormTimes || hasFormPref) {
+    const fromReportForm = (row as any).preferred_start_time === 'form' && venues.length === 0;
+    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
       const prefStart = (row as any).preferred_start_time as string;
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
