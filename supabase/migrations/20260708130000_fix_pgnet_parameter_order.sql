@@ -62,7 +62,7 @@ BEGIN
 
     PERFORM net.http_post(
       v_webhook_url,
-      v_record_json::text,
+      v_record_json,
       NULL,
       jsonb_build_object(
         'Content-Type', 'application/json',
