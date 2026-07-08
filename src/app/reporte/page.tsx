@@ -21,6 +21,7 @@ interface Activity {
   dayName: 'Dissabte' | 'Diumenge';
   categories: CategoryEntry[];
   total_participants: number;
+  freeTextMode: boolean;
 }
 
 interface CategoryOption {
@@ -220,6 +221,7 @@ export default function ReportePage() {
         dayName: 'Dissabte',
         categories: [],
         total_participants: 0,
+        freeTextMode: false,
       },
       {
         id: crypto.randomUUID(),
@@ -230,6 +232,7 @@ export default function ReportePage() {
         dayName: 'Diumenge',
         categories: [],
         total_participants: 0,
+        freeTextMode: false,
       },
     ]);
   }, []);
@@ -356,6 +359,7 @@ export default function ReportePage() {
           dayName,
           categories: buildDefaultCategories(),
           total_participants: 0,
+          freeTextMode: false,
         },
       ];
     });
@@ -434,23 +438,17 @@ export default function ReportePage() {
                         <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                       </div>
                     ) : (
-                      act.activitat === 'Texto libre' ? (
+                      act.freeTextMode ? (
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
                             autoFocus
                             placeholder="Nom de la nova activitat..."
-                            onChange={(e) => {
-                              // We just store it in 'activitat'. 
-                              // But wait, if they type, it will replace 'Texto libre'.
-                              // We need a way to know it's custom. We can just set 'activitat' to whatever they type.
-                              // If they clear it entirely, they can go back.
-                              handleChange(act.id, 'activitat', e.target.value);
-                            }}
-                            value={act.activitat === 'Texto libre' ? '' : act.activitat}
+                            onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
+                            value={act.activitat}
                             className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-indigo-500 text-center"
                           />
-                          <button type="button" onClick={() => handleChange(act.id, 'activitat', '')} className="text-slate-400 hover:text-white">
+                          <button type="button" onClick={() => handleChange(act.id, 'freeTextMode', false)} className="text-slate-400 hover:text-white">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
@@ -459,7 +457,13 @@ export default function ReportePage() {
                       ) : (
                         <select
                           value={act.activitat}
-                          onChange={(e) => handleChange(act.id, 'activitat', e.target.value)}
+                          onChange={(e) => {
+                            if (e.target.value === 'Texto libre') {
+                              handleChange(act.id, 'freeTextMode', true);
+                            } else {
+                              handleChange(act.id, 'activitat', e.target.value);
+                            }
+                          }}
                           className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50 appearance-none text-center"
                           style={{ textAlignLast: 'center' }}
                         >

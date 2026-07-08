@@ -1,6 +1,15 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
+import webpush from 'web-push';
+
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:info@barmarbella.com';
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 function getServiceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -134,6 +143,48 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
             console.error('Error inserting occurrence_groups:', insertGroupsErr);
           }
         }
+      }
+    }
+
+    // Send push notification to Hector
+    if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('email', 'hhector7722@gmail.com')
+          .maybeSingle();
+
+        if (profile?.id) {
+          const { data: subs } = await supabase
+            .from('push_subscriptions')
+            .select('subscription')
+            .eq('user_id', profile.id);
+
+          if (subs && subs.length > 0) {
+            const activityNames = payloads
+              .filter(p => p.activitat)
+              .map(p => p.activitat)
+              .join(', ');
+
+            const dates = [...new Set(payloads.map(p => p.data).filter(Boolean))].join(', ');
+
+            await Promise.allSettled(
+              subs.map(sub =>
+                webpush.sendNotification(
+                  sub.subscription as any,
+                  JSON.stringify({
+                    title: '📋 Nou informe d\'activitats',
+                    body: `${activityNames} — ${dates}`,
+                    url: '/staff/actividades',
+                  })
+                )
+              )
+            );
+          }
+        }
+      } catch (notifyErr) {
+        console.error('Error sending push notification:', notifyErr);
       }
     }
 
