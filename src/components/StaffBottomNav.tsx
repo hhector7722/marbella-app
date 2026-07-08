@@ -148,9 +148,7 @@ export default function StaffBottomNav() {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
 
-  // Destination for the Horarios nav button depends on the user
-  const scheduleHref =
-    userData?.email === 'fogotorrat@gmail.com' ? '/staff/actividades' : '/horario';
+  const scheduleHref = '/horario';
 
   return (
     <>

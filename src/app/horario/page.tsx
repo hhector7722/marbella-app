@@ -30,6 +30,14 @@ import { usePageView } from '@/lib/usage/usePageView';
 
 const MASTER_EMAIL = 'hhector7722@gmail.com';
 
+const ACTIVIDADES_EMAILS = [
+  'hhector7722@gmail.com',
+  'fogotorrat@gmail.com',
+  'pereboladeres@gmail.com',
+  'albamasia.opos@gmail.com',
+  'hernang6799@gmail.com',
+];
+
 const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
@@ -212,7 +220,12 @@ export default function HorarioPage() {
 
       const email = profile?.email ?? user.email ?? '';
       const master = email === MASTER_EMAIL;
-      if (!cancelled) setIsMaster(master);
+      if (!cancelled) {
+        setIsMaster(master);
+        if (ACTIVIDADES_EMAILS.includes(email)) {
+          setViewMode('actividades');
+        }
+      }
 
       if (master) {
         const { data: profiles } = await supabase

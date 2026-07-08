@@ -173,8 +173,8 @@ export async function getActivitiesByDateAction(params: {
       if (!occupationsMap.has(key)) {
         occupationsMap.set(key, {
           activity: actName,
-          start_time: start.substring(0, 5),
-          end_time: end.substring(0, 5),
+          start_time: start ? start.substring(0, 5) : '',
+          end_time: end ? end.substring(0, 5) : '',
           venues: [...venues],
           date: params.date,
           form_start_time: (row as any).form_start_time,
