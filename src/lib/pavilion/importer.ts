@@ -44,11 +44,21 @@ async function resolveActivity(
 ): Promise<{ id: string; wasCreated: boolean }> {
   const normalized = normalizeForMatch(rawName);
 
-  const { data: existing } = await supabase
+  let existing = await supabase
     .from('activities')
     .select('id, color')
     .ilike('external_name', normalized)
-    .maybeSingle();
+    .maybeSingle()
+    .then(r => r.data);
+
+  if (!existing) {
+    const byName = await supabase
+      .from('activities')
+      .select('id, color')
+      .ilike('name', normalized)
+      .maybeSingle();
+    existing = byName.data;
+  }
 
   if (existing) {
     if (color !== undefined && existing.color !== color) {
