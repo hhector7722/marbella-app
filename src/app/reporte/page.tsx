@@ -44,6 +44,22 @@ function getNextWeekend() {
   };
 }
 
+function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <input
+      ref={ref}
+      type="date"
+      value={value}
+      onChange={(e) => {
+        onChange(e.target.value);
+        ref.current?.blur();
+      }}
+      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
+    />
+  );
+}
+
 function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const timeOptions: string[] = [];
   for (let h = 7; h <= 23; h++) {
@@ -405,11 +421,9 @@ export default function ReportePage() {
               <div className="grid grid-cols-[120px_1fr] gap-x-6 gap-y-1.5 items-start">
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Data</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={act.data}
-                    onChange={(e) => handleChange(act.id, 'data', e.target.value)}
-                    className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
+                    onChange={(v) => handleChange(act.id, 'data', v)}
                   />
                 </div>
                 <div className="space-y-1">
