@@ -15,9 +15,13 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
 
 export async function POST(req: Request) {
     try {
-        const authHeader = req.headers.get('authorization');
-        if (!authHeader || authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        // Si WEBHOOK_SECRET está configurado, exigirlo (modo Dashboard webhook).
+        // Si no (modo pg_net desde trigger BD), aceptar cualquier llamada.
+        if (WEBHOOK_SECRET) {
+            const authHeader = req.headers.get('authorization');
+            if (!authHeader || authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            }
         }
 
         const body = await req.json();
