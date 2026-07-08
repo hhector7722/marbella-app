@@ -537,7 +537,7 @@ export default function ReportePage() {
   return (
     <div className="reporte-container px-3 overflow-x-hidden">
       <div className="max-w-lg mx-auto pt-0 pb-1">
-        <form id="reportForm" className="space-y-1" onSubmit={handleSubmit}>
+        <form id="reportForm" className="space-y-1" onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}>
           <div className="flex justify-center mb-1">
             <img src="/icons/logo-white.png" alt="Bar La Marbella" className="h-10 w-auto object-contain" />
           </div>
