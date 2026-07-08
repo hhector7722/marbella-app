@@ -285,8 +285,8 @@ export async function fetchActivitiesForRangeAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     const hasFormTimes = (row as any).form_start_time !== null;
-    const fromReportForm = (row as any).preferred_start_time === 'form' && venues.length === 0;
-    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
+    const hasFormPref = (row as any).preferred_start_time === 'form';
+    if (barVenues.length > 0 || hasFormTimes || hasFormPref) {
       const prefStart = (row as any).preferred_start_time as string;
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
@@ -364,8 +364,8 @@ export async function fetchDayDetailAction(params: {
 
     const barVenues = venues.filter((v) => v.affects_bar);
     const hasFormTimes = (row as any).form_start_time !== null;
-    const fromReportForm = (row as any).preferred_start_time === 'form' && venues.length === 0;
-    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
+    const hasFormPref = (row as any).preferred_start_time === 'form';
+    if (barVenues.length > 0 || hasFormTimes || hasFormPref) {
       const prefStart = (row as any).preferred_start_time as string;
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
