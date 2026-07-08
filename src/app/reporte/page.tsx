@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import './premium.css';
@@ -93,7 +94,7 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
   const displayNames = selectedNames.length > 0 ? selectedNames.join(', ') : '';
 
   const ageMap: Record<string, string> = {
-    'Prebenjamí': ' (6–7)',
+    'Prebenjamí': ' (-8)',
     'Benjamí': ' (8–9)',
     'Aleví': ' (10–11)',
     'Infantil': ' (12–13)',
@@ -115,7 +116,7 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
            <span className="truncate w-full text-white font-medium">{displayNames || 'Selecciona'}</span>
         )}
       </div>
-      {open && (
+      {open && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg" onClick={() => setOpen(false)}>
           <div 
             ref={dropdownRef}
@@ -132,7 +133,7 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
                 {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-2 max-h-[80vh] overflow-y-auto pr-1">
               {act.categories.map(cat => (
                 <label
                   key={cat.id}
@@ -172,7 +173,8 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
               Acceptar
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
