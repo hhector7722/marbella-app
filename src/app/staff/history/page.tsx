@@ -6,8 +6,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, ChevronDown, ChevronLeft, ChevronRight
+    Calendar, X, ChevronDown, ChevronLeft, ChevronRight, Share2
 } from 'lucide-react';
+import { buildTimesheetPayload } from '@/lib/staff/timesheet-export-payload';
+import { generateTimesheetPdf } from '@/lib/staff/timesheet-pdf';
+import { generateTimesheetXlsx } from '@/lib/staff/timesheet-xlsx';
 import {
     format,
     startOfWeek,
@@ -132,6 +135,8 @@ export default function HistoryPage() {
     const [plantillaWeeksData, setPlantillaWeeksData] = useState<PlantillaWeek[]>([]);
     const [summaryDate, setSummaryDate] = useState<string | null>(null);
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     const initUser = useCallback(async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -407,6 +412,7 @@ export default function HistoryPage() {
     const isManager = userRole === 'manager';
     const isPlantilla = isManager && selectedEmployeeId === '';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
+
     const headerLabel = isPlantilla
         ? 'Plantilla'
         : selectedEmployeeLabel ||
@@ -427,7 +433,58 @@ export default function HistoryPage() {
         return [];
     })();
 
+    /**
+     * Construye el payload de exportación obteniendo el DNI del empleado
+     * de forma lazy (solo al pulsar exportar, no al cargar la página).
+     */
+    async function handleExport(type: 'pdf' | 'xlsx') {
+        setShowExportMenu(false);
+        setIsExporting(true);
+        try {
+            const targetId = selectedEmployeeId || currentUserId;
+
+            // Obtener nombre completo desde el array ya cargado
+            const targetEmployee = employees.find((e) => e.id === targetId);
+            const fullName = targetEmployee
+                ? `${targetEmployee.first_name} ${targetEmployee.last_name}`.trim()
+                : headerLabel;
+
+            // Fetch lazy del DNI (1 fila, < 50 ms)
+            let dni: string | null = null;
+            try {
+                const { data: profileRow } = await supabase
+                    .from('profiles')
+                    .select('dni')
+                    .eq('id', targetId)
+                    .maybeSingle();
+                dni = profileRow?.dni ?? null;
+            } catch {
+                // DNI opcional — si falla, se omite en el documento sin error
+            }
+
+            const payload = buildTimesheetPayload(
+                weeksData,
+                fullName,
+                dni,
+                filterYear,
+                filterMonth,
+            );
+
+            if (type === 'pdf') {
+                await generateTimesheetPdf(payload);
+            } else {
+                generateTimesheetXlsx(payload);
+            }
+        } catch (err) {
+            console.error('Export error:', err);
+            toast.error('Error al generar el documento');
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
     const handleDayClick = (date: string) => {
+
         if (isPlantilla) {
             setSummaryDate(date);
             setIsSummaryModalOpen(true);
@@ -490,8 +547,65 @@ export default function HistoryPage() {
                             </button>
                         </div>
 
-                        {/* Derecha: Selector de Personal (Manager - Compacto) */}
-                        <div className="flex justify-end">
+                        {/* Derecha: Botón exportar + Selector de Personal */}
+                        <div className="flex items-center gap-2 justify-end">
+
+                            {/* Botón exportar — visible cuando hay datos y no es vista Plantilla */}
+                            {!isPlantilla && weeksData.length > 0 && (
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowExportMenu((v) => !v)}
+                                        disabled={isExporting}
+                                        className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100 disabled:opacity-40"
+                                        title="Exportar historial"
+                                        aria-label="Exportar historial de jornada"
+                                        aria-expanded={showExportMenu}
+                                        aria-haspopup="menu"
+                                    >
+                                        <Share2 size={16} strokeWidth={2} />
+                                    </button>
+
+                                    {showExportMenu && (
+                                        <>
+                                            {/* Overlay transparente para cerrar al clicar fuera */}
+                                            <button
+                                                type="button"
+                                                aria-label="Cerrar menú"
+                                                className="fixed inset-0 z-[40] cursor-default"
+                                                onClick={() => setShowExportMenu(false)}
+                                                tabIndex={-1}
+                                            />
+                                            {/* Mini-menú */}
+                                            <div
+                                                role="menu"
+                                                className="absolute right-0 top-full mt-1.5 z-[50] bg-white rounded-xl shadow-lg border border-zinc-100 overflow-hidden min-w-[210px] animate-in fade-in zoom-in-95 duration-150"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    role="menuitem"
+                                                    onClick={() => handleExport('pdf')}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                >
+                                                    <span className="text-base leading-none">📄</span>
+                                                    <span>Exportar PDF <span className="font-normal text-zinc-400">(Inspección)</span></span>
+                                                </button>
+                                                <div className="h-px bg-zinc-100 mx-3" />
+                                                <button
+                                                    type="button"
+                                                    role="menuitem"
+                                                    onClick={() => handleExport('xlsx')}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                >
+                                                    <span className="text-base leading-none">📊</span>
+                                                    <span>Exportar Excel <span className="font-normal text-zinc-400">(Inspección)</span></span>
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
                             {isManager && (
                                 <div className="relative">
                                     <button

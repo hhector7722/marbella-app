@@ -99,7 +99,7 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 md:gap-3">
+                    <div className="flex items-center gap-2 md:gap-2">
                         <ReservationsBell />
                         <NotificationsBell />
 
