@@ -8,7 +8,7 @@
  * Sin bloques de color, sin degradados, sin sombras.
  * Legible impreso en blanco y negro.
  *
- * Orientación: A4 landscape (297 × 210 mm)
+ * Orientación: A4 portrait (210 × 297 mm)
  * Dependencias: jspdf ^4, jspdf-autotable ^5
  */
 
@@ -35,12 +35,12 @@ const COMPANY = {
 // ---------------------------------------------------------------------------
 
 const DS = {
-    // Página
-    pageW: 297,
-    pageH: 210,
-    marginH: 20,   // margen horizontal
+    // Página (A4 portrait)
+    pageW: 210,
+    pageH: 297,
+    marginH: 18,   // margen horizontal
     marginV: 14,   // margen vertical superior
-    contentW: 257, // 297 - 2 * 20
+    contentW: 174, // 210 - 2 * 18
 
     // Paleta
     black:    [15,  15,  15]  as [number, number, number],
@@ -71,9 +71,9 @@ function isoToShort(isoDate: string): string {
     return `${d}/${m}`;
 }
 
-/** Minutos → "08 h 00 min" — siempre padded, siempre con minutos */
+/** Minutos → "08 h 00 min" — vacío si es 0 */
 function fmtMinutes(minutes: number): string {
-    if (minutes <= 0) return '— h — min';
+    if (minutes <= 0) return '';
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${String(h).padStart(2, '0')} h ${String(m).padStart(2, '0')} min`;
@@ -273,23 +273,18 @@ function drawSummaryCompact(doc: jsPDF, payload: TimesheetExportPayload, startY:
         const x = DS.marginH + i * (CARD_W + GAP);
         const y = startY;
 
-        doc.setFillColor(...DS.white);
-        doc.setDrawColor(...DS.gray100);
-        doc.setLineWidth(0.3);
-        doc.roundedRect(x, y, CARD_W, CARD_H, RADIUS, RADIUS, 'FD');
-
         doc.setFont(DS.font, 'normal');
         doc.setFontSize(6);
         doc.setTextColor(...DS.gray500);
-        doc.text(label.toUpperCase(), x + 4, y + 5);
+        doc.text(label.toUpperCase(), x, y + 5);
 
         doc.setFont(DS.font, 'bold');
         doc.setFontSize(10);
         doc.setTextColor(...DS.black);
-        doc.text(value, x + 4, y + 12.5);
+        doc.text(value, x, y + 14);
     });
 
-    return startY + CARD_H;
+    return startY + 22;
 }
 
 // ---------------------------------------------------------------------------
@@ -477,7 +472,7 @@ export async function generateTimesheetPdf(payload: TimesheetExportPayload): Pro
     const exportId = buildExportId(payload.generatedAt);
 
     const doc = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
     });
@@ -552,7 +547,7 @@ export async function generateTimesheetPdfMulti(
     const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
 
     const doc = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
     });

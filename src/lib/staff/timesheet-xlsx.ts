@@ -31,7 +31,7 @@ function fmtDateShort(isoDate: string): string {
 }
 
 function fmtMinutes(minutes: number): string {
-    if (minutes <= 0) return '— h — min';
+    if (minutes <= 0) return '';
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${String(h).padStart(2, '0')} h ${String(m).padStart(2, '0')} min`;
