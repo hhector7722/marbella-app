@@ -384,17 +384,22 @@ function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number):
         },
 
         columnStyles: {
-            0: { cellWidth: 22, halign: 'left' },    // Fecha
-            1: { cellWidth: 30, halign: 'left' },    // Día
-            2: { cellWidth: 20, halign: 'center' },  // Estado
-            3: { cellWidth: 22, halign: 'center' },  // Entrada
-            4: { cellWidth: 22, halign: 'center' },  // Salida
-            5: { halign: 'center' },                  // Horas (ocupa el resto)
+            0: { cellWidth: 22 },  // Fecha
+            1: { cellWidth: 26 },  // Día
+            2: { cellWidth: 18 },  // Estado
+            3: { cellWidth: 20 },  // Entrada
+            4: { cellWidth: 20 },  // Salida
+            5: { },                 // Horas computadas
         },
 
         styles: {
             font: DS.font,
             overflow: 'linebreak',
+        },
+
+        didParseCell: (data) => {
+            const align = (['left', 'left', 'left', 'center', 'center', 'right'] as const)[data.column.index];
+            data.cell.styles.halign = align;
         },
 
         // Línea horizontal muy fina entre filas
