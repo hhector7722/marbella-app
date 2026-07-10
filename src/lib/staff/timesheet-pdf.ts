@@ -489,3 +489,192 @@ export async function generateTimesheetPdf(payload: TimesheetExportPayload): Pro
 
     doc.save(`jornada_${employeeSlug}_${monthLabel}.pdf`);
 }
+
+// ---------------------------------------------------------------------------
+// Multi‑empleado: exporta todos los empleados seleccionados en un solo PDF
+// ---------------------------------------------------------------------------
+
+/**
+ * Genera y descarga un PDF combinado con la jornada de varios empleados.
+ *
+ * Cada empleado se muestra en una sección independiente dentro del mismo
+ * documento, con su cabecera, resumen y tabla de fichajes.
+ */
+export async function generateTimesheetPdfMulti(
+    payloads: Array<{
+        employee: { fullName: string; dni: string | null };
+        payload: TimesheetExportPayload;
+    }>,
+): Promise<void> {
+    if (payloads.length === 0) return;
+
+    const firstPayload = payloads[0].payload;
+    const exportId = buildExportId(firstPayload.generatedAt);
+    const periodLabel = fmtMonthYear(firstPayload.periodYear, firstPayload.periodMonth);
+    const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
+
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+    });
+
+    // ── CABECERA GENERAL (empresa + período) ─────────────────────────────
+
+    const L = DS.marginH;
+    const R = DS.pageW - DS.marginH;
+    let y = DS.marginV;
+
+    const LOGO_SIZE = 9;
+    if (logoDataUrl) {
+        doc.setFillColor(...DS.gray050);
+        doc.roundedRect(L, y, LOGO_SIZE, LOGO_SIZE, 1, 1, 'F');
+        doc.addImage(logoDataUrl, 'PNG', L, y, LOGO_SIZE, LOGO_SIZE);
+    }
+
+    const textX = logoDataUrl ? L + LOGO_SIZE + 3.5 : L;
+    let textY = y + 3;
+
+    doc.setFont(DS.font, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...DS.black);
+    doc.text(COMPANY.tradeName, textX, textY);
+
+    doc.setFont(DS.font, 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...DS.gray700);
+    doc.text(COMPANY.legalName, textX, textY + 4.5);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...DS.gray500);
+    doc.text(`CIF: ${COMPANY.cif}`, textX, textY + 8.5);
+    doc.text(COMPANY.address, textX, textY + 12);
+
+    doc.setFont(DS.font, 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...DS.black);
+    doc.text(periodLabel, R, y + 5, { align: 'right' });
+
+    doc.setFont(DS.font, 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...DS.gray500);
+    doc.text('Generado:', R, y + 11, { align: 'right' });
+
+    const genDate = isoToDisplay(firstPayload.generatedAt.toISOString().slice(0, 10));
+    const genTime = `${String(firstPayload.generatedAt.getHours()).padStart(2, '0')}:${String(firstPayload.generatedAt.getMinutes()).padStart(2, '0')}`;
+    doc.setFontSize(7.5);
+    doc.setTextColor(...DS.gray700);
+    doc.text(`${genDate}  ${genTime} h`, R, y + 15, { align: 'right' });
+
+    // Título
+    const titleY = y + 23;
+    doc.setFont(DS.font, 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...DS.black);
+    doc.text('INFORME DE REGISTRO DE JORNADA LABORAL — PLANTILLA', L, titleY);
+
+    hLine(doc, titleY + 2.5, L, R);
+
+    // Contador de empleados
+    const empCountY = titleY + 7;
+    doc.setFont(DS.font, 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...DS.gray500);
+    doc.text(`Empleados incluidos: ${payloads.length}`, L, empCountY);
+
+    let lastY = empCountY + 5;
+
+    // ── SECCIÓN POR CADA EMPLEADO ────────────────────────────────────────
+
+    for (let i = 0; i < payloads.length; i++) {
+        const { employee, payload } = payloads[i];
+
+        // Si no es el primero y queda poco espacio, nueva página
+        if (i > 0) {
+            doc.addPage();
+            lastY = DS.marginV;
+
+            // Mini‑cabecera de continuación
+            doc.setFont(DS.font, 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(...DS.gray500);
+            doc.text(
+                `${COMPANY.tradeName}  ·  ${periodLabel}  ·  Plantilla (cont.)`,
+                DS.marginH,
+                lastY,
+            );
+            hLine(doc, lastY + 2, DS.marginH, DS.pageW - DS.marginH);
+            lastY += 7;
+        }
+
+        // ── Empieza sección del empleado ──────────────────────────────────
+
+        // Título del empleado
+        const secY = lastY + 2;
+
+        doc.setFont(DS.font, 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...DS.black);
+        doc.text(`${i + 1}.  ${employee.fullName}`, L, secY);
+
+        let empInfoY = secY + 6;
+        const labelW = 22;
+        const col1 = L;
+        const col2 = L + 90;
+
+        doc.setFont(DS.font, 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...DS.gray500);
+        doc.text('Empleado:', col1, empInfoY);
+        doc.setFont(DS.font, 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...DS.black);
+        doc.text(employee.fullName, col1 + labelW, empInfoY);
+
+        if (employee.dni) {
+            doc.setFont(DS.font, 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(...DS.gray500);
+            doc.text('DNI / NIE:', col2, empInfoY);
+            doc.setFont(DS.font, 'bold');
+            doc.setFontSize(7.5);
+            doc.setTextColor(...DS.black);
+            doc.text(employee.dni, col2 + labelW, empInfoY);
+        }
+
+        doc.setFont(DS.font, 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...DS.gray500);
+        doc.text('Centro de trabajo:', col1, empInfoY + 5);
+        doc.setFont(DS.font, 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...DS.gray700);
+        doc.text(COMPANY.workCenter, col1 + labelW, empInfoY + 5);
+
+        const afterEmp = empInfoY + 10;
+
+        // Resumen
+        const afterSummary = drawSummary(doc, payload, afterEmp + 1);
+
+        // Tabla
+        drawTable(doc, payload, afterSummary);
+
+        lastY = (doc as any).lastAutoTable?.finalY ?? afterSummary + 5;
+        lastY += 6;
+    }
+
+    // ── PIE DE PÁGINA ─────────────────────────────────────────────────────
+
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        drawFooter(doc, firstPayload, exportId, p, totalPages);
+
+        // En páginas adicionales, repetir cabecera mínima
+        if (p > 1) {
+            // Ya dibujamos mini‑cabeceras manualmente
+        }
+    }
+
+    doc.save(`jornada_plantilla_${periodLabel.toLowerCase().replace(/\s+/g, '_')}.pdf`);
+}

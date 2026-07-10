@@ -174,3 +174,92 @@ export function generateTimesheetXlsx(payload: TimesheetExportPayload): void {
 
     XLSX.writeFile(wb, `jornada_${employeeSlug}_${monthLabel}.xlsx`, { compression: true });
 }
+
+// ---------------------------------------------------------------------------
+// Multi‑empleado: exporta varios empleados en un mismo Excel
+// ---------------------------------------------------------------------------
+
+/**
+ * Genera y descarga un Excel combinado con la jornada de varios empleados.
+ *
+ * Hojas:
+ *   - "Resumen": un empleado por fila con totales agregados
+ *   - "Registro diario": todas las filas de todos los empleados,
+ *     con columna "Empleado" para filtrar/ordenar
+ */
+export function generateTimesheetXlsxMulti(
+    payloads: Array<{
+        employee: { fullName: string; dni: string | null };
+        payload: TimesheetExportPayload;
+    }>,
+): void {
+    if (payloads.length === 0) return;
+
+    const wb = XLSX.utils.book_new();
+
+    // ── HOJA 1: RESUMEN ───────────────────────────────────────────────────
+
+    const resumenHeader = ['Empleado', 'DNI', 'Jornadas', 'Total horas', 'Primera jornada', 'Última jornada'];
+    const resumenBody = payloads.map(({ employee, payload }) => [
+        employee.fullName,
+        employee.dni ?? '—',
+        payload.totalDays,
+        fmtMinutes(payload.totalWorkedMinutes),
+        payload.firstDayDate ? fmtDate(payload.firstDayDate) : '—',
+        payload.lastDayDate ? fmtDate(payload.lastDayDate) : '—',
+    ]);
+
+    const wsResumen = XLSX.utils.aoa_to_sheet([resumenHeader, ...resumenBody]);
+    wsResumen['!cols'] = [
+        { wch: 30 },
+        { wch: 16 },
+        { wch: 10 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
+    ];
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+    // ── HOJA 2: REGISTRO DIARIO ───────────────────────────────────────────
+
+    const registroHeader = ['Empleado', 'Fecha', 'Día', 'Entrada', 'Salida', 'Horas trabajadas'];
+    const registroBody: (string | number)[][] = [];
+
+    for (const { employee, payload } of payloads) {
+        for (const row of payload.rows) {
+            registroBody.push([
+                employee.fullName,
+                fmtDate(row.date),
+                WEEKDAY_NAMES_ES[row.weekday] ?? '',
+                row.clockIn ?? '—',
+                row.clockOut ?? '—',
+                fmtMinutes(row.workedMinutes),
+            ]);
+        }
+    }
+
+    const wsRegistro = XLSX.utils.aoa_to_sheet([registroHeader, ...registroBody]);
+    wsRegistro['!cols'] = [
+        { wch: 30 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 18 },
+    ];
+
+    const lastRow = registroBody.length + 1;
+    wsRegistro['!autofilter'] = { ref: `A1:F${lastRow}` };
+
+    XLSX.utils.book_append_sheet(wb, wsRegistro, 'Registro diario');
+
+    // ── NOMBRE DE ARCHIVO ─────────────────────────────────────────────────
+
+    const firstPayload = payloads[0].payload;
+    const monthLabel = format(
+        new Date(firstPayload.periodYear, firstPayload.periodMonth, 1),
+        'yyyy-MM',
+    );
+
+    XLSX.writeFile(wb, `jornada_plantilla_${monthLabel}.xlsx`, { compression: true });
+}

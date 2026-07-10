@@ -8,9 +8,10 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight, Share2
 } from 'lucide-react';
-import { buildTimesheetPayload } from '@/lib/staff/timesheet-export-payload';
-import { generateTimesheetPdf } from '@/lib/staff/timesheet-pdf';
-import { generateTimesheetXlsx } from '@/lib/staff/timesheet-xlsx';
+import { buildTimesheetPayload, type TimesheetExportPayload } from '@/lib/staff/timesheet-export-payload';
+import { generateTimesheetPdf, generateTimesheetPdfMulti } from '@/lib/staff/timesheet-pdf';
+import { generateTimesheetXlsx, generateTimesheetXlsxMulti } from '@/lib/staff/timesheet-xlsx';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
     format,
     startOfWeek,
@@ -35,6 +36,7 @@ import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal
 import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import { WeekCard } from './WeekCard';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
+import { MultiEmployeeExportModal } from '@/components/modals/MultiEmployeeExportModal';
 
 /** Línea roja fina con gradiente y difuminado en los extremos; forma parte del borde visual entre semanas (sin añadir espacio). */
 function WeekSeparator() {
@@ -137,12 +139,16 @@ export default function HistoryPage() {
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [userEmail, setUserEmail] = useState<string>('');
+    const [showExportEmployeeModal, setShowExportEmployeeModal] = useState(false);
+    const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
 
     const initUser = useCallback(async () => {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
         if (!user) return;
         setCurrentUserId(user.id);
+        setUserEmail(user.email ?? '');
 
         const { data: profile } = await supabase
             .from('profiles')
@@ -412,6 +418,7 @@ export default function HistoryPage() {
     const isManager = userRole === 'manager';
     const isPlantilla = isManager && selectedEmployeeId === '';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
+    const isMaster = isMasterDashboardUser(userEmail);
 
     const headerLabel = isPlantilla
         ? 'Plantilla'
@@ -477,6 +484,80 @@ export default function HistoryPage() {
             }
         } catch (err) {
             console.error('Export error:', err);
+            toast.error('Error al generar el documento');
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
+    /**
+     * Exporta la jornada de varios empleados seleccionados en un único documento.
+     */
+    async function handleMultiExport(selectedIds: string[], type: 'pdf' | 'xlsx') {
+        setShowExportEmployeeModal(false);
+        setIsExporting(true);
+        try {
+            const exportPayloads: Array<{
+                employee: { fullName: string; dni: string | null };
+                payload: TimesheetExportPayload;
+            }> = [];
+
+            // Fetch data for each selected employee in parallel
+            const results = await Promise.allSettled(
+                selectedIds.map(async (id) => {
+                    const emp = employees.find((e) => e.id === id);
+                    if (!emp) return null;
+                    const fullName = `${emp.first_name} ${emp.last_name}`.trim();
+
+                    const [rpcResult, profileResult] = await Promise.all([
+                        supabase.rpc('get_monthly_timesheet', {
+                            p_user_id: id,
+                            p_year: filterYear,
+                            p_month: filterMonth + 1,
+                        }),
+                        supabase
+                            .from('profiles')
+                            .select('dni')
+                            .eq('id', id)
+                            .maybeSingle(),
+                    ]);
+
+                    if (rpcResult.error || !rpcResult.data) return null;
+
+                    const weeks = ((rpcResult.data as unknown) as MonthlyTimesheetRpcWeek[] || []).map((week) => ({
+                        ...week,
+                        days: week.days.map((day) => ({
+                            ...day,
+                            eventType: day.eventType ?? day.event_type ?? 'regular',
+                        })),
+                    }));
+
+                    const dni = profileResult.data?.dni ?? null;
+                    const payload = buildTimesheetPayload(weeks, fullName, dni, filterYear, filterMonth);
+                    return { employee: { fullName, dni }, payload };
+                }),
+            );
+
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value) {
+                    exportPayloads.push(result.value);
+                }
+            }
+
+            if (exportPayloads.length === 0) {
+                toast.error('No se pudieron obtener datos de los empleados seleccionados');
+                return;
+            }
+
+            if (type === 'pdf') {
+                await generateTimesheetPdfMulti(exportPayloads);
+            } else {
+                generateTimesheetXlsxMulti(exportPayloads);
+            }
+
+            toast.success(`Documento generado con ${exportPayloads.length} empleado${exportPayloads.length > 1 ? 's' : ''}`);
+        } catch (err) {
+            console.error('Multi export error:', err);
             toast.error('Error al generar el documento');
         } finally {
             setIsExporting(false);
@@ -550,8 +631,8 @@ export default function HistoryPage() {
                         {/* Derecha: Botón exportar + Selector de Personal */}
                         <div className="flex items-center gap-2 justify-end">
 
-                            {/* Botón exportar — visible cuando hay datos y no es vista Plantilla */}
-                            {!isPlantilla && weeksData.length > 0 && (
+                            {/* Botón exportar — visible cuando hay datos */}
+                            {((!isPlantilla && weeksData.length > 0) || (isPlantilla && isMaster && plantillaWeeksData.length > 0)) && (
                                 <div className="relative">
                                     <button
                                         type="button"
@@ -581,25 +662,51 @@ export default function HistoryPage() {
                                                 role="menu"
                                                 className="absolute right-0 top-full mt-1.5 z-[50] bg-white rounded-xl shadow-lg border border-zinc-100 overflow-hidden min-w-[210px] animate-in fade-in zoom-in-95 duration-150"
                                             >
-                                                <button
-                                                    type="button"
-                                                    role="menuitem"
-                                                    onClick={() => handleExport('pdf')}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                >
-                                                    <span className="text-base leading-none">📄</span>
-                                                    <span>Exportar PDF <span className="font-normal text-zinc-400">(Inspección)</span></span>
-                                                </button>
-                                                <div className="h-px bg-zinc-100 mx-3" />
-                                                <button
-                                                    type="button"
-                                                    role="menuitem"
-                                                    onClick={() => handleExport('xlsx')}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                >
-                                                    <span className="text-base leading-none">📊</span>
-                                                    <span>Exportar Excel <span className="font-normal text-zinc-400">(Inspección)</span></span>
-                                                </button>
+                                                {isPlantilla && isMaster ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            onClick={() => { setShowExportMenu(false); setExportFormat('pdf'); setShowExportEmployeeModal(true); }}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                        >
+                                                            <span className="text-base leading-none">📄</span>
+                                                            <span>Exportar todos <span className="font-normal text-zinc-400">(PDF)</span></span>
+                                                        </button>
+                                                        <div className="h-px bg-zinc-100 mx-3" />
+                                                        <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            onClick={() => { setShowExportMenu(false); setExportFormat('xlsx'); setShowExportEmployeeModal(true); }}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                        >
+                                                            <span className="text-base leading-none">📊</span>
+                                                            <span>Exportar todos <span className="font-normal text-zinc-400">(Excel)</span></span>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            onClick={() => handleExport('pdf')}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                        >
+                                                            <span className="text-base leading-none">📄</span>
+                                                            <span>Exportar PDF <span className="font-normal text-zinc-400">(Inspección)</span></span>
+                                                        </button>
+                                                        <div className="h-px bg-zinc-100 mx-3" />
+                                                        <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            onClick={() => handleExport('xlsx')}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                        >
+                                                            <span className="text-base leading-none">📊</span>
+                                                            <span>Exportar Excel <span className="font-normal text-zinc-400">(Inspección)</span></span>
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </>
                                     )}
@@ -726,6 +833,14 @@ export default function HistoryPage() {
                     userId={editingUserId}
                     userRole={userRole}
                     onSuccess={handleDetailModalSuccess}
+                />
+
+                <MultiEmployeeExportModal
+                    isOpen={showExportEmployeeModal}
+                    onClose={() => setShowExportEmployeeModal(false)}
+                    employees={employees}
+                    onExport={(ids) => handleMultiExport(ids, exportFormat)}
+                    isExporting={isExporting}
                 />
 
             </div>
