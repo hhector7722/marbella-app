@@ -492,6 +492,7 @@ export default function HistoryPage() {
 
     /**
      * Exporta la jornada de varios empleados y meses seleccionados.
+     * Todos los meses se combinan en un único payload por empleado.
      */
     async function handleMultiExport(
         selectedIds: string[],
@@ -501,66 +502,62 @@ export default function HistoryPage() {
         setShowExportEmployeeModal(false);
         setIsExporting(true);
         try {
+            const sorted = [...months].sort((a, b) => a.year - b.year || a.month - b.month);
+            const first = sorted[0];
+            const last = sorted[sorted.length - 1];
+            const periodLabel =
+                first.year === last.year && first.month === last.month
+                    ? undefined
+                    : `${format(new Date(first.year, first.month, 1), 'MMM yyyy', { locale: es })} — ${format(new Date(last.year, last.month, 1), 'MMM yyyy', { locale: es })}`;
+
             const exportPayloads: Array<{
                 employee: { fullName: string; dni: string | null };
                 payload: TimesheetExportPayload;
             }> = [];
 
-            // Fetch data for each employee × month in parallel
-            const tasks: Promise<{
-                employee: { fullName: string; dni: string | null };
-                payload: TimesheetExportPayload;
-            } | null>[] = [];
-
+            // Fetch data for each employee — combine all months into one payload
             for (const id of selectedIds) {
                 const emp = employees.find((e) => e.id === id);
                 if (!emp) continue;
                 const fullName = `${emp.first_name} ${emp.last_name}`.trim();
 
+                const { data: profileRow } = await supabase
+                    .from('profiles')
+                    .select('dni')
+                    .eq('id', id)
+                    .maybeSingle();
+                const dni = profileRow?.dni ?? null;
+
+                const allWeeks: WeekData[] = [];
+
                 for (const m of months) {
-                    tasks.push(
-                        (async () => {
-                            const [rpcResult, profileResult] = await Promise.all([
-                                supabase.rpc('get_monthly_timesheet', {
-                                    p_user_id: id,
-                                    p_year: m.year,
-                                    p_month: m.month + 1,
-                                }),
-                                supabase
-                                    .from('profiles')
-                                    .select('dni')
-                                    .eq('id', id)
-                                    .maybeSingle(),
-                            ]);
+                    const { data, error } = await supabase.rpc('get_monthly_timesheet', {
+                        p_user_id: id,
+                        p_year: m.year,
+                        p_month: m.month + 1,
+                    });
+                    if (error || !data) continue;
 
-                            if (rpcResult.error || !rpcResult.data) return null;
-
-                            const weeks = ((rpcResult.data as unknown) as MonthlyTimesheetRpcWeek[] || []).map((week) => ({
-                                ...week,
-                                days: week.days.map((day) => ({
-                                    ...day,
-                                    eventType: day.eventType ?? day.event_type ?? 'regular',
-                                })),
-                            }));
-
-                            const dni = profileResult.data?.dni ?? null;
-                            const payload = buildTimesheetPayload(weeks, fullName, dni, m.year, m.month);
-                            return { employee: { fullName, dni }, payload };
-                        })(),
-                    );
+                    const weeks = ((data as unknown) as MonthlyTimesheetRpcWeek[] || []).map((week) => ({
+                        ...week,
+                        days: week.days.map((day) => ({
+                            ...day,
+                            eventType: day.eventType ?? day.event_type ?? 'regular',
+                        })),
+                    }));
+                    allWeeks.push(...weeks);
                 }
-            }
 
-            const results = await Promise.allSettled(tasks);
+                if (allWeeks.length === 0) continue;
 
-            for (const result of results) {
-                if (result.status === 'fulfilled' && result.value) {
-                    exportPayloads.push(result.value);
-                }
+                const payload = buildTimesheetPayload(allWeeks, fullName, dni, first.year, first.month, periodLabel);
+                if (payload.rows.length === 0) continue;
+
+                exportPayloads.push({ employee: { fullName, dni }, payload });
             }
 
             if (exportPayloads.length === 0) {
-                toast.error('No se pudieron obtener datos de los empleados seleccionados');
+                toast.error('No se encontraron registros para los empleados y meses seleccionados');
                 return;
             }
 
@@ -570,8 +567,10 @@ export default function HistoryPage() {
                 generateTimesheetXlsxMulti(exportPayloads);
             }
 
-            const empCount = new Set(exportPayloads.map((p) => p.employee.fullName)).size;
-            toast.success(`Documento generado con ${empCount} empleado${empCount !== 1 ? 's' : ''} y ${months.length} mes${months.length !== 1 ? 'es' : ''}`);
+            toast.success(
+                `Documento generado con ${exportPayloads.length} empleado${exportPayloads.length !== 1 ? 's' : ''}` +
+                ` y ${months.length} mes${months.length !== 1 ? 'es' : ''}`,
+            );
         } catch (err) {
             console.error('Multi export error:', err);
             toast.error('Error al generar el documento');

@@ -255,6 +255,44 @@ async function drawHeader(
 }
 
 // ---------------------------------------------------------------------------
+// Sección: Resumen (2 tarjetas horizontales — sin primera/última jornada)
+// ---------------------------------------------------------------------------
+
+function drawSummaryCompact(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
+    const GAP = 4;
+    const CARD_W = (DS.contentW - GAP) / 2;
+    const CARD_H = 16;
+    const RADIUS = 1;
+
+    const items: [string, string][] = [
+        ['Jornadas trabajadas', String(payload.totalDays)],
+        ['Total horas', fmtMinutesCompact(payload.totalWorkedMinutes)],
+    ];
+
+    items.forEach(([label, value], i) => {
+        const x = DS.marginH + i * (CARD_W + GAP);
+        const y = startY;
+
+        doc.setFillColor(...DS.white);
+        doc.setDrawColor(...DS.gray100);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(x, y, CARD_W, CARD_H, RADIUS, RADIUS, 'FD');
+
+        doc.setFont(DS.font, 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(...DS.gray500);
+        doc.text(label.toUpperCase(), x + 4, y + 5);
+
+        doc.setFont(DS.font, 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...DS.black);
+        doc.text(value, x + 4, y + 12.5);
+    });
+
+    return startY + CARD_H;
+}
+
+// ---------------------------------------------------------------------------
 // Sección: Resumen (4 tarjetas horizontales)
 // ---------------------------------------------------------------------------
 
@@ -510,7 +548,7 @@ export async function generateTimesheetPdfMulti(
 
     const firstPayload = payloads[0].payload;
     const exportId = buildExportId(firstPayload.generatedAt);
-    const periodLabel = fmtMonthYear(firstPayload.periodYear, firstPayload.periodMonth);
+    const periodLabel = firstPayload.periodLabel ?? fmtMonthYear(firstPayload.periodYear, firstPayload.periodMonth);
     const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
 
     const doc = new jsPDF({
@@ -575,14 +613,7 @@ export async function generateTimesheetPdfMulti(
 
     hLine(doc, titleY + 2.5, L, R);
 
-    // Contador de empleados
-    const empCountY = titleY + 7;
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...DS.gray500);
-    doc.text(`Empleados incluidos: ${payloads.length}`, L, empCountY);
-
-    let lastY = empCountY + 5;
+    let lastY = titleY + 7;
 
     // ── SECCIÓN POR CADA EMPLEADO ────────────────────────────────────────
 
@@ -653,8 +684,8 @@ export async function generateTimesheetPdfMulti(
 
         const afterEmp = empInfoY + 10;
 
-        // Resumen
-        const afterSummary = drawSummary(doc, payload, afterEmp + 1);
+        // Resumen (sin primera/última jornada)
+        const afterSummary = drawSummaryCompact(doc, payload, afterEmp + 1);
 
         // Tabla
         drawTable(doc, payload, afterSummary);
@@ -676,5 +707,11 @@ export async function generateTimesheetPdfMulti(
         }
     }
 
-    doc.save(`jornada_plantilla_${periodLabel.toLowerCase().replace(/\s+/g, '_')}.pdf`);
+    const fileSlug = periodLabel
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .replace(/[^a-z0-9_]+/g, '_')
+        .replace(/^_|_$/g, '');
+    doc.save(`jornada_plantilla_${fileSlug}.pdf`);
 }

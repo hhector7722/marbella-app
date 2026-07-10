@@ -61,6 +61,11 @@ export interface TimesheetExportPayload {
     // -----------------------------------------------------------------------
     /** Instante exacto en que se construyó el payload */
     generatedAt: Date;
+    /**
+     * Etiqueta personalizada para el período (ej. "Ene - Mar 2026").
+     * Si se omite, los generadores usan periodYear / periodMonth.
+     */
+    periodLabel?: string;
 
     // -----------------------------------------------------------------------
     // Agregados numéricos (los formatos los produce cada generador)
@@ -142,6 +147,7 @@ export function buildTimesheetPayload(
     employeeDni: string | null,
     filterYear: number,
     filterMonth: number,
+    periodLabel?: string,
 ): TimesheetExportPayload {
     const rows: TimesheetDayRow[] = [];
 
@@ -183,6 +189,7 @@ export function buildTimesheetPayload(
         employeeDni: employeeDni || null,
         periodYear: filterYear,
         periodMonth: filterMonth,
+        periodLabel: periodLabel,
         generatedAt: new Date(),
         totalDays: rows.length,
         totalWorkedMinutes,

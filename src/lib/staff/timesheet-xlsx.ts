@@ -199,14 +199,12 @@ export function generateTimesheetXlsxMulti(
 
     // ── HOJA 1: RESUMEN ───────────────────────────────────────────────────
 
-    const resumenHeader = ['Empleado', 'DNI', 'Jornadas', 'Total horas', 'Primera jornada', 'Última jornada'];
+    const resumenHeader = ['Empleado', 'DNI', 'Jornadas', 'Total horas'];
     const resumenBody = payloads.map(({ employee, payload }) => [
         employee.fullName,
         employee.dni ?? '—',
         payload.totalDays,
         fmtMinutes(payload.totalWorkedMinutes),
-        payload.firstDayDate ? fmtDate(payload.firstDayDate) : '—',
-        payload.lastDayDate ? fmtDate(payload.lastDayDate) : '—',
     ]);
 
     const wsResumen = XLSX.utils.aoa_to_sheet([resumenHeader, ...resumenBody]);
@@ -214,8 +212,6 @@ export function generateTimesheetXlsxMulti(
         { wch: 30 },
         { wch: 16 },
         { wch: 10 },
-        { wch: 16 },
-        { wch: 16 },
         { wch: 16 },
     ];
     XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
@@ -256,10 +252,14 @@ export function generateTimesheetXlsxMulti(
     // ── NOMBRE DE ARCHIVO ─────────────────────────────────────────────────
 
     const firstPayload = payloads[0].payload;
-    const monthLabel = format(
-        new Date(firstPayload.periodYear, firstPayload.periodMonth, 1),
-        'yyyy-MM',
-    );
+    const label = firstPayload.periodLabel
+        ? firstPayload.periodLabel
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/\p{Diacritic}/gu, '')
+            .replace(/[^a-z0-9_]+/g, '_')
+            .replace(/^_|_$/g, '')
+        : format(new Date(firstPayload.periodYear, firstPayload.periodMonth, 1), 'yyyy-MM');
 
-    XLSX.writeFile(wb, `jornada_plantilla_${monthLabel}.xlsx`, { compression: true });
+    XLSX.writeFile(wb, `jornada_plantilla_${label}.xlsx`, { compression: true });
 }
