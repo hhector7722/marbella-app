@@ -157,10 +157,6 @@ export function buildTimesheetPayload(
     contractedHoursWeekly?: number,
 ): TimesheetExportPayload {
     const rows: TimesheetDayRow[] = [];
-    /** Minutos diarios contratados (para cómputo de bajas) */
-    const dailyContractMinutes = contractedHoursWeekly && contractedHoursWeekly > 0
-        ? Math.round((contractedHoursWeekly / 7) * 60)
-        : 0;
 
     for (const week of weeksData) {
         for (const day of week.days) {
@@ -169,10 +165,8 @@ export function buildTimesheetPayload(
             const workedMinutes = Math.round((day.totalHours ?? 0) * 60);
             const eventType = day.eventType ?? 'regular';
 
-            // Para días de baja usar la jornada contratada diaria
-            const displayMinutes = eventType === 'adjustment' && dailyContractMinutes > 0
-                ? dailyContractMinutes
-                : workedMinutes;
+            // Para días de baja: 8h fijas, sin entrada/salida
+            const displayMinutes = eventType === 'adjustment' ? 480 : workedMinutes;
 
             const [y, m, d] = day.date.split('-').map(Number);
             const dateObj = new Date(y, m - 1, d);

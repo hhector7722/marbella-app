@@ -347,8 +347,8 @@ function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number):
         isoToDisplay(row.date),
         WEEKDAY_ES[row.weekday] ?? '',
         estadoLabel(row.eventType),
-        row.clockIn  ?? '—',
-        row.clockOut ?? '—',
+        row.eventType === 'adjustment' ? '' : (row.clockIn ?? ''),
+        row.eventType === 'adjustment' ? '' : (row.clockOut ?? ''),
         fmtMinutes(row.displayMinutes),
     ]);
 

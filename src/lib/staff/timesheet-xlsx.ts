@@ -126,8 +126,8 @@ function buildRegistroSheet(payload: TimesheetExportPayload): XLSX.WorkSheet {
         fmtDate(row.date),
         WEEKDAY_NAMES_ES[row.weekday] ?? '',
         estadoLabel(row.eventType),
-        row.clockIn ?? '—',
-        row.clockOut ?? '—',
+        row.eventType === 'adjustment' ? '' : (row.clockIn ?? ''),
+        row.eventType === 'adjustment' ? '' : (row.clockOut ?? ''),
         fmtMinutes(row.displayMinutes),
     ]);
 
@@ -233,9 +233,9 @@ export function generateTimesheetXlsxMulti(
                 employee.fullName,
                 fmtDate(row.date),
                 WEEKDAY_NAMES_ES[row.weekday] ?? '',
-        estadoLabel(row.eventType),
-                row.clockIn ?? '—',
-                row.clockOut ?? '—',
+                estadoLabel(row.eventType),
+                row.eventType === 'adjustment' ? '' : (row.clockIn ?? ''),
+                row.eventType === 'adjustment' ? '' : (row.clockOut ?? ''),
                 fmtMinutes(row.displayMinutes),
             ]);
         }
