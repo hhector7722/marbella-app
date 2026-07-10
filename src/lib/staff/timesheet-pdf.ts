@@ -363,7 +363,6 @@ function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number):
             textColor: DS.gray700,
             fontSize: 7,
             fontStyle: 'bold',
-            halign: 'left',
             valign: 'middle',
             cellPadding: { top: 3, bottom: 3, left: 3, right: 3 },
             minCellHeight: 8,
