@@ -491,9 +491,13 @@ export default function HistoryPage() {
     }
 
     /**
-     * Exporta la jornada de varios empleados seleccionados en un único documento.
+     * Exporta la jornada de varios empleados y meses seleccionados.
      */
-    async function handleMultiExport(selectedIds: string[], type: 'pdf' | 'xlsx') {
+    async function handleMultiExport(
+        selectedIds: string[],
+        months: { year: number; month: number }[],
+        type: 'pdf' | 'xlsx',
+    ) {
         setShowExportEmployeeModal(false);
         setIsExporting(true);
         try {
@@ -502,41 +506,52 @@ export default function HistoryPage() {
                 payload: TimesheetExportPayload;
             }> = [];
 
-            // Fetch data for each selected employee in parallel
-            const results = await Promise.allSettled(
-                selectedIds.map(async (id) => {
-                    const emp = employees.find((e) => e.id === id);
-                    if (!emp) return null;
-                    const fullName = `${emp.first_name} ${emp.last_name}`.trim();
+            // Fetch data for each employee × month in parallel
+            const tasks: Promise<{
+                employee: { fullName: string; dni: string | null };
+                payload: TimesheetExportPayload;
+            } | null>[] = [];
 
-                    const [rpcResult, profileResult] = await Promise.all([
-                        supabase.rpc('get_monthly_timesheet', {
-                            p_user_id: id,
-                            p_year: filterYear,
-                            p_month: filterMonth + 1,
-                        }),
-                        supabase
-                            .from('profiles')
-                            .select('dni')
-                            .eq('id', id)
-                            .maybeSingle(),
-                    ]);
+            for (const id of selectedIds) {
+                const emp = employees.find((e) => e.id === id);
+                if (!emp) continue;
+                const fullName = `${emp.first_name} ${emp.last_name}`.trim();
 
-                    if (rpcResult.error || !rpcResult.data) return null;
+                for (const m of months) {
+                    tasks.push(
+                        (async () => {
+                            const [rpcResult, profileResult] = await Promise.all([
+                                supabase.rpc('get_monthly_timesheet', {
+                                    p_user_id: id,
+                                    p_year: m.year,
+                                    p_month: m.month + 1,
+                                }),
+                                supabase
+                                    .from('profiles')
+                                    .select('dni')
+                                    .eq('id', id)
+                                    .maybeSingle(),
+                            ]);
 
-                    const weeks = ((rpcResult.data as unknown) as MonthlyTimesheetRpcWeek[] || []).map((week) => ({
-                        ...week,
-                        days: week.days.map((day) => ({
-                            ...day,
-                            eventType: day.eventType ?? day.event_type ?? 'regular',
-                        })),
-                    }));
+                            if (rpcResult.error || !rpcResult.data) return null;
 
-                    const dni = profileResult.data?.dni ?? null;
-                    const payload = buildTimesheetPayload(weeks, fullName, dni, filterYear, filterMonth);
-                    return { employee: { fullName, dni }, payload };
-                }),
-            );
+                            const weeks = ((rpcResult.data as unknown) as MonthlyTimesheetRpcWeek[] || []).map((week) => ({
+                                ...week,
+                                days: week.days.map((day) => ({
+                                    ...day,
+                                    eventType: day.eventType ?? day.event_type ?? 'regular',
+                                })),
+                            }));
+
+                            const dni = profileResult.data?.dni ?? null;
+                            const payload = buildTimesheetPayload(weeks, fullName, dni, m.year, m.month);
+                            return { employee: { fullName, dni }, payload };
+                        })(),
+                    );
+                }
+            }
+
+            const results = await Promise.allSettled(tasks);
 
             for (const result of results) {
                 if (result.status === 'fulfilled' && result.value) {
@@ -555,7 +570,8 @@ export default function HistoryPage() {
                 generateTimesheetXlsxMulti(exportPayloads);
             }
 
-            toast.success(`Documento generado con ${exportPayloads.length} empleado${exportPayloads.length > 1 ? 's' : ''}`);
+            const empCount = new Set(exportPayloads.map((p) => p.employee.fullName)).size;
+            toast.success(`Documento generado con ${empCount} empleado${empCount !== 1 ? 's' : ''} y ${months.length} mes${months.length !== 1 ? 'es' : ''}`);
         } catch (err) {
             console.error('Multi export error:', err);
             toast.error('Error al generar el documento');
@@ -839,8 +855,10 @@ export default function HistoryPage() {
                     isOpen={showExportEmployeeModal}
                     onClose={() => setShowExportEmployeeModal(false)}
                     employees={employees}
-                    onExport={(ids) => handleMultiExport(ids, exportFormat)}
+                    onExport={(ids, months, format) => handleMultiExport(ids, months, format)}
                     isExporting={isExporting}
+                    initialYear={filterYear}
+                    initialMonth={filterMonth}
                 />
 
             </div>

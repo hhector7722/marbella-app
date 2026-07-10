@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, X, FileText, FileSpreadsheet } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, FileText, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface Employee {
     id: string;
@@ -13,13 +15,23 @@ interface Employee {
     avatar_url?: string | null;
 }
 
+export type MonthSelection = { year: number; month: number };
+
 interface MultiEmployeeExportModalProps {
     isOpen: boolean;
     onClose: () => void;
     employees: Employee[];
-    onExport: (selectedIds: string[], format: 'pdf' | 'xlsx') => void;
+    onExport: (selectedIds: string[], months: MonthSelection[], format: 'pdf' | 'xlsx') => void;
     isExporting: boolean;
+    initialYear: number;
+    initialMonth: number;
 }
+
+const MONTH_NAMES = Array.from({ length: 12 }).map((_, i) =>
+    format(new Date(2000, i, 1), 'MMM', { locale: es }),
+);
+
+function monthKey(year: number, month: number) { return `${year}-${month}`; }
 
 export function MultiEmployeeExportModal({
     isOpen,
@@ -27,9 +39,13 @@ export function MultiEmployeeExportModal({
     employees,
     onExport,
     isExporting,
+    initialYear,
+    initialMonth,
 }: MultiEmployeeExportModalProps) {
     const [search, setSearch] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(employees.map((e) => e.id)));
+    const [pickerYear, setPickerYear] = useState(initialYear);
+    const [selectedMonths, setSelectedMonths] = useState<Set<string>>(() => new Set([monthKey(initialYear, initialMonth)]));
 
     const filtered = useMemo(() => {
         if (!search.trim()) return employees;
@@ -41,7 +57,6 @@ export function MultiEmployeeExportModal({
     }, [employees, search]);
 
     const allFilteredSelected = filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id));
-    const someFilteredSelected = filtered.some((e) => selectedIds.has(e.id));
 
     const toggleAll = () => {
         if (allFilteredSelected) {
@@ -62,10 +77,22 @@ export function MultiEmployeeExportModal({
         setSelectedIds(newSet);
     };
 
+    const toggleMonth = (m: number) => {
+        const key = monthKey(pickerYear, m);
+        const newSet = new Set(selectedMonths);
+        if (newSet.has(key)) newSet.delete(key);
+        else newSet.add(key);
+        setSelectedMonths(newSet);
+    };
+
+    const monthsArray = Array.from(selectedMonths)
+        .map((k) => { const [y, m] = k.split('-').map(Number); return { year: y, month: m }; })
+        .sort((a, b) => a.year - b.year || a.month - b.month);
+
     const handleExport = (format: 'pdf' | 'xlsx') => {
         const ids = Array.from(selectedIds);
-        if (ids.length === 0) return;
-        onExport(ids, format);
+        if (ids.length === 0 || monthsArray.length === 0) return;
+        onExport(ids, monthsArray, format);
     };
 
     const selectedCount = selectedIds.size;
@@ -80,7 +107,54 @@ export function MultiEmployeeExportModal({
             wrapperClassName="max-w-md"
             zIndexClass="z-[160]"
         >
-            <div className="flex flex-col max-h-[70dvh]">
+            <div className="flex flex-col max-h-[75dvh]">
+                {/* ── SELECCIÓN DE MESES ── */}
+                <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Meses</span>
+                        <span className="text-[10px] font-bold text-zinc-500">{monthsArray.length} seleccionado{monthsArray.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                        <button
+                            type="button"
+                            onClick={() => setPickerYear((p) => p - 1)}
+                            className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
+                        <span className="text-xs font-black text-zinc-700">{pickerYear}</span>
+                        <button
+                            type="button"
+                            onClick={() => setPickerYear((p) => p + 1)}
+                            className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-6 gap-1">
+                        {MONTH_NAMES.map((name, i) => {
+                            const key = monthKey(pickerYear, i);
+                            const active = selectedMonths.has(key);
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => toggleMonth(i)}
+                                    className={cn(
+                                        'py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border min-h-[32px]',
+                                        active
+                                            ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm'
+                                            : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-[#36606F]/30 hover:text-zinc-700',
+                                    )}
+                                >
+                                    {name}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ── SELECCIÓN DE EMPLEADOS ── */}
                 <div className="shrink-0 px-4 pt-3 pb-2 space-y-2">
                     <div className="relative">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -144,7 +218,7 @@ export function MultiEmployeeExportModal({
                     <button
                         type="button"
                         onClick={() => handleExport('pdf')}
-                        disabled={selectedCount === 0 || isExporting}
+                        disabled={selectedCount === 0 || monthsArray.length === 0 || isExporting}
                         className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#36606F] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#36606F]/90 disabled:opacity-40 transition-all active:scale-[0.98]"
                     >
                         <FileText size={14} />
@@ -153,7 +227,7 @@ export function MultiEmployeeExportModal({
                     <button
                         type="button"
                         onClick={() => handleExport('xlsx')}
-                        disabled={selectedCount === 0 || isExporting}
+                        disabled={selectedCount === 0 || monthsArray.length === 0 || isExporting}
                         className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-40 transition-all active:scale-[0.98]"
                     >
                         <FileSpreadsheet size={14} />
