@@ -523,10 +523,11 @@ export default function HistoryPage() {
 
                 const { data: profileRow } = await supabase
                     .from('profiles')
-                    .select('dni')
+                    .select('dni, contracted_hours_weekly')
                     .eq('id', id)
                     .maybeSingle();
                 const dni = profileRow?.dni ?? null;
+                const contractedHoursWeekly = Number(profileRow?.contracted_hours_weekly ?? 0);
 
                 const allWeeks: WeekData[] = [];
 
@@ -550,7 +551,7 @@ export default function HistoryPage() {
 
                 if (allWeeks.length === 0) continue;
 
-                const payload = buildTimesheetPayload(allWeeks, fullName, dni, first.year, first.month, periodLabel);
+                const payload = buildTimesheetPayload(allWeeks, fullName, dni, first.year, first.month, periodLabel, contractedHoursWeekly);
                 if (payload.rows.length === 0) continue;
 
                 exportPayloads.push({ employee: { fullName, dni }, payload });

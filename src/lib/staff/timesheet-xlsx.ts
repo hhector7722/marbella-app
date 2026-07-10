@@ -67,6 +67,15 @@ const WEEKDAY_NAMES_ES = [
     'Jueves', 'Viernes', 'Sábado',
 ];
 
+const ESTADO_LABELS_XLSX: Record<string, string> = {
+    regular: '',
+    adjustment: 'Baja',
+    holiday: 'Festivo',
+    weekend: 'Enfermedad',
+    personal: 'Personal',
+    no_registered: 'No reg.',
+};
+
 // ---------------------------------------------------------------------------
 // Hoja 1: Resumen
 // ---------------------------------------------------------------------------
@@ -116,14 +125,15 @@ function buildResumenSheet(payload: TimesheetExportPayload): XLSX.WorkSheet {
 // ---------------------------------------------------------------------------
 
 function buildRegistroSheet(payload: TimesheetExportPayload): XLSX.WorkSheet {
-    const header = ['Fecha', 'Día', 'Entrada', 'Salida', 'Horas trabajadas'];
+    const header = ['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas'];
 
     const dataRows = payload.rows.map((row: TimesheetDayRow) => [
         fmtDate(row.date),
         WEEKDAY_NAMES_ES[row.weekday] ?? '',
+        ESTADO_LABELS_XLSX[row.eventType] ?? '',
         row.clockIn ?? '—',
         row.clockOut ?? '—',
-        fmtMinutes(row.workedMinutes),
+        fmtMinutes(row.displayMinutes),
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([header, ...dataRows]);
@@ -132,14 +142,15 @@ function buildRegistroSheet(payload: TimesheetExportPayload): XLSX.WorkSheet {
     ws['!cols'] = [
         { wch: 14 },  // Fecha
         { wch: 14 },  // Día
+        { wch: 10 },  // Estado
         { wch: 12 },  // Entrada
         { wch: 12 },  // Salida
-        { wch: 18 },  // Horas trabajadas
+        { wch: 16 },  // Horas
     ];
 
     // Rango de auto-filtro sobre la cabecera
     const lastRow = dataRows.length + 1; // +1 por la cabecera (1-indexed)
-    ws['!autofilter'] = { ref: `A1:E${lastRow}` };
+    ws['!autofilter'] = { ref: `A1:F${lastRow}` };
 
     return ws;
 }
@@ -218,7 +229,7 @@ export function generateTimesheetXlsxMulti(
 
     // ── HOJA 2: REGISTRO DIARIO ───────────────────────────────────────────
 
-    const registroHeader = ['Empleado', 'Fecha', 'Día', 'Entrada', 'Salida', 'Horas trabajadas'];
+    const registroHeader = ['Empleado', 'Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas'];
     const registroBody: (string | number)[][] = [];
 
     for (const { employee, payload } of payloads) {
@@ -227,25 +238,27 @@ export function generateTimesheetXlsxMulti(
                 employee.fullName,
                 fmtDate(row.date),
                 WEEKDAY_NAMES_ES[row.weekday] ?? '',
+                ESTADO_LABELS_XLSX[row.eventType] ?? '',
                 row.clockIn ?? '—',
                 row.clockOut ?? '—',
-                fmtMinutes(row.workedMinutes),
+                fmtMinutes(row.displayMinutes),
             ]);
         }
     }
 
     const wsRegistro = XLSX.utils.aoa_to_sheet([registroHeader, ...registroBody]);
     wsRegistro['!cols'] = [
-        { wch: 30 },
+        { wch: 28 },
         { wch: 14 },
         { wch: 14 },
+        { wch: 10 },
         { wch: 12 },
         { wch: 12 },
-        { wch: 18 },
+        { wch: 16 },
     ];
 
     const lastRow = registroBody.length + 1;
-    wsRegistro['!autofilter'] = { ref: `A1:F${lastRow}` };
+    wsRegistro['!autofilter'] = { ref: `A1:G${lastRow}` };
 
     XLSX.utils.book_append_sheet(wb, wsRegistro, 'Registro diario');
 

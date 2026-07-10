@@ -336,15 +336,25 @@ function drawSummary(doc: jsPDF, payload: TimesheetExportPayload, startY: number
 
 const WEEKDAY_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+const ESTADO_LABELS: Record<string, string> = {
+    regular: '',
+    adjustment: 'Baja',
+    holiday: 'Festivo',
+    weekend: 'Enfermedad',
+    personal: 'Personal',
+    no_registered: 'No reg.',
+};
+
 function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
-    const head = [['Fecha', 'Día', 'Entrada', 'Salida', 'Horas trabajadas']];
+    const head = [['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas']];
 
     const body = payload.rows.map((row) => [
         isoToDisplay(row.date),
         WEEKDAY_ES[row.weekday] ?? '',
+        ESTADO_LABELS[row.eventType] ?? '',
         row.clockIn  ?? '—',
         row.clockOut ?? '—',
-        fmtMinutes(row.workedMinutes),
+        fmtMinutes(row.displayMinutes),
     ]);
 
     autoTable(doc, {
@@ -360,18 +370,18 @@ function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number):
             fontStyle: 'bold',
             halign: 'left',
             valign: 'middle',
-            cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+            cellPadding: { top: 3, bottom: 3, left: 3, right: 3 },
             minCellHeight: 8,
             lineWidth: { bottom: 0.3 },
             lineColor: DS.gray300,
         },
 
         bodyStyles: {
-            fontSize: 8,
+            fontSize: 7.5,
             textColor: DS.black,
-            cellPadding: { top: 2.8, bottom: 2.8, left: 4, right: 4 },
+            cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
             valign: 'middle',
-            minCellHeight: 8.5,
+            minCellHeight: 8,
             lineWidth: 0,
         },
 
@@ -380,11 +390,12 @@ function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number):
         },
 
         columnStyles: {
-            0: { cellWidth: 26, halign: 'left' },    // Fecha
-            1: { cellWidth: 36, halign: 'left' },    // Día
-            2: { cellWidth: 28, halign: 'center' },  // Entrada
-            3: { cellWidth: 28, halign: 'center' },  // Salida
-            4: { halign: 'center' },                  // Horas (ocupa el resto)
+            0: { cellWidth: 22, halign: 'left' },    // Fecha
+            1: { cellWidth: 30, halign: 'left' },    // Día
+            2: { cellWidth: 20, halign: 'center' },  // Estado
+            3: { cellWidth: 22, halign: 'center' },  // Entrada
+            4: { cellWidth: 22, halign: 'center' },  // Salida
+            5: { halign: 'center' },                  // Horas (ocupa el resto)
         },
 
         styles: {

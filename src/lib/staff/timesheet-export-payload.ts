@@ -22,8 +22,10 @@ export interface TimesheetDayRow {
     clockIn: string | null;
     /** Hora de salida HH:mm, o null si no hay registro */
     clockOut: string | null;
-    /** Minutos trabajados. 0 si no hay fichaje. */
+    /** Minutos trabajados reales. 0 si no hay fichaje. */
     workedMinutes: number;
+    /** Minutos a mostrar en columna Horas (para baja = jornada contratada). */
+    displayMinutes: number;
     /** Tipo de jornada: "regular" | "holiday" | "weekend" | "adjustment" | "personal" | "no_registered" */
     eventType: string;
     /** true si hay al menos un fichaje registrado para este día */
@@ -74,6 +76,10 @@ export interface TimesheetExportPayload {
     totalDays: number;
     /** Suma de workedMinutes de todas las filas */
     totalWorkedMinutes: number;
+    /** Suma de displayMinutes de todas las filas (para total general) */
+    totalDisplayMinutes: number;
+    /** Horas contratadas semanales del empleado (para cómputo de bajas) */
+    contractedHoursWeekly: number;
     /** Fecha ISO del primer día con hasLog, o null si no hay ninguno */
     firstDayDate: string | null;
     /** Fecha ISO del último día con hasLog, o null si no hay ninguno */
@@ -148,18 +154,26 @@ export function buildTimesheetPayload(
     filterYear: number,
     filterMonth: number,
     periodLabel?: string,
+    contractedHoursWeekly?: number,
 ): TimesheetExportPayload {
     const rows: TimesheetDayRow[] = [];
+    /** Minutos diarios contratados (para cómputo de bajas) */
+    const dailyContractMinutes = contractedHoursWeekly && contractedHoursWeekly > 0
+        ? Math.round((contractedHoursWeekly / 7) * 60)
+        : 0;
 
     for (const week of weeksData) {
         for (const day of week.days) {
             if (!day.hasLog) continue;
 
-            // Calcular workedMinutes desde totalHours (número decimal)
-            // totalHours ya viene de la RPC como horas decimales (ej. 8.5 = 8h 30min)
             const workedMinutes = Math.round((day.totalHours ?? 0) * 60);
+            const eventType = day.eventType ?? 'regular';
 
-            // Obtener el día de la semana a partir de la fecha ISO
+            // Para días de baja usar la jornada contratada diaria
+            const displayMinutes = eventType === 'adjustment' && dailyContractMinutes > 0
+                ? dailyContractMinutes
+                : workedMinutes;
+
             const [y, m, d] = day.date.split('-').map(Number);
             const dateObj = new Date(y, m - 1, d);
             const weekday = dateObj.getDay();
@@ -170,16 +184,17 @@ export function buildTimesheetPayload(
                 clockIn: day.clockIn ?? null,
                 clockOut: day.clockOut ?? null,
                 workedMinutes,
-                eventType: day.eventType ?? 'regular',
+                displayMinutes,
+                eventType,
                 hasLog: true,
             });
         }
     }
 
-    // Ordenar cronológicamente por si los datos llegan desordenados
     rows.sort((a, b) => a.date.localeCompare(b.date));
 
     const totalWorkedMinutes = rows.reduce((acc, r) => acc + r.workedMinutes, 0);
+    const totalDisplayMinutes = rows.reduce((acc, r) => acc + r.displayMinutes, 0);
     const firstDayDate = rows.length > 0 ? rows[0].date : null;
     const lastDayDate = rows.length > 0 ? rows[rows.length - 1].date : null;
 
@@ -193,6 +208,8 @@ export function buildTimesheetPayload(
         generatedAt: new Date(),
         totalDays: rows.length,
         totalWorkedMinutes,
+        totalDisplayMinutes,
+        contractedHoursWeekly: contractedHoursWeekly ?? 0,
         firstDayDate,
         lastDayDate,
         rows,
