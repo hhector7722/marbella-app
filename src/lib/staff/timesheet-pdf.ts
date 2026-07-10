@@ -259,32 +259,46 @@ async function drawHeader(
 // ---------------------------------------------------------------------------
 
 function drawSummaryCompact(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
-    const GAP = 4;
-    const CARD_W = (DS.contentW - GAP) / 2;
-    const CARD_H = 16;
-    const RADIUS = 1;
+    const L = DS.marginH;
+    const R = DS.pageW - DS.marginH;
+    const y = startY + 4;
 
-    const items: [string, string][] = [
-        ['Jornadas trabajadas', String(payload.totalDays)],
-        ['Total horas', fmtMinutesCompact(payload.totalWorkedMinutes)],
-    ];
+    // Grupo izquierdo: "JORNADAS TRABAJADAS 33"
+    doc.setFont(DS.font, 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...DS.gray500);
+    const label1 = 'JORNADAS TRABAJADAS';
+    doc.text(label1, L, y);
 
-    items.forEach(([label, value], i) => {
-        const x = DS.marginH + i * (CARD_W + GAP);
-        const y = startY;
+    const label1W = doc.getTextWidth(label1);
+    doc.setFont(DS.font, 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...DS.black);
+    doc.text(String(payload.totalDays), L + label1W + 2, y);
 
-        doc.setFont(DS.font, 'normal');
-        doc.setFontSize(6);
-        doc.setTextColor(...DS.gray500);
-        doc.text(label.toUpperCase(), x, y + 5);
+    // Grupo derecho: "TOTAL HORAS 266 h 30 min"
+    const value2 = fmtMinutesCompact(payload.totalDisplayMinutes);
+    doc.setFont(DS.font, 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...DS.black);
+    const value2W = doc.getTextWidth(value2);
 
-        doc.setFont(DS.font, 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...DS.black);
-        doc.text(value, x, y + 14);
-    });
+    doc.setFont(DS.font, 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...DS.gray500);
+    const label2 = 'TOTAL HORAS';
+    const label2W = doc.getTextWidth(label2);
 
-    return startY + 22;
+    const rightW = label2W + 2 + value2W;
+    const label2X = R - rightW;
+
+    doc.text(label2, label2X, y);
+    doc.setFont(DS.font, 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...DS.black);
+    doc.text(value2, label2X + label2W + 2, y);
+
+    return y + 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -384,12 +398,12 @@ function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number):
         },
 
         columnStyles: {
-            0: { cellWidth: 22 },  // Fecha
-            1: { cellWidth: 26 },  // Día
-            2: { cellWidth: 18 },  // Estado
-            3: { cellWidth: 20 },  // Entrada
-            4: { cellWidth: 20 },  // Salida
-            5: { },                 // Horas computadas
+            0: { cellWidth: 31 },  // Fecha
+            1: { cellWidth: 35 },  // Día
+            2: { cellWidth: 31 },  // Estado
+            3: { cellWidth: 21 },  // Entrada
+            4: { cellWidth: 21 },  // Salida
+            5: { cellWidth: 35 },  // Horas computadas
         },
 
         styles: {
