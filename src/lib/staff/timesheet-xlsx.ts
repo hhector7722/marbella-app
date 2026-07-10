@@ -31,11 +31,10 @@ function fmtDateShort(isoDate: string): string {
 }
 
 function fmtMinutes(minutes: number): string {
-    if (minutes <= 0) return '—';
+    if (minutes <= 0) return '— h — min';
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}min`;
+    return `${String(h).padStart(2, '0')} h ${String(m).padStart(2, '0')} min`;
 }
 
 function fmtMonthYear(year: number, month0indexed: number): string {
