@@ -67,14 +67,9 @@ const WEEKDAY_NAMES_ES = [
     'Jueves', 'Viernes', 'Sábado',
 ];
 
-const ESTADO_LABELS_XLSX: Record<string, string> = {
-    regular: '',
-    adjustment: 'Baja',
-    holiday: 'Festivo',
-    weekend: 'Enfermedad',
-    personal: 'Personal',
-    no_registered: 'No reg.',
-};
+function estadoLabel(eventType: string): string {
+    return eventType === 'adjustment' ? 'Baja' : 'Regular';
+}
 
 // ---------------------------------------------------------------------------
 // Hoja 1: Resumen
@@ -125,12 +120,12 @@ function buildResumenSheet(payload: TimesheetExportPayload): XLSX.WorkSheet {
 // ---------------------------------------------------------------------------
 
 function buildRegistroSheet(payload: TimesheetExportPayload): XLSX.WorkSheet {
-    const header = ['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas'];
+    const header = ['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas computadas'];
 
     const dataRows = payload.rows.map((row: TimesheetDayRow) => [
         fmtDate(row.date),
         WEEKDAY_NAMES_ES[row.weekday] ?? '',
-        ESTADO_LABELS_XLSX[row.eventType] ?? '',
+        estadoLabel(row.eventType),
         row.clockIn ?? '—',
         row.clockOut ?? '—',
         fmtMinutes(row.displayMinutes),
@@ -229,7 +224,7 @@ export function generateTimesheetXlsxMulti(
 
     // ── HOJA 2: REGISTRO DIARIO ───────────────────────────────────────────
 
-    const registroHeader = ['Empleado', 'Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas'];
+    const registroHeader = ['Empleado', 'Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas computadas'];
     const registroBody: (string | number)[][] = [];
 
     for (const { employee, payload } of payloads) {
@@ -238,7 +233,7 @@ export function generateTimesheetXlsxMulti(
                 employee.fullName,
                 fmtDate(row.date),
                 WEEKDAY_NAMES_ES[row.weekday] ?? '',
-                ESTADO_LABELS_XLSX[row.eventType] ?? '',
+        estadoLabel(row.eventType),
                 row.clockIn ?? '—',
                 row.clockOut ?? '—',
                 fmtMinutes(row.displayMinutes),

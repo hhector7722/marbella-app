@@ -336,22 +336,17 @@ function drawSummary(doc: jsPDF, payload: TimesheetExportPayload, startY: number
 
 const WEEKDAY_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-const ESTADO_LABELS: Record<string, string> = {
-    regular: '',
-    adjustment: 'Baja',
-    holiday: 'Festivo',
-    weekend: 'Enfermedad',
-    personal: 'Personal',
-    no_registered: 'No reg.',
-};
+function estadoLabel(eventType: string): string {
+    return eventType === 'adjustment' ? 'Baja' : 'Regular';
+}
 
 function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
-    const head = [['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas']];
+    const head = [['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas computadas']];
 
     const body = payload.rows.map((row) => [
         isoToDisplay(row.date),
         WEEKDAY_ES[row.weekday] ?? '',
-        ESTADO_LABELS[row.eventType] ?? '',
+        estadoLabel(row.eventType),
         row.clockIn  ?? '—',
         row.clockOut ?? '—',
         fmtMinutes(row.displayMinutes),
