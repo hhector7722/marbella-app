@@ -180,9 +180,9 @@ export function buildTimesheetPayload(
             rows.push({
                 date: day.date,
                 weekday,
-                clockIn: day.clockIn ?? null,
-                clockOut: day.clockOut ?? null,
-                workedMinutes,
+                clockIn: eventType === 'adjustment' ? null : (day.clockIn ?? null),
+                clockOut: eventType === 'adjustment' ? null : (day.clockOut ?? null),
+                workedMinutes: eventType === 'adjustment' ? 480 : workedMinutes,
                 displayMinutes,
                 eventType,
                 hasLog: true,

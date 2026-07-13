@@ -14,6 +14,7 @@ import {
     findDayInWeeks,
     injectSimulatedWorkDay,
     isPlantillaWorkingDay,
+    normalizeLockedAbsenceDays,
     purgeClosedHolidayShifts,
 } from './staff-schedule-normalizer';
 
@@ -181,6 +182,10 @@ export function coordinatePlantillaSchedules(
     const understaffedDates = dates.filter(
         (date) => !isPlantillaClosedHoliday(date) && countPlantillaStaff(entries, date) < minDailyStaff,
     );
+
+    for (const entry of entries) {
+        normalizeLockedAbsenceDays(entry.weeks);
+    }
 
     return { holidaysCleared, staffingBoosts, understaffedDates };
 }

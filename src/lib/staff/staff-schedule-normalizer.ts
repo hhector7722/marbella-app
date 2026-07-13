@@ -44,6 +44,8 @@ interface ShiftPattern {
 }
 
 const LOCKED_EVENT_TYPES = new Set(['holiday', 'personal', 'adjustment']);
+/** Horas computadas en baja (sin fichaje horario). */
+const ADJUSTMENT_DISPLAY_HOURS = 8;
 
 const DAY_NAMES = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'] as const;
 
@@ -132,6 +134,9 @@ export function normalizeStaffSchedule(
     const refEnd = referencePeriodEnd(employeeBounds, contract.endDate, today);
     const pattern = extractShiftPattern(weeks, employee.userId, refStart, refEnd);
 
+    // Bajas reales: sin entrada/salida, 8 h computadas; no son jornada trabajada.
+    normalizeLockedAbsenceDays(weeks);
+
     // Fichajes reales en festivos de cierre no deben arrastrarse a la simulación.
     purgeClosedHolidayShifts(weeks, weeklyTarget);
 
@@ -161,6 +166,7 @@ export function normalizeStaffSchedule(
     }
 
     purgeClosedHolidayShifts(weeks, weeklyTarget);
+    normalizeLockedAbsenceDays(weeks);
 
     return weeks;
 }
@@ -947,11 +953,28 @@ export function clearFlexibleWorkOnClosedHoliday(
     const week = findWeekForDate(weeks, date);
     const day = findDayInWeeks(weeks, date);
     if (!day?.hasLog) return;
+    if (LOCKED_EVENT_TYPES.has(day.eventType ?? '')) return;
     if (!isPlantillaWorkingDay(day) && !(day.clockIn && day.clockOut) && (day.totalHours ?? 0) <= 0) {
         return;
     }
     clearDay(day);
     if (week) recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+}
+
+/**
+ * Normaliza ausencias bloqueadas (baja, festivo personal, etc.).
+ * Las bajas computan 8 h pero no llevan horario de entrada/salida.
+ */
+export function normalizeLockedAbsenceDays(weeks: TimesheetWeekData[]): void {
+    for (const week of weeks) {
+        for (const day of week.days) {
+            if (!day.hasLog || day.eventType !== 'adjustment') continue;
+            day.clockIn = null;
+            day.clockOut = null;
+            day.totalHours = ADJUSTMENT_DISPLAY_HOURS;
+            day.extraHours = 0;
+        }
+    }
 }
 
 /**
@@ -964,6 +987,7 @@ export function purgeClosedHolidayShifts(weeks: TimesheetWeekData[], weeklyTarge
         let weekChanged = false;
         for (const day of week.days) {
             if (!isPlantillaClosedHoliday(day.date) || !day.hasLog) continue;
+            if (LOCKED_EVENT_TYPES.has(day.eventType ?? '')) continue;
             const isWork =
                 isPlantillaWorkingDay(day) ||
                 Boolean(day.clockIn && day.clockOut) ||
