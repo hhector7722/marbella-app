@@ -32,6 +32,12 @@ import {
     sumWeekBillableHours,
 } from './staff-schedule-normalizer';
 export const MIN_PLANTILLA_DAILY_STAFF = 3;
+/** Mínimo sábado y domingo (más exigente que entre semana). */
+export const MIN_PLANTILLA_WEEKEND_STAFF = 4;
+/** Tope laborables para evitar sobredimensionar L–V. */
+export const MAX_PLANTILLA_WEEKDAY_STAFF = 6;
+/** Tope fines de semana. */
+export const MAX_PLANTILLA_WEEKEND_STAFF = 6;
 
 export interface PlantillaScheduleEntry {
     userId: string;
@@ -47,10 +53,12 @@ export interface PlantillaCoordinationReport {
     holidaysCleared: number;
     staffingBoosts: number;
     staffingRelocations: number;
+    staffingTrims: number;
     shiftsAligned: number;
     morningExclusiveAdjustments: number;
     weeksRebalanced: number;
     understaffedDates: string[];
+    overstaffedDates: string[];
 }
 
 const BAJA_TYPES = new Set(['adjustment']);
@@ -138,9 +146,10 @@ function canRelocateWorkDay(entry: PlantillaScheduleEntry, date: string): boolea
 function boostMinimumDailyStaffForDate(
     entries: PlantillaScheduleEntry[],
     date: string,
-    minDailyStaff: number,
+    weekdayMin: number,
 ): number {
-    if (isPlantillaClosedHoliday(date)) return 0;
+    const minDailyStaff = minDailyStaffForDate(date, weekdayMin);
+    if (minDailyStaff <= 0) return 0;
 
     let boosts = 0;
     const tried = new Set<string>();
@@ -172,12 +181,14 @@ function tryRelocateWorker(
     entries: PlantillaScheduleEntry[],
     fromDate: string,
     toDate: string,
-    minDailyStaff: number,
+    weekdayMin: number,
 ): boolean {
     if (fromDate === toDate) return false;
     if (isPlantillaClosedHoliday(fromDate) || isPlantillaClosedHoliday(toDate)) return false;
-    if (countPlantillaStaff(entries, fromDate) <= minDailyStaff) return false;
-    if (countPlantillaStaff(entries, toDate) >= minDailyStaff) return false;
+    const fromMin = minDailyStaffForDate(fromDate, weekdayMin);
+    const toMin = minDailyStaffForDate(toDate, weekdayMin);
+    if (countPlantillaStaff(entries, fromDate) <= fromMin) return false;
+    if (countPlantillaStaff(entries, toDate) >= toMin) return false;
 
     const candidates = entries.filter(
         (entry) => canRelocateWorkDay(entry, fromDate) && canBeScheduled(entry, toDate),
@@ -192,7 +203,7 @@ function tryRelocateWorker(
 
     for (const entry of candidates) {
         clearSimulatedWorkDay(entry, fromDate);
-        if (countPlantillaStaff(entries, fromDate) < minDailyStaff) {
+        if (countPlantillaStaff(entries, fromDate) < fromMin) {
             injectSimulatedWorkDay(
                 entry.weeks,
                 fromDate,
@@ -233,7 +244,7 @@ function tryRelocateWorker(
 function enforceMinimumDailyStaff(
     entries: PlantillaScheduleEntry[],
     dates: string[],
-    minDailyStaff: number,
+    weekdayMin: number,
 ): { boosts: number; relocations: number } {
     let boosts = 0;
     let relocations = 0;
@@ -241,7 +252,11 @@ function enforceMinimumDailyStaff(
 
     for (let pass = 0; pass < maxPasses; pass++) {
         const understaffed = dates
-            .filter((date) => !isPlantillaClosedHoliday(date) && countPlantillaStaff(entries, date) < minDailyStaff)
+            .filter(
+                (date) =>
+                    minDailyStaffForDate(date, weekdayMin) > 0 &&
+                    countPlantillaStaff(entries, date) < minDailyStaffForDate(date, weekdayMin),
+            )
             .sort((a, b) => countPlantillaStaff(entries, a) - countPlantillaStaff(entries, b));
 
         if (understaffed.length === 0) break;
@@ -249,22 +264,23 @@ function enforceMinimumDailyStaff(
         let progress = false;
 
         for (const date of understaffed) {
-            if (countPlantillaStaff(entries, date) >= minDailyStaff) continue;
+            const minStaff = minDailyStaffForDate(date, weekdayMin);
+            if (countPlantillaStaff(entries, date) >= minStaff) continue;
 
-            const added = boostMinimumDailyStaffForDate(entries, date, minDailyStaff);
+            const added = boostMinimumDailyStaffForDate(entries, date, weekdayMin);
             if (added > 0) {
                 boosts += added;
                 progress = true;
             }
-            if (countPlantillaStaff(entries, date) >= minDailyStaff) continue;
+            if (countPlantillaStaff(entries, date) >= minStaff) continue;
 
             const targetWeek = weekStartMonday(date);
             const donorDates = dates
                 .filter(
                     (donorDate) =>
-                        !isPlantillaClosedHoliday(donorDate) &&
+                        minDailyStaffForDate(donorDate, weekdayMin) > 0 &&
                         donorDate !== date &&
-                        countPlantillaStaff(entries, donorDate) > minDailyStaff,
+                        countPlantillaStaff(entries, donorDate) > minDailyStaffForDate(donorDate, weekdayMin),
                 )
                 .sort((a, b) => {
                     const sameWeekA = weekStartMonday(a) === targetWeek ? 1 : 0;
@@ -274,7 +290,7 @@ function enforceMinimumDailyStaff(
                 });
 
             for (const donorDate of donorDates) {
-                if (tryRelocateWorker(entries, donorDate, date, minDailyStaff)) {
+                if (tryRelocateWorker(entries, donorDate, date, weekdayMin)) {
                     relocations += 1;
                     progress = true;
                     break;
@@ -286,6 +302,113 @@ function enforceMinimumDailyStaff(
     }
 
     return { boosts, relocations };
+}
+
+function tryTrimWorkerFromDate(
+    entries: PlantillaScheduleEntry[],
+    fromDate: string,
+    dates: string[],
+    weekdayMin: number,
+): boolean {
+    const maxStaff = maxDailyStaffForDate(fromDate);
+    const minStaff = minDailyStaffForDate(fromDate, weekdayMin);
+    if (maxStaff == null || countPlantillaStaff(entries, fromDate) <= maxStaff) return false;
+
+    const candidates = entries.filter((entry) => {
+        if (!canRelocateWorkDay(entry, fromDate)) return false;
+        const rule = getMorningExclusiveRule(fromDate);
+        if (rule && isMorningExclusiveWorker(entry.fullName, rule)) return false;
+        return true;
+    });
+    if (candidates.length === 0) return false;
+
+    candidates.sort(
+        (a, b) => weekBillableHoursForEntry(b, fromDate) - weekBillableHoursForEntry(a, fromDate),
+    );
+
+    for (const entry of candidates) {
+        clearSimulatedWorkDay(entry, fromDate);
+        if (countPlantillaStaff(entries, fromDate) < minStaff) {
+            injectSimulatedWorkDay(
+                entry.weeks,
+                fromDate,
+                entry.userId,
+                entry.email,
+                entry.contractedHoursWeekly,
+            );
+            continue;
+        }
+
+        const targetWeek = weekStartMonday(fromDate);
+        const weekendTargets = dates
+            .filter((targetDate) => {
+                if (!isWeekend(targetDate) || isPlantillaClosedHoliday(targetDate)) return false;
+                const targetMin = minDailyStaffForDate(targetDate, weekdayMin);
+                return countPlantillaStaff(entries, targetDate) < targetMin;
+            })
+            .sort((a, b) => {
+                const sameWeekA = weekStartMonday(a) === targetWeek ? 1 : 0;
+                const sameWeekB = weekStartMonday(b) === targetWeek ? 1 : 0;
+                if (sameWeekB !== sameWeekA) return sameWeekB - sameWeekA;
+                return countPlantillaStaff(entries, a) - countPlantillaStaff(entries, b);
+            });
+
+        for (const targetDate of weekendTargets) {
+            if (!canBeScheduled(entry, targetDate)) continue;
+            if (
+                injectSimulatedWorkDay(
+                    entry.weeks,
+                    targetDate,
+                    entry.userId,
+                    entry.email,
+                    entry.contractedHoursWeekly,
+                )
+            ) {
+                recalculateWeekSummaries(entry.weeks, entry.contractedHoursWeekly);
+                return true;
+            }
+        }
+
+        recalculateWeekSummaries(entry.weeks, entry.contractedHoursWeekly);
+        return true;
+    }
+
+    return false;
+}
+
+function balancePlantillaStaffingDistribution(
+    entries: PlantillaScheduleEntry[],
+    dates: string[],
+    weekdayMin: number,
+): { boosts: number; relocations: number; trims: number } {
+    let boosts = 0;
+    let relocations = 0;
+    let trims = 0;
+    const maxPasses = Math.max(12, dates.length);
+
+    for (let pass = 0; pass < maxPasses; pass++) {
+        let progress = false;
+
+        const enforced = enforceMinimumDailyStaff(entries, dates, weekdayMin);
+        boosts += enforced.boosts;
+        relocations += enforced.relocations;
+        if (enforced.boosts + enforced.relocations > 0) progress = true;
+
+        const overcrowded = dates
+            .filter((date) => isOverstaffed(entries, date))
+            .sort((a, b) => countPlantillaStaff(entries, b) - countPlantillaStaff(entries, a));
+
+        for (const date of overcrowded) {
+            if (tryTrimWorkerFromDate(entries, date, dates, weekdayMin)) {
+                trims += 1;
+                progress = true;
+            }
+        }
+
+        if (!progress) break;
+    }
+
+    return { boosts, relocations, trims };
 }
 
 function pickStaffingCandidate(
@@ -354,6 +477,21 @@ function isWeekend(date: string): boolean {
     const [y, m, d] = date.split('-').map(Number);
     const dow = new Date(y, m - 1, d).getDay();
     return dow === 0 || dow === 6;
+}
+
+function minDailyStaffForDate(date: string, weekdayMin: number): number {
+    if (isPlantillaClosedHoliday(date)) return 0;
+    return isWeekend(date) ? MIN_PLANTILLA_WEEKEND_STAFF : weekdayMin;
+}
+
+function maxDailyStaffForDate(date: string): number | null {
+    if (isPlantillaClosedHoliday(date)) return null;
+    return isWeekend(date) ? MAX_PLANTILLA_WEEKEND_STAFF : MAX_PLANTILLA_WEEKDAY_STAFF;
+}
+
+function isOverstaffed(entries: PlantillaScheduleEntry[], date: string): boolean {
+    const maxStaff = maxDailyStaffForDate(date);
+    return maxStaff != null && countPlantillaStaff(entries, date) > maxStaff;
 }
 
 function parseHm(hm: string): number {
@@ -452,6 +590,7 @@ function alignPlantillaDailyShifts(
 
     for (const date of dates) {
         if (isPlantillaClosedHoliday(date)) continue;
+        if (getMorningExclusiveRule(date)) continue;
 
         const slots: Array<{ entry: PlantillaScheduleEntry; day: TimesheetDayData }> = [];
         for (const entry of entries) {
@@ -529,17 +668,26 @@ function applyMorningExclusivePlantillaRules(
             if (!day || !isPlantillaWorkingDay(day) || !day.clockIn || !day.clockOut) continue;
 
             if (isMorningExclusiveWorker(entry.fullName, rule)) {
-                const inMin = parseHm(day.clockIn);
-                if (inMin >= rule.untilMinutes) {
-                    const durationMin = Math.max(60, Math.round((day.totalHours ?? 8) * 60));
-                    setShiftTimes(day, openMin, Math.min(openMin + durationMin, closeMax));
-                    adjusted += 1;
-                }
+                const durationMin = Math.max(60, Math.round((day.totalHours ?? 8) * 60));
+                setShiftTimes(day, openMin, Math.min(openMin + durationMin, closeMax));
+                adjusted += 1;
                 continue;
             }
 
             const inMin = parseHm(day.clockIn);
-            if (inMin >= rule.untilMinutes) continue;
+            if (inMin >= rule.untilMinutes) {
+                const durationMin = Math.max(60, Math.round((day.totalHours ?? 8) * 60));
+                const afternoonIn = organicMinute(
+                    rule.untilMinutes,
+                    hashDate(date, `pm-${entry.userId}`),
+                );
+                const afternoonOut = Math.min(afternoonIn + durationMin, closeMax);
+                if (afternoonOut - afternoonIn >= minAfternoonMinutes) {
+                    setShiftTimes(day, afternoonIn, afternoonOut);
+                }
+                adjusted += 1;
+                continue;
+            }
 
             const durationMin = Math.max(60, Math.round((day.totalHours ?? 8) * 60));
             const afternoonIn = organicMinute(
@@ -612,21 +760,35 @@ export function coordinatePlantillaSchedules(
     const weeksRebalancedBeforeAlign = rebalanceAllEntries(entries, bounds);
 
     let shiftsAligned = alignPlantillaDailyShifts(entries, dates);
-    const morningExclusiveAdjustments = applyMorningExclusivePlantillaRules(entries, dates);
+    let morningExclusiveAdjustments = applyMorningExclusivePlantillaRules(entries, dates);
     rebalanceAllEntries(entries, bounds);
 
-    let staffingRelocations = 0;
-    for (let pass = 0; pass < 6; pass++) {
-        const enforced = enforceMinimumDailyStaff(entries, dates, minDailyStaff);
-        staffingBoosts += enforced.boosts;
-        staffingRelocations += enforced.relocations;
-        if (enforced.boosts + enforced.relocations === 0) break;
-        if (pass < 5) {
-            rebalanceAllEntries(entries, bounds);
-        }
-    }
+    const distribution = balancePlantillaStaffingDistribution(entries, dates, minDailyStaff);
+    staffingBoosts += distribution.boosts;
+    let staffingRelocations = distribution.relocations;
+    let staffingTrims = distribution.trims;
 
     shiftsAligned += alignPlantillaDailyShifts(entries, dates);
+    morningExclusiveAdjustments += applyMorningExclusivePlantillaRules(entries, dates);
+
+    for (let pass = 0; pass < 8; pass++) {
+        let progress = false;
+        const overcrowded = dates
+            .filter((date) => isOverstaffed(entries, date))
+            .sort((a, b) => countPlantillaStaff(entries, b) - countPlantillaStaff(entries, a));
+        for (const date of overcrowded) {
+            if (tryTrimWorkerFromDate(entries, date, dates, minDailyStaff)) {
+                staffingTrims += 1;
+                progress = true;
+            }
+        }
+        if (!progress) break;
+    }
+
+    const postSpecialEnforced = enforceMinimumDailyStaff(entries, dates, minDailyStaff);
+    staffingBoosts += postSpecialEnforced.boosts;
+    staffingRelocations += postSpecialEnforced.relocations;
+    morningExclusiveAdjustments += applyMorningExclusivePlantillaRules(entries, dates);
 
     for (const entry of entries) {
         normalizeLockedAbsenceDays(entry.weeks);
@@ -634,17 +796,22 @@ export function coordinatePlantillaSchedules(
     }
 
     const understaffedDates = dates.filter(
-        (date) => !isPlantillaClosedHoliday(date) && countPlantillaStaff(entries, date) < minDailyStaff,
+        (date) =>
+            minDailyStaffForDate(date, minDailyStaff) > 0 &&
+            countPlantillaStaff(entries, date) < minDailyStaffForDate(date, minDailyStaff),
     );
+    const overstaffedDates = dates.filter((date) => isOverstaffed(entries, date));
 
     return {
         holidaysCleared,
         staffingBoosts,
         staffingRelocations,
+        staffingTrims,
         shiftsAligned,
         morningExclusiveAdjustments,
         weeksRebalanced: weeksRebalancedBeforeAlign,
         understaffedDates,
+        overstaffedDates,
     };
 }
 
