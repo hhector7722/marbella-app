@@ -132,6 +132,12 @@ function buildInitials(fullName: string): string {
     return first + last;
 }
 
+function firstNameOnly(fullName: string): string {
+    const token = fullName.trim().split(/\s+/).filter(Boolean)[0];
+    if (!token) return fullName.trim();
+    return token.charAt(0).toUpperCase() + token.slice(1);
+}
+
 function ymd(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -248,8 +254,9 @@ function buildWeeklyHoursMap(byDate: Map<string, ShiftLog[]>): Map<string, Map<s
         const bucket = weekly.get(weekKey) ?? new Map<string, number>();
 
         for (const log of logs) {
-            const prev = bucket.get(log.employeeName) ?? 0;
-            bucket.set(log.employeeName, prev + log.hours);
+            const label = firstNameOnly(log.employeeName);
+            const prev = bucket.get(label) ?? 0;
+            bucket.set(label, prev + log.hours);
         }
 
         weekly.set(weekKey, bucket);
@@ -510,24 +517,30 @@ function buildHtml(
     }
     .week-summary-row {
       display: flex;
-      flex-direction: column;
-      gap: 1px;
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px;
       min-width: 0;
     }
     .week-summary-name {
       font-size: 7px;
       font-weight: 700;
       color: #374151;
-      line-height: 1.15;
+      line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
     }
     .week-summary-hours {
       font-size: 7px;
       font-weight: 800;
       color: #111827;
       font-family: ui-monospace, monospace;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .issues {
       max-width: 1040px;
@@ -583,16 +596,36 @@ async function main() {
 
     if (args.length === 0 || args.includes('--downloads')) {
         const downloads = path.join(process.env.USERPROFILE ?? process.env.HOME ?? '', 'Downloads');
-        pdfPaths = DEFAULT_DOWNLOADS_PDFS.map((f) => path.join(downloads, f));
+        const bySlug = new Map<string, { path: string; mtimeMs: number }>();
+        for (const file of fs.readdirSync(downloads)) {
+            if (!/^jornada_[a-z0-9_]+_2026-01\.pdf$/i.test(file)) continue;
+            const fullPath = path.join(downloads, file);
+            const slug = file.replace(/^jornada_/i, '').replace(/_2026-01\.pdf$/i, '');
+            const mtimeMs = fs.statSync(fullPath).mtimeMs;
+            const prev = bySlug.get(slug);
+            if (!prev || mtimeMs > prev.mtimeMs) {
+                bySlug.set(slug, { path: fullPath, mtimeMs });
+            }
+        }
+        pdfPaths = [...bySlug.values()].map((v) => v.path).sort();
+        if (pdfPaths.length === 0) {
+            pdfPaths = DEFAULT_DOWNLOADS_PDFS.map((f) => path.join(downloads, f)).filter((p) =>
+                fs.existsSync(p),
+            );
+        }
     } else {
         pdfPaths = args.map((p) => path.resolve(p));
     }
 
     const missing = pdfPaths.filter((p) => !fs.existsSync(p));
-    if (missing.length > 0) {
-        console.error('PDFs no encontrados:');
-        missing.forEach((p) => console.error('  -', p));
+    if (pdfPaths.length === 0) {
+        console.error('No se encontraron PDFs jornada_*.pdf en Downloads.');
         process.exit(1);
+    }
+    if (missing.length > 0) {
+        console.warn('PDFs no encontrados (omitidos):');
+        missing.forEach((p) => console.warn('  -', p));
+        pdfPaths = pdfPaths.filter((p) => fs.existsSync(p));
     }
 
     const byDate = new Map<string, ShiftLog[]>();

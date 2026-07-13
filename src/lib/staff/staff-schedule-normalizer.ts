@@ -56,6 +56,7 @@ const DAY_NAMES = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'] as const;
 const MIN_SHIFT_HOURS = 4;
 const MAX_SHIFT_HOURS = 10;
 const IDEAL_SHIFT_HOURS = 7;
+const PREFERRED_SHIFT_HOURS = 8;
 const BALANCE_TOLERANCE = 0.25;
 const TRIM_STEP_HOURS = 1 / 60; // 1 minuto — ajustes finos sin cuadrar a 5 min
 
@@ -321,7 +322,8 @@ function finalizeHectorRealisticShifts(
             if (isPlantillaClosedHoliday(day.date)) continue;
             if (isWeekend(day.date)) continue;
 
-            const targetHours = hectorDailyTargetHours(day.date, userId);
+            const organicTarget = hectorDailyTargetHours(day.date, userId);
+            const targetHours = Math.max(organicTarget, day.totalHours ?? 0);
             const shift = buildShiftTimes(
                 day.date,
                 userId,
@@ -352,8 +354,8 @@ function balanceWeek(
     const inRange = (day: TimesheetDayData) =>
         isInSimulationRange(day.date, simBounds.start, simBounds.end, contract.endDate);
 
-    const lockedHours = sumHours(
-        week.days.filter((d) => d.hasLog && LOCKED_EVENT_TYPES.has(d.eventType) && inRange(d)),
+    const lockedHours = roundHours(
+        week.days.filter(inRange).reduce((acc, day) => acc + lockedBillableHours(day), 0),
     );
     const flexTarget = Math.max(0, weekTarget - lockedHours);
 
@@ -366,10 +368,19 @@ function balanceWeek(
     let flexHours = sumHours(flexDays);
 
     if (flexHours > flexTarget + BALANCE_TOLERANCE) {
-        trimFlexibleHours(flexDays, flexHours - flexTarget, userId, isHector);
+        const idealCount = idealFlexibleDayCount(flexTarget, flexDays.length);
+        if (flexDays.length > idealCount) {
+            removeFlexibleDaysNaturally(week, flexTarget, userId, pattern, inRange, isHector);
+            flexDays = getFlexibleDays(week).filter(inRange);
+            flexHours = sumHours(flexDays);
+        }
 
-        flexDays = getFlexibleDays(week).filter(inRange);
-        flexHours = sumHours(flexDays);
+        if (flexHours > flexTarget + BALANCE_TOLERANCE) {
+            trimFlexibleHours(flexDays, flexHours - flexTarget, userId, isHector);
+
+            flexDays = getFlexibleDays(week).filter(inRange);
+            flexHours = sumHours(flexDays);
+        }
 
         if (flexHours > flexTarget + BALANCE_TOLERANCE) {
             removeFlexibleDaysNaturally(week, flexTarget, userId, pattern, inRange, isHector);
@@ -380,17 +391,19 @@ function balanceWeek(
         if (flexHours > flexTarget + BALANCE_TOLERANCE) {
             trimFlexibleHours(flexDays, flexHours - flexTarget, userId, isHector);
         }
-        return;
-    }
+    } else if (flexHours < flexTarget - BALANCE_TOLERANCE) {
+        let guard = 0;
+        while (flexHours < flexTarget - BALANCE_TOLERANCE && guard < 10) {
+            guard += 1;
+            const deficit = flexTarget - flexHours;
+            extendFlexibleHours(flexDays, deficit, userId, isHector);
 
-    if (flexHours < flexTarget - BALANCE_TOLERANCE) {
-        const deficit = flexTarget - flexHours;
-        extendFlexibleHours(flexDays, deficit, userId, isHector);
+            flexDays = getFlexibleDays(week).filter(inRange);
+            flexHours = sumHours(flexDays);
 
-        flexDays = getFlexibleDays(week).filter(inRange);
-        flexHours = sumHours(flexDays);
+            if (flexHours >= flexTarget - BALANCE_TOLERANCE) break;
 
-        if (flexHours < flexTarget - BALANCE_TOLERANCE) {
+            const beforeAdd = flexHours;
             addFlexibleDays(
                 week,
                 userId,
@@ -400,7 +413,48 @@ function balanceWeek(
                 pattern,
                 simBounds,
             );
+            flexDays = getFlexibleDays(week).filter(inRange);
+            flexHours = sumHours(flexDays);
+            if (flexHours <= beforeAdd + BALANCE_TOLERANCE) break;
         }
+    }
+
+    let reconcileGuard = 0;
+    while (reconcileGuard < 6) {
+        reconcileGuard += 1;
+        flexDays = getFlexibleDays(week).filter(inRange);
+        flexHours = sumHours(flexDays);
+
+        if (flexHours > flexTarget + BALANCE_TOLERANCE) {
+            const idealCount = idealFlexibleDayCount(flexTarget, flexDays.length);
+            if (flexDays.length > idealCount) {
+                removeFlexibleDaysNaturally(week, flexTarget, userId, pattern, inRange, isHector);
+                continue;
+            }
+            if (!trimFlexibleHours(flexDays, flexHours - flexTarget, userId, isHector)) break;
+            continue;
+        }
+
+        if (flexHours < flexTarget - BALANCE_TOLERANCE) {
+            const before = flexHours;
+            extendFlexibleHours(flexDays, flexTarget - flexHours, userId, isHector);
+            flexDays = getFlexibleDays(week).filter(inRange);
+            flexHours = sumHours(flexDays);
+            if (flexHours <= before + BALANCE_TOLERANCE) {
+                addFlexibleDays(
+                    week,
+                    userId,
+                    flexTarget - flexHours,
+                    contract,
+                    isHector,
+                    pattern,
+                    simBounds,
+                );
+            }
+            continue;
+        }
+
+        break;
     }
 }
 
@@ -510,6 +564,15 @@ function removeFlexibleDaysNaturally(
 function idealFlexibleDayCount(flexTarget: number, currentCount: number): number {
     if (currentCount <= 0) return 0;
 
+    const preferredByEight = Math.max(
+        1,
+        Math.min(currentCount, Math.round(flexTarget / PREFERRED_SHIFT_HOURS)),
+    );
+    const preferredAvg = flexTarget / preferredByEight;
+    if (preferredAvg >= MIN_SHIFT_HOURS && preferredAvg <= MAX_SHIFT_HOURS) {
+        return preferredByEight;
+    }
+
     let bestCount = currentCount;
     let bestScore = Infinity;
 
@@ -517,7 +580,7 @@ function idealFlexibleDayCount(flexTarget: number, currentCount: number): number
         const avg = flexTarget / n;
         if (avg < MIN_SHIFT_HOURS || avg > MAX_SHIFT_HOURS) continue;
 
-        const score = Math.abs(avg - IDEAL_SHIFT_HOURS);
+        const score = Math.abs(flexTarget - n * avg) + n * 0.05;
         if (score < bestScore) {
             bestScore = score;
             bestCount = n;
@@ -787,6 +850,64 @@ export function recalculateWeekSummaries(weeks: TimesheetWeekData[], weeklyTarge
     }
 }
 
+/** Horas computables de la semana (trabajo + bajas/festivos personales bloqueados). */
+export function sumWeekBillableHours(week: TimesheetWeekData): number {
+    return roundHours(
+        week.days.reduce((acc, day) => {
+            if (!day.hasLog) return acc;
+            if (day.eventType === 'adjustment') return acc + ADJUSTMENT_DISPLAY_HOURS;
+            if (LOCKED_EVENT_TYPES.has(day.eventType)) return acc + (day.totalHours ?? 0);
+            return acc + (day.totalHours ?? 0);
+        }, 0),
+    );
+}
+
+/**
+ * Re-equilibra cada semana hacia el contrato tras cambios de coordinación de plantilla.
+ * No toca bajas bloqueadas ni festivos de cierre.
+ */
+export function rebalancePlantillaSchedule(
+    weeks: TimesheetWeekData[],
+    employee: NormalizerEmployee,
+    contract: NormalizerContract,
+    weeklyTarget: number,
+    todayYmd: string,
+): void {
+    const isHector = isMasterDashboardUser(employee.email);
+    const employeeBounds = getEmployeeSimulationBounds(todayYmd, contract.joiningDate, contract.endDate);
+    const refStart = referencePeriodStart(employeeBounds.start);
+    const refEnd = referencePeriodEnd(employeeBounds, contract.endDate, todayYmd);
+    const pattern = extractShiftPattern(weeks, employee.userId, refStart, refEnd);
+
+    for (const week of weeks) {
+        balanceWeek(week, employee.userId, weeklyTarget, contract, isHector, pattern, employeeBounds);
+        recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+    }
+
+    if (isHector) {
+        finalizeHectorRealisticShifts(
+            weeks,
+            employee.userId,
+            contract,
+            pattern,
+            employeeBounds,
+            weeklyTarget,
+        );
+        for (const week of weeks) {
+            balanceWeek(week, employee.userId, weeklyTarget, contract, isHector, pattern, employeeBounds);
+            recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+        }
+        finalizeHectorRealisticShifts(
+            weeks,
+            employee.userId,
+            contract,
+            pattern,
+            employeeBounds,
+            weeklyTarget,
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Período de simulación: fecha de alta → mes actual
 // ---------------------------------------------------------------------------
@@ -850,6 +971,13 @@ function cloneWeeks(weeks: TimesheetWeekData[]): TimesheetWeekData[] {
 
 function sumHours(days: TimesheetDayData[]): number {
     return roundHours(days.reduce((acc, d) => acc + (d.totalHours ?? 0), 0));
+}
+
+/** Horas bloqueadas que computan al contrato (bajas siempre 8 h). */
+function lockedBillableHours(day: TimesheetDayData): number {
+    if (!day.hasLog || !LOCKED_EVENT_TYPES.has(day.eventType)) return 0;
+    if (day.eventType === 'adjustment') return ADJUSTMENT_DISPLAY_HOURS;
+    return day.totalHours ?? 0;
 }
 
 function isWeekend(date: string): boolean {

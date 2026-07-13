@@ -8,6 +8,11 @@
 
 import { isMasterDashboardUser } from './simulation-identity';
 import {
+    getMorningExclusiveRule,
+    isMorningExclusiveWorker,
+    type PlantillaMorningExclusiveRule,
+} from './plantilla-special-days';
+import {
     getPlantillaDayClosingMinutesOrganic,
     getPlantillaDayOpeningMinutes,
     isPlantillaClosedHoliday,
@@ -17,11 +22,14 @@ import type { TimesheetDayData, TimesheetWeekData } from './timesheet-export-pay
 import {
     clearFlexibleWorkOnClosedHoliday,
     findDayInWeeks,
+    findWeekForDate,
     injectSimulatedWorkDay,
     isPlantillaWorkingDay,
     normalizeLockedAbsenceDays,
     purgeClosedHolidayShifts,
+    rebalancePlantillaSchedule,
     recalculateWeekSummaries,
+    sumWeekBillableHours,
 } from './staff-schedule-normalizer';
 export const MIN_PLANTILLA_DAILY_STAFF = 3;
 
@@ -39,11 +47,15 @@ export interface PlantillaCoordinationReport {
     holidaysCleared: number;
     staffingBoosts: number;
     shiftsAligned: number;
+    morningExclusiveAdjustments: number;
+    weeksRebalanced: number;
     understaffedDates: string[];
 }
 
 const BAJA_TYPES = new Set(['adjustment']);
 const UNAVAILABLE_DAY_TYPES = new Set(['holiday', 'personal', 'adjustment']);
+/** Margen al añadir refuerzos o recortar tras alinear horarios. */
+const WEEKLY_HOURS_TOLERANCE = 1.5;
 
 function isEmployeeActiveOnDate(entry: PlantillaScheduleEntry, date: string): boolean {
     const join = entry.joiningDate?.slice(0, 10);
@@ -79,12 +91,24 @@ function countPlantillaStaff(entries: PlantillaScheduleEntry[], date: string): n
     return count;
 }
 
-function weekHoursForEntry(entry: PlantillaScheduleEntry, date: string): number {
-    const week = entry.weeks.find((w) => w.days.some((d) => d.date === date));
+function weekBillableHoursForEntry(entry: PlantillaScheduleEntry, date: string): number {
+    const week = findWeekForDate(entry.weeks, date);
     if (!week) return 0;
-    return week.days
-        .filter((d) => isPlantillaWorkingDay(d))
-        .reduce((acc, d) => acc + (d.totalHours ?? 0), 0);
+    return sumWeekBillableHours(week);
+}
+
+function estimatedBoostHours(entry: PlantillaScheduleEntry, date: string): number {
+    if (isMasterDashboardUser(entry.email)) {
+        return 8.15;
+    }
+    const target = entry.contractedHoursWeekly;
+    return target > 0 ? Math.max(6, target / 5) : 8;
+}
+
+function hasWeeklyCapacity(entry: PlantillaScheduleEntry, date: string): boolean {
+    const current = weekBillableHoursForEntry(entry, date);
+    const projected = current + estimatedBoostHours(entry, date);
+    return projected <= entry.contractedHoursWeekly + WEEKLY_HOURS_TOLERANCE;
 }
 
 function pickStaffingCandidate(
@@ -92,19 +116,47 @@ function pickStaffingCandidate(
     date: string,
     excludeUserIds: ReadonlySet<string> = new Set(),
 ): PlantillaScheduleEntry | null {
-    const eligible = entries.filter((e) => !excludeUserIds.has(e.userId) && canBeScheduled(e, date));
-    if (eligible.length === 0) return null;
+    const schedulable = entries.filter(
+        (e) => !excludeUserIds.has(e.userId) && canBeScheduled(e, date),
+    );
+    if (schedulable.length === 0) return null;
 
-    eligible.sort((a, b) => {
-        const hoursA = weekHoursForEntry(a, date);
-        const hoursB = weekHoursForEntry(b, date);
-        const roomA = Math.max(0, a.contractedHoursWeekly - hoursA);
-        const roomB = Math.max(0, b.contractedHoursWeekly - hoursB);
+    const withCapacity = schedulable.filter((e) => hasWeeklyCapacity(e, date));
+    const pool = withCapacity.length > 0 ? withCapacity : schedulable;
+
+    pool.sort((a, b) => {
+        const hoursA = weekBillableHoursForEntry(a, date);
+        const hoursB = weekBillableHoursForEntry(b, date);
+        const roomA = a.contractedHoursWeekly - hoursA;
+        const roomB = b.contractedHoursWeekly - hoursB;
         if (roomB !== roomA) return roomB - roomA;
         return hoursA - hoursB;
     });
 
-    return eligible[0] ?? null;
+    return pool[0] ?? null;
+}
+
+function rebalanceAllEntries(
+    entries: PlantillaScheduleEntry[],
+    bounds: { start: string; end: string },
+): number {
+    const todayYmd = bounds.end;
+    let count = 0;
+    for (const entry of entries) {
+        rebalancePlantillaSchedule(
+            entry.weeks,
+            { userId: entry.userId, email: entry.email },
+            {
+                contractedHoursWeekly: entry.contractedHoursWeekly,
+                joiningDate: entry.joiningDate,
+                endDate: entry.endDate,
+            },
+            entry.contractedHoursWeekly,
+            todayYmd,
+        );
+        count += entry.weeks.length;
+    }
+    return count;
 }
 
 function collectDatesInRange(entries: PlantillaScheduleEntry[], start: string, end: string): string[] {
@@ -160,9 +212,18 @@ function roundHours(h: number): number {
 }
 
 function setShiftTimes(day: TimesheetDayData, inMin: number, outMin: number): void {
-    const safeOut = Math.max(outMin, inMin + 30);
-    day.clockIn = minutesToHm(organicMinute(inMin, hashDate(day.date, 'in')));
-    day.clockOut = minutesToHm(organicMinute(safeOut, hashDate(day.date, 'out')));
+    const durationMin = Math.max(
+        30,
+        Math.round((day.totalHours ?? Math.max(0.5, (outMin - inMin) / 60)) * 60),
+    );
+    const inOrganic = organicMinute(inMin, hashDate(day.date, 'in'));
+    let outTarget = inOrganic + durationMin;
+    if (outMin >= inOrganic + durationMin - 20) {
+        outTarget = Math.min(outTarget, outMin + 8);
+    }
+    const outOrganic = organicMinute(Math.max(inOrganic + 30, outTarget), hashDate(day.date, 'out'));
+    day.clockIn = minutesToHm(inOrganic);
+    day.clockOut = minutesToHm(outOrganic);
     day.totalHours = roundHours((parseHm(day.clockOut) - parseHm(day.clockIn)) / 60);
 }
 
@@ -230,6 +291,106 @@ function alignPlantillaDailyShifts(
     return adjusted;
 }
 
+function clearSimulatedWorkDay(entry: PlantillaScheduleEntry, date: string): void {
+    const day = findDayInWeeks(entry.weeks, date);
+    if (!day?.hasLog || !isPlantillaWorkingDay(day)) return;
+    day.hasLog = false;
+    day.clockIn = null;
+    day.clockOut = null;
+    day.totalHours = 0;
+    day.extraHours = 0;
+    day.eventType = 'regular';
+}
+
+function ensureMorningExclusiveWorkers(
+    entries: PlantillaScheduleEntry[],
+    rule: PlantillaMorningExclusiveRule,
+): number {
+    let ensured = 0;
+    for (const entry of entries) {
+        if (!isMorningExclusiveWorker(entry.fullName, rule)) continue;
+        if (!isEmployeeActiveOnDate(entry, rule.date)) continue;
+        const day = findDayInWeeks(entry.weeks, rule.date);
+        if (isPlantillaWorkingDay(day)) continue;
+        if (
+            injectSimulatedWorkDay(
+                entry.weeks,
+                rule.date,
+                entry.userId,
+                entry.email,
+                entry.contractedHoursWeekly,
+            )
+        ) {
+            ensured += 1;
+        }
+    }
+    return ensured;
+}
+
+/**
+ * En fechas con regla de mañana exclusiva, solo los trabajadores permitidos
+ * pueden tener entrada antes de untilMinutes; el resto pasa a turno de tarde (≥13:00).
+ */
+function applyMorningExclusivePlantillaRules(
+    entries: PlantillaScheduleEntry[],
+    dates: string[],
+): number {
+    let adjusted = 0;
+
+    for (const date of dates) {
+        const rule = getMorningExclusiveRule(date);
+        if (!rule || isPlantillaClosedHoliday(date)) continue;
+
+        adjusted += ensureMorningExclusiveWorkers(entries, rule);
+
+        const closeMax = getPlantillaDayClosingMinutesOrganic(date);
+        const openMin = getPlantillaDayOpeningMinutes(date);
+        const minAfternoonMinutes = 60;
+
+        for (const entry of entries) {
+            const day = findDayInWeeks(entry.weeks, date);
+            if (!day || !isPlantillaWorkingDay(day) || !day.clockIn || !day.clockOut) continue;
+
+            if (isMorningExclusiveWorker(entry.fullName, rule)) {
+                const inMin = parseHm(day.clockIn);
+                if (inMin >= rule.untilMinutes) {
+                    const durationMin = Math.max(60, Math.round((day.totalHours ?? 8) * 60));
+                    setShiftTimes(day, openMin, Math.min(openMin + durationMin, closeMax));
+                    adjusted += 1;
+                }
+                continue;
+            }
+
+            const inMin = parseHm(day.clockIn);
+            if (inMin >= rule.untilMinutes) continue;
+
+            const durationMin = Math.max(60, Math.round((day.totalHours ?? 8) * 60));
+            const afternoonIn = organicMinute(
+                rule.untilMinutes,
+                hashDate(date, `pm-${entry.userId}`),
+            );
+
+            if (afternoonIn + minAfternoonMinutes > closeMax) {
+                clearSimulatedWorkDay(entry, date);
+                adjusted += 1;
+                continue;
+            }
+
+            const afternoonOut = Math.min(afternoonIn + durationMin, closeMax);
+            if (afternoonOut - afternoonIn < minAfternoonMinutes) {
+                clearSimulatedWorkDay(entry, date);
+                adjusted += 1;
+                continue;
+            }
+
+            setShiftTimes(day, afternoonIn, afternoonOut);
+            adjusted += 1;
+        }
+    }
+
+    return adjusted;
+}
+
 /**
  * Aplica reglas de plantilla sobre simulaciones ya generadas por empleado.
  */
@@ -263,6 +424,10 @@ export function coordinatePlantillaSchedules(
         holidaysCleared += purgeClosedHolidayShifts(entry.weeks, entry.contractedHoursWeekly);
     }
 
+    for (const entry of entries) {
+        normalizeLockedAbsenceDays(entry.weeks);
+    }
+
     for (const date of dates) {
         if (isPlantillaClosedHoliday(date)) continue;
 
@@ -288,18 +453,29 @@ export function coordinatePlantillaSchedules(
         }
     }
 
+    const weeksRebalancedBeforeAlign = rebalanceAllEntries(entries, bounds);
+
     const understaffedDates = dates.filter(
         (date) => !isPlantillaClosedHoliday(date) && countPlantillaStaff(entries, date) < minDailyStaff,
     );
 
     const shiftsAligned = alignPlantillaDailyShifts(entries, dates);
+    const morningExclusiveAdjustments = applyMorningExclusivePlantillaRules(entries, dates);
+    rebalanceAllEntries(entries, bounds);
 
     for (const entry of entries) {
         normalizeLockedAbsenceDays(entry.weeks);
         recalculateWeekSummaries(entry.weeks, entry.contractedHoursWeekly);
     }
 
-    return { holidaysCleared, staffingBoosts, shiftsAligned, understaffedDates };
+    return {
+        holidaysCleared,
+        staffingBoosts,
+        shiftsAligned,
+        morningExclusiveAdjustments,
+        weeksRebalanced: weeksRebalancedBeforeAlign,
+        understaffedDates,
+    };
 }
 
 /** Fechas de festivo de cierre dentro del rango (para informes). */

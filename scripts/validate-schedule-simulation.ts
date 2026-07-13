@@ -436,7 +436,8 @@ async function main() {
     const coordination = coordinatePlantillaSchedules(simulatedEntries, plantillaBounds);
     console.log(
         `\nPlantilla: ${coordination.holidaysCleared} turnos eliminados en festivos, ` +
-            `${coordination.staffingBoosts} refuerzos, ${coordination.shiftsAligned} turnos alineados (8:00–21:00).`,
+            `${coordination.staffingBoosts} refuerzos, ${coordination.shiftsAligned} turnos alineados (8:00–21:00), ` +
+            `${coordination.morningExclusiveAdjustments} ajustes mañana exclusiva.`,
     );
     if (coordination.understaffedDates.length > 0) {
         console.warn(`⚠ Días con <3 personas: ${coordination.understaffedDates.join(', ')}`);
