@@ -15,6 +15,7 @@ const require = createRequire(import.meta.url);
 const PDFParser = require('pdf2json');
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+const WEEK_SUMMARY_HEADER = 'HORAS SEM.';
 const MONTH_NAMES = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
     'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE',
@@ -26,6 +27,7 @@ type ShiftLog = {
     clockIn: string;
     clockOut: string;
     eventType: string;
+    hours: number;
 };
 
 type DayShifts = {
@@ -42,21 +44,28 @@ async function parsePdfTimesheet(filePath: string): Promise<{ employeeName: stri
     const employeeName = (nameMatch?.[1] ?? path.basename(filePath)).trim();
 
     const rowRe =
-        /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+(Regular|Festivo|Baja|Personal|Enfermedad|Fin de semana|Weekend|Overtime)\s+(\d{2}:\d{2})\s+(\d{2}:\d{2})/gi;
+        /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+(Regular|Festivo|Baja|Personal|Enfermedad|Fin de semana|Weekend|Overtime)\s+(\d{2}:\d{2})\s+(\d{2}:\d{2})\s+(\d{2})\s+h\s+(\d{2})\s+min/gi;
     const bajaRowRe =
-        /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+Baja\s+(?:(\d+)\s*h)?/gi;
+        /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+Baja\s+(\d{2})\s+h\s+(\d{2})\s+min/gi;
 
     const byDate = new Map<string, ShiftLog[]>();
     let match: RegExpExecArray | null;
     const initials = buildInitials(employeeName);
 
-    const pushLog = (date: string, eventType: string, clockIn: string, clockOut: string) => {
+    const pushLog = (
+        date: string,
+        eventType: string,
+        clockIn: string,
+        clockOut: string,
+        hours: number,
+    ) => {
         const log: ShiftLog = {
             employeeName,
             initials,
             clockIn,
             clockOut,
             eventType,
+            hours,
         };
         const list = byDate.get(date) ?? [];
         list.push(log);
@@ -69,12 +78,14 @@ async function parsePdfTimesheet(filePath: string): Promise<{ employeeName: stri
         if (eventType !== 'regular' && eventType !== 'weekend' && eventType !== 'overtime') {
             continue;
         }
-        pushLog(date, eventType, match[5], match[6]);
+        const hours = Number(match[7]) + Number(match[8]) / 60;
+        pushLog(date, eventType, match[5], match[6], hours);
     }
 
     while ((match = bajaRowRe.exec(text))) {
         const date = `${match[3]}-${match[2]}-${match[1]}`;
-        pushLog(date, 'adjustment', '', '');
+        const hours = Number(match[4]) + Number(match[5]) / 60;
+        pushLog(date, 'adjustment', '', '', hours);
     }
 
     const shifts = [...byDate.entries()]
@@ -223,7 +234,60 @@ function renderDayCell(date: string, dayNumber: number, isOtherMonth: boolean, l
       </div>`;
 }
 
-function renderMonth(year: number, month0: number, byDate: Map<string, ShiftLog[]>): string {
+function weekStartKey(date: string): string {
+    const [y, m, d] = date.split('-').map(Number);
+    const monday = mondayOnOrBefore(new Date(y, m - 1, d));
+    return ymd(monday);
+}
+
+function buildWeeklyHoursMap(byDate: Map<string, ShiftLog[]>): Map<string, Map<string, number>> {
+    const weekly = new Map<string, Map<string, number>>();
+
+    for (const [date, logs] of byDate) {
+        const weekKey = weekStartKey(date);
+        const bucket = weekly.get(weekKey) ?? new Map<string, number>();
+
+        for (const log of logs) {
+            const prev = bucket.get(log.employeeName) ?? 0;
+            bucket.set(log.employeeName, prev + log.hours);
+        }
+
+        weekly.set(weekKey, bucket);
+    }
+
+    return weekly;
+}
+
+function fmtHours(h: number): string {
+    const whole = Math.floor(h);
+    const mins = Math.round((h - whole) * 60);
+    return mins === 0 ? `${whole} h` : `${whole} h ${mins} min`;
+}
+
+function renderWeekSummaryCell(weekStart: string, weeklyHours: Map<string, Map<string, number>>): string {
+    const bucket = weeklyHours.get(weekStart);
+    if (!bucket || bucket.size === 0) {
+        return `<div class="week-summary"><div class="week-summary-empty">—</div></div>`;
+    }
+
+    const rows = [...bucket.entries()]
+        .sort(([a], [b]) => a.localeCompare(b, 'es'))
+        .map(([name, hours]) => `
+          <div class="week-summary-row">
+            <span class="week-summary-name">${escapeHtml(name)}</span>
+            <span class="week-summary-hours">${escapeHtml(fmtHours(hours))}</span>
+          </div>`)
+        .join('');
+
+    return `<div class="week-summary">${rows}</div>`;
+}
+
+function renderMonth(
+    year: number,
+    month0: number,
+    byDate: Map<string, ShiftLog[]>,
+    weeklyHours: Map<string, Map<string, number>>,
+): string {
     const weeks = buildMonthWeeks(year, month0);
     const monthLabel = `${MONTH_NAMES[month0]} DE ${year}`;
 
@@ -231,12 +295,13 @@ function renderMonth(year: number, month0: number, byDate: Map<string, ShiftLog[
         .map((week, idx) => {
             const header =
                 idx === 0
-                    ? `<div class="dow">${DAY_HEADERS.map((d) => `<span>${d}</span>`).join('')}</div>`
+                    ? `<div class="dow">${DAY_HEADERS.map((d) => `<span>${d}</span>`).join('')}<span class="week-col">${WEEK_SUMMARY_HEADER}</span></div>`
                     : '';
             const days = week
                 .map((day) => renderDayCell(day.date, day.dayNumber, day.isOtherMonth, byDate.get(day.date) ?? []))
                 .join('');
-            return `${header}<div class="week">${days}</div>`;
+            const summary = renderWeekSummaryCell(week[0].date, weeklyHours);
+            return `${header}<div class="week">${days}${summary}</div>`;
         })
         .join('');
 
@@ -247,7 +312,12 @@ function renderMonth(year: number, month0: number, byDate: Map<string, ShiftLog[
       </section>`;
 }
 
-function buildHtml(byDate: Map<string, ShiftLog[]>, employeeCount: number, sourceFiles: string[]): string {
+function buildHtml(
+    byDate: Map<string, ShiftLog[]>,
+    weeklyHours: Map<string, Map<string, number>>,
+    employeeCount: number,
+    sourceFiles: string[],
+): string {
     const dates = [...byDate.keys()].sort();
     const minDate = dates[0] ?? '2026-01-01';
     const maxDate = dates[dates.length - 1] ?? '2026-12-31';
@@ -257,7 +327,7 @@ function buildHtml(byDate: Map<string, ShiftLog[]>, employeeCount: number, sourc
 
     const months: string[] = [];
     for (let m = startMonth; m <= endMonth; m++) {
-        months.push(renderMonth(year, m, byDate));
+        months.push(renderMonth(year, m, byDate, weeklyHours));
     }
 
     const issues: string[] = [];
@@ -301,7 +371,7 @@ function buildHtml(byDate: Map<string, ShiftLog[]>, employeeCount: number, sourc
       font-size: 12px;
       margin-bottom: 28px;
     }
-    .month-block { margin-bottom: 28px; max-width: 920px; margin-left: auto; margin-right: auto; }
+    .month-block { margin-bottom: 28px; max-width: 1040px; margin-left: auto; margin-right: auto; }
     .month-badge {
       display: inline-block;
       background: #4b5563;
@@ -322,7 +392,7 @@ function buildHtml(byDate: Map<string, ShiftLog[]>, employeeCount: number, sourc
     }
     .dow {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, 1fr) minmax(108px, 1.15fr);
       background: linear-gradient(to bottom, #ef4444, #dc2626);
     }
     .dow span {
@@ -334,9 +404,15 @@ function buildHtml(byDate: Map<string, ShiftLog[]>, employeeCount: number, sourc
       border-right: 1px solid rgba(255,255,255,0.25);
     }
     .dow span:last-child { border-right: 0; }
+    .dow span.week-col {
+      font-size: 8px;
+      letter-spacing: 0.04em;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
     .week {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, 1fr) minmax(108px, 1.15fr);
       border-bottom: 1px solid #f3f4f6;
     }
     .week:last-child { border-bottom: 0; }
@@ -416,8 +492,45 @@ function buildHtml(byDate: Map<string, ShiftLog[]>, employeeCount: number, sourc
     .sep { color: #d1d5db; font-size: 7px; }
     .out { color: #e11d48; }
     .more { font-size: 7px; color: #9ca3af; font-weight: 700; padding-left: 18px; }
+    .week-summary {
+      border-left: 1px solid #e5e7eb;
+      background: #f9fafb;
+      padding: 4px 5px;
+      min-height: 88px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow: hidden;
+    }
+    .week-summary-empty {
+      color: #9ca3af;
+      font-size: 9px;
+      text-align: center;
+      margin-top: 28px;
+    }
+    .week-summary-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+    .week-summary-name {
+      font-size: 7px;
+      font-weight: 700;
+      color: #374151;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .week-summary-hours {
+      font-size: 7px;
+      font-weight: 800;
+      color: #111827;
+      font-family: ui-monospace, monospace;
+    }
     .issues {
-      max-width: 920px;
+      max-width: 1040px;
       margin: 32px auto 0;
       background: rgba(255,255,255,0.95);
       border-radius: 12px;
@@ -501,7 +614,7 @@ async function main() {
         byDate.set(date, logs);
     }
 
-    const html = buildHtml(byDate, employees.size, pdfPaths);
+    const html = buildHtml(byDate, buildWeeklyHoursMap(byDate), employees.size, pdfPaths);
     const outPath = path.join(
         path.dirname(pdfPaths[0]),
         'plantilla_calendario_simulacion_2026.html',

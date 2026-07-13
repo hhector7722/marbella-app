@@ -6,7 +6,11 @@
  */
 
 import { isMasterDashboardUser } from './simulation-identity';
-import { isPlantillaClosedHoliday } from './plantilla-holidays';
+import {
+    getPlantillaDayClosingMinutesOrganic,
+    getPlantillaDayOpeningMinutes,
+    isPlantillaClosedHoliday,
+} from './plantilla-holidays';
 import type { TimesheetDayData, TimesheetWeekData } from './timesheet-export-payload';
 
 // ---------------------------------------------------------------------------
@@ -619,11 +623,11 @@ function extractShiftPattern(
     }
 
     if (starts.length === 0 && durations.length === 0) {
-        return { startMinutes: 9 * 60, durationMinutes: 8 * 60, worksWeekends: false };
+        return { startMinutes: 8 * 60, durationMinutes: 8 * 60, worksWeekends: false };
     }
 
     return {
-        startMinutes: starts.length > 0 ? median(starts) : 9 * 60,
+        startMinutes: starts.length > 0 ? median(starts) : 8 * 60,
         durationMinutes: durations.length > 0 ? median(durations) : 8 * 60,
         worksWeekends,
     };
@@ -738,11 +742,13 @@ function buildShiftTimes(
 ) {
     const seed = hashString(`${userId}:${date}`);
     const seedDur = hashString(`${date}:${userId}:dur`);
-    const baseStart = pattern?.startMinutes ?? 9 * 60;
+    const baseStart = pattern?.startMinutes ?? 8 * 60;
     const baseDurationMin = pattern?.durationMinutes ?? Math.round(baseHours * 60);
+    const openAnchor = getPlantillaDayOpeningMinutes(date);
+    const closeMax = getPlantillaDayClosingMinutesOrganic(date);
 
     const startMinutes = organicMinute(
-        clamp(baseStart + (seed % 41) - 20, 7 * 60 + 30, 10 * 60 + 45),
+        clamp(baseStart + (seed % 31) - 15, openAnchor - 10, openAnchor + 25),
         seed,
     );
     const durationMinutes = clamp(
@@ -755,7 +761,7 @@ function buildShiftTimes(
 
     const clockIn = minutesToHm(startMinutes);
     const clockOut = minutesToHm(
-        organicMinute(clamp(startMinutes + durationMinutes, 12 * 60, 22 * 60), seedDur),
+        organicMinute(clamp(startMinutes + durationMinutes, 12 * 60, closeMax), seedDur),
     );
     const totalHours = roundHours((parseHm(clockOut) - parseHm(clockIn)) / 60);
 
@@ -772,6 +778,13 @@ function recalcWeekSummary(week: TimesheetWeekData, weeklyTarget: number) {
         startBalance: 0,
         estimatedValue: 0,
     };
+}
+
+/** Recalcula resúmenes semanales tras coordinación de plantilla. */
+export function recalculateWeekSummaries(weeks: TimesheetWeekData[], weeklyTarget: number): void {
+    for (const week of weeks) {
+        recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+    }
 }
 
 // ---------------------------------------------------------------------------
