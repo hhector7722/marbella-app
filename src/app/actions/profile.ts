@@ -13,6 +13,7 @@ export async function updateProfile(
         email?: string;
         joining_date?: string | null;
         end_date?: string | null;
+        visible_in_plantilla?: boolean;
         prefer_stock_hours?: boolean;
         codigo_empleado?: string;
     }
@@ -44,6 +45,8 @@ export async function updateProfile(
     }
 
     revalidatePath('/profile');
+    revalidatePath('/dashboard');
+    revalidatePath('/master/dashboard');
     return { success: true };
 }
 

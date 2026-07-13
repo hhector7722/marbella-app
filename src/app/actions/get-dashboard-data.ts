@@ -84,8 +84,8 @@ export async function getDashboardData() {
         chartPromise,
         supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single(),
         supabase.from('cash_boxes').select('*').order('name'),
-        // Por defecto: solo empleados activos (end_date IS NULL).
-        supabase.from('profiles').select('*').is('end_date', null),
+        // Plantilla: visibilidad manual (visible_in_plantilla), independiente de end_date.
+        supabase.from('profiles').select('*').eq('visible_in_plantilla', true),
         supabase.rpc('get_operational_box_status')
     ]);
 

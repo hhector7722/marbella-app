@@ -18,6 +18,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { updateProfile } from '@/app/actions/profile';
 import { CashBoxEditModal } from '@/components/modals/CashBoxEditModal';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -271,6 +272,37 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         });
         setAllEmployeesIncludingInactive(cleaned);
         return cleaned;
+    };
+
+    const patchPlantillaVisibility = (employeeId: string, visible: boolean) => {
+        const patch = (list: any[]) =>
+            list.map((emp) =>
+                emp.id === employeeId ? { ...emp, visible_in_plantilla: visible } : emp
+            );
+
+        setAllEmployeesIncludingInactive((prev) => (prev ? patch(prev) : prev));
+        setAllEmployees((prev) => {
+            if (visible) {
+                if (prev.some((emp) => emp.id === employeeId)) return patch(prev);
+                const match = allEmployeesIncludingInactive?.find((emp) => emp.id === employeeId);
+                return match ? [...prev, { ...match, visible_in_plantilla: true }] : prev;
+            }
+            return prev.filter((emp) => emp.id !== employeeId);
+        });
+    };
+
+    const handleTogglePlantillaVisibility = async (employeeId: string, visible: boolean) => {
+        const previousVisible = allEmployeesIncludingInactive?.find((emp) => emp.id === employeeId)?.visible_in_plantilla !== false;
+        patchPlantillaVisibility(employeeId, visible);
+
+        const result = await updateProfile(employeeId, { visible_in_plantilla: visible });
+        if (!result.success) {
+            patchPlantillaVisibility(employeeId, previousVisible);
+            toast.error(result.error || 'No se pudo actualizar la visibilidad');
+            return;
+        }
+
+        toast.success(visible ? 'Trabajador visible en plantilla' : 'Trabajador oculto en plantilla');
     };
 
     const handleCreateWorker = async () => {
@@ -962,7 +994,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     router.push('/dashboard/propinas');
                 }}
                 hideHeaderClose
-                includeInactive={showAllEmployeesInPlantilla}
+                manageVisibility={showAllEmployeesInPlantilla}
+                onToggleVisibility={handleTogglePlantillaVisibility}
                 headerTextAction={{
                     label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',
                     onClick: async () => {

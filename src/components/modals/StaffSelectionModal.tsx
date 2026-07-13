@@ -8,20 +8,21 @@ import { Modal } from '@/components/ui/modal';
 import { trackUsageModalApply } from '@/lib/usage/client';
 import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
 
-interface Employee {
+export interface PlantillaEmployee {
     id: string;
     first_name: string;
     last_name: string;
     role?: string;
     avatar_url?: string | null;
     end_date?: string | null;
+    visible_in_plantilla?: boolean;
 }
 
 interface StaffSelectionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (employee: Employee) => void;
-    employees: Employee[];
+    onSelect: (employee: PlantillaEmployee) => void;
+    employees: PlantillaEmployee[];
     title?: string;
     /** Identificador de uso para tracking (por pantalla). */
     usageId?: string;
@@ -34,15 +35,57 @@ interface StaffSelectionModalProps {
     onOpenTips?: () => void;
     /** Si true, muestra opción "Plantilla" primero (id ''); para vista asistencia manager */
     allowPlantilla?: boolean;
-    /** Si true, incluye empleados con end_date (inactivos) */
-    includeInactive?: boolean;
+    /** Modo gestión: lista con toggles de visibilidad en plantilla */
+    manageVisibility?: boolean;
+    /** Callback al cambiar visible_in_plantilla (solo en manageVisibility) */
+    onToggleVisibility?: (employeeId: string, visible: boolean) => void | Promise<void>;
     /** Acción de texto en cabecera (sin marco ni relleno) */
     headerTextAction?: { label: string; onClick: () => void };
     /** Si true, oculta la cruz (X) de cierre en cabecera */
     hideHeaderClose?: boolean;
 }
 
-const PLANTILLA_SENTINEL: Employee = { id: '', first_name: 'Plantilla', last_name: '' };
+const PLANTILLA_SENTINEL: PlantillaEmployee = { id: '', first_name: 'Plantilla', last_name: '' };
+
+const HIDDEN_NAMES = new Set(['ramon', 'ramón', 'empleado']);
+
+export function filterPlantillaEmployees(employees: PlantillaEmployee[]): PlantillaEmployee[] {
+    return employees.filter((emp) => {
+        const name = (emp.first_name || '').trim().toLowerCase();
+        if (HIDDEN_NAMES.has(name)) return false;
+        return true;
+    });
+}
+
+function VisibilityToggle({
+    visible,
+    onToggle,
+    label,
+}: {
+    visible: boolean;
+    onToggle: () => void;
+    label: string;
+}) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={visible}
+            aria-label={visible ? `Ocultar ${label} de plantilla` : `Mostrar ${label} en plantilla`}
+            onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+            }}
+            className={cn(
+                'flex min-h-12 min-w-[3.75rem] shrink-0 items-center rounded-full p-1 transition-colors',
+                visible ? 'bg-emerald-600 justify-end' : 'bg-zinc-300/90 justify-start',
+            )}
+            title={visible ? 'Visible en plantilla' : 'Oculto en plantilla'}
+        >
+            <span className="h-8 w-8 max-h-full aspect-square rounded-full bg-white shadow-md shrink-0 pointer-events-none" />
+        </button>
+    );
+}
 
 export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     isOpen,
@@ -56,13 +99,14 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     children,
     onOpenTips,
     allowPlantilla = false,
-    includeInactive = false,
+    manageVisibility = false,
+    onToggleVisibility,
     headerTextAction,
     hideHeaderClose = false
 }) => {
     const pathname = usePathname();
 
-    const handleSelect = (employee: Employee) => {
+    const handleSelect = (employee: PlantillaEmployee) => {
         const summary = staffSelectionApplySummary(employee);
         trackUsageModalApply(
             usageId,
@@ -75,12 +119,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         onClose();
     };
 
-    const filteredEmployees = employees.filter(emp => {
-        const name = (emp.first_name || '').trim().toLowerCase();
-        if (name === 'ramon' || name === 'ramón' || name === 'empleado') return false;
-        if (!includeInactive && emp.end_date) return false;
-        return true;
-    });
+    const filteredEmployees = filterPlantillaEmployees(employees);
 
     const headerTrailing = (
         <>
@@ -122,11 +161,13 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         >
             <div className={cn(
                 "p-4 bg-white",
-                variant === 'profile-list' ? 'overflow-visible' : 'overflow-y-auto no-scrollbar flex-1'
+                manageVisibility || variant !== 'profile-list'
+                    ? 'overflow-y-auto no-scrollbar flex-1'
+                    : 'overflow-visible'
             )}>
                 {children}
 
-                {allowPlantilla && (
+                {allowPlantilla && !manageVisibility && (
                     <button
                         type="button"
                         onClick={() => handleSelect(PLANTILLA_SENTINEL)}
@@ -136,7 +177,42 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     </button>
                 )}
 
-                {variant === 'profile-list' ? (
+                {manageVisibility ? (
+                    <div className="divide-y divide-zinc-100">
+                        {filteredEmployees.map((emp) => {
+                            const visible = emp.visible_in_plantilla !== false;
+                            const displayName = emp.first_name || 'Sin nombre';
+                            return (
+                                <div
+                                    key={emp.id}
+                                    className="flex min-h-12 items-center gap-3 py-3"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelect(emp)}
+                                        className="flex min-h-12 flex-1 min-w-0 items-center gap-3 text-left active:opacity-70"
+                                    >
+                                        <Avatar src={emp.avatar_url} alt={displayName} size="md" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-black text-zinc-900 truncate uppercase tracking-tight">
+                                                {displayName}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-zinc-400 truncate uppercase tracking-wider">
+                                                {emp.last_name || ' '}
+                                                {emp.end_date ? ' · Baja' : ''}
+                                            </p>
+                                        </div>
+                                    </button>
+                                    <VisibilityToggle
+                                        visible={visible}
+                                        label={displayName}
+                                        onToggle={() => onToggleVisibility?.(emp.id, !visible)}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : variant === 'profile-list' ? (
                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                         {filteredEmployees.map((emp) => (
                             <button

@@ -12,6 +12,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { updateProfile } from '@/app/actions/profile';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -222,6 +223,37 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         return cleaned;
     };
 
+    const patchPlantillaVisibility = (employeeId: string, visible: boolean) => {
+        const patch = (list: any[]) =>
+            list.map((emp) =>
+                emp.id === employeeId ? { ...emp, visible_in_plantilla: visible } : emp
+            );
+
+        setAllEmployeesIncludingInactive((prev) => (prev ? patch(prev) : prev));
+        setAllEmployees((prev) => {
+            if (visible) {
+                if (prev.some((emp) => emp.id === employeeId)) return patch(prev);
+                const match = allEmployeesIncludingInactive?.find((emp) => emp.id === employeeId);
+                return match ? [...prev, { ...match, visible_in_plantilla: true }] : prev;
+            }
+            return prev.filter((emp) => emp.id !== employeeId);
+        });
+    };
+
+    const handleTogglePlantillaVisibility = async (employeeId: string, visible: boolean) => {
+        const previousVisible = allEmployeesIncludingInactive?.find((emp) => emp.id === employeeId)?.visible_in_plantilla !== false;
+        patchPlantillaVisibility(employeeId, visible);
+
+        const result = await updateProfile(employeeId, { visible_in_plantilla: visible });
+        if (!result.success) {
+            patchPlantillaVisibility(employeeId, previousVisible);
+            toast.error(result.error || 'No se pudo actualizar la visibilidad');
+            return;
+        }
+
+        toast.success(visible ? 'Trabajador visible en plantilla' : 'Trabajador oculto en plantilla');
+    };
+
     const buildPaymentSources = (): BoxOption[] => {
         const list: BoxOption[] = [];
         const op = boxes.find((b: any) => b.type === 'operational');
@@ -314,7 +346,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     router.push('/dashboard/propinas');
                 }}
                 hideHeaderClose
-                includeInactive={showAllEmployeesInPlantilla}
+                manageVisibility={showAllEmployeesInPlantilla}
+                onToggleVisibility={handleTogglePlantillaVisibility}
                 headerTextAction={{
                     label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',
                     onClick: async () => {
