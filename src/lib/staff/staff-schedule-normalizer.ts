@@ -50,7 +50,10 @@ const MIN_SHIFT_HOURS = 4;
 const MAX_SHIFT_HOURS = 10;
 const IDEAL_SHIFT_HOURS = 7;
 const BALANCE_TOLERANCE = 0.25;
-const TRIM_STEP_HOURS = 5 / 60; // 5 minutos
+const TRIM_STEP_HOURS = 1 / 60; // 1 minuto — ajustes finos sin cuadrar a 5 min
+
+/** Héctor: jornadas simuladas siempre ligeramente por encima de 8 h. */
+const HECTOR_MIN_SHIFT_HOURS = 8 + 2 / 60;
 
 /** Mínimo de jornadas flexibles en el período de referencia para inferir patrón/contrato. */
 const MIN_REFERENCE_FLEX_DAYS = 4;
@@ -227,7 +230,7 @@ function inferContractFromReference(
 }
 
 // ---------------------------------------------------------------------------
-// Caso Héctor: L–V, ~8 h, sin festivos bloqueados
+// Caso Héctor: L–V, ~8 h+ con minutos realistas, sin festivos bloqueados
 // ---------------------------------------------------------------------------
 
 function applyHectorBaseline(
@@ -243,7 +246,13 @@ function applyHectorBaseline(
             if (isWeekend(day.date)) continue;
             if (day.hasLog && LOCKED_EVENT_TYPES.has(day.eventType)) continue;
 
-            const shift = buildShiftTimes(day.date, userId, 8, pattern);
+            const shift = buildShiftTimes(
+                day.date,
+                userId,
+                hectorDailyTargetHours(day.date, userId),
+                pattern,
+                HECTOR_MIN_SHIFT_HOURS,
+            );
             applyShiftToDay(day, shift);
         }
     }
@@ -291,26 +300,26 @@ function balanceWeek(
     let flexHours = sumHours(flexDays);
 
     if (flexHours > flexTarget + BALANCE_TOLERANCE) {
-        trimFlexibleHours(flexDays, flexHours - flexTarget, userId);
+        trimFlexibleHours(flexDays, flexHours - flexTarget, userId, isHector);
 
         flexDays = getFlexibleDays(week).filter(inRange);
         flexHours = sumHours(flexDays);
 
         if (flexHours > flexTarget + BALANCE_TOLERANCE) {
-            removeFlexibleDaysNaturally(week, flexTarget, userId, pattern, inRange);
+            removeFlexibleDaysNaturally(week, flexTarget, userId, pattern, inRange, isHector);
             flexDays = getFlexibleDays(week).filter(inRange);
             flexHours = sumHours(flexDays);
         }
 
         if (flexHours > flexTarget + BALANCE_TOLERANCE) {
-            trimFlexibleHours(flexDays, flexHours - flexTarget, userId);
+            trimFlexibleHours(flexDays, flexHours - flexTarget, userId, isHector);
         }
         return;
     }
 
     if (flexHours < flexTarget - BALANCE_TOLERANCE) {
         const deficit = flexTarget - flexHours;
-        extendFlexibleHours(flexDays, deficit, userId);
+        extendFlexibleHours(flexDays, deficit, userId, isHector);
 
         flexDays = getFlexibleDays(week).filter(inRange);
         flexHours = sumHours(flexDays);
@@ -334,24 +343,26 @@ function trimFlexibleHours(
     flexDays: TimesheetDayData[],
     hoursToRemove: number,
     userId: string,
+    isHector = false,
 ): boolean {
+    const minShift = isHector ? HECTOR_MIN_SHIFT_HOURS : MIN_SHIFT_HOURS;
     let remaining = hoursToRemove;
     let guard = 0;
 
     while (remaining > BALANCE_TOLERANCE && guard < 500) {
         guard += 1;
-        const adjustable = flexDays.filter((d) => d.totalHours - MIN_SHIFT_HOURS > TRIM_STEP_HOURS);
+        const adjustable = flexDays.filter((d) => d.totalHours - minShift > TRIM_STEP_HOURS);
         if (adjustable.length === 0) return false;
 
         const step = Math.min(TRIM_STEP_HOURS, remaining / adjustable.length);
         let progressed = false;
 
         for (const day of adjustable) {
-            const maxTrim = day.totalHours - MIN_SHIFT_HOURS;
+            const maxTrim = day.totalHours - minShift;
             const trim = Math.min(step, maxTrim, remaining);
             if (trim <= 0.01) continue;
 
-            adjustDayDuration(day, -trim, userId);
+            adjustDayDuration(day, -trim, userId, minShift);
             remaining -= trim;
             progressed = true;
             if (remaining <= BALANCE_TOLERANCE) return true;
@@ -368,7 +379,9 @@ function extendFlexibleHours(
     flexDays: TimesheetDayData[],
     hoursToAdd: number,
     userId: string,
+    isHector = false,
 ) {
+    const minShift = isHector ? HECTOR_MIN_SHIFT_HOURS : MIN_SHIFT_HOURS;
     let remaining = hoursToAdd;
     let guard = 0;
 
@@ -385,7 +398,7 @@ function extendFlexibleHours(
             const extend = Math.min(step, maxExtend, remaining);
             if (extend <= 0.01) continue;
 
-            adjustDayDuration(day, extend, userId);
+            adjustDayDuration(day, extend, userId, minShift);
             remaining -= extend;
             progressed = true;
             if (remaining <= BALANCE_TOLERANCE) return;
@@ -404,6 +417,7 @@ function removeFlexibleDaysNaturally(
     userId: string,
     pattern: ShiftPattern,
     inRange: (day: TimesheetDayData) => boolean,
+    isHector = false,
 ) {
     let flexDays = getFlexibleDays(week).filter(inRange);
     const idealCount = idealFlexibleDayCount(flexTarget, flexDays.length);
@@ -420,9 +434,9 @@ function removeFlexibleDaysNaturally(
     const diff = flexTarget - sumHours(flexDays);
     if (Math.abs(diff) > BALANCE_TOLERANCE && flexDays.length > 0) {
         if (diff > 0) {
-            extendFlexibleHours(flexDays, diff, userId);
+            extendFlexibleHours(flexDays, diff, userId, isHector);
         } else {
-            trimFlexibleHours(flexDays, -diff, userId);
+            trimFlexibleHours(flexDays, -diff, userId, isHector);
         }
     }
 }
@@ -583,9 +597,20 @@ function clearDay(day: TimesheetDayData) {
     day.eventType = 'regular';
 }
 
-function adjustDayDuration(day: TimesheetDayData, deltaHours: number, userId: string) {
+function adjustDayDuration(
+    day: TimesheetDayData,
+    deltaHours: number,
+    userId: string,
+    minShiftHours: number = MIN_SHIFT_HOURS,
+) {
     if (!day.clockIn || !day.clockOut) {
-        const shift = buildShiftTimes(day.date, userId, Math.max(MIN_SHIFT_HOURS, day.totalHours + deltaHours));
+        const shift = buildShiftTimes(
+            day.date,
+            userId,
+            Math.max(minShiftHours, day.totalHours + deltaHours),
+            undefined,
+            minShiftHours,
+        );
         applyShiftToDay(day, shift);
         return;
     }
@@ -593,9 +618,10 @@ function adjustDayDuration(day: TimesheetDayData, deltaHours: number, userId: st
     let inMin = parseHm(day.clockIn);
     let outMin = parseHm(day.clockOut);
     let deltaMin = Math.round(deltaHours * 60);
-    const minDuration = MIN_SHIFT_HOURS * 60;
+    const minDuration = Math.round(minShiftHours * 60);
     const maxOut = 22 * 60;
     const minIn = 7 * 60 + 30;
+    const seed = hashString(`${userId}:${day.date}:adjust`);
 
     if (deltaMin < 0) {
         let toRemove = -deltaMin;
@@ -621,36 +647,50 @@ function adjustDayDuration(day: TimesheetDayData, deltaHours: number, userId: st
         }
     }
 
-    inMin = snap5(inMin);
-    outMin = snap5(Math.max(outMin, inMin + minDuration));
+    inMin = organicMinute(inMin, seed);
+    outMin = organicMinute(Math.max(outMin, inMin + minDuration), seed + 17);
 
     day.clockIn = minutesToHm(inMin);
     day.clockOut = minutesToHm(outMin);
     day.totalHours = roundHours((outMin - inMin) / 60);
 }
 
-/** Variación determinista de entrada/salida basada en el patrón habitual del empleado. */
+/** Objetivo diario Héctor: entre 8 h 05 min y 8 h 28 min (determinista por fecha). */
+function hectorDailyTargetHours(date: string, userId: string): number {
+    const seed = hashString(`${userId}:${date}:hector-target`);
+    const extraMin = 5 + (seed % 24);
+    return roundHours((8 * 60 + extraMin) / 60);
+}
+
+/** Variación determinista de entrada/salida con minutos “humanos” (no múltiplos de 5). */
 function buildShiftTimes(
     date: string,
     userId: string,
     baseHours: number,
     pattern?: ShiftPattern,
+    minShiftHours: number = MIN_SHIFT_HOURS,
 ) {
     const seed = hashString(`${userId}:${date}`);
+    const seedDur = hashString(`${date}:${userId}:dur`);
     const baseStart = pattern?.startMinutes ?? 9 * 60;
     const baseDurationMin = pattern?.durationMinutes ?? Math.round(baseHours * 60);
 
-    const startMinutes = snap5(
-        clamp(baseStart + (seed % 31) - 15, 7 * 60 + 30, 11 * 60),
+    const startMinutes = organicMinute(
+        clamp(baseStart + (seed % 41) - 20, 7 * 60 + 30, 10 * 60 + 45),
+        seed,
     );
     const durationMinutes = clamp(
-        snap5(Math.round(baseHours * 60) + (seed % 23) - 11 + (baseDurationMin - Math.round(baseHours * 60)) / 3),
-        MIN_SHIFT_HOURS * 60,
+        Math.round(baseHours * 60) +
+            (seedDur % 29) - 12 +
+            Math.round((baseDurationMin - Math.round(baseHours * 60)) / 4),
+        Math.round(minShiftHours * 60),
         MAX_SHIFT_HOURS * 60,
     );
 
     const clockIn = minutesToHm(startMinutes);
-    const clockOut = minutesToHm(snap5(clamp(startMinutes + durationMinutes, 12 * 60, 22 * 60)));
+    const clockOut = minutesToHm(
+        organicMinute(clamp(startMinutes + durationMinutes, 12 * 60, 22 * 60), seedDur),
+    );
     const totalHours = roundHours((parseHm(clockOut) - parseHm(clockIn)) / 60);
 
     return { clockIn, clockOut, totalHours };
@@ -764,8 +804,14 @@ function median(values: number[]): number {
         : sorted[mid];
 }
 
-function snap5(minutes: number): number {
-    return Math.round(minutes / 5) * 5;
+function organicMinute(totalMinutes: number, seed: number): number {
+    let m = Math.round(totalMinutes);
+    const minPart = ((m % 60) + 60) % 60;
+    if (minPart % 5 !== 0) return m;
+
+    const offsets = [2, 3, 4, 7, 8, 9, 11, 13, 17, 22, 23, 38, 41, 46, 52, 58];
+    const offset = offsets[Math.abs(seed) % offsets.length];
+    return m - minPart + offset;
 }
 
 function formatYmd(d: Date): string {
