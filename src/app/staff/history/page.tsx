@@ -146,6 +146,7 @@ export default function HistoryPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
     const [showExportEmployeeModal, setShowExportEmployeeModal] = useState(false);
+    const [showSimulationEmployeePicker, setShowSimulationEmployeePicker] = useState(false);
     const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
 
     const initUser = useCallback(async () => {
@@ -452,6 +453,9 @@ export default function HistoryPage() {
     const isPlantilla = isManager && selectedEmployeeId === '';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
     const isMaster = isMasterDashboardUser(userEmail);
+    const hasRealExportData = weeksData.length > 0;
+    const showExportButton =
+        !isPlantilla || (isPlantilla && isMaster && plantillaWeeksData.length > 0);
 
     const headerLabel = isPlantilla
         ? 'Plantilla'
@@ -557,11 +561,15 @@ export default function HistoryPage() {
         return [...byStart.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
     }
 
-    async function handleExportSimulated() {
+    async function handleExportSimulated(overrideUserId?: string) {
         setShowExportMenu(false);
         setIsExporting(true);
         try {
-            const targetId = selectedEmployeeId || currentUserId;
+            const targetId = overrideUserId || selectedEmployeeId || currentUserId;
+            if (!targetId) {
+                toast.error('Selecciona un empleado para generar la simulación');
+                return;
+            }
 
             const targetEmployee = employees.find((e) => e.id === targetId);
             const fullName = targetEmployee
@@ -794,8 +802,8 @@ export default function HistoryPage() {
                         {/* Derecha: Botón exportar + Selector de Personal */}
                         <div className="flex items-center gap-2 justify-end">
 
-                            {/* Botón exportar — visible cuando hay datos */}
-                            {((!isPlantilla && weeksData.length > 0) || (isPlantilla && isMaster && plantillaWeeksData.length > 0)) && (
+                            {/* Botón exportar — individual siempre; plantilla solo master con datos */}
+                            {showExportButton && (
                                 <div className="relative">
                                     <button
                                         type="button"
@@ -846,29 +854,46 @@ export default function HistoryPage() {
                                                             <span className="text-base leading-none">📊</span>
                                                             <span>Exportar todos <span className="font-normal text-zinc-400">(Excel)</span></span>
                                                         </button>
-                                                    </>
-                                                ) : (
-                                                    <>
+                                                        <div className="h-px bg-zinc-100 mx-3" />
                                                         <button
                                                             type="button"
                                                             role="menuitem"
-                                                            onClick={() => handleExport('pdf')}
+                                                            onClick={() => {
+                                                                setShowExportMenu(false);
+                                                                setShowSimulationEmployeePicker(true);
+                                                            }}
                                                             className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                         >
                                                             <span className="text-base leading-none">📄</span>
-                                                            <span>PDF <span className="font-normal text-zinc-400">(Registros reales)</span></span>
+                                                            <span>PDF <span className="font-normal text-zinc-400">(Simulación horas contratadas)</span></span>
                                                         </button>
-                                                        <div className="h-px bg-zinc-100 mx-3" />
-                                                        <button
-                                                            type="button"
-                                                            role="menuitem"
-                                                            onClick={() => handleExport('xlsx')}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                        >
-                                                            <span className="text-base leading-none">📊</span>
-                                                            <span>Excel <span className="font-normal text-zinc-400">(Registros reales)</span></span>
-                                                        </button>
-                                                        <div className="h-px bg-zinc-100 mx-3" />
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {hasRealExportData ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    role="menuitem"
+                                                                    onClick={() => handleExport('pdf')}
+                                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                                >
+                                                                    <span className="text-base leading-none">📄</span>
+                                                                    <span>PDF <span className="font-normal text-zinc-400">(Registros reales)</span></span>
+                                                                </button>
+                                                                <div className="h-px bg-zinc-100 mx-3" />
+                                                                <button
+                                                                    type="button"
+                                                                    role="menuitem"
+                                                                    onClick={() => handleExport('xlsx')}
+                                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                                >
+                                                                    <span className="text-base leading-none">📊</span>
+                                                                    <span>Excel <span className="font-normal text-zinc-400">(Registros reales)</span></span>
+                                                                </button>
+                                                                <div className="h-px bg-zinc-100 mx-3" />
+                                                            </>
+                                                        ) : null}
                                                         <button
                                                             type="button"
                                                             role="menuitem"
@@ -1032,6 +1057,20 @@ export default function HistoryPage() {
                     setSelectedEmployeeId(emp.id);
                     setSelectedEmployeeLabel(staffSelectionApplySummary(emp));
                     setShowEmployeeDropdown(false);
+                }}
+            />
+
+            <StaffSelectionModal
+                isOpen={showSimulationEmployeePicker}
+                onClose={() => setShowSimulationEmployeePicker(false)}
+                employees={employees}
+                title="Simulación de jornada"
+                usageId="staff-history-simulation-export"
+                usageLabel="Exportar simulación"
+                allowPlantilla={false}
+                onSelect={(emp) => {
+                    setShowSimulationEmployeePicker(false);
+                    void handleExportSimulated(emp.id);
                 }}
             />
 
