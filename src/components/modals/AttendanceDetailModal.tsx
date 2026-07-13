@@ -219,7 +219,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     const [isSaving, setIsSaving] = useState(false);
     const [editWeekModalOpen, setEditWeekModalOpen] = useState(false);
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
-    const [createTime, setCreateTime] = useState('09:00');
+    const [createTime, setCreateTime] = useState('08:00');
     const [creating, setCreating] = useState(false);
     const isManager = userRole === 'manager';
 
@@ -271,8 +271,8 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
         const newLogs = [...logs];
         newLogs[index] = { ...newLogs[index], [field]: value };
         if (field === 'event_type' && value !== 'regular') {
-            if (!newLogs[index].in_time) newLogs[index].in_time = '09:00';
-            if (!newLogs[index].out_time) newLogs[index].out_time = '17:00';
+            if (!newLogs[index].in_time) newLogs[index].in_time = '08:00';
+            if (!newLogs[index].out_time) newLogs[index].out_time = '16:00';
         }
         setLogs(newLogs);
     };
@@ -371,7 +371,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             if (result.success) {
                 toast.success('Fichaje creado');
                 setShowCreateFichaje(false);
-                setCreateTime('09:00');
+                setCreateTime('08:00');
                 fetchDayLogs();
                 onSuccess();
             } else {

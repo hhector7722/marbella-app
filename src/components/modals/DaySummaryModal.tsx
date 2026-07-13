@@ -30,7 +30,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
     const trackDaySummary = useTrackModalApply('day-summary', 'Resumen de fichajes');
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
     const [createUserId, setCreateUserId] = useState('');
-    const [createTime, setCreateTime] = useState('09:00');
+    const [createTime, setCreateTime] = useState('08:00');
     const [creating, setCreating] = useState(false);
 
     const employeeIdsWithLog = new Set((logs || []).map((l: { user_id: string }) => l.user_id));
@@ -50,7 +50,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                 toast.success('Fichaje creado');
                 setShowCreateFichaje(false);
                 setCreateUserId('');
-                setCreateTime('09:00');
+                setCreateTime('08:00');
                 onFichajeCreated?.();
             } else {
                 toast.error(result.error ?? 'Error al crear fichaje');

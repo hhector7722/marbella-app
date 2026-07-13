@@ -436,8 +436,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             } else {
                 setIsDayPublished(false);
                 setActivity('');
-                setDefaultStart('');
-                setDefaultEnd('');
+                setDefaultStart('08:00');
+                setDefaultEnd('16:00');
                 setParticipantsCount('');
                 setCategoria('');
                 setActivity2('');
@@ -476,8 +476,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         const newShift = {
             employeeId: profile.id,
             name: profile.first_name?.toLowerCase() === 'fernando' ? 'Fer' : (profile.first_name?.toLowerCase() === 'mamadou' ? 'Mamdou' : profile.first_name),
-            start: defaultStart || '09:00',
-            end: defaultEnd || '17:00',
+            start: defaultStart || '08:00',
+            end: defaultEnd || '16:00',
             activity: activity || '',
             categoria: categoria || '',
             participantsCount: participantsCount || '',
@@ -550,8 +550,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
                 // Los valores por defecto de la cabecera (defaultStart, activity, etc.) ya actúan como inicializadores
                 // en handleAddEmployee, pero una vez creados, el turno del trabajador es independiente.
-                const resolvedStart = (shift.start || defaultStart || '09:00').trim();
-                const resolvedEnd = (shift.end || defaultEnd || '17:00').trim();
+                const resolvedStart = (shift.start || defaultStart || '08:00').trim();
+                const resolvedEnd = (shift.end || defaultEnd || '16:00').trim();
                 const startDateTime = new Date(`${date}T${resolvedStart}:00`);
                 const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
                 const isoStart = startDateTime.toISOString();
