@@ -85,6 +85,164 @@ function formatCurrencySpanish(val: number): string {
     return `${formatted}€`;
 }
 
+type MonthKey = string;
+
+function toMonthKey(date: Date): MonthKey {
+    return format(date, 'yyyy-MM');
+}
+
+function monthKeyLabel(key: MonthKey): string {
+    const [y, m] = key.split('-').map(Number);
+    return format(new Date(y, m - 1, 1), 'MMMM yyyy', { locale: es });
+}
+
+function monthKeyToRange(key: MonthKey): { start: string; end: string } {
+    const [y, m] = key.split('-').map(Number);
+    const start = new Date(y, m - 1, 1);
+    return {
+        start: format(start, 'yyyy-MM-dd'),
+        end: format(endOfMonth(start), 'yyyy-MM-dd'),
+    };
+}
+
+type ClosingExportRow = {
+    fecha: string;
+    ventas: string;
+    neta: string;
+    ticks: string;
+    tm: string;
+    cash: string;
+    card: string;
+    pend: string;
+    recup: string;
+    dif: string;
+};
+
+const EXPORT_TABLE_HEADERS = [
+    'Fecha', 'Ventas €', 'Neta €', 'Ticks', 'TM €', 'Cash €', 'Card €', 'Pend. €', 'Recup. €', 'Dif. €',
+] as const;
+
+function buildClosingExportRows(closings: any[]): ClosingExportRow[] {
+    return [...closings]
+        .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
+        .map((c) => {
+            const d = new Date(c.closed_at);
+            const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
+            const diff = c.difference ?? 0;
+            const fmt = (val: number) => (val === 0 ? '' : formatCurrencySpanish(val));
+            return {
+                fecha: format(d, 'd/M/yy', { locale: es }),
+                ventas: fmt(c.tpv_sales || 0),
+                neta: fmt(c.net_sales || 0),
+                ticks: (c.tickets_count || 0).toLocaleString('es-ES'),
+                tm: avgTicket === 0 ? '' : formatCurrencySpanish(avgTicket),
+                cash: fmt(c.cash_counted || 0),
+                card: fmt(c.sales_card || 0),
+                pend: fmt(c.sales_pending || 0),
+                recup: fmt(c.debt_recovered || 0),
+                dif: diff === 0 ? '' : formatCurrencySpanish(diff),
+            };
+        });
+}
+
+function buildExportTableHtml(rows: ClosingExportRow[], title: string): string {
+    const headerHtml = EXPORT_TABLE_HEADERS.map((h) => `<th>${h}</th>`).join('');
+    const bodyHtml = rows
+        .map((row) => {
+            const cells = [row.fecha, row.ventas, row.neta, row.ticks, row.tm, row.cash, row.card, row.pend, row.recup, row.dif];
+            return `<tr>${cells.map((cell, i) => `<td${i === 0 ? '' : ' style="text-align:right"'}>${cell || ' '}</td>`).join('')}</tr>`;
+        })
+        .join('');
+    return `<h1 style="font-size:18px;margin-bottom:12px;font-weight:800;">${title}</h1><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
+}
+
+function exportClosingsToExcel(closings: any[], monthKeys: string[]) {
+    const rows = buildClosingExportRows(closings);
+    const aoa = [
+        [...EXPORT_TABLE_HEADERS],
+        ...rows.map((r) => [r.fecha, r.ventas, r.neta, r.ticks, r.tm, r.cash, r.card, r.pend, r.recup, r.dif]),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cierres');
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const monthStamp = monthKeys.length === 1 ? monthKeys[0] : `${monthKeys[0]}_${monthKeys[monthKeys.length - 1]}`;
+    XLSX.writeFile(wb, `cierres_${monthStamp}_${stamp}.xlsx`, { compression: true });
+}
+
+function printClosingsTable(closings: any[], title: string) {
+    const rows = buildClosingExportRows(closings);
+    const html = buildExportTableHtml(rows, title);
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument;
+    if (!doc) {
+        iframe.remove();
+        throw new Error('No se pudo preparar la impresión.');
+    }
+
+    doc.open();
+    doc.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Imprimir cierres</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        background: #36606F; color: white;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        font-weight: 800; font-size: 11px;
+        padding: 10px 12px; text-align: right;
+      }
+      thead th:first-child { text-align: left; }
+      tbody td {
+        border-top: 1px solid #f4f4f5;
+        padding: 10px 12px;
+        font-size: 12px;
+        vertical-align: top;
+        text-align: right;
+      }
+      tbody td:first-child { text-align: left; }
+      tbody tr:nth-child(even) td { background: #fafafa; }
+      @media print {
+        body { margin: 0; padding: 0; }
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    ${html}
+  </body>
+</html>`);
+    doc.close();
+
+    setTimeout(() => {
+        try {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+        } finally {
+            setTimeout(() => iframe.remove(), 250);
+        }
+    }, 50);
+}
+
 function formatCurrencyModal(val: number): string {
     if (Math.abs(val) < 0.005) return '';
     const formatted = val.toLocaleString('es-ES', {
@@ -559,6 +717,7 @@ export default function HistoryPage() {
     const trackHistoryMonthPicker = useTrackModalApply('history-month-picker', 'Selector de mes historial');
     const trackHistoryDateSingle = useTrackModalApply('history-date-single', 'Calendario día historial');
     const trackHistoryDateRange = useTrackModalApply('history-date-range', 'Calendario periodo historial');
+    const trackHistoryExportMonths = useTrackModalApply('history-export-month-picker', 'Exportar meses historial');
 
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
@@ -589,6 +748,10 @@ export default function HistoryPage() {
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
     const [shareMenuOpen, setShareMenuOpen] = useState(false);
     const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
+    const [exportMonthPickerOpen, setExportMonthPickerOpen] = useState(false);
+    const [exportPendingFormat, setExportPendingFormat] = useState<'excel' | 'print' | null>(null);
+    const [exportSelectedMonths, setExportSelectedMonths] = useState<Set<MonthKey>>(new Set());
+    const [exportPickerYear, setExportPickerYear] = useState(() => new Date().getFullYear());
 
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
@@ -746,6 +909,11 @@ export default function HistoryPage() {
         open: showMonthPicker,
         usageId: 'history-month-picker',
         usageLabel: 'Selector de mes',
+    });
+    useModalUsageTracking({
+        open: exportMonthPickerOpen,
+        usageId: 'history-export-month-picker',
+        usageLabel: 'Selector de meses para exportar',
     });
 
     const calendarDays = useMemo(() => {
@@ -1125,120 +1293,104 @@ export default function HistoryPage() {
         }
     }
 
-    const getActiveTableEl = (): HTMLTableElement | null => {
-        const table = document.querySelector('.print-table-cierres table') as HTMLTableElement | null;
-        return table;
+    const getCurrentViewMonthKey = (): MonthKey => {
+        const base = filterMode === 'range' && rangeStart ? parseLocalSafe(rangeStart) : parseLocalSafe(selectedDate);
+        return toMonthKey(startOfMonth(base));
     };
 
-    const exportTableToExcel = () => {
-        if (shareBusy) return;
-        setShareBusy('excel');
-        try {
-            const table = getActiveTableEl();
-            if (!table) {
-                toast.error('No se ha encontrado la tabla para exportar.');
-                return;
+    const getInitialExportMonths = (): Set<MonthKey> => {
+        if (filterMode === 'range' && rangeStart && rangeEnd) {
+            const start = startOfMonth(parseLocalSafe(rangeStart));
+            const end = startOfMonth(parseLocalSafe(rangeEnd));
+            const months = new Set<MonthKey>();
+            let cursor = start;
+            while (cursor <= end) {
+                months.add(toMonthKey(cursor));
+                cursor = addMonths(cursor, 1);
             }
-            const ws = XLSX.utils.table_to_sheet(table);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Cierres');
-
-            const now = new Date();
-            const pad = (n: number) => String(n).padStart(2, '0');
-            const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-            XLSX.writeFile(wb, `cierres_${stamp}.xlsx`, { compression: true });
-            toast.success('Excel descargado.');
-        } catch (e) {
-            console.error(e);
-            toast.error('Error exportando a Excel.');
-        } finally {
-            setShareBusy(null);
-            setShareMenuOpen(false);
+            if (months.size > 0) return months;
         }
+        return new Set([getCurrentViewMonthKey()]);
     };
 
-    const printTable = () => {
+    const openExportMonthPicker = (format: 'excel' | 'print') => {
+        setShareMenuOpen(false);
+        setExportPendingFormat(format);
+        const initialMonths = getInitialExportMonths();
+        const currentKey = getCurrentViewMonthKey();
+        setExportSelectedMonths(initialMonths);
+        setExportPickerYear(Number(currentKey.split('-')[0]));
+        setExportMonthPickerOpen(true);
+    };
+
+    const toggleExportMonth = (key: MonthKey) => {
+        setExportSelectedMonths((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
+    async function fetchClosingsForMonths(monthKeys: Set<MonthKey>): Promise<any[]> {
+        if (monthKeys.size === 0) return [];
+        const ranges = Array.from(monthKeys).map(monthKeyToRange);
+        const startISO = ranges.reduce((min, r) => (r.start < min ? r.start : min), ranges[0].start);
+        const endISO = ranges.reduce((max, r) => (r.end > max ? r.end : max), ranges[0].end);
+
+        const { data, error } = await supabase
+            .from('cash_closings')
+            .select('*')
+            .gte('closing_date', startISO)
+            .lte('closing_date', endISO)
+            .order('closing_date', { ascending: false });
+
+        if (error) throw error;
+
+        return (data || []).filter((c) => monthKeys.has(toMonthKey(parseLocalSafe(c.closing_date))));
+    }
+
+    const confirmExport = async () => {
+        if (!exportPendingFormat || exportSelectedMonths.size === 0) {
+            toast.error('Selecciona al menos un mes.');
+            return;
+        }
         if (shareBusy) return;
-        setShareBusy('print');
+
+        setShareBusy(exportPendingFormat === 'excel' ? 'excel' : 'print');
         try {
-            const table = getActiveTableEl();
-            if (!table) {
-                toast.error('No se ha encontrado la tabla para imprimir.');
-                return;
-            }
-            const html = table.outerHTML;
-
-            const iframe = document.createElement('iframe');
-            iframe.setAttribute('aria-hidden', 'true');
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
-
-            const doc = iframe.contentDocument;
-            if (!doc) {
-                iframe.remove();
-                toast.error('No se pudo preparar la impresión.');
+            const closingsData = await fetchClosingsForMonths(exportSelectedMonths);
+            if (closingsData.length === 0) {
+                toast.error('No hay cierres en los meses seleccionados.');
                 return;
             }
 
-            doc.open();
-            doc.write(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Imprimir cierres</title>
-    <style>
-      * { box-sizing: border-box; }
-      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
-      table { width: 100%; border-collapse: collapse; }
-      thead th {
-        background: #36606F; color: white;
-        text-transform: uppercase; letter-spacing: 0.12em;
-        font-weight: 800; font-size: 11px;
-        padding: 10px 12px; text-align: right;
-      }
-      thead th:first-child { text-align: left; }
-      tbody td {
-        border-top: 1px solid #f4f4f5;
-        padding: 10px 12px;
-        font-size: 12px;
-        vertical-align: top;
-        text-align: right;
-      }
-      tbody td:first-child { text-align: left; }
-      tbody tr:nth-child(even) td { background: #fafafa; }
-      @media print {
-        body { margin: 0; padding: 0; }
-        thead { display: table-header-group; }
-        tr { page-break-inside: avoid; }
-      }
-    </style>
-  </head>
-  <body>
-    ${html}
-  </body>
-</html>`);
-            doc.close();
+            const sortedKeys = Array.from(exportSelectedMonths).sort();
+            const titleLabel = sortedKeys.length === 1
+                ? `Cierres — ${monthKeyLabel(sortedKeys[0])}`
+                : `Cierres — ${monthKeyLabel(sortedKeys[0])} a ${monthKeyLabel(sortedKeys[sortedKeys.length - 1])}`;
 
-            setTimeout(() => {
-                try {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                } finally {
-                    setTimeout(() => iframe.remove(), 250);
-                }
-            }, 50);
+            if (exportPendingFormat === 'excel') {
+                exportClosingsToExcel(closingsData, sortedKeys);
+                toast.success('Excel descargado.');
+            } else {
+                printClosingsTable(closingsData, titleLabel);
+            }
+
+            trackHistoryExportMonths(
+                sortedKeys.length === 1
+                    ? monthKeyLabel(sortedKeys[0])
+                    : `${monthKeyLabel(sortedKeys[0])} — ${monthKeyLabel(sortedKeys[sortedKeys.length - 1])} (${sortedKeys.length} meses)`,
+                { months: sortedKeys.join(','), format: exportPendingFormat }
+            );
+
+            setExportMonthPickerOpen(false);
+            setExportPendingFormat(null);
         } catch (e) {
             console.error(e);
-            toast.error('Error al imprimir.');
+            toast.error(exportPendingFormat === 'excel' ? 'Error exportando a Excel.' : 'Error al imprimir.');
         } finally {
             setShareBusy(null);
-            setShareMenuOpen(false);
         }
     };
 
@@ -1489,7 +1641,7 @@ export default function HistoryPage() {
                                             <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
                                                 <button
                                                     type="button"
-                                                    onClick={exportTableToExcel}
+                                                    onClick={() => openExportMonthPicker('excel')}
                                                     className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
                                                 >
                                                     <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
@@ -1498,10 +1650,10 @@ export default function HistoryPage() {
                                                 <div className="h-px bg-zinc-100" />
                                                 <button
                                                     type="button"
-                                                    onClick={printTable}
+                                                    onClick={() => openExportMonthPicker('print')}
                                                     className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
                                                 >
-                                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
+                                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir / PDF</span>
                                                     <Printer className="w-4 h-4 text-zinc-500" />
                                                 </button>
                                             </div>
@@ -2371,6 +2523,129 @@ export default function HistoryPage() {
                     </div>
                 </div>
             )}
+
+            {exportMonthPickerOpen && exportPendingFormat ? (
+                <div
+                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm"
+                    onClick={() => {
+                        if (shareBusy) return;
+                        setExportMonthPickerOpen(false);
+                        setExportPendingFormat(null);
+                    }}
+                >
+                    <div
+                        className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between gap-3">
+                            <div>
+                                <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">
+                                    Meses a exportar
+                                </h3>
+                                <p className="mt-1 text-[10px] font-semibold text-zinc-400">
+                                    {exportPendingFormat === 'excel' ? 'Excel' : 'Imprimir / PDF'} — puedes elegir uno o varios
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (shareBusy) return;
+                                    setExportMonthPickerOpen(false);
+                                    setExportPendingFormat(null);
+                                }}
+                                className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors shrink-0"
+                            >
+                                <X size={18} className="text-zinc-400" />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6 px-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setExportPickerYear((y) => y - 1)}
+                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-12 min-w-12 flex items-center justify-center"
+                                >
+                                    <ChevronLeft size={20} className="text-zinc-400" />
+                                </button>
+                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{exportPickerYear}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setExportPickerYear((y) => y + 1)}
+                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-12 min-w-12 flex items-center justify-center"
+                                >
+                                    <ChevronRight size={20} className="text-zinc-400" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                                {Array.from({ length: 12 }).map((_, i) => {
+                                    const date = new Date(exportPickerYear, i, 1);
+                                    const key = toMonthKey(date);
+                                    const isSelected = exportSelectedMonths.has(key);
+
+                                    return (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => toggleExportMonth(key)}
+                                            className={cn(
+                                                'py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-12',
+                                                isSelected
+                                                    ? 'bg-[#36606F] border-[#36606F] text-white shadow-lg scale-105'
+                                                    : 'bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900'
+                                            )}
+                                        >
+                                            {format(date, 'MMM', { locale: es })}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <p className="mt-4 text-center text-[10px] font-bold text-zinc-400 px-1">
+                                {exportSelectedMonths.size === 0
+                                    ? 'Ningún mes seleccionado'
+                                    : exportSelectedMonths.size === 1
+                                      ? monthKeyLabel(Array.from(exportSelectedMonths)[0])
+                                      : `${exportSelectedMonths.size} meses: ${Array.from(exportSelectedMonths)
+                                            .sort()
+                                            .map(monthKeyLabel)
+                                            .join(', ')}`}
+                            </p>
+                        </div>
+
+                        <div className="p-6 pt-0 flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (shareBusy) return;
+                                    setExportMonthPickerOpen(false);
+                                    setExportPendingFormat(null);
+                                }}
+                                className="flex-1 min-h-12 rounded-2xl border border-zinc-200 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => void confirmExport()}
+                                disabled={!!shareBusy || exportSelectedMonths.size === 0}
+                                className={cn(
+                                    'flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors',
+                                    'bg-zinc-900 text-white hover:bg-zinc-800',
+                                    (!!shareBusy || exportSelectedMonths.size === 0) && 'opacity-50 pointer-events-none'
+                                )}
+                            >
+                                {shareBusy
+                                    ? 'Exportando…'
+                                    : exportPendingFormat === 'excel'
+                                      ? 'Descargar Excel'
+                                      : 'Imprimir'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
             <ImageLightbox
                 open={lightboxIndex !== null && closingPhotoSlides.length > 0}
