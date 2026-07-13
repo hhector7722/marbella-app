@@ -12,7 +12,7 @@
  * Dependencias: jspdf ^4, jspdf-autotable ^5
  */
 
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -489,10 +489,13 @@ function drawFooter(
 // ---------------------------------------------------------------------------
 
 /**
- * Genera y descarga el PDF oficial de jornada laboral.
- * Diseño minimalista corporativo — apto para inspecciones de trabajo.
+ * Construye el documento PDF de jornada (sin guardar).
+ * Útil para descarga en navegador o guardado en Node.
  */
-export async function generateTimesheetPdf(payload: TimesheetExportPayload): Promise<void> {
+export async function createTimesheetPdfDocument(
+    payload: TimesheetExportPayload,
+    logoDataUrl: string | null,
+): Promise<jsPDF> {
     const exportId = buildExportId(payload.generatedAt);
 
     const doc = new jsPDF({
@@ -501,27 +504,15 @@ export async function generateTimesheetPdf(payload: TimesheetExportPayload): Pro
         format: 'a4',
     });
 
-    // Carga del logo
-    const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
-
-    // ── PÁGINA 1 ──────────────────────────────────────────────────────────
-
-    // 1. Cabecera
     const afterHeader = await drawHeader(doc, payload, logoDataUrl);
-
-    // 2. Resumen
     const afterSummary = drawSummary(doc, payload, afterHeader + 3);
-
-    // 3. Tabla
     drawTable(doc, payload, afterSummary);
 
-    // 4. Pie en todas las páginas
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
         drawFooter(doc, payload, exportId, p, totalPages);
 
-        // En páginas adicionales (paginación de tabla) repetir cabecera mínima
         if (p > 1) {
             doc.setFont(DS.font, 'normal');
             doc.setFontSize(6.5);
@@ -535,7 +526,17 @@ export async function generateTimesheetPdf(payload: TimesheetExportPayload): Pro
         }
     }
 
-    // Nombre de archivo
+    return doc;
+}
+
+/**
+ * Genera y descarga el PDF oficial de jornada laboral.
+ * Diseño minimalista corporativo — apto para inspecciones de trabajo.
+ */
+export async function generateTimesheetPdf(payload: TimesheetExportPayload): Promise<void> {
+    const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
+    const doc = await createTimesheetPdfDocument(payload, logoDataUrl);
+
     const monthLabel = format(new Date(payload.periodYear, payload.periodMonth, 1), 'yyyy-MM');
     const employeeSlug = payload.employeeFullName
         .toLowerCase()

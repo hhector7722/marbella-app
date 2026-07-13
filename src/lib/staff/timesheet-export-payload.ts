@@ -96,10 +96,10 @@ export interface TimesheetExportPayload {
 }
 
 // ---------------------------------------------------------------------------
-// Tipos internos de WeekData (espejados aquí para no crear dependencia circular)
+// Tipos WeekData (compartidos con la página de historial y el normalizador)
 // ---------------------------------------------------------------------------
 
-interface DayData {
+export interface TimesheetDayData {
     date: string;
     dayName: string;
     dayNumber: number;
@@ -112,7 +112,7 @@ interface DayData {
     isToday: boolean;
 }
 
-interface WeekSummary {
+export interface TimesheetWeekSummary {
     totalHours: number;
     startBalance: number;
     weeklyBalance: number;
@@ -121,14 +121,16 @@ interface WeekSummary {
     isPaid: boolean;
     preferStock?: boolean;
     hourlyRate?: number;
+    /** Horas contratadas vigentes en la semana (snapshot RPC) */
+    limitHours?: number;
 }
 
-interface WeekData {
+export interface TimesheetWeekData {
     weekNumber: number;
     startDate: string;
     isCurrentWeek: boolean;
-    days: DayData[];
-    summary: WeekSummary;
+    days: TimesheetDayData[];
+    summary: TimesheetWeekSummary;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +150,7 @@ const COMPANY_NAME = 'Bar La Marbella / Fogo Torrat S.L.';
  * @param filterMonth       Mes seleccionado en el filtro (0-indexed)
  */
 export function buildTimesheetPayload(
-    weeksData: WeekData[],
+    weeksData: TimesheetWeekData[],
     employeeFullName: string,
     employeeDni: string | null,
     filterYear: number,

@@ -8,7 +8,12 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight, Share2
 } from 'lucide-react';
-import { buildTimesheetPayload, type TimesheetExportPayload } from '@/lib/staff/timesheet-export-payload';
+import { buildTimesheetPayload, type TimesheetExportPayload, type TimesheetWeekData } from '@/lib/staff/timesheet-export-payload';
+import {
+    normalizeStaffSchedule,
+    resolveSimulationProfile,
+    SimulationUnavailableError,
+} from '@/lib/staff/staff-schedule-normalizer';
 import { generateTimesheetPdf, generateTimesheetPdfMulti } from '@/lib/staff/timesheet-pdf';
 import { generateTimesheetXlsx, generateTimesheetXlsxMulti } from '@/lib/staff/timesheet-xlsx';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -82,12 +87,8 @@ interface WeekSummary {
     hourlyRate?: number;
 }
 
-interface WeekData {
-    weekNumber: number;
-    startDate: string;
-    isCurrentWeek: boolean;
-    days: DayData[];
-    summary: WeekSummary;
+interface WeekData extends TimesheetWeekData {
+    days: (TimesheetWeekData['days'][number] & { clock_out_show_no_registrada?: boolean })[];
 }
 
 // --- CONSTANTES ---
@@ -482,23 +483,23 @@ export default function HistoryPage() {
         try {
             const targetId = selectedEmployeeId || currentUserId;
 
-            // Obtener nombre completo desde el array ya cargado
             const targetEmployee = employees.find((e) => e.id === targetId);
             const fullName = targetEmployee
                 ? `${targetEmployee.first_name} ${targetEmployee.last_name}`.trim()
                 : headerLabel;
 
-            // Fetch lazy del DNI (1 fila, < 50 ms)
             let dni: string | null = null;
+            let contractedHoursWeekly = 0;
             try {
                 const { data: profileRow } = await supabase
                     .from('profiles')
-                    .select('dni')
+                    .select('dni, contracted_hours_weekly')
                     .eq('id', targetId)
                     .maybeSingle();
                 dni = profileRow?.dni ?? null;
+                contractedHoursWeekly = Number(profileRow?.contracted_hours_weekly ?? 0);
             } catch {
-                // DNI opcional — si falla, se omite en el documento sin error
+                // DNI opcional
             }
 
             const payload = buildTimesheetPayload(
@@ -507,6 +508,8 @@ export default function HistoryPage() {
                 dni,
                 filterYear,
                 filterMonth,
+                undefined,
+                contractedHoursWeekly,
             );
 
             if (type === 'pdf') {
@@ -517,6 +520,117 @@ export default function HistoryPage() {
         } catch (err) {
             console.error('Export error:', err);
             toast.error('Error al generar el documento');
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
+    async function fetchWeeksYearToDate(userId: string, year: number): Promise<WeekData[]> {
+        const lastMonth = new Date().getMonth() + 1;
+        const allWeeks: WeekData[] = [];
+
+        for (let month = 1; month <= lastMonth; month++) {
+            const { data, error } = await supabase.rpc('get_monthly_timesheet', {
+                p_user_id: userId,
+                p_year: year,
+                p_month: month,
+            });
+            if (error || !data) continue;
+
+            const weeks = ((data as unknown) as MonthlyTimesheetRpcWeek[]).map((week) => ({
+                ...week,
+                startDate: typeof week.startDate === 'string'
+                    ? week.startDate.split('T')[0]
+                    : String(week.startDate),
+                days: week.days.map((day) => ({
+                    ...day,
+                    eventType: day.eventType ?? day.event_type ?? 'regular',
+                })),
+            }));
+            allWeeks.push(...weeks);
+        }
+
+        const byStart = new Map<string, WeekData>();
+        for (const week of allWeeks) {
+            byStart.set(week.startDate, week);
+        }
+        return [...byStart.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    }
+
+    async function handleExportSimulated() {
+        setShowExportMenu(false);
+        setIsExporting(true);
+        try {
+            const targetId = selectedEmployeeId || currentUserId;
+
+            const targetEmployee = employees.find((e) => e.id === targetId);
+            const fullName = targetEmployee
+                ? `${targetEmployee.first_name} ${targetEmployee.last_name}`.trim()
+                : headerLabel;
+
+            const { data: profileRow, error: profileError } = await supabase
+                .from('profiles')
+                .select('dni, contracted_hours_weekly, joining_date, end_date, email')
+                .eq('id', targetId)
+                .maybeSingle();
+
+            if (profileError || !profileRow) {
+                toast.error('No se pudo cargar el contrato del empleado');
+                return;
+            }
+
+            const year = new Date().getFullYear();
+            const lastMonth = new Date().getMonth();
+            const periodWeeks = await fetchWeeksYearToDate(targetId, year);
+
+            if (periodWeeks.length === 0) {
+                toast.error('No hay datos de jornada para simular en este período');
+                return;
+            }
+
+            const contract = {
+                contractedHoursWeekly: Number(profileRow.contracted_hours_weekly ?? 0),
+                joiningDate: profileRow.joining_date,
+                endDate: profileRow.end_date,
+            };
+
+            const resolution = resolveSimulationProfile(periodWeeks, contract);
+            if (!resolution.canSimulate) {
+                toast.error(resolution.reason ?? 'No hay información suficiente para simular el histórico');
+                return;
+            }
+
+            const simulatedWeeks = normalizeStaffSchedule(
+                periodWeeks,
+                { userId: targetId, email: profileRow.email },
+                contract,
+            );
+
+            const periodLabel = `Ene – ${format(new Date(year, lastMonth, 1), 'MMM yyyy', { locale: es })}`;
+
+            const payload = buildTimesheetPayload(
+                simulatedWeeks,
+                fullName,
+                profileRow.dni ?? null,
+                year,
+                0,
+                periodLabel,
+                resolution.contractedHoursWeekly,
+            );
+
+            if (payload.rows.length === 0) {
+                toast.error('No hay jornadas simuladas para exportar en este período');
+                return;
+            }
+
+            await generateTimesheetPdf(payload);
+        } catch (err) {
+            if (err instanceof SimulationUnavailableError) {
+                toast.error(err.message);
+                return;
+            }
+            console.error('Simulated export error:', err);
+            toast.error('Error al generar la simulación');
         } finally {
             setIsExporting(false);
         }
@@ -741,7 +855,7 @@ export default function HistoryPage() {
                                                             className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                         >
                                                             <span className="text-base leading-none">📄</span>
-                                                            <span>Exportar PDF <span className="font-normal text-zinc-400">(Inspección)</span></span>
+                                                            <span>PDF <span className="font-normal text-zinc-400">(Registros reales)</span></span>
                                                         </button>
                                                         <div className="h-px bg-zinc-100 mx-3" />
                                                         <button
@@ -751,7 +865,17 @@ export default function HistoryPage() {
                                                             className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                         >
                                                             <span className="text-base leading-none">📊</span>
-                                                            <span>Exportar Excel <span className="font-normal text-zinc-400">(Inspección)</span></span>
+                                                            <span>Excel <span className="font-normal text-zinc-400">(Registros reales)</span></span>
+                                                        </button>
+                                                        <div className="h-px bg-zinc-100 mx-3" />
+                                                        <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            onClick={() => void handleExportSimulated()}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                        >
+                                                            <span className="text-base leading-none">📄</span>
+                                                            <span>PDF <span className="font-normal text-zinc-400">(Simulación horas contratadas)</span></span>
                                                         </button>
                                                     </>
                                                 )}
