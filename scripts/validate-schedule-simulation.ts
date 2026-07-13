@@ -384,7 +384,6 @@ async function main() {
         const realWeeks = await fetchWeeksForPeriod(supabase, profile.id, year, lastMonth);
         const contract = {
             contractedHoursWeekly: Number(profile.contracted_hours_weekly ?? 0),
-            joiningDate: profile.joining_date,
             endDate: profile.end_date,
         };
         const resolution = resolveSimulationProfile(realWeeks, contract);
@@ -397,6 +396,8 @@ async function main() {
             realWeeks,
             { userId: profile.id, email: profile.email },
             contract,
+            undefined,
+            resolution,
         );
 
         const periodLabel = `Ene – ${new Date(year, lastMonth - 1, 1).toLocaleDateString('es-ES', { month: 'short' })} ${year}`;

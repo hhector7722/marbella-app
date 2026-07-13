@@ -570,7 +570,7 @@ export default function HistoryPage() {
 
             const { data: profileRow, error: profileError } = await supabase
                 .from('profiles')
-                .select('dni, contracted_hours_weekly, joining_date, end_date, email')
+                .select('dni, contracted_hours_weekly, end_date, email')
                 .eq('id', targetId)
                 .maybeSingle();
 
@@ -590,7 +590,6 @@ export default function HistoryPage() {
 
             const contract = {
                 contractedHoursWeekly: Number(profileRow.contracted_hours_weekly ?? 0),
-                joiningDate: profileRow.joining_date,
                 endDate: profileRow.end_date,
             };
 
@@ -604,6 +603,8 @@ export default function HistoryPage() {
                 periodWeeks,
                 { userId: targetId, email: profileRow.email },
                 contract,
+                undefined,
+                resolution,
             );
 
             const periodLabel = `Ene – ${format(new Date(year, lastMonth, 1), 'MMM yyyy', { locale: es })}`;
