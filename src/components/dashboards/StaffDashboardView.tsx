@@ -21,7 +21,8 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { differenceInMinutes, startOfWeek, addDays, format, isSameDay, parseISO } from 'date-fns';
+import { differenceInMinutes, startOfWeek, addDays, format, isSameDay } from 'date-fns';
+import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -260,9 +261,8 @@ export default function StaffDashboardView() {
             }
 
             const today = new Date();
-            const todayISO = today.toISOString().split('T')[0];
-            const startOfDay = new Date(todayISO).toISOString();
-            const endOfDay = new Date(todayISO + 'T23:59:59.999Z').toISOString();
+            const todayYmd = formatYmdInMadrid(today);
+            const { startIso: startOfDay, endIso: endOfDay } = madridDayUtcRangeIso(todayYmd);
 
             const { data: log } = await supabase.from('time_logs')
                 .select('*')
@@ -300,18 +300,23 @@ export default function StaffDashboardView() {
             });
 
             // Fetch logs for the week to get event_type and clock_out_show_no_registrada (RPC doesn't return them)
+            const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
+            const weekEndYmd = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+            const { startIso: weekStartIso, endIso: weekEndIso } = madridRangeUtcIso(weekStartYmd, weekEndYmd);
+
             const { data: weekLogs } = await supabase
                 .from('time_logs')
                 .select('clock_in, event_type, clock_out_show_no_registrada')
                 .eq('user_id', user.id)
-                .gte('clock_in', weekStart.toISOString())
-                .lte('clock_in', addDays(weekStart, 7).toISOString());
+                .gte('clock_in', weekStartIso)
+                .lte('clock_in', weekEndIso);
 
             let totalWeekHours = 0;
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
                 totalWeekHours += day.totalHours || 0;
                 const d = realWeekDays[i];
-                const dayLog = weekLogs?.find(l => isSameDay(new Date(l.clock_in), d));
+                const dayYmd = format(d, 'yyyy-MM-dd');
+                const dayLog = weekLogs?.find(l => formatYmdInMadrid(l.clock_in) === dayYmd);
                 return {
                     ...day,
                     date: d,
@@ -403,7 +408,7 @@ export default function StaffDashboardView() {
             // --- FETCH LIVE TICKETS FOR CLOSING (día negocio TPV `fecha`) ---
             const { data: ticketsToday } = await supabase.from('tickets_marbella')
                 .select('total_documento')
-                .eq('fecha', todayISO);
+                .eq('fecha', todayYmd);
 
             const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
             const countVentas = ticketsToday?.reduce((count, t) => {

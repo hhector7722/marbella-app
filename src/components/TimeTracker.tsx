@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Play, Square, Clock, Coffee } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
+import { formatMadridHmFromIso } from '@/lib/madrid-date-bounds';
 
 export default function TimeTracker() {
     const supabase = createClient();
@@ -164,7 +165,7 @@ export default function TimeTracker() {
 
             {currentLog && (
                 <p className="text-xs text-blue-200 mt-2">
-                    Iniciado a las {new Date(currentLog.clock_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    Iniciado a las {formatMadridHmFromIso(currentLog.clock_in) ?? '--:--'}
                 </p>
             )}
         </div>

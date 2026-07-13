@@ -20,9 +20,9 @@ import {
     endOfMonth,
     eachDayOfInterval,
     isSameDay,
-    parseISO,
     addDays,
 } from 'date-fns';
+import { formatMadridHmFromIso, formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
@@ -337,11 +337,15 @@ export default function HistoryPage() {
             const rangeStart = startOfWeek(startOfMonth(monthStart), { weekStartsOn: 1 });
             const rangeEnd = endOfWeek(endOfMonth(monthEnd), { weekStartsOn: 1 });
 
+            const rangeStartYmd = format(rangeStart, 'yyyy-MM-dd');
+            const rangeEndYmd = format(rangeEnd, 'yyyy-MM-dd');
+            const { startIso, endIso } = madridRangeUtcIso(rangeStartYmd, rangeEndYmd);
+
             const logsRes = await supabase
                 .from('time_logs')
                 .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
-                .gte('clock_in', rangeStart.toISOString())
-                .lte('clock_in', rangeEnd.toISOString());
+                .gte('clock_in', startIso)
+                .lte('clock_in', endIso);
 
             const logsRaw = logsRes.data || [];
             const userIds = [...new Set(logsRaw.map((log: { user_id: string }) => log.user_id))];
@@ -372,8 +376,8 @@ export default function HistoryPage() {
                     ...log,
                     first_name: p?.first_name ?? '',
                     last_name: p?.last_name ?? '',
-                    in_time: format(parseISO(log.clock_in), 'HH:mm'),
-                    out_time: log.clock_out ? format(parseISO(log.clock_out), 'HH:mm') : '',
+                    in_time: formatMadridHmFromIso(log.clock_in) ?? '',
+                    out_time: log.clock_out ? (formatMadridHmFromIso(log.clock_out) ?? '') : '',
                 };
             });
 
@@ -384,7 +388,8 @@ export default function HistoryPage() {
                 const weekStart = weekDays[0];
                 const weekNumber = Math.ceil((weekStart.getDate() + startOfMonth(monthStart).getDay() - 1) / 7) || 1;
                 const days = weekDays.map((day): PlantillaDay => {
-                    const dayLogs = enrichedLogs.filter((l: { clock_in: string }) => isSameDay(parseISO(l.clock_in), day));
+                    const dayYmd = format(day, 'yyyy-MM-dd');
+                    const dayLogs = enrichedLogs.filter((l: { clock_in: string }) => formatYmdInMadrid(l.clock_in) === dayYmd);
                     const y = day.getFullYear();
                     const m = day.getMonth();
                     const isOtherMonth = m !== filterMonth || y !== filterYear;

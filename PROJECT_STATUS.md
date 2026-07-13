@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-09 (Notificaciones push reservas vía pg_net + webhook)
+**Última actualización:** 2026-07-13 (Fix timezone fichajes asistencia — Europe/Madrid)
+
+- [x] **Asistencia: normalización horas Europe/Madrid (2026-07-13)**: Migración [`20260713140000_fix_weekly_log_grid_madrid_with_prorate.sql`](supabase/migrations/20260713140000_fix_weekly_log_grid_madrid_with_prorate.sql) — `get_worker_weekly_log_grid` volvía a usar `MIN(clock_in)::time` (UTC) tras el prorrateo `joining_date`; corregido con `to_char(... AT TIME ZONE 'Europe/Madrid', 'HH24:MI')`. Cliente: [`staff/history/page.tsx`](src/app/staff/history/page.tsx) (vista plantilla), [`StaffDashboardView.tsx`](src/components/dashboards/StaffDashboardView.tsx), [`TimeTracker.tsx`](src/components/TimeTracker.tsx) usan `formatMadridHmFromIso` / `madridDayUtcRangeIso`. **Aplicada en Supabase**.
+
+**Última actualización anterior:** 2026-07-09 (Notificaciones push reservas vía pg_net + webhook)
 
 - [x] **Notificaciones push reservas: trigger BD → pg_net → webhook (2026-07-08)**: Migración [`20260708120000_reservations_push_via_pgnet.sql`](supabase/migrations/20260708120000_reservations_push_via_pgnet.sql) — `CREATE EXTENSION IF NOT EXISTS pg_net`; tabla `app_settings` (RLS, key `push_webhook_url`); `fn_notify_reservation_insert()` actualizada: inserta in-app en `user_notifications` Y llama `net.http_post` al webhook [`/api/webhooks/reservations-push`](src/app/api/webhooks/reservations-push/route.ts) con `service_role_key` para bypassear RLS. Fix [`20260708130000_fix_pgnet_parameter_order.sql`](supabase/migrations/20260708130000_fix_pgnet_parameter_order.sql) — parámetros en orden correcto y body como `jsonb`. Trigger [`20260707120000_reservations_notify_trigger.sql`](supabase/migrations/20260707120000_reservations_notify_trigger.sql) — `trg_reservations_notify_insert` AFTER INSERT. Fix destinatarios [`20260707120500_update_reservation_notify_recipients.sql`](supabase/migrations/20260707120500_update_reservation_notify_recipients.sql).
 
