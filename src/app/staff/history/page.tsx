@@ -455,7 +455,8 @@ export default function HistoryPage() {
     const isMaster = isMasterDashboardUser(userEmail);
     const hasRealExportData = weeksData.length > 0;
     const showExportButton =
-        !isPlantilla || (isPlantilla && isMaster && plantillaWeeksData.length > 0);
+        (isPlantilla && isMaster && plantillaWeeksData.length > 0) ||
+        (!isPlantilla && (hasRealExportData || isMaster));
 
     const headerLabel = isPlantilla
         ? 'Plantilla'
@@ -563,6 +564,10 @@ export default function HistoryPage() {
 
     async function handleExportSimulated(overrideUserId?: string) {
         setShowExportMenu(false);
+        if (!isMasterDashboardUser(userEmail)) {
+            toast.error('No tienes permiso para exportar la simulación');
+            return;
+        }
         setIsExporting(true);
         try {
             const targetId = overrideUserId || selectedEmployeeId || currentUserId;
@@ -894,15 +899,17 @@ export default function HistoryPage() {
                                                                 <div className="h-px bg-zinc-100 mx-3" />
                                                             </>
                                                         ) : null}
-                                                        <button
-                                                            type="button"
-                                                            role="menuitem"
-                                                            onClick={() => void handleExportSimulated()}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                        >
-                                                            <span className="text-base leading-none">📄</span>
-                                                            <span>PDF <span className="font-normal text-zinc-400">(Simulación horas contratadas)</span></span>
-                                                        </button>
+                                                        {isMaster ? (
+                                                            <button
+                                                                type="button"
+                                                                role="menuitem"
+                                                                onClick={() => void handleExportSimulated()}
+                                                                className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                            >
+                                                                <span className="text-base leading-none">📄</span>
+                                                                <span>PDF <span className="font-normal text-zinc-400">(Simulación horas contratadas)</span></span>
+                                                            </button>
+                                                        ) : null}
                                                     </>
                                                 )}
                                             </div>
@@ -1060,19 +1067,21 @@ export default function HistoryPage() {
                 }}
             />
 
-            <StaffSelectionModal
-                isOpen={showSimulationEmployeePicker}
-                onClose={() => setShowSimulationEmployeePicker(false)}
-                employees={employees}
-                title="Simulación de jornada"
-                usageId="staff-history-simulation-export"
-                usageLabel="Exportar simulación"
-                allowPlantilla={false}
-                onSelect={(emp) => {
-                    setShowSimulationEmployeePicker(false);
-                    void handleExportSimulated(emp.id);
-                }}
-            />
+            {isMaster ? (
+                <StaffSelectionModal
+                    isOpen={showSimulationEmployeePicker}
+                    onClose={() => setShowSimulationEmployeePicker(false)}
+                    employees={employees}
+                    title="Simulación de jornada"
+                    usageId="staff-history-simulation-export"
+                    usageLabel="Exportar simulación"
+                    allowPlantilla={false}
+                    onSelect={(emp) => {
+                        setShowSimulationEmployeePicker(false);
+                        void handleExportSimulated(emp.id);
+                    }}
+                />
+            ) : null}
 
             {showMonthPicker && (
                 <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={() => setShowMonthPicker(false)}>
