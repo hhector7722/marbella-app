@@ -1,7 +1,7 @@
 /**
  * Generador de histórico simulado por empleado (solo en memoria).
  *
- * Alcance: enero → mes actual del año en curso (sin compensación agosto+).
+ * Alcance: fecha de alta en la empresa → mes actual del año en curso (sin compensación agosto+).
  * No modifica BD ni conoce el resto de la plantilla.
  */
 
@@ -19,6 +19,7 @@ export interface NormalizerEmployee {
 
 export interface NormalizerContract {
     contractedHoursWeekly: number;
+    joiningDate?: string | null;
     endDate?: string | null;
 }
 
@@ -122,20 +123,22 @@ export function normalizeStaffSchedule(
     const weeks = cloneWeeks(weeksData);
     const isHector = isMasterDashboardUser(employee.email);
     const weeklyTarget = resolved.contractedHoursWeekly;
-    const simBounds = getSimulationBounds(today);
-    const refStart = referencePeriodStart(simBounds.start);
-    const refEnd = referencePeriodEnd(simBounds, contract.endDate, today);
+    const employeeBounds = getEmployeeSimulationBounds(today, contract.joiningDate, contract.endDate);
+    const refStart = referencePeriodStart(employeeBounds.start);
+    const refEnd = referencePeriodEnd(employeeBounds, contract.endDate, today);
     const pattern = extractShiftPattern(weeks, employee.userId, refStart, refEnd);
 
     if (isHector) {
-        applyHectorBaseline(weeks, employee.userId, contract, pattern, simBounds);
+        applyHectorBaseline(weeks, employee.userId, contract, pattern, employeeBounds);
         clearHectorWeekends(weeks);
     }
 
     for (const week of weeks) {
-        balanceWeek(week, employee.userId, weeklyTarget, contract, isHector, pattern, simBounds);
-        recalcWeekSummary(week, weeklyTarget);
+        balanceWeek(week, employee.userId, weeklyTarget, contract, isHector, pattern, employeeBounds);
+        recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
     }
+
+    clearDaysOutsideBounds(weeks, employeeBounds);
 
     return weeks;
 }
@@ -270,26 +273,32 @@ function balanceWeek(
     pattern: ShiftPattern,
     simBounds: { start: string; end: string },
 ) {
-    const lockedHours = sumHours(week.days.filter((d) => d.hasLog && LOCKED_EVENT_TYPES.has(d.eventType)));
-    const flexTarget = Math.max(0, weeklyTarget - lockedHours);
+    const weekTarget = resolveWeeklyTarget(week, weeklyTarget);
+    const inRange = (day: TimesheetDayData) =>
+        isInSimulationRange(day.date, simBounds.start, simBounds.end, contract.endDate);
 
-    if (weeklyTarget <= 0) {
-        for (const day of getFlexibleDays(week)) clearDay(day);
+    const lockedHours = sumHours(
+        week.days.filter((d) => d.hasLog && LOCKED_EVENT_TYPES.has(d.eventType) && inRange(d)),
+    );
+    const flexTarget = Math.max(0, weekTarget - lockedHours);
+
+    if (weekTarget <= 0) {
+        for (const day of getFlexibleDays(week).filter(inRange)) clearDay(day);
         return;
     }
 
-    let flexDays = getFlexibleDays(week);
+    let flexDays = getFlexibleDays(week).filter(inRange);
     let flexHours = sumHours(flexDays);
 
     if (flexHours > flexTarget + BALANCE_TOLERANCE) {
         trimFlexibleHours(flexDays, flexHours - flexTarget, userId);
 
-        flexDays = getFlexibleDays(week);
+        flexDays = getFlexibleDays(week).filter(inRange);
         flexHours = sumHours(flexDays);
 
         if (flexHours > flexTarget + BALANCE_TOLERANCE) {
-            removeFlexibleDaysNaturally(week, flexTarget, userId, pattern);
-            flexDays = getFlexibleDays(week);
+            removeFlexibleDaysNaturally(week, flexTarget, userId, pattern, inRange);
+            flexDays = getFlexibleDays(week).filter(inRange);
             flexHours = sumHours(flexDays);
         }
 
@@ -303,7 +312,7 @@ function balanceWeek(
         const deficit = flexTarget - flexHours;
         extendFlexibleHours(flexDays, deficit, userId);
 
-        flexDays = getFlexibleDays(week);
+        flexDays = getFlexibleDays(week).filter(inRange);
         flexHours = sumHours(flexDays);
 
         if (flexHours < flexTarget - BALANCE_TOLERANCE) {
@@ -394,8 +403,9 @@ function removeFlexibleDaysNaturally(
     flexTarget: number,
     userId: string,
     pattern: ShiftPattern,
+    inRange: (day: TimesheetDayData) => boolean,
 ) {
-    let flexDays = getFlexibleDays(week);
+    let flexDays = getFlexibleDays(week).filter(inRange);
     const idealCount = idealFlexibleDayCount(flexTarget, flexDays.length);
     let toRemove = Math.max(0, flexDays.length - idealCount);
 
@@ -403,10 +413,10 @@ function removeFlexibleDaysNaturally(
         const removeDay = pickDayToRemove(flexDays, flexTarget);
         clearDay(removeDay);
         toRemove -= 1;
-        flexDays = getFlexibleDays(week);
+        flexDays = getFlexibleDays(week).filter(inRange);
     }
 
-    flexDays = getFlexibleDays(week);
+    flexDays = getFlexibleDays(week).filter(inRange);
     const diff = flexTarget - sumHours(flexDays);
     if (Math.abs(diff) > BALANCE_TOLERANCE && flexDays.length > 0) {
         if (diff > 0) {
@@ -659,7 +669,7 @@ function recalcWeekSummary(week: TimesheetWeekData, weeklyTarget: number) {
 }
 
 // ---------------------------------------------------------------------------
-// Período de simulación: enero → mes actual
+// Período de simulación: fecha de alta → mes actual
 // ---------------------------------------------------------------------------
 
 function getSimulationBounds(todayYmd: string): { start: string; end: string } {
@@ -669,6 +679,42 @@ function getSimulationBounds(todayYmd: string): { start: string; end: string } {
         start: `${y}-01-01`,
         end: ymdMin(formatYmd(lastDay), todayYmd),
     };
+}
+
+function getEmployeeSimulationBounds(
+    todayYmd: string,
+    joiningDate?: string | null,
+    endDate?: string | null,
+): { start: string; end: string } {
+    const base = getSimulationBounds(todayYmd);
+    let start = base.start;
+    if (joiningDate) {
+        start = ymdMax(start, joiningDate.slice(0, 10));
+    }
+    let end = ymdMin(base.end, todayYmd);
+    if (endDate) {
+        end = ymdMin(end, endDate.slice(0, 10));
+    }
+    return { start, end };
+}
+
+function resolveWeeklyTarget(week: TimesheetWeekData, defaultTarget: number): number {
+    const limit = week.summary.limitHours;
+    if (typeof limit === 'number' && limit > 0) return limit;
+    return defaultTarget;
+}
+
+function clearDaysOutsideBounds(
+    weeks: TimesheetWeekData[],
+    bounds: { start: string; end: string },
+) {
+    for (const week of weeks) {
+        for (const day of week.days) {
+            if (day.date < bounds.start || day.date > bounds.end) {
+                if (day.hasLog) clearDay(day);
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -731,6 +777,10 @@ function formatYmd(d: Date): string {
 
 function ymdMin(a: string, b: string): string {
     return a < b ? a : b;
+}
+
+function ymdMax(a: string, b: string): string {
+    return a > b ? a : b;
 }
 
 function hashString(value: string): number {

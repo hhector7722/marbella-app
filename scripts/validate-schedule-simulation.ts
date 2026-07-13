@@ -136,6 +136,22 @@ function isWeekend(date: string): boolean {
     return dow === 0 || dow === 6;
 }
 
+function buildSimulationPeriodLabel(
+    joiningDate: string | null | undefined,
+    year: number,
+    lastMonth0: number,
+): string {
+    const endLabel = new Date(year, lastMonth0, 1).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+    const joinYmd = joiningDate?.slice(0, 10);
+    const yearStart = `${year}-01-01`;
+    if (joinYmd && joinYmd > yearStart) {
+        const [y, m, d] = joinYmd.split('-').map(Number);
+        const startLabel = new Date(y, m - 1, d).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+        return `${startLabel} – ${endLabel}`;
+    }
+    return `Ene – ${endLabel}`;
+}
+
 function analyzeEmployee(
     name: string,
     contractedWeekly: number,
@@ -384,6 +400,7 @@ async function main() {
         const realWeeks = await fetchWeeksForPeriod(supabase, profile.id, year, lastMonth);
         const contract = {
             contractedHoursWeekly: Number(profile.contracted_hours_weekly ?? 0),
+            joiningDate: profile.joining_date,
             endDate: profile.end_date,
         };
         const resolution = resolveSimulationProfile(realWeeks, contract);
@@ -400,7 +417,7 @@ async function main() {
             resolution,
         );
 
-        const periodLabel = `Ene – ${new Date(year, lastMonth - 1, 1).toLocaleDateString('es-ES', { month: 'short' })} ${year}`;
+        const periodLabel = buildSimulationPeriodLabel(profile.joining_date, year, lastMonth - 1);
         const payload = buildTimesheetPayload(
             simulatedWeeks,
             fullName,

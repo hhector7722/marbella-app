@@ -95,6 +95,22 @@ interface WeekData extends TimesheetWeekData {
 const getMonthLabel = (year: number, month: number) =>
     new Date(year, month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
+function buildSimulationPeriodLabel(
+    joiningDate: string | null | undefined,
+    year: number,
+    lastMonth0: number,
+): string {
+    const endLabel = format(new Date(year, lastMonth0, 1), 'MMM yyyy', { locale: es });
+    const joinYmd = joiningDate?.slice(0, 10);
+    const yearStart = `${year}-01-01`;
+    if (joinYmd && joinYmd > yearStart) {
+        const [y, m, d] = joinYmd.split('-').map(Number);
+        const startLabel = format(new Date(y, m - 1, d), 'MMM yyyy', { locale: es });
+        return `${startLabel} – ${endLabel}`;
+    }
+    return `Ene – ${endLabel}`;
+}
+
 type Employee = { id: string; first_name: string; last_name: string; avatar_url?: string | null };
 
 type MonthlyTimesheetRpcDay = Omit<DayData, 'eventType' | 'clock_out_show_no_registrada'> & {
@@ -583,7 +599,7 @@ export default function HistoryPage() {
 
             const { data: profileRow, error: profileError } = await supabase
                 .from('profiles')
-                .select('dni, contracted_hours_weekly, end_date, email')
+                .select('dni, contracted_hours_weekly, joining_date, end_date, email')
                 .eq('id', targetId)
                 .maybeSingle();
 
@@ -603,6 +619,7 @@ export default function HistoryPage() {
 
             const contract = {
                 contractedHoursWeekly: Number(profileRow.contracted_hours_weekly ?? 0),
+                joiningDate: profileRow.joining_date,
                 endDate: profileRow.end_date,
             };
 
@@ -620,7 +637,7 @@ export default function HistoryPage() {
                 resolution,
             );
 
-            const periodLabel = `Ene – ${format(new Date(year, lastMonth, 1), 'MMM yyyy', { locale: es })}`;
+            const periodLabel = buildSimulationPeriodLabel(profileRow.joining_date, year, lastMonth);
 
             const payload = buildTimesheetPayload(
                 simulatedWeeks,
