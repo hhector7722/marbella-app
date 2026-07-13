@@ -143,6 +143,19 @@ export function normalizeStaffSchedule(
 
     clearDaysOutsideBounds(weeks, employeeBounds);
 
+    // El balance semanal recorta a 8 h exactas y deja minutos artificiales (:00/:05).
+    // Tras cuadrar contrato, re-aplicamos caras horarias realistas (>8 h) para Héctor.
+    if (isHector) {
+        finalizeHectorRealisticShifts(
+            weeks,
+            employee.userId,
+            contract,
+            pattern,
+            employeeBounds,
+            weeklyTarget,
+        );
+    }
+
     return weeks;
 }
 
@@ -266,6 +279,38 @@ function clearHectorWeekends(weeks: TimesheetWeekData[]) {
             if (LOCKED_EVENT_TYPES.has(day.eventType)) continue;
             clearDay(day);
         }
+    }
+}
+
+/**
+ * Tras el balance semanal, restaura entradas/salidas realistas para Héctor.
+ * El balance deja jornadas en 8 h redondas; aquí fijamos 8 h 05–28 min con minutos orgánicos.
+ */
+function finalizeHectorRealisticShifts(
+    weeks: TimesheetWeekData[],
+    userId: string,
+    contract: NormalizerContract,
+    pattern: ShiftPattern,
+    simBounds: { start: string; end: string },
+    weeklyTarget: number,
+) {
+    for (const week of weeks) {
+        for (const day of week.days) {
+            if (!isInSimulationRange(day.date, simBounds.start, simBounds.end, contract.endDate)) continue;
+            if (!isFlexibleDay(day)) continue;
+            if (isWeekend(day.date)) continue;
+
+            const targetHours = hectorDailyTargetHours(day.date, userId);
+            const shift = buildShiftTimes(
+                day.date,
+                userId,
+                targetHours,
+                pattern,
+                HECTOR_MIN_SHIFT_HOURS,
+            );
+            applyShiftToDay(day, shift);
+        }
+        recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
     }
 }
 
@@ -511,13 +556,16 @@ function addFlexibleDays(
     for (const day of candidates) {
         if (remaining <= BALANCE_TOLERANCE) break;
 
-        const targetHours = clamp(
-            remaining,
-            MIN_SHIFT_HOURS,
-            Math.min(MAX_SHIFT_HOURS, pattern.durationMinutes / 60 + 1),
-        );
+        const minShift = isHector ? HECTOR_MIN_SHIFT_HOURS : MIN_SHIFT_HOURS;
+        const targetHours = isHector
+            ? hectorDailyTargetHours(day.date, userId)
+            : clamp(
+                  remaining,
+                  MIN_SHIFT_HOURS,
+                  Math.min(MAX_SHIFT_HOURS, pattern.durationMinutes / 60 + 1),
+              );
 
-        const shift = buildShiftTimes(day.date, userId, targetHours, pattern);
+        const shift = buildShiftTimes(day.date, userId, targetHours, pattern, minShift);
         applyShiftToDay(day, shift);
         remaining -= shift.totalHours;
     }
