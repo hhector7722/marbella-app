@@ -6,6 +6,8 @@
  * generador (PDF / Excel) para mantener el DTO independiente de la representación.
  */
 
+import { isPlantillaClosedHoliday } from './plantilla-holidays';
+
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
@@ -163,6 +165,7 @@ export function buildTimesheetPayload(
     for (const week of weeksData) {
         for (const day of week.days) {
             if (!day.hasLog) continue;
+            if (isPlantillaClosedHoliday(day.date)) continue;
 
             const workedMinutes = Math.round((day.totalHours ?? 0) * 60);
             const eventType = day.eventType ?? 'regular';

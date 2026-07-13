@@ -132,6 +132,9 @@ export function normalizeStaffSchedule(
     const refEnd = referencePeriodEnd(employeeBounds, contract.endDate, today);
     const pattern = extractShiftPattern(weeks, employee.userId, refStart, refEnd);
 
+    // Fichajes reales en festivos de cierre no deben arrastrarse a la simulación.
+    purgeClosedHolidayShifts(weeks, weeklyTarget);
+
     if (isHector) {
         applyHectorBaseline(weeks, employee.userId, contract, pattern, employeeBounds);
         clearHectorWeekends(weeks);
@@ -156,6 +159,8 @@ export function normalizeStaffSchedule(
             weeklyTarget,
         );
     }
+
+    purgeClosedHolidayShifts(weeks, weeklyTarget);
 
     return weeks;
 }
@@ -623,7 +628,7 @@ function extractShiftPattern(
 // ---------------------------------------------------------------------------
 
 function getFlexibleDays(week: TimesheetWeekData): TimesheetDayData[] {
-    return week.days.filter((d) => isFlexibleDay(d));
+    return week.days.filter((d) => isFlexibleDay(d) && !isPlantillaClosedHoliday(d.date));
 }
 
 function isFlexibleDay(day: TimesheetDayData): boolean {
@@ -932,13 +937,47 @@ export function findWeekForDate(weeks: TimesheetWeekData[], date: string): Times
     return weeks.find((week) => week.days.some((d) => d.date === date)) ?? null;
 }
 
-/** Elimina jornadas flexibles simuladas en un festivo de cierre. */
-export function clearFlexibleWorkOnClosedHoliday(weeks: TimesheetWeekData[], date: string): void {
+/** Elimina jornadas simuladas en un festivo de cierre. */
+export function clearFlexibleWorkOnClosedHoliday(
+    weeks: TimesheetWeekData[],
+    date: string,
+    weeklyTarget = 0,
+): void {
     if (!isPlantillaClosedHoliday(date)) return;
+    const week = findWeekForDate(weeks, date);
     const day = findDayInWeeks(weeks, date);
-    if (!day || !day.hasLog) return;
-    if (LOCKED_EVENT_TYPES.has(day.eventType)) return;
+    if (!day?.hasLog) return;
+    if (!isPlantillaWorkingDay(day) && !(day.clockIn && day.clockOut) && (day.totalHours ?? 0) <= 0) {
+        return;
+    }
     clearDay(day);
+    if (week) recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+}
+
+/**
+ * En festivos de cierre del bar no debe quedar ninguna jornada trabajada
+ * (ni fichajes reales regular/overtime/weekend ni simulados).
+ */
+export function purgeClosedHolidayShifts(weeks: TimesheetWeekData[], weeklyTarget = 0): number {
+    let cleared = 0;
+    for (const week of weeks) {
+        let weekChanged = false;
+        for (const day of week.days) {
+            if (!isPlantillaClosedHoliday(day.date) || !day.hasLog) continue;
+            const isWork =
+                isPlantillaWorkingDay(day) ||
+                Boolean(day.clockIn && day.clockOut) ||
+                (day.totalHours ?? 0) > 0;
+            if (!isWork) continue;
+            clearDay(day);
+            cleared += 1;
+            weekChanged = true;
+        }
+        if (weekChanged) {
+            recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+        }
+    }
+    return cleared;
 }
 
 /**

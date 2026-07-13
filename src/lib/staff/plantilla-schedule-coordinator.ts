@@ -14,6 +14,7 @@ import {
     findDayInWeeks,
     injectSimulatedWorkDay,
     isPlantillaWorkingDay,
+    purgeClosedHolidayShifts,
 } from './staff-schedule-normalizer';
 
 export const MIN_PLANTILLA_DAILY_STAFF = 3;
@@ -137,10 +138,19 @@ export function coordinatePlantillaSchedules(
         for (const entry of entries) {
             const before = findDayInWeeks(entry.weeks, date);
             if (before?.hasLog && isPlantillaWorkingDay(before)) {
-                clearFlexibleWorkOnClosedHoliday(entry.weeks, date);
+                clearFlexibleWorkOnClosedHoliday(
+                    entry.weeks,
+                    date,
+                    entry.contractedHoursWeekly,
+                );
                 holidaysCleared += 1;
             }
         }
+    }
+
+    // Barrido final: elimina fichajes reales que hayan quedado con horas en festivo.
+    for (const entry of entries) {
+        holidaysCleared += purgeClosedHolidayShifts(entry.weeks, entry.contractedHoursWeekly);
     }
 
     for (const date of dates) {
