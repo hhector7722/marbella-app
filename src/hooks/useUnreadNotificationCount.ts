@@ -81,17 +81,12 @@ export function useUnreadNotificationCount(options: Options = {}) {
   refreshRef.current = refresh
 
   useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      if (cancelled) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null)
-    })()
-    return () => {
-      cancelled = true
-    }
+    })
+    return () => subscription.unsubscribe()
   }, [supabase])
 
   useEffect(() => {

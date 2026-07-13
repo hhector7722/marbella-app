@@ -231,8 +231,6 @@ export function NotificationsBell() {
     }
   }, [supabase, userId, unreadCount, refresh])
 
-  if (!userId) return null
-
   const badgeLabel = unreadCount > 99 ? '99+' : unreadCount > 0 ? String(unreadCount) : ''
   const hasItems = items.length > 0
   const showEmpty = !loading && !hasItems
@@ -332,7 +330,9 @@ export function NotificationsBell() {
     <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
+        disabled={!userId}
         onClick={() => {
+          if (!userId) return
           setOpen((v) => {
             const next = !v
             if (next) updatePanelAnchor()
@@ -341,7 +341,8 @@ export function NotificationsBell() {
         }}
         className={cn(
           'relative grid min-h-12 min-w-12 shrink-0 place-items-center text-white transition-transform active:scale-95',
-          open && 'opacity-90'
+          open && 'opacity-90',
+          !userId && 'opacity-60'
         )}
         aria-label={
           unreadCount > 0
