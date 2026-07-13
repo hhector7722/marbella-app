@@ -10,10 +10,9 @@ import {
 } from 'lucide-react';
 import { buildTimesheetPayload, type TimesheetExportPayload, type TimesheetWeekData } from '@/lib/staff/timesheet-export-payload';
 import {
-    normalizeStaffSchedule,
-    resolveSimulationProfile,
     SimulationUnavailableError,
 } from '@/lib/staff/staff-schedule-normalizer';
+import { buildCoordinatedPlantillaSimulation } from '@/lib/staff/coordinated-plantilla-simulation';
 import { generateTimesheetPdf, generateTimesheetPdfMulti } from '@/lib/staff/timesheet-pdf';
 import { generateTimesheetXlsx, generateTimesheetXlsxMulti } from '@/lib/staff/timesheet-xlsx';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -42,6 +41,10 @@ import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import { WeekCard } from './WeekCard';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 import { MultiEmployeeExportModal } from '@/components/modals/MultiEmployeeExportModal';
+import {
+    SimulationPlantillaExportModal,
+    type SimulationPlantillaEmployee,
+} from '@/components/modals/SimulationPlantillaExportModal';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
@@ -162,7 +165,8 @@ export default function HistoryPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
     const [showExportEmployeeModal, setShowExportEmployeeModal] = useState(false);
-    const [showSimulationEmployeePicker, setShowSimulationEmployeePicker] = useState(false);
+    const [showSimulationExportModal, setShowSimulationExportModal] = useState(false);
+    const [simulationEmployees, setSimulationEmployees] = useState<SimulationPlantillaEmployee[]>([]);
     const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
 
     const initUser = useCallback(async () => {
@@ -578,83 +582,141 @@ export default function HistoryPage() {
         return [...byStart.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
     }
 
-    async function handleExportSimulated(overrideUserId?: string) {
+    const openSimulationExportModal = useCallback(async () => {
         setShowExportMenu(false);
         if (!isMasterDashboardUser(userEmail)) {
             toast.error('No tienes permiso para exportar la simulación');
             return;
         }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url, joining_date, end_date, visible_in_plantilla')
+            .eq('visible_in_plantilla', true)
+            .order('first_name');
+
+        if (error) {
+            toast.error('No se pudo cargar la plantilla para la simulación');
+            return;
+        }
+
+        const visible = filterVisiblePlantillaEmployees((data ?? []) as SimulationPlantillaEmployee[]);
+        if (visible.length === 0) {
+            toast.error('No hay empleados disponibles para simular');
+            return;
+        }
+
+        setSimulationEmployees(visible);
+        setShowSimulationExportModal(true);
+    }, [supabase, userEmail]);
+
+    async function handleSimulationBatchExport(selectedIds: string[]) {
+        setShowSimulationExportModal(false);
         setIsExporting(true);
         try {
-            const targetId = overrideUserId || selectedEmployeeId || currentUserId;
-            if (!targetId) {
-                toast.error('Selecciona un empleado para generar la simulación');
-                return;
-            }
-
-            const targetEmployee = employees.find((e) => e.id === targetId);
-            const fullName = targetEmployee
-                ? `${targetEmployee.first_name} ${targetEmployee.last_name}`.trim()
-                : headerLabel;
-
-            const { data: profileRow, error: profileError } = await supabase
-                .from('profiles')
-                .select('dni, contracted_hours_weekly, joining_date, end_date, email')
-                .eq('id', targetId)
-                .maybeSingle();
-
-            if (profileError || !profileRow) {
-                toast.error('No se pudo cargar el contrato del empleado');
+            if (selectedIds.length === 0) {
+                toast.error('Selecciona al menos un empleado');
                 return;
             }
 
             const year = new Date().getFullYear();
             const lastMonth = new Date().getMonth();
-            const periodWeeks = await fetchWeeksYearToDate(targetId, year);
+            const todayYmd = new Date().toISOString().slice(0, 10);
+            const plantillaBounds = { start: `${year}-01-01`, end: todayYmd };
 
-            if (periodWeeks.length === 0) {
+            const { data: profileRows, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name, email, dni, contracted_hours_weekly, joining_date, end_date, visible_in_plantilla')
+                .in('id', selectedIds);
+
+            if (profilesError || !profileRows?.length) {
+                toast.error('No se pudo cargar el contrato de los empleados seleccionados');
+                return;
+            }
+
+            const selectedProfiles = filterVisiblePlantillaEmployees(profileRows);
+            const weeksByUserId = new Map<string, WeekData[]>();
+
+            await Promise.all(
+                selectedProfiles.map(async (profile) => {
+                    const weeks = await fetchWeeksYearToDate(profile.id, year);
+                    if (weeks.length > 0) {
+                        weeksByUserId.set(profile.id, weeks);
+                    }
+                }),
+            );
+
+            if (weeksByUserId.size === 0) {
                 toast.error('No hay datos de jornada para simular en este período');
                 return;
             }
 
-            const contract = {
-                contractedHoursWeekly: Number(profileRow.contracted_hours_weekly ?? 0),
-                joiningDate: profileRow.joining_date,
-                endDate: profileRow.end_date,
-            };
+            const coordinated = buildCoordinatedPlantillaSimulation(
+                selectedProfiles,
+                weeksByUserId,
+                plantillaBounds,
+                todayYmd,
+            );
 
-            const resolution = resolveSimulationProfile(periodWeeks, contract);
-            if (!resolution.canSimulate) {
-                toast.error(resolution.reason ?? 'No hay información suficiente para simular el histórico');
+            if (coordinated.entries.length === 0) {
+                toast.error('No hay información suficiente para simular el histórico');
                 return;
             }
 
-            const simulatedWeeks = normalizeStaffSchedule(
-                periodWeeks,
-                { userId: targetId, email: profileRow.email },
-                contract,
-                undefined,
-                resolution,
-            );
+            const skippedCount = selectedIds.length - coordinated.entries.length;
+            if (skippedCount > 0) {
+                toast.warning(
+                    `${skippedCount} empleado(s) sin histórico suficiente; se omiten de la exportación.`,
+                    { duration: 5000 },
+                );
+            }
 
-            const periodLabel = buildSimulationPeriodLabel(profileRow.joining_date, year, lastMonth);
+            if (coordinated.coordination.understaffedDates.length > 0) {
+                toast.warning(
+                    `${coordinated.coordination.understaffedDates.length} días quedan con menos de 3 personas. Incluye más empleados en la simulación.`,
+                    { duration: 6000 },
+                );
+            }
 
-            const payload = buildTimesheetPayload(
-                simulatedWeeks,
-                fullName,
-                profileRow.dni ?? null,
-                year,
-                0,
-                periodLabel,
-                resolution.contractedHoursWeekly,
-            );
+            const profileById = new Map(selectedProfiles.map((p) => [p.id, p]));
+            let generated = 0;
 
-            if (payload.rows.length === 0) {
+            for (const entry of coordinated.entries) {
+                const profile = profileById.get(entry.userId);
+                if (!profile) continue;
+
+                const periodLabel = buildSimulationPeriodLabel(profile.joining_date, year, lastMonth);
+                const payload = buildTimesheetPayload(
+                    entry.weeks,
+                    entry.fullName,
+                    profile.dni ?? null,
+                    year,
+                    0,
+                    periodLabel,
+                    entry.contractedHoursWeekly,
+                );
+
+                if (payload.rows.length === 0) continue;
+
+                await generateTimesheetPdf(payload);
+                generated += 1;
+                if (generated < coordinated.entries.length) {
+                    await new Promise((resolve) => setTimeout(resolve, 450));
+                }
+            }
+
+            if (generated === 0) {
                 toast.error('No hay jornadas simuladas para exportar en este período');
                 return;
             }
 
-            await generateTimesheetPdf(payload);
+            trackUsageModalApply(
+                'staff-history-simulation-export',
+                'Exportar simulación',
+                pathname,
+                `${generated} PDF · ${selectedIds.length} empleados`,
+            );
+            toast.success(`${generated} PDF${generated !== 1 ? 's' : ''} de simulación generados`);
         } catch (err) {
             if (err instanceof SimulationUnavailableError) {
                 toast.error(err.message);
@@ -880,10 +942,7 @@ export default function HistoryPage() {
                                                         <button
                                                             type="button"
                                                             role="menuitem"
-                                                            onClick={() => {
-                                                                setShowExportMenu(false);
-                                                                setShowSimulationEmployeePicker(true);
-                                                            }}
+                                                            onClick={() => void openSimulationExportModal()}
                                                             className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                         >
                                                             <span className="text-base leading-none">📄</span>
@@ -920,7 +979,7 @@ export default function HistoryPage() {
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                onClick={() => void handleExportSimulated()}
+                                                                onClick={() => void openSimulationExportModal()}
                                                                 className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                             >
                                                                 <span className="text-base leading-none">📄</span>
@@ -1085,18 +1144,13 @@ export default function HistoryPage() {
             />
 
             {isMaster ? (
-                <StaffSelectionModal
-                    isOpen={showSimulationEmployeePicker}
-                    onClose={() => setShowSimulationEmployeePicker(false)}
-                    employees={employees}
-                    title="Simulación de jornada"
-                    usageId="staff-history-simulation-export"
-                    usageLabel="Exportar simulación"
-                    allowPlantilla={false}
-                    onSelect={(emp) => {
-                        setShowSimulationEmployeePicker(false);
-                        void handleExportSimulated(emp.id);
-                    }}
+                <SimulationPlantillaExportModal
+                    isOpen={showSimulationExportModal}
+                    onClose={() => setShowSimulationExportModal(false)}
+                    employees={simulationEmployees}
+                    onExport={(ids) => void handleSimulationBatchExport(ids)}
+                    isExporting={isExporting}
+                    year={new Date().getFullYear()}
                 />
             ) : null}
 

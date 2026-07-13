@@ -1,13 +1,23 @@
 /**
  * Validación offline de simulación de jornada (ene–jul año actual).
- * Uso: node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/validate-schedule-simulation.ts
+ * Uso: npx tsx scripts/validate-schedule-simulation.ts
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { buildTimesheetPayload, type TimesheetWeekData } from '../src/lib/staff/timesheet-export-payload.ts';
-import { normalizeStaffSchedule, resolveSimulationProfile } from '../src/lib/staff/staff-schedule-normalizer.ts';
+import {
+    normalizeStaffSchedule,
+    resolveSimulationProfile,
+} from '../src/lib/staff/staff-schedule-normalizer.ts';
+import { filterVisiblePlantillaEmployees } from '../src/lib/staff/plantilla-employees.ts';
+import {
+    analyzePlantillaStaffingByDate,
+    coordinatePlantillaSchedules,
+    type PlantillaScheduleEntry,
+} from '../src/lib/staff/plantilla-schedule-coordinator.ts';
+import { isPlantillaClosedHoliday } from '../src/lib/staff/plantilla-holidays.ts';
 
 // ---------------------------------------------------------------------------
 // Env
@@ -51,6 +61,7 @@ type ProfileRow = {
     contracted_hours_weekly: number | null;
     joining_date: string | null;
     end_date: string | null;
+    visible_in_plantilla?: boolean | null;
 };
 
 type MonthlyTimesheetRpcWeek = TimesheetWeekData & {
@@ -379,14 +390,63 @@ async function main() {
 
     const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, dni, contracted_hours_weekly, joining_date, end_date');
+        .select('id, first_name, last_name, email, dni, contracted_hours_weekly, joining_date, end_date, visible_in_plantilla');
 
     if (error) throw error;
 
+    const plantillaProfiles = filterVisiblePlantillaEmployees((profiles ?? []) as ProfileRow[]);
+    const todayYmd = new Date().toISOString().slice(0, 10);
+    const plantillaBounds = { start: `${year}-01-01`, end: todayYmd };
+
+    const simulatedEntries: PlantillaScheduleEntry[] = [];
+
+    for (const profile of plantillaProfiles) {
+        const fullName = `${profile.first_name} ${profile.last_name}`.trim();
+        const realWeeks = await fetchWeeksForPeriod(supabase, profile.id, year, lastMonth);
+        const contract = {
+            contractedHoursWeekly: Number(profile.contracted_hours_weekly ?? 0),
+            joiningDate: profile.joining_date,
+            endDate: profile.end_date,
+        };
+        const resolution = resolveSimulationProfile(realWeeks, contract, todayYmd);
+        if (!resolution.canSimulate) {
+            console.warn(`✗ ${fullName}: ${resolution.reason ?? 'sin simulación'}`);
+            continue;
+        }
+
+        const simulatedWeeks = normalizeStaffSchedule(
+            realWeeks,
+            { userId: profile.id, email: profile.email },
+            contract,
+            todayYmd,
+            resolution,
+        );
+
+        simulatedEntries.push({
+            userId: profile.id,
+            email: profile.email,
+            fullName,
+            weeks: simulatedWeeks,
+            contractedHoursWeekly: resolution.contractedHoursWeekly,
+            joiningDate: profile.joining_date,
+            endDate: profile.end_date,
+        });
+    }
+
+    const coordination = coordinatePlantillaSchedules(simulatedEntries, plantillaBounds);
+    console.log(
+        `\nPlantilla: ${coordination.holidaysCleared} turnos eliminados en festivos, ` +
+            `${coordination.staffingBoosts} refuerzos de personal.`,
+    );
+    if (coordination.understaffedDates.length > 0) {
+        console.warn(`⚠ Días con <3 personas: ${coordination.understaffedDates.join(', ')}`);
+    }
+
+    const entriesById = new Map(simulatedEntries.map((e) => [e.userId, e]));
     const results: AnalysisResult[] = [];
 
     for (const target of TARGETS) {
-        const profile = (profiles as ProfileRow[]).find((p) =>
+        const profile = plantillaProfiles.find((p) =>
             'id' in target && target.id
                 ? p.id === target.id
                 : 'match' in target && target.match(p.first_name.trim()),
@@ -396,26 +456,14 @@ async function main() {
             continue;
         }
 
-        const fullName = `${profile.first_name} ${profile.last_name}`.trim();
-        const realWeeks = await fetchWeeksForPeriod(supabase, profile.id, year, lastMonth);
-        const contract = {
-            contractedHoursWeekly: Number(profile.contracted_hours_weekly ?? 0),
-            joiningDate: profile.joining_date,
-            endDate: profile.end_date,
-        };
-        const resolution = resolveSimulationProfile(realWeeks, contract);
-        if (!resolution.canSimulate) {
-            console.warn(`✗ ${fullName}: ${resolution.reason}`);
+        const entry = entriesById.get(profile.id);
+        if (!entry) {
+            console.warn(`✗ ${profile.first_name}: sin simulación tras coordinación`);
             continue;
         }
 
-        const simulatedWeeks = normalizeStaffSchedule(
-            realWeeks,
-            { userId: profile.id, email: profile.email },
-            contract,
-            undefined,
-            resolution,
-        );
+        const fullName = entry.fullName;
+        const simulatedWeeks = entry.weeks;
 
         const periodLabel = buildSimulationPeriodLabel(profile.joining_date, year, lastMonth - 1);
         const payload = buildTimesheetPayload(
@@ -425,7 +473,7 @@ async function main() {
             year,
             0,
             periodLabel,
-            resolution.contractedHoursWeekly,
+            entry.contractedHoursWeekly,
         );
 
         const pdfName = `simulacion_${target.key}_${year}_ene-jul.pdf`;
@@ -434,7 +482,7 @@ async function main() {
 
         const analysis = analyzeEmployee(
             fullName,
-            Number(profile.contracted_hours_weekly ?? 0),
+            entry.contractedHoursWeekly,
             simulatedWeeks,
             payload.rows,
         );
@@ -443,9 +491,52 @@ async function main() {
         console.log(`✓ ${fullName} → ${pdfPath} (${payload.rows.length} días)`);
     }
 
+    const staffingProbeDates = [
+        '2026-01-10', '2026-02-01', '2026-02-07', '2026-02-15', '2026-02-17', '2026-02-18',
+        '2026-02-21', '2026-02-28', '2026-03-15', '2026-04-04', '2026-05-03', '2026-07-04',
+        '2026-07-06', '2026-07-11',
+        '2026-01-01', '2026-01-06', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-06-24',
+    ];
+    const plantillaStaffing = analyzePlantillaStaffingByDate(simulatedEntries, staffingProbeDates);
+    const holidayViolations = plantillaStaffing.filter(
+        (row) => isPlantillaClosedHoliday(row.date) && row.staff > 0,
+    );
+    const lowStaff = plantillaStaffing.filter(
+        (row) => !isPlantillaClosedHoliday(row.date) && row.staff > 0 && row.staff < 3,
+    );
+
     const reportPath = path.join(outDir, 'informe-validacion.json');
-    fs.writeFileSync(reportPath, JSON.stringify({ generatedAt: new Date().toISOString(), year, lastMonth, results }, null, 2));
+    fs.writeFileSync(
+        reportPath,
+        JSON.stringify(
+            {
+                generatedAt: new Date().toISOString(),
+                year,
+                lastMonth,
+                coordination,
+                plantillaStaffing,
+                holidayViolations,
+                lowStaff,
+                results,
+            },
+            null,
+            2,
+        ),
+    );
     console.log(`\nInforme JSON: ${reportPath}`);
+    if (holidayViolations.length > 0) {
+        console.warn('⚠ Festivos con personal:', holidayViolations.map((r) => `${r.date} (${r.staff})`).join(', '));
+    }
+    if (lowStaff.length > 0) {
+        console.warn('⚠ Cobertura baja:', lowStaff.map((r) => `${r.date} (${r.staff}: ${r.workers.join(', ')})`).join('; '));
+    }
+    const understaffedAnalysis = analyzePlantillaStaffingByDate(
+        simulatedEntries,
+        coordination.understaffedDates,
+    );
+    if (understaffedAnalysis.length > 0) {
+        console.warn('Detalle días <3:', understaffedAnalysis.map((r) => `${r.date} (${r.staff}: ${r.workers.join(', ') || '—'})`).join('; '));
+    }
 }
 
 main().catch((err) => {

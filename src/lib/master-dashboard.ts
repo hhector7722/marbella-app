@@ -1,8 +1,4 @@
-export const MASTER_DASHBOARD_EMAIL = 'hhector7722@gmail.com';
-
-export function isMasterDashboardUser(email: string | null | undefined): boolean {
-    return String(email ?? '').trim().toLowerCase() === MASTER_DASHBOARD_EMAIL;
-}
+export { MASTER_DASHBOARD_EMAIL, isMasterDashboardUser } from './staff/simulation-identity';
 
 export function getHomeHrefForUser(email: string | null | undefined, role?: string | null): string {
     if (isMasterDashboardUser(email)) return '/master/dashboard';

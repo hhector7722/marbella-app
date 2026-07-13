@@ -5,7 +5,8 @@
  * No modifica BD ni conoce el resto de la plantilla.
  */
 
-import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { isMasterDashboardUser } from './simulation-identity';
+import { isPlantillaClosedHoliday } from './plantilla-holidays';
 import type { TimesheetDayData, TimesheetWeekData } from './timesheet-export-payload';
 
 // ---------------------------------------------------------------------------
@@ -256,6 +257,10 @@ function applyHectorBaseline(
     for (const week of weeks) {
         for (const day of week.days) {
             if (!isInSimulationRange(day.date, simBounds.start, simBounds.end, contract.endDate)) continue;
+            if (isPlantillaClosedHoliday(day.date)) {
+                if (day.hasLog && isFlexibleDay(day)) clearDay(day);
+                continue;
+            }
             if (isWeekend(day.date)) continue;
             if (day.hasLog && LOCKED_EVENT_TYPES.has(day.eventType)) continue;
 
@@ -298,6 +303,7 @@ function finalizeHectorRealisticShifts(
         for (const day of week.days) {
             if (!isInSimulationRange(day.date, simBounds.start, simBounds.end, contract.endDate)) continue;
             if (!isFlexibleDay(day)) continue;
+            if (isPlantillaClosedHoliday(day.date)) continue;
             if (isWeekend(day.date)) continue;
 
             const targetHours = hectorDailyTargetHours(day.date, userId);
@@ -546,6 +552,7 @@ function addFlexibleDays(
         .filter((d) => {
             if (d.hasLog) return false;
             if (!isInSimulationRange(d.date, simBounds.start, simBounds.end, contract.endDate)) return false;
+            if (isPlantillaClosedHoliday(d.date)) return false;
             if (isWeekend(d.date) && (isHector || !pattern.worksWeekends)) return false;
             return true;
         })
@@ -903,5 +910,68 @@ function roundHours(h: number): number {
 export function dayNameForDate(date: string): string {
     const [y, m, d] = date.split('-').map(Number);
     return DAY_NAMES[new Date(y, m - 1, d).getDay()];
+}
+
+/** Tipos de jornada que cuentan como personal de plantilla trabajando. */
+export const PLANTILLA_WORKING_EVENT_TYPES = new Set(['regular', 'overtime', 'weekend']);
+
+export function isPlantillaWorkingDay(day: TimesheetDayData | null | undefined): boolean {
+    if (!day?.hasLog) return false;
+    return PLANTILLA_WORKING_EVENT_TYPES.has(day.eventType ?? 'regular');
+}
+
+export function findDayInWeeks(weeks: TimesheetWeekData[], date: string): TimesheetDayData | null {
+    for (const week of weeks) {
+        const day = week.days.find((d) => d.date === date);
+        if (day) return day;
+    }
+    return null;
+}
+
+export function findWeekForDate(weeks: TimesheetWeekData[], date: string): TimesheetWeekData | null {
+    return weeks.find((week) => week.days.some((d) => d.date === date)) ?? null;
+}
+
+/** Elimina jornadas flexibles simuladas en un festivo de cierre. */
+export function clearFlexibleWorkOnClosedHoliday(weeks: TimesheetWeekData[], date: string): void {
+    if (!isPlantillaClosedHoliday(date)) return;
+    const day = findDayInWeeks(weeks, date);
+    if (!day || !day.hasLog) return;
+    if (LOCKED_EVENT_TYPES.has(day.eventType)) return;
+    clearDay(day);
+}
+
+/**
+ * Añade una jornada simulada en una fecha concreta (coordinación de plantilla).
+ * Devuelve false si no puede (festivo, ya trabaja, Héctor en fin de semana, etc.).
+ */
+export function injectSimulatedWorkDay(
+    weeks: TimesheetWeekData[],
+    date: string,
+    userId: string,
+    email: string | null | undefined,
+    weeklyTarget: number,
+): boolean {
+    if (isPlantillaClosedHoliday(date)) return false;
+
+    const isHector = isMasterDashboardUser(email);
+    if (isHector && isWeekend(date)) return false;
+
+    const day = findDayInWeeks(weeks, date);
+    if (!day || day.hasLog) return false;
+    if (LOCKED_EVENT_TYPES.has(day.eventType)) return false;
+
+    const defaultHours = weeklyTarget > 0 ? Math.max(MIN_SHIFT_HOURS, weeklyTarget / 5) : IDEAL_SHIFT_HOURS;
+    const targetHours = isHector ? hectorDailyTargetHours(date, userId) : defaultHours;
+    const minShift = isHector ? HECTOR_MIN_SHIFT_HOURS : MIN_SHIFT_HOURS;
+
+    const shift = buildShiftTimes(date, userId, targetHours, undefined, minShift);
+    applyShiftToDay(day, shift);
+
+    const week = findWeekForDate(weeks, date);
+    if (week) {
+        recalcWeekSummary(week, resolveWeeklyTarget(week, weeklyTarget));
+    }
+    return true;
 }
 
