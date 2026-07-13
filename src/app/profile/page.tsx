@@ -344,8 +344,7 @@ function ProfileContent() {
     const viewMode: ViewMode = !isManager ? 'staff' : viewingOtherProfile ? 'manager-employee' : 'manager-self';
 
     const saveJoiningDate = useCallback(async () => {
-        if (!profile) return;
-        if (!viewingOtherProfile) return;
+        if (!profile || !isManager) return;
         setJoiningDateSaving(true);
         try {
             const normalized = String(joiningDateYmd || '').trim();
@@ -363,11 +362,10 @@ function ProfileContent() {
         } finally {
             setJoiningDateSaving(false);
         }
-    }, [profile, viewingOtherProfile, joiningDateYmd]);
+    }, [profile, isManager, joiningDateYmd]);
 
     const saveEndDate = useCallback(async () => {
-        if (!profile) return;
-        if (!viewingOtherProfile) return;
+        if (!profile || !isManager) return;
         setEndDateSaving(true);
         try {
             const normalized = String(endDateYmd || '').trim();
@@ -385,7 +383,7 @@ function ProfileContent() {
         } finally {
             setEndDateSaving(false);
         }
-    }, [profile, viewingOtherProfile, endDateYmd]);
+    }, [profile, isManager, endDateYmd]);
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -564,9 +562,11 @@ function ProfileContent() {
                             ))}
                         </div>
 
-                        {viewMode === 'manager-employee' && (
+                        {isManager && (
                             <div className="mt-8">
-                                <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Datos laborales</h2>
+                                <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">
+                                    {viewingOtherProfile ? 'Datos laborales' : 'Mi contrato'}
+                                </h2>
                                 <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-4 mb-4">
                                     <div className="grid grid-cols-1 gap-3">
                                         <div className="flex items-center justify-between gap-3">
@@ -638,13 +638,15 @@ function ProfileContent() {
                                         </p>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
-                                    className="flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
-                                >
-                                    Ver registros
-                                </button>
+                                {viewingOtherProfile ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
+                                        className="flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
+                                    >
+                                        Ver registros
+                                    </button>
+                                ) : null}
                             </div>
                         )}
                     </div>

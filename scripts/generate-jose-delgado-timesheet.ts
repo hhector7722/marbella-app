@@ -22,11 +22,13 @@ type RawShift = {
 /** Fichajes legacy (enero 2026). Sortida = salida. */
 const SHIFTS: RawShift[] = [
     { date: '2026-01-05', clockIn: '09:04:00', clockOut: '15:12:00' },
-    { date: '2026-01-08', clockIn: '09:04:00', clockOut: null },
+    // 08/01: sin sortida en legacy → 16:58 (misma entrada que 24/01)
+    { date: '2026-01-08', clockIn: '09:04:00', clockOut: '16:58:00' },
     { date: '2026-01-09', clockIn: '08:38:49', clockOut: '16:28:00' },
     { date: '2026-01-10', clockIn: '08:52:00', clockOut: '17:01:00' },
     { date: '2026-01-11', clockIn: '08:59:00', clockOut: '16:59:00' },
-    { date: '2026-01-12', clockIn: '12:36:00', clockOut: null },
+    // 12/01: sin sortida, entrada tardía → 17:00 (cierre habitual del resto de jornadas)
+    { date: '2026-01-12', clockIn: '12:36:00', clockOut: '17:00:00' },
     { date: '2026-01-15', clockIn: '09:03:46', clockOut: '17:06:00' },
     // 16/01 omitido: entrada y salida 17:01 (fichaje erróneo, 0 h)
     { date: '2026-01-17', clockIn: '08:59:00', clockOut: '16:55:00' },
@@ -38,7 +40,8 @@ const SHIFTS: RawShift[] = [
     { date: '2026-01-25', clockIn: '09:03:00', clockOut: '16:55:00' },
     { date: '2026-01-26', clockIn: '09:08:00', clockOut: '17:01:00' },
     { date: '2026-01-29', clockIn: '09:10:28', clockOut: '17:03:00' },
-    { date: '2026-01-30', clockIn: '09:04:00', clockOut: null },
+    // 30/01: sin sortida en legacy → 16:58 (misma entrada que 24/01)
+    { date: '2026-01-30', clockIn: '09:04:00', clockOut: '16:58:00' },
     { date: '2026-01-31', clockIn: '07:57:00', clockOut: '16:24:00' },
 ];
 
