@@ -100,8 +100,10 @@ export default function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-2">
-                        <ReservationsBell />
-                        <NotificationsBell />
+                        <div className="flex items-center -space-x-2">
+                            <ReservationsBell />
+                            <NotificationsBell />
+                        </div>
 
                         {/* BOTÓN IA RECTANGULAR - solo texto */}
                         <button
