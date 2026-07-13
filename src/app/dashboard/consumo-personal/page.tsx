@@ -26,6 +26,10 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import {
+    filterVisiblePlantillaEmployees,
+    PLANTILLA_EMPLOYEE_SELECT,
+} from '@/lib/staff/plantilla-employees';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
@@ -229,8 +233,8 @@ export default function ConsumoPersonalDashboardPage() {
     void (async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url')
-        .is('end_date', null)
+        .select(PLANTILLA_EMPLOYEE_SELECT)
+        .eq('visible_in_plantilla', true)
         .order('first_name');
       if (cancelledEmployees) return;
       if (error) {
@@ -239,11 +243,7 @@ export default function ConsumoPersonalDashboardPage() {
         setEmployees([]);
         return;
       }
-      const list = (data || []).filter((e: ProfileOption) => {
-        const name = (e.first_name || '').trim().toLowerCase();
-        return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-      });
-      setEmployees(list);
+      setEmployees(filterVisiblePlantillaEmployees((data || []) as ProfileOption[]));
     })();
     return () => {
       cancelledAuth = true;

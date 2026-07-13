@@ -25,6 +25,10 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import {
+    filterVisiblePlantillaEmployees,
+    PLANTILLA_EMPLOYEE_SELECT,
+} from '@/lib/staff/plantilla-employees';
 import { trackUsageModalApply } from '@/lib/usage/client';
 
 type DayCell = { total: number; fixed: number; overtime: number };
@@ -262,15 +266,11 @@ export default function LaborHistoryPage() {
         void (async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, avatar_url')
-                .is('end_date', null)
+                .select(PLANTILLA_EMPLOYEE_SELECT)
+                .eq('visible_in_plantilla', true)
                 .order('first_name');
             if (cancelled || error) return;
-            const list = (data || []).filter((e: ProfileOption) => {
-                const name = (e.first_name || '').trim().toLowerCase();
-                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-            });
-            setEmployees(list);
+            setEmployees(filterVisiblePlantillaEmployees((data || []) as ProfileOption[]));
         })();
         return () => {
             cancelled = true;

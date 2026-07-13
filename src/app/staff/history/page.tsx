@@ -37,6 +37,10 @@ import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import { WeekCard } from './WeekCard';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 import { MultiEmployeeExportModal } from '@/components/modals/MultiEmployeeExportModal';
+import {
+    filterVisiblePlantillaEmployees,
+    PLANTILLA_EMPLOYEE_SELECT,
+} from '@/lib/staff/plantilla-employees';
 
 /** Línea roja fina con gradiente y difuminado en los extremos; forma parte del borde visual entre semanas (sin añadir espacio). */
 function WeekSeparator() {
@@ -167,14 +171,11 @@ export default function HistoryPage() {
         if (profile?.role === 'manager') {
             const { data: emps } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, avatar_url')
-                .is('end_date', null)
+                .select(PLANTILLA_EMPLOYEE_SELECT)
+                .eq('visible_in_plantilla', true)
                 .order('first_name');
 
-            setEmployees((emps || []).filter((e: Employee) => {
-                const name = (e.first_name || '').trim().toLowerCase();
-                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-            }));
+            setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
         }
     }, [supabase]);
 
@@ -182,12 +183,25 @@ export default function HistoryPage() {
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');
-        if (userRole === 'manager' && id && currentUserId) {
-            setSelectedEmployeeId(id);
-            const emp = employees.find((e) => e.id === id);
-            if (emp) setSelectedEmployeeLabel(staffSelectionApplySummary(emp));
+        if (userRole !== 'manager' || !id || !currentUserId) return;
+
+        setSelectedEmployeeId(id);
+        const emp = employees.find((e) => e.id === id);
+        if (emp) {
+            setSelectedEmployeeLabel(staffSelectionApplySummary(emp));
+            return;
         }
-    }, [searchParams, userRole, currentUserId, employees]);
+
+        void supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .eq('id', id)
+            .maybeSingle()
+            .then(({ data }) => {
+                if (!data) return;
+                setSelectedEmployeeLabel(staffSelectionApplySummary(data as Employee));
+            });
+    }, [searchParams, userRole, currentUserId, employees, supabase]);
 
     useEffect(() => {
         if (!currentUserId) return;
@@ -323,17 +337,30 @@ export default function HistoryPage() {
             const rangeStart = startOfWeek(startOfMonth(monthStart), { weekStartsOn: 1 });
             const rangeEnd = endOfWeek(endOfMonth(monthEnd), { weekStartsOn: 1 });
 
-            const [logsRes, profilesRes] = await Promise.all([
-                supabase
-                    .from('time_logs')
-                    .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
-                    .gte('clock_in', rangeStart.toISOString())
-                    .lte('clock_in', rangeEnd.toISOString()),
-                supabase.from('profiles').select('id, first_name, last_name').is('end_date', null).order('first_name'),
-            ]);
+            const logsRes = await supabase
+                .from('time_logs')
+                .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
+                .gte('clock_in', rangeStart.toISOString())
+                .lte('clock_in', rangeEnd.toISOString());
 
             const logsRaw = logsRes.data || [];
-            const profiles = (profilesRes.data || []).filter((p: { first_name?: string }) => {
+            const userIds = [...new Set(logsRaw.map((log: { user_id: string }) => log.user_id))];
+
+            let profiles: { id: string; first_name?: string; last_name?: string }[] = [];
+            if (userIds.length > 0) {
+                const { data: profilesData, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name')
+                    .in('id', userIds);
+
+                if (profilesError) {
+                    console.error('Error fetching profiles for plantilla:', profilesError);
+                } else {
+                    profiles = profilesData || [];
+                }
+            }
+
+            profiles = profiles.filter((p: { first_name?: string }) => {
                 const name = (p.first_name || '').trim().toLowerCase();
                 return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
             });

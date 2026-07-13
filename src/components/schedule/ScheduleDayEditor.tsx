@@ -27,6 +27,7 @@ import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { fetchDayDetailAction, BarActivity } from '@/app/staff/actividades/actions';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 
@@ -266,7 +267,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         try {
             const { data: employees } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, end_date, avatar_url')
+                .select('id, first_name, last_name, end_date, avatar_url, visible_in_plantilla')
+                .eq('visible_in_plantilla', true)
                 .order('first_name');
 
             const startOfDay = `${targetDate}T00:00:00.000Z`;
@@ -446,12 +448,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             }
 
             setShifts(activeShifts);
-            setAvailableProfiles((employees || []).filter((e: any) => {
-                const name = (e.first_name || '').trim().toLowerCase();
-                if (name === 'ramon' || name === 'ramón' || name === 'empleado') return false;
-                if (e.end_date) return false;
-                return true;
-            }));
+            setAvailableProfiles(filterVisiblePlantillaEmployees(employees || []));
             setHasUnsavedChanges(false);
             setIsDaySent(false); // Reinicia estado "enviado" al cambiar día
         } catch (error) {

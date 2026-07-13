@@ -9,6 +9,7 @@ import {
 import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 
 export { USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 
@@ -141,14 +142,14 @@ async function getActiveFilterUsers(): Promise<UsageFilterUser[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, first_name, last_name')
-    .is('end_date', null)
+    .eq('visible_in_plantilla', true)
     .order('first_name', { ascending: true });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return (data ?? []).map((profile) => ({
+  return filterVisiblePlantillaEmployees(data ?? []).map((profile) => ({
     profileId: profile.id,
     email: profile.email ?? '?',
     displayName: profileDisplayName(profile),

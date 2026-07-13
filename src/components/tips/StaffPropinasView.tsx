@@ -7,6 +7,10 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import {
+  filterVisiblePlantillaEmployees,
+  PLANTILLA_EMPLOYEE_SELECT,
+} from '@/lib/staff/plantilla-employees';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
   mapStaffTipHistoryRows,
@@ -88,8 +92,8 @@ export default function StaffPropinasView({
     void (async () => {
       const { data: emps, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url')
-        .is('end_date', null)
+        .select(PLANTILLA_EMPLOYEE_SELECT)
+        .eq('visible_in_plantilla', true)
         .order('first_name');
 
       if (error) {
@@ -98,12 +102,7 @@ export default function StaffPropinasView({
         return;
       }
 
-      setEmployees(
-        (emps ?? []).filter((e) => {
-          const name = (e.first_name || '').trim().toLowerCase();
-          return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-        }) as EmployeeOption[]
-      );
+      setEmployees(filterVisiblePlantillaEmployees((emps ?? []) as EmployeeOption[]));
     })();
   }, [canSelectEmployee, supabase]);
 

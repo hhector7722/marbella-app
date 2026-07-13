@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getISOWeek, format, addDays, parseISO } from 'date-fns';
 import { getBusinessHourFromTicket } from '@/lib/utils';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -223,9 +224,6 @@ export async function getDashboardData() {
         differenceCents,
         overtimeData,
         paidStatus: initialPaidStatus,
-        allEmployees: (allProfiles || []).filter((p: any) => {
-            const name = (p.first_name || '').trim().toLowerCase();
-            return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-        })
+        allEmployees: filterVisiblePlantillaEmployees(allProfiles || []),
     };
 }

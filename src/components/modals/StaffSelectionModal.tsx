@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
+import { isHiddenPlantillaName } from '@/lib/staff/plantilla-employees';
 import { trackUsageModalApply } from '@/lib/usage/client';
 import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
 
@@ -47,14 +48,8 @@ interface StaffSelectionModalProps {
 
 const PLANTILLA_SENTINEL: PlantillaEmployee = { id: '', first_name: 'Plantilla', last_name: '' };
 
-const HIDDEN_NAMES = new Set(['ramon', 'ramón', 'empleado']);
-
 export function filterPlantillaEmployees(employees: PlantillaEmployee[]): PlantillaEmployee[] {
-    return employees.filter((emp) => {
-        const name = (emp.first_name || '').trim().toLowerCase();
-        if (HIDDEN_NAMES.has(name)) return false;
-        return true;
-    });
+    return employees.filter((emp) => !isHiddenPlantillaName(emp.first_name));
 }
 
 function VisibilityToggle({

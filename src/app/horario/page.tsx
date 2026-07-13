@@ -21,6 +21,7 @@ import {
   type DayCalendarData,
 } from '@/app/staff/actividades/actions';
 import { cn } from '@/lib/utils';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
@@ -231,11 +232,12 @@ export default function HorarioPage() {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, first_name')
+          .eq('visible_in_plantilla', true)
           .order('first_name', { ascending: true });
 
         if (!cancelled && profiles) {
           setEmployees(
-            profiles.map((p: { id: string; first_name: string | null }) => ({
+            filterVisiblePlantillaEmployees(profiles).map((p) => ({
               id: p.id,
               name: p.first_name || 'Sin nombre',
             }))
