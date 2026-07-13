@@ -65,12 +65,6 @@ function isoToDisplay(isoDate: string): string {
     return `${d}/${m}/${y}`;
 }
 
-/** "2026-07-10" → "10/07" */
-function isoToShort(isoDate: string): string {
-    const [, m, d] = isoDate.split('-');
-    return `${d}/${m}`;
-}
-
 /** Minutos → "08 h 00 min" — vacío si es 0 */
 function fmtMinutes(minutes: number): string {
     if (minutes <= 0) return '';
@@ -302,49 +296,6 @@ function drawSummaryCompact(doc: jsPDF, payload: TimesheetExportPayload, startY:
 }
 
 // ---------------------------------------------------------------------------
-// Sección: Resumen (4 tarjetas horizontales)
-// ---------------------------------------------------------------------------
-
-function drawSummary(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
-    const GAP = 4;
-    const CARD_W = (DS.contentW - GAP * 3) / 4;
-    const CARD_H = 16;
-    const RADIUS = 1;
-
-    const items: [string, string][] = [
-        ['Jornadas trabajadas', String(payload.totalDays)],
-        ['Total horas', fmtMinutesCompact(payload.totalWorkedMinutes)],
-        ['Primera jornada', payload.firstDayDate ? isoToShort(payload.firstDayDate) : '—'],
-        ['Última jornada',  payload.lastDayDate  ? isoToShort(payload.lastDayDate)  : '—'],
-    ];
-
-    items.forEach(([label, value], i) => {
-        const x = DS.marginH + i * (CARD_W + GAP);
-        const y = startY;
-
-        // Marco del recuadro
-        doc.setFillColor(...DS.white);
-        doc.setDrawColor(...DS.gray100);
-        doc.setLineWidth(0.3);
-        doc.roundedRect(x, y, CARD_W, CARD_H, RADIUS, RADIUS, 'FD');
-
-        // Etiqueta superior
-        doc.setFont(DS.font, 'normal');
-        doc.setFontSize(6);
-        doc.setTextColor(...DS.gray500);
-        doc.text(label.toUpperCase(), x + 4, y + 5);
-
-        // Valor central
-        doc.setFont(DS.font, 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...DS.black);
-        doc.text(value, x + 4, y + 12.5);
-    });
-
-    return startY + CARD_H;
-}
-
-// ---------------------------------------------------------------------------
 // Sección: Tabla principal
 // ---------------------------------------------------------------------------
 
@@ -505,7 +456,7 @@ export async function createTimesheetPdfDocument(
     });
 
     const afterHeader = await drawHeader(doc, payload, logoDataUrl);
-    const afterSummary = drawSummary(doc, payload, afterHeader + 3);
+    const afterSummary = drawSummaryCompact(doc, payload, afterHeader + 3);
     drawTable(doc, payload, afterSummary);
 
     const totalPages = (doc as any).internal.getNumberOfPages();
