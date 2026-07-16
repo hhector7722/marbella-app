@@ -4,7 +4,7 @@
  */
 
 import { liquidateWeek } from './liquidation-engine.ts';
-import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
+import { patchWeeksFromLiquidation } from './week-card-from-liquidation.ts';
 import type {
   CivilDate,
   ContractRegime,
@@ -166,45 +166,19 @@ export function extrasByDayFromLiquidation(
   return out;
 }
 
+/**
+ * @deprecated Preferir patchWeeksFromLiquidation (días + footer desde el mismo resultado).
+ */
 export function patchWeeksDailyExtrasFromEngine<
   TWeek extends {
     startDate: string;
     days: ReadonlyArray<{ date: string; extraHours: number }>;
+    summary?: { isPaid?: boolean };
   },
 >(
   weeks: readonly TWeek[],
   employee: EmployeeBoundaryFacts,
   logs: readonly TimeLogFact[],
 ): TWeek[] {
-  return weeks.map((week) => {
-    const weekStart = (
-      typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate)
-    ) as CivilDate;
-
-    const daySet = new Set(
-      week.days.map((d) => (typeof d.date === 'string' ? d.date.split('T')[0] : String(d.date))),
-    );
-
-    const weekLogs = logs.filter((l) => {
-      const day = formatYmdInMadrid(l.clockInIso);
-      return day != null && daySet.has(day);
-    });
-
-    const extrasByDay = liquidateWeekExtrasByDay({
-      employee,
-      weekStart,
-      logs: weekLogs,
-    });
-
-    return {
-      ...week,
-      days: week.days.map((day) => {
-        const key = typeof day.date === 'string' ? day.date.split('T')[0] : String(day.date);
-        return {
-          ...day,
-          extraHours: extrasByDay[key] ?? 0,
-        };
-      }),
-    };
-  });
+  return patchWeeksFromLiquidation(weeks, employee, logs);
 }

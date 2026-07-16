@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
-import { liquidateWeekExtrasByDay, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
 import { madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 
 // --- TYPES ---
@@ -99,10 +99,9 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     async function fetchWeekData() {
         setLoading(true);
         try {
-            // 1. Fetch Profile (solo presentación + RPC grid clocks)
             const { data: profile, error: profileError } = await supabase
                 .from('profiles')
-                .select('first_name, last_name, contracted_hours_weekly, is_fixed_salary, role')
+                .select('first_name, last_name, is_fixed_salary, role')
                 .eq('id', workerId)
                 .single();
 
@@ -114,54 +113,55 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
             const mondayDate = parseISO(weekStart);
             const sundayDate = addDays(mondayDate, 6);
-            const mondayISO = weekStart;
+            const mondayISO = weekStart.split('T')[0]!;
             const sundayISO = format(sundayDate, 'yyyy-MM-dd');
 
-            // 2. Fetch SSOT Statistics (totales del footer)
-            const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
-                p_start_date: mondayISO,
-                p_end_date: sundayISO,
-                p_user_id: workerId,
-                p_only_completed_weeks: false,
-            });
-
-            if (rpcError) throw rpcError;
-
-            const rpcWeek = rpcData?.weeksResult?.[0];
-            const rpcStaff = rpcWeek?.staff?.[0];
-
-            // 3. Fetch grid days (clocks / horas; extraHours de la RPC se ignora)
             const profileRole = (profile?.role ?? '') as string;
-            const effContract =
-                profileRole === 'manager' || !!profile?.is_fixed_salary
-                    ? 0
-                    : (profile?.contracted_hours_weekly ?? 40);
+            const effContractForGrid =
+                profileRole === 'manager' || !!profile?.is_fixed_salary ? 0 : 40;
 
-            const { data: gridDays, error: gridErr } = await supabase.rpc('get_worker_weekly_log_grid', {
-                p_user_id: workerId,
-                p_start_date: mondayISO,
-                p_contracted_hours: effContract
-            });
+            const [{ data: gridDays, error: gridErr }, { data: snap }, logsRes, employeeFacts] =
+                await Promise.all([
+                    supabase.rpc('get_worker_weekly_log_grid', {
+                        p_user_id: workerId,
+                        p_start_date: mondayISO,
+                        p_contracted_hours: effContractForGrid,
+                    }),
+                    supabase
+                        .from('weekly_snapshots')
+                        .select('is_paid')
+                        .eq('user_id', workerId)
+                        .eq('week_start', mondayISO)
+                        .maybeSingle(),
+                    (() => {
+                        const { startIso: weekStartIso, endIso: weekEndIso } = madridRangeUtcIso(
+                            mondayISO,
+                            sundayISO,
+                        );
+                        return supabase
+                            .from('time_logs')
+                            .select('clock_in, clock_out, total_hours')
+                            .eq('user_id', workerId)
+                            .gte('clock_in', weekStartIso)
+                            .lte('clock_in', weekEndIso);
+                    })(),
+                    loadEmployeeBoundaryFacts(supabase, workerId),
+                ]);
 
             if (gridErr) throw gridErr;
+            if (logsRes.error) throw logsRes.error;
 
-            const { startIso: weekStartIso, endIso: weekEndIso } = madridRangeUtcIso(mondayISO, sundayISO);
-            const { data: weekLogs } = await supabase
-                .from('time_logs')
-                .select('clock_in, clock_out, total_hours')
-                .eq('user_id', workerId)
-                .gte('clock_in', weekStartIso)
-                .lte('clock_in', weekEndIso);
-
-            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, workerId);
-            const extrasByDay = liquidateWeekExtrasByDay({
+            const isPaid = snap?.is_paid === true;
+            const { extrasByDay, summary } = liquidateWeekForCard({
                 employee: employeeFacts,
                 weekStart: mondayISO,
-                logs: (weekLogs ?? []).map((l) => ({
+                logs: (logsRes.data ?? []).map((l) => ({
                     clockInIso: l.clock_in,
                     clockOutIso: l.clock_out,
                     totalHours: l.total_hours,
                 })),
+                isPaid,
+                carryIn: 0,
             });
 
             const rawDays = (gridDays || []) as Array<{
@@ -173,7 +173,6 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 extraHours: number;
             }>;
 
-            // 4. Build presentation array (formato unificado con /staff/history)
             const weekDays: DailyLog[] = rawDays.map((day: any) => {
                 const dateKey = typeof day.date === 'string' ? day.date.split('T')[0] : String(day.date);
                 const d = new Date(day.date);
@@ -189,22 +188,21 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 };
             });
 
-            // 5. Set Final State (SSOT)
             setWeekData({
                 weekNumber: parseInt(format(mondayDate, 'w')),
                 startDate: mondayDate,
                 endDate: sundayDate,
                 days: weekDays,
                 summary: {
-                    totalHours: rpcStaff?.totalHours ?? 0,
-                    weeklyBalance: rpcStaff?.overtimeHours ?? 0,
-                    estimatedValue: rpcStaff?.totalCost ?? 0,
-                    finalBalance: rpcStaff?.overtimeHours ?? 0,
-                    isPaid: rpcStaff?.isPaid ?? false,
-                    contractedHours: effContract,
-                    startBalance: rpcStaff?.startBalance ?? 0,
-                    preferStock: rpcStaff?.preferStock ?? false
-                }
+                    totalHours: summary.totalHours,
+                    weeklyBalance: summary.weeklyBalance,
+                    estimatedValue: summary.estimatedValue,
+                    finalBalance: summary.finalBalance,
+                    isPaid: summary.isPaid,
+                    contractedHours: summary.limitHours,
+                    startBalance: summary.startBalance,
+                    preferStock: summary.preferStock,
+                },
             });
         } catch (error) {
             console.error("Error in Modal:", error);

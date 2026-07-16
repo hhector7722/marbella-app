@@ -45,7 +45,7 @@ import {
     SimulationPlantillaExportModal,
     type SimulationPlantillaEmployee,
 } from '@/components/modals/SimulationPlantillaExportModal';
-import { patchWeeksDailyExtrasFromEngine, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
+import { patchWeeksFromLiquidation, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
@@ -89,6 +89,7 @@ interface WeekSummary {
     isPaid: boolean;
     preferStock?: boolean;
     hourlyRate?: number;
+    limitHours?: number;
 }
 
 interface WeekData extends TimesheetWeekData {
@@ -241,18 +242,16 @@ export default function HistoryPage() {
         setLoading(true);
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
-            // p_month es 1-indexed en PostgreSQL
-            const [rpcResult, logsResult, weeklyStatsResult, profileResult] = await Promise.all([
+            // RPC: estructura días/clocks + isPaid administrativo. Liquidación → motor.
+            const [rpcResult, logsResult] = await Promise.all([
                 supabase.rpc('get_monthly_timesheet', {
                     p_user_id: targetUserId,
                     p_year: filterYear,
                     p_month: filterMonth + 1,
                 }),
-                // Fichajes: clocks + horas para motor; clock_out_show_no_registrada para UI
                 (() => {
                     const start = new Date(filterYear, filterMonth, 1);
                     const end = new Date(filterYear, filterMonth + 1, 0);
-                    // Ampliar a semanas ISO que cruzan el mes
                     const rangeStart = startOfWeek(start, { weekStartsOn: 1 });
                     const rangeEnd = endOfWeek(end, { weekStartsOn: 1 });
                     const startYmd = format(rangeStart, 'yyyy-MM-dd');
@@ -265,24 +264,6 @@ export default function HistoryPage() {
                         .gte('clock_in', startIso)
                         .lte('clock_in', endIso);
                 })(),
-                // RPC semanal para saber si la semana está configurada como "guardar horas" (preferStock)
-                (() => {
-                    const monthStart = new Date(filterYear, filterMonth, 1);
-                    const monthEnd = new Date(filterYear, filterMonth + 1, 0);
-                    const startStr = format(monthStart, 'yyyy-MM-dd');
-                    const endStr = format(monthEnd, 'yyyy-MM-dd');
-                    return supabase.rpc('get_weekly_worker_stats', {
-                        p_start_date: startStr,
-                        p_end_date: endStr,
-                        p_user_id: targetUserId,
-                        p_only_completed_weeks: false,
-                    });
-                })(),
-                supabase
-                    .from('profiles')
-                    .select('overtime_cost_per_hour')
-                    .eq('id', targetUserId)
-                    .maybeSingle(),
             ]);
 
             const { data, error } = rpcResult;
@@ -297,31 +278,12 @@ export default function HistoryPage() {
                 toast.warning('No se pudieron cargar los indicadores de salida no registrada.');
             }
 
-            // Mapa semana -> preferStock (guardar horas esta semana)
-            const preferStockByWeekStart: Record<string, boolean> = {};
-            if (weeklyStatsResult && !weeklyStatsResult.error && weeklyStatsResult.data) {
-                const weeksArray = (weeklyStatsResult.data as any).weeksResult || [];
-                (weeksArray as any[]).forEach((week: any) => {
-                    if (!week || !week.weekId || !Array.isArray(week.staff) || week.staff.length === 0) return;
-                    const staffEntry = week.staff[0];
-                    if (typeof staffEntry?.preferStock !== 'boolean') return;
-                    const key: string = typeof week.weekId === 'string'
-                        ? week.weekId.split('T')[0]
-                        : String(week.weekId);
-                    preferStockByWeekStart[key] = staffEntry.preferStock;
-                });
-            } else if (weeklyStatsResult?.error) {
-                console.error('Error fetching weekly stats (preferStock):', weeklyStatsResult.error);
-            }
-
-            // Mapa fecha (YYYY-MM-DD) -> mostrar "No registrada"
             const noRegistradaByDate: Record<string, boolean> = {};
             (logsResult.data || []).forEach((log: { clock_in: string; clock_out_show_no_registrada?: boolean }) => {
                 const dateKey = formatYmdInMadrid(log.clock_in) ?? format(new Date(log.clock_in), 'yyyy-MM-dd');
                 if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
             });
 
-            const profileHourlyRate = Number(profileResult.data?.overtime_cost_per_hour ?? 0);
             const employeeFacts = await loadEmployeeBoundaryFacts(supabase, targetUserId);
             const engineLogs = (logsResult.data || []).map((l: {
                 clock_in: string;
@@ -333,25 +295,17 @@ export default function HistoryPage() {
                 totalHours: l.total_hours,
             }));
 
-            const formattedWeeks: WeekData[] = patchWeeksDailyExtrasFromEngine(
+            const formattedWeeks: WeekData[] = patchWeeksFromLiquidation(
                 (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => {
                     const startDateKey = typeof (week as any).startDate === 'string'
                         ? (week as any).startDate.split('T')[0]
                         : String((week as any).startDate);
-                    const preferStockForWeek = preferStockByWeekStart[startDateKey];
-                    const rpcHourlyRate = (week.summary as WeekSummary | undefined)?.hourlyRate;
-                    const hourlyRate =
-                        typeof rpcHourlyRate === 'number' && Number.isFinite(rpcHourlyRate)
-                            ? rpcHourlyRate
-                            : profileHourlyRate;
-
                     return {
                         ...week,
                         startDate: startDateKey,
                         summary: {
                             ...week.summary,
-                            preferStock: preferStockForWeek,
-                            hourlyRate,
+                            isPaid: week.summary?.isPaid ?? false,
                         },
                         days: week.days.map((day) => ({
                             ...day,
@@ -601,12 +555,16 @@ export default function HistoryPage() {
             });
             if (error || !data) continue;
 
-            const weeks = patchWeeksDailyExtrasFromEngine(
+            const weeks = patchWeeksFromLiquidation(
                 ((data as unknown) as MonthlyTimesheetRpcWeek[]).map((week) => ({
                     ...week,
                     startDate: typeof week.startDate === 'string'
                         ? week.startDate.split('T')[0]
                         : String(week.startDate),
+                    summary: {
+                        ...week.summary,
+                        isPaid: week.summary?.isPaid ?? false,
+                    },
                     days: week.days.map((day) => ({
                         ...day,
                         eventType: day.eventType ?? day.event_type ?? 'regular',

@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Comanda: 1/2 sin duplicar)
+**Última actualización:** 2026-07-16 (Footer semanal → LiquidationResult)
+
+- [x] **Tarjeta semanal: footer → motor (2026-07-16)**: HORAS / PENDIENTES / EXTRAS / IMPORTE salen de `LiquidationResult` vía [`week-card-from-liquidation.ts`](src/lib/hours-engine/week-card-from-liquidation.ts) + `patchWeeksFromLiquidation`. Misma fuente que Ex. diarias → imposible discrepancia. `/staff/history` + `WorkerWeeklyHistoryModal`. RPC solo clocks/`isPaid`. Tests: `npm run test:hours-engine:week-card` (10) + suite **104/104**. Sin orquestador, sin borrar snapshots.
+
+**Última actualización anterior:** 2026-07-16 (Comanda: 1/2 sin duplicar)
 
 - [x] **Ración medio en comanda sin «1/2» duplicado (2026-07-16)**: Producto = `1/2 ENT. LLOM PLANXA` (cantidad aparte). Ya no se muestra `1/2` otra vez en notas. RPC `fn_event_order_apply_racion` + UI/print. Migración [`20260716230000_half_ration_name_no_dup.sql`](supabase/migrations/20260716230000_half_ration_name_no_dup.sql) **aplicada**.
 

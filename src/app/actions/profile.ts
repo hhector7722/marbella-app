@@ -16,6 +16,11 @@ export async function updateProfile(
         visible_in_plantilla?: boolean;
         prefer_stock_hours?: boolean;
         codigo_empleado?: string;
+        /** Campos contractuales → profiles + trigger hours_contract_terms */
+        contracted_hours_weekly?: number;
+        overtime_cost_per_hour?: number | null;
+        is_fixed_salary?: boolean;
+        role?: string;
     }
 ) {
     const supabase = await createClient();
@@ -30,8 +35,24 @@ export async function updateProfile(
         .eq('id', currentUser.id)
         .single();
 
-    if (currentProfile?.role !== 'manager' && currentUser.id !== userId) {
+    const isManager = currentProfile?.role === 'manager';
+    if (!isManager && currentUser.id !== userId) {
         return { success: false, error: 'No tienes permisos' };
+    }
+
+    // Solo managers pueden mutar campos contractuales / frontera laboral
+    const contractualKeys = [
+        'prefer_stock_hours',
+        'contracted_hours_weekly',
+        'overtime_cost_per_hour',
+        'is_fixed_salary',
+        'role',
+        'joining_date',
+        'end_date',
+    ] as const;
+    const touchesContractual = contractualKeys.some((k) => data[k] !== undefined);
+    if (touchesContractual && !isManager) {
+        return { success: false, error: 'Solo managers pueden cambiar datos contractuales' };
     }
 
     const { error } = await supabase
@@ -43,6 +64,9 @@ export async function updateProfile(
         console.error('Error updating profile:', error);
         return { success: false, error: error.message };
     }
+
+    // hours_contract_terms: sincronizado por trg_hours_contract_terms_sync
+    // (contracted_hours_weekly, prefer_stock, is_fixed, overtime, role).
 
     revalidatePath('/profile');
     revalidatePath('/dashboard');
