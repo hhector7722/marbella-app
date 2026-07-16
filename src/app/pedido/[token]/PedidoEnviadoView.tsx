@@ -1,17 +1,21 @@
 import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 
-import { buildMarbellaWhatsAppUrl, getMarbellaPublicWhatsAppPhone } from '@/lib/client-pedido-link'
+import { buildWhatsAppUrl, resolvePedidoContactWhatsAppPhone } from '@/lib/client-pedido-link'
 import { cn } from '@/lib/utils'
 
 /** Pantalla informativa tras envío one-shot (sin carta ni botones de edición). */
-export function PedidoEnviadoView() {
-  const restaurantPhone = getMarbellaPublicWhatsAppPhone()
-  const waUrl = restaurantPhone
-    ? buildMarbellaWhatsAppUrl(
-        'Hola, soy el cliente del pedido. Necesito ayuda o realizar un cambio. ¡Gracias!'
-      )
-    : null
+export function PedidoEnviadoView({
+  contactWhatsAppPhone = null,
+}: {
+  /** Teléfono del contacto (perfil Héctor). Si falta, se resuelve con fallback. */
+  contactWhatsAppPhone?: string | null
+}) {
+  const phone = resolvePedidoContactWhatsAppPhone(contactWhatsAppPhone)
+  const waUrl = buildWhatsAppUrl(
+    phone,
+    'Hola, soy el cliente del pedido. Necesito ayuda o realizar un cambio. ¡Gracias!'
+  )
 
   return (
     <main className="flex min-h-[100dvh] flex-col bg-white text-zinc-900">

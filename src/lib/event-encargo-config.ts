@@ -1,5 +1,5 @@
 import type { PublicMenuRow } from '@/components/public/PublicCarta'
-import { eventOrderProductId } from '@/lib/event-order-carta'
+import { eventOrderCartKey, eventOrderProductId } from '@/lib/event-order-carta'
 
 export type EventCategoryLimits = {
   parents?: Record<string, number>
@@ -71,8 +71,8 @@ export function sumQtyInParent(
   for (const row of items) {
     const pk = row.category_parent_id ?? `__no_parent__:${(row.category_parent_name ?? '').trim()}`
     if (pk !== parentKey) continue
-    const pid = eventOrderProductId(row.articulo_id)
-    total += Math.max(0, Number(qtyById[pid]) || 0)
+    total += Math.max(0, Number(qtyById[eventOrderCartKey(row.articulo_id, 'entero')]) || 0)
+    total += Math.max(0, Number(qtyById[eventOrderCartKey(row.articulo_id, 'medio')]) || 0)
   }
   return total
 }
@@ -87,8 +87,8 @@ export function sumQtyInSub(
     const childTitleRaw = row.category_child_name?.trim() || ''
     const sk = row.category_child_id ?? `__no_child__:${childTitleRaw}`
     if (sk !== subKey) continue
-    const pid = eventOrderProductId(row.articulo_id)
-    total += Math.max(0, Number(qtyById[pid]) || 0)
+    total += Math.max(0, Number(qtyById[eventOrderCartKey(row.articulo_id, 'entero')]) || 0)
+    total += Math.max(0, Number(qtyById[eventOrderCartKey(row.articulo_id, 'medio')]) || 0)
   }
   return total
 }

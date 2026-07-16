@@ -10,8 +10,8 @@ import {
 } from '@/components/eventos/EventEncargoCartFooter'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
 import { DEFAULT_CARTA_LANG, getCartaDisplayName } from '@/lib/carta-menu-i18n'
-import { eventOrderProductId } from '@/lib/event-order-carta'
-import type { EventEncargoEditControl, EventOrderCartaControl } from '@/lib/event-order-carta'
+import { eventOrderProductId, eventOrderCartKey, parseEventOrderCartKey, qtyByIdToSubmitItems } from '@/lib/event-order-carta'
+import type { EventEncargoEditControl, EventOrderCartaControl, EventOrderPortion } from '@/lib/event-order-carta'
 import {
   enabledSetFromStored,
   normalizeEnabledProductIdsForSave,
@@ -76,6 +76,7 @@ export default function EventEncargoCartaClient({
   backHref = null,
   variant = 'public',
   clientEditToken = null,
+  contactWhatsAppPhone = null,
 }: {
   event: EncargoCartaEvent
   allMenuItems: PublicMenuRow[]
@@ -91,6 +92,8 @@ export default function EventEncargoCartaClient({
   variant?: 'public' | 'staff' | 'client-token'
   /** Token privado: el cliente actualiza el pedido existente (no crea uno nuevo). */
   clientEditToken?: string | null
+  /** WhatsApp post-envío (perfil contacto pedido). */
+  contactWhatsAppPhone?: string | null
 }) {
   const router = useRouter()
   const isStaff = variant === 'staff'
@@ -149,17 +152,21 @@ export default function EventEncargoCartaClient({
 
   const totalItems = useMemo(() => sumItems(qtyById), [qtyById])
 
-  const onQuantityChange = useCallback((articuloId: number, quantity: number) => {
-    const pid = eventOrderProductId(articuloId)
-    setQtyById((curr) => {
-      const next = Math.max(0, Math.min(999, Number(quantity) || 0))
-      if (next <= 0) {
-        const { [pid]: _removed, ...rest } = curr
-        return rest
-      }
-      return { ...curr, [pid]: next }
-    })
-  }, [])
+  const onQuantityChange = useCallback(
+    (articuloId: number, quantity: number, opts?: { portion?: EventOrderPortion }) => {
+      const portion = opts?.portion ?? 'entero'
+      const pid = eventOrderCartKey(articuloId, portion)
+      setQtyById((curr) => {
+        const next = Math.max(0, Math.min(999, Number(quantity) || 0))
+        if (next <= 0) {
+          const { [pid]: _removed, ...rest } = curr
+          return rest
+        }
+        return { ...curr, [pid]: next }
+      })
+    },
+    []
+  )
 
   const eventOrder: EventOrderCartaControl | undefined = useMemo(
     () =>
@@ -170,32 +177,44 @@ export default function EventEncargoCartaClient({
   )
 
   const cartLines = useMemo((): EventEncargoCartLine[] => {
+    const byArticulo = new Map(clientMenuItems.map((row) => [row.articulo_id, row]))
     const lines: EventEncargoCartLine[] = []
-    for (const row of clientMenuItems) {
-      const pid = eventOrderProductId(row.articulo_id)
-      const quantity = Math.max(0, Number(qtyById[pid]) || 0)
+    for (const [key, quantityRaw] of Object.entries(qtyById)) {
+      const quantity = Math.max(0, Number(quantityRaw) || 0)
       if (quantity <= 0) continue
+      const parsed = parseEventOrderCartKey(key)
+      const articuloId = parsed?.articuloId ?? Number(key)
+      if (!Number.isFinite(articuloId) || articuloId <= 0) continue
+      const row = byArticulo.get(articuloId)
+      if (!row) continue
+      const baseName = getCartaDisplayName(row, DEFAULT_CARTA_LANG)
+      const factor = Number(row.tpv_factor_porcion)
+      const isMedioFactor = Number.isFinite(factor) && factor > 0 && factor <= 0.55
+      const isMedioRacion = parsed?.portion === 'medio' || isMedioFactor
+      const alreadyMarked = /\b(1\/2|½|medio|media|mitad|half)\b/i.test(baseName)
+      const name = isMedioRacion && !alreadyMarked ? `1/2 · ${baseName}` : baseName
       lines.push({
-        key: pid,
-        articuloId: row.articulo_id,
-        name: getCartaDisplayName(row, DEFAULT_CARTA_LANG),
+        key,
+        articuloId,
+        name,
         quantity,
+        portion: isMedioRacion ? 'medio' : 'entero',
       })
     }
     lines.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
     return lines
   }, [clientMenuItems, qtyById])
 
-  const addOneToCart = useCallback((articuloId: number) => {
-    const pid = eventOrderProductId(articuloId)
+  const addOneToCart = useCallback((articuloId: number, portion: EventOrderPortion = 'entero') => {
+    const pid = eventOrderCartKey(articuloId, portion)
     setQtyById((curr) => ({
       ...curr,
       [pid]: Math.min(999, (curr[pid] ?? 0) + 1),
     }))
   }, [])
 
-  const removeOneFromCart = useCallback((articuloId: number) => {
-    const pid = eventOrderProductId(articuloId)
+  const removeOneFromCart = useCallback((articuloId: number, portion: EventOrderPortion = 'entero') => {
+    const pid = eventOrderCartKey(articuloId, portion)
     setQtyById((curr) => {
       const nextQty = (curr[pid] ?? 0) - 1
       if (nextQty <= 0) {
@@ -310,9 +329,7 @@ export default function EventEncargoCartaClient({
           toast.error('Revisa los límites del pedido antes de guardar.')
           return
         }
-        const items = Object.entries(qtyById)
-          .map(([product_id, quantity]) => ({ product_id, quantity }))
-          .filter((it) => Number(it.quantity) > 0)
+        const items = qtyByIdToSubmitItems(qtyById)
         if (items.length === 0) {
           toast.error('Añade al menos un producto.')
           return
@@ -338,9 +355,7 @@ export default function EventEncargoCartaClient({
           toast.error('Revisa los límites del pedido antes de guardar.')
           return
         }
-        const items = Object.entries(qtyById)
-          .map(([product_id, quantity]) => ({ product_id, quantity }))
-          .filter((it) => Number(it.quantity) > 0)
+        const items = qtyByIdToSubmitItems(qtyById)
         if (items.length === 0) {
           toast.error('Añade al menos un producto.')
           return
@@ -393,7 +408,7 @@ export default function EventEncargoCartaClient({
 
   if (orderDone) {
     if (isClientToken) {
-      return <PedidoEnviadoView />
+      return <PedidoEnviadoView contactWhatsAppPhone={contactWhatsAppPhone} />
     }
     return (
       <main className="flex min-h-[100dvh] flex-col bg-white text-zinc-900">
@@ -443,30 +458,44 @@ export default function EventEncargoCartaClient({
         {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Guardar configuración'}
       </button>
     </div>
-  ) : (
-    <div className="space-y-2 px-0 py-3">
-      {isStaff ? (
-        <button
-          type="button"
-          className={cn(btnBase, 'w-full bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-          onClick={() => void copyPublicLink()}
-        >
-          <span className="inline-flex items-center justify-center gap-2">
-            <Copy className="h-4 w-4" strokeWidth={2.5} />
-            Copiar enlace
-          </span>
-        </button>
-      ) : null}
+  ) : isStaff ? (
+    <div className="space-y-2 px-0 pt-3">
+      <button
+        type="button"
+        className={cn(btnBase, 'w-full bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+        onClick={() => void copyPublicLink()}
+      >
+        <span className="inline-flex items-center justify-center gap-2">
+          <Copy className="h-4 w-4" strokeWidth={2.5} />
+          Copiar enlace
+        </span>
+      </button>
       <EventEncargoCartFooter
         lines={cartLines}
         totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
+        limitWarnings={limitWarnings}
         onIncrement={addOneToCart}
         onDecrement={removeOneFromCart}
         onSave={openSaveModal}
         isPending={isPending}
-        saveLabel={isClientToken ? 'Enviar pedido' : isStaff ? 'Guardar pedido' : 'Guardar'}
+        saveLabel="Guardar pedido"
       />
     </div>
+  ) : (
+    <EventEncargoCartFooter
+      lines={cartLines}
+      totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
+      limitWarnings={limitWarnings}
+      onIncrement={addOneToCart}
+      onDecrement={removeOneFromCart}
+      onSave={openSaveModal}
+      isPending={isPending}
+      saveLabel={isClientToken ? 'Enviar pedido' : 'Guardar'}
+      requireConfirm={isClientToken}
+      confirmTitle="¿Enviar pedido?"
+      confirmBody="¿Seguro que quieres enviar el pedido? Después no podrás modificarlo desde este enlace."
+      confirmActionLabel="Sí, enviar"
+    />
   )
 
   return (
@@ -542,9 +571,7 @@ export default function EventEncargoCartaClient({
                     toast.error('Revisa los límites del pedido antes de enviar.')
                     return
                   }
-                  const items = Object.entries(qtyById)
-                    .map(([product_id, quantity]) => ({ product_id, quantity }))
-                    .filter((it) => Number(it.quantity) > 0)
+                  const items = qtyByIdToSubmitItems(qtyById)
                   if (items.length === 0) {
                     toast.error('Añade al menos un producto.')
                     return

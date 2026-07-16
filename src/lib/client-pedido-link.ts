@@ -16,12 +16,29 @@ export function getMarbellaPublicWhatsAppPhone(): string | null {
   return '34932254427'
 }
 
-export function buildMarbellaWhatsAppUrl(prefillText?: string): string | null {
-  const phone = getMarbellaPublicWhatsAppPhone()
-  if (!phone) return null
+/** Email del contacto WhatsApp tras envío de pedido cliente (`profiles.phone`). */
+export const PEDIDO_CONTACT_EMAIL = 'hhector7722@gmail.com' as const
+
+/**
+ * Normaliza un teléfono de contacto de pedido (perfil Héctor vía RPC).
+ * Fallback al fijo del restaurante solo si no hay teléfono de perfil.
+ */
+export function resolvePedidoContactWhatsAppPhone(rawPhone: string | null | undefined): string | null {
+  const formatted = formatWhatsAppPhone(String(rawPhone ?? ''))
+  if (formatted.length >= 9) return formatted
+  return getMarbellaPublicWhatsAppPhone()
+}
+
+export function buildWhatsAppUrl(phone: string | null | undefined, prefillText?: string): string | null {
+  const formatted = formatWhatsAppPhone(String(phone ?? ''))
+  if (formatted.length < 9) return null
   const text = String(prefillText ?? '').trim()
-  if (!text) return `https://wa.me/${phone}`
-  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+  if (!text) return `https://wa.me/${formatted}`
+  return `https://wa.me/${formatted}?text=${encodeURIComponent(text)}`
+}
+
+export function buildMarbellaWhatsAppUrl(prefillText?: string): string | null {
+  return buildWhatsAppUrl(getMarbellaPublicWhatsAppPhone(), prefillText)
 }
 
 /** Fecha local a partir de YYYY-MM-DD (sin Date('YYYY-MM-DD') nativo). */

@@ -23,6 +23,7 @@ export default function ClientPedidoCartaClient({
   startingPackItems,
   initialEnabledProductIds,
   initialCategoryLimits,
+  contactWhatsAppPhone = null,
 }: {
   token: string
   event: EncargoCartaEvent
@@ -35,6 +36,7 @@ export default function ClientPedidoCartaClient({
   startingPackItems: Array<{ product_id: string; quantity: number }>
   initialEnabledProductIds: string[] | null
   initialCategoryLimits: EventCategoryLimits
+  contactWhatsAppPhone?: string | null
 }) {
   const [started, setStarted] = useState(false)
 
@@ -65,6 +67,7 @@ export default function ClientPedidoCartaClient({
       canManage={false}
       variant="client-token"
       clientEditToken={token}
+      contactWhatsAppPhone={contactWhatsAppPhone}
     />
   )
 }

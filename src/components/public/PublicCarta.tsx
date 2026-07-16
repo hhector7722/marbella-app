@@ -22,6 +22,7 @@ export type PublicMenuRow = {
   carta_nombre_en: string | null
   precio: number | string | null
   precio_medio_display?: number | string | null
+  medio_articulo_id?: number | null
   carta_dual_racion_enabled?: boolean | null
   override_precio_medio?: number | string | null
   carta_racion_entero_es?: string | null
@@ -88,6 +89,7 @@ export function publicMenuRowsToDigitalMenu(items: PublicMenuRow[]): DigitalMenu
     descripcion: null,
     precio: row.precio,
     precio_medio_display: row.precio_medio_display,
+    medio_articulo_id: row.medio_articulo_id,
     carta_dual_racion_enabled: row.carta_dual_racion_enabled,
     override_precio_medio: row.override_precio_medio,
     carta_racion_entero_es: row.carta_racion_entero_es,

@@ -7,6 +7,8 @@ import {
   parseEventCategoryLimits,
 } from '@/lib/event-encargo-config'
 import { eventOrderProductId } from '@/lib/event-order-carta'
+import { expandEnabledIdsWithMedioPartners } from '@/lib/carta-medio-merge'
+import { loadPedidoContactWhatsAppPhone } from '@/lib/load-pedido-contact-phone'
 import ClientPedidoCartaClient from './ClientPedidoCartaClient'
 import { PedidoEnviadoView } from './PedidoEnviadoView'
 import { canClientOpenPedidoCarta } from '@/lib/reservas-encargos-calendar'
@@ -63,6 +65,7 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
   if (!token) return <ErrorView message="Enlace no válido." />
 
   const supabase = await createClient()
+  const contactWhatsAppPhone = await loadPedidoContactWhatsAppPhone(supabase)
 
   const { data: event, error: evErr } = await supabase
     .from('events')
@@ -96,7 +99,7 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
       client_order_submitted_at: row.client_order_submitted_at,
     })
   ) {
-    return <PedidoEnviadoView />
+    return <PedidoEnviadoView contactWhatsAppPhone={contactWhatsAppPhone} />
   }
 
   if (!row.is_active) {
@@ -116,8 +119,9 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
   if (!cartaFull.ok) return <ErrorView message={cartaFull.message} />
 
   const allMenuItems = cartaFull.data.items
+  const enabledWithMedio = expandEnabledIdsWithMedioPartners(enabledIds, allMenuItems)
   const clientMenuItems = allMenuItems.filter((r) =>
-    isEventProductEnabled(eventOrderProductId(r.articulo_id), enabledIds)
+    isEventProductEnabled(eventOrderProductId(r.articulo_id), enabledWithMedio)
   )
   if (clientMenuItems.length === 0) {
     return <ErrorView message="No hay productos activos en este pedido." />
@@ -142,6 +146,7 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
       startingPackItems={[]}
       initialEnabledProductIds={enabledIds}
       initialCategoryLimits={categoryLimits}
+      contactWhatsAppPhone={contactWhatsAppPhone}
     />
   )
 }

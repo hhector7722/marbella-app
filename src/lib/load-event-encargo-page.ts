@@ -2,6 +2,7 @@ import type { PublicMenuRow } from '@/components/public/PublicCarta'
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { expandEnabledIdsWithMedioPartners } from '@/lib/carta-medio-merge'
 import {
   isEventProductEnabled,
   parseEnabledProductIds,
@@ -69,8 +70,9 @@ export async function loadEncargoPageById(
   if (!cartaFull.ok) return { ok: false, message: cartaFull.message }
 
   const allMenuItems = cartaFull.data.items
+  const enabledWithMedio = expandEnabledIdsWithMedioPartners(enabledIds, allMenuItems)
   const clientMenuItems = allMenuItems.filter((row) =>
-    isEventProductEnabled(eventOrderProductId(row.articulo_id), enabledIds)
+    isEventProductEnabled(eventOrderProductId(row.articulo_id), enabledWithMedio)
   )
   if (clientMenuItems.length === 0) {
     return { ok: false, message: 'No hay productos activos en este encargo.' }

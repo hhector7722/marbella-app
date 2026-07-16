@@ -1,6 +1,22 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Pedido cliente sin chrome app)
+**Última actualización:** 2026-07-16 (Pedido: ración 1/2 mismo artículo TPV)
+
+- [x] **Pedido ración medio = mismo artículo TPV (2026-07-16)**: Como en TPV (opción ración), Entero/Medio sobre el mismo `articulo_id` + `override_precio_medio`. Carrito: claves `id` / `id:medio`. Resumen cliente: 2 líneas (`ENT…` y `1/2 · ENT…`). Comanda staff: mismo product_id, `notes: 1/2`, precio medio. RPC `fn_event_order_apply_racion` + `save_client` / staff create/update.
+
+**Última actualización anterior:** 2026-07-16 (Ex. diarias → Liquidation Engine)
+
+- [x] **Ex. diarias migradas al motor (2026-07-16)**: `LiquidationResult.dailyBreakdown` (regla running = misma funcional). UI (`StaffDashboardView`, `WorkerWeeklyHistoryModal`, `/staff/history`) pinta Ex. desde `liquidateWeek` / `patchWeeksDailyExtrasFromEngine`. RPCs `get_worker_weekly_log_grid` y `get_monthly_timesheet` ya **no calculan** `extraHours` (siempre 0). Migración [`20260716193000_daily_extras_from_hours_engine.sql`](supabase/migrations/20260716193000_daily_extras_from_hours_engine.sql) **aplicada**. Tests: `npm run test:hours-engine:daily` + suite **68/68**. Invariante runtime: Σ extras diarias = extras semanales.
+
+**Última actualización anterior:** 2026-07-16 (Pedido cliente: footer compacto + confirmación + WA Héctor)
+
+- [x] **Pedido cliente UX pie + confirmación + WhatsApp (2026-07-16)**: Pie compacto «Ver pedido» + «Enviar pedido» (desglose en modal, no fijo). Confirmación obligatoria antes de enviar. WhatsApp post-envío = `profiles.phone` de `hhector7722@gmail.com` vía RPC `get_pedido_contact_whatsapp_phone` ([`20260716190000`](supabase/migrations/20260716190000_get_pedido_contact_whatsapp_phone.sql)).
+
+**Última actualización anterior:** 2026-07-16 (Pedido cliente: Entero/Medio bocadillo)
+
+- [x] **Pedido carta: elegir Entero o 1/2 bocadillo (2026-07-16)**: El merge entero/medio guarda `medio_articulo_id`. En pedido (cliente/staff sobre carta) aparecen botones Entero/Medio; el resumen y el envío usan el `product_id` del TPV medio. Si hay lista blanca de productos, se incluye el medio emparejado.
+
+**Última actualización anterior:** 2026-07-16 (Pedido cliente sin chrome app)
 
 - [x] **Pedido `/pedido/[token]` sin Navbar ni barra inferior (2026-07-16)**: Ruta añadida a `isFullscreenCartaPath` (como `/eventos` y `/carta`). El cliente solo ve la bienvenida/carta, no el shell interno de la app.
 

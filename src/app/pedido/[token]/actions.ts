@@ -11,6 +11,8 @@ const saveSchema = z.object({
       z.object({
         product_id: z.string().trim().min(1),
         quantity: z.coerce.number().int().min(0).max(999),
+        is_half: z.coerce.boolean().optional(),
+        notes: z.string().trim().max(400).optional().nullable(),
       })
     )
     .max(200),
@@ -39,7 +41,12 @@ export async function saveClientEventOrderByTokenAction(input: unknown): Promise
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('save_client_event_order_by_token', {
     p_token: parsed.data.token,
-    p_items: items,
+    p_items: items.map((it) => ({
+      product_id: it.product_id,
+      quantity: it.quantity,
+      is_half: Boolean(it.is_half),
+      notes: it.notes ?? null,
+    })),
     p_notes: parsed.data.notes ?? null,
   })
 

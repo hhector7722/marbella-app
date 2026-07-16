@@ -99,6 +99,8 @@ export type DigitalMenuRow = {
     precio: number | string | null
     /** Par entero/medio fusionado (solo UI): precio del artículo medio. */
     precio_medio_display?: number | string | null
+    /** articulo_id del TPV medio emparejado (pedidos Entero/Medio). */
+    medio_articulo_id?: number | null
     carta_dual_racion_enabled?: boolean | null
     override_precio_medio?: number | string | null
     carta_racion_entero_es?: string | null

@@ -20,6 +20,7 @@ import {
   isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 import { EventCartaOrderControls } from '@/components/carta/EventCartaOrderControls'
+import { EventCartaDualRacionOrderControls } from '@/components/carta/EventCartaDualRacionOrderControls'
 import {
   eventOrderProductId,
   eventOrderQtyFor,
@@ -35,6 +36,7 @@ export type CartaStaffMenuProductRow = CartaNameRow &
     photo_url?: string | null
     precio?: number | string | null
     precio_medio_display?: number | string | null
+    medio_articulo_id?: number | null
     carta_dual_racion_enabled?: boolean | null
     editor_is_hidden?: boolean
   }
@@ -80,10 +82,24 @@ export function CartaStaffMenuProductCard({
   const isActive = editMode ? !(row.editor_is_hidden ?? false) : true
   const busy = editMode && productToggleBusyId === row.articulo_id
   const eventOrderActive = Boolean(eventOrder) && !editMode && !productReorderMode
-  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd)
-  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd
-  const eventQty = eventOrderQtyFor(eventOrder, row.articulo_id)
+  const medioArticuloId =
+    row.medio_articulo_id != null && Number(row.medio_articulo_id) > 0
+      ? Number(row.medio_articulo_id)
+      : null
+  /** Dual ración TPV (mismo artículo + precio medio) o par TPV entero/medio. */
+  const hasDualOrderChoice =
+    eventOrderActive && Boolean(row.precio_medio_display)
+  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd) && !hasDualOrderChoice
+  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd && !hasDualOrderChoice
+  const eventQty = eventOrderQtyFor(eventOrder, row.articulo_id, 'entero')
+  const eventQtyMedio = hasDualOrderChoice
+    ? medioArticuloId != null
+      ? eventOrderQtyFor(eventOrder, medioArticuloId, 'entero')
+      : eventOrderQtyFor(eventOrder, row.articulo_id, 'medio')
+    : 0
+  const eventQtyTotal = eventQty + eventQtyMedio
   const productId = eventOrderProductId(row.articulo_id)
+  const dualLabels = resolveCartaDualRacionLabels(row, lang)
 
   const handleTapAdd = (e: MouseEvent) => {
     if (!eventOrder || !eventTapToAdd) return
@@ -190,6 +206,11 @@ export function CartaStaffMenuProductCard({
                   ×{eventQty}
                 </span>
               ) : null}
+              {hasDualOrderChoice && eventQtyTotal > 0 ? (
+                <span className="absolute right-0 top-0 z-30 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm sm:right-0.5 sm:top-0.5">
+                  ×{eventQtyTotal}
+                </span>
+              ) : null}
               {editMode && onToggleProductActive ? (
                 <button
                   type="button"
@@ -281,14 +302,40 @@ export function CartaStaffMenuProductCard({
         </p>
         {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
           <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>
-        ) : eventTapToAdd ? null : (
+        ) : eventTapToAdd || hasDualOrderChoice ? null : (
           <CartaDualRacionPrices
-            {...resolveCartaDualRacionLabels(row, lang)}
+            {...dualLabels}
             precio={row.precio}
             precioMedio={row.precio_medio_display}
             variant="staff"
           />
         )}
+        {hasDualOrderChoice && eventOrder ? (
+          <EventCartaDualRacionOrderControls
+            racionEntero={dualLabels.racionEntero}
+            racionMedio={dualLabels.racionMedio}
+            precioEntero={row.precio}
+            precioMedio={row.precio_medio_display}
+            qtyEntero={eventQty}
+            qtyMedio={eventQtyMedio}
+            onAddEntero={() =>
+              eventOrder.onQuantityChange(row.articulo_id, Math.min(999, eventQty + 1), {
+                portion: 'entero',
+              })
+            }
+            onAddMedio={() => {
+              if (medioArticuloId != null) {
+                eventOrder.onQuantityChange(medioArticuloId, Math.min(999, eventQtyMedio + 1), {
+                  portion: 'entero',
+                })
+              } else {
+                eventOrder.onQuantityChange(row.articulo_id, Math.min(999, eventQtyMedio + 1), {
+                  portion: 'medio',
+                })
+              }
+            }}
+          />
+        ) : null}
         {eventStepper && eventOrder ? (
           <EventCartaOrderControls
             className="mt-1"

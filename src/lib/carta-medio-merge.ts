@@ -80,6 +80,8 @@ function fallbackPairKey(r: CartaMedioMergeRow): string | null {
 export type CartaMedioMerged<T extends CartaMedioMergeRow> = T & {
   /** Precio del artículo “medio” cuando esta fila es la fusión entero+medio. */
   precio_medio_display?: number | string | null
+  /** articulo_id del TPV “medio” emparejado (para pedidos; null si solo hay precio dual en un solo artículo). */
+  medio_articulo_id?: number | null
 }
 
 /**
@@ -105,10 +107,7 @@ export function mergeEnteroMedioForCartaDisplay<T extends CartaMedioMergeRow>(ro
 
     if (a.carta_dual_racion_enabled) {
       const pMedio = parsePriceNumber(a.override_precio_medio)
-      out.push({
-        ...a,
-        precio_medio_display: pMedio != null && pMedio > 0 ? pMedio : null,
-      } as CartaMedioMerged<T>)
+      let medioArticuloId: number | null = null
       for (let j = 0; j < rows.length; j++) {
         if (j === i) continue
         const b = rows[j]!
@@ -119,6 +118,7 @@ export function mergeEnteroMedioForCartaDisplay<T extends CartaMedioMergeRow>(ro
         const bKey = fallbackPairKey(b)
         if (aKey && bKey && aKey === bKey) {
           consumed.add(b.articulo_id)
+          if (isMedioFactor(b.tpv_factor_porcion)) medioArticuloId = b.articulo_id
         }
         if (
           a.recipe_id &&
@@ -132,9 +132,16 @@ export function mergeEnteroMedioForCartaDisplay<T extends CartaMedioMergeRow>(ro
           const bIsMedio = isMedioFactor(b.tpv_factor_porcion)
           if ((aIsEntero && bIsMedio) || (aIsMedio && bIsEntero)) {
             consumed.add(b.articulo_id)
+            if (bIsMedio) medioArticuloId = b.articulo_id
+            if (aIsMedio) medioArticuloId = a.articulo_id
           }
         }
       }
+      out.push({
+        ...a,
+        precio_medio_display: pMedio != null && pMedio > 0 ? pMedio : null,
+        medio_articulo_id: medioArticuloId,
+      } as CartaMedioMerged<T>)
       continue
     }
 
@@ -215,8 +222,31 @@ export function mergeEnteroMedioForCartaDisplay<T extends CartaMedioMergeRow>(ro
     out.push({
       ...entero,
       precio_medio_display: medio.precio,
+      medio_articulo_id: medio.articulo_id,
     } as CartaMedioMerged<T>)
   }
 
   return out
+}
+
+/**
+ * Si el encargo tiene lista blanca de productos, incluye también el TPV “medio”
+ * emparejado con cada entero habilitado (Extras/Bocadillos).
+ */
+export function expandEnabledIdsWithMedioPartners(
+  enabledIds: string[] | null,
+  rows: CartaMedioMergeRow[]
+): string[] | null {
+  if (enabledIds == null) return null
+  if (enabledIds.length === 0) return enabledIds
+
+  const enabled = new Set(enabledIds.map((id) => String(id).trim()).filter(Boolean))
+  const merged = mergeEnteroMedioForCartaDisplay(rows)
+  for (const row of merged) {
+    const enteroId = String(row.articulo_id)
+    const medioId = row.medio_articulo_id
+    if (medioId == null) continue
+    if (enabled.has(enteroId)) enabled.add(String(medioId))
+  }
+  return Array.from(enabled)
 }

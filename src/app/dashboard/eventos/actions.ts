@@ -183,6 +183,7 @@ const staffOrderItemSchema = z.object({
   product_id: z.string().trim().min(1),
   quantity: z.coerce.number().int().min(1).max(999),
   notes: z.string().trim().max(400).optional().nullable(),
+  is_half: z.coerce.boolean().optional(),
 })
 
 const createStaffEventOrderSchema = z.object({
@@ -459,6 +460,7 @@ export async function createStaffEventOrderAction(input: unknown): Promise<
       product_id: it.product_id,
       quantity: it.quantity,
       notes: it.notes ?? null,
+      is_half: Boolean(it.is_half),
     })),
     p_notes: parsed.data.notes ?? null,
     p_responsible_name: parsed.data.responsible_name ?? null,
@@ -534,6 +536,7 @@ export async function updateStaffEventOrderAction(input: unknown): Promise<
       product_id: it.product_id,
       quantity: it.quantity,
       notes: it.notes ?? null,
+      is_half: Boolean(it.is_half),
     })),
   })
 

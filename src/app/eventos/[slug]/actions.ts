@@ -11,6 +11,8 @@ const submitSchema = z.object({
       z.object({
         product_id: z.string().trim().min(1),
         quantity: z.coerce.number().int().min(0).max(999),
+        is_half: z.coerce.boolean().optional(),
+        notes: z.string().trim().max(400).optional().nullable(),
       })
     )
     .max(200),
@@ -41,7 +43,12 @@ export async function submitEventOrderAction(input: unknown): Promise<
   const { data, error } = await supabase.rpc('create_event_order', {
     p_slug: parsed.data.slug,
     p_responsible_name: parsed.data.responsible_name,
-    p_items: items,
+    p_items: items.map((it) => ({
+      product_id: it.product_id,
+      quantity: it.quantity,
+      is_half: Boolean(it.is_half),
+      notes: it.notes ?? null,
+    })),
     p_notes: parsed.data.notes ?? null,
   })
 
