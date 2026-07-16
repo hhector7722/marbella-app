@@ -63,6 +63,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Pedido privado por token (edición cliente, sin login).
+  if (path === "/pedido" || path.startsWith("/pedido/")) {
+    return NextResponse.next();
+  }
+
   // Formulario público de reporte de actividades (sin login)
   if (path === "/reporte" || path.startsWith("/reporte/")) {
     return NextResponse.next();

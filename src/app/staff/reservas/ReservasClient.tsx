@@ -35,6 +35,10 @@ import {
 } from '@/components/reservas/DayAgendaModal'
 import { EncargoOrderViewModal } from '@/components/reservas/EncargoOrderViewModal'
 import { EncargoProductEditor } from '@/components/reservas/EncargoProductEditor'
+import {
+  ClientPedidoShareModal,
+  PedidoEditorChoiceModal,
+} from '@/components/reservas/PedidoClientEditModals'
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
@@ -42,6 +46,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { formatYmdShort, reservationApplySummary } from '@/lib/usage/modal-apply'
 import { createClient } from '@/utils/supabase/client'
+import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
 import type { EncargoOrderRow, EncargoRow } from '@/lib/reservas-encargos-calendar'
 import {
   encargosForReservation,
@@ -169,22 +174,6 @@ function reservationDotClass(r: Reservation, hasEncargo: boolean) {
   return 'bg-green-500'
 }
 
-function EncargoCalendarEntry({ e }: { e: EncargoRow }) {
-  return (
-    <div className="flex flex-col min-w-0 w-full leading-none">
-      <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
-        <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-500" aria-hidden />
-        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-zinc-900">
-          {timeShortHm(e.event_time)}
-        </span>
-      </div>
-      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-zinc-900">
-        {e.name}
-      </span>
-    </div>
-  )
-}
-
 const CALENDAR_LEGEND_ITEMS = [
   { label: 'Reserva', color: 'bg-green-500' },
   { label: 'Pedido', color: 'bg-blue-500' },
@@ -210,19 +199,41 @@ function ReservasCalendarLegend() {
   )
 }
 
+function CalendarDot({
+  colorClass,
+  showNewBadge = false,
+}: {
+  colorClass: string
+  showNewBadge?: boolean
+}) {
+  return (
+    <span className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center">
+      <span className={cn('h-1.5 w-1.5 rounded-full', colorClass)} aria-hidden />
+      {showNewBadge ? (
+        <span
+          className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#FF3B30] ring-1 ring-white"
+          aria-label="Pedido nuevo"
+        />
+      ) : null}
+    </span>
+  )
+}
+
 function ReservationCalendarEntry({
   r,
   hasEncargo,
+  showNewBadge = false,
 }: {
   r: Reservation
   hasEncargo: boolean
+  showNewBadge?: boolean
 }) {
   return (
     <div className="flex flex-col min-w-0 w-full leading-none">
       <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
-        <div
-          className={cn('w-1.5 h-1.5 rounded-full shrink-0', reservationDotClass(r, hasEncargo))}
-          aria-hidden
+        <CalendarDot
+          colorClass={reservationDotClass(r, hasEncargo)}
+          showNewBadge={showNewBadge}
         />
         <span className="text-[9px] font-mono leading-none whitespace-nowrap text-zinc-900">
           {timeShort(r.reservation_time)}
@@ -230,6 +241,28 @@ function ReservationCalendarEntry({
       </div>
       <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-zinc-900">
         {r.pax > 0 ? `${r.pax} pax` : ' '}
+      </span>
+    </div>
+  )
+}
+
+function EncargoCalendarEntry({
+  e,
+  showNewBadge = false,
+}: {
+  e: EncargoRow
+  showNewBadge?: boolean
+}) {
+  return (
+    <div className="flex flex-col min-w-0 w-full leading-none">
+      <div className="flex items-center gap-1 min-w-0 h-5 shrink-0">
+        <CalendarDot colorClass="bg-blue-500" showNewBadge={showNewBadge} />
+        <span className="text-[9px] font-mono leading-none whitespace-nowrap text-zinc-900">
+          {timeShortHm(e.event_time)}
+        </span>
+      </div>
+      <span className="text-[8px] font-normal leading-none ml-[10px] truncate text-zinc-900">
+        {e.name}
       </span>
     </div>
   )
@@ -477,6 +510,8 @@ export default function ReservasClient() {
   const supabase = useMemo(() => createClient(), [])
   const searchParams = useSearchParams()
   const deepLinkHandledRef = useRef<string | null>(null)
+  const { userId, items: unreadNotifications, refresh: refreshUnreadNotifications } =
+    useUnreadNotifications()
   const [isPendingEncargo, startEncargoTransition] = useTransition()
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()))
@@ -494,6 +529,22 @@ export default function ReservasClient() {
   const [editEncargoId, setEditEncargoId] = useState<string | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [actionBusy, setActionBusy] = useState<Record<string, ActionKind | null>>({})
+  const [pendingPedidoDraft, setPendingPedidoDraft] = useState<{
+    dayYmd: string
+    contact_name: string
+    event_time: string
+    guest_count: number
+    reservation_id: string | null
+    customer_phone: string | null
+  } | null>(null)
+  const [clientShare, setClientShare] = useState<{
+    customerName: string
+    customerPhone: string | null
+    clientEditToken: string
+    eventDate?: string | null
+    eventTime?: string | null
+    guestCount?: number | null
+  } | null>(null)
 
   useModalUsageTracking({
     open: listModalDay !== null,
@@ -545,6 +596,52 @@ export default function ReservasClient() {
     [allEncargos]
   )
 
+  const unreadClientOrderEventIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const row of unreadNotifications) {
+      if (
+        row.type === 'client_order_submitted' &&
+        row.entity_id &&
+        !row.read_at
+      ) {
+        set.add(row.entity_id)
+      }
+    }
+    return set
+  }, [unreadNotifications])
+
+  const reservationIdsWithUnreadClientOrder = useMemo(() => {
+    const set = new Set<string>()
+    for (const e of allEncargos) {
+      const rid = e.reservation_id?.trim()
+      if (rid && unreadClientOrderEventIds.has(e.id)) set.add(rid)
+    }
+    return set
+  }, [allEncargos, unreadClientOrderEventIds])
+
+  const markClientOrderNotificationSeen = useCallback(
+    async (eventId: string) => {
+      if (!userId || !eventId) return
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('type', 'client_order_submitted')
+        .eq('entity_id', eventId)
+        .is('read_at', null)
+      if (!error) await refreshUnreadNotifications()
+    },
+    [userId, supabase, refreshUnreadNotifications]
+  )
+
+  const openViewEncargo = useCallback(
+    (eventId: string) => {
+      setViewEncargoId(eventId)
+      void markClientOrderNotificationSeen(eventId)
+    },
+    [markClientOrderNotificationSeen]
+  )
+
   const fetchMonthData = useCallback(async () => {
     const seq = ++fetchSeqRef.current
     setRpcError(null)
@@ -576,7 +673,9 @@ export default function ReservasClient() {
           .order('reservation_time', { ascending: true }),
         supabase
           .from('events')
-          .select('id, slug, name, event_date, event_time, guest_count, reservation_id, is_active')
+          .select(
+            'id, slug, name, event_date, event_time, guest_count, reservation_id, is_active, client_edit_enabled, client_edit_token, client_order_submitted_at'
+          )
           .gte('event_date', monthStart)
           .lte('event_date', monthEnd)
           .order('event_time', { ascending: true }),
@@ -761,6 +860,48 @@ export default function ReservasClient() {
   }, [searchParams, byDate, loading, supabase])
 
   useEffect(() => {
+    const eventId = searchParams.get('eventId')?.trim()
+    if (!eventId || deepLinkHandledRef.current === `event:${eventId}`) return
+
+    const found = allEncargos.find((e) => e.id === eventId)
+    if (found) {
+      deepLinkHandledRef.current = `event:${eventId}`
+      const [y, m] = found.event_date.slice(0, 10).split('-').map(Number)
+      if (!Number.isNaN(y) && !Number.isNaN(m)) {
+        setViewMonth(new Date(y, m - 1, 1))
+      }
+      openViewEncargo(eventId)
+      return
+    }
+
+    if (loading) return
+
+    void (async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select(
+          'id, slug, name, event_date, event_time, guest_count, reservation_id, is_active, client_edit_enabled, client_edit_token, client_order_submitted_at'
+        )
+        .eq('id', eventId)
+        .maybeSingle()
+
+      if (error || !data) {
+        toast.error('No se encontró el pedido de la notificación')
+        return
+      }
+
+      deepLinkHandledRef.current = `event:${eventId}`
+      const row = data as EncargoRow
+      const [y, m] = String(row.event_date).slice(0, 10).split('-').map(Number)
+      if (!Number.isNaN(y) && !Number.isNaN(m)) {
+        setViewMonth(new Date(y, m - 1, 1))
+      }
+      setAllEncargos((prev) => (prev.some((e) => e.id === row.id) ? prev : [...prev, row]))
+      openViewEncargo(eventId)
+    })()
+  }, [searchParams, allEncargos, loading, supabase, openViewEncargo])
+
+  useEffect(() => {
     function shouldRefetch(reservationDate: string | null | undefined) {
       if (!reservationDate) return true
       const d = reservationDate.slice(0, 10)
@@ -813,10 +954,6 @@ export default function ReservasClient() {
     }
   }, [supabase, monthStart, monthEnd, fetchMonthData, removeReservationFromState])
 
-  const openViewEncargo = useCallback((eventId: string) => {
-    setViewEncargoId(eventId)
-  }, [])
-
   const openEditEncargo = useCallback((eventId: string) => {
     setViewEncargoId(null)
     setEditEncargoId(eventId)
@@ -836,6 +973,8 @@ export default function ReservasClient() {
         event_time: string
         guest_count: number
         reservation_id?: string | null
+        customer_phone?: string | null
+        client_edit: boolean
       }
     ) => {
       startEncargoTransition(async () => {
@@ -845,33 +984,63 @@ export default function ReservasClient() {
           event_time: data.event_time,
           guest_count: data.guest_count,
           reservation_id: data.reservation_id ?? null,
+          client_edit: data.client_edit,
         })
         if (!res.success) {
           toast.error(res.message)
           return
         }
         trackReservasPlusPedido(data.contact_name)
+        setPendingPedidoDraft(null)
         setCreateEncargoDay(null)
         setListModalDay(null)
         setSelectedReservation(null)
-        toast.success('Encargo creado')
+        toast.success(data.client_edit ? 'Enlace cliente listo' : 'Encargo creado')
         await fetchMonthData()
+        if (data.client_edit && res.clientEditToken) {
+          setClientShare({
+            customerName: data.contact_name,
+            customerPhone: data.customer_phone ?? null,
+            clientEditToken: res.clientEditToken,
+            eventDate: dayYmd,
+            eventTime: data.event_time,
+            guestCount: data.guest_count,
+          })
+          return
+        }
         setEditEncargoId(res.eventId)
       })
     },
     [trackReservasPlusPedido, fetchMonthData]
   )
 
-  const startEncargoFromReservation = useCallback(
-    (reservation: Reservation) => {
-      submitCreateEncargo(reservation.reservation_date.slice(0, 10), {
-        contact_name: reservation.customer_name,
-        event_time: timeShort(reservation.reservation_time),
-        guest_count: Math.max(1, reservation.pax || 1),
-        reservation_id: reservation.id,
-      })
+  const startEncargoFromReservation = useCallback((reservation: Reservation) => {
+    setPendingPedidoDraft({
+      dayYmd: reservation.reservation_date.slice(0, 10),
+      contact_name: reservation.customer_name,
+      event_time: timeShort(reservation.reservation_time),
+      guest_count: Math.max(1, reservation.pax || 1),
+      reservation_id: reservation.id,
+      customer_phone: reservation.customer_phone?.trim() || null,
+    })
+  }, [])
+
+  const resolvePhoneForDraft = useCallback(
+    (draft: {
+      reservation_id: string | null
+      customer_phone: string | null
+      contact_name: string
+    }) => {
+      if (draft.customer_phone) return draft.customer_phone
+      const rid = draft.reservation_id?.trim()
+      if (!rid) return null
+      for (const list of Object.values(byDate)) {
+        const res = list.find((r) => r.id === rid)
+        if (res) return res.customer_phone?.trim() || null
+      }
+      return null
     },
-    [submitCreateEncargo]
+    [byDate]
   )
 
   const handleDayClick = (day: Date) => {
@@ -1028,10 +1197,15 @@ export default function ReservasClient() {
                                     key={r.id}
                                     r={r}
                                     hasEncargo={reservationIdsWithLinkedEncargo.has(r.id)}
+                                    showNewBadge={reservationIdsWithUnreadClientOrder.has(r.id)}
                                   />
                                 ))}
                                 {visibleEnc.map((e) => (
-                                  <EncargoCalendarEntry key={e.id} e={e} />
+                                  <EncargoCalendarEntry
+                                    key={e.id}
+                                    e={e}
+                                    showNewBadge={unreadClientOrderEventIds.has(e.id)}
+                                  />
                                 ))}
                                 {hiddenCount > 0 ? (
                                   <span className="text-[8px] text-gray-400">+{hiddenCount} más</span>
@@ -1084,7 +1258,60 @@ export default function ReservasClient() {
             availableReservations={createEncargoAvailableReservations}
             busy={isPendingEncargo}
             onClose={() => setCreateEncargoDay(null)}
-            onSubmit={(data) => submitCreateEncargo(createEncargoDay, data)}
+            onSubmit={(data) => {
+              const phone =
+                data.reservation_id
+                  ? (byDate[createEncargoDay] ?? []).find((r) => r.id === data.reservation_id)
+                      ?.customer_phone?.trim() || null
+                  : null
+              setCreateEncargoDay(null)
+              setPendingPedidoDraft({
+                dayYmd: createEncargoDay,
+                contact_name: data.contact_name,
+                event_time: data.event_time,
+                guest_count: data.guest_count,
+                reservation_id: data.reservation_id,
+                customer_phone: phone,
+              })
+            }}
+          />,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        pendingPedidoDraft &&
+        createPortal(
+          <PedidoEditorChoiceModal
+            busy={isPendingEncargo}
+            onClose={() => setPendingPedidoDraft(null)}
+            onChooseStaff={() =>
+              submitCreateEncargo(pendingPedidoDraft.dayYmd, {
+                ...pendingPedidoDraft,
+                client_edit: false,
+              })
+            }
+            onChooseClient={() =>
+              submitCreateEncargo(pendingPedidoDraft.dayYmd, {
+                ...pendingPedidoDraft,
+                customer_phone: resolvePhoneForDraft(pendingPedidoDraft),
+                client_edit: true,
+              })
+            }
+          />,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        clientShare &&
+        createPortal(
+          <ClientPedidoShareModal
+            customerName={clientShare.customerName}
+            customerPhone={clientShare.customerPhone}
+            clientEditToken={clientShare.clientEditToken}
+            eventDate={clientShare.eventDate}
+            eventTime={clientShare.eventTime}
+            guestCount={clientShare.guestCount}
+            onClose={() => setClientShare(null)}
           />,
           document.body
         )}
@@ -1113,9 +1340,25 @@ export default function ReservasClient() {
             encargoDate={viewEncargo.event_date}
             encargoTime={timeShortHm(viewEncargo.event_time)}
             contactPhone={viewEncargoContactPhone}
+            guestCount={viewEncargo.guest_count ?? null}
             items={viewEncargoItems}
+            clientEditEnabled={Boolean(viewEncargo.client_edit_enabled)}
+            clientEditToken={viewEncargo.client_edit_token ?? null}
+            clientOrderSubmittedAt={viewEncargo.client_order_submitted_at ?? null}
+            eventId={viewEncargo.id}
             onClose={() => setViewEncargoId(null)}
             onEdit={() => openEditEncargo(viewEncargo.id)}
+            onClientLinkReady={(token) => {
+              void fetchMonthData()
+              setClientShare({
+                customerName: viewEncargo.name,
+                customerPhone: viewEncargoContactPhone,
+                clientEditToken: token,
+                eventDate: viewEncargo.event_date,
+                eventTime: timeShortHm(viewEncargo.event_time),
+                guestCount: viewEncargo.guest_count ?? null,
+              })
+            }}
           />,
           document.body
         )}

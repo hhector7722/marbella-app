@@ -911,12 +911,17 @@ export type Database = {
       events: {
         Row: {
           category_limits: Json | null
+          client_edit_enabled: boolean
+          client_edit_token: string | null
+          client_order_submitted_at: string | null
           created_at: string
           created_by: string | null
+          created_from: string | null
           description: string | null
           enabled_product_ids: string[] | null
           event_date: string
           event_time: string
+          filled_by: string | null
           guest_count: number | null
           id: string
           is_active: boolean
@@ -928,12 +933,17 @@ export type Database = {
         }
         Insert: {
           category_limits?: Json | null
+          client_edit_enabled?: boolean
+          client_edit_token?: string | null
+          client_order_submitted_at?: string | null
           created_at?: string
           created_by?: string | null
+          created_from?: string | null
           description?: string | null
           enabled_product_ids?: string[] | null
           event_date: string
           event_time: string
+          filled_by?: string | null
           guest_count?: number | null
           id?: string
           is_active?: boolean
@@ -945,12 +955,17 @@ export type Database = {
         }
         Update: {
           category_limits?: Json | null
+          client_edit_enabled?: boolean
+          client_edit_token?: string | null
+          client_order_submitted_at?: string | null
           created_at?: string
           created_by?: string | null
+          created_from?: string | null
           description?: string | null
           enabled_product_ids?: string[] | null
           event_date?: string
           event_time?: string
+          filled_by?: string | null
           guest_count?: number | null
           id?: string
           is_active?: boolean
@@ -3474,6 +3489,26 @@ export type Database = {
           p_notes?: string
           p_responsible_name?: string
         }
+        Returns: Json
+      }
+      disable_event_client_edit: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      enable_event_client_edit: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      reopen_client_order: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      request_new_client_order: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      save_client_event_order_by_token: {
+        Args: { p_items: Json; p_notes?: string; p_token: string }
         Returns: Json
       }
       create_user_notifications_bulk: {

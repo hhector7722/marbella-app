@@ -28,6 +28,8 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { saveEventEncargoConfigAction, createStaffEventOrderAction } from '@/app/dashboard/eventos/actions'
 import { submitEventOrderAction } from './actions'
+import { saveClientEventOrderByTokenAction } from '@/app/pedido/[token]/actions'
+import { PedidoEnviadoView } from '@/app/pedido/[token]/PedidoEnviadoView'
 
 export type EncargoCartaEvent = {
   id: string
@@ -73,6 +75,7 @@ export default function EventEncargoCartaClient({
   canManage = false,
   backHref = null,
   variant = 'public',
+  clientEditToken = null,
 }: {
   event: EncargoCartaEvent
   allMenuItems: PublicMenuRow[]
@@ -85,10 +88,13 @@ export default function EventEncargoCartaClient({
   initialCategoryLimits: EventCategoryLimits
   canManage?: boolean
   backHref?: string | null
-  variant?: 'public' | 'staff'
+  variant?: 'public' | 'staff' | 'client-token'
+  /** Token privado: el cliente actualiza el pedido existente (no crea uno nuevo). */
+  clientEditToken?: string | null
 }) {
   const router = useRouter()
   const isStaff = variant === 'staff'
+  const isClientToken = variant === 'client-token' && Boolean(clientEditToken)
   const allProductIds = useMemo(() => productIdsFromMenuItems(allMenuItems), [allMenuItems])
 
   const [editMode, setEditMode] = useState(false)
@@ -326,6 +332,34 @@ export default function EventEncargoCartaClient({
       })
       return
     }
+    if (isClientToken && clientEditToken) {
+      startTransition(async () => {
+        if (warnings.length > 0) {
+          toast.error('Revisa los límites del pedido antes de guardar.')
+          return
+        }
+        const items = Object.entries(qtyById)
+          .map(([product_id, quantity]) => ({ product_id, quantity }))
+          .filter((it) => Number(it.quantity) > 0)
+        if (items.length === 0) {
+          toast.error('Añade al menos un producto.')
+          return
+        }
+        const res = await saveClientEventOrderByTokenAction({
+          token: clientEditToken,
+          items,
+        })
+        if (!res.success) {
+          toast.error(res.message)
+          return
+        }
+        setOrderDone(true)
+        trackEncargoOrderSave(`${namedEntitySummary(event.name)} · ${items.length} productos`)
+        toast.success('Pedido enviado')
+      })
+      return
+    }
+    setResponsibleName((prev) => prev.trim() || event.name)
     setSaveModalOpen(true)
   }, [
     qtyById,
@@ -333,11 +367,14 @@ export default function EventEncargoCartaClient({
     categoryLimits,
     enabledIdsForClient,
     isStaff,
+    isClientToken,
+    clientEditToken,
     event.id,
     event.name,
     router,
     backHref,
     trackStaffInternalOrder,
+    trackEncargoOrderSave,
     startTransition,
   ])
 
@@ -355,6 +392,9 @@ export default function EventEncargoCartaClient({
   }, [event.slug])
 
   if (orderDone) {
+    if (isClientToken) {
+      return <PedidoEnviadoView />
+    }
     return (
       <main className="flex min-h-[100dvh] flex-col bg-white text-zinc-900">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-5 pb-safe pt-safe md:px-8">
@@ -424,7 +464,7 @@ export default function EventEncargoCartaClient({
         onDecrement={removeOneFromCart}
         onSave={openSaveModal}
         isPending={isPending}
-        saveLabel={isStaff ? 'Guardar pedido' : 'Guardar'}
+        saveLabel={isClientToken ? 'Enviar pedido' : isStaff ? 'Guardar pedido' : 'Guardar'}
       />
     </div>
   )

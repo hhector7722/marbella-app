@@ -60,7 +60,8 @@ export function getNotificationVisual(
   if (
     haystack.includes('pedido') ||
     haystack.includes('order') ||
-    haystack.includes('event_order')
+    haystack.includes('event_order') ||
+    haystack.includes('client_order')
   ) {
     return { Icon: Package, iconClass: ICON_PETROL }
   }

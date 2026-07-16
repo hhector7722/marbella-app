@@ -9,6 +9,24 @@ export type EncargoRow = {
   guest_count: number | null
   reservation_id: string | null
   is_active: boolean
+  client_edit_enabled?: boolean
+  client_edit_token?: string | null
+  client_order_submitted_at?: string | null
+}
+
+/** Pedido ya enviado por el cliente (one-shot cerrado). */
+export function isClientOrderSubmitted(
+  submittedAt: string | null | undefined
+): boolean {
+  return Boolean(submittedAt && String(submittedAt).trim())
+}
+
+/** Carta pública solo si el enlace está abierto Y aún no hubo envío. */
+export function canClientOpenPedidoCarta(opts: {
+  client_edit_enabled?: boolean | null
+  client_order_submitted_at?: string | null
+}): boolean {
+  return Boolean(opts.client_edit_enabled) && !isClientOrderSubmitted(opts.client_order_submitted_at)
 }
 
 export type EncargoOrderRow = {

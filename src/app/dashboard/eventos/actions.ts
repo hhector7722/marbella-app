@@ -50,11 +50,14 @@ async function gateStaffEncargo(): Promise<GateResult> {
   return { ok: true, supabase, userId: user.id, role }
 }
 
-function revalidateEncargoPaths(slug?: string) {
+function revalidateEncargoPaths(slug?: string, clientToken?: string | null) {
   revalidatePath('/dashboard/eventos')
   revalidatePath('/staff/reservas')
   if (slug) {
     revalidatePath(`/eventos/${slug}`)
+  }
+  if (clientToken) {
+    revalidatePath(`/pedido/${clientToken}`)
   }
 }
 
@@ -172,6 +175,8 @@ const createEncargoSchema = z.object({
   event_time: z.string().trim().regex(/^\d{2}:\d{2}$/),
   guest_count: z.coerce.number().int().min(1).max(9999),
   reservation_id: z.string().uuid().optional().nullable(),
+  /** Si true: habilita edición cliente + token (mismo event; sin líneas hasta el envío). */
+  client_edit: z.coerce.boolean().optional().default(false),
 })
 
 const staffOrderItemSchema = z.object({
@@ -224,7 +229,13 @@ function randomSuffix4(): string {
 }
 
 export async function createEncargoAction(input: unknown): Promise<
-  | { success: true; eventId: string; slug: string }
+  | {
+      success: true
+      eventId: string
+      slug: string
+      clientEditEnabled: boolean
+      clientEditToken: string | null
+    }
   | { success: false; message: string }
 > {
   const parsed = createEncargoSchema.safeParse(input)
@@ -261,6 +272,9 @@ export async function createEncargoAction(input: unknown): Promise<
       is_active: true,
       created_by: gate.userId,
       reservation_id: data.reservation_id ?? null,
+      client_edit_enabled: false,
+      client_edit_token: null,
+      created_from: data.reservation_id ? 'reservation' : 'standalone',
     })
     .select('id, slug')
     .maybeSingle()
@@ -268,17 +282,153 @@ export async function createEncargoAction(input: unknown): Promise<
   if (insErr) return { success: false, message: insErr.message }
   if (!inserted) return { success: false, message: 'No se pudo crear el encargo' }
 
-  revalidateEncargoPaths(String((inserted as { slug?: string }).slug))
+  const eventId = String((inserted as { id: string }).id)
+  const eventSlug = String((inserted as { slug: string }).slug)
+  let clientEditToken: string | null = null
+  let clientEditEnabled = false
+
+  if (data.client_edit) {
+    const { data: enData, error: enErr } = await gate.supabase.rpc('enable_event_client_edit', {
+      p_event_id: eventId,
+    })
+    if (enErr) return { success: false, message: enErr.message }
+    const payload = enData as { ok?: boolean; client_edit_token?: string; error?: string }
+    if (!payload?.ok || !payload.client_edit_token) {
+      return { success: false, message: 'Encargo creado pero no se pudo habilitar el enlace cliente.' }
+    }
+    clientEditToken = String(payload.client_edit_token)
+    clientEditEnabled = true
+  }
+
+  revalidateEncargoPaths(eventSlug, clientEditToken)
   return {
     success: true,
-    eventId: String((inserted as { id: string }).id),
-    slug: String((inserted as { slug: string }).slug),
+    eventId,
+    slug: eventSlug,
+    clientEditEnabled,
+    clientEditToken,
   }
+}
+
+export async function enableEventClientEditAction(input: unknown): Promise<
+  | { success: true; eventId: string; clientEditToken: string }
+  | { success: false; message: string }
+> {
+  const parsed = z.object({ eventId: z.string().uuid() }).safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateStaffEncargo()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.rpc('enable_event_client_edit', {
+    p_event_id: parsed.data.eventId,
+  })
+  if (error) {
+    const msg = String(error.message ?? '')
+    if (/sin_permiso|no_autenticado/i.test(msg)) return { success: false, message: 'Sin permiso' }
+    if (/already_submitted/i.test(msg)) {
+      return {
+        success: false,
+        message: 'El cliente ya envió el pedido. Usa «Reabrir pedido al cliente» si hace falta.',
+      }
+    }
+    return { success: false, message: msg || 'Error habilitando enlace' }
+  }
+
+  const payload = data as { ok?: boolean; client_edit_token?: string; error?: string }
+  if (!payload?.ok || !payload.client_edit_token) {
+    if (payload?.error === 'not_found') return { success: false, message: 'Encargo no encontrado.' }
+    if (payload?.error === 'already_submitted') {
+      return {
+        success: false,
+        message: 'El cliente ya envió el pedido. Usa «Reabrir pedido al cliente» si hace falta.',
+      }
+    }
+    return { success: false, message: 'No se pudo habilitar el enlace.' }
+  }
+
+  revalidateEncargoPaths(undefined, String(payload.client_edit_token))
+  return {
+    success: true,
+    eventId: parsed.data.eventId,
+    clientEditToken: String(payload.client_edit_token),
+  }
+}
+
+/** Reabre el mismo pedido al cliente (sin borrar líneas). El próximo envío sustituye. */
+export async function reopenClientOrderAction(input: unknown): Promise<
+  | { success: true; eventId: string; clientEditToken: string }
+  | { success: false; message: string }
+> {
+  const parsed = z.object({ eventId: z.string().uuid() }).safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateStaffEncargo()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.rpc('reopen_client_order', {
+    p_event_id: parsed.data.eventId,
+  })
+  if (error) {
+    const msg = String(error.message ?? '')
+    if (/sin_permiso|no_autenticado/i.test(msg)) return { success: false, message: 'Sin permiso' }
+    return { success: false, message: msg || 'Error reabriendo pedido' }
+  }
+
+  const payload = data as { ok?: boolean; client_edit_token?: string; error?: string }
+  if (!payload?.ok || !payload.client_edit_token) {
+    if (payload?.error === 'not_found') return { success: false, message: 'Encargo no encontrado.' }
+    if (payload?.error === 'not_submitted') {
+      return { success: false, message: 'El cliente aún no ha enviado el pedido.' }
+    }
+    return { success: false, message: 'No se pudo reabrir el pedido.' }
+  }
+
+  revalidateEncargoPaths(undefined, String(payload.client_edit_token))
+  return {
+    success: true,
+    eventId: parsed.data.eventId,
+    clientEditToken: String(payload.client_edit_token),
+  }
+}
+
+/** @deprecated Usar reopenClientOrderAction */
+export async function requestNewClientOrderAction(input: unknown): Promise<
+  | { success: true; eventId: string; clientEditToken: string }
+  | { success: false; message: string }
+> {
+  return reopenClientOrderAction(input)
+}
+
+export async function disableEventClientEditAction(input: unknown): Promise<
+  { success: true } | { success: false; message: string }
+> {
+  const parsed = z.object({ eventId: z.string().uuid() }).safeParse(input)
+  if (!parsed.success) return { success: false, message: 'Datos inválidos' }
+
+  const gate = await gateStaffEncargo()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.rpc('disable_event_client_edit', {
+    p_event_id: parsed.data.eventId,
+  })
+  if (error) return { success: false, message: error.message }
+  const payload = data as { ok?: boolean; error?: string }
+  if (!payload?.ok) return { success: false, message: 'No se pudo deshabilitar.' }
+
+  revalidateEncargoPaths()
+  return { success: true }
 }
 
 /** @deprecated Usar createEncargoAction */
 export async function createEventAction(input: unknown): Promise<
-  | { success: true; eventId: string; slug: string }
+  | {
+      success: true
+      eventId: string
+      slug: string
+      clientEditEnabled: boolean
+      clientEditToken: string | null
+    }
   | { success: false; message: string }
 > {
   return createEncargoAction(input)

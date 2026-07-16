@@ -1,16 +1,56 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Calendarios mensuales: filas iguales + compacto desktop)
+**Última actualización:** 2026-07-16 (Aviso pedido cliente enviado)
+
+- [x] **Aviso visual pedido cliente (2026-07-16)**: Al «Enviar pedido», RPC inserta `user_notifications` (`client_order_submitted`) para alba/hernan/pere/hector — aparece en campana. Deep link `/staff/reservas?eventId=`. Badge rojo discreto sobre el punto verde/naranja/azul del calendario mientras la notificación esté sin leer; se quita al abrir el pedido. Sin tablas nuevas ni cambio de colores/leyenda. Migración [`20260716180000_notify_client_order_submitted.sql`](supabase/migrations/20260716180000_notify_client_order_submitted.sql) **aplicada**.
+
+**Última actualización anterior:** 2026-07-16 (UX pedido cliente — bienvenida + WhatsApp)
+
+- [x] **UX pedido por enlace (2026-07-16)**: Bienvenida antes de la carta (`PedidoBienvenidaView` → «Empezar pedido»). Carta sin cambios. Confirmación post-envío rediseñada (`PedidoEnviadoView` + WhatsApp al 932 254 427 / `NEXT_PUBLIC_MARBELLA_WHATSAPP`). Mensaje WhatsApp staff más cuidado (fecha/hora/personas + URL). Sin cambios de modelo, permisos ni lógica de pedidos.
+
+**Última actualización anterior:** 2026-07-16 (Calendarios mensuales: filas iguales + compacto desktop)
 
 - [x] **Calendarios mensuales: filas iguales y menos agobio en escritorio (2026-07-16)**: Fix CSS `month-cal-*` — celdas `height:100%` + `min-height:0` (el contenido ya no estira filas); semanas `flex:1` iguales; chips densos (`month-cal-chips`). Historial calendario: oculta gráfico en `lg`, KPIs compactos, calendario `flex-1` con filas uniformes. Smartphone/tablet sin cambios.
+
+**Última actualización anterior:** 2026-07-16 (Fase 2 motor de horas — Invalidation Orchestrator)
+
+- [x] **Fase 2 Invalidation Orchestrator (2026-07-16)**: Módulo [`src/lib/hours-engine/orchestrator/`](src/lib/hours-engine/orchestrator/) — impacto → confirmación → reapertura Pagada → `liquidateWeek` → propagación por `carryOut` → persistencia de `LiquidationResult`. Núcleo Fase 1 **sin cambios**. Stores en memoria (`MemoryFactStore` / `MemoryResultStore`) como puertos. Tests: `npm run test:hours-engine:orchestrator` (20) + suite completa **58/58**. Sin UI, sin migración legacy, sin Cost Engine.
+
+**Última actualización anterior:** 2026-07-16 (Reabrir pedido al cliente)
+
+- [x] **Reabrir pedido al cliente (2026-07-16)**: Eliminado el concepto «Solicitar nuevo pedido». Acción staff: «Reabrir pedido al cliente» (solo si ya hubo envío) con confirmación obligatoria. Al confirmar: `client_edit_enabled=true` + `client_order_submitted_at=NULL` **sin tocar** `event_orders`. El próximo «Enviar pedido» del cliente sustituye líneas/totales y vuelve a cerrar el enlace. Auditoría informativa: `events.created_from` (`reservation`|`standalone`), `events.filled_by` (`staff`|`client`). RPC `reopen_client_order`. Migraciones [`20260716162000_reopen_client_order_audit.sql`](supabase/migrations/20260716162000_reopen_client_order_audit.sql) + [`20260716170000_filled_by_on_order_save.sql`](supabase/migrations/20260716170000_filled_by_on_order_save.sql) **aplicadas**.
+
+**Última actualización anterior:** 2026-07-16 (Pedido cliente — doble guardia)
+
+- [x] **Pedido cliente endurecido (2026-07-16)**: Columna `events.client_order_submitted_at`. Carta solo si `client_edit_enabled` **y** `submitted_at IS NULL`. Tras envío: cierra enlace + marca submitted. «Permitir edición cliente» bloqueado si ya enviado; reopen vía `reopen_client_order` (antes «Solicitar nuevo pedido»). Migración [`20260716160000_client_order_submitted_guard.sql`](supabase/migrations/20260716160000_client_order_submitted_guard.sql) **aplicada**.
+
+**Última actualización anterior:** 2026-07-16 (Fase 1 motor de horas — ADR-003 cerrado; núcleo finalizado)
+
+- [x] **ADR-003 cerrado + Fase 1 oficialmente finalizada (2026-07-16)**: `Regime Policy` ya no calcula `días/7 × jornada`; consume `contractedHours` del Contract Resolver (reparto entre buckets solo por proporción de días). Única implementación del prorrateo: [`contract-resolver.ts`](src/lib/hours-engine/contract-resolver.ts). Suite `npm run test:hours-engine` → **38/38**. Arquitectura del núcleo **congelada**. Siguiente: Fase 2 (Invalidation Orchestrator).
 
 **Última actualización anterior:** 2026-07-16 (Calendarios mensuales fit viewport escritorio)
 
 - [x] **Calendarios mensuales: caben en 1 pantalla en escritorio (2026-07-16)**: Utilidades CSS `month-cal-*` (solo `@media ≥1024px`) — shell a `100dvh − header − bottom nav`, celdas fluidas (`grid-auto-rows: 1fr` / semanas flex). Aplicado en `/horario`, `/staff/actividades`, `/staff/reservas`, `/dashboard/history` (modo calendario), `/dashboard/consumo-personal`, `/dashboard/labor`. Smartphone/tablet **sin cambios**.
 
+**Última actualización anterior:** 2026-07-16 (Pedido cliente one-shot)
+
+- [x] **Pedido cliente one-shot (2026-07-16)**: Tras «Enviar pedido», RPC `save_client_event_order_by_token` pone `client_edit_enabled=false` (token se conserva). Reabrir `/pedido/[token]` muestra [`PedidoEnviadoView`](src/app/pedido/[token]/PedidoEnviadoView.tsx) — sin carta ni edición. Solo staff edita después vía editor interno. Migración [`20260716153000_client_pedido_oneshot_close.sql`](supabase/migrations/20260716153000_client_pedido_oneshot_close.sql) **aplicada**.
+
+**Última actualización anterior:** 2026-07-16 (Pedido cliente por URL privada)
+
+- [x] **Pedido cliente por enlace privado (2026-07-16)**: Permiso opcional en `events` (`client_edit_enabled` + `client_edit_token`). Al crear pedido desde `/staff/reservas` se elige «Lo introduciré yo» (editor staff) o «Lo introducirá el cliente» (token + share WhatsApp/copiar). Ruta pública [`/pedido/[token]`](src/app/pedido/[token]/page.tsx) reutiliza carta digital (`EventEncargoCartaClient` variant `client-token`) y **actualiza** el `event_orders` primario vía RPC `save_client_event_order_by_token` (no crea pedido nuevo). Migración [`20260716134100_events_client_edit_token.sql`](supabase/migrations/20260716134100_events_client_edit_token.sql) **aplicada en Supabase**. Colores calendario sin cambios (verde/naranja/azul). Desde «Ver pedido» se puede activar enlace cliente a posteriori.
+
 **Última actualización anterior:** 2026-07-16 (Layout escritorio — horario + actividades)
 
 - [x] **Layout escritorio calendarios/revisión (2026-07-16)**: `/horario`, `/staff/actividades` y `/staff/actividades/revision` adaptados a desktop (`lg:` ≥1024px) — celdas más altas, tipografía legible, cabeceras táctiles, contenedor max 1400px; revisión en rejilla tipo tabla. Smartphone/tablet (`< lg`) sin cambios.
+
+**Última actualización anterior:** 2026-07-16 (Gate validación Fase 1 motor de horas — Opción B)
+
+- [ ] **Gate Fase 1 motor de horas (2026-07-16)**: Suite [`hours-engine.gate-validation.test.ts`](src/lib/hours-engine/hours-engine.gate-validation.test.ts) — golden + determinismo×100 + idempotencia + propagación simulada. **37/37 tests OK**. Veredicto **Opción B** (no aprobar Fase 1 aún): ADR-003 (fórmula `/7` duplicada en `regime-policy`), UI/legacy siguen calculando (ADR-002/004/011), motor no consumido por pantallas. Ejecutar: `npm run test:hours-engine:gate`.
+
+**Última actualización anterior:** 2026-07-16 (Motor de horas Fase 1 — núcleo determinista)
+
+- [x] **Motor de horas — Fase 1 núcleo determinista (2026-07-16)**: Nuevo módulo puro [`src/lib/hours-engine/`](src/lib/hours-engine/) — `Contract Resolver`, `Attendance Aggregator` (Europe/Madrid), `Regime Policy` (staff / agosto / manager / fixed / pre-alta), `Carry Engine` (waterfall por tramo bolsa/pago), `Liquidation Engine` (`liquidateWeek`). Sin persistencia, sin UI, sin Cost Engine, sin tocar legacy. Bolsa/pago y régimen se resuelven **por tramo** (composición semanal). Tests: `npm run test:hours-engine`. Spec v1.0 + diseño técnico + ADR. **No sustituye** `fn_recalc_and_propagate_snapshots` todavía.
 
 **Última actualización anterior:** 2026-07-13 (Fix timezone fichajes asistencia — Europe/Madrid)
 
