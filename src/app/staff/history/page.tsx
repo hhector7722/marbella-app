@@ -45,6 +45,7 @@ import {
     SimulationPlantillaExportModal,
     type SimulationPlantillaEmployee,
 } from '@/components/modals/SimulationPlantillaExportModal';
+import { patchWeeksDailyExtrasFromEngine, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
@@ -247,17 +248,22 @@ export default function HistoryPage() {
                     p_year: filterYear,
                     p_month: filterMonth + 1,
                 }),
-                // La RPC no devuelve clock_out_show_no_registrada: obtenerlo de time_logs y fusionar por día
+                // Fichajes: clocks + horas para motor; clock_out_show_no_registrada para UI
                 (() => {
                     const start = new Date(filterYear, filterMonth, 1);
                     const end = new Date(filterYear, filterMonth + 1, 0);
-                    end.setHours(23, 59, 59, 999);
+                    // Ampliar a semanas ISO que cruzan el mes
+                    const rangeStart = startOfWeek(start, { weekStartsOn: 1 });
+                    const rangeEnd = endOfWeek(end, { weekStartsOn: 1 });
+                    const startYmd = format(rangeStart, 'yyyy-MM-dd');
+                    const endYmd = format(rangeEnd, 'yyyy-MM-dd');
+                    const { startIso, endIso } = madridRangeUtcIso(startYmd, endYmd);
                     return supabase
                         .from('time_logs')
-                        .select('clock_in, clock_out_show_no_registrada')
+                        .select('clock_in, clock_out, total_hours, clock_out_show_no_registrada')
                         .eq('user_id', targetUserId)
-                        .gte('clock_in', start.toISOString())
-                        .lte('clock_in', end.toISOString());
+                        .gte('clock_in', startIso)
+                        .lte('clock_in', endIso);
                 })(),
                 // RPC semanal para saber si la semana está configurada como "guardar horas" (preferStock)
                 (() => {
@@ -311,37 +317,52 @@ export default function HistoryPage() {
             // Mapa fecha (YYYY-MM-DD) -> mostrar "No registrada"
             const noRegistradaByDate: Record<string, boolean> = {};
             (logsResult.data || []).forEach((log: { clock_in: string; clock_out_show_no_registrada?: boolean }) => {
-                const dateKey = format(new Date(log.clock_in), 'yyyy-MM-dd');
+                const dateKey = formatYmdInMadrid(log.clock_in) ?? format(new Date(log.clock_in), 'yyyy-MM-dd');
                 if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
             });
 
             const profileHourlyRate = Number(profileResult.data?.overtime_cost_per_hour ?? 0);
+            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, targetUserId);
+            const engineLogs = (logsResult.data || []).map((l: {
+                clock_in: string;
+                clock_out?: string | null;
+                total_hours?: number | null;
+            }) => ({
+                clockInIso: l.clock_in,
+                clockOutIso: l.clock_out,
+                totalHours: l.total_hours,
+            }));
 
-            const formattedWeeks: WeekData[] = (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => {
-                const startDateKey = typeof (week as any).startDate === 'string'
-                    ? (week as any).startDate.split('T')[0]
-                    : String((week as any).startDate);
-                const preferStockForWeek = preferStockByWeekStart[startDateKey];
-                const rpcHourlyRate = (week.summary as WeekSummary | undefined)?.hourlyRate;
-                const hourlyRate =
-                    typeof rpcHourlyRate === 'number' && Number.isFinite(rpcHourlyRate)
-                        ? rpcHourlyRate
-                        : profileHourlyRate;
+            const formattedWeeks: WeekData[] = patchWeeksDailyExtrasFromEngine(
+                (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => {
+                    const startDateKey = typeof (week as any).startDate === 'string'
+                        ? (week as any).startDate.split('T')[0]
+                        : String((week as any).startDate);
+                    const preferStockForWeek = preferStockByWeekStart[startDateKey];
+                    const rpcHourlyRate = (week.summary as WeekSummary | undefined)?.hourlyRate;
+                    const hourlyRate =
+                        typeof rpcHourlyRate === 'number' && Number.isFinite(rpcHourlyRate)
+                            ? rpcHourlyRate
+                            : profileHourlyRate;
 
-                return {
-                    ...week,
-                    summary: {
-                        ...week.summary,
-                        preferStock: preferStockForWeek,
-                        hourlyRate,
-                    },
-                    days: week.days.map((day) => ({
-                        ...day,
-                        eventType: day.eventType ?? day.event_type ?? 'regular',
-                        clock_out_show_no_registrada: noRegistradaByDate[day.date] === true,
-                    })),
-                };
-            });
+                    return {
+                        ...week,
+                        startDate: startDateKey,
+                        summary: {
+                            ...week.summary,
+                            preferStock: preferStockForWeek,
+                            hourlyRate,
+                        },
+                        days: week.days.map((day) => ({
+                            ...day,
+                            eventType: day.eventType ?? day.event_type ?? 'regular',
+                            clock_out_show_no_registrada: noRegistradaByDate[day.date] === true,
+                        })),
+                    };
+                }),
+                employeeFacts,
+                engineLogs,
+            );
 
             setWeeksData(formattedWeeks);
         } catch (err) {
@@ -554,6 +575,24 @@ export default function HistoryPage() {
         const lastMonth = new Date().getMonth() + 1;
         const allWeeks: WeekData[] = [];
 
+        const employeeFacts = await loadEmployeeBoundaryFacts(supabase, userId);
+
+        const yearStart = `${year}-01-01`;
+        const yearEnd = format(new Date(), 'yyyy-MM-dd');
+        const { startIso, endIso } = madridRangeUtcIso(yearStart, yearEnd);
+        const { data: yearLogs } = await supabase
+            .from('time_logs')
+            .select('clock_in, clock_out, total_hours')
+            .eq('user_id', userId)
+            .gte('clock_in', startIso)
+            .lte('clock_in', endIso);
+
+        const engineLogs = (yearLogs ?? []).map((l) => ({
+            clockInIso: l.clock_in,
+            clockOutIso: l.clock_out,
+            totalHours: l.total_hours,
+        }));
+
         for (let month = 1; month <= lastMonth; month++) {
             const { data, error } = await supabase.rpc('get_monthly_timesheet', {
                 p_user_id: userId,
@@ -562,16 +601,20 @@ export default function HistoryPage() {
             });
             if (error || !data) continue;
 
-            const weeks = ((data as unknown) as MonthlyTimesheetRpcWeek[]).map((week) => ({
-                ...week,
-                startDate: typeof week.startDate === 'string'
-                    ? week.startDate.split('T')[0]
-                    : String(week.startDate),
-                days: week.days.map((day) => ({
-                    ...day,
-                    eventType: day.eventType ?? day.event_type ?? 'regular',
+            const weeks = patchWeeksDailyExtrasFromEngine(
+                ((data as unknown) as MonthlyTimesheetRpcWeek[]).map((week) => ({
+                    ...week,
+                    startDate: typeof week.startDate === 'string'
+                        ? week.startDate.split('T')[0]
+                        : String(week.startDate),
+                    days: week.days.map((day) => ({
+                        ...day,
+                        eventType: day.eventType ?? day.event_type ?? 'regular',
+                    })),
                 })),
-            }));
+                employeeFacts,
+                engineLogs,
+            );
             allWeeks.push(...weeks);
         }
 

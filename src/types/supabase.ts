@@ -3160,6 +3160,42 @@ export type Database = {
         }
         Relationships: []
       }
+      hours_contract_terms: {
+        Row: {
+          id: string
+          user_id: string
+          effective_from: string
+          effective_to: string | null
+          weekly_hours: number
+          bag_mode: boolean
+          regime: string
+          overtime_rate_per_hour: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          effective_from: string
+          effective_to?: string | null
+          weekly_hours: number
+          bag_mode?: boolean
+          regime: string
+          overtime_rate_per_hour?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          effective_from?: string
+          effective_to?: string | null
+          weekly_hours?: number
+          bag_mode?: boolean
+          regime?: string
+          overtime_rate_per_hour?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       weekly_snapshots: {
         Row: {
           balance_hours: number | null

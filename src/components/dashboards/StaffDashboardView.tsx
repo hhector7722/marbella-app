@@ -35,6 +35,7 @@ import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { liquidateWeekExtrasByDay, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -245,7 +246,7 @@ export default function StaffDashboardView() {
             let userPreferStock = false;
 
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours, is_fixed_salary')
+                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours, is_fixed_salary, joining_date, end_date')
                 .eq('id', user.id)
                 .single();
 
@@ -306,10 +307,22 @@ export default function StaffDashboardView() {
 
             const { data: weekLogs } = await supabase
                 .from('time_logs')
-                .select('clock_in, event_type, clock_out_show_no_registrada')
+                .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
                 .eq('user_id', user.id)
                 .gte('clock_in', weekStartIso)
                 .lte('clock_in', weekEndIso);
+
+            // Ex. diarias: Liquidation Engine + tramos versionados (no perfil vivo).
+            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, user.id);
+            const extrasByDay = liquidateWeekExtrasByDay({
+                employee: employeeFacts,
+                weekStart: weekStartYmd,
+                logs: (weekLogs ?? []).map((l) => ({
+                    clockInIso: l.clock_in,
+                    clockOutIso: l.clock_out,
+                    totalHours: l.total_hours,
+                })),
+            });
 
             let totalWeekHours = 0;
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
@@ -323,6 +336,7 @@ export default function StaffDashboardView() {
                     dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
                     dayNumber: parseInt(format(d, 'd'), 10),
                     isToday: isSameDay(d, today),
+                    extraHours: extrasByDay[dayYmd] ?? 0,
                     eventType: dayLog?.event_type || day.eventType || day.event_type || 'regular',
                     clock_out_show_no_registrada: dayLog?.clock_out_show_no_registrada === true
                 };

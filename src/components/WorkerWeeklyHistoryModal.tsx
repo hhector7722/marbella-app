@@ -12,6 +12,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
+import { liquidateWeekExtrasByDay, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
+import { madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 
 // --- TYPES ---
 interface DailyLog {
@@ -97,7 +99,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     async function fetchWeekData() {
         setLoading(true);
         try {
-            // 1. Fetch Profile
+            // 1. Fetch Profile (solo presentación + RPC grid clocks)
             const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('first_name, last_name, contracted_hours_weekly, is_fixed_salary, role')
@@ -128,8 +130,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             const rpcWeek = rpcData?.weeksResult?.[0];
             const rpcStaff = rpcWeek?.staff?.[0];
 
-            // 3. Fetch grid days from SSOT semanal (no depende del monthly_timesheet)
-            // Regla contrato: manager / fijo => 0; resto => contracted_hours_weekly (default 40)
+            // 3. Fetch grid days (clocks / horas; extraHours de la RPC se ignora)
             const profileRole = (profile?.role ?? '') as string;
             const effContract =
                 profileRole === 'manager' || !!profile?.is_fixed_salary
@@ -144,6 +145,25 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
             if (gridErr) throw gridErr;
 
+            const { startIso: weekStartIso, endIso: weekEndIso } = madridRangeUtcIso(mondayISO, sundayISO);
+            const { data: weekLogs } = await supabase
+                .from('time_logs')
+                .select('clock_in, clock_out, total_hours')
+                .eq('user_id', workerId)
+                .gte('clock_in', weekStartIso)
+                .lte('clock_in', weekEndIso);
+
+            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, workerId);
+            const extrasByDay = liquidateWeekExtrasByDay({
+                employee: employeeFacts,
+                weekStart: mondayISO,
+                logs: (weekLogs ?? []).map((l) => ({
+                    clockInIso: l.clock_in,
+                    clockOutIso: l.clock_out,
+                    totalHours: l.total_hours,
+                })),
+            });
+
             const rawDays = (gridDays || []) as Array<{
                 date: string;
                 hasLog: boolean;
@@ -155,6 +175,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
             // 4. Build presentation array (formato unificado con /staff/history)
             const weekDays: DailyLog[] = rawDays.map((day: any) => {
+                const dateKey = typeof day.date === 'string' ? day.date.split('T')[0] : String(day.date);
                 const d = new Date(day.date);
                 return {
                     ...day,
@@ -163,7 +184,8 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                     dayNumber: d.getDate(),
                     isToday: isSameDay(d, new Date()),
                     clockIn: day.clockIn ?? '',
-                    clockOut: day.clockOut ?? ''
+                    clockOut: day.clockOut ?? '',
+                    extraHours: extrasByDay[dateKey] ?? 0,
                 };
             });
 

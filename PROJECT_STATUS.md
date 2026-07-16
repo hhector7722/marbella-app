@@ -1,8 +1,16 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Modal día horario/actividades — desktop)
+**Última actualización:** 2026-07-16 (Pedido carta = fotocopia + picker ración)
+
+- [x] **Pedido carta fotocopia + picker Entero/Medio (2026-07-16)**: Misma UI de precios que la carta (`CartaDualRacionPrices`). Tap en producto → suma al carrito (no lightbox). Si hay precio medio (bocadillo/ración TPV), tap abre modal Entero/Medio.
+
+**Última actualización anterior:** 2026-07-16 (Modal día horario/actividades — desktop)
 
 - [x] **Modal del día desktop (2026-07-16)**: `PavilionDayModal` + `ActivitiesTab` y vista día de `StaffScheduleModal` — utilidades `day-modal-*` (≥1024px): panel a `100dvh`, filas de hora iguales, chips/filas de turnos repartidas, dots ocultos. Smartphone/tablet sin cambios.
+
+**Última actualización anterior:** 2026-07-16 (Contratos versionados — sin perfil vivo)
+
+- [x] **Tramos contractuales versionados (2026-07-16)**: Tabla `hours_contract_terms` (RLS + seed desde perfil actual, 22 empleados). Contract Resolver / liquidación / Ex. diarias leen **solo** tramos versionados vía `loadEmployeeBoundaryFacts` + `employeeFactsFromContractTerms`. Eliminado `employeeFactsFromProfile`. Tarifa OT versionada en el tramo (`overtimeRatePerHour`). Tests: `npm run test:hours-engine:contract-terms` + suite **80/80**. Migración [`20260716200000_hours_contract_terms.sql`](supabase/migrations/20260716200000_hours_contract_terms.sql) **aplicada**. Inmutabilidad del pasado demostrada (cambiar tramo vigente/futuro no reinterpreta histórico).
 
 **Última actualización anterior:** 2026-07-16 (Pedido: ración 1/2 mismo artículo TPV)
 
