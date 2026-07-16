@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState, useTransition } from 'react'
-import { Copy, Link2, Loader2, MessageCircle, Pencil, Printer, RotateCcw, X } from 'lucide-react'
+import { Copy, Link2, Loader2, MessageCircle, Pencil, Printer, Receipt, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
@@ -20,6 +20,7 @@ import {
   formatEncargoProductNote,
 } from '@/lib/encargo-staff-helpers'
 import {
+  buildEncargoInvoiceHtml,
   buildEncargoPrintHtml,
   printEncargoHtml,
 } from '@/lib/reservas/print-encargo-document'
@@ -64,6 +65,7 @@ export function EncargoOrderViewModal({
 }) {
   const tableRef = useRef<HTMLDivElement>(null)
   const [printBusy, setPrintBusy] = useState(false)
+  const [invoiceBusy, setInvoiceBusy] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [localToken, setLocalToken] = useState<string | null>(clientEditToken)
   const [localEnabled, setLocalEnabled] = useState(clientEditEnabled)
@@ -107,6 +109,31 @@ export function EncargoOrderViewModal({
       setPrintBusy(false)
     }
   }, [printBusy, encargoName, encargoDate, encargoTime, contactPhone, items])
+
+  const handlePrintInvoice = useCallback(async () => {
+    if (invoiceBusy || items.length === 0) return
+    setInvoiceBusy(true)
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const html = buildEncargoInvoiceHtml(
+        {
+          encargoDate: formatEncargoPrintDate(encargoDate),
+          encargoTime,
+          encargoName,
+          contactPhone: contactPhone ?? null,
+          guestCount,
+          logoUrl: `${origin}/icons/logo-share.png`,
+        },
+        items
+      )
+      await printEncargoHtml(html)
+    } catch (error) {
+      console.error('encargo invoice print failed', error)
+      toast.error('No se pudo preparar la factura.')
+    } finally {
+      setInvoiceBusy(false)
+    }
+  }, [invoiceBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
 
   const handleEnableClientEdit = useCallback(() => {
     startTransition(async () => {
@@ -198,7 +225,7 @@ export function EncargoOrderViewModal({
             onClick={() => void handlePrint()}
             disabled={items.length === 0 || printBusy}
             className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 disabled:opacity-40"
-            aria-label="Imprimir pedido"
+            aria-label="Imprimir comanda"
           >
             {printBusy ? (
               <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
@@ -216,11 +243,16 @@ export function EncargoOrderViewModal({
           </button>
           <button
             type="button"
-            onClick={onClose}
-            className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10"
-            aria-label="Cerrar"
+            onClick={() => void handlePrintInvoice()}
+            disabled={items.length === 0 || invoiceBusy}
+            className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 disabled:opacity-40"
+            aria-label="Imprimir factura"
           >
-            <X size={20} strokeWidth={2.5} />
+            {invoiceBusy ? (
+              <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+            ) : (
+              <Receipt size={18} strokeWidth={2.5} />
+            )}
           </button>
         </div>
 

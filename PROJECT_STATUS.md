@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Condiciones laborales v2 — splice histórico)
+**Última actualización:** 2026-07-16 (Factura cliente desde modal pedido)
+
+- [x] **Factura imprimible en modal pedido reservas (2026-07-16)**: Sustituida la X de cierre por icono factura (`Receipt`). Misma vía de impresión que la comanda (iframe → print). Logo, desglose qty/precios, fecha/hora reserva, base + IVA 10%, total, mensaje de gracias. Cierre del modal: tap fuera.
+
+**Última actualización anterior:** 2026-07-16 (Condiciones laborales v2 — splice histórico)
 
 - [x] **Condiciones laborales v2 — fecha efectiva + splice (2026-07-16)**: Formulario con fecha efectiva (default hoy Madrid). Planificador unificado: localiza tramo, parte o reescribe in-place, cola intacta, coalescencia de vecinos idénticos. `profiles` espeja el tramo **abierto**. UI: cabeceras petróleo en `/profile/contrato`. Sin orquestador. Tests: `test:hours-engine:contract-terms` + `labor` → suite **124/124**.
 
