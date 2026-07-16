@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-13 (Fix timezone fichajes asistencia — Europe/Madrid)
+**Última actualización:** 2026-07-16 (Layout escritorio — horario + actividades)
+
+- [x] **Layout escritorio calendarios/revisión (2026-07-16)**: `/horario`, `/staff/actividades` y `/staff/actividades/revision` adaptados a desktop (`lg:` ≥1024px) — celdas más altas, tipografía legible, cabeceras táctiles, contenedor max 1400px; revisión en rejilla tipo tabla. Smartphone/tablet (`< lg`) sin cambios.
+
+**Última actualización anterior:** 2026-07-13 (Fix timezone fichajes asistencia — Europe/Madrid)
 
 - [x] **Asistencia: normalización horas Europe/Madrid (2026-07-13)**: Migración [`20260713140000_fix_weekly_log_grid_madrid_with_prorate.sql`](supabase/migrations/20260713140000_fix_weekly_log_grid_madrid_with_prorate.sql) — `get_worker_weekly_log_grid` volvía a usar `MIN(clock_in)::time` (UTC) tras el prorrateo `joining_date`; corregido con `to_char(... AT TIME ZONE 'Europe/Madrid', 'HH24:MI')`. Cliente: [`staff/history/page.tsx`](src/app/staff/history/page.tsx) (vista plantilla), [`StaffDashboardView.tsx`](src/components/dashboards/StaffDashboardView.tsx), [`TimeTracker.tsx`](src/components/TimeTracker.tsx) usan `formatMadridHmFromIso` / `madridDayUtcRangeIso`. **Aplicada en Supabase**.
 

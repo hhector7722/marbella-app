@@ -246,11 +246,11 @@ export default function PavilionRevisionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-6">
-      <div className="mx-auto max-w-5xl px-3 pt-4 md:pt-8">
-        <div className="overflow-hidden bg-zinc-50">
+    <div className="min-h-screen bg-zinc-50 pb-6 lg:pb-10">
+      <div className="mx-auto max-w-5xl px-3 pt-4 md:pt-8 lg:max-w-6xl lg:px-8 lg:pt-10">
+        <div className="overflow-hidden bg-zinc-50 lg:rounded-2xl lg:border lg:border-zinc-100 lg:bg-white lg:shadow-sm">
           {/* ---- Header bar ---- */}
-          <div className="flex shrink-0 items-center gap-3 bg-zinc-50 px-4 py-4">
+          <div className="flex shrink-0 items-center gap-3 bg-zinc-50 px-4 py-4 lg:bg-white lg:px-6 lg:py-5 lg:border-b lg:border-zinc-100">
             <button
               type="button"
               onClick={handleCancel}
@@ -260,7 +260,7 @@ export default function PavilionRevisionPage() {
               <ChevronLeft size={22} strokeWidth={2.5} />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="truncate text-sm font-black uppercase tracking-widest text-zinc-900">
+              <h1 className="truncate text-sm font-black uppercase tracking-widest text-zinc-900 lg:text-base">
                 {dateStr ? format(parseLocalSafe(dateStr), 'EEEE d MMMM yyyy', { locale: es }) : ''}
               </h1>
             </div>
@@ -268,7 +268,7 @@ export default function PavilionRevisionPage() {
               <button
                 type="button"
                 onClick={() => void loadData(true)}
-                className="flex items-center gap-2 rounded-xl bg-zinc-200 px-3 py-2 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-300"
+                className="flex items-center gap-2 rounded-xl bg-zinc-200 px-3 py-2 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-300 lg:min-h-12 lg:px-4 lg:text-sm"
               >
                 <RefreshCw size={14} />
                 Re-procesar con OCR
@@ -323,13 +323,13 @@ export default function PavilionRevisionPage() {
           {(state === 'parsed' || state === 'importing') && (
             <>
               {/* ---- Info ---- */}
-              <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+              <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 lg:px-6">
                 <div />
                 {selectedIndices.size > 1 && (
                   <button
                     type="button"
                     onClick={handleMerge}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100"
+                    className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 lg:min-h-12 lg:px-4 lg:text-sm"
                   >
                     <Merge size={14} />
                     Unificar seleccionadas ({selectedIndices.size})
@@ -337,34 +337,50 @@ export default function PavilionRevisionPage() {
                 )}
               </div>
 
+              {/* ---- Desktop column headers ---- */}
+              <div className="hidden lg:grid lg:grid-cols-[2.5rem_minmax(14rem,1.4fr)_minmax(16rem,1.2fr)_5.5rem_4rem_5.5rem_minmax(10rem,1fr)_2.5rem] lg:gap-3 lg:items-center lg:border-b lg:border-zinc-100 lg:bg-zinc-50/80 lg:px-6 lg:py-2.5">
+                <span className="sr-only">Seleccionar</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Actividad</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Horario</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Cat</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Pax</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Color</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Espacios</span>
+                <span className="sr-only">Eliminar</span>
+              </div>
+
               {/* ---- List Editor ---- */}
-              <div className="w-full divide-y divide-zinc-100 px-4">
+              <div className="w-full divide-y divide-zinc-100 px-4 lg:px-0">
                 {editableOccupations.map((occ, i) => (
-                  <div key={i} className="py-4 flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedIndices.has(i)}
-                        onChange={() => toggleSelect(i)}
-                        className="rounded border-zinc-300"
-                      />
+                  <div key={i} className="py-4 flex flex-col gap-3 lg:grid lg:grid-cols-[2.5rem_minmax(14rem,1.4fr)_minmax(16rem,1.2fr)_5.5rem_4rem_5.5rem_minmax(10rem,1fr)_2.5rem] lg:gap-3 lg:items-start lg:px-6 lg:py-4">
+                    {/* Row 1 (móvil): checkbox + nombre + horas + borrar */}
+                    <div className="flex flex-wrap items-center gap-2 lg:contents">
+                      <div className="flex items-center lg:pt-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedIndices.has(i)}
+                          onChange={() => toggleSelect(i)}
+                          className="rounded border-zinc-300 size-4"
+                        />
+                      </div>
                       <input
                         type="text"
                         value={occ.activity}
                         onChange={(e) => updateOccupation(i, 'activity', e.target.value)}
-                        className="flex-1 rounded-md border border-zinc-200 px-2 py-1.5 text-sm focus:border-[#36606F] focus:outline-none min-w-[120px]"
+                        className="flex-1 rounded-md border border-zinc-200 px-2 py-1.5 text-sm focus:border-[#36606F] focus:outline-none min-w-[120px] lg:min-h-12 lg:w-full lg:px-3 lg:text-sm"
                         placeholder="Nombre de la actividad"
                       />
+
                       {/* TIME SELECTION */}
-                      <div className="flex flex-col gap-2 ml-2 border-l border-zinc-200 pl-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase w-10">INICIO</span>
+                      <div className="flex flex-col gap-2 ml-2 border-l border-zinc-200 pl-3 lg:ml-0 lg:border-l-0 lg:pl-0 lg:gap-1.5 lg:pt-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase w-10 shrink-0">INICIO</span>
                           {occ.form_start_time ? (
                             <>
                               <label className="flex items-center gap-1 text-[11px] cursor-pointer">
                                 <input type="radio" checked={occ.preferred_start_time !== 'form'} onChange={() => updateOccupation(i, 'preferred_start_time', 'pdf')} className="accent-[#36606F]" />
                                 PDF:
-                                <input type="time" value={occ.start_time} onChange={(e) => updateOccupation(i, 'start_time', e.target.value)} className="w-[70px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none" />
+                                <input type="time" value={occ.start_time} onChange={(e) => updateOccupation(i, 'start_time', e.target.value)} className="w-[70px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none lg:min-h-10 lg:w-[88px]" />
                               </label>
                               <label className="flex items-center gap-1 text-[11px] cursor-pointer bg-[#36606F]/10 px-1.5 py-0.5 rounded text-[#36606F]">
                                 <input type="radio" checked={occ.preferred_start_time === 'form'} onChange={() => updateOccupation(i, 'preferred_start_time', 'form')} className="accent-[#36606F]" />
@@ -372,17 +388,17 @@ export default function PavilionRevisionPage() {
                               </label>
                             </>
                           ) : (
-                            <input type="time" value={occ.start_time} onChange={(e) => updateOccupation(i, 'start_time', e.target.value)} className="w-[75px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none text-sm" />
+                            <input type="time" value={occ.start_time} onChange={(e) => updateOccupation(i, 'start_time', e.target.value)} className="w-[75px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none text-sm lg:min-h-10 lg:w-[96px]" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase w-10">FINAL</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase w-10 shrink-0">FINAL</span>
                           {occ.form_end_time ? (
                             <>
                               <label className="flex items-center gap-1 text-[11px] cursor-pointer">
                                 <input type="radio" checked={occ.preferred_end_time !== 'form'} onChange={() => updateOccupation(i, 'preferred_end_time', 'pdf')} className="accent-[#36606F]" />
                                 PDF:
-                                <input type="time" value={occ.end_time} onChange={(e) => updateOccupation(i, 'end_time', e.target.value)} className="w-[70px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none" />
+                                <input type="time" value={occ.end_time} onChange={(e) => updateOccupation(i, 'end_time', e.target.value)} className="w-[70px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none lg:min-h-10 lg:w-[88px]" />
                               </label>
                               <label className="flex items-center gap-1 text-[11px] cursor-pointer bg-[#36606F]/10 px-1.5 py-0.5 rounded text-[#36606F]">
                                 <input type="radio" checked={occ.preferred_end_time === 'form'} onChange={() => updateOccupation(i, 'preferred_end_time', 'form')} className="accent-[#36606F]" />
@@ -390,7 +406,7 @@ export default function PavilionRevisionPage() {
                               </label>
                             </>
                           ) : (
-                            <input type="time" value={occ.end_time} onChange={(e) => updateOccupation(i, 'end_time', e.target.value)} className="w-[75px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none text-sm" />
+                            <input type="time" value={occ.end_time} onChange={(e) => updateOccupation(i, 'end_time', e.target.value)} className="w-[75px] rounded-md border border-zinc-200 px-1 py-0.5 focus:border-[#36606F] focus:outline-none text-sm lg:min-h-10 lg:w-[96px]" />
                           )}
                         </div>
                       </div>
@@ -398,16 +414,16 @@ export default function PavilionRevisionPage() {
                       <button
                         type="button"
                         onClick={() => removeRow(i)}
-                        className="rounded p-1.5 text-zinc-300 hover:bg-red-50 hover:text-red-500 shrink-0 ml-auto"
+                        className="rounded p-1.5 text-zinc-300 hover:bg-red-50 hover:text-red-500 shrink-0 ml-auto lg:hidden"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
 
-                    <div className="flex items-center flex-wrap gap-3 pl-8">
-                      {/* CATEGORIES */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">CAT</span>
+                    {/* Row 2 (móvil) / resto de columnas (desktop) */}
+                    <div className="flex items-center flex-wrap gap-3 pl-8 lg:contents">
+                      <div className="flex items-center gap-1.5 lg:block">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider lg:hidden">CAT</span>
                         <select
                           value={occ.occurrence_groups?.[0]?.category_id || ''}
                           onChange={(e) => {
@@ -419,7 +435,7 @@ export default function PavilionRevisionPage() {
                               updateOccupation(i, 'occurrence_groups', [{ category_id: val, name: catName }]);
                             }
                           }}
-                          className="w-32 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none bg-white"
+                          className="w-32 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none bg-white lg:min-h-12 lg:w-full lg:px-2 lg:text-xs"
                         >
                           <option value="">Selecciona</option>
                           {categories.map(c => (
@@ -428,28 +444,26 @@ export default function PavilionRevisionPage() {
                         </select>
                       </div>
 
-                      {/* PARTICIPANTS */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PAX</span>
+                      <div className="flex items-center gap-1.5 lg:block">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider lg:hidden">PAX</span>
                         <input
                           type="number"
                           min="0"
                           value={occ.total_participants ?? ''}
                           onChange={(e) => updateOccupation(i, 'total_participants', e.target.value ? parseInt(e.target.value, 10) : null)}
-                          className="w-12 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
+                          className="w-12 rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none lg:min-h-12 lg:w-full lg:px-2 lg:text-xs"
                         />
                       </div>
 
-                      {/* COLOR */}
-                      <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-3">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">COLOR</span>
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-3 lg:border-l-0 lg:pl-0">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider lg:hidden">COLOR</span>
+                        <div className="flex items-center gap-1 lg:pt-2.5">
                           <input
                             type="text"
                             placeholder="#5a9a87"
                             value={occ.color || ''}
                             onChange={(e) => updateOccupation(i, 'color', e.target.value)}
-                            className="w-[60px] rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none"
+                            className="w-[60px] rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] focus:border-zinc-400 focus:outline-none lg:min-h-10 lg:w-[72px] lg:text-xs"
                           />
                           {occ.color && (
                             <div className="w-4 h-4 rounded-full border border-zinc-200 shrink-0" style={{ backgroundColor: occ.color }} />
@@ -457,8 +471,7 @@ export default function PavilionRevisionPage() {
                         </div>
                       </div>
                       
-                      {/* VENUES */}
-                      <div className="flex flex-wrap gap-1 border-l border-zinc-200 pl-3">
+                      <div className="flex flex-wrap gap-1 border-l border-zinc-200 pl-3 lg:border-l-0 lg:pl-0 lg:pt-1.5">
                         {allVenues.map((v) => {
                           const active = occ.venues.includes(v.code);
                           return (
@@ -467,7 +480,7 @@ export default function PavilionRevisionPage() {
                               type="button"
                               onClick={() => toggleVenue(i, v.code)}
                               className={cn(
-                                'rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors border',
+                                'rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors border lg:min-h-9 lg:px-2 lg:text-[11px]',
                                 active
                                   ? 'bg-zinc-800 text-white border-zinc-800'
                                   : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100',
@@ -478,16 +491,24 @@ export default function PavilionRevisionPage() {
                           );
                         })}
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeRow(i)}
+                        className="hidden lg:flex lg:min-h-12 lg:min-w-10 lg:items-center lg:justify-center rounded-lg text-zinc-300 hover:bg-red-50 hover:text-red-500"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
               
-              <div className="p-4">
+              <div className="p-4 lg:px-6">
                 <button
                   type="button"
                   onClick={addRow}
-                  className="flex items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-500 hover:border-zinc-400 hover:text-zinc-700"
+                  className="flex items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 lg:min-h-12"
                 >
                   <Plus size={16} />
                   Añadir actividad
@@ -495,7 +516,7 @@ export default function PavilionRevisionPage() {
               </div>
 
               {/* ---- Footer actions ---- */}
-              <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-4 py-4">
+              <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-4 py-4 lg:px-6 lg:py-5">
                 <button
                   type="button"
                   onClick={handleCancel}
@@ -508,7 +529,7 @@ export default function PavilionRevisionPage() {
                   type="button"
                   onClick={() => void handleAccept()}
                   disabled={state === 'importing'}
-                  className="flex min-h-12 items-center gap-2 rounded-xl bg-emerald-600 px-5 font-black text-white hover:bg-emerald-700 disabled:opacity-50"
+                  className="flex min-h-12 items-center gap-2 rounded-xl bg-emerald-600 px-5 font-black text-white hover:bg-emerald-700 disabled:opacity-50 lg:px-8"
                 >
                   {state === 'importing' ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   Guardar horario

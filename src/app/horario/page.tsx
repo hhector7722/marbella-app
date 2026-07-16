@@ -322,18 +322,18 @@ export default function HorarioPage() {
   const modalRole = isMaster ? 'manager' : userRole;
 
   return (
-    <div className="pb-24">
-      <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
-        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
+    <div className="pb-24 lg:pb-10">
+      <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 lg:mx-auto lg:max-w-[1400px] lg:px-6 lg:py-6">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none lg:shadow-xl">
 
           {/* ── Header ── */}
-          <div className="flex items-center justify-between bg-[#36606F] px-3 py-2.5 min-h-[52px] gap-2">
+          <div className="flex items-center justify-between bg-[#36606F] px-3 py-2.5 min-h-[52px] gap-2 lg:px-5 lg:py-3 lg:min-h-[60px]">
 
             {/* Left: view toggle */}
-            <div className="flex-shrink-0 flex rounded-md overflow-hidden border border-white/20">
+            <div className="flex-shrink-0 flex rounded-md overflow-hidden border border-white/20 lg:rounded-lg">
               <button
                 onClick={() => setViewMode('horarios')}
-                className={`px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                className={`px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap lg:min-h-12 lg:px-4 lg:py-2 lg:text-xs ${
                   viewMode === 'horarios'
                     ? 'bg-white text-[#36606F]'
                     : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
@@ -343,7 +343,7 @@ export default function HorarioPage() {
               </button>
               <button
                 onClick={() => setViewMode('actividades')}
-                className={`px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                className={`px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap lg:min-h-12 lg:px-4 lg:py-2 lg:text-xs ${
                   viewMode === 'actividades'
                     ? 'bg-white text-[#36606F]'
                     : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
@@ -354,45 +354,45 @@ export default function HorarioPage() {
             </div>
 
             {/* Center: month navigation */}
-            <div className="flex items-center gap-0.5 flex-1 justify-center min-w-0">
+            <div className="flex items-center gap-0.5 flex-1 justify-center min-w-0 lg:gap-2">
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => subMonths(m, 1))}
-                className="flex items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0 p-0.5"
+                className="flex items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0 p-0.5 lg:min-h-12 lg:min-w-12"
                 aria-label="Mes anterior"
               >
-                <ChevronLeft size={18} strokeWidth={2.5} />
+                <ChevronLeft size={18} strokeWidth={2.5} className="lg:size-6" />
               </button>
-              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap truncate">
+              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap truncate lg:text-base lg:tracking-[0.2em]">
                 {getMonthLabel(viewMonth)}
               </span>
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                className="flex items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0 p-0.5"
+                className="flex items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full flex-shrink-0 p-0.5 lg:min-h-12 lg:min-w-12"
                 aria-label="Mes siguiente"
               >
-                <ChevronRight size={18} strokeWidth={2.5} />
+                <ChevronRight size={18} strokeWidth={2.5} className="lg:size-6" />
               </button>
             </div>
 
             {/* Right: employee filter and settings (master only) */}
-            <div className="flex-shrink-0 flex items-center justify-end gap-2 min-w-[90px]">
+            <div className="flex-shrink-0 flex items-center justify-end gap-2 min-w-[90px] lg:min-w-[160px] lg:gap-3">
               {isMaster && (
                 <button
                   type="button"
                   onClick={() => window.location.href = '/staff/actividades/gestion'}
-                  className="text-white hover:text-white/70 transition-colors"
+                  className="text-white hover:text-white/70 transition-colors lg:min-h-12 lg:min-w-12 lg:flex lg:items-center lg:justify-center"
                   aria-label="Gestionar actividades"
                 >
-                  <Settings size={18} strokeWidth={1.5} />
+                  <Settings size={18} strokeWidth={1.5} className="lg:size-5" />
                 </button>
               )}
               {isMaster && viewMode === 'horarios' && (
                 <select
                   value={selectedEmployeeId ?? ''}
                   onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
-                  className="w-full rounded bg-white/10 border border-white/20 text-white text-[10px] font-semibold text-center px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer appearance-none"
+                  className="w-full rounded bg-white/10 border border-white/20 text-white text-[10px] font-semibold text-center px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer appearance-none lg:min-h-12 lg:rounded-lg lg:px-3 lg:text-sm"
                   style={{ color: 'white', backgroundColor: 'rgba(255,255,255,0.12)' }}
                 >
                   <option value="" style={{ color: '#1a1a1a', backgroundColor: '#fff' }}>
@@ -415,7 +415,7 @@ export default function HorarioPage() {
             </div>
           ) : (
             <div
-              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 shrink-0 touch-pan-y"
+              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 shrink-0 touch-pan-y lg:gap-2 lg:px-4 lg:pt-4 lg:pb-3"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -427,9 +427,9 @@ export default function HorarioPage() {
                   {CALENDAR_WEEKDAYS.map((d, index) => (
                     <div
                       key={d}
-                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0"
+                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0 lg:h-9"
                     >
-                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none">
+                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none lg:text-xs lg:tracking-widest">
                         <span className="hidden md:inline">{d}</span>
                         <span className="md:hidden">{MOBILE_HEADERS[index]}</span>
                       </span>
@@ -450,7 +450,7 @@ export default function HorarioPage() {
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0 cursor-pointer',
-                      'h-24 sm:h-28 md:h-32 lg:h-36',
+                      'h-24 sm:h-28 md:h-32 lg:h-44 xl:h-52 lg:p-1.5',
                       isPastDay ? 'bg-zinc-100' : 'bg-white',
                       isToday && isViewMonthDay && 'bg-blue-50/20',
                       isSelected && 'ring-2 ring-inset ring-[#36606F]/40',
@@ -459,9 +459,9 @@ export default function HorarioPage() {
                     );
 
                     const dayNumCls = cn(
-                      'text-[9px] md:text-[10px] font-bold leading-none',
+                      'text-[9px] md:text-[10px] font-bold leading-none lg:text-sm',
                       isToday && isViewMonthDay
-                        ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md font-semibold'
+                        ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md font-semibold lg:px-1.5 lg:py-1'
                         : 'text-zinc-400',
                     );
 
@@ -485,44 +485,40 @@ export default function HorarioPage() {
                               <>
                                 <div className="flex-1 w-full min-h-0" />
                                   <div
-                                    className="w-full h-[14px] rounded-[3px] shrink-0 relative flex items-center justify-center overflow-hidden"
+                                    className="w-full h-[14px] rounded-[3px] shrink-0 relative flex items-center justify-center overflow-hidden lg:h-7 lg:rounded-md"
                                     style={{ backgroundColor: '#2b8a4e', opacity: isPastDay ? 0.8 : 1 }}
                                   >
-                                    <div className="absolute left-0 pl-[3px] flex items-center h-full z-0 pointer-events-none">
+                                    <div className="absolute left-0 pl-[3px] flex items-center h-full z-0 pointer-events-none lg:pl-1.5">
                                       <svg
                                         viewBox="0 0 24 24"
-                                        className="text-white shrink-0"
-                                        style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
+                                        className="text-white shrink-0 size-[clamp(5px,8cqi,8px)] lg:size-3.5"
                                         fill="currentColor"
                                       >
                                         <path d="M0 10h14V6l10 6-10 6v-4H0z" />
                                       </svg>
                                     </div>
                                     <span
-                                      className="font-black text-white leading-none whitespace-nowrap z-10 pointer-events-none"
-                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
+                                      className="font-black text-white leading-none whitespace-nowrap z-10 pointer-events-none text-[clamp(4px,7cqi,7px)] lg:text-xs"
                                     >
                                       {fmtHour(shift.startTime)}
                                     </span>
                                   </div>
-                                  <div className="w-full shrink-0 h-[3px]" />
+                                  <div className="w-full shrink-0 h-[3px] lg:h-1.5" />
                                   <div
-                                    className="w-full h-[14px] rounded-[3px] shrink-0 relative flex items-center justify-center overflow-hidden"
+                                    className="w-full h-[14px] rounded-[3px] shrink-0 relative flex items-center justify-center overflow-hidden lg:h-7 lg:rounded-md"
                                     style={{ backgroundColor: '#c0392b', opacity: isPastDay ? 0.8 : 1 }}
                                   >
-                                    <div className="absolute left-0 pl-[3px] flex items-center h-full z-0 pointer-events-none">
+                                    <div className="absolute left-0 pl-[3px] flex items-center h-full z-0 pointer-events-none lg:pl-1.5">
                                       <svg
                                         viewBox="0 0 24 24"
-                                        className="text-white shrink-0 -scale-x-100"
-                                        style={{ width: 'clamp(5px,8cqi,8px)', height: 'clamp(5px,8cqi,8px)' }}
+                                        className="text-white shrink-0 -scale-x-100 size-[clamp(5px,8cqi,8px)] lg:size-3.5"
                                         fill="currentColor"
                                       >
                                         <path d="M0 10h14V6l10 6-10 6v-4H0z" />
                                       </svg>
                                     </div>
                                     <span
-                                      className="font-black text-white leading-none whitespace-nowrap z-10 pointer-events-none"
-                                      style={{ fontSize: 'clamp(4px, 7cqi, 7px)' }}
+                                      className="font-black text-white leading-none whitespace-nowrap z-10 pointer-events-none text-[clamp(4px,7cqi,7px)] lg:text-xs"
                                     >
                                       {fmtHour(shift.endTime)}
                                     </span>
@@ -541,16 +537,15 @@ export default function HorarioPage() {
                               const grouped = groupActivities(barActs);
                               if (grouped.length === 0) return null;
                               return (
-                                <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-0.5">
+                                <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-0.5 lg:gap-1 lg:mt-1">
                                   {grouped.map((act, i) => {
                                     const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                                    const hasFormTime = act.formStartTime || act.formEndTime;
                                     const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
 
                                     return (
                                       <div
                                         key={i}
-                                        className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0"
+                                        className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0 lg:rounded-md"
                                         style={{
                                           backgroundColor: bgColor,
                                           color: '#ffffff',
@@ -558,25 +553,22 @@ export default function HorarioPage() {
                                           ...(isPastDay ? { opacity: 0.8 } : {}),
                                         }}
                                       >
-                                        <div className="px-1 py-[2px] flex flex-col justify-center min-h-[16px]">
+                                        <div className="px-1 py-[2px] flex flex-col justify-center min-h-[16px] lg:px-1.5 lg:py-1 lg:min-h-[20px]">
                                           <span
-                                            className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight"
-                                            style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
+                                            className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight text-[clamp(5px,11cqi,11px)] lg:text-[11px]"
                                           >
                                             {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                           </span>
                                         </div>
-                                        <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center">
+                                        <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center lg:px-1.5 lg:py-1">
                                           <span
-                                            className="break-keep font-bold leading-tight"
-                                            style={{ fontSize: 'clamp(6px, 14cqi, 14px)' }}
+                                            className="break-keep font-bold leading-tight text-[clamp(6px,14cqi,14px)] lg:text-xs"
                                           >
                                             {act.activityName}
                                           </span>
                                           {hasParticipants && (
                                             <span
-                                              className="break-keep font-medium leading-tight opacity-90 mt-[1px]"
-                                              style={{ fontSize: 'clamp(5px, 11cqi, 11px)' }}
+                                              className="break-keep font-medium leading-tight opacity-90 mt-[1px] text-[clamp(5px,11cqi,11px)] lg:text-[10px] lg:mt-0.5"
                                             >
                                               {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
                                               {act.totalParticipants && act.categories?.length ? ' • ' : ''}
@@ -599,8 +591,8 @@ export default function HorarioPage() {
                 </div>
               </div>
 
-              {/* Swipe indicator */}
-              <div className="flex justify-center items-center gap-1.5 py-2 w-full">
+              {/* Swipe indicator — solo móvil/tablet */}
+              <div className="flex justify-center items-center gap-1.5 py-2 w-full lg:hidden">
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
                 <div className="w-2 h-2 rounded-full bg-white shadow-sm border border-zinc-200"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
