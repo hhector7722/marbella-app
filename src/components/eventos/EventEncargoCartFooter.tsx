@@ -118,76 +118,80 @@ export function EventEncargoCartFooter({
         usageLabel="Ver pedido encargo"
         className="max-w-sm"
       >
-        {lines.length === 0 ? (
-          <p className="py-6 text-center text-sm font-semibold text-zinc-500">Aún no hay productos.</p>
-        ) : (
-          <div className="flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain">
-            {lines.map((line) => (
-              <div
-                key={line.key}
-                className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0"
-              >
-                <button
-                  type="button"
-                  onClick={() => onDecrement(line.articuloId, line.portion ?? 'entero')}
-                  className={cn(
-                    'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                    'transition-colors hover:text-zinc-600 active:scale-[0.98]'
-                  )}
-                  aria-label={`Quitar una unidad de ${line.name}`}
+        <div className="px-4 pb-4 pt-3">
+          {lines.length === 0 ? (
+            <p className="py-6 text-center text-sm font-semibold text-zinc-500">
+              Aún no hay productos.
+            </p>
+          ) : (
+            <div className="flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain rounded-xl border border-zinc-100 bg-zinc-50/60 px-1">
+              {lines.map((line) => (
+                <div
+                  key={line.key}
+                  className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0"
                 >
-                  <Minus className="h-5 w-5" strokeWidth={2.5} />
-                </button>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-zinc-900" title={line.name}>
-                    {line.name}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onDecrement(line.articuloId, line.portion ?? 'entero')}
+                    className={cn(
+                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                      'transition-colors hover:text-zinc-600 active:scale-[0.98]'
+                    )}
+                    aria-label={`Quitar una unidad de ${line.name}`}
+                  >
+                    <Minus className="h-5 w-5" strokeWidth={2.5} />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-zinc-900" title={line.name}>
+                      {line.name}
+                    </p>
+                  </div>
+                  <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
+                    ×{line.quantity}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onIncrement(line.articuloId, line.portion ?? 'entero')}
+                    className={cn(
+                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                      'transition-colors hover:text-zinc-600 active:scale-[0.98]'
+                    )}
+                    aria-label={`Añadir una unidad de ${line.name}`}
+                  >
+                    <Plus className="h-5 w-5" strokeWidth={2.5} />
+                  </button>
                 </div>
-                <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
-                  ×{line.quantity}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onIncrement(line.articuloId, line.portion ?? 'entero')}
-                  className={cn(
-                    'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                    'transition-colors hover:text-zinc-600 active:scale-[0.98]'
-                  )}
-                  aria-label={`Añadir una unidad de ${line.name}`}
-                >
-                  <Plus className="h-5 w-5" strokeWidth={2.5} />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+
+          {totalLabel ? (
+            <p className="mt-3 text-right text-sm font-black text-[#36606F]">{totalLabel}</p>
+          ) : null}
+
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              className={cn(
+                'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
+                hasLines
+                  ? 'bg-[#36606F] hover:bg-[#2a4a56] active:scale-[0.99]'
+                  : 'bg-zinc-200 text-zinc-600 shadow-none',
+                'disabled:cursor-not-allowed disabled:opacity-70'
+              )}
+              disabled={saveBlocked}
+              onClick={requestSave}
+            >
+              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : saveLabel}
+            </button>
+            <button
+              type="button"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
+              onClick={() => setCartOpen(false)}
+            >
+              Seguir eligiendo
+            </button>
           </div>
-        )}
-
-        {totalLabel ? (
-          <p className="mt-3 text-right text-sm font-black text-[#36606F]">{totalLabel}</p>
-        ) : null}
-
-        <div className="mt-4 flex flex-col gap-2">
-          <button
-            type="button"
-            className={cn(
-              'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
-              hasLines
-                ? 'bg-[#36606F] hover:bg-[#2a4a56] active:scale-[0.99]'
-                : 'bg-zinc-200 text-zinc-600 shadow-none',
-              'disabled:cursor-not-allowed disabled:opacity-70'
-            )}
-            disabled={saveBlocked}
-            onClick={requestSave}
-          >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : saveLabel}
-          </button>
-          <button
-            type="button"
-            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
-            onClick={() => setCartOpen(false)}
-          >
-            Seguir eligiendo
-          </button>
         </div>
       </Modal>
 
@@ -199,31 +203,33 @@ export function EventEncargoCartFooter({
         usageLabel="Confirmar envío pedido"
         className="max-w-sm"
       >
-        <p className="text-sm font-semibold leading-relaxed text-zinc-700">{confirmBody}</p>
-        <div className="mt-5 flex flex-col gap-2">
-          <button
-            type="button"
-            className={cn(
-              'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white',
-              'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]',
-              'disabled:cursor-not-allowed disabled:opacity-70'
-            )}
-            disabled={isPending}
-            onClick={() => {
-              setConfirmOpen(false)
-              onSave()
-            }}
-          >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : confirmActionLabel}
-          </button>
-          <button
-            type="button"
-            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
-            disabled={isPending}
-            onClick={() => setConfirmOpen(false)}
-          >
-            Cancelar
-          </button>
+        <div className="px-4 pb-4 pt-3">
+          <p className="text-sm font-semibold leading-relaxed text-zinc-700">{confirmBody}</p>
+          <div className="mt-5 flex flex-col gap-2">
+            <button
+              type="button"
+              className={cn(
+                'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white',
+                'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]',
+                'disabled:cursor-not-allowed disabled:opacity-70'
+              )}
+              disabled={isPending}
+              onClick={() => {
+                setConfirmOpen(false)
+                onSave()
+              }}
+            >
+              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : confirmActionLabel}
+            </button>
+            <button
+              type="button"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
+              disabled={isPending}
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       </Modal>
     </>

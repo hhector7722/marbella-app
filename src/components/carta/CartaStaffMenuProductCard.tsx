@@ -381,46 +381,48 @@ export function CartaStaffMenuProductCard({
         className="max-w-sm"
         zIndexClass="z-[320]"
       >
-        <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="px-4 pb-4 pt-3">
+          <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              className="flex min-h-14 flex-col items-center justify-center rounded-xl bg-[#36606F] px-2 py-3 text-white active:scale-[0.98]"
+              onClick={() => {
+                addEntero()
+                setRacionPickerOpen(false)
+              }}
+            >
+              <span className="text-sm font-black">{dualLabels.racionEntero}</span>
+              {priceEnteroLabel.trim() ? (
+                <span className="mt-0.5 text-xs font-bold tabular-nums opacity-90">
+                  {priceEnteroLabel}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-3 text-zinc-900 active:scale-[0.98]"
+              onClick={() => {
+                addMedio()
+                setRacionPickerOpen(false)
+              }}
+            >
+              <span className="text-sm font-black">{dualLabels.racionMedio}</span>
+              {priceMedioLabel.trim() ? (
+                <span className="mt-0.5 text-xs font-bold tabular-nums text-zinc-700">
+                  {priceMedioLabel}
+                </span>
+              ) : null}
+            </button>
+          </div>
           <button
             type="button"
-            className="flex min-h-14 flex-col items-center justify-center rounded-xl bg-[#36606F] px-2 py-3 text-white active:scale-[0.98]"
-            onClick={() => {
-              addEntero()
-              setRacionPickerOpen(false)
-            }}
+            className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
+            onClick={() => setRacionPickerOpen(false)}
           >
-            <span className="text-sm font-black">{dualLabels.racionEntero}</span>
-            {priceEnteroLabel.trim() ? (
-              <span className="mt-0.5 text-xs font-bold tabular-nums opacity-90">
-                {priceEnteroLabel}
-              </span>
-            ) : null}
-          </button>
-          <button
-            type="button"
-            className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-3 text-zinc-900 active:scale-[0.98]"
-            onClick={() => {
-              addMedio()
-              setRacionPickerOpen(false)
-            }}
-          >
-            <span className="text-sm font-black">{dualLabels.racionMedio}</span>
-            {priceMedioLabel.trim() ? (
-              <span className="mt-0.5 text-xs font-bold tabular-nums text-zinc-700">
-                {priceMedioLabel}
-              </span>
-            ) : null}
+            Cancelar
           </button>
         </div>
-        <button
-          type="button"
-          className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
-          onClick={() => setRacionPickerOpen(false)}
-        >
-          Cancelar
-        </button>
       </Modal>
     </div>
   )
