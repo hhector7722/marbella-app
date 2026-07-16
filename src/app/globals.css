@@ -241,6 +241,88 @@
     .month-cal-swipe-dots {
       display: none !important;
     }
+
+    /**
+     * Modal del día (PavilionDayModal / StaffScheduleModal):
+     * caber en 1 viewport, filas de hora iguales, sin agobiar.
+     */
+    .day-modal-overlay {
+      padding: 0.75rem !important;
+    }
+
+    .day-modal-panel {
+      width: min(100%, 64rem) !important;
+      max-width: 64rem !important;
+      height: calc(100dvh - 1.5rem) !important;
+      max-height: calc(100dvh - 1.5rem) !important;
+      border-radius: 1rem !important;
+    }
+
+    .day-modal-panel.day-modal-panel--narrow {
+      width: min(100%, 28rem) !important;
+      max-width: 28rem !important;
+      height: auto !important;
+      max-height: calc(100dvh - 1.5rem) !important;
+    }
+
+    .day-modal-header {
+      padding-top: 0.35rem !important;
+      padding-bottom: 0.35rem !important;
+    }
+
+    .day-modal-body {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .day-modal-dots {
+      display: none !important;
+    }
+
+    .day-modal-activities {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      padding: 0.2rem 0.4rem !important;
+    }
+
+    .day-modal-activities > table {
+      height: 100% !important;
+      min-height: 0;
+    }
+
+    .day-modal-activities thead tr {
+      height: 1.35rem !important;
+    }
+
+    /* Filas de hora: misma altura (reparto del alto disponible) */
+    .day-modal-activities tbody tr,
+    .day-modal-activities tbody tr.day-modal-hour-row {
+      height: 1% !important;
+    }
+
+    .day-modal-activities tbody td {
+      vertical-align: middle;
+    }
+
+    .day-modal-shift-rows {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .day-modal-shift-row {
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      height: auto !important;
+    }
   }
 }
 

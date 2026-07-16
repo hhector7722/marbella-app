@@ -142,14 +142,14 @@ export function PavilionDayModal({
   return typeof document !== 'undefined'
     ? createPortal(
         <div
-          className="fixed inset-0 z-[10050] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[10050] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 day-modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
           role="presentation"
         >
           <div
-            className="bg-white rounded-[2rem] w-full max-w-full shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 touch-pan-y"
+            className="bg-white rounded-[2rem] w-full max-w-full shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 touch-pan-y day-modal-panel"
             style={{
               maxHeight: '92dvh',
               transform: `translateX(${clampedOffset}px)`,
@@ -161,7 +161,7 @@ export function PavilionDayModal({
             onClick={(e) => e.stopPropagation()}
           >
             {/* ---- Header ---- */}
-            <div className="bg-[#36606F] px-2 py-2 text-white shrink-0 flex items-center gap-0.5">
+            <div className="bg-[#36606F] px-2 py-2 text-white shrink-0 flex items-center gap-0.5 day-modal-header">
               {/* Left: prev arrow — no fill, just icon */}
               <button
                 type="button"
@@ -233,18 +233,20 @@ export function PavilionDayModal({
             </div>
 
             {/* ---- Content ---- */}
-            <div className="flex flex-col overflow-hidden">
+            <div className="flex flex-col overflow-hidden flex-1 min-h-0 day-modal-body">
               {loading ? (
-                <div className="flex items-center justify-center py-16">
+                <div className="flex items-center justify-center py-16 flex-1">
                   <LoadingSpinner className="text-[#36606F]" />
                 </div>
               ) : error ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-4">
+                <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-4 flex-1">
                   <p className="text-sm font-black text-zinc-700">Error en carregar el dia</p>
                   <p className="text-xs font-bold text-zinc-400">{error}</p>
                 </div>
               ) : showPdf ? (
-                <PdfTab filePath={dayDetail?.pdfFilePath ?? null} />
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <PdfTab filePath={dayDetail?.pdfFilePath ?? null} />
+                </div>
               ) : (
                 <ActivitiesTab
                   activities={dayDetail?.barActivities ?? []}
@@ -254,8 +256,8 @@ export function PavilionDayModal({
               )}
             </div>
 
-            {/* ---- iOS-style page dots ---- */}
-            <div className="flex justify-center items-center gap-[6px] py-1.5 bg-white shrink-0">
+            {/* ---- iOS-style page dots (ocultos en escritorio) ---- */}
+            <div className="flex justify-center items-center gap-[6px] py-1.5 bg-white shrink-0 day-modal-dots">
               <div className="w-[7px] h-[7px] rounded-full bg-[#36606F]/25" />
               <div className="w-[9px] h-[9px] rounded-full bg-[#36606F]" />
               <div className="w-[7px] h-[7px] rounded-full bg-[#36606F]/25" />

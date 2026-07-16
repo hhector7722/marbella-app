@@ -215,6 +215,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       rows.push(
         <tr
           key={hours[ri]}
+          className="day-modal-hour-row"
           style={{ height: ROW_H }}
         >
           <td className="w-8 sm:w-10 p-0 border-r border-b border-zinc-100 relative">
@@ -232,7 +233,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
 
   if (!hasAnyActivity) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center px-4 h-full">
+      <div className="flex flex-col items-center justify-center py-16 text-center px-4 h-full flex-1 day-modal-activities">
         <span className="text-2xl mb-2">{'🌞'}</span>
         <p className="text-sm font-black text-zinc-500">
           No hi ha activitats que afectin el bar avui
@@ -244,7 +245,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
           <button
             type="button"
             onClick={() => router.push(`/staff/actividades/revision?date=${date}`)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2.5 text-sm font-black uppercase tracking-wider text-white transition-all hover:bg-[#36606F]/90 active:scale-95"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2.5 text-sm font-black uppercase tracking-wider text-white transition-all hover:bg-[#36606F]/90 active:scale-95 min-h-12"
           >
             Crear horari des de 0
           </button>
@@ -254,7 +255,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
   }
 
   return (
-    <div className="px-1 sm:px-2 py-1 w-full">
+    <div className="px-1 sm:px-2 py-1 w-full day-modal-activities">
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr style={{ height: ROW_H }}>

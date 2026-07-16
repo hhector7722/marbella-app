@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Pedido: ración 1/2 mismo artículo TPV)
+**Última actualización:** 2026-07-16 (Modal día horario/actividades — desktop)
+
+- [x] **Modal del día desktop (2026-07-16)**: `PavilionDayModal` + `ActivitiesTab` y vista día de `StaffScheduleModal` — utilidades `day-modal-*` (≥1024px): panel a `100dvh`, filas de hora iguales, chips/filas de turnos repartidas, dots ocultos. Smartphone/tablet sin cambios.
+
+**Última actualización anterior:** 2026-07-16 (Pedido: ración 1/2 mismo artículo TPV)
 
 - [x] **Pedido ración medio = mismo artículo TPV (2026-07-16)**: Como en TPV (opción ración), Entero/Medio sobre el mismo `articulo_id` + `override_precio_medio`. Carrito: claves `id` / `id:medio`. Resumen cliente: 2 líneas (`ENT…` y `1/2 · ENT…`). Comanda staff: mismo product_id, `notes: 1/2`, precio medio. RPC `fn_event_order_apply_racion` + `save_client` / staff create/update.
 
