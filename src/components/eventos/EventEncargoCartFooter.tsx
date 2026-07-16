@@ -22,7 +22,7 @@ function UnitsBadge({ count }: { count: number }) {
     <span
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF3B30] text-white tabular-nums',
-        'font-semibold leading-none shadow-[0_1px_4px_rgba(255,59,48,0.4)]',
+        'font-semibold leading-none',
         'min-h-[18px] min-w-[18px] px-1 text-[11px]'
       )}
       aria-hidden

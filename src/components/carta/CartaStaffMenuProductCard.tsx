@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
@@ -28,6 +28,70 @@ import {
   type EventOrderCartaControl,
 } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
+
+/** Badge de uds. anclado a la esquina superior de la última letra de la 1ª fila del nombre. */
+function EventOrderNameQtyBadge({ name, qty }: { name: string; qty: number }) {
+  const wrapRef = useRef<HTMLSpanElement>(null)
+  const nameRef = useRef<HTMLSpanElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  useLayoutEffect(() => {
+    if (qty <= 0) {
+      setPos(null)
+      return
+    }
+
+    const measure = () => {
+      const wrap = wrapRef.current
+      const nameEl = nameRef.current
+      if (!wrap || !nameEl) return
+
+      const range = document.createRange()
+      range.selectNodeContents(nameEl)
+      const rects = range.getClientRects()
+      if (!rects.length) return
+
+      // Primera caja = primera línea visual (nunca la 2ª).
+      const first = rects[0]
+      const wrapRect = wrap.getBoundingClientRect()
+      setPos({
+        top: first.top - wrapRect.top,
+        left: first.right - wrapRect.left,
+      })
+    }
+
+    measure()
+    const wrapEl = wrapRef.current
+    if (!wrapEl) return
+    const ro = new ResizeObserver(measure)
+    ro.observe(wrapEl)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [name, qty])
+
+  return (
+    <span ref={wrapRef} className="relative inline-block max-w-full align-top">
+      <span ref={nameRef}>{name}</span>
+      {qty > 0 && pos ? (
+        <span
+          className={cn(
+            'pointer-events-none absolute z-10',
+            'inline-flex -translate-x-[15%] -translate-y-[55%] items-center justify-center',
+            'min-h-[16px] min-w-[16px] rounded-full bg-[#FF3B30] px-1',
+            'text-[9px] font-semibold tabular-nums leading-none text-white'
+          )}
+          style={{ top: pos.top, left: pos.left }}
+          aria-label={`${qty} en el pedido`}
+        >
+          {qty > 99 ? '99+' : qty}
+        </span>
+      ) : null}
+    </span>
+  )
+}
 
 export type CartaStaffMenuProductRow = CartaNameRow &
   CartaDualRacionLabelFields & {
@@ -168,8 +232,7 @@ export function CartaStaffMenuProductCard({
             eventTapToAdd && 'overflow-visible',
             rowDensity === 'compact' && 'pt-0.5',
             rowDensity === 'cozy' && 'pt-0.5',
-            rowDensity === 'normal' && 'pt-1',
-            eventTapToAdd && eventQtyTotal > 0 && 'pt-2 pr-1'
+            rowDensity === 'normal' && 'pt-1'
           )}
         >
           {row.photo_url ? (
@@ -237,20 +300,6 @@ export function CartaStaffMenuProductCard({
                   articuloId={row.articulo_id}
                 />
               </button>
-              {eventTapToAdd && eventQtyTotal > 0 ? (
-                <span
-                  className={cn(
-                    'pointer-events-none absolute right-0 top-0 z-30',
-                    'inline-flex translate-x-[35%] -translate-y-[35%] items-center justify-center',
-                    'min-h-[18px] min-w-[18px] rounded-full bg-[#FF3B30] px-1',
-                    'text-[10px] font-semibold tabular-nums leading-none text-white',
-                    'shadow-[0_1px_4px_rgba(255,59,48,0.4)]'
-                  )}
-                  aria-label={`${eventQtyTotal} en el pedido`}
-                >
-                  {eventQtyTotal > 99 ? '99+' : eventQtyTotal}
-                </span>
-              ) : null}
               {editMode && onToggleProductActive ? (
                 <button
                   type="button"
@@ -338,7 +387,11 @@ export function CartaStaffMenuProductCard({
           className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
           title={displayName}
         >
-          {displayName}
+          {eventTapToAdd && eventQtyTotal > 0 ? (
+            <EventOrderNameQtyBadge name={displayName} qty={eventQtyTotal} />
+          ) : (
+            displayName
+          )}
         </p>
         {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
           <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>

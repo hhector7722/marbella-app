@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Reabrir pedido = carrito con líneas previas)
+**Última actualización:** 2026-07-16 (Badge uds. en 1ª fila del nombre)
+
+- [x] **Badge cantidad en 1ª fila del nombre (2026-07-16)**: Círculo de unidades en la esquina superior de la última letra de la **primera** fila (si el nombre salta a 2 líneas, nunca en la 2ª); sin sombra. Footer «Ver pedido» también sin sombra en el badge.
+
+**Última actualización anterior:** 2026-07-16 (Reabrir pedido = carrito con líneas previas)
 
 - [x] **Reabrir pedido: cliente parte del pedido existente (2026-07-16)**: `/pedido/[token]` hidrata el carrito con `event_orders.items` vía RPC `get_client_event_order_items_by_token` (mapea `is_half` → `id:medio`). Reopen sigue sin borrar líneas. Migración [`20260716240000_get_client_order_items_by_token.sql`](supabase/migrations/20260716240000_get_client_order_items_by_token.sql) **aplicada**.
 
