@@ -1,8 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Badge uds. en 1ª fila del nombre)
+**Última actualización:** 2026-07-16 (Badge uds. en esquina de foto)
 
-- [x] **Badge cantidad en 1ª fila del nombre (2026-07-16)**: Círculo de unidades en la esquina superior de la última letra de la **primera** fila (si el nombre salta a 2 líneas, nunca en la 2ª); sin sombra. Footer «Ver pedido» también sin sombra en el badge.
+- [x] **Badge cantidad en esquina de foto (2026-07-16)**: Círculo de unidades sobre la imagen (esquina superior derecha, inset) — 100% visible, sin sombra ni recorte. Nombre sin badge.
 
 **Última actualización anterior:** 2026-07-16 (Reabrir pedido = carrito con líneas previas)
 
