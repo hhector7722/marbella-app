@@ -16,11 +16,16 @@ import {
   type LaborConditionsFormInput,
 } from '@/lib/hours-engine/labor-conditions';
 import type { ContractRegime } from '@/lib/hours-engine';
+import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 
 function formatYmdEs(ymd: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
   if (!m) return ymd;
   return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+function todayMadridYmd(): string {
+  return formatYmdInMadrid(new Date()) || '';
 }
 
 function displayHours(n: number): string {
@@ -52,6 +57,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
     regime: 'staff',
     bagMode: false,
     overtimeRatePerHour: null,
+    effectiveFrom: todayMadridYmd(),
   });
 
   const load = useCallback(async () => {
@@ -72,6 +78,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
         regime: open.regime as ContractRegime,
         bagMode: open.bagMode,
         overtimeRatePerHour: open.overtimeRatePerHour,
+        effectiveFrom: todayMadridYmd(),
       });
     }
     setLoading(false);
@@ -90,7 +97,10 @@ export default function LaborConditionsView({ employeeId }: Props) {
         regime: vigente.regime as ContractRegime,
         bagMode: vigente.bagMode,
         overtimeRatePerHour: vigente.overtimeRatePerHour,
+        effectiveFrom: todayMadridYmd(),
       });
+    } else {
+      setForm((f) => ({ ...f, effectiveFrom: todayMadridYmd() }));
     }
     setEditing(true);
   };
@@ -125,157 +135,193 @@ export default function LaborConditionsView({ employeeId }: Props) {
     return <div className="min-h-screen" />;
   }
 
+  const backToProfile = () =>
+    router.push(`/profile?id=${encodeURIComponent(employeeId)}`);
+
+  const cardHeader = (title: string, opts?: { withBack?: boolean }) => (
+    <div
+      className={cn(
+        'flex shrink-0 items-center gap-1 bg-[#36606F] px-2 py-2 text-white',
+        !opts?.withBack && 'px-4 py-3',
+      )}
+    >
+      {opts?.withBack ? (
+        <button
+          type="button"
+          onClick={backToProfile}
+          className={cn(
+            'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl',
+            'text-white active:opacity-70',
+          )}
+          aria-label="Volver al perfil"
+        >
+          <ArrowLeft className="size-5 shrink-0" strokeWidth={2.25} />
+        </button>
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate text-sm font-semibold text-white">{title}</h1>
+        {employeeName ? (
+          <p className="truncate text-xs text-white/80">{employeeName}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen pb-24 p-4">
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push(`/profile?id=${encodeURIComponent(employeeId)}`)}
-            className={cn(
-              'inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl',
-              'text-zinc-700 active:opacity-70',
-            )}
-            aria-label="Volver al perfil"
-          >
-            <ArrowLeft className="size-5 shrink-0" strokeWidth={2.25} />
-          </button>
-          <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold text-zinc-900">
-              Condiciones laborales
-            </h1>
-            {employeeName ? (
-              <p className="truncate text-xs text-zinc-500">{employeeName}</p>
-            ) : null}
-          </div>
-        </div>
-
         {!editing ? (
           <>
-            <section className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-zinc-900">Condiciones laborales</h2>
-              {vigente ? (
-                <dl className="mt-3 divide-y divide-zinc-100">
-                  <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                    <dt className="text-xs text-zinc-500">Horas semanales</dt>
-                    <dd className="text-sm font-semibold text-zinc-900">
-                      {displayHours(vigente.weeklyHours)}
-                    </dd>
-                  </div>
-                  <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                    <dt className="text-xs text-zinc-500">Régimen</dt>
-                    <dd className="text-sm font-semibold text-zinc-900">
-                      {regimeLabel(vigente.regime as ContractRegime)}
-                    </dd>
-                  </div>
-                  <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                    <dt className="text-xs text-zinc-500">Bolsa / Pago</dt>
-                    <dd className="text-sm font-semibold text-zinc-900">
-                      {bagLabel(vigente.bagMode)}
-                    </dd>
-                  </div>
-                  <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                    <dt className="text-xs text-zinc-500">Tarifa extras</dt>
-                    <dd className="text-sm font-semibold text-zinc-900">
-                      {displayRate(vigente.overtimeRatePerHour)}
-                    </dd>
-                  </div>
-                  <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                    <dt className="text-xs text-zinc-500">Vigente desde</dt>
-                    <dd className="text-sm font-semibold text-zinc-900">
-                      {formatYmdEs(vigente.effectiveFrom)}
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className="mt-3 text-sm text-zinc-500">
-                  Sin condiciones vigentes. Puedes definirlas ahora.
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={startEdit}
-                className={cn(
-                  'mt-4 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
-                  'bg-[#36606F] px-4 text-[10px] font-black uppercase tracking-widest text-white',
-                  'active:scale-[0.98]',
+            <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
+              {cardHeader('Condiciones laborales', { withBack: true })}
+              <div className="p-4">
+                {vigente ? (
+                  <dl className="divide-y divide-zinc-100">
+                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                      <dt className="text-xs text-zinc-500">Horas semanales</dt>
+                      <dd className="text-sm font-semibold text-zinc-900">
+                        {displayHours(vigente.weeklyHours)}
+                      </dd>
+                    </div>
+                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                      <dt className="text-xs text-zinc-500">Régimen</dt>
+                      <dd className="text-sm font-semibold text-zinc-900">
+                        {regimeLabel(vigente.regime as ContractRegime)}
+                      </dd>
+                    </div>
+                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                      <dt className="text-xs text-zinc-500">Bolsa / Pago</dt>
+                      <dd className="text-sm font-semibold text-zinc-900">
+                        {bagLabel(vigente.bagMode)}
+                      </dd>
+                    </div>
+                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                      <dt className="text-xs text-zinc-500">Tarifa extras</dt>
+                      <dd className="text-sm font-semibold text-zinc-900">
+                        {displayRate(vigente.overtimeRatePerHour)}
+                      </dd>
+                    </div>
+                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                      <dt className="text-xs text-zinc-500">Vigente desde</dt>
+                      <dd className="text-sm font-semibold text-zinc-900">
+                        {formatYmdEs(vigente.effectiveFrom)}
+                      </dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <p className="text-sm text-zinc-500">
+                    Sin condiciones vigentes. Puedes definirlas ahora.
+                  </p>
                 )}
-              >
-                Cambiar condiciones laborales
-              </button>
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className={cn(
+                    'mt-4 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
+                    'bg-[#36606F] px-4 text-[10px] font-black uppercase tracking-widest text-white',
+                    'active:scale-[0.98]',
+                  )}
+                >
+                  Cambiar condiciones laborales
+                </button>
+              </div>
             </section>
 
-            <section className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-zinc-900">Histórico contractual</h2>
-              {terms.length === 0 ? (
-                <p className="mt-3 text-sm text-zinc-500">Sin histórico.</p>
-              ) : (
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[32rem] text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-zinc-100 text-zinc-500">
-                        <th className="py-2 pr-2 font-medium">Desde</th>
-                        <th className="py-2 pr-2 font-medium">Hasta</th>
-                        <th className="py-2 pr-2 font-medium">Horas</th>
-                        <th className="py-2 pr-2 font-medium">Régimen</th>
-                        <th className="py-2 pr-2 font-medium">Bolsa/Pago</th>
-                        <th className="py-2 font-medium">€/h</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-100">
-                      {[...terms]
-                        .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
-                        .map((t) => {
-                          const isOpen = t.effectiveTo === null;
-                          return (
-                            <tr
-                              key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
-                              className={cn(isOpen && 'bg-emerald-50/60')}
-                            >
-                              <td className="min-h-12 py-3 pr-2 font-medium text-zinc-900">
-                                {formatYmdEs(t.effectiveFrom)}
-                                {isOpen ? (
-                                  <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                                    Vigente
-                                  </span>
-                                ) : null}
-                              </td>
-                              <td className="py-3 pr-2 text-zinc-700">
-                                {t.effectiveTo ? formatYmdEs(t.effectiveTo) : '—'}
-                              </td>
-                              <td className="py-3 pr-2 text-zinc-700">
-                                {t.weeklyHours === 0 ? ' ' : t.weeklyHours}
-                              </td>
-                              <td className="py-3 pr-2 text-zinc-700">
-                                {regimeLabel(t.regime as ContractRegime)}
-                              </td>
-                              <td className="py-3 pr-2 text-zinc-700">
-                                {bagLabel(t.bagMode)}
-                              </td>
-                              <td className="py-3 text-zinc-700">
-                                {t.overtimeRatePerHour == null || t.overtimeRatePerHour === 0
-                                  ? ' '
-                                  : t.overtimeRatePerHour}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
+              <div className="bg-[#36606F] px-4 py-3">
+                <h2 className="text-sm font-semibold text-white">Histórico contractual</h2>
+              </div>
+              <div className="p-4">
+                {terms.length === 0 ? (
+                  <p className="text-sm text-zinc-500">Sin histórico.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[32rem] text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-zinc-100 text-zinc-500">
+                          <th className="py-2 pr-2 font-medium">Desde</th>
+                          <th className="py-2 pr-2 font-medium">Hasta</th>
+                          <th className="py-2 pr-2 font-medium">Horas</th>
+                          <th className="py-2 pr-2 font-medium">Régimen</th>
+                          <th className="py-2 pr-2 font-medium">Bolsa/Pago</th>
+                          <th className="py-2 font-medium">€/h</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        {[...terms]
+                          .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
+                          .map((t) => {
+                            const isOpen = t.effectiveTo === null;
+                            return (
+                              <tr
+                                key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
+                                className={cn(isOpen && 'bg-emerald-50/60')}
+                              >
+                                <td className="min-h-12 py-3 pr-2 font-medium text-zinc-900">
+                                  {formatYmdEs(t.effectiveFrom)}
+                                  {isOpen ? (
+                                    <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                                      Vigente
+                                    </span>
+                                  ) : null}
+                                </td>
+                                <td className="py-3 pr-2 text-zinc-700">
+                                  {t.effectiveTo ? formatYmdEs(t.effectiveTo) : '—'}
+                                </td>
+                                <td className="py-3 pr-2 text-zinc-700">
+                                  {t.weeklyHours === 0 ? ' ' : t.weeklyHours}
+                                </td>
+                                <td className="py-3 pr-2 text-zinc-700">
+                                  {regimeLabel(t.regime as ContractRegime)}
+                                </td>
+                                <td className="py-3 pr-2 text-zinc-700">
+                                  {bagLabel(t.bagMode)}
+                                </td>
+                                <td className="py-3 text-zinc-700">
+                                  {t.overtimeRatePerHour == null || t.overtimeRatePerHour === 0
+                                    ? ' '
+                                    : t.overtimeRatePerHour}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </section>
           </>
         ) : (
-          <section className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-zinc-900">
-              Cambiar condiciones laborales
-            </h2>
-            <p className="mt-1 text-xs text-zinc-500">
-              La vigencia empieza hoy (Europe/Madrid). El histórico se gestiona solo.
+          <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
+            {cardHeader('Cambiar condiciones laborales', { withBack: true })}
+            <div className="p-4">
+            <p className="text-xs text-zinc-500">
+              Indica desde cuándo aplican. El histórico se reconstruye solo.
             </p>
 
             <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  Fecha efectiva
+                </span>
+                <input
+                  type="date"
+                  value={form.effectiveFrom ?? ''}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      effectiveFrom: e.target.value,
+                    }))
+                  }
+                  className={cn(
+                    'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
+                    'text-sm font-bold text-zinc-800',
+                    'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
+                  )}
+                />
+              </label>
+
               <label className="block">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
                   Horas semanales
@@ -428,6 +474,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
               >
                 {saving ? 'Guardando…' : 'Guardar'}
               </button>
+            </div>
             </div>
           </section>
         )}

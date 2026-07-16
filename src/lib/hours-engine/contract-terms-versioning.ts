@@ -2,16 +2,18 @@
  * Único planificador de versionado contractual (puro).
  * No escribe BD. No toca liquidación ni Contract Resolver.
  *
- * Reglas:
- * - Sin cambio de snapshot → noop
- * - Cambio → cierra tramo abierto el día anterior; abre nuevo desde effectiveFrom
- * - Mismo día (open.effectiveFrom === effectiveFrom) → actualiza el abierto in-place
- * - Empleado nuevo (sin tramos) → primer tramo
+ * Operación: splice histórico
+ * - Localiza el tramo que contiene effectiveFrom
+ * - Noop si el snapshot coincide
+ * - Si D == inicio del tramo → reescribe in-place
+ * - Si D > inicio → parte: izquierda (hasta D-1) + derecha (D → to original)
+ * - Cola de tramos posteriores intacta
+ * - Coalesce de vecinos con el mismo snapshot
  * - Invariantes: sin solapes, ≤1 abierto, sin huecos
  */
 
 import type { CivilDate, ContractRegime, ContractTermFact } from './types.ts';
-import { addCivilDays, compareCivilDate } from './week-dates.ts';
+import { addCivilDays, compareCivilDate, isCivilDateInRange } from './week-dates.ts';
 import { assertTermsNonOverlapping } from './ui-bridge.ts';
 
 export type ContractualSnapshot = {
@@ -24,7 +26,11 @@ export type ContractualSnapshot = {
 export type VersioningResult =
   | { kind: 'noop'; terms: readonly ContractTermFact[] }
   | { kind: 'created'; terms: readonly ContractTermFact[] }
+  | { kind: 'spliced'; terms: readonly ContractTermFact[] }
+  | { kind: 'updated'; terms: readonly ContractTermFact[] }
+  /** @deprecated Alias histórico de spliced (tests / callers antiguos). */
   | { kind: 'appended'; terms: readonly ContractTermFact[] }
+  /** @deprecated Alias histórico de updated. */
   | { kind: 'updated_open'; terms: readonly ContractTermFact[] }
   | { kind: 'rewritten'; terms: readonly ContractTermFact[] };
 
@@ -134,9 +140,45 @@ export function assertContractTermInvariants(terms: readonly ContractTermFact[])
   assertNoGaps(terms);
 }
 
+export function findTermContaining(
+  terms: readonly ContractTermFact[],
+  day: CivilDate,
+): ContractTermFact | null {
+  for (const t of terms) {
+    if (isCivilDateInRange(day, t.effectiveFrom, t.effectiveTo)) {
+      return t;
+    }
+  }
+  return null;
+}
+
+/** Fusiona vecinos consecutivos con el mismo snapshot contractual. */
+export function coalesceIdenticalConsecutiveTerms(
+  terms: readonly ContractTermFact[],
+): ContractTermFact[] {
+  if (terms.length === 0) return [];
+  const sorted = [...terms].sort((a, b) =>
+    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
+  );
+  const out: ContractTermFact[] = [{ ...sorted[0]! }];
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = out[out.length - 1]!;
+    const cur = sorted[i]!;
+    if (snapshotsEqual(termToSnapshot(prev), termToSnapshot(cur))) {
+      out[out.length - 1] = {
+        ...prev,
+        effectiveTo: cur.effectiveTo,
+      };
+    } else {
+      out.push({ ...cur });
+    }
+  }
+  return out;
+}
+
 /**
- * Aplica un cambio contractual con fecha efectiva.
- * Preserva tramos históricos cerrados.
+ * Aplica un cambio contractual con fecha efectiva (splice histórico).
+ * Preserva tramos que no contienen la fecha.
  */
 export function applyContractualChange(
   terms: readonly ContractTermFact[],
@@ -148,92 +190,98 @@ export function applyContractualChange(
   );
 
   if (sorted.length === 0) {
-    const created = [snapshotToTerm(nextSnapshot, effectiveFrom, null)];
+    const created = coalesceIdenticalConsecutiveTerms([
+      snapshotToTerm(nextSnapshot, effectiveFrom, null),
+    ]);
     assertContractTermInvariants(created);
     return { kind: 'created', terms: created };
   }
 
-  const openIdx = sorted.findIndex((t) => t.effectiveTo === null);
-  if (openIdx < 0) {
-    // Todos cerrados: enlazar sin hueco
-    const last = sorted[sorted.length - 1]!;
-    if (last.effectiveTo === null) {
-      throw new Error('Estado inconsistente');
-    }
-    const expectedFrom = nextCivilDay(last.effectiveTo);
-    if (compareCivilDate(effectiveFrom, expectedFrom) !== 0) {
+  const target = findTermContaining(sorted, effectiveFrom);
+  if (!target) {
+    const first = sorted[0]!;
+    if (compareCivilDate(effectiveFrom, first.effectiveFrom) < 0) {
       throw new Error(
-        `Hueco al reabrir: efectivo ${effectiveFrom}, esperado ${expectedFrom}`,
+        `La fecha efectiva (${effectiveFrom}) es anterior al primer contrato (${first.effectiveFrom})`,
       );
     }
-    const appended = [...sorted, snapshotToTerm(nextSnapshot, effectiveFrom, null)];
-    assertContractTermInvariants(appended);
-    return { kind: 'appended', terms: appended };
+    throw new Error(
+      `La fecha efectiva (${effectiveFrom}) no pertenece a ningún tramo contractual`,
+    );
   }
 
-  const open = sorted[openIdx]!;
-  if (snapshotsEqual(termToSnapshot(open), nextSnapshot)) {
+  if (snapshotsEqual(termToSnapshot(target), nextSnapshot)) {
     assertContractTermInvariants(sorted);
     return { kind: 'noop', terms: sorted };
   }
 
-  // Mismo día: corregir el abierto (no crear tramo idéntico de rango inválido)
-  if (compareCivilDate(open.effectiveFrom, effectiveFrom) === 0) {
-    const updated = sorted.map((t, i) =>
-      i === openIdx ? snapshotToTerm(nextSnapshot, effectiveFrom, null) : t,
-    );
-    assertContractTermInvariants(updated);
-    return { kind: 'updated_open', terms: updated };
-  }
-
-  if (compareCivilDate(effectiveFrom, open.effectiveFrom) <= 0) {
-    throw new Error(
-      `effectiveFrom (${effectiveFrom}) debe ser posterior al inicio del tramo abierto (${open.effectiveFrom})`,
-    );
-  }
-
-  const dayBefore = previousCivilDay(effectiveFrom);
-  const closed = sorted.map((t, i) =>
-    i === openIdx ? { ...t, effectiveTo: dayBefore } : t,
+  const idx = sorted.findIndex(
+    (t) => compareCivilDate(t.effectiveFrom, target.effectiveFrom) === 0,
   );
-  const appended = [...closed, snapshotToTerm(nextSnapshot, effectiveFrom, null)];
-  assertContractTermInvariants(appended);
-  return { kind: 'appended', terms: appended };
+  if (idx < 0) {
+    throw new Error('Estado inconsistente: tramo localizado no encontrado');
+  }
+
+  // Exactamente el inicio del tramo → reescritura in-place
+  if (compareCivilDate(effectiveFrom, target.effectiveFrom) === 0) {
+    const updated = sorted.map((t, i) =>
+      i === idx
+        ? snapshotToTerm(nextSnapshot, t.effectiveFrom, t.effectiveTo)
+        : t,
+    );
+    const coalesced = coalesceIdenticalConsecutiveTerms(updated);
+    assertContractTermInvariants(coalesced);
+    const wasOpen = target.effectiveTo === null;
+    return {
+      kind: wasOpen ? 'updated_open' : 'updated',
+      terms: coalesced,
+    };
+  }
+
+  // Dentro del tramo (D > from): partir
+  const dayBefore = previousCivilDay(effectiveFrom);
+  if (compareCivilDate(dayBefore, target.effectiveFrom) < 0) {
+    throw new Error('Rango inválido al partir el tramo');
+  }
+
+  const left: ContractTermFact = {
+    ...target,
+    effectiveTo: dayBefore,
+  };
+  const right = snapshotToTerm(nextSnapshot, effectiveFrom, target.effectiveTo);
+
+  const spliced = [
+    ...sorted.slice(0, idx),
+    left,
+    right,
+    ...sorted.slice(idx + 1),
+  ];
+  const coalesced = coalesceIdenticalConsecutiveTerms(spliced);
+  assertContractTermInvariants(coalesced);
+
+  // Compat: si el tramo partido era el abierto, callers antiguos esperan 'appended'
+  if (target.effectiveTo === null) {
+    return { kind: 'appended', terms: coalesced };
+  }
+  return { kind: 'spliced', terms: coalesced };
 }
 
 /**
- * Reescribe un tramo histórico cerrado (por effectiveFrom).
- * No toca tramos posteriores ni el abierto salvo que sea ese.
+ * Reescribe un tramo histórico por effectiveFrom (payload).
+ * Equivale a applyContractualChange con D = inicio de ese tramo.
  */
 export function rewriteHistoricalTerm(
   terms: readonly ContractTermFact[],
   termEffectiveFrom: CivilDate,
   nextSnapshot: ContractualSnapshot,
 ): VersioningResult {
-  const sorted = [...terms].sort((a, b) =>
-    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
-  );
-  const idx = sorted.findIndex(
-    (t) => compareCivilDate(t.effectiveFrom, termEffectiveFrom) === 0,
-  );
-  if (idx < 0) {
-    throw new Error(`No existe tramo con effectiveFrom=${termEffectiveFrom}`);
+  const plan = applyContractualChange(terms, nextSnapshot, termEffectiveFrom);
+  if (plan.kind === 'noop') {
+    return plan;
   }
-  const target = sorted[idx]!;
-  if (snapshotsEqual(termToSnapshot(target), nextSnapshot)) {
-    return { kind: 'noop', terms: sorted };
+  if (plan.kind === 'updated' || plan.kind === 'updated_open') {
+    return { kind: 'rewritten', terms: plan.terms };
   }
-  const rewritten = sorted.map((t, i) =>
-    i === idx
-      ? {
-          ...t,
-          weeklyHours: nextSnapshot.weeklyHours,
-          bagMode: nextSnapshot.bagMode,
-          regime: nextSnapshot.regime,
-          overtimeRatePerHour: nextSnapshot.overtimeRatePerHour,
-        }
-      : t,
-  );
-  assertContractTermInvariants(rewritten);
-  return { kind: 'rewritten', terms: rewritten };
+  // Si por alguna razón no era el inicio, no debería ocurrir al pasar el from exacto
+  return { kind: 'rewritten', terms: plan.terms };
 }

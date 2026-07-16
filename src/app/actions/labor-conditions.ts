@@ -10,7 +10,9 @@ import {
   type ContractTermRow,
 } from '@/lib/hours-engine';
 import {
-  laborChangeIsNoop,
+  laborChangeIsNoopAt,
+  openTermSnapshot,
+  parseCivilYmd,
   snapshotToProfileMirror,
   validateLaborConditionsForm,
   type LaborConditionsFormInput,
@@ -94,8 +96,8 @@ export async function getEmployeeLaborConditions(employeeId: string): Promise<{
 }
 
 /**
- * Cambia condiciones laborales (fecha efectiva = hoy Madrid).
- * Versiona hours_contract_terms vía servicio; luego espeja profiles.
+ * Cambia condiciones laborales (fecha efectiva editable; default hoy Madrid).
+ * Versiona hours_contract_terms vía splice; luego espeja profiles con el tramo abierto.
  */
 export async function updateLaborConditions(
   employeeId: string,
@@ -112,6 +114,20 @@ export async function updateLaborConditions(
 
   const validated = validateLaborConditionsForm(form);
   if (!validated.ok) return { success: false, error: validated.error };
+
+  const todayMadrid = formatYmdInMadrid(new Date());
+  if (!todayMadrid) {
+    return { success: false, error: 'No se pudo determinar la fecha de hoy (Madrid)' };
+  }
+
+  const effectiveFrom =
+    form.effectiveFrom != null && String(form.effectiveFrom).trim() !== ''
+      ? parseCivilYmd(String(form.effectiveFrom))
+      : todayMadrid;
+
+  if (!effectiveFrom) {
+    return { success: false, error: 'Fecha efectiva no válida' };
+  }
 
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
@@ -133,17 +149,12 @@ export async function updateLaborConditions(
   if (loadErr) return { success: false, error: loadErr.message };
 
   const currentTerms = mapContractTermRows((termRows ?? []) as ContractTermRow[]);
-  if (laborChangeIsNoop(currentTerms, validated.snapshot)) {
+  if (laborChangeIsNoopAt(currentTerms, validated.snapshot, effectiveFrom)) {
     return {
       success: true,
       kind: 'noop',
-      message: 'No hay cambios respecto al contrato vigente',
+      message: 'No hay cambios respecto a las condiciones de esa fecha',
     };
-  }
-
-  const effectiveFrom = formatYmdInMadrid(new Date());
-  if (!effectiveFrom) {
-    return { success: false, error: 'No se pudo determinar la fecha de hoy (Madrid)' };
   }
 
   let plan: { kind: string; terms: readonly ContractTermFact[] };
@@ -163,11 +174,13 @@ export async function updateLaborConditions(
     return {
       success: true,
       kind: 'noop',
-      message: 'No hay cambios respecto al contrato vigente',
+      message: 'No hay cambios respecto a las condiciones de esa fecha',
     };
   }
 
-  const mirror = snapshotToProfileMirror(validated.snapshot, profile.role ?? 'staff');
+  // Espejo legacy = tramo abierto tras el plan (puede no coincidir con el splice histórico)
+  const openSnap = openTermSnapshot(plan.terms) ?? validated.snapshot;
+  const mirror = snapshotToProfileMirror(openSnap, profile.role ?? 'staff');
   const { error: updErr } = await supabase.from('profiles').update(mirror).eq('id', id);
   if (updErr) {
     return {

@@ -30,6 +30,8 @@ export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
 export {
   applyContractualChange,
   assertContractTermInvariants,
+  coalesceIdenticalConsecutiveTerms,
+  findTermContaining,
   rewriteHistoricalTerm,
   snapshotFromProfileFields,
   snapshotsEqual,

@@ -1,5 +1,5 @@
 /**
- * Persistencia de tramos: aplica el planificador puro sobre hours_contract_terms.
+ * Persistencia de tramos: aplica el planificador puro (splice) sobre hours_contract_terms.
  * Única vía TS recomendada (además del trigger SQL en profiles).
  */
 

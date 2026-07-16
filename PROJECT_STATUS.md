@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Fix build: select FC recetas)
+**Última actualización:** 2026-07-16 (Condiciones laborales v2 — splice histórico)
+
+- [x] **Condiciones laborales v2 — fecha efectiva + splice (2026-07-16)**: Formulario con fecha efectiva (default hoy Madrid). Planificador unificado: localiza tramo, parte o reescribe in-place, cola intacta, coalescencia de vecinos idénticos. `profiles` espeja el tramo **abierto**. UI: cabeceras petróleo en `/profile/contrato`. Sin orquestador. Tests: `test:hours-engine:contract-terms` + `labor` → suite **124/124**.
+
+**Última actualización anterior:** 2026-07-16 (Fix build: select FC recetas)
 
 - [x] **Fix TypeScript build Vercel — filtro FC recetas (2026-07-16)**: El ternario en `.select(needsFc ? RECIPE_FOOD_COST_SELECT : …)` rompía el parser de tipos de Supabase (`ParserError`). Ramas separadas en `/recipes` y `/recipes/[id]`; `RECIPE_FOOD_COST_SELECT` con `as const`.
 

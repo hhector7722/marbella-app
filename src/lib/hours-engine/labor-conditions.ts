@@ -1,17 +1,25 @@
 /**
- * Condiciones laborales (v1) — formulario ↔ snapshot contractual.
- * Sin fecha efectiva libre: siempre hoy Madrid en la action.
+ * Condiciones laborales — formulario ↔ snapshot contractual.
+ * Fecha efectiva editable (Europe/Madrid); splice histórico en el planificador.
  */
 
-import type { ContractRegime, ContractTermFact } from './types.ts';
+import type { CivilDate, ContractRegime, ContractTermFact } from './types.ts';
 import type { ContractualSnapshot } from './contract-terms-versioning.ts';
-import { snapshotsEqual, termToSnapshot } from './contract-terms-versioning.ts';
+import {
+  findTermContaining,
+  snapshotsEqual,
+  termToSnapshot,
+} from './contract-terms-versioning.ts';
+
+const CIVIL_YMD = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export type LaborConditionsFormInput = {
   weeklyHours: number;
   regime: ContractRegime;
   bagMode: boolean;
   overtimeRatePerHour: number | null;
+  /** YYYY-MM-DD; por defecto la action usa hoy Madrid si falta. */
+  effectiveFrom?: string;
 };
 
 export type ProfileContractMirror = {
@@ -21,6 +29,20 @@ export type ProfileContractMirror = {
   overtime_cost_per_hour: number | null;
   role: string;
 };
+
+export function parseCivilYmd(raw: string): CivilDate | null {
+  const m = CIVIL_YMD.exec(String(raw || '').trim());
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
+    return null;
+  }
+  return `${m[1]}-${m[2]}-${m[3]}`;
+}
 
 export function validateLaborConditionsForm(
   input: LaborConditionsFormInput,
@@ -88,6 +110,18 @@ export function openTermSnapshot(
   return open ? termToSnapshot(open) : null;
 }
 
+/** Noop respecto al tramo que contiene la fecha efectiva. */
+export function laborChangeIsNoopAt(
+  terms: readonly ContractTermFact[],
+  next: ContractualSnapshot,
+  effectiveFrom: CivilDate,
+): boolean {
+  const t = findTermContaining(terms, effectiveFrom);
+  if (!t) return false;
+  return snapshotsEqual(termToSnapshot(t), next);
+}
+
+/** @deprecated Preferir laborChangeIsNoopAt con fecha efectiva. */
 export function laborChangeIsNoop(
   terms: readonly ContractTermFact[],
   next: ContractualSnapshot,

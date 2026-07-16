@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   applyContractualChange,
   assertContractTermInvariants,
+  coalesceIdenticalConsecutiveTerms,
   rewriteHistoricalTerm,
   snapshotFromProfileFields,
   snapshotsEqual,
@@ -40,7 +41,7 @@ describe('contract-terms-versioning', () => {
     assertContractTermInvariants(r.terms);
   });
 
-  it('cambiar jornada → cierra y abre', () => {
+  it('cambiar jornada → cierra y abre (splice sobre abierto)', () => {
     const base = [term('2026-01-01', null, 16)];
     const r = applyContractualChange(
       base,
@@ -161,23 +162,19 @@ describe('contract-terms-versioning', () => {
     assert.throws(() =>
       assertContractTermInvariants([
         term('2026-01-01', '2026-01-31', 16),
-        term('2026-02-02', null, 40), // falta 2026-02-01
+        term('2026-02-02', null, 40),
       ]),
     );
   });
 
   it('evitar crear tramos idénticos sin cambios', () => {
     const base = [term('2026-01-01', null, 40, { bagMode: true })];
-    const r = applyContractualChange(
-      base,
-      termToSnapshot(base[0]!),
-      '2026-06-01',
-    );
+    const r = applyContractualChange(base, termToSnapshot(base[0]!), '2026-06-01');
     assert.equal(r.kind, 'noop');
     assert.equal(r.terms.length, 1);
   });
 
-  it('mismo día: actualiza abierto in-place', () => {
+  it('mismo día: actualiza in-place', () => {
     const base = [term('2026-03-01', null, 16)];
     const r = applyContractualChange(
       base,
@@ -212,5 +209,172 @@ describe('contract-terms-versioning', () => {
     });
     assert.equal(snap.regime, 'manager');
     assert.equal(snap.weeklyHours, 0);
+  });
+});
+
+describe('contract-terms-versioning — splice histórico v2', () => {
+  const snap = (h: number, rate: number | null = 10): Parameters<typeof applyContractualChange>[1] => ({
+    weeklyHours: h,
+    bagMode: false,
+    regime: 'staff',
+    overtimeRatePerHour: rate,
+  });
+
+  it('splice sobre tramo cerrado (ejemplo aprobado)', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    const r = applyContractualChange(base, snap(32), '2026-05-01');
+    assert.equal(r.kind, 'spliced');
+    assert.equal(r.terms.length, 3);
+    assert.deepEqual(
+      r.terms.map((t) => ({
+        from: t.effectiveFrom,
+        to: t.effectiveTo,
+        h: t.weeklyHours,
+      })),
+      [
+        { from: '2026-02-11', to: '2026-04-30', h: 16 },
+        { from: '2026-05-01', to: '2026-07-15', h: 32 },
+        { from: '2026-07-16', to: null, h: 40 },
+      ],
+    );
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('splice sobre tramo abierto', () => {
+    const base = [term('2026-02-11', null, 16, { bagMode: false, overtimeRatePerHour: 10 })];
+    const r = applyContractualChange(base, snap(40), '2026-05-01');
+    assert.equal(r.kind, 'appended');
+    assert.equal(r.terms.length, 2);
+    assert.equal(r.terms[0]!.effectiveTo, '2026-04-30');
+    assert.equal(r.terms[1]!.weeklyHours, 40);
+    assert.equal(r.terms[1]!.effectiveTo, null);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('splice exactamente en el inicio de un tramo', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    const r = applyContractualChange(base, snap(32), '2026-07-16');
+    assert.equal(r.kind, 'updated_open');
+    assert.equal(r.terms.length, 2);
+    assert.equal(r.terms[0]!.weeklyHours, 16);
+    assert.equal(r.terms[1]!.weeklyHours, 32);
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-07-16');
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('splice último día de un tramo', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    const r = applyContractualChange(base, snap(32), '2026-07-15');
+    assert.equal(r.kind, 'spliced');
+    assert.equal(r.terms.length, 3);
+    assert.equal(r.terms[0]!.effectiveTo, '2026-07-14');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-07-15');
+    assert.equal(r.terms[1]!.effectiveTo, '2026-07-15');
+    assert.equal(r.terms[1]!.weeklyHours, 32);
+    assert.equal(r.terms[2]!.weeklyHours, 40);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('múltiples splices históricos consecutivos', () => {
+    let terms: readonly ContractTermFact[] = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    terms = applyContractualChange(terms, snap(32), '2026-05-01').terms;
+    terms = applyContractualChange(terms, snap(28), '2026-06-01').terms;
+    assert.equal(terms.length, 4);
+    assert.equal(terms[1]!.weeklyHours, 32);
+    assert.equal(terms[1]!.effectiveTo, '2026-05-31');
+    assert.equal(terms[2]!.weeklyHours, 28);
+    assert.equal(terms[2]!.effectiveFrom, '2026-06-01');
+    assert.equal(terms[2]!.effectiveTo, '2026-07-15');
+    assert.equal(terms[3]!.weeklyHours, 40);
+    assertContractTermInvariants(terms);
+  });
+
+  it('noop si snapshot igual al tramo que contiene la fecha', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    const r = applyContractualChange(base, snap(16), '2026-05-01');
+    assert.equal(r.kind, 'noop');
+    assert.equal(r.terms.length, 2);
+  });
+
+  it('mismo día con modificación distinta → updated', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    const r = applyContractualChange(base, snap(20), '2026-02-11');
+    assert.equal(r.kind, 'updated');
+    assert.equal(r.terms[0]!.weeklyHours, 20);
+    assert.equal(r.terms[0]!.effectiveTo, '2026-07-15');
+    assert.equal(r.terms[1]!.weeklyHours, 40);
+  });
+
+  it('coalescencia automática de vecinos idénticos', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    // Reescribir el abierto a 16h → coalesce con el cerrado previo
+    const r = applyContractualChange(base, snap(16), '2026-07-16');
+    assert.equal(r.kind, 'updated_open');
+    assert.equal(r.terms.length, 1);
+    assert.equal(r.terms[0]!.effectiveFrom, '2026-02-11');
+    assert.equal(r.terms[0]!.effectiveTo, null);
+    assert.equal(r.terms[0]!.weeklyHours, 16);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('coalesceIdenticalConsecutiveTerms puro', () => {
+    const merged = coalesceIdenticalConsecutiveTerms([
+      term('2026-01-01', '2026-01-31', 40, { bagMode: false }),
+      term('2026-02-01', null, 40, { bagMode: false }),
+    ]);
+    assert.equal(merged.length, 1);
+    assert.equal(merged[0]!.effectiveFrom, '2026-01-01');
+    assert.equal(merged[0]!.effectiveTo, null);
+  });
+
+  it('rechaza fecha anterior al primer contrato', () => {
+    const base = [term('2026-02-11', null, 16, { bagMode: false })];
+    assert.throws(
+      () => applyContractualChange(base, snap(40), '2026-01-01'),
+      /anterior al primer contrato/,
+    );
+  });
+
+  it('rechaza fecha fuera de cualquier tramo (hueco)', () => {
+    const base = [
+      term('2026-01-01', '2026-01-31', 16, { bagMode: false }),
+      // hueco artificial no pasa invariantes al construir a mano sin assert;
+      // simulamos “fuera” con un solo tramo cerrado y D posterior
+      term('2026-02-01', '2026-02-28', 40, { bagMode: false }),
+    ];
+    assert.throws(
+      () => applyContractualChange(base, snap(32), '2026-03-15'),
+      /no pertenece a ningún tramo/,
+    );
+  });
+
+  it('invariantes finales: sin huecos ni solapes tras splice', () => {
+    const base = [
+      term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ];
+    const r = applyContractualChange(base, snap(32), '2026-05-01');
+    assert.doesNotThrow(() => assertContractTermInvariants(r.terms));
   });
 });

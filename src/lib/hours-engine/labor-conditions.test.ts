@@ -4,7 +4,9 @@ import { applyContractualChange } from './contract-terms-versioning.ts';
 import {
   bagLabel,
   laborChangeIsNoop,
+  laborChangeIsNoopAt,
   openTermSnapshot,
+  parseCivilYmd,
   regimeLabel,
   snapshotToProfileMirror,
   validateLaborConditionsForm,
@@ -100,9 +102,16 @@ describe('labor-conditions v1', () => {
       overtimeRatePerHour: 10,
     };
     assert.equal(laborChangeIsNoop(terms, next), true);
+    assert.equal(laborChangeIsNoopAt(terms, next, '2026-07-16'), true);
     const plan = applyContractualChange(terms, next, '2026-07-16');
     assert.equal(plan.kind, 'noop');
     assert.equal(plan.terms.length, 1);
+  });
+
+  it('parseCivilYmd valida fechas', () => {
+    assert.equal(parseCivilYmd('2026-05-01'), '2026-05-01');
+    assert.equal(parseCivilYmd('2026-02-30'), null);
+    assert.equal(parseCivilYmd('nope'), null);
   });
 
   it('crear nuevo tramo al cambiar condiciones', () => {
