@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Badge uds. en esquina de foto)
+**Última actualización:** 2026-07-16 (Filtro Food Cost en /recipes)
+
+- [x] **Filtro Food Cost en Cat. (/recipes) (2026-07-16)**: Primera opción del popup «Cat.» = «Filtrar Food Cost»; subfiltro Óptimo (<30%) / Alerta (30–35%) / Crítico (≥35%). Chip activo con X. Solo managers/supervisors (misma visibilidad que el precio FC). Compatible con filtro por categoría.
+
+**Última actualización anterior:** 2026-07-16 (Badge uds. en esquina de foto)
 
 - [x] **Badge cantidad en esquina de foto (2026-07-16)**: Círculo de unidades sobre la imagen (esquina superior derecha, inset) — 100% visible, sin sombra ni recorte. Nombre sin badge.
 
