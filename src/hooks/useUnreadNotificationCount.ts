@@ -14,12 +14,25 @@ type Options = {
   withItems?: boolean
   limit?: number
   onFetchError?: (message: string) => void
+  /** Solo estos types (ej. centro reservas). */
+  includeTypes?: readonly string[]
+  /** Excluir estos types (ej. campana general sin reservas/pedido). Encadenar .neq — no .not in. */
+  excludeTypes?: readonly string[]
 }
 
 export function useUnreadNotificationCount(options: Options = {}) {
-  const { withItems = false, limit = DEFAULT_LIMIT, onFetchError } = options
+  const {
+    withItems = false,
+    limit = DEFAULT_LIMIT,
+    onFetchError,
+    includeTypes,
+    excludeTypes,
+  } = options
   const onFetchErrorRef = useRef(onFetchError)
   onFetchErrorRef.current = onFetchError
+
+  const includeKey = includeTypes?.join(',') ?? ''
+  const excludeKey = excludeTypes?.join(',') ?? ''
 
   const supabase = useMemo(() => createClient(), [])
   const [userId, setUserId] = useState<string | null>(null)
@@ -42,13 +55,21 @@ export function useUnreadNotificationCount(options: Options = {}) {
 
       setLoading(true)
       try {
-        // Incluye reservation_new + client_order_submitted (mismo centro que reservas)
         let query = supabase
           .from('user_notifications')
           .select(withItems ? '*' : 'id', { count: 'exact', head: !withItems })
           .eq('user_id', userId)
           .is('read_at', null)
           .order('created_at', { ascending: false })
+
+        if (includeTypes && includeTypes.length > 0) {
+          query = query.in('type', [...includeTypes])
+        }
+        if (excludeTypes && excludeTypes.length > 0) {
+          for (const t of excludeTypes) {
+            query = query.neq('type', t)
+          }
+        }
 
         if (withItems) {
           query = query.limit(limit)
@@ -74,7 +95,7 @@ export function useUnreadNotificationCount(options: Options = {}) {
         setLoading(false)
       }
     },
-    [supabase, userId, withItems, limit]
+    [supabase, userId, withItems, limit, includeKey, excludeKey, includeTypes, excludeTypes]
   )
 
   const refreshRef = useRef(refresh)
@@ -97,13 +118,13 @@ export function useUnreadNotificationCount(options: Options = {}) {
       return
     }
     void refreshRef.current()
-  }, [userId])
+  }, [userId, includeKey, excludeKey])
 
   useEffect(() => {
     if (!userId) return
 
     const channel = supabase
-      .channel(`user_notifications:${userId}`)
+      .channel(`user_notifications:${userId}:${includeKey}:${excludeKey}`)
       .on(
         'postgres_changes',
         {
@@ -133,7 +154,7 @@ export function useUnreadNotificationCount(options: Options = {}) {
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [supabase, userId])
+  }, [supabase, userId, includeKey, excludeKey])
 
   useEffect(() => {
     if (!userId) return

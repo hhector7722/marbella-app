@@ -192,7 +192,7 @@ export default function EventEncargoCartaClient({
       const isMedioFactor = Number.isFinite(factor) && factor > 0 && factor <= 0.55
       const isMedioRacion = parsed?.portion === 'medio' || isMedioFactor
       const alreadyMarked = /\b(1\/2|½|medio|media|mitad|half)\b/i.test(baseName)
-      const name = isMedioRacion && !alreadyMarked ? `1/2 · ${baseName}` : baseName
+      const name = isMedioRacion && !alreadyMarked ? `1/2 ${baseName}` : baseName
       lines.push({
         key,
         articuloId,

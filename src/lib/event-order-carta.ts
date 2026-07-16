@@ -94,7 +94,6 @@ export function qtyByIdToSubmitItems(qtyById: Record<string, number>): EventOrde
         product_id: eventOrderProductId(parsed.articuloId),
         quantity,
         is_half: true,
-        notes: '1/2',
       })
     } else {
       out.push({

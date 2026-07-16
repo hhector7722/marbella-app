@@ -85,6 +85,39 @@ export function orderItemsToStaffLines(items: EventOrderItem[]): StaffEncargoLin
   }))
 }
 
+/** Nota de ración ½ (no debe repetirse junto al nombre ya prefijado). */
+export function isHalfRationNote(notes: string | null | undefined): boolean {
+  return /^(1\/2|½|medio|mitad|half)$/i.test(String(notes ?? '').trim())
+}
+
+/**
+ * Etiqueta de producto en comanda: «1/2 ENT. LLOM PLANXA».
+ * Evita «1/2 · NOMBRE» + nota «1/2» (duplicado confuso).
+ */
+export function formatEncargoProductLabel(
+  name: string,
+  notes?: string | null
+): string {
+  let label = String(name ?? '').trim()
+  if (!label) return ''
+  label = label.replace(/^1\/2\s*·\s*/i, '1/2 ').replace(/^½\s*·\s*/i, '1/2 ')
+  if (isHalfRationNote(notes) && !/^(1\/2|½)\b/i.test(label)) {
+    label = `1/2 ${label}`
+  }
+  return label
+}
+
+/** Nota visible en columna secundaria (oculta marcador ½ si ya va en el nombre). */
+export function formatEncargoProductNote(
+  name: string,
+  notes?: string | null
+): string {
+  const note = String(notes ?? '').trim()
+  if (!note) return ''
+  if (isHalfRationNote(note)) return ''
+  return note
+}
+
 export function buildDayAgendaListRows(
   reservations: Array<{
     id: string

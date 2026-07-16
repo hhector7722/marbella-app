@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Fix staff: ver líneas pedido cliente)
+**Última actualización:** 2026-07-16 (Comanda: 1/2 sin duplicar)
+
+- [x] **Ración medio en comanda sin «1/2» duplicado (2026-07-16)**: Producto = `1/2 ENT. LLOM PLANXA` (cantidad aparte). Ya no se muestra `1/2` otra vez en notas. RPC `fn_event_order_apply_racion` + UI/print. Migración [`20260716230000_half_ration_name_no_dup.sql`](supabase/migrations/20260716230000_half_ration_name_no_dup.sql) **aplicada**.
+
+**Última actualización anterior:** 2026-07-16 (Calendario = centro avisos reservas/pedido)
+
+- [x] **Icono calendario = avisos reservas + pedido (2026-07-16)**: `ReservationsBell` muestra `reservation_new` y `client_order_submitted` (badge + panel). La campana general los excluye. Destinatarios sin cambio (alba/hernan/pere/hector).
+
+**Última actualización anterior:** 2026-07-16 (Fix staff: ver líneas pedido cliente)
 
 - [x] **Fix ver pedido cliente en staff (2026-07-16)**: Al abrir el modal de encargo (o deep-link `?eventId=`), se refetch de `events` + `event_orders` — ya no se muestra el shell vacío en caché.
 

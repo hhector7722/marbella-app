@@ -32,11 +32,19 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
   const contactValue = meta.contactPhone?.trim() ? escapeHtml(meta.contactPhone.trim()) : '&nbsp;'
   const rows = items
     .map((it) => {
-      const note = it.notes?.trim()
-      const noteCell = note ? escapeHtml(note) : '&nbsp;'
+      const note = it.notes?.trim() ?? ''
+      const isHalfNote = /^(1\/2|½|medio|mitad|half)$/i.test(note)
+      let productLabel = String(it.name ?? '').trim()
+      productLabel = productLabel
+        .replace(/^1\/2\s*·\s*/i, '1/2 ')
+        .replace(/^½\s*·\s*/i, '1/2 ')
+      if (isHalfNote && !/^(1\/2|½)\b/i.test(productLabel)) {
+        productLabel = `1/2 ${productLabel}`
+      }
+      const noteCell = note && !isHalfNote ? escapeHtml(note) : '&nbsp;'
       const qty = it.quantity > 0 ? String(it.quantity) : ''
       return `<tr>
-        <td class="col-product">${escapeHtml(it.name)}</td>
+        <td class="col-product">${escapeHtml(productLabel)}</td>
         <td class="col-note">${noteCell}</td>
         <td class="col-qty">${qty}</td>
       </tr>`

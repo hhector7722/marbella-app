@@ -16,6 +16,10 @@ import {
 } from '@/lib/client-pedido-link'
 import { isClientOrderSubmitted } from '@/lib/reservas-encargos-calendar'
 import {
+  formatEncargoProductLabel,
+  formatEncargoProductNote,
+} from '@/lib/encargo-staff-helpers'
+import {
   buildEncargoPrintHtml,
   printEncargoHtml,
 } from '@/lib/reservas/print-encargo-document'
@@ -243,11 +247,12 @@ export function EncargoOrderViewModal({
                 </thead>
                 <tbody>
                   {items.map((it, index) => {
-                    const note = it.notes?.trim()
+                    const productLabel = formatEncargoProductLabel(it.name, it.notes)
+                    const note = formatEncargoProductNote(it.name, it.notes)
                     return (
                       <tr key={`${it.product_id}-${index}`} className="border-t border-zinc-100">
                         <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle whitespace-nowrap">
-                          {it.name}
+                          {productLabel}
                         </td>
                         <td className="px-3 py-2.5 text-left align-middle text-[14px] font-semibold text-zinc-600 lowercase whitespace-nowrap">
                           {note || ' '}

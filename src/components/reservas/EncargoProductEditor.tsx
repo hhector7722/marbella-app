@@ -22,6 +22,10 @@ import {
 } from '@/app/dashboard/eventos/actions'
 import { eventOrderProductId } from '@/lib/event-order-carta'
 import type { StaffEncargoLineItem } from '@/lib/encargo-staff-helpers'
+import {
+  formatEncargoProductLabel,
+  formatEncargoProductNote,
+} from '@/lib/encargo-staff-helpers'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/client'
 
@@ -430,11 +434,14 @@ function EncargoCartModal({
           ) : (
             <div className="divide-y divide-zinc-100">
               {lines.map((line) => {
-                const note = line.notes.trim()
+                const productLabel = formatEncargoProductLabel(line.name ?? line.product_id, line.notes)
+                const note = formatEncargoProductNote(line.name ?? '', line.notes)
                 return (
                   <div key={line.lineKey} className="py-1.5 px-1 flex items-center gap-1.5 min-h-10">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-bold text-zinc-900 truncate leading-tight">{line.name}</p>
+                      <p className="text-[11px] font-bold text-zinc-900 truncate leading-tight">
+                        {productLabel}
+                      </p>
                       {note ? (
                         <p className="text-[9px] font-medium text-zinc-500 lowercase truncate">{note}</p>
                       ) : null}

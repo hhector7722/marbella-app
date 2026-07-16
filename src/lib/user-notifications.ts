@@ -21,6 +21,21 @@ export type UserNotificationRow = {
   created_at: string
 }
 
+/** Tipos del icono calendario (ReservationsBell): reservas + pedidos cliente. */
+export const RESERVATION_CENTER_NOTIFICATION_TYPES = [
+  'reservation_new',
+  'client_order_submitted',
+] as const
+
+export type ReservationCenterNotificationType =
+  (typeof RESERVATION_CENTER_NOTIFICATION_TYPES)[number]
+
+export function isReservationCenterNotificationType(type: string): boolean {
+  return (RESERVATION_CENTER_NOTIFICATION_TYPES as readonly string[]).includes(
+    type
+  )
+}
+
 /** Iconos discretos sobre la tarjeta — sin contenedor. */
 const ICON_PETROL = 'text-[#2F5D6A]/45'
 const ICON_ALERT = 'text-rose-500/70'
