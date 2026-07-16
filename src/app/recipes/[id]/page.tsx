@@ -36,6 +36,11 @@ import {
     menuCategoryFromUrlParam,
     sortMenuCategoriesForRecipes,
 } from '@/lib/recipe-menu-categories';
+import {
+    getRecipeFoodCostStatus,
+    parseFoodCostFilterParam,
+    RECIPE_FOOD_COST_SELECT,
+} from '@/lib/recipe-food-cost';
 
 interface ViewState {
     location: 'pvp' | 'pavello';
@@ -118,12 +123,15 @@ function RecipeDetailContent() {
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
     const catFilter = searchParams.get('cat');
+    const foodCostFilter = parseFoodCostFilterParam(searchParams.get('fc'));
 
-    /** Lista: misma `cat` / `view` que en la ficha; sin params si el detalle no traía filtro (entrada directa u otra ruta). */
+    /** Lista: misma `cat` / `fc` / `view` que en la ficha; sin params si el detalle no traía filtro (entrada directa u otra ruta). */
     const recipesListHref = useMemo(() => {
         const qs = new URLSearchParams();
         const cat = searchParams.get('cat');
+        const fc = searchParams.get('fc');
         if (cat) qs.set('cat', cat);
+        if (fc) qs.set('fc', fc);
         if (searchParams.get('view') === 'staff') qs.set('view', 'staff');
         const s = qs.toString();
         return s ? `/recipes?${s}` : '/recipes';
@@ -214,7 +222,11 @@ function RecipeDetailContent() {
     };
 
     const fetchAllRecipes = async () => {
-        let q = supabase.from('recipes').select('id, name, category, menu_category_id').order('name');
+        const needsFc = !!foodCostFilter;
+        let q = supabase
+            .from('recipes')
+            .select(needsFc ? RECIPE_FOOD_COST_SELECT : 'id, name, category, menu_category_id')
+            .order('name');
         if (catFilter && catFilter !== '__none__') {
             const row = menuCategoryRows.length ? menuCategoryFromUrlParam(catFilter, menuCategoryRows) : null;
             if (row) q = q.eq('menu_category_id', row.id);
@@ -224,8 +236,11 @@ function RecipeDetailContent() {
         }
         const { data } = await q;
         if (data) {
-            setAllRecipes(data);
-            setCurrentRecipeIndex(data.findIndex((r: any) => r.id === recipeId));
+            const list = foodCostFilter
+                ? data.filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter)
+                : data;
+            setAllRecipes(list);
+            setCurrentRecipeIndex(list.findIndex((r: { id: string }) => r.id === recipeId));
         }
     };
 
@@ -242,7 +257,7 @@ function RecipeDetailContent() {
             }
         };
         checkRole();
-    }, [recipeId, catFilter, menuCategoryRows]);
+    }, [recipeId, catFilter, foodCostFilter, menuCategoryRows]);
 
     useEffect(() => {
         setSimulatorExpanded(false);
@@ -715,7 +730,7 @@ function RecipeDetailContent() {
     const handleDelete = async () => {
         if (!confirm('¿Eliminar?')) return;
         await supabase.from('recipes').delete().eq('id', recipeId);
-        router.push('/recipes');
+        router.push(recipesListHref);
     };
 
     const closeAddIngredientModal = () => {

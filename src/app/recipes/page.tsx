@@ -18,21 +18,15 @@ import {
     menuCategoryToUrlParam,
     sortMenuCategoriesForRecipes,
 } from '@/lib/recipe-menu-categories';
-import { recipeLineCost, resolveIngredientRecipeUnit, type IngredientPackBridgeContext } from '@/lib/recipe-cost';
+import { resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
+import {
+    FOOD_COST_FILTER_OPTIONS,
+    type FoodCostStatus,
+    getRecipeFoodCostStatus,
+    parseFoodCostFilterParam,
+    RECIPE_FOOD_COST_SELECT,
+} from '@/lib/recipe-food-cost';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
-
-/** Estados de food cost alineados con getHealthIndicator en ficha de receta. */
-type FoodCostStatus = 'optimal' | 'alert' | 'critical';
-
-const FOOD_COST_FILTER_OPTIONS: Array<{
-    status: FoodCostStatus;
-    label: string;
-    colorClass: string;
-}> = [
-    { status: 'optimal', label: 'Óptimo', colorClass: 'text-green-600' },
-    { status: 'alert', label: 'Alerta', colorClass: 'text-amber-500' },
-    { status: 'critical', label: 'Crítico', colorClass: 'text-red-600' },
-];
 
 interface Recipe {
     id: string;
@@ -49,29 +43,6 @@ interface Recipe {
     }[];
 }
 
-function getRecipeFoodCostStatus(recipe: Recipe): FoodCostStatus | null {
-    if (!recipe.recipe_ingredients || !recipe.sale_price) return null;
-    const totalCost = recipe.recipe_ingredients.reduce((sum, item) => {
-        const ingredient = Array.isArray(item.ingredients) ? item.ingredients[0] : item.ingredients;
-        const price = ingredient?.current_price ?? 0;
-        const purchaseUnit = ingredient?.purchase_unit ?? 'kg';
-        const recipeUnit = item.unit ?? 'kg';
-        const pack: IngredientPackBridgeContext | undefined = ingredient
-            ? {
-                  supplier_pricing_mode: (ingredient as { supplier_pricing_mode?: string }).supplier_pricing_mode,
-                  pack_unit_size_qty: (ingredient as { pack_unit_size_qty?: number | null }).pack_unit_size_qty,
-                  pack_unit_size_unit: (ingredient as { pack_unit_size_unit?: string | null }).pack_unit_size_unit,
-              }
-            : undefined;
-        return sum + recipeLineCost(item.quantity_gross, recipeUnit, purchaseUnit, price, pack);
-    }, 0);
-    const basePrice = recipe.sale_price / 1.10;
-    const foodCost = basePrice > 0 ? (totalCost / basePrice) * 100 : 0;
-    if (foodCost < 30) return 'optimal';
-    if (foodCost < 35) return 'alert';
-    return 'critical';
-}
-
 function RecipesContent() {
     const supabase = createClient();
     const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -79,7 +50,6 @@ function RecipesContent() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showCategoryPopup, setShowCategoryPopup] = useState(false);
     const [showFoodCostSubfilter, setShowFoodCostSubfilter] = useState(false);
-    const [foodCostFilter, setFoodCostFilter] = useState<FoodCostStatus | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRecipe, setNewRecipe] = useState<any>({ name: '', menu_category_id: '', category: '', sale_price: 0, ingredients: [] });
     const [isCreating, setIsCreating] = useState(false);
@@ -104,6 +74,7 @@ function RecipesContent() {
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
     const categoryFromUrl = searchParams.get('cat');
+    const foodCostFilter = parseFoodCostFilterParam(searchParams.get('fc'));
 
     const buildRecipesHref = (id: string) => {
         const qs = new URLSearchParams(searchParams.toString());
@@ -122,6 +93,14 @@ function RecipesContent() {
         const qs = new URLSearchParams(searchParams.toString());
         if (cat) qs.set('cat', cat);
         else qs.delete('cat');
+        const next = qs.toString();
+        router.replace(next ? `/recipes?${next}` : '/recipes');
+    };
+
+    const setFoodCostAndUrl = (status: FoodCostStatus | null) => {
+        const qs = new URLSearchParams(searchParams.toString());
+        if (status) qs.set('fc', status);
+        else qs.delete('fc');
         const next = qs.toString();
         router.replace(next ? `/recipes?${next}` : '/recipes');
     };
@@ -230,7 +209,11 @@ function RecipesContent() {
     useEffect(() => {
         if (!isStaffView || !selectedRecipeId) return;
         void (async () => {
-            let q = supabase.from('recipes').select('id').order('name');
+            const needsFc = !!foodCostFilter;
+            let q = supabase
+                .from('recipes')
+                .select(needsFc ? RECIPE_FOOD_COST_SELECT : 'id')
+                .order('name');
             const cat = categoryFromUrl;
             if (cat && cat !== '__none__') {
                 const row = menuCategoryRows.length ? menuCategoryFromUrlParam(cat, menuCategoryRows) : null;
@@ -240,10 +223,16 @@ function RecipesContent() {
                 q = q.is('menu_category_id', null);
             }
             const { data, error } = await q;
-            if (!error && data) setStaffNavRecipes(data);
-            else setStaffNavRecipes([]);
+            if (error || !data) {
+                setStaffNavRecipes([]);
+                return;
+            }
+            const list = foodCostFilter
+                ? data.filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter)
+                : data;
+            setStaffNavRecipes(list.map((r) => ({ id: r.id })));
         })();
-    }, [isStaffView, selectedRecipeId, categoryFromUrl, menuCategoryRows, supabase]);
+    }, [isStaffView, selectedRecipeId, categoryFromUrl, foodCostFilter, menuCategoryRows, supabase]);
 
     const staffNavIndex = staffNavRecipes.findIndex((r) => r.id === selectedRecipeId);
 
@@ -380,7 +369,7 @@ function RecipesContent() {
     };
 
     const applyFoodCostFilter = (status: FoodCostStatus) => {
-        setFoodCostFilter(status);
+        setFoodCostAndUrl(status);
         closeCategoryPopup();
     };
 
@@ -422,7 +411,7 @@ function RecipesContent() {
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => setFoodCostFilter(null)}
+                                        onClick={() => setFoodCostAndUrl(null)}
                                         className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"
                                         aria-label="Quitar filtro food cost"
                                     >

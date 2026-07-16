@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Plantilla ↔ perfil manager)
+**Última actualización:** 2026-07-16 (FC filter persistido en navegación recetas)
+
+- [x] **Filtro Food Cost en URL + nav detalle (2026-07-16)**: `fc=optimal|alert|critical` en query (como `cat`). Lista ↔ ficha y flechas prev/next solo entre recetas que cumplen el filtro. Helper compartido [`recipe-food-cost.ts`](src/lib/recipe-food-cost.ts).
+
+**Última actualización anterior:** 2026-07-16 (Plantilla ↔ perfil manager)
 
 - [x] **Navegación plantilla desde /profile (manager) (2026-07-16)**: En `/profile`, managers ven flecha atrás (sin marco) que abre `StaffSelectionModal`; al elegir trabajador → `/profile?id=`. Si el modal se abre desde perfil, su flecha vuelve al home del rol (`getHomeHrefForUser`). Desde dashboard/otras pantallas el modal no muestra esa flecha. Navbar no duplica la flecha en `/profile` para managers.
 
