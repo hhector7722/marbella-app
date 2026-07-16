@@ -379,7 +379,7 @@ export function CartaStaffMenuProductCard({
         usageId="event-carta-racion-picker"
         usageLabel="Elegir ración pedido"
         className="max-w-sm"
-        zIndexClass="z-[220]"
+        zIndexClass="z-[320]"
       >
         <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>
         <div className="mt-4 grid grid-cols-2 gap-3">
