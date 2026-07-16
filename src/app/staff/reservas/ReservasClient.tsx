@@ -634,12 +634,72 @@ export default function ReservasClient() {
     [userId, supabase, refreshUnreadNotifications]
   )
 
+  /** Refetch evento + pedidos (evita mostrar shell vacío tras envío cliente). */
+  const refreshEncargoOrders = useCallback(
+    async (eventId: string): Promise<EncargoRow | null> => {
+      const [{ data: eventRow, error: eventErr }, { data: orders, error: ordersErr }] =
+        await Promise.all([
+          supabase
+            .from('events')
+            .select(
+              'id, slug, name, event_date, event_time, guest_count, reservation_id, is_active, client_edit_enabled, client_edit_token, client_order_submitted_at'
+            )
+            .eq('id', eventId)
+            .maybeSingle(),
+          supabase
+            .from('event_orders')
+            .select('id, event_id, responsible_name, items, status, created_at')
+            .eq('event_id', eventId)
+            .order('created_at', { ascending: false }),
+        ])
+
+      if (eventErr) throw eventErr
+      if (ordersErr) throw ordersErr
+      if (!eventRow) return null
+
+      const row = eventRow as EncargoRow
+      setAllEncargos((prev) => {
+        const idx = prev.findIndex((e) => e.id === row.id)
+        if (idx < 0) return [...prev, row]
+        const next = prev.slice()
+        next[idx] = row
+        return next
+      })
+      setEncargosByDate((prev) => {
+        const others = Object.values(prev)
+          .flat()
+          .filter((e) => e.id !== row.id)
+        return groupEncargosByDate([...others, row])
+      })
+      setOrdersByEventId((prev) => ({
+        ...prev,
+        [eventId]: (orders ?? []) as EncargoOrderRow[],
+      }))
+      return row
+    },
+    [supabase]
+  )
+
   const openViewEncargo = useCallback(
     (eventId: string) => {
-      setViewEncargoId(eventId)
-      void markClientOrderNotificationSeen(eventId)
+      void (async () => {
+        try {
+          const row = await refreshEncargoOrders(eventId)
+          if (!row) {
+            toast.error('No se encontró el pedido')
+            return
+          }
+          setViewEncargoId(eventId)
+          void markClientOrderNotificationSeen(eventId)
+        } catch (e) {
+          const msg =
+            (e as { message?: string })?.message ||
+            'No se pudo actualizar el pedido'
+          toast.error(msg)
+        }
+      })()
     },
-    [markClientOrderNotificationSeen]
+    [markClientOrderNotificationSeen, refreshEncargoOrders]
   )
 
   const fetchMonthData = useCallback(async () => {
@@ -877,29 +937,31 @@ export default function ReservasClient() {
     if (loading) return
 
     void (async () => {
-      const { data, error } = await supabase
-        .from('events')
-        .select(
-          'id, slug, name, event_date, event_time, guest_count, reservation_id, is_active, client_edit_enabled, client_edit_token, client_order_submitted_at'
-        )
-        .eq('id', eventId)
-        .maybeSingle()
-
-      if (error || !data) {
+      try {
+        const row = await refreshEncargoOrders(eventId)
+        if (!row) {
+          toast.error('No se encontró el pedido de la notificación')
+          return
+        }
+        deepLinkHandledRef.current = `event:${eventId}`
+        const [y, m] = String(row.event_date).slice(0, 10).split('-').map(Number)
+        if (!Number.isNaN(y) && !Number.isNaN(m)) {
+          setViewMonth(new Date(y, m - 1, 1))
+        }
+        setViewEncargoId(eventId)
+        void markClientOrderNotificationSeen(eventId)
+      } catch {
         toast.error('No se encontró el pedido de la notificación')
-        return
       }
-
-      deepLinkHandledRef.current = `event:${eventId}`
-      const row = data as EncargoRow
-      const [y, m] = String(row.event_date).slice(0, 10).split('-').map(Number)
-      if (!Number.isNaN(y) && !Number.isNaN(m)) {
-        setViewMonth(new Date(y, m - 1, 1))
-      }
-      setAllEncargos((prev) => (prev.some((e) => e.id === row.id) ? prev : [...prev, row]))
-      openViewEncargo(eventId)
     })()
-  }, [searchParams, allEncargos, loading, supabase, openViewEncargo])
+  }, [
+    searchParams,
+    allEncargos,
+    loading,
+    openViewEncargo,
+    refreshEncargoOrders,
+    markClientOrderNotificationSeen,
+  ])
 
   useEffect(() => {
     function shouldRefetch(reservationDate: string | null | undefined) {

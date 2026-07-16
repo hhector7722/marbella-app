@@ -42,12 +42,12 @@ export function useUnreadNotificationCount(options: Options = {}) {
 
       setLoading(true)
       try {
+        // Incluye reservation_new + client_order_submitted (mismo centro que reservas)
         let query = supabase
           .from('user_notifications')
           .select(withItems ? '*' : 'id', { count: 'exact', head: !withItems })
           .eq('user_id', userId)
           .is('read_at', null)
-          .neq('type', 'reservation_new')
           .order('created_at', { ascending: false })
 
         if (withItems) {

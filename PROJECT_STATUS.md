@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Pedido carta = fotocopia + picker ración)
+**Última actualización:** 2026-07-16 (Fix staff: ver líneas pedido cliente)
+
+- [x] **Fix ver pedido cliente en staff (2026-07-16)**: Al abrir el modal de encargo (o deep-link `?eventId=`), se refetch de `events` + `event_orders` — ya no se muestra el shell vacío en caché.
+
+**Última actualización anterior:** 2026-07-16 (Pedido cliente → campana reservas + push)
+
+- [x] **Pedido cliente: campana + push como reservas (2026-07-16)**: Al «Enviar pedido», mismos destinatarios que reservas (alba/hernan/pere/hector). In-app en campana (`client_order_submitted`) y **push** vía pg_net → `/api/webhooks/reservations-push`. También `reservation_new` vuelve a mostrarse en la campana (mismo centro). Migración [`20260716210000_client_order_push_and_notify.sql`](supabase/migrations/20260716210000_client_order_push_and_notify.sql) **aplicada**.
+
+**Última actualización anterior:** 2026-07-16 (Pedido carta = fotocopia + picker ración)
 
 - [x] **Pedido carta fotocopia + picker Entero/Medio (2026-07-16)**: Misma UI de precios que la carta (`CartaDualRacionPrices`). Tap en producto → suma al carrito (no lightbox). Si hay precio medio (bocadillo/ración TPV), tap abre modal Entero/Medio.
 

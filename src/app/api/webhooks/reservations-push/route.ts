@@ -9,8 +9,81 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+/** Mismos destinatarios que fn_notify_reservation_insert / save_client_event_order_by_token */
+const ALLOWED_FIRST_NAMES = ['alba', 'hector', 'pere', 'hernan'] as const;
+
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
+
+function formatDateEs(isoDate: string | null | undefined): string {
+    if (!isoDate) return '';
+    const [y, m, d] = isoDate.split('-');
+    if (!y || !m || !d) return isoDate;
+    return `${d}/${m}/${y}`;
+}
+
+function formatTimeHm(time: string | null | undefined): string {
+    if (!time) return '';
+    return time.substring(0, 5);
+}
+
+type PushPayload = {
+    title: string;
+    body: string;
+    url: string;
+};
+
+function buildPushFromBody(body: {
+    table?: string;
+    kind?: string;
+    record?: Record<string, unknown>;
+}): PushPayload | null {
+    const record = body.record;
+    if (!record || !record.id) return null;
+
+    const isClientOrder =
+        body.kind === 'client_order_submitted' || body.table === 'events';
+
+    if (isClientOrder) {
+        const name = String(record.customer_name ?? 'Cliente');
+        const dateStr = formatDateEs(
+            typeof record.event_date === 'string' ? record.event_date : undefined
+        );
+        const timeStr = formatTimeHm(
+            typeof record.event_time === 'string' ? record.event_time : undefined
+        );
+        const kindLine =
+            typeof record.kind_line === 'string' && record.kind_line
+                ? record.kind_line
+                : 'Pedido';
+        const when = [dateStr, timeStr].filter(Boolean).join(' ');
+        return {
+            title: '🛒 Nuevo pedido recibido',
+            body: [name, when, kindLine].filter(Boolean).join(' · '),
+            url: `/staff/reservas?eventId=${record.id}`,
+        };
+    }
+
+    // Default: nueva reserva
+    const dateStr = formatDateEs(
+        typeof record.reservation_date === 'string'
+            ? record.reservation_date
+            : undefined
+    );
+    const timeStr = formatTimeHm(
+        typeof record.reservation_time === 'string'
+            ? record.reservation_time
+            : undefined
+    );
+    const pax = record.pax != null ? `${record.pax} pax` : '';
+    return {
+        title: '📅 Nueva reserva',
+        body: [record.customer_name, pax, `${dateStr} ${timeStr}`.trim()]
+            .filter(Boolean)
+            .join(' · '),
+        url: `/staff/reservas?id=${record.id}`,
+    };
 }
 
 export async function POST(req: Request) {
@@ -26,9 +99,9 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { record } = body;
+        const push = buildPushFromBody(body);
 
-        if (!record || !record.id) {
+        if (!push) {
             return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
@@ -38,22 +111,29 @@ export async function POST(req: Request) {
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-        // Obtener correos permitidos (Alba, Hector, Pere, Hernan)
         const { data: managers, error: managerError } = await supabase
             .from('profiles')
             .select('id, first_name');
-            
+
         if (managerError || !managers?.length) {
             return NextResponse.json({ error: 'No managers found' }, { status: 404 });
         }
 
-        const allowedNames = ['alba', 'hector', 'pere', 'hernan'];
         const managerIds = managers
-            .filter(m => m.first_name && allowedNames.includes(m.first_name.trim().toLowerCase()))
-            .map(m => m.id);
+            .filter(
+                (m) =>
+                    m.first_name &&
+                    ALLOWED_FIRST_NAMES.includes(
+                        m.first_name.trim().toLowerCase() as (typeof ALLOWED_FIRST_NAMES)[number]
+                    )
+            )
+            .map((m) => m.id);
 
         if (managerIds.length === 0) {
-            return NextResponse.json({ success: true, message: 'No allowed managers found by name' });
+            return NextResponse.json({
+                success: true,
+                message: 'No allowed managers found by name',
+            });
         }
 
         const { data: subscriptions, error: subError } = await supabase
@@ -66,37 +146,25 @@ export async function POST(req: Request) {
         }
 
         if (!subscriptions || subscriptions.length === 0) {
-            return NextResponse.json({ success: true, message: 'No active push subscriptions' });
+            return NextResponse.json({
+                success: true,
+                message: 'No active push subscriptions',
+            });
         }
 
-        // Construir la fecha legible (ej. 14/06/2026)
-        let dateStr = record.reservation_date;
-        if (dateStr) {
-            const [y, m, d] = dateStr.split('-');
-            dateStr = `${d}/${m}/${y}`;
-        }
-        
-        // Construir la hora legible (ej. 20:30)
-        let timeStr = record.reservation_time;
-        if (timeStr) {
-            timeStr = timeStr.substring(0, 5);
-        }
-
-        const payload = JSON.stringify({
-            title: '📅 Nueva reserva',
-            body: `${record.customer_name} · ${record.pax} pax · ${dateStr} ${timeStr}`,
-            url: `/staff/reservas?id=${record.id}`,
-        });
+        const payload = JSON.stringify(push);
 
         const results = await Promise.allSettled(
-            subscriptions.map(sub => webpush.sendNotification(sub.subscription as any, payload))
+            subscriptions.map((sub) =>
+                webpush.sendNotification(sub.subscription as webpush.PushSubscription, payload)
+            )
         );
 
-        // Limpiar suscripciones caducadas
-        const failures = results.filter(r => r.status === 'rejected');
-        const expiredSubIds = failures
-            .map((f: any, idx) => {
-                if (f.reason?.statusCode === 404 || f.reason?.statusCode === 410) {
+        const expiredSubIds = results
+            .map((r, idx) => {
+                if (r.status !== 'rejected') return null;
+                const statusCode = (r.reason as { statusCode?: number })?.statusCode;
+                if (statusCode === 404 || statusCode === 410) {
                     return subscriptions[idx].user_id;
                 }
                 return null;
@@ -107,14 +175,13 @@ export async function POST(req: Request) {
             await supabase
                 .from('push_subscriptions')
                 .delete()
-                .in('user_id', expiredSubIds);
+                .in('user_id', expiredSubIds as string[]);
         }
 
-        const sentCount = results.filter(r => r.status === 'fulfilled').length;
-        
-        return NextResponse.json({ success: true, sentCount });
+        const sentCount = results.filter((r) => r.status === 'fulfilled').length;
 
-    } catch (err: any) {
+        return NextResponse.json({ success: true, sentCount });
+    } catch (err: unknown) {
         console.error('Error procesando webhook reservations-push:', err);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

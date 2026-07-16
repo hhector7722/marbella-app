@@ -26,6 +26,15 @@ export type DayAgendaEncargoRow = {
 
 export type DayAgendaListRow = DayAgendaReservationRow | DayAgendaEncargoRow
 
+function orderItemsCount(items: EncargoOrderRow['items']): number {
+  return Array.isArray(items) ? items.length : 0
+}
+
+/**
+ * Pedido “principal” del encargo (comanda staff).
+ * Alineado con save_client_event_order_by_token: confirmed → pending más antiguo;
+ * si hay varios pending, prioriza el que ya tiene líneas (cliente rellenó el shell).
+ */
 export function primaryOrderForEncargo(
   eventId: string,
   ordersByEventId: Record<string, EncargoOrderRow[]>
@@ -34,8 +43,12 @@ export function primaryOrderForEncargo(
   if (list.length === 0) return null
   const confirmed = list.find((o) => o.status === 'confirmed')
   if (confirmed) return confirmed
-  const pending = list.find((o) => o.status === 'pending')
-  return pending ?? list[0]
+  const pending = list
+    .filter((o) => o.status === 'pending')
+    .slice()
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+  const withItems = pending.find((o) => orderItemsCount(o.items) > 0)
+  return withItems ?? pending[0] ?? list[0]
 }
 
 export function parseOrderItems(raw: unknown): EventOrderItem[] {
