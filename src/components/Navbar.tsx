@@ -10,6 +10,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
+import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -56,10 +57,7 @@ export default function Navbar() {
     }, [supabase]);
 
     if (pathname === '/login') return null;
-    if (pathname === '/carta') return null;
-    if (pathname === '/staff/carta') return null;
-    if (pathname === '/dashboard/carta') return null;
-    if (pathname.startsWith('/eventos')) return null;
+    if (isFullscreenCartaPath(pathname)) return null;
     if (pathname.startsWith('/reporte')) return null;
 
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';

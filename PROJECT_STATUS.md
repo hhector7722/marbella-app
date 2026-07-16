@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Aviso pedido cliente enviado)
+**Última actualización:** 2026-07-16 (Pedido cliente sin chrome app)
+
+- [x] **Pedido `/pedido/[token]` sin Navbar ni barra inferior (2026-07-16)**: Ruta añadida a `isFullscreenCartaPath` (como `/eventos` y `/carta`). El cliente solo ve la bienvenida/carta, no el shell interno de la app.
+
+**Última actualización anterior:** 2026-07-16 (Aviso pedido cliente enviado)
 
 - [x] **Aviso visual pedido cliente (2026-07-16)**: Al «Enviar pedido», RPC inserta `user_notifications` (`client_order_submitted`) para alba/hernan/pere/hector — aparece en campana. Deep link `/staff/reservas?eventId=`. Badge rojo discreto sobre el punto verde/naranja/azul del calendario mientras la notificación esté sin leer; se quita al abrir el pedido. Sin tablas nuevas ni cambio de colores/leyenda. Migración [`20260716180000_notify_client_order_submitted.sql`](supabase/migrations/20260716180000_notify_client_order_submitted.sql) **aplicada**.
 

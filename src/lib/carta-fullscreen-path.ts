@@ -5,6 +5,8 @@ export function isFullscreenCartaPath(pathname: string): boolean {
   if (pathname === '/dashboard/carta') return true
   if (pathname === '/eventos') return true
   if (pathname.startsWith('/eventos/')) return true
+  if (pathname === '/pedido') return true
+  if (pathname.startsWith('/pedido/')) return true
   return false
 }
 
