@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Editar tramos históricos contractuales)
+**Última actualización:** 2026-07-16 (Fix edit pedido: sin updated_at)
+
+- [x] **Fix editar pedido staff (2026-07-16)**: `update_staff_event_order` ya no escribe `updated_at` en `event_orders` (columna inexistente). Migración [`20260716250000_fix_update_staff_event_order_no_updated_at.sql`](supabase/migrations/20260716250000_fix_update_staff_event_order_no_updated_at.sql) **aplicada**.
+
+**Última actualización anterior:** 2026-07-16 (Editar tramos históricos contractuales)
 
 - [x] **Editar histórico contractual desde la lista (2026-07-16)**: En `/profile/contrato`, pulsar un tramo del histórico abre corrección de horas/régimen/bolsa/tarifa (periodo solo lectura). Reescritura in-place vía planificador (`D = inicio del tramo`) + coalescencia. Sin editar `effective_from`/`effective_to` a mano.
 
