@@ -370,7 +370,7 @@ export default function ActividadesPage() {
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5">
+                        <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5 month-cal-chips">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
                             return (

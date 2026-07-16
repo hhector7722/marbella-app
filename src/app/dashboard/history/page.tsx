@@ -1688,14 +1688,17 @@ export default function HistoryPage() {
                     </div>
 
                     <div className={cn('bg-white', viewMode === 'calendar' && 'month-cal-body')}>
-                        <div className="pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0">
+                        <div className={cn(
+                            'pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0',
+                            viewMode === 'calendar' && 'month-cal-kpi lg:pt-2 lg:pb-0'
+                        )}>
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center gap-1.5 leading-none">
-                                    <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums">
+                                    <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
-                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
+                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
                                     VENTA NETA
                                 </span>
                             </div>
@@ -1710,7 +1713,7 @@ export default function HistoryPage() {
                                         const triangleSymbol = isNeutral ? '' : (popPercent > 5 ? '▲' : '▼');
                                         return (
                                             <span className={cn(
-                                                "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums flex items-center gap-1",
+                                                "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value",
                                                 popScale.color
                                             )}>
                                                 {!isNeutral && <span className="text-[9px] sm:text-[10px] md:text-xs leading-none">{triangleSymbol}</span>}
@@ -1719,25 +1722,31 @@ export default function HistoryPage() {
                                         );
                                     })()}
                                 </div>
-                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
+                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
                                     RENDIMIENTO
                                 </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none">
+                                <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                     {formatValue(summary.totalGross, 'tpv_sales')}
                                 </span>
-                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5">
+                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
                                     VENTAS
                                 </span>
                             </div>
                         </div>
 
+                        {/* En calendario escritorio el gráfico sobra: el mes ya muestra cada día */}
                         {!loading && closings.length > 0 && (
-                            <DailySalesChart closings={closings} historicalClosingsMap={historicalClosingsMap} />
+                            <div className={cn(viewMode === 'calendar' && 'lg:hidden shrink-0')}>
+                                <DailySalesChart closings={closings} historicalClosingsMap={historicalClosingsMap} />
+                            </div>
                         )}
 
-                        <div className="pb-1 md:pb-2 pt-0.5 px-0">
+                        <div className={cn(
+                            'pb-1 md:pb-2 pt-0.5 px-0',
+                            viewMode === 'calendar' && 'flex-1 min-h-0 flex flex-col'
+                        )}>
                             {viewMode === 'table' ? (
                                 <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 shrink-0 min-w-0">
                                     <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print-table-cierres">
@@ -1824,15 +1833,15 @@ export default function HistoryPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1 min-h-0 flex flex-col">
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 flex-1 min-h-0">
-                                                <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap">
+                                            <div className="py-1 bg-zinc-50/50 flex flex-col gap-1 flex-1 min-h-0">
+                                                <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap flex-1 min-h-0">
                                                 <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
                                                     {CALENDAR_WEEKDAYS.map((d, index) => (
                                                         <div

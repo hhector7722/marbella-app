@@ -102,8 +102,8 @@
 
   /**
    * Calendario mensual a 1 viewport en escritorio (≥1024px).
-   * En smartphone/tablet estas clases no cambian nada (media query).
-   * Chrome: header (3.5rem) + bottom nav (~5rem) + safe-areas.
+   * Filas de igual altura (minmax(0,1fr) + min-height:0 en celdas).
+   * Smartphone/tablet: sin cambios (media query).
    */
   @media (min-width: 1024px) {
     .month-cal-shell {
@@ -119,8 +119,8 @@
       height: calc(100dvh - var(--marbella-cal-header) - var(--marbella-cal-bottom));
       max-height: calc(100dvh - var(--marbella-cal-header) - var(--marbella-cal-bottom));
       min-height: 0 !important;
-      padding: 0.5rem 1rem !important;
-      padding-bottom: 0.5rem !important;
+      padding: 0.25rem 0.75rem !important;
+      padding-bottom: 0.35rem !important;
       overflow: hidden;
     }
 
@@ -145,6 +145,18 @@
       min-height: 0 !important;
       overflow: hidden !important;
       flex-shrink: 1 !important;
+      padding-top: 0.35rem !important;
+      padding-bottom: 0.25rem !important;
+      gap: 0.15rem !important;
+    }
+
+    .month-cal-kpi {
+      padding-top: 0.4rem !important;
+      padding-bottom: 0.15rem !important;
+    }
+
+    .month-cal-kpi .month-cal-kpi-value {
+      font-size: 0.7rem !important;
     }
 
     .month-cal-grid-wrap {
@@ -158,40 +170,72 @@
 
     /* Días en un único grid plano (horario, actividades, consumo, labor) */
     .month-cal-days {
-      display: grid;
+      display: grid !important;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      grid-auto-rows: minmax(0, 1fr);
-      flex: 1 1 0%;
-      min-height: 0;
-      height: 100%;
+      grid-auto-rows: minmax(0, 1fr) !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      height: auto !important;
       align-content: stretch;
+      overflow: hidden;
     }
 
     .month-cal-days.month-cal-days--gap {
-      gap: 0.25rem;
+      gap: 0.2rem;
     }
 
-    /* Semanas apiladas (reservas, historial cierres) */
+    /* Semanas apiladas (reservas, historial cierres) — misma altura cada fila */
     .month-cal-weeks {
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 0%;
-      min-height: 0;
-      height: 100%;
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      height: auto !important;
+      overflow: hidden;
     }
 
     .month-cal-week {
-      display: grid;
+      display: grid !important;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      flex: 1 1 0%;
-      min-height: 0;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
     }
 
+    /**
+     * Celda: ocupa exactamente su área de grid/semana.
+     * min-height:0 evita que el contenido (chips) fuerce filas más altas.
+     */
     .month-cal-cell {
-      height: auto !important;
+      height: 100% !important;
       min-height: 0 !important;
-      max-height: none !important;
+      max-height: 100% !important;
+      overflow: hidden !important;
+      align-self: stretch !important;
+      padding: 0.15rem 0.2rem !important;
+    }
+
+    .month-cal-days > *,
+    .month-cal-week > * {
+      min-height: 0 !important;
       overflow: hidden;
+    }
+
+    /* Chips de actividad más densos en escritorio */
+    .month-cal-chips {
+      gap: 1px !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .month-cal-chips > * > div {
+      padding-top: 1px !important;
+      padding-bottom: 1px !important;
+    }
+
+    .month-cal-chips span {
+      font-size: clamp(5px, 7cqi, 8px) !important;
+      line-height: 1.15 !important;
     }
 
     .month-cal-swipe-dots {

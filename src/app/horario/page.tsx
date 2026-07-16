@@ -536,7 +536,7 @@ export default function HorarioPage() {
                               const grouped = groupActivities(barActs);
                               if (grouped.length === 0) return null;
                               return (
-                                <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5 mt-0.5">
+                                <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5 mt-0.5 month-cal-chips">
                                   {grouped.map((act, i) => {
                                     const bgColor = act.activityColor || stringToHslColor(act.activityName);
                                     const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
