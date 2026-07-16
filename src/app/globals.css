@@ -99,6 +99,105 @@
   .scroll-pb-end-cards {
     scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 15rem);
   }
+
+  /**
+   * Calendario mensual a 1 viewport en escritorio (≥1024px).
+   * En smartphone/tablet estas clases no cambian nada (media query).
+   * Chrome: header (3.5rem) + bottom nav (~5rem) + safe-areas.
+   */
+  @media (min-width: 1024px) {
+    .month-cal-shell {
+      --marbella-cal-header: calc(3.5rem + env(safe-area-inset-top, 0px));
+      --marbella-cal-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+      height: calc(100dvh - var(--marbella-cal-header) - var(--marbella-cal-bottom));
+      max-height: calc(100dvh - var(--marbella-cal-header) - var(--marbella-cal-bottom));
+      min-height: 0 !important;
+      padding: 0.5rem 1rem !important;
+      padding-bottom: 0.5rem !important;
+      overflow: hidden;
+    }
+
+    /* Anula max-width interno en desktop para usar todo el shell */
+    .month-cal-shell .month-cal-card {
+      max-width: none !important;
+    }
+
+    .month-cal-card {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      width: 100%;
+    }
+
+    .month-cal-body {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      flex-shrink: 1 !important;
+    }
+
+    .month-cal-grid-wrap {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      width: 100%;
+    }
+
+    /* Días en un único grid plano (horario, actividades, consumo, labor) */
+    .month-cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-auto-rows: minmax(0, 1fr);
+      flex: 1 1 0%;
+      min-height: 0;
+      height: 100%;
+      align-content: stretch;
+    }
+
+    .month-cal-days.month-cal-days--gap {
+      gap: 0.25rem;
+    }
+
+    /* Semanas apiladas (reservas, historial cierres) */
+    .month-cal-weeks {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0%;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .month-cal-week {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      flex: 1 1 0%;
+      min-height: 0;
+    }
+
+    .month-cal-cell {
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: hidden;
+    }
+
+    .month-cal-swipe-dots {
+      display: none !important;
+    }
+  }
 }
 
 @keyframes animate-spinner-fade {

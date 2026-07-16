@@ -912,9 +912,8 @@ export default function ReservasClient() {
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
 
   return (
-    <div className="min-h-screen">
-      <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none">
+    <div className="min-h-screen px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell">
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none month-cal-card">
           <div className="bg-[#36606F] rounded-t-2xl px-3 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
             <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
               Reservas y encargos
@@ -929,8 +928,8 @@ export default function ReservasClient() {
             </a>
           </div>
 
-          <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 shrink-0">
-            <div className="flex justify-center w-full px-2 sm:px-3">
+          <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 month-cal-body">
+            <div className="flex justify-center w-full px-2 sm:px-3 shrink-0">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
@@ -955,7 +954,7 @@ export default function ReservasClient() {
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 px-2 sm:px-3">
+              <div className="flex flex-col items-center justify-center py-20 gap-4 px-2 sm:px-3 flex-1">
                 <LoadingSpinner size="lg" className="text-[#36606F]" />
               </div>
             ) : rpcError ? (
@@ -964,8 +963,8 @@ export default function ReservasClient() {
                 <div className="text-xs font-medium">{rpcError}</div>
               </div>
             ) : (
-              <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
-                <div className="grid grid-cols-7 border-b border-gray-100">
+              <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap">
+                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
                   {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                     <div
                       key={d}
@@ -978,8 +977,9 @@ export default function ReservasClient() {
                     </div>
                   ))}
                 </div>
+                <div className="month-cal-weeks">
                 {calendarWeeks.map((week, weekIdx) => (
-                  <div key={weekIdx} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
+                  <div key={weekIdx} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
                     {week.map((day) => {
                       const key = format(day, 'yyyy-MM-dd')
                       const isViewMonthDay = isSameMonth(day, viewMonth)
@@ -1004,7 +1004,7 @@ export default function ReservasClient() {
                           onClick={() => isViewMonthDay && handleDayClick(day)}
                           disabled={!isViewMonthDay}
                           className={cn(
-                            'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] lg:min-h-[120px] transition-colors p-1 sm:p-1.5',
+                            'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] transition-colors p-1 sm:p-1.5 month-cal-cell',
                             'border-r border-gray-100 last:border-r-0 bg-white',
                             !isViewMonthDay && 'opacity-25 pointer-events-none',
                             isViewMonthDay &&
@@ -1020,7 +1020,7 @@ export default function ReservasClient() {
                           >
                             {format(day, 'd')}
                           </span>
-                          <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px] gap-0.5 overflow-hidden">
+                          <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-0 gap-0.5 overflow-hidden">
                             {isViewMonthDay && hasCalendarEntries ? (
                               <>
                                 {visibleRes.map((r) => (
@@ -1044,12 +1044,12 @@ export default function ReservasClient() {
                     })}
                   </div>
                 ))}
+                </div>
               </div>
             )}
 
-            {!loading && !rpcError ? <ReservasCalendarLegend /> : null}
+            {!loading && !rpcError ? <div className="shrink-0"><ReservasCalendarLegend /></div> : null}
           </div>
-        </div>
       </div>
 
       {typeof document !== 'undefined' &&

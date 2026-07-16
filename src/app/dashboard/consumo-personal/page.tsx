@@ -402,9 +402,8 @@ export default function ConsumoPersonalDashboardPage() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <div className="p-4 md:p-6 pb-24">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
+    <div className="p-4 md:p-6 pb-24 month-cal-shell">
+      <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col month-cal-card w-full max-w-4xl mx-auto">
           <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0">
             <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink min-w-0 truncate pr-2">
               Consumo staff
@@ -479,7 +478,7 @@ export default function ConsumoPersonalDashboardPage() {
             </div>
           </div>
 
-          <div className="p-4 md:p-8 flex flex-col">
+          <div className="p-4 md:p-8 flex flex-col month-cal-body min-h-0">
             <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
               <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
@@ -505,9 +504,9 @@ export default function ConsumoPersonalDashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col">
-                <div className="p-0 md:p-1 overflow-x-auto no-scrollbar">
-                  <div className="min-w-0">
-                    <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
+                <div className="p-0 md:p-1 overflow-x-auto no-scrollbar month-cal-grid-wrap">
+                  <div className="min-w-0 flex flex-col flex-1 min-h-0">
+                    <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2 shrink-0">
                       {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
                         <div
                           key={d}
@@ -518,7 +517,7 @@ export default function ConsumoPersonalDashboardPage() {
                         </div>
                       ))}
                     </div>
-                    <div className="grid grid-cols-7 gap-1 md:gap-2">
+                    <div className="grid grid-cols-7 gap-1 md:gap-2 month-cal-days month-cal-days--gap">
                       {calendarDays.map((day) => {
                         const key = format(day, 'yyyy-MM-dd');
                         const isFutureDay = key > todayStr;
@@ -535,7 +534,7 @@ export default function ConsumoPersonalDashboardPage() {
                             type="button"
                             onClick={() => clickable && openDayDetail(day)}
                             className={cn(
-                              'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all',
+                              'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all month-cal-cell',
                               !isViewMonthDay &&
                                 'bg-transparent border-transparent opacity-25 pointer-events-none',
                               isViewMonthDay &&
@@ -588,7 +587,6 @@ export default function ConsumoPersonalDashboardPage() {
             )}
           </div>
         </div>
-      </div>
 
       {detailOpen &&
         typeof document !== 'undefined' &&

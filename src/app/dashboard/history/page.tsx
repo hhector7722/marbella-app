@@ -1561,10 +1561,10 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
-            <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 print:max-w-none">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-none print:rounded-none print:shadow-none">
-                    <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative print:hidden">
+        <div className={cn('min-h-screen pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0', viewMode === 'calendar' && 'month-cal-shell px-1 py-3 sm:px-1.5 md:px-2 md:py-4')}>
+            <div className={cn('w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 print:max-w-none', viewMode === 'calendar' && 'contents')}>
+                <div className={cn('bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-none print:rounded-none print:shadow-none', viewMode === 'calendar' && 'month-cal-card')}>
+                    <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative print:hidden shrink-0">
                         <div className="relative flex items-center justify-between gap-1 min-w-0">
                             <div className="flex items-center shrink-0 min-w-0 z-10">
                                 <div className="inline-flex w-fit rounded-md overflow-hidden border border-white/30 shadow-sm">
@@ -1687,8 +1687,8 @@ export default function HistoryPage() {
                         </div>
                     </div>
 
-                    <div className="bg-white">
-                        <div className="pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden">
+                    <div className={cn('bg-white', viewMode === 'calendar' && 'month-cal-body')}>
+                        <div className="pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center gap-1.5 leading-none">
                                     <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums">
@@ -1831,9 +1831,9 @@ export default function HistoryPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 shrink-0">
-                                                <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
-                                                <div className="grid grid-cols-7 border-b border-gray-100">
+                                            <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 flex-1 min-h-0">
+                                                <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap">
+                                                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
                                                     {CALENDAR_WEEKDAYS.map((d, index) => (
                                                         <div
                                                             key={d}
@@ -1847,8 +1847,9 @@ export default function HistoryPage() {
                                                     ))}
                                                 </div>
 
+                                                <div className="month-cal-weeks">
                                                 {calendarWeeks.map((week) => (
-                                                    <div key={format(week[0], 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
+                                                    <div key={format(week[0], 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
                                                         {week.map((day) => {
                                                             const key = format(day, 'yyyy-MM-dd');
                                                             const closing = closingsByDate.get(key);
@@ -1862,7 +1863,7 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[68px] sm:min-h-[76px] md:min-h-[84px] lg:min-h-[92px] p-0.5 sm:p-1',
+                                                                            'relative flex flex-col min-h-[68px] sm:min-h-[76px] md:min-h-[84px] p-0.5 sm:p-1 month-cal-cell',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
@@ -1880,7 +1881,7 @@ export default function HistoryPage() {
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[68px] sm:min-h-[76px] md:min-h-[84px] lg:min-h-[92px] transition-colors p-0.5 sm:p-1',
+                                                                        'group relative flex flex-col text-left min-h-[68px] sm:min-h-[76px] md:min-h-[84px] transition-colors p-0.5 sm:p-1 month-cal-cell',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
@@ -1888,7 +1889,7 @@ export default function HistoryPage() {
                                                                     )}
                                                                 >
                                                                     <ClosingCalendarDayLabel day={day} today={today} isViewMonthDay={isViewMonthDay} />
-                                                                    <div className="mt-0.5 flex min-h-0 flex-1 flex-col items-center px-0.5 pb-0.5">
+                                                                    <div className="mt-0.5 flex min-h-0 flex-1 flex-col items-center px-0.5 pb-0.5 overflow-hidden">
                                                                         <ClosingCalendarCellContent
                                                                             closing={closing}
                                                                             expectedSales={get8DayExpectedSales(day)}
@@ -1899,6 +1900,7 @@ export default function HistoryPage() {
                                                         })}
                                                     </div>
                                                 ))}
+                                                </div>
                                             </div>
                                             </div>
                                         </>

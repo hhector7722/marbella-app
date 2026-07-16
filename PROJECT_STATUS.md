@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Layout escritorio — horario + actividades)
+**Última actualización:** 2026-07-16 (Calendarios mensuales fit viewport escritorio)
+
+- [x] **Calendarios mensuales: caben en 1 pantalla en escritorio (2026-07-16)**: Utilidades CSS `month-cal-*` (solo `@media ≥1024px`) — shell a `100dvh − header − bottom nav`, celdas fluidas (`grid-auto-rows: 1fr` / semanas flex). Aplicado en `/horario`, `/staff/actividades`, `/staff/reservas`, `/dashboard/history` (modo calendario), `/dashboard/consumo-personal`, `/dashboard/labor`. Smartphone/tablet **sin cambios**.
+
+**Última actualización anterior:** 2026-07-16 (Layout escritorio — horario + actividades)
 
 - [x] **Layout escritorio calendarios/revisión (2026-07-16)**: `/horario`, `/staff/actividades` y `/staff/actividades/revision` adaptados a desktop (`lg:` ≥1024px) — celdas más altas, tipografía legible, cabeceras táctiles, contenedor max 1400px; revisión en rejilla tipo tabla. Smartphone/tablet (`< lg`) sin cambios.
 

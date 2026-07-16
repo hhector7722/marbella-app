@@ -241,47 +241,46 @@ export default function ActividadesPage() {
     date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="pb-10">
-      <div className="w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 lg:mx-auto lg:max-w-[1400px] lg:px-6 lg:py-6">
-        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none lg:shadow-xl">
+    <div className="pb-10 px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none month-cal-card">
           {/* ── Header: centered month nav only ── */}
-          <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px] lg:px-5 lg:py-3 lg:min-h-[60px]">
-            <div className="w-[100px] lg:w-[140px]" />
-            <div className="flex items-center gap-0.5 lg:gap-2">
+          <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px] shrink-0">
+            <div className="w-[100px]" />
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => subMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full lg:min-h-12 lg:min-w-12"
+                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
                 aria-label="Mes anterior"
               >
-                <ChevronLeft size={18} strokeWidth={2.5} className="lg:size-6" />
+                <ChevronLeft size={18} strokeWidth={2.5} />
               </button>
-              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap lg:text-base lg:tracking-[0.2em]">
+              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap">
                 {getMonthLabel(viewMonth)}
               </span>
               <button
                 type="button"
                 onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full lg:min-h-12 lg:min-w-12"
+                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
                 aria-label="Mes siguiente"
               >
-                <ChevronRight size={18} strokeWidth={2.5} className="lg:size-6" />
+                <ChevronRight size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="w-[100px] flex justify-end items-center gap-2 lg:w-[140px] lg:gap-3">
+            <div className="w-[100px] flex justify-end items-center gap-2">
               {isMaster && (
                 <button
                   type="button"
                   onClick={() => window.location.href = '/staff/actividades/gestion'}
-                  className="text-white hover:text-white/70 transition-colors lg:min-h-12 lg:min-w-12 lg:flex lg:items-center lg:justify-center"
+                  className="text-white hover:text-white/70 transition-colors"
                   aria-label="Gestionar actividades"
                 >
-                  <Settings size={18} strokeWidth={1.5} className="lg:size-5" />
+                  <Settings size={18} strokeWidth={1.5} />
                 </button>
               )}
               <a
                 href="/horario"
-                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap lg:min-h-12 lg:flex lg:items-center lg:rounded-lg lg:px-3 lg:text-sm"
+                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
               >
                 Horarios
               </a>
@@ -290,25 +289,25 @@ export default function ActividadesPage() {
 
           {/* ── Calendar ── */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-20">
+            <div className="flex flex-col items-center justify-center gap-4 py-20 month-cal-body">
               <LoadingSpinner size="lg" className="text-[#36606F]" />
             </div>
           ) : (
             <div 
-              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 shrink-0 touch-pan-y lg:gap-2 lg:px-4 lg:pt-4 lg:pb-3"
+              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 touch-pan-y month-cal-body"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <div className="mx-auto w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)]">
+              <div className="mx-auto w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] month-cal-grid-wrap">
                 {/* Day headers */}
-                <div className="grid grid-cols-7 border-b border-gray-100">
+                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
                   {CALENDAR_WEEKDAYS.map((d, index) => (
                     <div
                       key={d}
-                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0 lg:h-9"
+                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0"
                     >
-                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none lg:text-xs lg:tracking-widest">
+                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none">
                         <span className="hidden md:inline">{d}</span>
                         <span className="md:hidden">{MOBILE_HEADERS[index]}</span>
                       </span>
@@ -317,7 +316,7 @@ export default function ActividadesPage() {
                 </div>
 
                 {/* Days grid */}
-                <div className="grid grid-cols-7">
+                <div className="grid grid-cols-7 month-cal-days">
                   {calendarDays.map((day) => {
                     const key = format(day, 'yyyy-MM-dd');
                     const dayData = byDate[key];
@@ -330,16 +329,16 @@ export default function ActividadesPage() {
                     const grouped = groupActivities(barActs);
 
                     const cellCls = cn(
-                      'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0',
-                      'h-24 sm:h-28 md:h-32 lg:h-48 xl:h-56 lg:p-1.5',
+                      'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0 month-cal-cell',
+                      'h-24 sm:h-28 md:h-32',
                       pastDayBg,
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
                     );
 
                     const dayNumCls = cn(
-                      'text-[9px] md:text-[10px] font-bold leading-none lg:text-sm',
+                      'text-[9px] md:text-[10px] font-bold leading-none',
                       isToday && isViewMonthDay
-                        ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md font-semibold lg:px-1.5 lg:py-1'
+                        ? 'text-blue-600 bg-blue-50/80 px-1 py-0.5 rounded-md font-semibold'
                         : 'text-zinc-400',
                     );
 
@@ -367,34 +366,31 @@ export default function ActividadesPage() {
                         tabIndex={0}
                         className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left overflow-hidden')}
                       >
-                        {/* Day number — top right */}
-                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5 lg:mb-1">
+                        <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        {/* Activities */}
-                        <div className="flex-1 w-full overflow-y-auto flex flex-col gap-0.5 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] lg:gap-1">
+                        <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                            const textColor = '#ffffff';
                             return (
                               <div 
                                 key={i} 
-                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink-0 lg:rounded-md"
+                                className="w-full rounded-[3px] overflow-hidden flex flex-col shrink min-h-0"
                                 style={{
                                   backgroundColor: bgColor,
-                                  color: textColor,
+                                  color: '#ffffff',
                                   containerType: 'inline-size',
                                   ...(isPastDay ? { opacity: 0.8 } : {}),
                                 }}
                               >
-                                  <div className="px-1 py-[2px] flex flex-col justify-center min-h-[16px] lg:px-1.5 lg:py-1 lg:min-h-[20px]">
-                                    <span className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight text-[clamp(5px,11cqi,11px)] lg:text-[11px]">
+                                  <div className="px-1 py-[2px] flex flex-col justify-center min-h-0">
+                                    <span className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight text-[clamp(5px,11cqi,11px)]">
                                       {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
                                     </span>
                                   </div>
-                                  <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center lg:px-1.5 lg:py-1">
-                                    <span className="break-keep font-bold leading-tight text-[clamp(6px,14cqi,14px)] lg:text-xs">
+                                  <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center min-h-0">
+                                    <span className="break-keep font-bold leading-tight text-[clamp(6px,14cqi,14px)] truncate">
                                     {act.activityName}
                                   </span>
                                 </div>
@@ -408,15 +404,13 @@ export default function ActividadesPage() {
                 </div>
               </div>
               
-              {/* Pagination Dots (Swipe Indicator) — solo móvil/tablet */}
-              <div className="flex justify-center items-center gap-1.5 py-2 w-full lg:hidden">
+              <div className="flex justify-center items-center gap-1.5 py-2 w-full month-cal-swipe-dots">
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
                 <div className="w-2 h-2 rounded-full bg-white shadow-sm border border-zinc-200"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
               </div>
             </div>
           )}
-        </div>
       </div>
 
       <PavilionDayModal
