@@ -1,0 +1,2432 @@
+{
+  "generatedAt": "2026-07-13T17:23:11.034Z",
+  "year": 2026,
+  "lastMonth": 7,
+  "coordination": {
+    "holidaysCleared": 0,
+    "staffingBoosts": 62,
+    "staffingRelocations": 0,
+    "staffingTrims": 69,
+    "shiftsAligned": 1813,
+    "morningExclusiveAdjustments": 23,
+    "weeksRebalanced": 527,
+    "understaffedDates": [],
+    "overstaffedDates": []
+  },
+  "plantillaStaffing": [
+    {
+      "date": "2026-01-10",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Lucia Rodero",
+        "Aldo Ruggeri",
+        "Juan Jesus Alvez de Olivera"
+      ]
+    },
+    {
+      "date": "2026-02-01",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Hernan David Gutierrez",
+        "Willy Ruiz",
+        "Juan Jesus Alvez de Olivera"
+      ]
+    },
+    {
+      "date": "2026-02-07",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Hernan David Gutierrez",
+        "Aldo Ruggeri",
+        "Juan Jesus Alvez de Olivera"
+      ]
+    },
+    {
+      "date": "2026-02-15",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Fernando Gutierrez",
+        "Hugo Rubio Larripa",
+        "Julia Navarro"
+      ]
+    },
+    {
+      "date": "2026-02-17",
+      "staff": 4,
+      "workers": [
+        "Fernando Gutierrez",
+        "Alba Masià De Pablo",
+        "Pere Boladeres",
+        "Hector Sanchez Arranz"
+      ]
+    },
+    {
+      "date": "2026-02-18",
+      "staff": 3,
+      "workers": [
+        "Fernando Gutierrez",
+        "Pere Boladeres",
+        "Hector Sanchez Arranz"
+      ]
+    },
+    {
+      "date": "2026-02-21",
+      "staff": 5,
+      "workers": [
+        "Silvia Valiente",
+        "Fernando Gutierrez",
+        "Julia Navarro",
+        "Aldo Ruggeri",
+        "Willy Ruiz"
+      ]
+    },
+    {
+      "date": "2026-02-28",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Fernando Gutierrez",
+        "Julia Navarro",
+        "Juan Jesus Alvez de Olivera"
+      ]
+    },
+    {
+      "date": "2026-03-15",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Fernando Gutierrez",
+        "Julia Navarro",
+        "Aldo Ruggeri"
+      ]
+    },
+    {
+      "date": "2026-04-04",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Fernando Gutierrez",
+        "Julia Navarro",
+        "Lucia Rodero"
+      ]
+    },
+    {
+      "date": "2026-05-03",
+      "staff": 4,
+      "workers": [
+        "Mamadou Ndiaye",
+        "Fernando Gutierrez",
+        "Lucia Rodero",
+        "Aldo Ruggeri"
+      ]
+    },
+    {
+      "date": "2026-07-04",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Mamadou Ndiaye",
+        "Julia Navarro",
+        "Pere Boladeres"
+      ]
+    },
+    {
+      "date": "2026-07-06",
+      "staff": 6,
+      "workers": [
+        "Mamadou Ndiaye",
+        "Fernando Gutierrez",
+        "Hernan David Gutierrez",
+        "Pere Boladeres",
+        "Aldo Ruggeri",
+        "Hector Sanchez Arranz"
+      ]
+    },
+    {
+      "date": "2026-07-11",
+      "staff": 4,
+      "workers": [
+        "Silvia Valiente",
+        "Mamadou Ndiaye",
+        "Fernando Gutierrez",
+        "Julia Navarro"
+      ]
+    },
+    {
+      "date": "2026-01-01",
+      "staff": 0,
+      "workers": []
+    },
+    {
+      "date": "2026-01-06",
+      "staff": 0,
+      "workers": []
+    },
+    {
+      "date": "2026-04-03",
+      "staff": 0,
+      "workers": []
+    },
+    {
+      "date": "2026-04-06",
+      "staff": 0,
+      "workers": []
+    },
+    {
+      "date": "2026-05-01",
+      "staff": 0,
+      "workers": []
+    },
+    {
+      "date": "2026-05-25",
+      "staff": 0,
+      "workers": []
+    },
+    {
+      "date": "2026-06-24",
+      "staff": 0,
+      "workers": []
+    }
+  ],
+  "holidayViolations": [],
+  "lowStaff": [],
+  "results": [
+    {
+      "employee": "Hector Sanchez Arranz",
+      "contractedWeekly": 40,
+      "totalRows": 115,
+      "totalHours": 958.63,
+      "weeks": [
+        {
+          "startDate": "2025-12-29",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.4,
+          "flexHours": 8.4,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-02"
+          ]
+        },
+        {
+          "startDate": "2026-01-05",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.02,
+          "flexHours": 33.02,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-05",
+            "2026-01-07",
+            "2026-01-08",
+            "2026-01-09"
+          ]
+        },
+        {
+          "startDate": "2026-01-12",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 42.47,
+          "flexHours": 42.47,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-12",
+            "2026-01-13",
+            "2026-01-14",
+            "2026-01-15",
+            "2026-01-16"
+          ]
+        },
+        {
+          "startDate": "2026-01-19",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 42.7,
+          "flexHours": 42.7,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-19",
+            "2026-01-20",
+            "2026-01-21",
+            "2026-01-22",
+            "2026-01-23"
+          ]
+        },
+        {
+          "startDate": "2026-01-26",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 42.42,
+          "flexHours": 42.42,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-26",
+            "2026-01-27",
+            "2026-01-28",
+            "2026-01-29",
+            "2026-01-30"
+          ]
+        },
+        {
+          "startDate": "2026-02-02",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 42.55,
+          "flexHours": 42.55,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-02",
+            "2026-02-03",
+            "2026-02-04",
+            "2026-02-05",
+            "2026-02-06"
+          ]
+        },
+        {
+          "startDate": "2026-02-09",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.66,
+          "flexHours": 32.66,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-10",
+            "2026-02-11",
+            "2026-02-12",
+            "2026-02-13"
+          ]
+        },
+        {
+          "startDate": "2026-02-16",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 44.9,
+          "flexHours": 44.9,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-16",
+            "2026-02-17",
+            "2026-02-18",
+            "2026-02-19",
+            "2026-02-20"
+          ]
+        },
+        {
+          "startDate": "2026-02-23",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.3,
+          "flexHours": 32.3,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-24",
+            "2026-02-25",
+            "2026-02-26",
+            "2026-02-27"
+          ]
+        },
+        {
+          "startDate": "2026-03-02",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.66,
+          "flexHours": 33.66,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-03",
+            "2026-03-04",
+            "2026-03-05",
+            "2026-03-06"
+          ]
+        },
+        {
+          "startDate": "2026-03-09",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.8,
+          "flexHours": 32.8,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-10",
+            "2026-03-11",
+            "2026-03-12",
+            "2026-03-13"
+          ]
+        },
+        {
+          "startDate": "2026-03-16",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 40.29,
+          "flexHours": 40.29,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-16",
+            "2026-03-17",
+            "2026-03-18",
+            "2026-03-19",
+            "2026-03-20"
+          ]
+        },
+        {
+          "startDate": "2026-03-23",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 41.9,
+          "flexHours": 41.9,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-23",
+            "2026-03-24",
+            "2026-03-25",
+            "2026-03-26",
+            "2026-03-27"
+          ]
+        },
+        {
+          "startDate": "2026-03-30",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.28,
+          "flexHours": 33.28,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-30",
+            "2026-03-31",
+            "2026-04-01",
+            "2026-04-02"
+          ]
+        },
+        {
+          "startDate": "2026-04-06",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 34.1,
+          "flexHours": 34.1,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-07",
+            "2026-04-08",
+            "2026-04-09",
+            "2026-04-10"
+          ]
+        },
+        {
+          "startDate": "2026-04-13",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.37,
+          "flexHours": 33.37,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-14",
+            "2026-04-15",
+            "2026-04-16",
+            "2026-04-17"
+          ]
+        },
+        {
+          "startDate": "2026-04-20",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.07,
+          "flexHours": 32.07,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-21",
+            "2026-04-22",
+            "2026-04-23",
+            "2026-04-24"
+          ]
+        },
+        {
+          "startDate": "2026-04-27",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.18,
+          "flexHours": 33.18,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-27",
+            "2026-04-28",
+            "2026-04-29",
+            "2026-04-30"
+          ]
+        },
+        {
+          "startDate": "2026-05-04",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 40.28,
+          "flexHours": 40.28,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-04",
+            "2026-05-05",
+            "2026-05-06",
+            "2026-05-07",
+            "2026-05-08"
+          ]
+        },
+        {
+          "startDate": "2026-05-11",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 34.2,
+          "flexHours": 34.2,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-12",
+            "2026-05-13",
+            "2026-05-14",
+            "2026-05-15"
+          ]
+        },
+        {
+          "startDate": "2026-05-18",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 31.13,
+          "flexHours": 31.13,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-19",
+            "2026-05-20",
+            "2026-05-21",
+            "2026-05-22"
+          ]
+        },
+        {
+          "startDate": "2026-05-25",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.42,
+          "flexHours": 32.42,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-26",
+            "2026-05-27",
+            "2026-05-28",
+            "2026-05-29"
+          ]
+        },
+        {
+          "startDate": "2026-06-01",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.71,
+          "flexHours": 33.71,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-01",
+            "2026-06-02",
+            "2026-06-03",
+            "2026-06-05"
+          ]
+        },
+        {
+          "startDate": "2026-06-08",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 24.39,
+          "flexHours": 24.39,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-10",
+            "2026-06-11",
+            "2026-06-12"
+          ]
+        },
+        {
+          "startDate": "2026-06-15",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.88,
+          "flexHours": 32.88,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-16",
+            "2026-06-17",
+            "2026-06-18",
+            "2026-06-19"
+          ]
+        },
+        {
+          "startDate": "2026-06-22",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 26.36,
+          "flexHours": 26.36,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-23",
+            "2026-06-25",
+            "2026-06-26"
+          ]
+        },
+        {
+          "startDate": "2026-06-29",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 25.48,
+          "flexHours": 25.48,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-01",
+            "2026-07-02",
+            "2026-07-03"
+          ]
+        },
+        {
+          "startDate": "2026-07-06",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 41.67,
+          "flexHours": 41.67,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-06",
+            "2026-07-07",
+            "2026-07-08",
+            "2026-07-09",
+            "2026-07-10"
+          ]
+        },
+        {
+          "startDate": "2026-07-13",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-20",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-27",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        }
+      ],
+      "anomalies": [
+        "Semana 2025-12-29: 8.4h vs contrato 40h (Δ 31.6h)",
+        "Semana 2026-01-05: 33.02h vs contrato 40h (Δ 7h)",
+        "Semana 2026-01-12: 42.470000000000006h vs contrato 40h (Δ 2.5h)",
+        "Entrada muy tardía: 2026-01-23 12:07",
+        "Semana 2026-01-19: 42.699999999999996h vs contrato 40h (Δ 2.7h)",
+        "Semana 2026-01-26: 42.42h vs contrato 40h (Δ 2.4h)",
+        "Entrada muy temprana: 2026-02-04 07:14",
+        "Semana 2026-02-02: 42.55h vs contrato 40h (Δ 2.5h)",
+        "Semana 2026-02-09: 32.66h vs contrato 40h (Δ 7.3h)",
+        "Semana 2026-02-16: 44.900000000000006h vs contrato 40h (Δ 4.9h)",
+        "Semana 2026-02-23: 32.3h vs contrato 40h (Δ 7.7h)",
+        "Semana 2026-03-02: 33.66h vs contrato 40h (Δ 6.3h)",
+        "Semana 2026-03-09: 32.8h vs contrato 40h (Δ 7.2h)",
+        "Entrada muy temprana: 2026-03-27 07:04",
+        "Semana 2026-03-30: 33.28h vs contrato 40h (Δ 6.7h)",
+        "Entrada muy tardía: 2026-04-07 12:13",
+        "Jornada >10h: 2026-04-08 (10.05h)",
+        "Semana 2026-04-06: 34.1h vs contrato 40h (Δ 5.9h)",
+        "Semana 2026-04-13: 33.370000000000005h vs contrato 40h (Δ 6.6h)",
+        "Semana 2026-04-20: 32.07h vs contrato 40h (Δ 7.9h)",
+        "Semana 2026-04-27: 33.18h vs contrato 40h (Δ 6.8h)",
+        "Entrada muy tardía: 2026-05-04 12:42",
+        "Semana 2026-05-11: 34.199999999999996h vs contrato 40h (Δ 5.8h)",
+        "Semana 2026-05-18: 31.130000000000003h vs contrato 40h (Δ 8.9h)",
+        "Semana 2026-05-25: 32.42h vs contrato 40h (Δ 7.6h)",
+        "Semana 2026-06-01: 33.71h vs contrato 40h (Δ 6.3h)",
+        "Semana 2026-06-08: 24.39h vs contrato 40h (Δ 15.6h)",
+        "Semana 2026-06-15: 32.88h vs contrato 40h (Δ 7.1h)",
+        "Semana 2026-06-22: 26.36h vs contrato 40h (Δ 13.6h)",
+        "Semana 2026-06-29: 25.480000000000004h vs contrato 40h (Δ 14.5h)",
+        "Semana 2026-07-13: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-13",
+        "Semana 2026-07-20: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-20",
+        "Semana 2026-07-27: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-27"
+      ],
+      "naturalness": [
+        "115 días exportados en el período simulado.",
+        "Hay variación en la duración de las jornadas.",
+        "Hay variación en las horas de entrada."
+      ],
+      "weeklyDistribution": [
+        "2/31 semanas dentro de ±1.5h del contrato (40h/sem).",
+        "Media de jornadas flexibles por semana activa: 4.1."
+      ],
+      "consistency": [
+        "Entrada habitual simulada entre 07:04 y 12:42."
+      ],
+      "strengths": [
+        "Distribución coherente para contrato de 40h (~5 jornadas)."
+      ],
+      "improvements": [
+        "Afinar el balance semanal para acercar más semanas al contrato exacto.",
+        "Evitar huecos semanales en períodos con actividad adyacente."
+      ]
+    },
+    {
+      "employee": "Pere Boladeres",
+      "contractedWeekly": 28,
+      "totalRows": 108,
+      "totalHours": 807.92,
+      "weeks": [
+        {
+          "startDate": "2025-12-29",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 25.79,
+          "flexHours": 25.79,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-02",
+            "2026-01-03",
+            "2026-01-04"
+          ]
+        },
+        {
+          "startDate": "2026-01-05",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 29.55,
+          "flexHours": 29.55,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-05",
+            "2026-01-07",
+            "2026-01-08",
+            "2026-01-09"
+          ]
+        },
+        {
+          "startDate": "2026-01-12",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 30.23,
+          "flexHours": 30.23,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-12",
+            "2026-01-13",
+            "2026-01-14",
+            "2026-01-15"
+          ]
+        },
+        {
+          "startDate": "2026-01-19",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 30.27,
+          "flexHours": 30.27,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-19",
+            "2026-01-20",
+            "2026-01-21",
+            "2026-01-23"
+          ]
+        },
+        {
+          "startDate": "2026-01-26",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 35.5,
+          "flexHours": 35.5,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-26",
+            "2026-01-27",
+            "2026-01-28",
+            "2026-01-29",
+            "2026-01-30"
+          ]
+        },
+        {
+          "startDate": "2026-02-02",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 28.49,
+          "flexHours": 28.49,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-02",
+            "2026-02-03",
+            "2026-02-04",
+            "2026-02-06"
+          ]
+        },
+        {
+          "startDate": "2026-02-09",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 32.99,
+          "flexHours": 32.99,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-09",
+            "2026-02-10",
+            "2026-02-11",
+            "2026-02-13"
+          ]
+        },
+        {
+          "startDate": "2026-02-16",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 29.54,
+          "flexHours": 29.54,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-17",
+            "2026-02-18",
+            "2026-02-19",
+            "2026-02-20"
+          ]
+        },
+        {
+          "startDate": "2026-02-23",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 33.16,
+          "flexHours": 33.16,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-24",
+            "2026-02-25",
+            "2026-02-26",
+            "2026-02-27"
+          ]
+        },
+        {
+          "startDate": "2026-03-02",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 30.37,
+          "flexHours": 30.37,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-02",
+            "2026-03-03",
+            "2026-03-05",
+            "2026-03-06"
+          ]
+        },
+        {
+          "startDate": "2026-03-09",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 28.6,
+          "flexHours": 28.6,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-09",
+            "2026-03-10",
+            "2026-03-11",
+            "2026-03-12"
+          ]
+        },
+        {
+          "startDate": "2026-03-16",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 31.84,
+          "flexHours": 31.84,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-16",
+            "2026-03-18",
+            "2026-03-19",
+            "2026-03-20"
+          ]
+        },
+        {
+          "startDate": "2026-03-23",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 27.98,
+          "flexHours": 27.98,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-23",
+            "2026-03-25",
+            "2026-03-26",
+            "2026-03-27"
+          ]
+        },
+        {
+          "startDate": "2026-03-30",
+          "flexDays": 3,
+          "lockedDays": 1,
+          "totalHours": 29.29,
+          "flexHours": 21.29,
+          "lockedHours": 8,
+          "dates": [
+            "2026-03-31",
+            "2026-04-01",
+            "2026-04-02"
+          ]
+        },
+        {
+          "startDate": "2026-04-06",
+          "flexDays": 3,
+          "lockedDays": 1,
+          "totalHours": 29.57,
+          "flexHours": 21.57,
+          "lockedHours": 8,
+          "dates": [
+            "2026-04-08",
+            "2026-04-09",
+            "2026-04-10"
+          ]
+        },
+        {
+          "startDate": "2026-04-13",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 30.34,
+          "flexHours": 30.34,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-13",
+            "2026-04-14",
+            "2026-04-15",
+            "2026-04-16"
+          ]
+        },
+        {
+          "startDate": "2026-04-20",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 30.97,
+          "flexHours": 30.97,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-20",
+            "2026-04-22",
+            "2026-04-23",
+            "2026-04-24"
+          ]
+        },
+        {
+          "startDate": "2026-04-27",
+          "flexDays": 3,
+          "lockedDays": 1,
+          "totalHours": 31.02,
+          "flexHours": 23.02,
+          "lockedHours": 8,
+          "dates": [
+            "2026-04-27",
+            "2026-04-29",
+            "2026-04-30"
+          ]
+        },
+        {
+          "startDate": "2026-05-04",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 28.27,
+          "flexHours": 28.27,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-04",
+            "2026-05-05",
+            "2026-05-06",
+            "2026-05-08"
+          ]
+        },
+        {
+          "startDate": "2026-05-11",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 29.29,
+          "flexHours": 29.29,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-12",
+            "2026-05-13",
+            "2026-05-14",
+            "2026-05-15"
+          ]
+        },
+        {
+          "startDate": "2026-05-18",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 29.69,
+          "flexHours": 29.69,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-18",
+            "2026-05-19",
+            "2026-05-20",
+            "2026-05-21"
+          ]
+        },
+        {
+          "startDate": "2026-05-25",
+          "flexDays": 3,
+          "lockedDays": 1,
+          "totalHours": 29.72,
+          "flexHours": 22.72,
+          "lockedHours": 7,
+          "dates": [
+            "2026-05-27",
+            "2026-05-28",
+            "2026-05-29"
+          ]
+        },
+        {
+          "startDate": "2026-06-01",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 31.02,
+          "flexHours": 31.02,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-01",
+            "2026-06-02",
+            "2026-06-03",
+            "2026-06-04"
+          ]
+        },
+        {
+          "startDate": "2026-06-08",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 29.88,
+          "flexHours": 29.88,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-08",
+            "2026-06-09",
+            "2026-06-10",
+            "2026-06-11"
+          ]
+        },
+        {
+          "startDate": "2026-06-15",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 28.78,
+          "flexHours": 28.78,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-15",
+            "2026-06-16",
+            "2026-06-17",
+            "2026-06-18"
+          ]
+        },
+        {
+          "startDate": "2026-06-22",
+          "flexDays": 2,
+          "lockedDays": 1,
+          "totalHours": 21.75,
+          "flexHours": 13.75,
+          "lockedHours": 8,
+          "dates": [
+            "2026-06-23",
+            "2026-06-25"
+          ]
+        },
+        {
+          "startDate": "2026-06-29",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 34.26,
+          "flexHours": 34.26,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-29",
+            "2026-06-30",
+            "2026-07-01",
+            "2026-07-03",
+            "2026-07-04"
+          ]
+        },
+        {
+          "startDate": "2026-07-06",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 30.63,
+          "flexHours": 30.63,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-06",
+            "2026-07-07",
+            "2026-07-08",
+            "2026-07-09"
+          ]
+        },
+        {
+          "startDate": "2026-07-13",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.18,
+          "flexHours": 8.18,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-13"
+          ]
+        },
+        {
+          "startDate": "2026-07-20",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-27",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        }
+      ],
+      "anomalies": [
+        "Entrada muy tardía: 2026-01-02 13:53",
+        "Jornada >10h: 2026-01-03 (10.02h)",
+        "Semana 2025-12-29: 25.79h vs contrato 28h (Δ 2.2h)",
+        "Entrada muy temprana: 2026-01-09 07:04",
+        "Entrada muy tardía: 2026-01-15 16:32",
+        "Semana 2026-01-12: 30.229999999999997h vs contrato 28h (Δ 2.2h)",
+        "Entrada muy temprana: 2026-01-19 07:01",
+        "Entrada muy tardía: 2026-01-20 12:59",
+        "Entrada muy temprana: 2026-01-21 07:11",
+        "Semana 2026-01-19: 30.27h vs contrato 28h (Δ 2.3h)",
+        "Entrada muy tardía: 2026-01-27 12:14",
+        "Semana 2026-01-26: 35.5h vs contrato 28h (Δ 7.5h)",
+        "Entrada muy temprana: 2026-02-06 07:00",
+        "Semana 2026-02-09: 32.99h vs contrato 28h (Δ 5h)",
+        "Entrada muy temprana: 2026-02-19 07:03",
+        "Entrada muy tardía: 2026-02-20 13:33",
+        "Entrada muy tardía: 2026-02-27 13:22",
+        "Semana 2026-02-23: 33.16h vs contrato 28h (Δ 5.2h)",
+        "Entrada muy tardía: 2026-03-02 12:22",
+        "Entrada muy tardía: 2026-03-05 12:46",
+        "Semana 2026-03-02: 30.37h vs contrato 28h (Δ 2.4h)",
+        "Semana 2026-03-16: 31.840000000000003h vs contrato 28h (Δ 3.8h)",
+        "Entrada muy tardía: 2026-04-02 12:46",
+        "Jornada >10h: 2026-04-13 (10.17h)",
+        "Entrada muy temprana: 2026-04-14 07:11",
+        "Semana 2026-04-13: 30.34h vs contrato 28h (Δ 2.3h)",
+        "Entrada muy temprana: 2026-04-24 07:09",
+        "Semana 2026-04-20: 30.97h vs contrato 28h (Δ 3h)",
+        "Semana 2026-04-27: 31.02h vs contrato 28h (Δ 3h)",
+        "Entrada muy tardía: 2026-05-04 13:43",
+        "Entrada muy tardía: 2026-05-15 12:11",
+        "Entrada muy temprana: 2026-05-21 07:14",
+        "Semana 2026-06-01: 31.020000000000003h vs contrato 28h (Δ 3h)",
+        "Semana 2026-06-22: 21.75h vs contrato 28h (Δ 6.3h)",
+        "Semana 2026-06-29: 34.26h vs contrato 28h (Δ 6.3h)",
+        "Entrada muy tardía: 2026-07-07 13:37",
+        "Jornada >10h: 2026-07-09 (11.38h)",
+        "Semana 2026-07-06: 30.630000000000003h vs contrato 28h (Δ 2.6h)",
+        "Semana 2026-07-13: 8.18h vs contrato 28h (Δ 19.8h)",
+        "Semana 2026-07-20: 0h vs contrato 28h (Δ 28h)",
+        "Semana vacía: 2026-07-20",
+        "Semana 2026-07-27: 0h vs contrato 28h (Δ 28h)",
+        "Semana vacía: 2026-07-27"
+      ],
+      "naturalness": [
+        "108 días exportados en el período simulado.",
+        "Hay variación en la duración de las jornadas.",
+        "Hay variación en las horas de entrada."
+      ],
+      "weeklyDistribution": [
+        "7/31 semanas dentro de ±1.5h del contrato (28h/sem).",
+        "Media de jornadas flexibles por semana activa: 3.7."
+      ],
+      "consistency": [
+        "Entrada habitual simulada entre 07:00 y 16:32."
+      ],
+      "strengths": [
+        "Histórico generado sin destacar fortalezas específicas."
+      ],
+      "improvements": [
+        "Afinar el balance semanal para acercar más semanas al contrato exacto.",
+        "Evitar huecos semanales en períodos con actividad adyacente."
+      ]
+    },
+    {
+      "employee": "Juan Jesus Alvez de Olivera",
+      "contractedWeekly": 40,
+      "totalRows": 67,
+      "totalHours": 523.05,
+      "weeks": [
+        {
+          "startDate": "2025-12-29",
+          "flexDays": 3,
+          "lockedDays": 1,
+          "totalHours": 34.27,
+          "flexHours": 26.27,
+          "lockedHours": 8,
+          "dates": [
+            "2026-01-02",
+            "2026-01-03",
+            "2026-01-04"
+          ]
+        },
+        {
+          "startDate": "2026-01-05",
+          "flexDays": 5,
+          "lockedDays": 1,
+          "totalHours": 45.16,
+          "flexHours": 37.16,
+          "lockedHours": 8,
+          "dates": [
+            "2026-01-05",
+            "2026-01-07",
+            "2026-01-08",
+            "2026-01-09",
+            "2026-01-10"
+          ]
+        },
+        {
+          "startDate": "2026-01-12",
+          "flexDays": 6,
+          "lockedDays": 0,
+          "totalHours": 43.88,
+          "flexHours": 43.88,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-12",
+            "2026-01-13",
+            "2026-01-14",
+            "2026-01-15",
+            "2026-01-16",
+            "2026-01-18"
+          ]
+        },
+        {
+          "startDate": "2026-01-19",
+          "flexDays": 6,
+          "lockedDays": 0,
+          "totalHours": 48.63,
+          "flexHours": 48.63,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-19",
+            "2026-01-20",
+            "2026-01-21",
+            "2026-01-22",
+            "2026-01-24",
+            "2026-01-25"
+          ]
+        },
+        {
+          "startDate": "2026-01-26",
+          "flexDays": 6,
+          "lockedDays": 0,
+          "totalHours": 46.92,
+          "flexHours": 46.92,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-26",
+            "2026-01-27",
+            "2026-01-29",
+            "2026-01-30",
+            "2026-01-31",
+            "2026-02-01"
+          ]
+        },
+        {
+          "startDate": "2026-02-02",
+          "flexDays": 6,
+          "lockedDays": 0,
+          "totalHours": 45.83,
+          "flexHours": 45.83,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-02",
+            "2026-02-03",
+            "2026-02-04",
+            "2026-02-05",
+            "2026-02-06",
+            "2026-02-07"
+          ]
+        },
+        {
+          "startDate": "2026-02-09",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 40.02,
+          "flexHours": 40.02,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-09",
+            "2026-02-10",
+            "2026-02-11",
+            "2026-02-12",
+            "2026-02-13"
+          ]
+        },
+        {
+          "startDate": "2026-02-16",
+          "flexDays": 0,
+          "lockedDays": 5,
+          "totalHours": 40,
+          "flexHours": 0,
+          "lockedHours": 40,
+          "dates": []
+        },
+        {
+          "startDate": "2026-02-23",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 37.88,
+          "flexHours": 37.88,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-24",
+            "2026-02-25",
+            "2026-02-26",
+            "2026-02-27",
+            "2026-02-28"
+          ]
+        },
+        {
+          "startDate": "2026-03-02",
+          "flexDays": 5,
+          "lockedDays": 0,
+          "totalHours": 39.22,
+          "flexHours": 39.22,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-02",
+            "2026-03-03",
+            "2026-03-04",
+            "2026-03-05",
+            "2026-03-06"
+          ]
+        },
+        {
+          "startDate": "2026-03-09",
+          "flexDays": 4,
+          "lockedDays": 0,
+          "totalHours": 31.55,
+          "flexHours": 31.55,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-10",
+            "2026-03-11",
+            "2026-03-12",
+            "2026-03-13"
+          ]
+        },
+        {
+          "startDate": "2026-03-16",
+          "flexDays": 4,
+          "lockedDays": 1,
+          "totalHours": 38.95,
+          "flexHours": 30.95,
+          "lockedHours": 8,
+          "dates": [
+            "2026-03-16",
+            "2026-03-17",
+            "2026-03-18",
+            "2026-03-19"
+          ]
+        },
+        {
+          "startDate": "2026-03-23",
+          "flexDays": 4,
+          "lockedDays": 1,
+          "totalHours": 38.72,
+          "flexHours": 30.72,
+          "lockedHours": 8,
+          "dates": [
+            "2026-03-24",
+            "2026-03-25",
+            "2026-03-26",
+            "2026-03-27"
+          ]
+        },
+        {
+          "startDate": "2026-03-30",
+          "flexDays": 0,
+          "lockedDays": 1,
+          "totalHours": 8,
+          "flexHours": 0,
+          "lockedHours": 8,
+          "dates": []
+        },
+        {
+          "startDate": "2026-04-06",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-04-13",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-04-20",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-04-27",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-05-04",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-05-11",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-05-18",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-05-25",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-06-01",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-06-08",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-06-15",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-06-22",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-06-29",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-06",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-13",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-20",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-27",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        }
+      ],
+      "anomalies": [
+        "Jornada >10h: 2026-01-03 (10.93h)",
+        "Semana 2025-12-29: 34.269999999999996h vs contrato 40h (Δ 5.7h)",
+        "Entrada muy tardía: 2026-01-07 12:18",
+        "Semana 2026-01-05: 45.16h vs contrato 40h (Δ 5.2h)",
+        "Entrada muy tardía: 2026-01-14 12:42",
+        "Semana 2026-01-12: 43.88h vs contrato 40h (Δ 3.9h)",
+        "Semana con muchas jornadas flexibles (6): 2026-01-12",
+        "Entrada muy tardía: 2026-01-19 13:00",
+        "Entrada muy tardía: 2026-01-21 13:14",
+        "Semana 2026-01-19: 48.63h vs contrato 40h (Δ 8.6h)",
+        "Semana con muchas jornadas flexibles (6): 2026-01-19",
+        "Entrada muy tardía: 2026-01-26 12:52",
+        "Semana 2026-01-26: 46.92h vs contrato 40h (Δ 6.9h)",
+        "Semana con muchas jornadas flexibles (6): 2026-01-26",
+        "Entrada muy tardía: 2026-02-02 12:08",
+        "Semana 2026-02-02: 45.83h vs contrato 40h (Δ 5.8h)",
+        "Semana con muchas jornadas flexibles (6): 2026-02-02",
+        "Entrada muy tardía: 2026-02-24 12:13",
+        "Entrada muy tardía: 2026-02-25 12:28",
+        "Entrada muy tardía: 2026-02-26 13:57",
+        "Semana 2026-02-23: 37.879999999999995h vs contrato 40h (Δ 2.1h)",
+        "Entrada muy tardía: 2026-03-04 13:59",
+        "Entrada muy tardía: 2026-03-12 12:01",
+        "Semana 2026-03-09: 31.549999999999997h vs contrato 40h (Δ 8.5h)",
+        "Entrada muy tardía: 2026-03-18 14:58",
+        "Semana 2026-03-30: 8h vs contrato 40h (Δ 32h)",
+        "Semana 2026-04-06: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-04-06",
+        "Semana 2026-04-13: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-04-13",
+        "Semana 2026-04-20: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-04-20",
+        "Semana 2026-04-27: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-04-27",
+        "Semana 2026-05-04: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-05-04",
+        "Semana 2026-05-11: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-05-11",
+        "Semana 2026-05-18: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-05-18",
+        "Semana 2026-05-25: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-05-25",
+        "Semana 2026-06-01: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-06-01",
+        "Semana 2026-06-08: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-06-08",
+        "Semana 2026-06-15: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-06-15",
+        "Semana 2026-06-22: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-06-22",
+        "Semana 2026-06-29: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-06-29",
+        "Semana 2026-07-06: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-06",
+        "Semana 2026-07-13: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-13",
+        "Semana 2026-07-20: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-20",
+        "Semana 2026-07-27: 0h vs contrato 40h (Δ 40h)",
+        "Semana vacía: 2026-07-27",
+        "Racha de 6 días consecutivos hasta 2026-02-03",
+        "Racha de 7 días consecutivos hasta 2026-02-04",
+        "Racha de 8 días consecutivos hasta 2026-02-05",
+        "Racha de 9 días consecutivos hasta 2026-02-06",
+        "Racha de 10 días consecutivos hasta 2026-02-07"
+      ],
+      "naturalness": [
+        "67 días exportados en el período simulado.",
+        "Hay variación en la duración de las jornadas.",
+        "Hay variación en las horas de entrada."
+      ],
+      "weeklyDistribution": [
+        "5/31 semanas dentro de ±1.5h del contrato (40h/sem).",
+        "Media de jornadas flexibles por semana activa: 4.9."
+      ],
+      "consistency": [
+        "Entrada habitual simulada entre 07:18 y 14:58."
+      ],
+      "strengths": [
+        "Distribución coherente para contrato de 40h (~5 jornadas)."
+      ],
+      "improvements": [
+        "Afinar el balance semanal para acercar más semanas al contrato exacto.",
+        "Evitar huecos semanales en períodos con actividad adyacente."
+      ]
+    },
+    {
+      "employee": "Willy Ruiz",
+      "contractedWeekly": 8,
+      "totalRows": 37,
+      "totalHours": 251.37,
+      "weeks": [
+        {
+          "startDate": "2025-12-29",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.15,
+          "flexHours": 8.15,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-02"
+          ]
+        },
+        {
+          "startDate": "2026-01-05",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.98,
+          "flexHours": 7.98,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-11"
+          ]
+        },
+        {
+          "startDate": "2026-01-12",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 11.2,
+          "flexHours": 11.2,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-12",
+            "2026-01-17"
+          ]
+        },
+        {
+          "startDate": "2026-01-19",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 11.45,
+          "flexHours": 11.45,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-24",
+            "2026-01-25"
+          ]
+        },
+        {
+          "startDate": "2026-01-26",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 11.55,
+          "flexHours": 11.55,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-31",
+            "2026-02-01"
+          ]
+        },
+        {
+          "startDate": "2026-02-02",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.22,
+          "flexHours": 8.22,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-08"
+          ]
+        },
+        {
+          "startDate": "2026-02-09",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.3,
+          "flexHours": 8.3,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-14"
+          ]
+        },
+        {
+          "startDate": "2026-02-16",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 13.15,
+          "flexHours": 13.15,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-16",
+            "2026-02-21"
+          ]
+        },
+        {
+          "startDate": "2026-02-23",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 10.16,
+          "flexHours": 10.16,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-23",
+            "2026-02-24"
+          ]
+        },
+        {
+          "startDate": "2026-03-02",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.32,
+          "flexHours": 7.32,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-02"
+          ]
+        },
+        {
+          "startDate": "2026-03-09",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.45,
+          "flexHours": 8.45,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-14"
+          ]
+        },
+        {
+          "startDate": "2026-03-16",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.6,
+          "flexHours": 7.6,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-22"
+          ]
+        },
+        {
+          "startDate": "2026-03-23",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.85,
+          "flexHours": 7.85,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-28"
+          ]
+        },
+        {
+          "startDate": "2026-03-30",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 6.78,
+          "flexHours": 6.78,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-30"
+          ]
+        },
+        {
+          "startDate": "2026-04-06",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 11.21,
+          "flexHours": 11.21,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-07",
+            "2026-04-12"
+          ]
+        },
+        {
+          "startDate": "2026-04-13",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 5.67,
+          "flexHours": 5.67,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-17"
+          ]
+        },
+        {
+          "startDate": "2026-04-20",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 6.8,
+          "flexHours": 6.8,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-21"
+          ]
+        },
+        {
+          "startDate": "2026-04-27",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 5.88,
+          "flexHours": 5.88,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-28"
+          ]
+        },
+        {
+          "startDate": "2026-05-04",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 6.15,
+          "flexHours": 6.15,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-07"
+          ]
+        },
+        {
+          "startDate": "2026-05-11",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 13.22,
+          "flexHours": 13.22,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-11",
+            "2026-05-15"
+          ]
+        },
+        {
+          "startDate": "2026-05-18",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 6.65,
+          "flexHours": 6.65,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-22"
+          ]
+        },
+        {
+          "startDate": "2026-05-25",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.4,
+          "flexHours": 7.4,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-30"
+          ]
+        },
+        {
+          "startDate": "2026-06-01",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.93,
+          "flexHours": 7.93,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-07"
+          ]
+        },
+        {
+          "startDate": "2026-06-08",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.57,
+          "flexHours": 8.57,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-13"
+          ]
+        },
+        {
+          "startDate": "2026-06-15",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 12.6,
+          "flexHours": 12.6,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-19",
+            "2026-06-21"
+          ]
+        },
+        {
+          "startDate": "2026-06-22",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.45,
+          "flexHours": 8.45,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-22"
+          ]
+        },
+        {
+          "startDate": "2026-06-29",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.08,
+          "flexHours": 7.08,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-05"
+          ]
+        },
+        {
+          "startDate": "2026-07-06",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 7.37,
+          "flexHours": 7.37,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-12"
+          ]
+        },
+        {
+          "startDate": "2026-07-13",
+          "flexDays": 1,
+          "lockedDays": 0,
+          "totalHours": 8.22,
+          "flexHours": 8.22,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-13"
+          ]
+        },
+        {
+          "startDate": "2026-07-20",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-27",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        }
+      ],
+      "anomalies": [
+        "Entrada muy temprana: 2026-01-11 07:04",
+        "Entrada muy tardía: 2026-01-17 15:29",
+        "Semana 2026-01-12: 11.2h vs contrato 8h (Δ 3.2h)",
+        "Semana 2026-01-19: 11.45h vs contrato 8h (Δ 3.4h)",
+        "Semana 2026-01-26: 11.55h vs contrato 8h (Δ 3.6h)",
+        "Semana 2026-02-16: 13.15h vs contrato 8h (Δ 5.2h)",
+        "Semana 2026-02-23: 10.16h vs contrato 8h (Δ 2.2h)",
+        "Entrada muy tardía: 2026-03-14 12:51",
+        "Entrada muy tardía: 2026-03-30 12:17",
+        "Semana 2026-04-06: 11.21h vs contrato 8h (Δ 3.2h)",
+        "Entrada muy tardía: 2026-04-17 12:27",
+        "Semana 2026-04-13: 5.67h vs contrato 8h (Δ 2.3h)",
+        "Semana 2026-04-27: 5.88h vs contrato 8h (Δ 2.1h)",
+        "Semana 2026-05-11: 13.219999999999999h vs contrato 8h (Δ 5.2h)",
+        "Semana 2026-06-15: 12.600000000000001h vs contrato 8h (Δ 4.6h)",
+        "Entrada muy tardía: 2026-07-13 12:01",
+        "Semana 2026-07-20: 0h vs contrato 8h (Δ 8h)",
+        "Semana vacía: 2026-07-20",
+        "Semana 2026-07-27: 0h vs contrato 8h (Δ 8h)",
+        "Semana vacía: 2026-07-27"
+      ],
+      "naturalness": [
+        "37 días exportados en el período simulado.",
+        "Hay variación en la duración de las jornadas.",
+        "Hay variación en las horas de entrada."
+      ],
+      "weeklyDistribution": [
+        "18/31 semanas dentro de ±1.5h del contrato (8h/sem).",
+        "Media de jornadas flexibles por semana activa: 1.3."
+      ],
+      "consistency": [
+        "Entrada habitual simulada entre 07:04 y 15:29."
+      ],
+      "strengths": [
+        "Distribución coherente para contrato de 8h (~1 jornada)."
+      ],
+      "improvements": [
+        "Afinar el balance semanal para acercar más semanas al contrato exacto.",
+        "Evitar huecos semanales en períodos con actividad adyacente."
+      ]
+    },
+    {
+      "employee": "Silvia Valiente",
+      "contractedWeekly": 16,
+      "totalRows": 59,
+      "totalHours": 461.6,
+      "weeks": [
+        {
+          "startDate": "2025-12-29",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.66,
+          "flexHours": 16.66,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-02",
+            "2026-01-03"
+          ]
+        },
+        {
+          "startDate": "2026-01-05",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 20.26,
+          "flexHours": 20.26,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-05",
+            "2026-01-10",
+            "2026-01-11"
+          ]
+        },
+        {
+          "startDate": "2026-01-12",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.17,
+          "flexHours": 16.17,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-17",
+            "2026-01-18"
+          ]
+        },
+        {
+          "startDate": "2026-01-19",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 14.83,
+          "flexHours": 14.83,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-19",
+            "2026-01-24"
+          ]
+        },
+        {
+          "startDate": "2026-01-26",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 19.67,
+          "flexHours": 19.67,
+          "lockedHours": 0,
+          "dates": [
+            "2026-01-31",
+            "2026-02-01"
+          ]
+        },
+        {
+          "startDate": "2026-02-02",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 17.93,
+          "flexHours": 17.93,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-07",
+            "2026-02-08"
+          ]
+        },
+        {
+          "startDate": "2026-02-09",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 21.45,
+          "flexHours": 21.45,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-09",
+            "2026-02-14",
+            "2026-02-15"
+          ]
+        },
+        {
+          "startDate": "2026-02-16",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.72,
+          "flexHours": 16.72,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-21",
+            "2026-02-22"
+          ]
+        },
+        {
+          "startDate": "2026-02-23",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 17.8,
+          "flexHours": 17.8,
+          "lockedHours": 0,
+          "dates": [
+            "2026-02-28",
+            "2026-03-01"
+          ]
+        },
+        {
+          "startDate": "2026-03-02",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.9,
+          "flexHours": 15.9,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-07",
+            "2026-03-08"
+          ]
+        },
+        {
+          "startDate": "2026-03-09",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 11.65,
+          "flexHours": 11.65,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-09",
+            "2026-03-15"
+          ]
+        },
+        {
+          "startDate": "2026-03-16",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.22,
+          "flexHours": 16.22,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-21",
+            "2026-03-22"
+          ]
+        },
+        {
+          "startDate": "2026-03-23",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.28,
+          "flexHours": 16.28,
+          "lockedHours": 0,
+          "dates": [
+            "2026-03-28",
+            "2026-03-29"
+          ]
+        },
+        {
+          "startDate": "2026-03-30",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.25,
+          "flexHours": 16.25,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-04",
+            "2026-04-05"
+          ]
+        },
+        {
+          "startDate": "2026-04-06",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.08,
+          "flexHours": 15.08,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-11",
+            "2026-04-12"
+          ]
+        },
+        {
+          "startDate": "2026-04-13",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.5,
+          "flexHours": 15.5,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-18",
+            "2026-04-19"
+          ]
+        },
+        {
+          "startDate": "2026-04-20",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.27,
+          "flexHours": 16.27,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-22",
+            "2026-04-25"
+          ]
+        },
+        {
+          "startDate": "2026-04-27",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.97,
+          "flexHours": 15.97,
+          "lockedHours": 0,
+          "dates": [
+            "2026-04-29",
+            "2026-04-30"
+          ]
+        },
+        {
+          "startDate": "2026-05-04",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 13.57,
+          "flexHours": 13.57,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-04",
+            "2026-05-09"
+          ]
+        },
+        {
+          "startDate": "2026-05-11",
+          "flexDays": 3,
+          "lockedDays": 0,
+          "totalHours": 20.55,
+          "flexHours": 20.55,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-11",
+            "2026-05-16",
+            "2026-05-17"
+          ]
+        },
+        {
+          "startDate": "2026-05-18",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.6,
+          "flexHours": 15.6,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-23",
+            "2026-05-24"
+          ]
+        },
+        {
+          "startDate": "2026-05-25",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.38,
+          "flexHours": 16.38,
+          "lockedHours": 0,
+          "dates": [
+            "2026-05-30",
+            "2026-05-31"
+          ]
+        },
+        {
+          "startDate": "2026-06-01",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.63,
+          "flexHours": 15.63,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-06",
+            "2026-06-07"
+          ]
+        },
+        {
+          "startDate": "2026-06-08",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.69,
+          "flexHours": 16.69,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-11",
+            "2026-06-14"
+          ]
+        },
+        {
+          "startDate": "2026-06-15",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 16.25,
+          "flexHours": 16.25,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-20",
+            "2026-06-21"
+          ]
+        },
+        {
+          "startDate": "2026-06-22",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.95,
+          "flexHours": 15.95,
+          "lockedHours": 0,
+          "dates": [
+            "2026-06-27",
+            "2026-06-28"
+          ]
+        },
+        {
+          "startDate": "2026-06-29",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.11,
+          "flexHours": 15.11,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-04",
+            "2026-07-05"
+          ]
+        },
+        {
+          "startDate": "2026-07-06",
+          "flexDays": 2,
+          "lockedDays": 0,
+          "totalHours": 15.25,
+          "flexHours": 15.25,
+          "lockedHours": 0,
+          "dates": [
+            "2026-07-11",
+            "2026-07-12"
+          ]
+        },
+        {
+          "startDate": "2026-07-13",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-20",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        },
+        {
+          "startDate": "2026-07-27",
+          "flexDays": 0,
+          "lockedDays": 0,
+          "totalHours": 0,
+          "flexHours": 0,
+          "lockedHours": 0,
+          "dates": []
+        }
+      ],
+      "anomalies": [
+        "Entrada muy temprana: 2026-01-11 07:14",
+        "Semana 2026-01-05: 20.259999999999998h vs contrato 16h (Δ 4.3h)",
+        "Entrada muy tardía: 2026-01-17 13:13",
+        "Jornada >10h: 2026-01-31 (10.1h)",
+        "Semana 2026-01-26: 19.67h vs contrato 16h (Δ 3.7h)",
+        "Jornada >10h: 2026-02-07 (10.38h)",
+        "Entrada muy tardía: 2026-02-14 13:18",
+        "Semana 2026-02-09: 21.450000000000003h vs contrato 16h (Δ 5.5h)",
+        "Entrada muy tardía: 2026-02-28 12:04",
+        "Entrada muy temprana: 2026-03-01 07:07",
+        "Entrada muy tardía: 2026-03-07 13:53",
+        "Semana 2026-03-09: 11.65h vs contrato 16h (Δ 4.4h)",
+        "Entrada muy temprana: 2026-04-05 06:38",
+        "Entrada muy tardía: 2026-05-09 13:33",
+        "Semana 2026-05-04: 13.57h vs contrato 16h (Δ 2.4h)",
+        "Semana 2026-05-11: 20.55h vs contrato 16h (Δ 4.6h)",
+        "Entrada muy temprana: 2026-05-31 07:13",
+        "Entrada muy tardía: 2026-06-27 12:08",
+        "Entrada muy tardía: 2026-07-04 13:42",
+        "Semana 2026-07-13: 0h vs contrato 16h (Δ 16h)",
+        "Semana vacía: 2026-07-13",
+        "Semana 2026-07-20: 0h vs contrato 16h (Δ 16h)",
+        "Semana vacía: 2026-07-20",
+        "Semana 2026-07-27: 0h vs contrato 16h (Δ 16h)",
+        "Semana vacía: 2026-07-27"
+      ],
+      "naturalness": [
+        "59 días exportados en el período simulado.",
+        "Hay variación en la duración de las jornadas.",
+        "Hay variación en las horas de entrada."
+      ],
+      "weeklyDistribution": [
+        "20/31 semanas dentro de ±1.5h del contrato (16h/sem).",
+        "Media de jornadas flexibles por semana activa: 2.1."
+      ],
+      "consistency": [
+        "Entrada habitual simulada entre 06:38 y 13:53."
+      ],
+      "strengths": [
+        "Distribución coherente para contrato de 16h (~2 jornadas)."
+      ],
+      "improvements": [
+        "Afinar el balance semanal para acercar más semanas al contrato exacto.",
+        "Evitar huecos semanales en períodos con actividad adyacente."
+      ]
+    }
+  ]
+}

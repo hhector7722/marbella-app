@@ -1,0 +1,108 @@
+{
+  "fixedToday": "2026-07-13",
+  "determinism": [
+    {
+      "name": "Hector (40h)",
+      "match": true,
+      "hash": "1c00f7c166fa6e92"
+    },
+    {
+      "name": "Pere (28h)",
+      "match": true,
+      "hash": "72d8679147959d10"
+    },
+    {
+      "name": "Silvia (16h)",
+      "match": true,
+      "hash": "8a76c30fa11b6c3f"
+    },
+    {
+      "name": "Willy (8h)",
+      "match": true,
+      "hash": "156c70ad8438713b"
+    },
+    {
+      "name": "Juan (0h+hist)",
+      "match": true,
+      "hash": "6b2cf5204602cc39"
+    }
+  ],
+  "edgeCases": [
+    {
+      "name": "Hector (40h)",
+      "canSimulate": true,
+      "effectiveContract": 40,
+      "rows": 138
+    },
+    {
+      "name": "Pere (28h)",
+      "canSimulate": true,
+      "effectiveContract": 28,
+      "rows": 113
+    },
+    {
+      "name": "Silvia (16h)",
+      "canSimulate": true,
+      "effectiveContract": 16,
+      "rows": 58
+    },
+    {
+      "name": "Willy (8h)",
+      "canSimulate": true,
+      "effectiveContract": 8,
+      "rows": 33
+    },
+    {
+      "name": "Juan (0h+hist)",
+      "canSimulate": true,
+      "effectiveContract": 40,
+      "rows": 68
+    }
+  ],
+  "january": [
+    {
+      "name": "Hector",
+      "janDays": 22,
+      "joiningDate": "2026-02-15"
+    },
+    {
+      "name": "Pere",
+      "janDays": 19,
+      "joiningDate": "2026-02-15"
+    },
+    {
+      "name": "Silvia",
+      "janDays": 9,
+      "joiningDate": "2026-02-15"
+    },
+    {
+      "name": "Willy",
+      "janDays": 5,
+      "joiningDate": "2025-10-01"
+    },
+    {
+      "name": "Juan",
+      "janDays": 23,
+      "joiningDate": "2026-02-15"
+    }
+  ],
+  "endDate": [
+    {
+      "name": "Juan",
+      "endDate": "2026-03-30",
+      "maxSimulatedDate": "2026-03-30",
+      "ok": true
+    }
+  ],
+  "zeroContractBlocked": {
+    "canSimulate": false,
+    "reason": "No hay información suficiente para simular el histórico. Se necesitan fichajes fiables desde mediados de febrero.",
+    "contractedHoursWeekly": 0
+  },
+  "joiningDateIgnored": {
+    "hashLateJoin": "1c00f7c166fa6e92",
+    "hashNoJoin": "1c00f7c166fa6e92",
+    "match": true
+  },
+  "syntheticZeroThrows": true
+}
