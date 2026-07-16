@@ -104,3 +104,56 @@ export function qtyByIdToSubmitItems(qtyById: Record<string, number>): EventOrde
   }
   return out
 }
+
+export type EventOrderStartingPackItem = {
+  product_id: string
+  quantity: number
+}
+
+function lineLooksHalf(row: {
+  is_half?: boolean
+  notes?: string | null
+  name?: string | null
+}): boolean {
+  if (row.is_half === true) return true
+  const notes = String(row.notes ?? '').trim()
+  if (/^(1\/2|½|medio|mitad|half)$/i.test(notes)) return true
+  const name = String(row.name ?? '').trim()
+  return /^(1\/2|½)\b/i.test(name)
+}
+
+/**
+ * Convierte líneas de event_orders.items → claves de carrito (`id` / `id:medio`)
+ * para hidratar qtyById al reabrir el pedido cliente.
+ */
+export function eventOrderItemsToStartingPack(
+  items: unknown
+): EventOrderStartingPackItem[] {
+  if (!Array.isArray(items)) return []
+  const merged = new Map<string, number>()
+  for (const raw of items) {
+    const row = raw as {
+      product_id?: string
+      quantity?: number
+      is_half?: boolean
+      notes?: string | null
+      name?: string | null
+    }
+    const pid = String(row.product_id ?? '').trim()
+    const qty = Math.max(0, Math.min(999, Number(row.quantity) || 0))
+    if (!pid || qty <= 0) continue
+    const articuloId = Number(pid)
+    let key = pid
+    if (Number.isFinite(articuloId) && articuloId > 0) {
+      key = eventOrderCartKey(
+        articuloId,
+        lineLooksHalf(row) ? 'medio' : 'entero'
+      )
+    }
+    merged.set(key, (merged.get(key) ?? 0) + qty)
+  }
+  return [...merged.entries()].map(([product_id, quantity]) => ({
+    product_id,
+    quantity,
+  }))
+}

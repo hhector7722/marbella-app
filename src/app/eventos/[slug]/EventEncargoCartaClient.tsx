@@ -115,7 +115,7 @@ export default function EventEncargoCartaClient({
       const pid = String(it.product_id ?? '').trim()
       const qty = Number(it.quantity) || 0
       if (!pid || qty <= 0) continue
-      out[pid] = qty
+      out[pid] = (out[pid] ?? 0) + qty
     }
     return out
   })

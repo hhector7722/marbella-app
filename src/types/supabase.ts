@@ -3547,6 +3547,10 @@ export type Database = {
         Args: { p_items: Json; p_notes?: string; p_token: string }
         Returns: Json
       }
+      get_client_event_order_items_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       create_user_notifications_bulk: {
         Args: {
           p_action_url: string
