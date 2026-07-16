@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Condiciones laborales v1)
+**Última actualización:** 2026-07-16 (Plantilla ↔ perfil manager)
+
+- [x] **Navegación plantilla desde /profile (manager) (2026-07-16)**: En `/profile`, managers ven flecha atrás (sin marco) que abre `StaffSelectionModal`; al elegir trabajador → `/profile?id=`. Si el modal se abre desde perfil, su flecha vuelve al home del rol (`getHomeHrefForUser`). Desde dashboard/otras pantallas el modal no muestra esa flecha. Navbar no duplica la flecha en `/profile` para managers.
+
+**Última actualización anterior:** 2026-07-16 (Condiciones laborales v1)
 
 - [x] **Condiciones laborales v1 (2026-07-16)**: Pantalla `/profile/contrato?id=` (botón «Condiciones laborales» en `/profile`, solo `hhector7722@gmail.com`). Resumen + histórico; CTA «Cambiar condiciones laborales»; fecha efectiva = hoy Madrid (sin selector). Escritura: Server Action → `persistContractualChange` → `hours_contract_terms` → espejo `profiles`. Bloqueo de campos contractuales en `updateProfile`. Tests: `npm run test:hours-engine:labor` (7). Sin fechas libres, sin edición histórica, sin orquestador.
 

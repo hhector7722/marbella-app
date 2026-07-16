@@ -62,6 +62,8 @@ export default function Navbar() {
 
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
     const homePath = getHomeHrefForUser(userData?.email, userData?.role);
+    // En /profile el manager usa la flecha del propio perfil (abre plantilla); no duplicar la del Navbar
+    const hideNavbarBack = isDashboard || (pathname === '/profile' && userData?.role === 'manager');
 
     return (
         <>
@@ -73,14 +75,15 @@ export default function Navbar() {
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full">
 
                     <div className="flex items-center gap-1">
-                        {!isDashboard && (
+                        {!hideNavbarBack && (
                             <button
                                 onClick={() => {
                                     router.push(homePath);
                                 }}
                                 className={cn(
-                                    'h-12 w-12 shrink-0 grid place-items-center rounded-full transition-colors',
-                                    'hover:bg-white/10 active:bg-white/15'
+                                    'h-12 w-12 shrink-0 grid place-items-center',
+                                    'border-0 bg-transparent shadow-none rounded-none',
+                                    'active:opacity-70 transition-opacity'
                                 )}
                                 aria-label="Ir a inicio"
                             >

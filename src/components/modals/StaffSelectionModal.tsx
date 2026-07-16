@@ -44,6 +44,12 @@ interface StaffSelectionModalProps {
     headerTextAction?: { label: string; onClick: () => void };
     /** Si true, oculta la cruz (X) de cierre en cabecera */
     hideHeaderClose?: boolean;
+    /**
+     * Flecha atrás en cabecera (sin marco/relleno).
+     * Solo pasar cuando el modal se abre desde `/profile` (navega a inicio).
+     * Desde dashboard u otras pantallas no debe pasarse.
+     */
+    onBack?: () => void;
 }
 
 const PLANTILLA_SENTINEL: PlantillaEmployee = { id: '', first_name: 'Plantilla', last_name: '' };
@@ -97,7 +103,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     manageVisibility = false,
     onToggleVisibility,
     headerTextAction,
-    hideHeaderClose = false
+    hideHeaderClose = false,
+    onBack,
 }) => {
     const pathname = usePathname();
 
@@ -153,6 +160,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             zIndexClass="z-[150]"
             headerTrailing={headerTrailing}
             hideCloseButton={hideHeaderClose}
+            onBack={onBack}
+            onBackPlain={Boolean(onBack)}
         >
             <div className={cn(
                 "p-4 bg-white",

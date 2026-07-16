@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { Avatar } from '@/components/ui/Avatar';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, ChevronLeft } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -19,7 +19,15 @@ import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
 import { updateProfile } from '@/app/actions/profile';
-import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
+import {
+    PLANTILLA_EMPLOYEE_SELECT,
+    filterVisiblePlantillaEmployees,
+} from '@/lib/staff/plantilla-employees';
+import {
+    StaffSelectionModal,
+    type PlantillaEmployee,
+} from '@/components/modals/StaffSelectionModal';
 import type { User } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -85,6 +93,10 @@ function ProfileContent() {
     const [joiningDateSaving, setJoiningDateSaving] = useState(false);
     const [endDateYmd, setEndDateYmd] = useState<string>('');
     const [endDateSaving, setEndDateSaving] = useState(false);
+    const [plantillaOpen, setPlantillaOpen] = useState(false);
+    const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployee[]>([]);
+    const [plantillaLoading, setPlantillaLoading] = useState(false);
+    const [viewerRole, setViewerRole] = useState<string | null>(null);
 
     const fullName = profile
         ? `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase()
@@ -324,6 +336,7 @@ function ProfileContent() {
             const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             const managerStatus = currentProfile?.role === 'manager';
             setIsManager(managerStatus);
+            setViewerRole(currentProfile?.role ?? null);
             const effectiveId = (targetId && managerStatus) ? targetId : user.id;
             const { data, error } = await supabase.from('profiles').select('*').eq('id', effectiveId).single();
             if (error) throw error;
@@ -343,6 +356,39 @@ function ProfileContent() {
     const showAccountSection = !viewingOtherProfile;
     type ViewMode = 'staff' | 'manager-self' | 'manager-employee';
     const viewMode: ViewMode = !isManager ? 'staff' : viewingOtherProfile ? 'manager-employee' : 'manager-self';
+
+    const openPlantillaFromProfile = useCallback(async () => {
+        if (!isManager) return;
+        setPlantillaOpen(true);
+        if (plantillaEmployees.length > 0) return;
+        setPlantillaLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select(PLANTILLA_EMPLOYEE_SELECT)
+                .eq('visible_in_plantilla', true)
+                .order('first_name');
+            if (error) {
+                toast.error('No se pudo cargar la plantilla');
+                setPlantillaOpen(false);
+                return;
+            }
+            setPlantillaEmployees(
+                filterVisiblePlantillaEmployees((data || []) as PlantillaEmployee[]),
+            );
+        } catch (e) {
+            console.error(e);
+            toast.error('No se pudo cargar la plantilla');
+            setPlantillaOpen(false);
+        } finally {
+            setPlantillaLoading(false);
+        }
+    }, [isManager, plantillaEmployees.length, supabase]);
+
+    const goHomeFromPlantilla = useCallback(() => {
+        setPlantillaOpen(false);
+        router.push(getHomeHrefForUser(currentUser?.email, viewerRole));
+    }, [currentUser?.email, viewerRole, router]);
 
     const saveJoiningDate = useCallback(async () => {
         if (!profile || !isManager) return;
@@ -461,6 +507,23 @@ function ProfileContent() {
                     {/* Cabecera petróleo (compacta) */}
                     <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 pt-3 pb-3 px-4">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
+
+                        {isManager ? (
+                            <div className="relative z-10 -ml-2 -mt-1 mb-1">
+                                <button
+                                    type="button"
+                                    onClick={() => void openPlantillaFromProfile()}
+                                    className={cn(
+                                        'inline-flex min-h-12 min-w-12 items-center justify-center',
+                                        'border-0 bg-transparent shadow-none',
+                                        'text-white active:opacity-70',
+                                    )}
+                                    aria-label="Abrir plantilla"
+                                >
+                                    <ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />
+                                </button>
+                            </div>
+                        ) : null}
 
                         <div className="relative z-10 grid grid-cols-[5rem_1fr_5rem] items-start gap-3 min-h-0">
                             <div className="shrink-0 flex flex-col items-center gap-1.5 w-20">
@@ -713,6 +776,27 @@ function ProfileContent() {
                     onCancel={handleAvatarCropCancel}
                 />
             )}
+
+            {isManager ? (
+                <StaffSelectionModal
+                    isOpen={plantillaOpen}
+                    onClose={() => setPlantillaOpen(false)}
+                    employees={plantillaEmployees}
+                    onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
+                    title="Plantilla"
+                    variant="profile-list"
+                    hideHeaderClose
+                    onBack={goHomeFromPlantilla}
+                    usageId="profile-plantilla"
+                    usageLabel="Plantilla desde perfil"
+                >
+                    {plantillaLoading && plantillaEmployees.length === 0 ? (
+                        <p className="py-6 text-center text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                            Cargando…
+                        </p>
+                    ) : null}
+                </StaffSelectionModal>
+            ) : null}
 
             {/* Confirmación cerrar sesión */}
             {logoutConfirm && (

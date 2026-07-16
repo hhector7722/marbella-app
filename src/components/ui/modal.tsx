@@ -28,6 +28,8 @@ type ModalProps = {
   ariaLabel?: string;
   backdropClassName?: string;
   onBack?: () => void;
+  /** Flecha atrás sin marco/relleno (p. ej. plantilla desde /profile) */
+  onBackPlain?: boolean;
   loading?: boolean;
   headerTitleAlign?: 'left' | 'default';
   headerCompact?: boolean;
@@ -49,6 +51,7 @@ function ModalPanelShell({
   headerVariant,
   onClose,
   onBack,
+  onBackPlain = false,
   hideHeaderDivider,
   hideTitle = false,
   hideHeader = false,
@@ -67,6 +70,7 @@ function ModalPanelShell({
   headerVariant: ModalHeaderVariant;
   onClose: () => void;
   onBack?: () => void;
+  onBackPlain?: boolean;
   hideHeaderDivider?: boolean;
   hideTitle?: boolean;
   hideHeader?: boolean;
@@ -109,13 +113,20 @@ function ModalPanelShell({
               aria-label="Volver"
               onClick={onBack}
               className={cn(
-                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
-                petroleum
-                  ? 'bg-white/10 hover:bg-white/20 text-white'
-                  : 'text-zinc-500 hover:bg-zinc-100'
+                'flex shrink-0 items-center justify-center transition-colors active:opacity-70',
+                onBackPlain
+                  ? 'min-h-12 min-w-12 border-0 bg-transparent shadow-none'
+                  : 'h-10 w-10 rounded-xl',
+                onBackPlain
+                  ? petroleum
+                    ? 'text-white'
+                    : 'text-zinc-700'
+                  : petroleum
+                    ? 'bg-white/10 hover:bg-white/20 text-white'
+                    : 'text-zinc-500 hover:bg-zinc-100'
               )}
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" strokeWidth={onBackPlain ? 2.25 : undefined} />
             </button>
           ) : (
             <span className={cn('shrink-0', hideTitle || titleLeft ? 'w-0' : 'w-10')} aria-hidden />
@@ -205,6 +216,7 @@ export function Modal({
   ariaLabel,
   backdropClassName,
   onBack,
+  onBackPlain = false,
   loading = false,
   headerTrailing,
   headerTitleAlign = 'default',
@@ -343,6 +355,7 @@ export function Modal({
             headerVariant={headerVariant}
             onClose={onClose}
             onBack={onBack}
+            onBackPlain={onBackPlain}
             hideHeaderDivider={hideHeaderDivider}
             hideTitle={hideTitle}
             hideHeader={hideHeader}
