@@ -472,7 +472,7 @@ export default function EventEncargoCartaClient({
       </button>
       <EventEncargoCartFooter
         lines={cartLines}
-        totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
+        totalUnits={totalItems}
         limitWarnings={limitWarnings}
         onIncrement={addOneToCart}
         onDecrement={removeOneFromCart}
@@ -484,7 +484,7 @@ export default function EventEncargoCartaClient({
   ) : (
     <EventEncargoCartFooter
       lines={cartLines}
-      totalLabel={totalItems > 0 ? `${totalItems} uds.` : undefined}
+      totalUnits={totalItems}
       limitWarnings={limitWarnings}
       onIncrement={addOneToCart}
       onDecrement={removeOneFromCart}

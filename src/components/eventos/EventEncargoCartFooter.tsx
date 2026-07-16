@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Minus, Plus, Loader2, ShoppingBag } from 'lucide-react'
+import { Minus, Plus, Loader2 } from 'lucide-react'
 
 import { Modal } from '@/components/ui/modal'
 import { cn } from '@/lib/utils'
@@ -14,9 +14,27 @@ export type EventEncargoCartLine = {
   portion?: 'entero' | 'medio'
 }
 
+/** Badge rojo estilo campana de notificaciones. */
+function UnitsBadge({ count }: { count: number }) {
+  if (count < 1) return null
+  const label = count > 99 ? '99+' : String(count)
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF3B30] text-white tabular-nums',
+        'font-semibold leading-none shadow-[0_1px_4px_rgba(255,59,48,0.4)]',
+        'min-h-[18px] min-w-[18px] px-1 text-[11px]'
+      )}
+      aria-hidden
+    >
+      {label}
+    </span>
+  )
+}
+
 export function EventEncargoCartFooter({
   lines,
-  totalLabel,
+  totalUnits = 0,
   limitWarnings = [],
   onIncrement,
   onDecrement,
@@ -30,7 +48,8 @@ export function EventEncargoCartFooter({
   confirmActionLabel = 'Sí, enviar',
 }: {
   lines: EventEncargoCartLine[]
-  totalLabel?: string
+  /** Unidades totales para el badge (estilo notificación). */
+  totalUnits?: number
   limitWarnings?: string[]
   onIncrement: (articuloId: number, portion?: 'entero' | 'medio') => void
   onDecrement: (articuloId: number, portion?: 'entero' | 'medio') => void
@@ -47,6 +66,7 @@ export function EventEncargoCartFooter({
   const [cartOpen, setCartOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const hasLines = lines.length > 0
+  const units = totalUnits > 0 ? totalUnits : lines.reduce((s, l) => s + l.quantity, 0)
   const saveBlocked = saveDisabled || !hasLines || isPending
 
   const requestSave = () => {
@@ -61,9 +81,9 @@ export function EventEncargoCartFooter({
 
   return (
     <>
-      <div className="shrink-0 border-t border-zinc-200 bg-white px-4 py-3 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] pb-safe md:px-5">
+      <div className="shrink-0 border-t border-zinc-200 bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_16px_rgba(0,0,0,0.04)] md:px-4">
         {limitWarnings.length > 0 ? (
-          <ul className="mb-2 space-y-1">
+          <ul className="mb-1.5 space-y-0.5">
             {limitWarnings.map((w) => (
               <li key={w} className="text-xs font-bold leading-snug text-red-600">
                 {w}
@@ -78,25 +98,22 @@ export function EventEncargoCartFooter({
             disabled={!hasLines}
             onClick={() => setCartOpen(true)}
             className={cn(
-              'relative flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors',
+              'relative flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3',
+              'text-sm font-bold whitespace-nowrap transition-colors',
               hasLines
                 ? 'border-zinc-200 bg-white text-zinc-900 active:bg-zinc-50'
                 : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-400'
             )}
           >
-            <ShoppingBag className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
-            Ver pedido
-            {hasLines && totalLabel ? (
-              <span className="rounded-md bg-[#36606F]/10 px-1.5 py-0.5 text-[11px] font-black tabular-nums text-[#36606F]">
-                {totalLabel}
-              </span>
-            ) : null}
+            <span className="leading-none">Ver pedido</span>
+            {hasLines && units > 0 ? <UnitsBadge count={units} /> : null}
           </button>
 
           <button
             type="button"
             className={cn(
-              'flex min-h-12 flex-1 items-center justify-center rounded-xl px-3 text-sm font-bold text-white shadow-md transition-all',
+              'flex h-10 min-h-10 flex-1 items-center justify-center rounded-xl px-3',
+              'text-sm font-bold whitespace-nowrap text-white shadow-md transition-all',
               hasLines
                 ? 'bg-[#36606F] hover:bg-[#2a4a56] active:scale-[0.99]'
                 : 'bg-zinc-200 text-zinc-600 shadow-none',
@@ -105,7 +122,7 @@ export function EventEncargoCartFooter({
             disabled={saveBlocked}
             onClick={requestSave}
           >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : saveLabel}
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : saveLabel}
           </button>
         </div>
       </div>
@@ -165,8 +182,8 @@ export function EventEncargoCartFooter({
             </div>
           )}
 
-          {totalLabel ? (
-            <p className="mt-3 text-right text-sm font-black text-[#36606F]">{totalLabel}</p>
+          {units > 0 ? (
+            <p className="mt-3 text-right text-sm font-black text-[#36606F]">{units} uds.</p>
           ) : null}
 
           <div className="mt-4 flex flex-col gap-2">

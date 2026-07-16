@@ -150,7 +150,9 @@ export function CartaStaffMenuProductCard({
   return (
     <div
       className={cn(
-        'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
+        'flex h-full min-w-0 flex-col items-center rounded-2xl bg-white',
+        // overflow-hidden recorta el badge de cantidad; visible en modo pedido
+        eventTapToAdd ? 'overflow-visible' : 'overflow-hidden',
         rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
         rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
         rowDensity === 'normal' && 'gap-1 sm:gap-1.5',
@@ -163,9 +165,11 @@ export function CartaStaffMenuProductCard({
             CARTA_PRODUCT_PHOTO_CELL_CLASS,
             'shrink-0',
             row.photo_url && 'relative',
+            eventTapToAdd && 'overflow-visible',
             rowDensity === 'compact' && 'pt-0.5',
             rowDensity === 'cozy' && 'pt-0.5',
-            rowDensity === 'normal' && 'pt-1'
+            rowDensity === 'normal' && 'pt-1',
+            eventTapToAdd && eventQtyTotal > 0 && 'pt-2 pr-1'
           )}
         >
           {row.photo_url ? (
@@ -234,8 +238,17 @@ export function CartaStaffMenuProductCard({
                 />
               </button>
               {eventTapToAdd && eventQtyTotal > 0 ? (
-                <span className="absolute right-0 top-0 z-30 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm sm:right-0.5 sm:top-0.5">
-                  ×{eventQtyTotal}
+                <span
+                  className={cn(
+                    'pointer-events-none absolute right-0 top-0 z-30',
+                    'inline-flex translate-x-[35%] -translate-y-[35%] items-center justify-center',
+                    'min-h-[18px] min-w-[18px] rounded-full bg-[#FF3B30] px-1',
+                    'text-[10px] font-semibold tabular-nums leading-none text-white',
+                    'shadow-[0_1px_4px_rgba(255,59,48,0.4)]'
+                  )}
+                  aria-label={`${eventQtyTotal} en el pedido`}
+                >
+                  {eventQtyTotal > 99 ? '99+' : eventQtyTotal}
                 </span>
               ) : null}
               {editMode && onToggleProductActive ? (
