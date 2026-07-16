@@ -20,7 +20,8 @@ import {
   isCartaDrinksSection,
 } from '@/lib/carta-product-photo'
 import { EventCartaOrderControls } from '@/components/carta/EventCartaOrderControls'
-import { EventCartaDualRacionOrderControls } from '@/components/carta/EventCartaDualRacionOrderControls'
+import { Modal } from '@/components/ui/modal'
+import { formatCartaPrice } from '@/lib/carta-price-display'
 import {
   eventOrderProductId,
   eventOrderQtyFor,
@@ -75,6 +76,7 @@ export function CartaStaffMenuProductCard({
   eventOrder?: EventOrderCartaControl
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [racionPickerOpen, setRacionPickerOpen] = useState(false)
   const displayName =
     isPlatoMarbellaLauncher && platoLauncherTitle?.trim()
       ? platoLauncherTitle.trim()
@@ -86,13 +88,13 @@ export function CartaStaffMenuProductCard({
     row.medio_articulo_id != null && Number(row.medio_articulo_id) > 0
       ? Number(row.medio_articulo_id)
       : null
-  /** Dual ración TPV (mismo artículo + precio medio) o par TPV entero/medio. */
-  const hasDualOrderChoice =
-    eventOrderActive && Boolean(row.precio_medio_display)
-  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd) && !hasDualOrderChoice
-  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd && !hasDualOrderChoice
+  /** Tiene ración medio (mismo artículo TPV o par emparejado). */
+  const hasDualRacion = Boolean(row.precio_medio_display)
+  /** Pedido = fotocopia de carta: tap añade (o abre picker si hay mitad). */
+  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd)
+  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd
   const eventQty = eventOrderQtyFor(eventOrder, row.articulo_id, 'entero')
-  const eventQtyMedio = hasDualOrderChoice
+  const eventQtyMedio = hasDualRacion
     ? medioArticuloId != null
       ? eventOrderQtyFor(eventOrder, medioArticuloId, 'entero')
       : eventOrderQtyFor(eventOrder, row.articulo_id, 'medio')
@@ -100,17 +102,45 @@ export function CartaStaffMenuProductCard({
   const eventQtyTotal = eventQty + eventQtyMedio
   const productId = eventOrderProductId(row.articulo_id)
   const dualLabels = resolveCartaDualRacionLabels(row, lang)
+  const priceEnteroLabel = formatCartaPrice(row.precio)
+  const priceMedioLabel = formatCartaPrice(row.precio_medio_display)
+
+  const addEntero = () => {
+    if (!eventOrder) return
+    eventOrder.onQuantityChange(row.articulo_id, Math.min(999, eventQty + 1), {
+      portion: 'entero',
+    })
+  }
+
+  const addMedio = () => {
+    if (!eventOrder) return
+    if (medioArticuloId != null) {
+      eventOrder.onQuantityChange(medioArticuloId, Math.min(999, eventQtyMedio + 1), {
+        portion: 'entero',
+      })
+    } else {
+      eventOrder.onQuantityChange(row.articulo_id, Math.min(999, eventQtyMedio + 1), {
+        portion: 'medio',
+      })
+    }
+  }
 
   const handleTapAdd = (e: MouseEvent) => {
     if (!eventOrder || !eventTapToAdd) return
     e.preventDefault()
     e.stopPropagation()
-    const next = Math.min(999, eventQty + 1)
-    eventOrder.onQuantityChange(row.articulo_id, next)
+    if (hasDualRacion) {
+      setRacionPickerOpen(true)
+      return
+    }
+    addEntero()
   }
 
   useEffect(() => {
-    if (editMode) setLightboxOpen(false)
+    if (editMode) {
+      setLightboxOpen(false)
+      setRacionPickerOpen(false)
+    }
   }, [editMode])
 
   const isDrink = isCartaDrinksSection(row.category_parent_name)
@@ -159,7 +189,9 @@ export function CartaStaffMenuProductCard({
                 style={frameStyle}
                 aria-label={
                   eventTapToAdd
-                    ? `Añadir ${displayName}`
+                    ? hasDualRacion
+                      ? `Elegir ración de ${displayName}`
+                      : `Añadir ${displayName}`
                     : productReorderMode && onReorderTap
                       ? 'Seleccionar para reordenar'
                       : editMode && onEditProduct
@@ -201,12 +233,7 @@ export function CartaStaffMenuProductCard({
                   articuloId={row.articulo_id}
                 />
               </button>
-              {eventTapToAdd && eventQty > 0 ? (
-                <span className="absolute right-0 top-0 z-30 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm sm:right-0.5 sm:top-0.5">
-                  ×{eventQty}
-                </span>
-              ) : null}
-              {hasDualOrderChoice && eventQtyTotal > 0 ? (
+              {eventTapToAdd && eventQtyTotal > 0 ? (
                 <span className="absolute right-0 top-0 z-30 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm sm:right-0.5 sm:top-0.5">
                   ×{eventQtyTotal}
                 </span>
@@ -302,7 +329,7 @@ export function CartaStaffMenuProductCard({
         </p>
         {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
           <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>
-        ) : eventTapToAdd || hasDualOrderChoice ? null : (
+        ) : (
           <CartaDualRacionPrices
             {...dualLabels}
             precio={row.precio}
@@ -310,32 +337,6 @@ export function CartaStaffMenuProductCard({
             variant="staff"
           />
         )}
-        {hasDualOrderChoice && eventOrder ? (
-          <EventCartaDualRacionOrderControls
-            racionEntero={dualLabels.racionEntero}
-            racionMedio={dualLabels.racionMedio}
-            precioEntero={row.precio}
-            precioMedio={row.precio_medio_display}
-            qtyEntero={eventQty}
-            qtyMedio={eventQtyMedio}
-            onAddEntero={() =>
-              eventOrder.onQuantityChange(row.articulo_id, Math.min(999, eventQty + 1), {
-                portion: 'entero',
-              })
-            }
-            onAddMedio={() => {
-              if (medioArticuloId != null) {
-                eventOrder.onQuantityChange(medioArticuloId, Math.min(999, eventQtyMedio + 1), {
-                  portion: 'entero',
-                })
-              } else {
-                eventOrder.onQuantityChange(row.articulo_id, Math.min(999, eventQtyMedio + 1), {
-                  portion: 'medio',
-                })
-              }
-            }}
-          />
-        ) : null}
         {eventStepper && eventOrder ? (
           <EventCartaOrderControls
             className="mt-1"
@@ -370,6 +371,57 @@ export function CartaStaffMenuProductCard({
         }
         onClose={() => setLightboxOpen(false)}
       />
+
+      <Modal
+        open={racionPickerOpen && eventOrderActive}
+        onClose={() => setRacionPickerOpen(false)}
+        title={displayName}
+        usageId="event-carta-racion-picker"
+        usageLabel="Elegir ración pedido"
+        className="max-w-sm"
+        zIndexClass="z-[220]"
+      >
+        <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            className="flex min-h-14 flex-col items-center justify-center rounded-xl bg-[#36606F] px-2 py-3 text-white active:scale-[0.98]"
+            onClick={() => {
+              addEntero()
+              setRacionPickerOpen(false)
+            }}
+          >
+            <span className="text-sm font-black">{dualLabels.racionEntero}</span>
+            {priceEnteroLabel.trim() ? (
+              <span className="mt-0.5 text-xs font-bold tabular-nums opacity-90">
+                {priceEnteroLabel}
+              </span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-3 text-zinc-900 active:scale-[0.98]"
+            onClick={() => {
+              addMedio()
+              setRacionPickerOpen(false)
+            }}
+          >
+            <span className="text-sm font-black">{dualLabels.racionMedio}</span>
+            {priceMedioLabel.trim() ? (
+              <span className="mt-0.5 text-xs font-bold tabular-nums text-zinc-700">
+                {priceMedioLabel}
+              </span>
+            ) : null}
+          </button>
+        </div>
+        <button
+          type="button"
+          className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
+          onClick={() => setRacionPickerOpen(false)}
+        >
+          Cancelar
+        </button>
+      </Modal>
     </div>
   )
 }
