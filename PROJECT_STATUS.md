@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Factura cliente desde modal pedido)
+**Última actualización:** 2026-07-16 (Editar tramos históricos contractuales)
+
+- [x] **Editar histórico contractual desde la lista (2026-07-16)**: En `/profile/contrato`, pulsar un tramo del histórico abre corrección de horas/régimen/bolsa/tarifa (periodo solo lectura). Reescritura in-place vía planificador (`D = inicio del tramo`) + coalescencia. Sin editar `effective_from`/`effective_to` a mano.
+
+**Última actualización anterior:** 2026-07-16 (Factura cliente desde modal pedido)
 
 - [x] **Factura imprimible en modal pedido reservas (2026-07-16)**: Sustituida la X de cierre por icono factura (`Receipt`). Misma vía de impresión que la comanda (iframe → print). Logo, desglose qty/precios, fecha/hora reserva, base + IVA 10%, total, mensaje de gracias. Cierre del modal: tap fuera.
 
@@ -26,7 +30,7 @@
 
 **Última actualización anterior:** 2026-07-16 (Condiciones laborales v1)
 
-- [x] **Condiciones laborales v1 (2026-07-16)**: Pantalla `/profile/contrato?id=` (botón «Condiciones laborales» en `/profile`, solo `hhector7722@gmail.com`). Resumen + histórico; CTA «Cambiar condiciones laborales»; fecha efectiva = hoy Madrid (sin selector). Escritura: Server Action → `persistContractualChange` → `hours_contract_terms` → espejo `profiles`. Bloqueo de campos contractuales en `updateProfile`. Tests: `npm run test:hours-engine:labor` (7). Sin fechas libres, sin edición histórica, sin orquestador.
+- [x] **Condiciones laborales v1 (2026-07-16)**: Pantalla `/profile/contrato?id=` (botón «Condiciones laborales» en `/profile`, solo `hhector7722@gmail.com`). Resumen + histórico; CTA «Cambiar condiciones laborales». Escritura: Server Action → `persistContractualChange` → `hours_contract_terms` → espejo `profiles`. Bloqueo de campos contractuales en `updateProfile`. Tests: `npm run test:hours-engine:labor`. (Edición histórica y fecha efectiva: ver entradas posteriores.)
 
 **Última actualización anterior:** 2026-07-16 (Filtro Food Cost en /recipes)
 

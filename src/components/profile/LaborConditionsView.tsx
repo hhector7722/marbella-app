@@ -41,6 +41,8 @@ function openTerm(terms: LaborTermDto[]): LaborTermDto | null {
   return terms.find((t) => t.effectiveTo === null) ?? null;
 }
 
+type EditMode = 'change' | 'rewrite';
+
 type Props = {
   employeeId: string;
 };
@@ -50,6 +52,8 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editMode, setEditMode] = useState<EditMode>('change');
+  const [editingTermTo, setEditingTermTo] = useState<string | null>(null);
   const [employeeName, setEmployeeName] = useState('');
   const [terms, setTerms] = useState<LaborTermDto[]>([]);
   const [form, setForm] = useState<LaborConditionsFormInput>({
@@ -90,7 +94,15 @@ export default function LaborConditionsView({ employeeId }: Props) {
 
   const vigente = openTerm(terms);
 
-  const startEdit = () => {
+  const closeEditor = () => {
+    setEditing(false);
+    setEditMode('change');
+    setEditingTermTo(null);
+  };
+
+  const startChange = () => {
+    setEditMode('change');
+    setEditingTermTo(null);
     if (vigente) {
       setForm({
         weeklyHours: vigente.weeklyHours,
@@ -105,6 +117,20 @@ export default function LaborConditionsView({ employeeId }: Props) {
     setEditing(true);
   };
 
+  /** Corrige un tramo ya registrado (mismas fechas Desde/Hasta; solo condiciones). */
+  const startRewriteTerm = (t: LaborTermDto) => {
+    setEditMode('rewrite');
+    setEditingTermTo(t.effectiveTo);
+    setForm({
+      weeklyHours: t.weeklyHours,
+      regime: t.regime as ContractRegime,
+      bagMode: t.bagMode,
+      overtimeRatePerHour: t.overtimeRatePerHour,
+      effectiveFrom: t.effectiveFrom,
+    });
+    setEditing(true);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -112,6 +138,11 @@ export default function LaborConditionsView({ employeeId }: Props) {
         ...form,
         weeklyHours:
           form.regime === 'manager' || form.regime === 'fixed' ? 0 : form.weeklyHours,
+        // En reescritura: anclar al inicio del tramo (no permite mover fechas)
+        effectiveFrom:
+          editMode === 'rewrite'
+            ? form.effectiveFrom
+            : form.effectiveFrom || todayMadridYmd(),
       };
       const res = await updateLaborConditions(employeeId, payload);
       if (!res.success) {
@@ -119,12 +150,21 @@ export default function LaborConditionsView({ employeeId }: Props) {
         return;
       }
       if (res.kind === 'noop') {
-        toast.message(res.message ?? 'No hay cambios respecto al contrato vigente');
-        setEditing(false);
+        toast.message(
+          res.message ??
+            (editMode === 'rewrite'
+              ? 'No hay cambios en este tramo'
+              : 'No hay cambios respecto a las condiciones de esa fecha'),
+        );
+        closeEditor();
         return;
       }
-      toast.success('Condiciones laborales actualizadas');
-      setEditing(false);
+      toast.success(
+        editMode === 'rewrite'
+          ? 'Tramo contractual actualizado'
+          : 'Condiciones laborales actualizadas',
+      );
+      closeEditor();
       await load();
     } finally {
       setSaving(false);
@@ -138,6 +178,11 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const backToProfile = () =>
     router.push(`/profile?id=${encodeURIComponent(employeeId)}`);
 
+  const editorTitle =
+    editMode === 'rewrite'
+      ? 'Editar tramo contractual'
+      : 'Cambiar condiciones laborales';
+
   const cardHeader = (title: string, opts?: { withBack?: boolean }) => (
     <div
       className={cn(
@@ -148,12 +193,12 @@ export default function LaborConditionsView({ employeeId }: Props) {
       {opts?.withBack ? (
         <button
           type="button"
-          onClick={backToProfile}
+          onClick={editing ? closeEditor : backToProfile}
           className={cn(
             'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl',
             'text-white active:opacity-70',
           )}
-          aria-label="Volver al perfil"
+          aria-label={editing ? 'Cancelar edición' : 'Volver al perfil'}
         >
           <ArrowLeft className="size-5 shrink-0" strokeWidth={2.25} />
         </button>
@@ -166,6 +211,13 @@ export default function LaborConditionsView({ employeeId }: Props) {
       </div>
     </div>
   );
+
+  const periodLabel =
+    editMode === 'rewrite' && form.effectiveFrom
+      ? `${formatYmdEs(form.effectiveFrom)} → ${
+          editingTermTo ? formatYmdEs(editingTermTo) : 'Vigente'
+        }`
+      : null;
 
   return (
     <div className="min-h-screen pb-24 p-4">
@@ -215,7 +267,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 )}
                 <button
                   type="button"
-                  onClick={startEdit}
+                  onClick={startChange}
                   className={cn(
                     'mt-4 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
                     'bg-[#36606F] px-4 text-[10px] font-black uppercase tracking-widest text-white',
@@ -235,246 +287,254 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 {terms.length === 0 ? (
                   <p className="text-sm text-zinc-500">Sin histórico.</p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[32rem] text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-zinc-100 text-zinc-500">
-                          <th className="py-2 pr-2 font-medium">Desde</th>
-                          <th className="py-2 pr-2 font-medium">Hasta</th>
-                          <th className="py-2 pr-2 font-medium">Horas</th>
-                          <th className="py-2 pr-2 font-medium">Régimen</th>
-                          <th className="py-2 pr-2 font-medium">Bolsa/Pago</th>
-                          <th className="py-2 font-medium">€/h</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100">
-                        {[...terms]
-                          .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
-                          .map((t) => {
-                            const isOpen = t.effectiveTo === null;
-                            return (
-                              <tr
-                                key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
-                                className={cn(isOpen && 'bg-emerald-50/60')}
-                              >
-                                <td className="min-h-12 py-3 pr-2 font-medium text-zinc-900">
+                  <>
+                    <p className="mb-3 text-xs text-zinc-500">
+                      Pulsa un tramo para corregir sus condiciones (horas, régimen, bolsa,
+                      tarifa). Las fechas del periodo no se editan aquí.
+                    </p>
+                    <div className="divide-y divide-zinc-100">
+                      {[...terms]
+                        .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
+                        .map((t) => {
+                          const isOpen = t.effectiveTo === null;
+                          return (
+                            <button
+                              key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
+                              type="button"
+                              onClick={() => startRewriteTerm(t)}
+                              className={cn(
+                                'flex w-full min-h-12 flex-col gap-1 py-3 text-left active:opacity-70',
+                                isOpen && 'bg-emerald-50/60 -mx-1 px-1 rounded-lg',
+                              )}
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-semibold text-zinc-900">
                                   {formatYmdEs(t.effectiveFrom)}
-                                  {isOpen ? (
-                                    <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                                      Vigente
-                                    </span>
-                                  ) : null}
-                                </td>
-                                <td className="py-3 pr-2 text-zinc-700">
-                                  {t.effectiveTo ? formatYmdEs(t.effectiveTo) : '—'}
-                                </td>
-                                <td className="py-3 pr-2 text-zinc-700">
-                                  {t.weeklyHours === 0 ? ' ' : t.weeklyHours}
-                                </td>
-                                <td className="py-3 pr-2 text-zinc-700">
-                                  {regimeLabel(t.regime as ContractRegime)}
-                                </td>
-                                <td className="py-3 pr-2 text-zinc-700">
-                                  {bagLabel(t.bagMode)}
-                                </td>
-                                <td className="py-3 text-zinc-700">
-                                  {t.overtimeRatePerHour == null || t.overtimeRatePerHour === 0
+                                  {' → '}
+                                  {t.effectiveTo ? formatYmdEs(t.effectiveTo) : 'Vigente'}
+                                </span>
+                                {isOpen ? (
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                                    Vigente
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
+                                <span>
+                                  {t.weeklyHours === 0 ? ' ' : `${t.weeklyHours} h`}
+                                </span>
+                                <span>{regimeLabel(t.regime as ContractRegime)}</span>
+                                <span>{bagLabel(t.bagMode)}</span>
+                                <span>
+                                  {t.overtimeRatePerHour == null ||
+                                  t.overtimeRatePerHour === 0
                                     ? ' '
-                                    : t.overtimeRatePerHour}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-                  </div>
+                                    : `${t.overtimeRatePerHour} €/h`}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </>
                 )}
               </div>
             </section>
           </>
         ) : (
           <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
-            {cardHeader('Cambiar condiciones laborales', { withBack: true })}
+            {cardHeader(editorTitle, { withBack: true })}
             <div className="p-4">
-            <p className="text-xs text-zinc-500">
-              Indica desde cuándo aplican. El histórico se reconstruye solo.
-            </p>
+              <p className="text-xs text-zinc-500">
+                {editMode === 'rewrite'
+                  ? 'Corrige las condiciones de este periodo. El resto del histórico no se mueve.'
+                  : 'Indica desde cuándo aplican. El histórico se reconstruye solo.'}
+              </p>
 
-            <div className="mt-4 space-y-4">
-              <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Fecha efectiva
-                </span>
-                <input
-                  type="date"
-                  value={form.effectiveFrom ?? ''}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      effectiveFrom: e.target.value,
-                    }))
-                  }
-                  className={cn(
-                    'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                    'text-sm font-bold text-zinc-800',
-                    'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                  )}
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Horas semanales
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  disabled={form.regime === 'manager' || form.regime === 'fixed'}
-                  value={
-                    form.regime === 'manager' || form.regime === 'fixed'
-                      ? 0
-                      : form.weeklyHours
-                  }
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      weeklyHours: Number(e.target.value),
-                    }))
-                  }
-                  className={cn(
-                    'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                    'text-sm font-bold text-zinc-800',
-                    'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                    (form.regime === 'manager' || form.regime === 'fixed') &&
-                      'bg-zinc-50 text-zinc-400',
-                  )}
-                />
-              </label>
-
-              <fieldset>
-                <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Régimen
-                </legend>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {(
-                    [
-                      ['staff', 'Staff'],
-                      ['manager', 'Manager'],
-                      ['fixed', 'Salario fijo'],
-                    ] as const
-                  ).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() =>
+              <div className="mt-4 space-y-4">
+                {editMode === 'rewrite' ? (
+                  <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      Periodo
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-zinc-900">{periodLabel}</p>
+                  </div>
+                ) : (
+                  <label className="block">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      Fecha efectiva
+                    </span>
+                    <input
+                      type="date"
+                      value={form.effectiveFrom ?? ''}
+                      onChange={(e) =>
                         setForm((f) => ({
                           ...f,
-                          regime: value,
-                          weeklyHours:
-                            value === 'manager' || value === 'fixed' ? 0 : f.weeklyHours,
+                          effectiveFrom: e.target.value,
                         }))
                       }
                       className={cn(
+                        'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
+                        'text-sm font-bold text-zinc-800',
+                        'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
+                      )}
+                    />
+                  </label>
+                )}
+
+                <label className="block">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Horas semanales
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    disabled={form.regime === 'manager' || form.regime === 'fixed'}
+                    value={
+                      form.regime === 'manager' || form.regime === 'fixed'
+                        ? 0
+                        : form.weeklyHours
+                    }
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        weeklyHours: Number(e.target.value),
+                      }))
+                    }
+                    className={cn(
+                      'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
+                      'text-sm font-bold text-zinc-800',
+                      'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
+                      (form.regime === 'manager' || form.regime === 'fixed') &&
+                        'bg-zinc-50 text-zinc-400',
+                    )}
+                  />
+                </label>
+
+                <fieldset>
+                  <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Régimen
+                  </legend>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {(
+                      [
+                        ['staff', 'Staff'],
+                        ['manager', 'Manager'],
+                        ['fixed', 'Salario fijo'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            regime: value,
+                            weeklyHours:
+                              value === 'manager' || value === 'fixed' ? 0 : f.weeklyHours,
+                          }))
+                        }
+                        className={cn(
+                          'min-h-12 rounded-xl border px-2 text-[10px] font-black uppercase tracking-widest',
+                          'active:scale-[0.98]',
+                          form.regime === value
+                            ? 'border-[#36606F] bg-[#36606F] text-white'
+                            : 'border-zinc-200 bg-white text-zinc-700',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Bolsa / Pago
+                  </legend>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, bagMode: true }))}
+                      className={cn(
                         'min-h-12 rounded-xl border px-2 text-[10px] font-black uppercase tracking-widest',
                         'active:scale-[0.98]',
-                        form.regime === value
+                        form.bagMode
                           ? 'border-[#36606F] bg-[#36606F] text-white'
                           : 'border-zinc-200 bg-white text-zinc-700',
                       )}
                     >
-                      {label}
+                      Bolsa de horas
                     </button>
-                  ))}
-                </div>
-              </fieldset>
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, bagMode: false }))}
+                      className={cn(
+                        'min-h-12 rounded-xl border px-2 text-[10px] font-black uppercase tracking-widest',
+                        'active:scale-[0.98]',
+                        !form.bagMode
+                          ? 'border-[#36606F] bg-[#36606F] text-white'
+                          : 'border-zinc-200 bg-white text-zinc-700',
+                      )}
+                    >
+                      Pago mensual
+                    </button>
+                  </div>
+                </fieldset>
 
-              <fieldset>
-                <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Bolsa / Pago
-                </legend>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, bagMode: true }))}
+                <label className="block">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Tarifa horas extra (€/h)
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={form.overtimeRatePerHour ?? ''}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        overtimeRatePerHour: raw === '' ? null : Number(raw),
+                      }));
+                    }}
                     className={cn(
-                      'min-h-12 rounded-xl border px-2 text-[10px] font-black uppercase tracking-widest',
-                      'active:scale-[0.98]',
-                      form.bagMode
-                        ? 'border-[#36606F] bg-[#36606F] text-white'
-                        : 'border-zinc-200 bg-white text-zinc-700',
+                      'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
+                      'text-sm font-bold text-zinc-800',
+                      'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
                     )}
-                  >
-                    Bolsa de horas
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, bagMode: false }))}
-                    className={cn(
-                      'min-h-12 rounded-xl border px-2 text-[10px] font-black uppercase tracking-widest',
-                      'active:scale-[0.98]',
-                      !form.bagMode
-                        ? 'border-[#36606F] bg-[#36606F] text-white'
-                        : 'border-zinc-200 bg-white text-zinc-700',
-                    )}
-                  >
-                    Pago mensual
-                  </button>
-                </div>
-              </fieldset>
+                  />
+                </label>
+              </div>
 
-              <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Tarifa horas extra (€/h)
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={form.overtimeRatePerHour ?? ''}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    setForm((f) => ({
-                      ...f,
-                      overtimeRatePerHour: raw === '' ? null : Number(raw),
-                    }));
-                  }}
+              <div className="mt-6 flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={closeEditor}
                   className={cn(
-                    'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                    'text-sm font-bold text-zinc-800',
-                    'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
+                    'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-zinc-200',
+                    'text-[10px] font-black uppercase tracking-widest text-zinc-700',
+                    'active:scale-[0.98]',
                   )}
-                />
-              </label>
-            </div>
-
-            <div className="mt-6 flex shrink-0 gap-2">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => setEditing(false)}
-                className={cn(
-                  'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-zinc-200',
-                  'text-[10px] font-black uppercase tracking-widest text-zinc-700',
-                  'active:scale-[0.98]',
-                )}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => void handleSave()}
-                className={cn(
-                  'flex min-h-12 flex-1 items-center justify-center rounded-xl',
-                  'bg-emerald-600 text-[10px] font-black uppercase tracking-widest text-white',
-                  'active:scale-[0.98]',
-                  saving && 'opacity-60',
-                )}
-              >
-                {saving ? 'Guardando…' : 'Guardar'}
-              </button>
-            </div>
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void handleSave()}
+                  className={cn(
+                    'flex min-h-12 flex-1 items-center justify-center rounded-xl',
+                    'bg-emerald-600 text-[10px] font-black uppercase tracking-widest text-white',
+                    'active:scale-[0.98]',
+                    saving && 'opacity-60',
+                  )}
+                >
+                  {saving ? 'Guardando…' : 'Guardar'}
+                </button>
+              </div>
             </div>
           </section>
         )}
