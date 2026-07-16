@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Ver pedido: precios + total)
+**Última actualización:** 2026-07-16 (Fix build: select FC recetas)
+
+- [x] **Fix TypeScript build Vercel — filtro FC recetas (2026-07-16)**: El ternario en `.select(needsFc ? RECIPE_FOOD_COST_SELECT : …)` rompía el parser de tipos de Supabase (`ParserError`). Ramas separadas en `/recipes` y `/recipes/[id]`; `RECIPE_FOOD_COST_SELECT` con `as const`.
+
+**Última actualización anterior:** 2026-07-16 (Ver pedido: precios + total)
 
 - [x] **Ver pedido: precio por fila + total (2026-07-16)**: En el modal «Tu pedido», cada línea muestra el importe (qty × precio entero/medio) y al pie el total en €.
 

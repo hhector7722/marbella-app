@@ -222,11 +222,26 @@ function RecipeDetailContent() {
     };
 
     const fetchAllRecipes = async () => {
-        const needsFc = !!foodCostFilter;
-        let q = supabase
-            .from('recipes')
-            .select(needsFc ? RECIPE_FOOD_COST_SELECT : 'id, name, category, menu_category_id')
-            .order('name');
+        // Ramas separadas: un ternario en .select() rompe el parser de tipos de Supabase.
+        if (foodCostFilter) {
+            let q = supabase.from('recipes').select(RECIPE_FOOD_COST_SELECT).order('name');
+            if (catFilter && catFilter !== '__none__') {
+                const row = menuCategoryRows.length ? menuCategoryFromUrlParam(catFilter, menuCategoryRows) : null;
+                if (row) q = q.eq('menu_category_id', row.id);
+                else q = q.eq('category', catFilter);
+            } else if (catFilter === '__none__') {
+                q = q.is('menu_category_id', null);
+            }
+            const { data } = await q;
+            if (data) {
+                const list = data.filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter);
+                setAllRecipes(list);
+                setCurrentRecipeIndex(list.findIndex((r) => r.id === recipeId));
+            }
+            return;
+        }
+
+        let q = supabase.from('recipes').select('id, name, category, menu_category_id').order('name');
         if (catFilter && catFilter !== '__none__') {
             const row = menuCategoryRows.length ? menuCategoryFromUrlParam(catFilter, menuCategoryRows) : null;
             if (row) q = q.eq('menu_category_id', row.id);
@@ -236,11 +251,8 @@ function RecipeDetailContent() {
         }
         const { data } = await q;
         if (data) {
-            const list = foodCostFilter
-                ? data.filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter)
-                : data;
-            setAllRecipes(list);
-            setCurrentRecipeIndex(list.findIndex((r: { id: string }) => r.id === recipeId));
+            setAllRecipes(data);
+            setCurrentRecipeIndex(data.findIndex((r) => r.id === recipeId));
         }
     };
 

@@ -69,4 +69,4 @@ export function getRecipeFoodCostStatus(recipe: RecipeFoodCostInput): FoodCostSt
 
 /** Select mínimo para calcular food cost en listados / navegación entre fichas. */
 export const RECIPE_FOOD_COST_SELECT =
-  'id, name, category, menu_category_id, sale_price, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))';
+  'id, name, category, menu_category_id, sale_price, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))' as const;

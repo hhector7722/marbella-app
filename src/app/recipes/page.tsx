@@ -209,12 +209,31 @@ function RecipesContent() {
     useEffect(() => {
         if (!isStaffView || !selectedRecipeId) return;
         void (async () => {
-            const needsFc = !!foodCostFilter;
-            let q = supabase
-                .from('recipes')
-                .select(needsFc ? RECIPE_FOOD_COST_SELECT : 'id')
-                .order('name');
             const cat = categoryFromUrl;
+            // Ramas separadas: un ternario en .select() rompe el parser de tipos de Supabase.
+            if (foodCostFilter) {
+                let q = supabase.from('recipes').select(RECIPE_FOOD_COST_SELECT).order('name');
+                if (cat && cat !== '__none__') {
+                    const row = menuCategoryRows.length ? menuCategoryFromUrlParam(cat, menuCategoryRows) : null;
+                    if (row) q = q.eq('menu_category_id', row.id);
+                    else q = q.eq('category', cat);
+                } else if (cat === '__none__') {
+                    q = q.is('menu_category_id', null);
+                }
+                const { data, error } = await q;
+                if (error || !data) {
+                    setStaffNavRecipes([]);
+                    return;
+                }
+                setStaffNavRecipes(
+                    data
+                        .filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter)
+                        .map((r) => ({ id: r.id })),
+                );
+                return;
+            }
+
+            let q = supabase.from('recipes').select('id').order('name');
             if (cat && cat !== '__none__') {
                 const row = menuCategoryRows.length ? menuCategoryFromUrlParam(cat, menuCategoryRows) : null;
                 if (row) q = q.eq('menu_category_id', row.id);
@@ -227,10 +246,7 @@ function RecipesContent() {
                 setStaffNavRecipes([]);
                 return;
             }
-            const list = foodCostFilter
-                ? data.filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter)
-                : data;
-            setStaffNavRecipes(list.map((r) => ({ id: r.id })));
+            setStaffNavRecipes(data.map((r) => ({ id: r.id })));
         })();
     }, [isStaffView, selectedRecipeId, categoryFromUrl, foodCostFilter, menuCategoryRows, supabase]);
 
