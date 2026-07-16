@@ -47,6 +47,16 @@ function sumItems(qtyById: Record<string, number>): number {
   return n
 }
 
+/** Precio unitario de la línea (medio usa precio_medio_display si existe). */
+function cartLineUnitPrice(row: PublicMenuRow, portion: 'entero' | 'medio'): number {
+  if (portion === 'medio') {
+    const medio = Number(row.precio_medio_display ?? row.override_precio_medio)
+    if (Number.isFinite(medio) && medio > 0) return medio
+  }
+  const entero = Number(row.precio)
+  return Number.isFinite(entero) && entero > 0 ? entero : 0
+}
+
 function rowsForParent(items: PublicMenuRow[], parentKey: string): PublicMenuRow[] {
   return items.filter((row) => {
     const pk = row.category_parent_id ?? `__no_parent__:${(row.category_parent_name ?? '').trim()}`
@@ -193,12 +203,14 @@ export default function EventEncargoCartaClient({
       const isMedioRacion = parsed?.portion === 'medio' || isMedioFactor
       const alreadyMarked = /\b(1\/2|½|medio|media|mitad|half)\b/i.test(baseName)
       const name = isMedioRacion && !alreadyMarked ? `1/2 ${baseName}` : baseName
+      const portion: 'entero' | 'medio' = isMedioRacion ? 'medio' : 'entero'
       lines.push({
         key,
         articuloId,
         name,
         quantity,
-        portion: isMedioRacion ? 'medio' : 'entero',
+        unitPrice: cartLineUnitPrice(row, portion),
+        portion,
       })
     }
     lines.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))

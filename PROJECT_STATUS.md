@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (FC filter persistido en navegación recetas)
+**Última actualización:** 2026-07-16 (Ver pedido: precios + total)
+
+- [x] **Ver pedido: precio por fila + total (2026-07-16)**: En el modal «Tu pedido», cada línea muestra el importe (qty × precio entero/medio) y al pie el total en €.
+
+**Última actualización anterior:** 2026-07-16 (FC filter persistido en navegación recetas)
 
 - [x] **Filtro Food Cost en URL + nav detalle (2026-07-16)**: `fc=optimal|alert|critical` en query (como `cat`). Lista ↔ ficha y flechas prev/next solo entre recetas que cumplen el filtro. Helper compartido [`recipe-food-cost.ts`](src/lib/recipe-food-cost.ts).
 

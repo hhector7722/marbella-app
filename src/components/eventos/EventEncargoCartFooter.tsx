@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Minus, Plus, Loader2 } from 'lucide-react'
 
 import { Modal } from '@/components/ui/modal'
+import { formatCartaPrice } from '@/lib/carta-price-display'
 import { cn } from '@/lib/utils'
 
 export type EventEncargoCartLine = {
@@ -11,6 +12,8 @@ export type EventEncargoCartLine = {
   articuloId: number
   name: string
   quantity: number
+  /** Precio unitario (€) de la ración (entero o medio). */
+  unitPrice: number
   portion?: 'entero' | 'medio'
 }
 
@@ -67,6 +70,7 @@ export function EventEncargoCartFooter({
   const [confirmOpen, setConfirmOpen] = useState(false)
   const hasLines = lines.length > 0
   const units = totalUnits > 0 ? totalUnits : lines.reduce((s, l) => s + l.quantity, 0)
+  const totalPrice = lines.reduce((s, l) => s + Math.max(0, l.unitPrice) * Math.max(0, l.quantity), 0)
   const saveBlocked = saveDisabled || !hasLines || isPending
 
   const requestSave = () => {
@@ -142,48 +146,62 @@ export function EventEncargoCartFooter({
             </p>
           ) : (
             <div className="flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain rounded-xl border border-zinc-100 bg-zinc-50/60 px-1">
-              {lines.map((line) => (
-                <div
-                  key={line.key}
-                  className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0"
-                >
-                  <button
-                    type="button"
-                    onClick={() => onDecrement(line.articuloId, line.portion ?? 'entero')}
-                    className={cn(
-                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                      'transition-colors hover:text-zinc-600 active:scale-[0.98]'
-                    )}
-                    aria-label={`Quitar una unidad de ${line.name}`}
+              {lines.map((line) => {
+                const lineTotal = Math.max(0, line.unitPrice) * Math.max(0, line.quantity)
+                return (
+                  <div
+                    key={line.key}
+                    className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0"
                   >
-                    <Minus className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-zinc-900" title={line.name}>
-                      {line.name}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onDecrement(line.articuloId, line.portion ?? 'entero')}
+                      className={cn(
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                        'transition-colors hover:text-zinc-600 active:scale-[0.98]'
+                      )}
+                      aria-label={`Quitar una unidad de ${line.name}`}
+                    >
+                      <Minus className="h-5 w-5" strokeWidth={2.5} />
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-zinc-900" title={line.name}>
+                        {line.name}
+                      </p>
+                    </div>
+                    <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
+                      ×{line.quantity}
+                    </div>
+                    <div
+                      className="w-[4.25rem] shrink-0 text-right tabular-nums text-sm font-bold text-zinc-900"
+                      title={formatCartaPrice(lineTotal).trim() || undefined}
+                    >
+                      {formatCartaPrice(lineTotal)}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onIncrement(line.articuloId, line.portion ?? 'entero')}
+                      className={cn(
+                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                        'transition-colors hover:text-zinc-600 active:scale-[0.98]'
+                      )}
+                      aria-label={`Añadir una unidad de ${line.name}`}
+                    >
+                      <Plus className="h-5 w-5" strokeWidth={2.5} />
+                    </button>
                   </div>
-                  <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
-                    ×{line.quantity}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onIncrement(line.articuloId, line.portion ?? 'entero')}
-                    className={cn(
-                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                      'transition-colors hover:text-zinc-600 active:scale-[0.98]'
-                    )}
-                    aria-label={`Añadir una unidad de ${line.name}`}
-                  >
-                    <Plus className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
 
-          {units > 0 ? (
-            <p className="mt-3 text-right text-sm font-black text-[#36606F]">{units} uds.</p>
+          {hasLines ? (
+            <div className="mt-3 flex items-baseline justify-between gap-3">
+              <p className="text-sm font-bold text-zinc-500">{units > 0 ? `${units} uds.` : ' '}</p>
+              <p className="text-base font-black tabular-nums text-[#36606F]">
+                Total {formatCartaPrice(totalPrice)}
+              </p>
+            </div>
           ) : null}
 
           <div className="mt-4 flex flex-col gap-2">

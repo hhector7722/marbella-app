@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-16 (FC filter persistido en navegación recetas)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-16 (Ver pedido: precios + total)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Ver pedido: precio por fila + total (2026-07-16)**: En el modal «Tu pedido», cada línea muestra el importe (qty × precio entero/medio) y al pie el total en €.
 - **Filtro Food Cost en URL + nav detalle (2026-07-16)**: `fc=optimal|alert|critical` en query (como `cat`). Lista ↔ ficha y flechas prev/next solo entre recetas que cumplen el filtro. Helper compartido [`recipe-food-cost.ts`](src/lib/recipe-food-cost.ts).
 - **Navegación plantilla desde /profile (manager) (2026-07-16)**: En `/profile`, managers ven flecha atrás (sin marco) que abre `StaffSelectionModal`; al elegir trabajador → `/profile?id=`. Si el modal se abre desde perfil, su flecha vuelve al home del rol (`getHomeHrefForUser`). Desde dashboard/otras pantallas el modal no muestra esa flecha. Navbar no duplica la flecha en `/profile` para managers.
 - **Condiciones laborales v1 (2026-07-16)**: Pantalla `/profile/contrato?id=` (botón «Condiciones laborales» en `/profile`, solo `hhector7722@gmail.com`). Resumen + histórico; CTA «Cambiar condiciones laborales»; fecha efectiva = hoy Madrid (sin selector). Escritura: Server Action → `persistContractualChange` → `hours_contract_terms` → espejo `profiles`. Bloqueo de campos contractuales en `updateProfile`. Tests: `npm run test:hours-engine:labor` (7). Sin fechas libres, sin edición histórica, sin orquestador.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Actividades pabellón: esquema maestro BD (2026-06-23)**: Migración [`20260623180500_pavilion_events_schema.sql`](supabase/migrations/20260623180500_pavilion_events_schema.sql) — tablas `activities` (catálogo maestro, `name`, `external_name` para matching PDF, `color`), `participant_categories`, `activity_kinds`, `venues` (`code`, `affects_bar`), `activity_occurrences` (fechas, `start_time`/`end_time`, campos generados `sys_start_timestamp`/`sys_end_timestamp` AT TIME ZONE Madrid, `form_start_time`/`form_end_time`, `preferred_start_time`/`preferred_end_time`, `total_participants`, `participant_category_id`, `source_pdf_id`). RLS sobre todas las tablas.
 - **Insights: ranking productos con filtro horario (2026-06-21)**: Migración [`20260621160500_ventas_product_ranking_time_filter.sql`](supabase/migrations/20260621160500_ventas_product_ranking_time_filter.sql) — `get_product_sales_ranking` acepta `p_start_time`/`p_end_time` opcionales para filtrar por franja horaria. UI actualizada en [`InsightsClient.tsx`](src/app/dashboard/insights/InsightsClient.tsx).
 - **Historial cierres `/dashboard/history`: rediseño calendario + modal (2026-06-21)**: Calendario a ancho completo (como reservas), celdas con 4 métricas (venta, tarjeta, tickets, clima), toggle en cabecera, tipografía compacta. Modal diario: layout por filas, navegación swipe entre días, fotos con tamaño exacto, KPIs rendimiento, sparkline con leyenda triangular, importes con separador miles español.
-- **Revert Motion iOS en navegación staff (2026-06-20)**: Eliminado `template.tsx` + `AppPageTransition` + `SwipeBackGesture` + hooks/tokens motion. El wrapper con `transform` desanclaba `StaffBottomNav` (`position: fixed`) y alteraba carga/transiciones en `/staff/dashboard`. Restaurados [`MainWrapper`](src/components/MainWrapper.tsx), [`Modal`](src/components/ui/modal.tsx) y [`globals.css`](src/app/globals.css) al comportamiento previo.
 
 <!-- sync:project-status:end -->
