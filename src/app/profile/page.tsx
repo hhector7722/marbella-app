@@ -19,6 +19,7 @@ import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
 import { updateProfile } from '@/app/actions/profile';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import type { User } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -427,6 +428,7 @@ function ProfileContent() {
     };
     const showPersonalPurchasesAccountsButton =
         String(profile?.email || '').toLowerCase() === 'hhector7722@gmail.com';
+    const canManageLaborConditions = isMasterDashboardUser(currentUser?.email);
 
     const gridItems = showAccountSection
         ? PROFILE_GRID
@@ -561,6 +563,22 @@ function ProfileContent() {
                                 </button>
                             ))}
                         </div>
+
+                        {canManageLaborConditions ? (
+                            <div className="mt-8">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.push(
+                                            `/profile/contrato?id=${encodeURIComponent(profile.id)}`,
+                                        )
+                                    }
+                                    className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white py-3 font-black text-[10px] uppercase tracking-widest text-zinc-800 hover:bg-zinc-50 active:scale-[0.98]"
+                                >
+                                    Condiciones laborales
+                                </button>
+                            </div>
+                        ) : null}
 
                         {isManager && (
                             <div className="mt-8">

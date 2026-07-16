@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Filtro Food Cost en /recipes)
+**Última actualización:** 2026-07-16 (Condiciones laborales v1)
+
+- [x] **Condiciones laborales v1 (2026-07-16)**: Pantalla `/profile/contrato?id=` (botón «Condiciones laborales» en `/profile`, solo `hhector7722@gmail.com`). Resumen + histórico; CTA «Cambiar condiciones laborales»; fecha efectiva = hoy Madrid (sin selector). Escritura: Server Action → `persistContractualChange` → `hours_contract_terms` → espejo `profiles`. Bloqueo de campos contractuales en `updateProfile`. Tests: `npm run test:hours-engine:labor` (7). Sin fechas libres, sin edición histórica, sin orquestador.
+
+**Última actualización anterior:** 2026-07-16 (Filtro Food Cost en /recipes)
 
 - [x] **Filtro Food Cost en Cat. (/recipes) (2026-07-16)**: Primera opción del popup «Cat.» = «Filtrar Food Cost»; subfiltro Óptimo (<30%) / Alerta (30–35%) / Crítico (≥35%). Chip activo con X. Solo managers/supervisors (misma visibilidad que el precio FC). Compatible con filtro por categoría.
 

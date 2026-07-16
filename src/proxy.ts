@@ -206,6 +206,12 @@ export async function proxy(request: NextRequest) {
       return webRedirect;
     }
 
+    if (path.startsWith("/profile/contrato") && !isMasterDashboardUser(email)) {
+      const contratoRedirect = NextResponse.redirect(new URL("/profile", request.url));
+      copyResponseCookies(response, contratoRedirect);
+      return contratoRedirect;
+    }
+
     if (path.startsWith("/login")) {
       const home = getHomeHrefForUser(email, role);
       const loginHomeRedirect = NextResponse.redirect(new URL(home, request.url));
