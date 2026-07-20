@@ -68,6 +68,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-03-06', 8),
     ];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -86,6 +87,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-07-16', 8),
     ];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-07-13',
       logs,
@@ -102,6 +104,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     const employee = emp([term('2026-01-01', null, 16)]);
     const logs = [dayLog('2026-03-02', 8), dayLog('2026-03-03', 8)];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -124,6 +127,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-03-06', 8),
     ];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -143,6 +147,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-03-05', 8),
     ];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -163,6 +168,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-03-04', 8),
     ];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -182,6 +188,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-08-07', 8),
     ];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-08-03',
       logs,
@@ -197,6 +204,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     ]);
     const logs = [dayLog('2026-03-02', 8), dayLog('2026-03-03', 8)];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -212,6 +220,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     ]);
     const logs = [dayLog('2026-03-02', 5)];
     const { result, summary, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
       employee,
       weekStart: '2026-03-02',
       logs,
@@ -246,6 +255,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       ],
       employee,
       logs,
+      { openingCarryIn: 0 },
     );
     const week = patched[0]!;
     const sumDaily = week.days.reduce((a, d) => a + d.extraHours, 0);

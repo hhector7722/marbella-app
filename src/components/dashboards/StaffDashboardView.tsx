@@ -324,6 +324,17 @@ export default function StaffDashboardView() {
                 })),
             });
 
+            // TEMP DEBUG Ex.
+            if (user.id === '97a9cb0d-f9c5-4a01-800e-a5a0bcde5848' || Object.values(extrasByDay).some((v) => v > 0)) {
+                console.log('[Ex.debug] StaffDashboardView', {
+                    ruta: 'StaffDashboardView (home staff)',
+                    userId: user.id,
+                    weekStartYmd,
+                    rpcGridExtraHours: (gridDays || []).map((d: any) => ({ date: d.date, extraHours: d.extraHours })),
+                    extrasByDay,
+                });
+            }
+
             let totalWeekHours = 0;
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
                 totalWeekHours += day.totalHours || 0;

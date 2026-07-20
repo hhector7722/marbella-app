@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
-import { liquidateWeekForCard, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows } from '@/lib/hours-engine';
 import { madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 
 // --- TYPES ---
@@ -120,48 +120,60 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             const effContractForGrid =
                 profileRole === 'manager' || !!profile?.is_fixed_salary ? 0 : 40;
 
-            const [{ data: gridDays, error: gridErr }, { data: snap }, logsRes, employeeFacts] =
-                await Promise.all([
-                    supabase.rpc('get_worker_weekly_log_grid', {
-                        p_user_id: workerId,
-                        p_start_date: mondayISO,
-                        p_contracted_hours: effContractForGrid,
-                    }),
-                    supabase
-                        .from('weekly_snapshots')
-                        .select('is_paid')
-                        .eq('user_id', workerId)
-                        .eq('week_start', mondayISO)
-                        .maybeSingle(),
-                    (() => {
-                        const { startIso: weekStartIso, endIso: weekEndIso } = madridRangeUtcIso(
-                            mondayISO,
-                            sundayISO,
-                        );
-                        return supabase
-                            .from('time_logs')
-                            .select('clock_in, clock_out, total_hours')
-                            .eq('user_id', workerId)
-                            .gte('clock_in', weekStartIso)
-                            .lte('clock_in', weekEndIso);
-                    })(),
-                    loadEmployeeBoundaryFacts(supabase, workerId),
-                ]);
+            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, workerId);
+            const timelineStart = employeeTimelineStartWeek(employeeFacts);
+            const logsFromYmd =
+                timelineStart && timelineStart < mondayISO ? timelineStart : mondayISO;
+            const { startIso: logsStartIso, endIso: weekEndIso } = madridRangeUtcIso(
+                logsFromYmd,
+                sundayISO,
+            );
+
+            const [{ data: gridDays, error: gridErr }, snapsRes, logsRes] = await Promise.all([
+                supabase.rpc('get_worker_weekly_log_grid', {
+                    p_user_id: workerId,
+                    p_start_date: mondayISO,
+                    p_contracted_hours: effContractForGrid,
+                }),
+                supabase
+                    .from('weekly_snapshots')
+                    .select('week_start, is_paid')
+                    .eq('user_id', workerId)
+                    .gte('week_start', logsFromYmd)
+                    .lte('week_start', mondayISO),
+                supabase
+                    .from('time_logs')
+                    .select('clock_in, clock_out, total_hours')
+                    .eq('user_id', workerId)
+                    .gte('clock_in', logsStartIso)
+                    .lte('clock_in', weekEndIso),
+            ]);
 
             if (gridErr) throw gridErr;
             if (logsRes.error) throw logsRes.error;
+            if (snapsRes.error) throw snapsRes.error;
 
-            const isPaid = snap?.is_paid === true;
+            const engineLogs = (logsRes.data ?? []).map((l) => ({
+                clockInIso: l.clock_in,
+                clockOutIso: l.clock_out,
+                totalHours: l.total_hours,
+            }));
+
+            const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
+            const isPaid = isPaidByWeek(mondayISO);
+            const carryIn = resolveOpeningCarryIn({
+                employee: employeeFacts,
+                chainStart: mondayISO,
+                logs: engineLogs,
+                isPaidByWeek,
+            });
+
             const { extrasByDay, summary } = liquidateWeekForCard({
                 employee: employeeFacts,
                 weekStart: mondayISO,
-                logs: (logsRes.data ?? []).map((l) => ({
-                    clockInIso: l.clock_in,
-                    clockOutIso: l.clock_out,
-                    totalHours: l.total_hours,
-                })),
+                logs: engineLogs,
                 isPaid,
-                carryIn: 0,
+                carryIn,
             });
 
             const rawDays = (gridDays || []) as Array<{

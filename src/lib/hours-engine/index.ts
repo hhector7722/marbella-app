@@ -26,6 +26,11 @@ export {
   weekCardSummaryFromLiquidation,
 } from './week-card-from-liquidation.ts';
 export type { WeekCardSummaryFromEngine } from './week-card-from-liquidation.ts';
+export {
+  employeeTimelineStartWeek,
+  isPaidLookupFromRows,
+  resolveOpeningCarryIn,
+} from './opening-carry.ts';
 export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
 export {
   applyContractualChange,

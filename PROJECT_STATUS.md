@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Fix edit pedido: sin updated_at)
+**Última actualización:** 2026-07-17 (Carry continuo entre semanas)
+
+- [x] **Cadena continua de carry (openingCarryIn) (2026-07-17)**: Orquestación UI — `resolveOpeningCarryIn` reconstruye el carryOut de W−1 desde el timeline del empleado. `/staff/history` y `WorkerWeeklyHistoryModal` ya no asumen `carryIn = 0` al abrir un mes/semana. `patchWeeksFromLiquidation` / `liquidateWeekForCard` exigen carry explícito. Motor/Carry/Resolver **sin cambios**. Tests: `opening-carry.test.ts` (8) — suite hours-engine **132/132**. Caso Alba S22→S23: PENDIENTES junio = −3.79.
+
+**Última actualización anterior:** 2026-07-16 (Fix edit pedido: sin updated_at)
 
 - [x] **Fix editar pedido staff (2026-07-16)**: `update_staff_event_order` ya no escribe `updated_at` en `event_orders` (columna inexistente). Migración [`20260716250000_fix_update_staff_event_order_no_updated_at.sql`](supabase/migrations/20260716250000_fix_update_staff_event_order_no_updated_at.sql) **aplicada**.
 

@@ -1,559 +1,1118 @@
-'use server';
-
-import { createClient } from '@/utils/supabase/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
-import { revalidatePath } from 'next/cache';
-
-export async function updateProfile(
-    userId: string,
-    data: {
-        dni?: string;
-        bank_account?: string;
-        phone?: string;
-        email?: string;
-        joining_date?: string | null;
-        end_date?: string | null;
-        visible_in_plantilla?: boolean;
-        prefer_stock_hours?: boolean;
-        codigo_empleado?: string;
-        /** Campos contractuales → profiles + trigger hours_contract_terms */
-        contracted_hours_weekly?: number;
-        overtime_cost_per_hour?: number | null;
-        is_fixed_salary?: boolean;
-        role?: string;
-    }
-) {
-    const supabase = await createClient();
-
-    // Verificar si el usuario que hace la petición es manager
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-    const isManager = currentProfile?.role === 'manager';
-    if (!isManager && currentUser.id !== userId) {
-        return { success: false, error: 'No tienes permisos' };
-    }
-
-    // Condiciones laborales globales: solo /profile/contrato → updateLaborConditions.
-    const blockedContractKeys = [
-        'prefer_stock_hours',
-        'contracted_hours_weekly',
-        'overtime_cost_per_hour',
-        'is_fixed_salary',
-        'role',
-    ] as const;
-    if (blockedContractKeys.some((k) => data[k] !== undefined)) {
-        return {
-            success: false,
-            error:
-                'Las condiciones laborales solo se modifican en Condiciones laborales (/profile/contrato)',
-        };
-    }
-
-    // Alta/baja y plantilla: solo managers
-    const frontierKeys = ['joining_date', 'end_date', 'visible_in_plantilla'] as const;
-    const touchesFrontier = frontierKeys.some((k) => data[k] !== undefined);
-    if (touchesFrontier && !isManager) {
-        return { success: false, error: 'Solo managers pueden cambiar alta/baja o plantilla' };
-    }
-
-    const { error } = await supabase
-        .from('profiles')
-        .update(data)
-        .eq('id', userId);
-
-    if (error) {
-        console.error('Error updating profile:', error);
-        return { success: false, error: error.message };
-    }
-
-    revalidatePath('/profile');
-    revalidatePath('/dashboard');
-    revalidatePath('/master/dashboard');
-    return { success: true };
-}
-
-export async function addEmployeeDocument(userId: string, docData: { type: 'contract' | 'payroll'; file_path: string; file_name: string; period?: string }) {
-    const supabase = await createClient();
-
-    // Solo managers pueden subir documentos
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (currentProfile?.role !== 'manager') {
-        return { success: false, error: 'Solo managers pueden subir documentos' };
-    }
-
-    const { error } = await supabase
-        .from('employee_documents')
-        .insert({
-            user_id: userId,
-            ...docData
-        });
-
-    if (error) {
-        console.error('Error saving document metadata:', error);
-        return { success: false, error: error.message };
-    }
-
-    revalidatePath('/profile');
-    return { success: true };
-}
-
-/** Sube comunicado, contrato o nómina para un empleado (bucket employee-documents, tabla employee_documents) */
-export async function addEmployeeDocumentByTipo(
-    userId: string,
-    docData: { tipo: 'comunicado' | 'contrato' | 'nomina' | 'sancion'; storage_path: string; filename: string; mes?: string; year?: number }
-) {
-    const supabase = await createClient();
-
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (currentProfile?.role !== 'manager') {
-        return { success: false, error: 'Solo el manager puede subir documentos' };
-    }
-
-    const { data: targetProfile } = await supabase
-        .from('profiles')
-        .select('codigo_empleado')
-        .eq('id', userId)
-        .single();
-
-    const codigoEmpleado = targetProfile?.codigo_empleado ?? userId;
-
-    const { error } = await supabase
-        .from('employee_documents')
-        .insert({
-            user_id: userId,
-            codigo_empleado: codigoEmpleado,
-            tipo: docData.tipo,
-            mes: docData.mes ?? null,
-            year: docData.year ?? null,
-            filename: docData.filename,
-            storage_path: docData.storage_path
-        });
-
-    if (error) {
-        console.error('Error saving document metadata:', error);
-        return { success: false, error: error.message };
-    }
-
-    revalidatePath('/profile');
-    return { success: true };
-}
-
-/** Borra documento de tipo comunicado/contrato (storage + DB) */
-export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: string, bucket: string = 'employee-documents') {
-    const supabase = await createClient();
-
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (currentProfile?.role !== 'manager') {
-        return { success: false, error: 'Solo el manager puede eliminar documentos' };
-    }
-
-    const { error: storageError } = await supabase.storage
-        .from(bucket)
-        .remove([storagePath]);
-
-    if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
-    }
-
-    const { error: dbError } = await supabase
-        .from('employee_documents')
-        .delete()
-        .eq('id', docId);
-
-    if (dbError) {
-        return { success: false, error: dbError.message };
-    }
-
-    revalidatePath('/profile');
-    return { success: true };
-}
-
-/** Borra nómina del sistema legado (bucket 'nominas' + tabla 'nominas') */
-export async function deleteLegacyNomina(nominaId: string, storagePath: string) {
-    const supabase = await createClient();
-
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (currentProfile?.role !== 'manager') {
-        return { success: false, error: 'No tienes permisos de administrador' };
-    }
-
-    // 1. Borrar de Storage (bucket 'nominas')
-    const { error: storageError } = await supabase.storage
-        .from('nominas')
-        .remove([storagePath]);
-
-    if (storageError) {
-        console.error('Error deleting legacy file from storage:', storageError);
-    }
-
-    // 2. Borrar de DB (tabla 'nominas')
-    const { error: dbError } = await supabase
-        .from('nominas')
-        .delete()
-        .eq('id', nominaId);
-
-    if (dbError) {
-        return { success: false, error: dbError.message };
-    }
-
-    revalidatePath('/profile');
-    return { success: true };
-}
-
-
-
-export async function getEmployeeDocuments(userId: string) {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-        .from('employee_documents')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error('Error fetching documents:', error);
-        return [];
-    }
-
-    return data;
-}
-
-export async function deleteEmployeeDocument(docId: string, filePath: string) {
-    const supabase = await createClient();
-
-    // Solo managers pueden borrar
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (currentProfile?.role !== 'manager') {
-        return { success: false, error: 'No tienes permisos' };
-    }
-
-    // 1. Borrar de Storage
-    const { error: storageError } = await supabase.storage
-        .from('employee-documents')
-        .remove([filePath]);
-
-    if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
-    }
-
-    // 2. Borrar de DB
-    const { error: dbError } = await supabase
-        .from('employee_documents')
-        .delete()
-        .eq('id', docId);
-
-    if (dbError) {
-        console.error('Error deleting document metadata:', dbError);
-        return { success: false, error: dbError.message };
-    }
-
-    revalidatePath('/profile');
-    return { success: true };
-}
-
-/** Resultado para useActionState (form con action). */
-export type UpdateAvatarResult = { success: boolean; error?: string; avatarUrl?: string };
-
-export async function updateAvatar(formData: FormData): Promise<UpdateAvatarResult> {
-    const supabase = await createClient();
-
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return { success: false, error: 'No autenticado' };
-
-    const userId = formData.get('userId') as string | null;
-    if (!userId || currentUser.id !== userId) {
-        return { success: false, error: 'Solo puedes editar tu propia imagen de perfil' };
-    }
-
-    const file = formData.get('avatar') as File | null;
-    if (!file || typeof file.size !== 'number' || file.size === 0) {
-        return { success: false, error: 'No se ha seleccionado ninguna imagen' };
-    }
-
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
-        return { success: false, error: 'Formato no permitido. Usa JPG, PNG, WebP o GIF.' };
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-        return { success: false, error: 'La imagen no puede superar 2 MB' };
-    }
-
-    const timestamp = Date.now();
-    const filePath = `${userId}/avatar_${timestamp}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: false });
-
-    if (uploadError) {
-        console.error('Avatar upload error:', uploadError);
-        return { success: false, error: uploadError.message };
-    }
-
-    const { data: existingObjects } = await supabase.storage.from('avatars').list(userId);
-    if (existingObjects?.length) {
-        const toRemove = existingObjects.filter((o) => o.name !== `avatar_${timestamp}.${ext}`);
-        if (toRemove.length > 0) {
-            await supabase.storage.from('avatars').remove(toRemove.map((o) => `${userId}/${o.name}`));
-        }
-    }
-
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-
-    const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', userId);
-
-    if (updateError) {
-        console.error('Profile update error:', updateError);
-        return { success: false, error: updateError.message };
-    }
-
-    revalidatePath('/profile');
-    return { success: true, avatarUrl: publicUrl };
-}
-
-/** Wrapper para useActionState: el formulario envía FormData (incl. archivo) correctamente. */
-export async function updateAvatarFormAction(
-    _prevState: UpdateAvatarResult | null,
-    formData: FormData
-): Promise<UpdateAvatarResult> {
-    return updateAvatar(formData);
-}
-
-/** Subidas manuales usan `.../nominas/archivo` en bucket employee-documents; webhook usa bucket nominas. */
-function nominasStorageBucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
-    if (storagePath.includes('/nominas/')) return 'employee-documents';
-    return 'nominas';
-}
-
-export type NominaListItem = {
-    id: string;
-    user_id: string;
-    mes: string;
-    year: number;
-    filename: string;
-    storage_path: string;
-    created_at: string | null;
-    bucket: 'nominas' | 'employee-documents';
-    sourceTable: 'employee_documents' | 'nominas';
-};
-
-/**
- * Lista nóminas evitando RLS en el cliente (staff a veces no pasa SELECT en employee_documents).
- * Tras comprobar identidad, lee con service role.
- */
-export async function fetchNominasListForUser(targetUserId: string): Promise<{ rows: NominaListItem[]; error?: string }> {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { rows: [], error: 'No autenticado' };
-
-    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    const allowed =
-        user.id === targetUserId || me?.role === 'manager' || me?.role === 'supervisor';
-    if (!allowed) return { rows: [], error: 'Sin permiso' };
-
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return { rows: [], error: 'Configuración del servidor incompleta' };
-    }
-
-    const admin = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { persistSession: false } }
-    );
-
-    const { data: edData, error: edErr } = await admin
-        .from('employee_documents')
-        .select('id, user_id, mes, year, filename, storage_path, created_at')
-        .eq('user_id', targetUserId)
-        .eq('tipo', 'nomina')
-        .order('created_at', { ascending: false });
-
-    if (edErr) {
-        console.error('fetchNominasListForUser employee_documents', edErr);
-        return { rows: [], error: edErr.message };
-    }
-
-    const { data: nomData, error: nomErr } = await admin
-        .from('nominas')
-        .select('id, empleado_id, mes_anio, file_path, created_at')
-        .eq('empleado_id', targetUserId)
-        .order('created_at', { ascending: false });
-
-    if (nomErr) {
-        console.error('fetchNominasListForUser nominas', nomErr);
-        return { rows: [], error: nomErr.message };
-    }
-
-    const seen = new Set<string>();
-    const rows: NominaListItem[] = [];
-
-    for (const row of edData ?? []) {
-        if (!row.storage_path || seen.has(row.storage_path)) continue;
-        seen.add(row.storage_path);
-        rows.push({
-            id: row.id,
-            user_id: row.user_id,
-            mes: row.mes ?? '',
-            year: row.year ?? 0,
-            filename: row.filename ?? '',
-            storage_path: row.storage_path,
-            created_at: row.created_at,
-            bucket: nominasStorageBucketForPath(row.storage_path),
-            sourceTable: 'employee_documents'
-        });
-    }
-
-    for (const row of nomData ?? []) {
-        if (!row.file_path || seen.has(row.file_path)) continue;
-        seen.add(row.file_path);
-        const parts = (row.mes_anio ?? '').split('-');
-        const [a, b] = parts;
-        const isYearFirst = a?.length === 4;
-        const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
-        const mes = isYearFirst ? (b ?? '') : (a ?? '');
-        rows.push({
-            id: row.id,
-            user_id: row.empleado_id,
-            mes,
-            year,
-            filename: `Nómina ${row.mes_anio ?? ''}`,
-            storage_path: row.file_path,
-            created_at: row.created_at,
-            bucket: 'nominas',
-            sourceTable: 'nominas'
-        });
-    }
-
-    rows.sort((a, b) => {
-        const nameA = a.storage_path.split('/').pop() || '';
-        const nameB = b.storage_path.split('/').pop() || '';
-        return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
-    });
-
-    return { rows };
-}
-
-/**
- * Descarga de nómina sin depender de RLS de Storage ni de SELECT del cliente.
- * Verificación de fila con service role (RLS a veces bloquea al staff en employee_documents).
- */
-export async function getNominaSignedDownloadUrl(input: {
-    ownerUserId: string;
-    storagePath: string;
-}): Promise<{ url?: string; error?: string }> {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'No autenticado' };
-
-    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    const isManager = me?.role === 'manager' || me?.role === 'supervisor';
-    const isOwn = user.id === input.ownerUserId;
-    if (!isOwn && !isManager) return { error: 'Sin permiso' };
-
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return { error: 'Configuración del servidor incompleta' };
-    }
-
-    const admin = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { persistSession: false } }
-    );
-
-    const { data: ed } = await admin
-        .from('employee_documents')
-        .select('id')
-        .eq('user_id', input.ownerUserId)
-        .eq('storage_path', input.storagePath)
-        .eq('tipo', 'nomina')
-        .maybeSingle();
-
-    const { data: leg } = await admin
-        .from('nominas')
-        .select('id')
-        .eq('empleado_id', input.ownerUserId)
-        .eq('file_path', input.storagePath)
-        .maybeSingle();
-
-    if (!ed && !leg) {
-        return { error: 'Documento no encontrado o sin acceso' };
-    }
-
-    const bucket = nominasStorageBucketForPath(input.storagePath);
-    const { data, error } = await admin.storage.from(bucket).createSignedUrl(input.storagePath, 120);
-
-    if (error) return { error: error.message };
-    return { url: data.signedUrl };
-}
-
-export async function completeOnboarding() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ needs_onboarding: false })
-        .eq('id', user.id);
-
-    if (error) {
-        console.error('Error completing onboarding:', error);
-        return { success: false, error: error.message };
-    }
-
-    revalidatePath('/');
-    return { success: true };
-}
+'use server';
+
+
+
+import { createClient } from '@/utils/supabase/server';
+
+import { createClient as createServiceClient } from '@supabase/supabase-js';
+
+import { revalidatePath } from 'next/cache';
+
+
+
+export async function updateProfile(
+
+    userId: string,
+
+    data: {
+
+        dni?: string;
+
+        bank_account?: string;
+
+        phone?: string;
+
+        email?: string;
+
+        joining_date?: string | null;
+
+        end_date?: string | null;
+
+        visible_in_plantilla?: boolean;
+
+        prefer_stock_hours?: boolean;
+
+        codigo_empleado?: string;
+
+        /** Campos contractuales → profiles + trigger hours_contract_terms */
+
+        contracted_hours_weekly?: number;
+
+        overtime_cost_per_hour?: number | null;
+
+        is_fixed_salary?: boolean;
+
+        role?: string;
+
+    }
+
+) {
+
+    const supabase = await createClient();
+
+
+
+    // Verificar si el usuario que hace la petición es manager
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const { data: currentProfile } = await supabase
+
+        .from('profiles')
+
+        .select('role')
+
+        .eq('id', currentUser.id)
+
+        .single();
+
+
+
+    const isManager = currentProfile?.role === 'manager';
+
+    if (!isManager && currentUser.id !== userId) {
+
+        return { success: false, error: 'No tienes permisos' };
+
+    }
+
+
+
+    // Condiciones laborales globales: solo /profile/contrato → updateLaborConditions.
+
+    const blockedContractKeys = [
+
+        'prefer_stock_hours',
+
+        'contracted_hours_weekly',
+
+        'overtime_cost_per_hour',
+
+        'is_fixed_salary',
+
+        'role',
+
+    ] as const;
+
+    if (blockedContractKeys.some((k) => data[k] !== undefined)) {
+
+        return {
+
+            success: false,
+
+            error:
+
+                'Las condiciones laborales solo se modifican en Condiciones laborales (/profile/contrato)',
+
+        };
+
+    }
+
+
+
+    // Alta/baja y plantilla: solo managers
+
+    const frontierKeys = ['joining_date', 'end_date', 'visible_in_plantilla'] as const;
+
+    const touchesFrontier = frontierKeys.some((k) => data[k] !== undefined);
+
+    if (touchesFrontier && !isManager) {
+
+        return { success: false, error: 'Solo managers pueden cambiar alta/baja o plantilla' };
+
+    }
+
+
+
+    const { error } = await supabase
+
+        .from('profiles')
+
+        .update(data)
+
+        .eq('id', userId);
+
+
+
+    if (error) {
+
+        console.error('Error updating profile:', error);
+
+        return { success: false, error: error.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    revalidatePath('/dashboard');
+
+    revalidatePath('/master/dashboard');
+
+    return { success: true };
+
+}
+
+
+
+export async function addEmployeeDocument(userId: string, docData: { type: 'contract' | 'payroll'; file_path: string; file_name: string; period?: string }) {
+
+    const supabase = await createClient();
+
+
+
+    // Solo managers pueden subir documentos
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const { data: currentProfile } = await supabase
+
+        .from('profiles')
+
+        .select('role')
+
+        .eq('id', currentUser.id)
+
+        .single();
+
+
+
+    if (currentProfile?.role !== 'manager') {
+
+        return { success: false, error: 'Solo managers pueden subir documentos' };
+
+    }
+
+
+
+    const { error } = await supabase
+
+        .from('employee_documents')
+
+        .insert({
+
+            user_id: userId,
+
+            ...docData
+
+        });
+
+
+
+    if (error) {
+
+        console.error('Error saving document metadata:', error);
+
+        return { success: false, error: error.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    return { success: true };
+
+}
+
+
+
+/** Sube comunicado, contrato o nómina para un empleado (bucket employee-documents, tabla employee_documents) */
+
+export async function addEmployeeDocumentByTipo(
+
+    userId: string,
+
+    docData: { tipo: 'comunicado' | 'contrato' | 'nomina' | 'sancion'; storage_path: string; filename: string; mes?: string; year?: number }
+
+) {
+
+    const supabase = await createClient();
+
+
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const { data: currentProfile } = await supabase
+
+        .from('profiles')
+
+        .select('role')
+
+        .eq('id', currentUser.id)
+
+        .single();
+
+
+
+    if (currentProfile?.role !== 'manager') {
+
+        return { success: false, error: 'Solo el manager puede subir documentos' };
+
+    }
+
+
+
+    const { data: targetProfile } = await supabase
+
+        .from('profiles')
+
+        .select('codigo_empleado')
+
+        .eq('id', userId)
+
+        .single();
+
+
+
+    const codigoEmpleado = targetProfile?.codigo_empleado ?? userId;
+
+
+
+    const { error } = await supabase
+
+        .from('employee_documents')
+
+        .insert({
+
+            user_id: userId,
+
+            codigo_empleado: codigoEmpleado,
+
+            tipo: docData.tipo,
+
+            mes: docData.mes ?? null,
+
+            year: docData.year ?? null,
+
+            filename: docData.filename,
+
+            storage_path: docData.storage_path
+
+        });
+
+
+
+    if (error) {
+
+        console.error('Error saving document metadata:', error);
+
+        return { success: false, error: error.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    return { success: true };
+
+}
+
+
+
+/** Borra documento de tipo comunicado/contrato (storage + DB) */
+
+export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: string, bucket: string = 'employee-documents') {
+
+    const supabase = await createClient();
+
+
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const { data: currentProfile } = await supabase
+
+        .from('profiles')
+
+        .select('role')
+
+        .eq('id', currentUser.id)
+
+        .single();
+
+
+
+    if (currentProfile?.role !== 'manager') {
+
+        return { success: false, error: 'Solo el manager puede eliminar documentos' };
+
+    }
+
+
+
+    const { error: storageError } = await supabase.storage
+
+        .from(bucket)
+
+        .remove([storagePath]);
+
+
+
+    if (storageError) {
+
+        console.error('Error deleting file from storage:', storageError);
+
+    }
+
+
+
+    const { error: dbError } = await supabase
+
+        .from('employee_documents')
+
+        .delete()
+
+        .eq('id', docId);
+
+
+
+    if (dbError) {
+
+        return { success: false, error: dbError.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    return { success: true };
+
+}
+
+
+
+/** Borra nómina del sistema legado (bucket 'nominas' + tabla 'nominas') */
+
+export async function deleteLegacyNomina(nominaId: string, storagePath: string) {
+
+    const supabase = await createClient();
+
+
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const { data: currentProfile } = await supabase
+
+        .from('profiles')
+
+        .select('role')
+
+        .eq('id', currentUser.id)
+
+        .single();
+
+
+
+    if (currentProfile?.role !== 'manager') {
+
+        return { success: false, error: 'No tienes permisos de administrador' };
+
+    }
+
+
+
+    // 1. Borrar de Storage (bucket 'nominas')
+
+    const { error: storageError } = await supabase.storage
+
+        .from('nominas')
+
+        .remove([storagePath]);
+
+
+
+    if (storageError) {
+
+        console.error('Error deleting legacy file from storage:', storageError);
+
+    }
+
+
+
+    // 2. Borrar de DB (tabla 'nominas')
+
+    const { error: dbError } = await supabase
+
+        .from('nominas')
+
+        .delete()
+
+        .eq('id', nominaId);
+
+
+
+    if (dbError) {
+
+        return { success: false, error: dbError.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    return { success: true };
+
+}
+
+
+
+
+
+
+
+export async function getEmployeeDocuments(userId: string) {
+
+    const supabase = await createClient();
+
+
+
+    const { data, error } = await supabase
+
+        .from('employee_documents')
+
+        .select('*')
+
+        .eq('user_id', userId)
+
+        .order('created_at', { ascending: false });
+
+
+
+    if (error) {
+
+        console.error('Error fetching documents:', error);
+
+        return [];
+
+    }
+
+
+
+    return data;
+
+}
+
+
+
+export async function deleteEmployeeDocument(docId: string, filePath: string) {
+
+    const supabase = await createClient();
+
+
+
+    // Solo managers pueden borrar
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const { data: currentProfile } = await supabase
+
+        .from('profiles')
+
+        .select('role')
+
+        .eq('id', currentUser.id)
+
+        .single();
+
+
+
+    if (currentProfile?.role !== 'manager') {
+
+        return { success: false, error: 'No tienes permisos' };
+
+    }
+
+
+
+    // 1. Borrar de Storage
+
+    const { error: storageError } = await supabase.storage
+
+        .from('employee-documents')
+
+        .remove([filePath]);
+
+
+
+    if (storageError) {
+
+        console.error('Error deleting file from storage:', storageError);
+
+    }
+
+
+
+    // 2. Borrar de DB
+
+    const { error: dbError } = await supabase
+
+        .from('employee_documents')
+
+        .delete()
+
+        .eq('id', docId);
+
+
+
+    if (dbError) {
+
+        console.error('Error deleting document metadata:', dbError);
+
+        return { success: false, error: dbError.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    return { success: true };
+
+}
+
+
+
+/** Resultado para useActionState (form con action). */
+
+export type UpdateAvatarResult = { success: boolean; error?: string; avatarUrl?: string };
+
+
+
+export async function updateAvatar(formData: FormData): Promise<UpdateAvatarResult> {
+
+    const supabase = await createClient();
+
+
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+
+
+    const userId = formData.get('userId') as string | null;
+
+    if (!userId || currentUser.id !== userId) {
+
+        return { success: false, error: 'Solo puedes editar tu propia imagen de perfil' };
+
+    }
+
+
+
+    const file = formData.get('avatar') as File | null;
+
+    if (!file || typeof file.size !== 'number' || file.size === 0) {
+
+        return { success: false, error: 'No se ha seleccionado ninguna imagen' };
+
+    }
+
+
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+
+        return { success: false, error: 'Formato no permitido. Usa JPG, PNG, WebP o GIF.' };
+
+    }
+
+
+
+    if (file.size > 2 * 1024 * 1024) {
+
+        return { success: false, error: 'La imagen no puede superar 2 MB' };
+
+    }
+
+
+
+    const timestamp = Date.now();
+
+    const filePath = `${userId}/avatar_${timestamp}.${ext}`;
+
+
+
+    const { error: uploadError } = await supabase.storage
+
+        .from('avatars')
+
+        .upload(filePath, file, { upsert: false });
+
+
+
+    if (uploadError) {
+
+        console.error('Avatar upload error:', uploadError);
+
+        return { success: false, error: uploadError.message };
+
+    }
+
+
+
+    const { data: existingObjects } = await supabase.storage.from('avatars').list(userId);
+
+    if (existingObjects?.length) {
+
+        const toRemove = existingObjects.filter((o) => o.name !== `avatar_${timestamp}.${ext}`);
+
+        if (toRemove.length > 0) {
+
+            await supabase.storage.from('avatars').remove(toRemove.map((o) => `${userId}/${o.name}`));
+
+        }
+
+    }
+
+
+
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+
+
+    const { error: updateError } = await supabase
+
+        .from('profiles')
+
+        .update({ avatar_url: publicUrl })
+
+        .eq('id', userId);
+
+
+
+    if (updateError) {
+
+        console.error('Profile update error:', updateError);
+
+        return { success: false, error: updateError.message };
+
+    }
+
+
+
+    revalidatePath('/profile');
+
+    return { success: true, avatarUrl: publicUrl };
+
+}
+
+
+
+/** Wrapper para useActionState: el formulario envía FormData (incl. archivo) correctamente. */
+
+export async function updateAvatarFormAction(
+
+    _prevState: UpdateAvatarResult | null,
+
+    formData: FormData
+
+): Promise<UpdateAvatarResult> {
+
+    return updateAvatar(formData);
+
+}
+
+
+
+/** Subidas manuales usan `.../nominas/archivo` en bucket employee-documents; webhook usa bucket nominas. */
+
+function nominasStorageBucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
+
+    if (storagePath.includes('/nominas/')) return 'employee-documents';
+
+    return 'nominas';
+
+}
+
+
+
+export type NominaListItem = {
+
+    id: string;
+
+    user_id: string;
+
+    mes: string;
+
+    year: number;
+
+    filename: string;
+
+    storage_path: string;
+
+    created_at: string | null;
+
+    bucket: 'nominas' | 'employee-documents';
+
+    sourceTable: 'employee_documents' | 'nominas';
+
+};
+
+
+
+/**
+
+ * Lista nóminas evitando RLS en el cliente (staff a veces no pasa SELECT en employee_documents).
+
+ * Tras comprobar identidad, lee con service role.
+
+ */
+
+export async function fetchNominasListForUser(targetUserId: string): Promise<{ rows: NominaListItem[]; error?: string }> {
+
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { rows: [], error: 'No autenticado' };
+
+
+
+    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+
+    const allowed =
+
+        user.id === targetUserId || me?.role === 'manager' || me?.role === 'supervisor';
+
+    if (!allowed) return { rows: [], error: 'Sin permiso' };
+
+
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+
+        return { rows: [], error: 'Configuración del servidor incompleta' };
+
+    }
+
+
+
+    const admin = createServiceClient(
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+
+        { auth: { persistSession: false } }
+
+    );
+
+
+
+    const { data: edData, error: edErr } = await admin
+
+        .from('employee_documents')
+
+        .select('id, user_id, mes, year, filename, storage_path, created_at')
+
+        .eq('user_id', targetUserId)
+
+        .eq('tipo', 'nomina')
+
+        .order('created_at', { ascending: false });
+
+
+
+    if (edErr) {
+
+        console.error('fetchNominasListForUser employee_documents', edErr);
+
+        return { rows: [], error: edErr.message };
+
+    }
+
+
+
+    const { data: nomData, error: nomErr } = await admin
+
+        .from('nominas')
+
+        .select('id, empleado_id, mes_anio, file_path, created_at')
+
+        .eq('empleado_id', targetUserId)
+
+        .order('created_at', { ascending: false });
+
+
+
+    if (nomErr) {
+
+        console.error('fetchNominasListForUser nominas', nomErr);
+
+        return { rows: [], error: nomErr.message };
+
+    }
+
+
+
+    const seen = new Set<string>();
+
+    const rows: NominaListItem[] = [];
+
+
+
+    for (const row of edData ?? []) {
+
+        if (!row.storage_path || seen.has(row.storage_path)) continue;
+
+        seen.add(row.storage_path);
+
+        rows.push({
+
+            id: row.id,
+
+            user_id: row.user_id,
+
+            mes: row.mes ?? '',
+
+            year: row.year ?? 0,
+
+            filename: row.filename ?? '',
+
+            storage_path: row.storage_path,
+
+            created_at: row.created_at,
+
+            bucket: nominasStorageBucketForPath(row.storage_path),
+
+            sourceTable: 'employee_documents'
+
+        });
+
+    }
+
+
+
+    for (const row of nomData ?? []) {
+
+        if (!row.file_path || seen.has(row.file_path)) continue;
+
+        seen.add(row.file_path);
+
+        const parts = (row.mes_anio ?? '').split('-');
+
+        const [a, b] = parts;
+
+        const isYearFirst = a?.length === 4;
+
+        const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
+
+        const mes = isYearFirst ? (b ?? '') : (a ?? '');
+
+        rows.push({
+
+            id: row.id,
+
+            user_id: row.empleado_id,
+
+            mes,
+
+            year,
+
+            filename: `Nómina ${row.mes_anio ?? ''}`,
+
+            storage_path: row.file_path,
+
+            created_at: row.created_at,
+
+            bucket: 'nominas',
+
+            sourceTable: 'nominas'
+
+        });
+
+    }
+
+
+
+    rows.sort((a, b) => {
+
+        const nameA = a.storage_path.split('/').pop() || '';
+
+        const nameB = b.storage_path.split('/').pop() || '';
+
+        return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
+
+    });
+
+
+
+    return { rows };
+
+}
+
+
+
+/**
+
+ * Descarga de nómina sin depender de RLS de Storage ni de SELECT del cliente.
+
+ * Verificación de fila con service role (RLS a veces bloquea al staff en employee_documents).
+
+ */
+
+export async function getNominaSignedDownloadUrl(input: {
+
+    ownerUserId: string;
+
+    storagePath: string;
+
+}): Promise<{ url?: string; error?: string }> {
+
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: 'No autenticado' };
+
+
+
+    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+
+    const isManager = me?.role === 'manager' || me?.role === 'supervisor';
+
+    const isOwn = user.id === input.ownerUserId;
+
+    if (!isOwn && !isManager) return { error: 'Sin permiso' };
+
+
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+
+        return { error: 'Configuración del servidor incompleta' };
+
+    }
+
+
+
+    const admin = createServiceClient(
+
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+
+        { auth: { persistSession: false } }
+
+    );
+
+
+
+    const { data: ed } = await admin
+
+        .from('employee_documents')
+
+        .select('id')
+
+        .eq('user_id', input.ownerUserId)
+
+        .eq('storage_path', input.storagePath)
+
+        .eq('tipo', 'nomina')
+
+        .maybeSingle();
+
+
+
+    const { data: leg } = await admin
+
+        .from('nominas')
+
+        .select('id')
+
+        .eq('empleado_id', input.ownerUserId)
+
+        .eq('file_path', input.storagePath)
+
+        .maybeSingle();
+
+
+
+    if (!ed && !leg) {
+
+        return { error: 'Documento no encontrado o sin acceso' };
+
+    }
+
+
+
+    const bucket = nominasStorageBucketForPath(input.storagePath);
+
+    const { data, error } = await admin.storage.from(bucket).createSignedUrl(input.storagePath, 120);
+
+
+
+    if (error) return { error: error.message };
+
+    return { url: data.signedUrl };
+
+}
+
+
+
+export async function completeOnboarding() {
+
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+
+
+    if (!user) return { success: false, error: 'No autenticado' };
+
+
+
+    const { error } = await supabase
+
+        .from('profiles')
+
+        .update({ needs_onboarding: false })
+
+        .eq('id', user.id);
+
+
+
+    if (error) {
+
+        console.error('Error completing onboarding:', error);
+
+        return { success: false, error: error.message };
+
+    }
+
+
+
+    revalidatePath('/');
+
+    return { success: true };
+
+}
+

@@ -146,6 +146,7 @@ export function liquidateWeekExtrasByDay(input: {
   weekStart: CivilDate;
   logs: readonly TimeLogFact[];
 }): Readonly<Record<CivilDate, number>> {
+  // Extras diarias no dependen del banco; carryIn explícito 0 (no arrastre en esta proyección).
   const result = liquidateWeek({
     employee: input.employee,
     weekStart: input.weekStart,
@@ -180,5 +181,5 @@ export function patchWeeksDailyExtrasFromEngine<
   employee: EmployeeBoundaryFacts,
   logs: readonly TimeLogFact[],
 ): TWeek[] {
-  return patchWeeksFromLiquidation(weeks, employee, logs);
+  return patchWeeksFromLiquidation(weeks, employee, logs, { openingCarryIn: 0 });
 }
