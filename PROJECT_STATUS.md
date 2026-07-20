@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-20 (Home: PENDIENTES = carryIn motor)
+**Última actualización:** 2026-07-20 (Historial: editar efectivo/desglose en cierre)
+
+- [x] **Editar Efectivo en modal de cierre (2026-07-20)**: En `/dashboard/history`, al editar un cierre, **Efectivo** es editable: abre el desglose guardado (`cash_closings.breakdown`) con controles +/− táctiles. Al «Guardar desglose» se persiste `breakdown`/`cash_counted`/`cash_withdrawn` y el trigger `trg_cash_closing_to_treasury_v2` actualiza el `CLOSE_ENTRY` en `treasury_log` (importe + desglose + inventario/saldo) visible en `/dashboard/movements`.
+
+**Última actualización anterior:** 2026-07-20 (Home: PENDIENTES = carryIn motor)
 
 - [x] **Home staff alineado al motor — PENDIENTES = banco al inicio (2026-07-20)**: `StaffDashboardView` deja `profiles.hours_balance` / `effectivePivot`. Misma orquestación que historial: `resolveOpeningCarryIn` + `liquidateWeekForCard`. Pendiente = `carryIn`; EXTRAS/IMPORTE desde el mismo `LiquidationResult`.
 

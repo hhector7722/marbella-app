@@ -16,11 +16,13 @@ import {
     ChevronRight as ChevronRightIcon,
     Banknote,
     Minus,
+    Plus,
     Printer,
     Share,
     Download,
     Filter,
 } from 'lucide-react';
+import Image from 'next/image';
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -44,6 +46,7 @@ import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { CLOSING_WEATHER_OPTIONS, weatherIdFromLabel } from '@/lib/cash-closing-weather';
+import { CURRENCY_IMAGES } from '@/lib/constants';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -458,27 +461,68 @@ const CashBreakdownModal = ({
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     <div className="space-y-2">
-                        {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => (
-                            <div key={den} className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100/50">
-                                <span className="text-xs font-black text-gray-400">{parseFloat(den) < 1 ? (parseFloat(den) * 100).toFixed(0) + 'c' : den + '€'}</span>
-                                <div className="flex items-center gap-4">
-                                    {isEditing ? (
-                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm">
-                                            <span className="text-[10px] font-black text-gray-300 uppercase">x</span>
-                                            <input
-                                                type="number"
-                                                className="w-12 bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
-                                                value={qty as number || ''}
-                                                onChange={e => onUpdate?.(den, parseInt(e.target.value) || 0)}
+                        {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => {
+                            const denNum = parseFloat(den);
+                            const qtyNum = Number(qty) || 0;
+                            const lineTotal = denNum * qtyNum;
+                            const imgSrc = CURRENCY_IMAGES[denNum];
+                            return (
+                            <div key={den} className="flex items-center justify-between gap-3 p-3 sm:p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100/50">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {imgSrc ? (
+                                        <div className="h-10 w-14 shrink-0 flex items-center justify-center">
+                                            <Image
+                                                src={imgSrc}
+                                                alt={denNum < 1 ? `${(denNum * 100).toFixed(0)}c` : `${den}€`}
+                                                width={56}
+                                                height={40}
+                                                className="h-full w-auto object-contain"
                                             />
                                         </div>
+                                    ) : null}
+                                    <span className="text-xs font-black text-gray-400 shrink-0">
+                                        {denNum < 1 ? `${(denNum * 100).toFixed(0)}c` : `${den}€`}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    {isEditing ? (
+                                        <div className="flex items-center h-12 min-h-[48px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
+                                            <button
+                                                type="button"
+                                                onClick={() => onUpdate?.(den, Math.max(0, qtyNum - 1))}
+                                                className="w-11 min-h-[48px] flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                aria-label={`Restar ${den}`}
+                                            >
+                                                <Minus size={14} strokeWidth={3} />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                inputMode="numeric"
+                                                className="w-12 min-h-[48px] bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
+                                                value={qtyNum || ''}
+                                                onChange={e => onUpdate?.(den, parseInt(e.target.value, 10) || 0)}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => onUpdate?.(den, qtyNum + 1)}
+                                                className="w-11 min-h-[48px] flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                aria-label={`Sumar ${den}`}
+                                            >
+                                                <Plus size={14} strokeWidth={3} />
+                                            </button>
+                                        </div>
                                     ) : (
-                                        <span className="text-xs font-black text-gray-400">x{qty as number}</span>
+                                        <span className="text-xs font-black text-gray-400">
+                                            {qtyNum > 0 ? `x${qtyNum}` : ' '}
+                                        </span>
                                     )}
-                                    <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">{formatCurrencySpanish(parseFloat(den) * (qty as number || 0))}</span>
+                                    <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">
+                                        {lineTotal > 0.005 ? formatCurrencySpanish(lineTotal) : ' '}
+                                    </span>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center px-2">
                         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Contado</span>
@@ -486,12 +530,13 @@ const CashBreakdownModal = ({
                     </div>
                 </div>
                 {isEditing && (
-                    <div className="p-6 bg-gray-50/50 border-t border-gray-100">
+                    <div className="p-6 bg-gray-50/50 border-t border-gray-100 shrink-0">
                         <button
+                            type="button"
                             onClick={onSave}
                             disabled={saving}
                             className={cn(
-                                "w-full h-12 bg-[#36606F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg transition-all",
+                                "w-full min-h-[48px] h-12 bg-[#36606F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg transition-all",
                                 "hover:scale-[1.02] active:scale-[0.98]",
                                 saving ? "opacity-70 pointer-events-none" : ""
                             )}
@@ -1478,17 +1523,34 @@ export default function HistoryPage() {
     };
 
     const handleBreakdownUpdate = (denomination: string, qty: number) => {
-        if (!editData) return;
-        const newBreakdown = { ...editData.breakdown, [denomination]: qty };
-        const totalCounted = Object.entries(newBreakdown).reduce((sum, [den, q]) => sum + (parseFloat(den) * (q as number)), 0);
-        const diff = totalCounted - editData.cash_expected;
+        if (!editData) {
+            toast.error('No hay datos de edición del cierre');
+            return;
+        }
+        const safeQty = Math.max(0, Number.isFinite(qty) ? qty : 0);
+        const newBreakdown = { ...(editData.breakdown ?? {}), [denomination]: safeQty };
+        const totalCounted = Object.entries(newBreakdown).reduce(
+            (sum, [den, q]) => sum + (parseFloat(den) * (Number(q) || 0)),
+            0
+        );
+        const diff = totalCounted - Number(editData.cash_expected || 0);
         const withDrawn = totalCounted;
         const cLeft = 0;
-        setEditData({ ...editData, breakdown: newBreakdown, cash_counted: totalCounted, difference: diff, cash_withdrawn: withDrawn, cash_left: cLeft });
+        setEditData({
+            ...editData,
+            breakdown: newBreakdown,
+            cash_counted: totalCounted,
+            difference: diff,
+            cash_withdrawn: withDrawn,
+            cash_left: cLeft,
+        });
     };
 
-    const persistEditData = async (opts?: { exitEdit?: boolean }) => {
-        if (!editData) return;
+    const persistEditData = async (opts?: { exitEdit?: boolean; successMessage?: string }) => {
+        if (!editData) {
+            toast.error('No hay datos de edición para guardar');
+            return;
+        }
         setLoading(true);
         try {
             const { error } = await supabase.from('cash_closings').update({
@@ -1507,7 +1569,7 @@ export default function HistoryPage() {
                 cash_left: editData.cash_left,
             }).eq('id', editData.id);
             if (error) throw error;
-            toast.success("Cierre actualizado");
+            toast.success(opts?.successMessage ?? 'Cierre actualizado');
             setSelectedClosing(editData);
             setEditData({ ...editData });
             if (opts?.exitEdit !== false) setIsEditing(false);
@@ -2024,7 +2086,7 @@ export default function HistoryPage() {
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-end gap-1">
                                     {!isEditing && isManager && (
                                         <button
-                                            onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                            onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
                                             className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95 min-h-[32px] min-w-[32px] flex items-center justify-center"
                                             title="Editar cierre"
                                         >
@@ -2058,6 +2120,7 @@ export default function HistoryPage() {
                                     editable = false,
                                     isDiff = false,
                                     onClick,
+                                    openEditor,
                                 }: {
                                     label: string;
                                     value: number;
@@ -2065,6 +2128,8 @@ export default function HistoryPage() {
                                     editable?: boolean;
                                     isDiff?: boolean;
                                     onClick?: () => void;
+                                    /** En edición: abre editor externo (p. ej. desglose de efectivo) */
+                                    openEditor?: () => void;
                                 }) => {
                                     const hasValue = Math.abs(value) >= 0.005;
                                     let text = '';
@@ -2089,7 +2154,23 @@ export default function HistoryPage() {
                                                 {label}
                                             </span>
                                             <div className="flex min-w-0 items-center justify-center">
-                                                {isEditing && editable && fieldKey ? (
+                                                {isEditing && openEditor ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={openEditor}
+                                                        className="w-[8.75rem] sm:w-[9.5rem] min-h-[48px] h-12 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm active:scale-[0.98] transition-transform"
+                                                        title="Editar desglose de efectivo"
+                                                    >
+                                                        <span className="text-sm font-black tabular-nums text-zinc-800">
+                                                            {text || ' '}
+                                                        </span>
+                                                        {hasValue && (
+                                                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500">
+                                                                €
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ) : isEditing && editable && fieldKey ? (
                                                     <div className="w-[8.75rem] sm:w-[9.5rem] h-8 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm">
                                                         <input
                                                             type="number"
@@ -2108,9 +2189,12 @@ export default function HistoryPage() {
                                                     <div 
                                                         className={cn(
                                                             "w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative",
-                                                            onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4"
+                                                            onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4 min-h-[48px]"
                                                         )}
                                                         onClick={onClick}
+                                                        role={onClick ? 'button' : undefined}
+                                                        tabIndex={onClick ? 0 : undefined}
+                                                        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
                                                     >
                                                         <span className={cn(
                                                             "text-sm font-black tabular-nums",
@@ -2191,7 +2275,8 @@ export default function HistoryPage() {
                                             <RowItem
                                                 label="Efectivo"
                                                 value={getValue('cash_counted')}
-                                                onClick={!isEditing ? () => setShowCashDetails(true) : undefined}
+                                                onClick={() => setShowCashDetails(true)}
+                                                openEditor={() => setShowCashDetails(true)}
                                             />
                                         </div>
                                         <div className="py-2">
@@ -2411,9 +2496,9 @@ export default function HistoryPage() {
                 <CashBreakdownModal
                     isOpen={showCashDetails}
                     onClose={() => setShowCashDetails(false)}
-                    breakdown={isEditing ? editData.breakdown : selectedClosing.breakdown}
+                    breakdown={isEditing ? (editData?.breakdown ?? selectedClosing.breakdown ?? {}) : (selectedClosing.breakdown ?? {})}
                     date={selectedClosing.closed_at}
-                    total={isEditing ? editData.cash_counted : selectedClosing.cash_counted}
+                    total={isEditing ? Number(editData?.cash_counted ?? selectedClosing.cash_counted ?? 0) : Number(selectedClosing.cash_counted ?? 0)}
                     isEditing={isEditing}
                     onUpdate={handleBreakdownUpdate}
                     saving={loading}
@@ -2423,7 +2508,10 @@ export default function HistoryPage() {
                             setShowCashDetails(false);
                             return;
                         }
-                        await persistEditData({ exitEdit: false });
+                        await persistEditData({
+                            exitEdit: false,
+                            successMessage: 'Desglose de efectivo actualizado (movimiento recalculado)',
+                        });
                         setShowCashDetails(false);
                     }}
                 />
