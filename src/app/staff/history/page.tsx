@@ -663,7 +663,7 @@ export default function HistoryPage() {
             employeeFacts,
             engineLogs,
             { openingCarryIn },
-        );
+        ) as WeekData[];
     }
 
     const openSimulationExportModal = useCallback(async () => {

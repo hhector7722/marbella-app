@@ -213,8 +213,8 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
           ...day,
           extraHours: extrasByDay[key] ?? 0,
         };
-      }),
-    });
+      }) as TWeek['days'],
+    } as TWeek);
   }
 
   return weeks.map((_, i) => byIndex.get(i)!);
