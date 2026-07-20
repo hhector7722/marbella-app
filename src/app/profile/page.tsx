@@ -505,54 +505,53 @@ function ProfileContent() {
                 {/* Un solo contenedor: esquinas redondeadas, cabecera petróleo + contenido */}
                 <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden min-h-[60vh] flex flex-col">
                     {/* Cabecera petróleo (compacta) */}
-                    <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 pt-3 pb-3 px-4">
+                    <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 py-2.5 px-3">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
 
-                        {isManager ? (
-                            <div className="relative z-10 -ml-2 -mt-1 mb-1">
-                                <button
-                                    type="button"
-                                    onClick={() => void openPlantillaFromProfile()}
-                                    className={cn(
-                                        'inline-flex min-h-12 min-w-12 items-center justify-center',
-                                        'border-0 bg-transparent shadow-none',
-                                        'text-white active:opacity-70',
-                                    )}
-                                    aria-label="Abrir plantilla"
-                                >
-                                    <ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />
-                                </button>
-                            </div>
-                        ) : null}
-
-                        <div className="relative z-10 grid grid-cols-[5rem_1fr_5rem] items-start gap-3 min-h-0">
-                            <div className="shrink-0 flex flex-col items-center gap-1.5 w-20">
-                                <Avatar
-                                    src={profile.avatar_url}
-                                    alt={fullName}
-                                    size="lg"
-                                    className="shadow-lg bg-white ring-2 ring-white"
-                                />
-                                {showAccountSection && (
-                                    <label
+                        <div className="relative z-10 grid grid-cols-[auto_1fr_auto] items-center gap-2 min-h-0">
+                            <div className="shrink-0 flex items-center gap-0.5">
+                                {isManager ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => void openPlantillaFromProfile()}
                                         className={cn(
-                                            'shrink-0 inline-flex items-center justify-center self-center text-center',
-                                            'px-1 py-0.5',
-                                            'rounded-lg border border-white/80',
-                                            'text-white text-[10px] font-black uppercase tracking-widest leading-none',
-                                            'hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95'
+                                            'inline-flex min-h-12 min-w-10 shrink-0 items-center justify-center',
+                                            'border-0 bg-transparent shadow-none',
+                                            'text-white active:opacity-70',
                                         )}
+                                        aria-label="Abrir plantilla"
                                     >
-                                        <input
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp,image/gif"
-                                            onChange={handleAvatarFileSelect}
-                                            disabled={avatarUploading}
-                                            className="hidden"
-                                        />
-                                        {avatarUploading ? 'Subiendo…' : 'Editar'}
-                                    </label>
-                                )}
+                                        <ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />
+                                    </button>
+                                ) : null}
+                                <div className="flex flex-col items-center gap-1">
+                                    <Avatar
+                                        src={profile.avatar_url}
+                                        alt={fullName}
+                                        size="md"
+                                        className="shadow-md bg-white ring-1 ring-white"
+                                    />
+                                    {showAccountSection && (
+                                        <label
+                                            className={cn(
+                                                'shrink-0 inline-flex items-center justify-center self-center text-center',
+                                                'px-1 py-0.5',
+                                                'rounded-lg border border-white/80',
+                                                'text-white text-[9px] font-black uppercase tracking-widest leading-none',
+                                                'hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95'
+                                            )}
+                                        >
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                                onChange={handleAvatarFileSelect}
+                                                disabled={avatarUploading}
+                                                className="hidden"
+                                            />
+                                            {avatarUploading ? 'Subiendo…' : 'Editar'}
+                                        </label>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="min-w-0 flex flex-col items-center justify-center self-stretch pt-0.5 pb-0.5">
@@ -579,19 +578,18 @@ function ProfileContent() {
                                 )}
                             </div>
 
-                            <div className="shrink-0 w-20 flex items-start justify-end">
+                            <div className="shrink-0 flex items-start justify-end min-w-12">
                                 {showPersonalPurchasesAccountsButton ? (
                                     <button
                                         type="button"
                                         onClick={() => router.push('/dashboard/ledger')}
                                         className={cn(
                                             'shrink-0',
-                                            'min-h-[48px] min-w-[48px]',
+                                            'min-h-12 min-w-12',
                                             'inline-flex items-center justify-center',
-                                            'rounded-xl',
-                                            'bg-transparent border-0 shadow-none',
-                                            'text-white/90 hover:text-white hover:bg-white/10',
-                                            'active:scale-95 transition'
+                                            'border-0 bg-transparent shadow-none',
+                                            'text-white/90 hover:text-white',
+                                            'active:opacity-70 transition-opacity'
                                         )}
                                         aria-label="Cuentas de compras personales"
                                         title="Compras personales"

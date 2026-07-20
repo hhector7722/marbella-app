@@ -160,6 +160,19 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                     const hFormatted = fmtHours(day.totalHours);
                     const exFormatted = fmtHours(day.extraHours);
 
+                    // TEMP DEBUG Ex. — no cambia lógica; solo traza lo que se pinta
+                    if (week.startDate?.startsWith('2026-07-13') || day.extraHours > 0.05) {
+                        console.log('[Ex.debug] WeekCard RENDER', {
+                            ruta: '/staff/history → WeekCard',
+                            weekStart: week.startDate,
+                            date: day.date,
+                            'day.extraHours (prop recibida)': day.extraHours,
+                            'exFormatted (texto UI)': exFormatted || '(no se pinta — vacío)',
+                            'summary.weeklyBalance (footer EXTRAS)': week.summary.weeklyBalance,
+                            'summary.totalHours': week.summary.totalHours,
+                        });
+                    }
+
                     return (
                         <div
                             key={di}

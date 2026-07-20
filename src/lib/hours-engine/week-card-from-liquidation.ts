@@ -1,6 +1,9 @@
 /**
  * Única proyección UI de la tarjeta semanal desde LiquidationResult.
  * Sin cálculos en React ni lectura de weekly_snapshots para resultados.
+ *
+ * Cadena de carry: el caller DEBE pasar openingCarryIn / carryIn explícitos
+ * (vía resolveOpeningCarryIn). No hay default implícito a 0.
  */
 
 import { liquidateWeek } from './liquidation-engine.ts';
@@ -117,13 +120,14 @@ export function assertCardMatchesLiquidation(
 
 /**
  * Liquida una semana y proyecta días + footer desde el mismo resultado.
+ * `carryIn` es obligatorio (usar resolveOpeningCarryIn para la primera semana de una cadena).
  */
 export function liquidateWeekForCard(input: {
   employee: EmployeeBoundaryFacts;
   weekStart: CivilDate;
   logs: readonly TimeLogFact[];
   isPaid?: boolean;
-  carryIn?: number;
+  carryIn: number;
 }): {
   result: LiquidationResult;
   extrasByDay: Readonly<Record<CivilDate, number>>;
@@ -134,7 +138,7 @@ export function liquidateWeekForCard(input: {
     weekStart: input.weekStart,
     logs: input.logs,
     isPaid: input.isPaid ?? false,
-    carryIn: input.carryIn ?? 0,
+    carryIn: input.carryIn,
   });
   const rate = overtimeRateForWeek(input.employee, input.weekStart);
   const summary = weekCardSummaryFromLiquidation(result, rate);
@@ -155,19 +159,20 @@ type WeekLike = {
 /**
  * Parchea semanas: días Ex. + footer desde la misma liquidación.
  * Encadena carryOut → carryIn entre semanas (orden cronológico).
+ * `openingCarryIn` es obligatorio — nunca se asume 0 implícitamente.
  */
 export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
   weeks: readonly TWeek[],
   employee: EmployeeBoundaryFacts,
   logs: readonly TimeLogFact[],
-  options?: { openingCarryIn?: number },
+  options: { openingCarryIn: number },
 ): TWeek[] {
   const indexed = weeks.map((week, index) => ({ week, index }));
   indexed.sort((a, b) =>
     weekStartKey(a.week).localeCompare(weekStartKey(b.week)),
   );
 
-  let carryIn = options?.openingCarryIn ?? 0;
+  let carryIn = options.openingCarryIn;
   const byIndex = new Map<number, TWeek>();
 
   for (const { week, index } of indexed) {
@@ -208,8 +213,8 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
           ...day,
           extraHours: extrasByDay[key] ?? 0,
         };
-      }),
-    });
+      }) as TWeek['days'],
+    } as TWeek);
   }
 
   return weeks.map((_, i) => byIndex.get(i)!);

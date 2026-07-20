@@ -1,8 +1,16 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-18 (Auditoría documental e IA)
+**Última actualización:** 2026-07-20 (Home: PENDIENTES = carryIn motor)
+
+- [x] **Home staff alineado al motor — PENDIENTES = banco al inicio (2026-07-20)**: `StaffDashboardView` deja `profiles.hours_balance` / `effectivePivot`. Misma orquestación que historial: `resolveOpeningCarryIn` + `liquidateWeekForCard`. Pendiente = `carryIn`; EXTRAS/IMPORTE desde el mismo `LiquidationResult`.
+
+**Última actualización anterior:** 2026-07-18 (Auditoría documental e IA)
 
 - [x] **Auditoría documental e IA (2026-07-18)**: Inventario exhaustivo solo lectura en [`AUDITORIA_DOCUMENTAL.md`](AUDITORIA_DOCUMENTAL.md) — OCR/Gemini, PDFs, Storage, Whisper, webhooks, scripts, oportunidades MinerU/VLM. Sin cambios de código ni refactor.
+
+**Última actualización anterior:** 2026-07-17 (Carry continuo entre semanas)
+
+- [x] **Cadena continua de carry (openingCarryIn) (2026-07-17)**: Orquestación UI — `resolveOpeningCarryIn` reconstruye el carryOut de W−1 desde el timeline del empleado. `/staff/history` y `WorkerWeeklyHistoryModal` ya no asumen `carryIn = 0` al abrir un mes/semana. `patchWeeksFromLiquidation` / `liquidateWeekForCard` exigen carry explícito. Motor/Carry/Resolver **sin cambios**. Tests: `opening-carry.test.ts` (8) — suite hours-engine **132/132**. Caso Alba S22→S23: PENDIENTES junio = −3.79.
 
 **Última actualización anterior:** 2026-07-16 (Fix edit pedido: sin updated_at)
 
