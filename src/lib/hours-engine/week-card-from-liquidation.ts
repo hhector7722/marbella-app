@@ -153,7 +153,8 @@ export function liquidateWeekForCard(input: {
 type WeekLike = {
   startDate: string;
   days: ReadonlyArray<{ date: string; extraHours: number }>;
-  summary?: WeekAdminFlags & Record<string, unknown>;
+  /** Solo se lee `isPaid`; el resto del summary se preserva al parchear. */
+  summary?: WeekAdminFlags;
 };
 
 /**
