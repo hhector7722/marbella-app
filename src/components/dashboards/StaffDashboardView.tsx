@@ -35,7 +35,7 @@ import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { liquidateWeekExtrasByDay, loadEmployeeBoundaryFacts } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows } from '@/lib/hours-engine';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -240,13 +240,11 @@ export default function StaffDashboardView() {
             setUserEmail(user.email ?? '');
 
             let contractHours = 40;
-            let overtimeRate = 0;
-            let historicalBalance = 0;
             let isFixedSalary = false;
             let userPreferStock = false;
 
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours, is_fixed_salary, joining_date, end_date')
+                .select('first_name, role, contracted_hours_weekly, prefer_stock_hours, is_fixed_salary')
                 .eq('id', user.id)
                 .single();
 
@@ -254,8 +252,6 @@ export default function StaffDashboardView() {
                 setUserRole(profile.role as any);
                 setUserName(profile.first_name || "Personal");
                 if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
-                if (profile.overtime_cost_per_hour !== null) overtimeRate = profile.overtime_cost_per_hour;
-                if (profile.hours_balance !== undefined && profile.hours_balance !== null) historicalBalance = profile.hours_balance;
                 if (profile.prefer_stock_hours) userPreferStock = profile.prefer_stock_hours;
                 if (profile.is_fixed_salary) isFixedSalary = profile.is_fixed_salary;
                 setPreferStock(userPreferStock);
@@ -293,54 +289,74 @@ export default function StaffDashboardView() {
             const wNum = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
             setWeekNumber(wNum);
 
-            const effContract = (profile?.role === 'manager' || isFixedSalary) ? 0 : contractHours;
-            const { data: gridDays } = await supabase.rpc('get_worker_weekly_log_grid', {
-                p_user_id: user.id,
-                p_start_date: format(weekStart, 'yyyy-MM-dd'),
-                p_contracted_hours: effContract
-            });
-
-            // Fetch logs for the week to get event_type and clock_out_show_no_registrada (RPC doesn't return them)
             const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
             const weekEndYmd = format(addDays(weekStart, 6), 'yyyy-MM-dd');
-            const { startIso: weekStartIso, endIso: weekEndIso } = madridRangeUtcIso(weekStartYmd, weekEndYmd);
 
-            const { data: weekLogs } = await supabase
-                .from('time_logs')
-                .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
-                .eq('user_id', user.id)
-                .gte('clock_in', weekStartIso)
-                .lte('clock_in', weekEndIso);
-
-            // Ex. diarias: Liquidation Engine + tramos versionados (no perfil vivo).
             const employeeFacts = await loadEmployeeBoundaryFacts(supabase, user.id);
-            const extrasByDay = liquidateWeekExtrasByDay({
-                employee: employeeFacts,
-                weekStart: weekStartYmd,
-                logs: (weekLogs ?? []).map((l) => ({
-                    clockInIso: l.clock_in,
-                    clockOutIso: l.clock_out,
-                    totalHours: l.total_hours,
-                })),
-            });
+            const timelineStart = employeeTimelineStartWeek(employeeFacts);
+            const logsFromYmd =
+                timelineStart && timelineStart < weekStartYmd ? timelineStart : weekStartYmd;
+            const { startIso: logsStartIso, endIso: weekEndIso } = madridRangeUtcIso(
+                logsFromYmd,
+                weekEndYmd,
+            );
 
-            // TEMP DEBUG Ex.
-            if (user.id === '97a9cb0d-f9c5-4a01-800e-a5a0bcde5848' || Object.values(extrasByDay).some((v) => v > 0)) {
-                console.log('[Ex.debug] StaffDashboardView', {
-                    ruta: 'StaffDashboardView (home staff)',
-                    userId: user.id,
-                    weekStartYmd,
-                    rpcGridExtraHours: (gridDays || []).map((d: any) => ({ date: d.date, extraHours: d.extraHours })),
-                    extrasByDay,
-                });
+            const effContract = (profile?.role === 'manager' || isFixedSalary) ? 0 : contractHours;
+            const [{ data: gridDays }, snapsRes, logsRes] = await Promise.all([
+                supabase.rpc('get_worker_weekly_log_grid', {
+                    p_user_id: user.id,
+                    p_start_date: weekStartYmd,
+                    p_contracted_hours: effContract,
+                }),
+                supabase
+                    .from('weekly_snapshots')
+                    .select('week_start, is_paid')
+                    .eq('user_id', user.id)
+                    .gte('week_start', logsFromYmd)
+                    .lte('week_start', weekStartYmd),
+                supabase
+                    .from('time_logs')
+                    .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
+                    .eq('user_id', user.id)
+                    .gte('clock_in', logsStartIso)
+                    .lte('clock_in', weekEndIso),
+            ]);
+
+            if (logsRes.error) {
+                console.error('Error fetching time_logs for carry:', logsRes.error);
+            }
+            if (snapsRes.error) {
+                console.error('Error fetching weekly_snapshots for carry:', snapsRes.error);
             }
 
-            let totalWeekHours = 0;
+            const engineLogs = (logsRes.data ?? []).map((l) => ({
+                clockInIso: l.clock_in,
+                clockOutIso: l.clock_out,
+                totalHours: l.total_hours,
+            }));
+
+            const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
+            const isPaid = isPaidByWeek(weekStartYmd);
+            const carryIn = resolveOpeningCarryIn({
+                employee: employeeFacts,
+                chainStart: weekStartYmd,
+                logs: engineLogs,
+                isPaidByWeek,
+            });
+
+            // Misma liquidación que historial: PENDIENTES = carryIn; EXTRAS/IMPORTE desde el motor.
+            const { extrasByDay, summary } = liquidateWeekForCard({
+                employee: employeeFacts,
+                weekStart: weekStartYmd,
+                logs: engineLogs,
+                isPaid,
+                carryIn,
+            });
+
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
-                totalWeekHours += day.totalHours || 0;
                 const d = realWeekDays[i];
                 const dayYmd = format(d, 'yyyy-MM-dd');
-                const dayLog = weekLogs?.find(l => formatYmdInMadrid(l.clock_in) === dayYmd);
+                const dayLog = logsRes.data?.find((l) => formatYmdInMadrid(l.clock_in) === dayYmd);
                 return {
                     ...day,
                     date: d,
@@ -349,41 +365,28 @@ export default function StaffDashboardView() {
                     isToday: isSameDay(d, today),
                     extraHours: extrasByDay[dayYmd] ?? 0,
                     eventType: dayLog?.event_type || day.eventType || day.event_type || 'regular',
-                    clock_out_show_no_registrada: dayLog?.clock_out_show_no_registrada === true
+                    clock_out_show_no_registrada: dayLog?.clock_out_show_no_registrada === true,
                 };
             });
             setWeekDays(daysStructure);
 
-            let weekDifference = 0;
-            let displayHours = totalWeekHours;
-
+            // Manager / fijo: presentación de HORAS (no altera carryIn del motor).
+            let displayHours = summary.totalHours;
             if (profile?.role === 'manager' || isFixedSalary) {
-                weekDifference = totalWeekHours;
-                // REGLA SOLICITADA: Mostrar 40 si hay 0 horas, o 40 + horas si hay horas
-                if (totalWeekHours === 0) {
+                if (summary.totalHours === 0) {
                     displayHours = contractHours;
                 } else {
-                    displayHours = contractHours + totalWeekHours;
+                    displayHours = contractHours + summary.totalHours;
                 }
-            } else {
-                weekDifference = totalWeekHours - contractHours;
-                displayHours = totalWeekHours;
-            }
-
-            const effectivePivot = (!userPreferStock && historicalBalance > 0) ? 0 : historicalBalance;
-            const currentTotalBalance = effectivePivot + weekDifference;
-            let payout = 0;
-            if (currentTotalBalance > 0 && !userPreferStock) {
-                payout = currentTotalBalance * overtimeRate;
             }
 
             setWeeklySummary({
                 totalHours: displayHours,
-                hoursDifference: weekDifference,
-                currentBalance: currentTotalBalance,
-                estimatedPayout: payout,
+                hoursDifference: summary.weeklyBalance,
+                currentBalance: summary.weeklyBalance,
+                estimatedPayout: summary.estimatedValue,
                 status: 'pending',
-                startBalance: effectivePivot
+                startBalance: summary.startBalance,
             });
 
             // Cargar cajas de forma más robusta (Consolidación de Tesorería)
@@ -876,16 +879,29 @@ export default function StaffDashboardView() {
 
                                     <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 md:h-5 flex items-center">
-                                            <span className={`font-black text-[11px] md:text-sm leading-none text-red-600`}>
-                                                {formatWorked(weeklySummary.startBalance)}
-                                            </span>
+                                            {(() => {
+                                                const pending = weeklySummary.startBalance ?? 0;
+                                                const show = Math.abs(pending) > 0.05;
+                                                const color = !show
+                                                    ? 'text-transparent'
+                                                    : pending >= 0
+                                                      ? 'text-emerald-600'
+                                                      : 'text-red-600';
+                                                return (
+                                                    <span className={cn('font-black text-[11px] md:text-sm leading-none', color)}>
+                                                        {show ? formatWorked(pending) : '\u00a0'}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
                                         <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 md:h-5 flex items-center">
                                             <span className={`font-black text-[11px] md:text-sm leading-none text-black`}>
-                                                {weeklySummary.currentBalance > 0 ? formatWorked(weeklySummary.currentBalance) : " "}
+                                                {(weeklySummary.currentBalance ?? 0) > 0.05
+                                                    ? formatWorked(weeklySummary.currentBalance)
+                                                    : '\u00a0'}
                                             </span>
                                         </div>
                                         <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
