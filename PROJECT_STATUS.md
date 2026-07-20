@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-16 (Fix edit pedido: sin updated_at)
+**Última actualización:** 2026-07-18 (Auditoría documental e IA)
+
+- [x] **Auditoría documental e IA (2026-07-18)**: Inventario exhaustivo solo lectura en [`AUDITORIA_DOCUMENTAL.md`](AUDITORIA_DOCUMENTAL.md) — OCR/Gemini, PDFs, Storage, Whisper, webhooks, scripts, oportunidades MinerU/VLM. Sin cambios de código ni refactor.
+
+**Última actualización anterior:** 2026-07-16 (Fix edit pedido: sin updated_at)
 
 - [x] **Fix editar pedido staff (2026-07-16)**: `update_staff_event_order` ya no escribe `updated_at` en `event_orders` (columna inexistente). Migración [`20260716250000_fix_update_staff_event_order_no_updated_at.sql`](supabase/migrations/20260716250000_fix_update_staff_event_order_no_updated_at.sql) **aplicada**.
 
