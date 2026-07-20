@@ -359,8 +359,8 @@ export default function HistoryPage() {
                 isPaidByWeek,
             });
 
-            const formattedWeeks: WeekData[] = patchWeeksFromLiquidation(
-                mappedWeeks,
+            const formattedWeeks = patchWeeksFromLiquidation<WeekData>(
+                mappedWeeks as WeekData[],
                 employeeFacts,
                 engineLogs,
                 { openingCarryIn },
@@ -658,12 +658,13 @@ export default function HistoryPage() {
             isPaidByWeek,
         });
 
-        return patchWeeksFromLiquidation(
+        // TWeek se infiere como WeekLike si no se fija; preservar WeekData del historial.
+        return patchWeeksFromLiquidation<WeekData>(
             uniqueWeeks,
             employeeFacts,
             engineLogs,
             { openingCarryIn },
-        ) as WeekData[];
+        );
     }
 
     const openSimulationExportModal = useCallback(async () => {
