@@ -787,8 +787,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const renderDashboardChangeCard = (title: string, idx: number) => {
         const box = dashboardChangeBoxes[idx];
         if (!box) return null;
-        const diff = box.current_balance - 300;
-        const isOk = Math.abs(diff) < 0.01;
         return (
             <div key={box.id} className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden h-full min-h-0 w-full min-w-0 border border-zinc-100">
                 <div className="bg-[#36606F] pl-3 pr-2 md:pl-3 md:pr-2 py-0.5 md:py-0.5 flex items-center justify-between text-white shrink-0">
@@ -800,11 +798,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <span className="max-w-full text-xs sm:text-sm md:text-base font-black tabular-nums leading-tight text-zinc-800 break-words">
                                 {formatChangeBoxEur(box.current_balance)}
                             </span>
-                            {!isOk && Math.abs(diff) > 0.005 && (
-                                <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5 tabular-nums leading-tight", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
-                                    {diff > 0 ? `+${formatChangeBoxEur(diff)}` : `-${formatChangeBoxEur(Math.abs(diff))}`}
-                                </span>
-                            )}
                         </div>
                         <div className="flex min-h-[40px] min-w-0 items-center justify-center shrink-0">
                             <button
