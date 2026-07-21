@@ -158,6 +158,19 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                     const hFormatted = fmtHours(day.totalHours);
                     const exFormatted = fmtHours(day.extraHours);
 
+                    // TEMP DEBUG Ex. — no cambia lógica; solo traza lo que se pinta
+                    if (week.startDate?.startsWith('2026-07-13') || day.extraHours > 0.05) {
+                        console.log('[Ex.debug] WeekCard RENDER', {
+                            ruta: '/staff/history → WeekCard',
+                            weekStart: week.startDate,
+                            date: day.date,
+                            'day.extraHours (prop recibida)': day.extraHours,
+                            'exFormatted (texto UI)': exFormatted || '(no se pinta — vacío)',
+                            'summary.weeklyBalance (footer EXTRAS)': week.summary.weeklyBalance,
+                            'summary.totalHours': week.summary.totalHours,
+                        });
+                    }
+
                     return (
                         <div
                             key={di}
@@ -168,17 +181,14 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                 day.isToday && !isOtherMonth && "bg-blue-50/10"
                             )}
                         >
-                            <span className={cn(
-                                "absolute top-1 right-1 text-[9px] font-bold",
-                                day.isToday && !isOtherMonth ? "text-blue-600" : "text-gray-400"
-                            )}>
+                            <span className={cn("absolute top-1 right-1 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
                                 {day.dayNumber}
                             </span>
-                            <div className="flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]">
+                            <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
                                 {isSpecial ? (
                                     <>
                                         <div className="h-5 flex items-center justify-center shrink-0">
-                                            <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig!.color)}>
+                                            <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig!.color, isOtherMonth && "opacity-60")}>
                                                 {eventConfig!.showCross ? (
                                                     <X size={14} strokeWidth={2.5} className="text-white" />
                                                 ) : (
@@ -186,29 +196,15 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                                 )}
                                             </div>
                                         </div>
-                                        {/* Si hay fichaje real en día especial, mostrarlo (no ocultar) */}
-                                        {day.hasLog && day.clockIn ? (
-                                            <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-green-500" />
-                                                <span className="text-[9px] font-mono leading-none text-gray-700">{day.clockIn}</span>
-                                                {day.clockOut ? (
-                                                    <>
-                                                        <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-red-500" />
-                                                        <span className="text-[9px] font-mono leading-none text-gray-700">{day.clockOut}</span>
-                                                    </>
-                                                ) : null}
-                                            </div>
-                                        ) : (
-                                            <div className="h-5 shrink-0" aria-hidden />
-                                        )}
+                                        <div className="h-5 shrink-0" aria-hidden />
                                     </>
                                 ) : (
                                     <>
                                         <div className="h-5 flex items-center justify-center gap-1 shrink-0">
                                             {day.hasLog ? (
                                                 <>
-                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-green-500" />
-                                                    <span className="text-[9px] font-mono leading-none text-gray-700">{day.clockIn}</span>
+                                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
+                                                    <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
                                                 </>
                                             ) : <span className="text-[9px] text-transparent select-none">0</span>}
                                         </div>
@@ -217,9 +213,9 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                                 day.eventType === 'no_registered' ? (
                                                     <>
                                                         <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
-                                                            <X size={8} strokeWidth={2.5} className="shrink-0 text-red-500" />
+                                                            <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
                                                         </span>
-                                                        <span className="text-[9px] font-mono leading-none text-gray-700">{day.clockOut}</span>
+                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                     </>
                                                 ) : day.clock_out_show_no_registrada ? (
                                                     <span
@@ -227,16 +223,16 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                                         className="inline-flex items-center justify-center gap-1 shrink-0"
                                                     >
                                                         <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
-                                                            <X size={8} strokeWidth={2.5} className="shrink-0 text-red-500" />
+                                                            <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
                                                         </span>
-                                                        <span className="text-[9px] font-mono leading-none text-gray-700">
+                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>
                                                             {day.clockOut}
                                                         </span>
                                                     </span>
                                                 ) : (
                                                     <>
-                                                        <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-red-500" />
-                                                        <span className="text-[9px] font-mono leading-none text-gray-700">{day.clockOut}</span>
+                                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
+                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                     </>
                                                 )
                                             ) : (day.hasLog && !day.clockOut && day.isToday) ? (
@@ -249,17 +245,17 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                 )}
                             </div>
                             {!isSpecial && (
-                                <div className="w-full space-y-0 mt-0.5 min-h-[20px]">
+                                <div className={cn("w-full space-y-0 mt-0.5 min-h-[20px]", isOtherMonth && "opacity-45")}>
                                     {day.hasLog && hFormatted ? (
                                         <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                             <span className="ml-0.5">H</span>
-                                            <span className="font-bold pr-1 text-gray-800">{hFormatted}</span>
+                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{hFormatted}</span>
                                         </div>
                                     ) : <div className="h-3" />}
                                     {exFormatted ? (
                                         <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                             <span className="ml-0.5">Ex</span>
-                                            <span className="font-bold pr-1 text-gray-800">{exFormatted}</span>
+                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
                                         </div>
                                     ) : <div className="h-3" />}
                                 </div>

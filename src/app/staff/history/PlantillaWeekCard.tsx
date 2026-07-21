@@ -8,11 +8,11 @@ const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
-    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50', text: 'text-red-600' },
-    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50', text: 'text-yellow-700' },
-    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50', text: 'text-orange-600' },
-    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50', text: 'text-blue-600' },
-    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50', text: 'text-red-600' },
+    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
+    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
+    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
 ];
 
 export type PlantillaDayLog = {
@@ -75,9 +75,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                 </div>
             )}
 
-            <div className="grid grid-cols-7 border-b border-gray-100 items-stretch">
+            <div className="grid grid-cols-7 border-b border-gray-100">
                 {week.days.map((day, di) => {
-                    const logs = day.logs || [];
                     return (
                         <div
                             key={di}
@@ -90,13 +89,12 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                         >
                             <span className={cn(
                                 "absolute top-1 right-1 text-[9px] font-bold",
-                                day.isToday && !day.isOtherMonth ? "text-blue-600" : "text-gray-400"
+                                day.isToday && !day.isOtherMonth ? "text-blue-600" : (day.isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400")
                             )}>
                                 {day.dayNumber}
                             </span>
-                            {/* Todos los fichajes del día — sin tope ni opacity que los oculte */}
-                            <div className="flex-1 flex flex-col items-stretch justify-start mt-3 w-full min-h-[52px] space-y-0.5">
-                                {logs.map((log) => {
+                            <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                                {(day.logs || []).slice(0, 4).map((log) => {
                                     const eventConfig = EVENT_TYPES.find(t => t.value === (log.event_type || 'regular'));
                                     const isRegular = !log.event_type || log.event_type === 'regular';
                                     const isComplete = !!log.clock_out && !log.clock_out_show_no_registrada;
@@ -111,22 +109,25 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                             )}
                                         >
                                             <div className={cn(
-                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 text-[6.5px] leading-none font-black",
+                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 flex-shrink-0 text-[6.5px] leading-none font-black",
                                                 eventConfig?.showCross ? "bg-red-600 text-white" : (isComplete ? "bg-emerald-600 text-white" : "bg-rose-600 text-white")
                                             )}>
                                                 {eventConfig?.showCross && log.event_type !== 'no_registered' ? <X size={8} strokeWidth={2.5} className="text-white" /> : initials}
                                             </div>
                                             <div className="min-w-0 flex-1 flex items-center gap-0.5 truncate">
-                                                {isRegular || log.event_type === 'no_registered' ? (
+                                                {isRegular ? (
                                                     <>
                                                         <span className="text-[8px] font-mono font-bold text-emerald-600 shrink-0">{log.in_time || '—'}</span>
-                                                        <span className="text-gray-400 text-[7px]">-</span>
-                                                        <span className="text-[8px] font-mono font-bold text-rose-600 shrink-0">
-                                                            {log.clock_out_show_no_registrada || log.event_type === 'no_registered' ? 'No reg.' : (log.out_time || '—')}
+                                                        <span className="text-gray-300 text-[7px]">-</span>
+                                                        <span className={cn(
+                                                            "text-[8px] font-mono font-bold shrink-0",
+                                                            log.clock_out_show_no_registrada ? "text-rose-600" : "text-rose-600"
+                                                        )}>
+                                                            {log.clock_out_show_no_registrada ? 'No reg.' : (log.out_time || '—')}
                                                         </span>
                                                     </>
                                                 ) : (
-                                                    <span className={cn("text-[8px] font-black", eventConfig?.text || "text-gray-700")}>
+                                                    <span className={cn("text-[8px] font-black", eventConfig?.color || "text-gray-500")}>
                                                         {eventConfig?.initial || '?'}
                                                     </span>
                                                 )}
@@ -134,6 +135,9 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                         </div>
                                     );
                                 })}
+                                {(day.logs?.length || 0) > 4 && (
+                                    <div className="text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 4} más</div>
+                                )}
                             </div>
                         </div>
                     );

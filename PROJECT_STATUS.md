@@ -1,8 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Plantilla: mostrar todos los fichajes en celda)
+**Última actualización:** 2026-07-21 (Asistencia UI: aspecto restaurado)
 
-- [x] **Plantilla asistencia: ver todos los fichajes (2026-07-21)**: En vista plantilla (`PlantillaWeekCard`) se eliminó el tope `slice(0, 4)`, el `overflow-hidden` y la `opacity-45` de días de otro mes que ocultaban fichajes (el modal sí los tenía). Celdas crecen con todos los empleados. `WeekCard` individual: sin atenuar fichajes; si hay reloj en día especial (F/E/…) también se pinta.
+- [x] **Asistencia UI restaurada a aspecto previo (2026-07-21)**: `PlantillaWeekCard` + `WeekCard` vuelven al look de antes del cambio de visibilidad (colores, opacity, layout). El modal de día sigue mostrando el detalle completo.
+
+**Última actualización anterior:** 2026-07-21 (Plantilla: mostrar todos los fichajes en celda)
+
+- [x] **Plantilla asistencia: ver todos los fichajes (2026-07-21)**: En vista plantilla (`PlantillaWeekCard`) se eliminó el tope `slice(0, 4)`, el `overflow-hidden` y la `opacity-45` de días de otro mes que ocultaban fichajes (el modal sí los tenía). Celdas crecen con todos los empleados. `WeekCard` individual: sin atenuar fichajes; si hay reloj en día especial (F/E/…) también se pinta. **Revertido visualmente** (ver entrada superior).
 
 **Última actualización anterior:** 2026-07-21 (Horas solo .0/.5 + color días pasados Horarios)
 
