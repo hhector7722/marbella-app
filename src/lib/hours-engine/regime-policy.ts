@@ -4,7 +4,7 @@ import type {
   SegmentLiquidation,
   SegmentRegime,
 } from './types.ts';
-import { roundMarbellaHours, roundMarbellaSigned } from './marbella-round.ts';
+import { roundMarbellaSigned } from './marbella-round.ts';
 import { isAugustCivilDate } from './week-dates.ts';
 
 export type RegimeSegmentInput = {
@@ -119,15 +119,17 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
   const regimeApplied =
     buckets.length === 1 ? buckets[0]!.regime : kind === 'pre_alta' ? 'pre_alta' : termRegime;
 
+  // Ordinarias/extras/horas: sin redondear aquí (deben coincidir Σ con daily-breakdown).
+  // Solo el balance de banco se normaliza a .0/.5 (carry).
   return {
     days,
-    hoursWorked: roundMarbellaHours(hoursWorked),
-    contractedHours: roundMarbellaHours(contractedHoursOut),
+    hoursWorked,
+    contractedHours: contractedHoursOut,
     bagMode,
     regimeApplied,
     weeklyBalancePart: roundMarbellaSigned(weeklyBalancePart),
-    ordinaryHours: roundMarbellaHours(ordinaryHours),
-    overtimeHours: roundMarbellaHours(overtimeHours),
+    ordinaryHours,
+    overtimeHours,
     kind,
   };
 }

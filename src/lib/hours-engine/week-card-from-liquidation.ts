@@ -8,7 +8,7 @@
 
 import { liquidateWeek } from './liquidation-engine.ts';
 import { resolveEffectiveContract } from './contract-resolver.ts';
-import { roundMarbellaHours, roundMarbellaSigned } from './marbella-round.ts';
+import { roundMarbellaHours } from './marbella-round.ts';
 import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
 import type {
   CivilDate,
@@ -129,14 +129,14 @@ export function weekCardSummaryFromLiquidation(
     : roundMarbellaHours(Math.max(0, netPayable - Math.max(0, result.carryIn)));
 
   return {
-    totalHours: roundMarbellaHours(result.hoursWorked),
-    startBalance: roundMarbellaSigned(result.carryIn),
+    totalHours: result.hoursWorked,
+    startBalance: result.carryIn,
     weeklyBalance: extrasFooter,
-    finalBalance: roundMarbellaSigned(result.balanceFinal),
+    finalBalance: result.balanceFinal,
     estimatedValue: netPayable * overtimeRatePerHour,
     isPaid: result.isPaid,
     preferStock,
-    limitHours: roundMarbellaHours(result.contractedHoursEffective),
+    limitHours: result.contractedHoursEffective,
     hourlyRate: overtimeRatePerHour,
   };
 }

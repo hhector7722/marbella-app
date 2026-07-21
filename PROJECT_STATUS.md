@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Asistencia UI: aspecto restaurado)
+**Última actualización:** 2026-07-21 (Fix invariante extras diarias ≠ semanales)
+
+- [x] **Fix invariante Σ extras diarias (2026-07-21)**: Redondear OT/ordinarias en `regime-policy` rompía la coherencia con `daily-breakdown` (ej. `0.619999… ≠ 0.5`) y tumba el modal «Historial semanal» (`No data found` + toast). OT/ordinarias vuelven sin redondear ahí; el banco sigue en `.0/.5` vía carry. Assert compara en escala Marbella. Suite **122/122**.
+
+**Última actualización anterior:** 2026-07-21 (Asistencia UI: aspecto restaurado)
 
 - [x] **Asistencia UI restaurada a aspecto previo (2026-07-21)**: `PlantillaWeekCard` + `WeekCard` vuelven al look de antes del cambio de visibilidad (colores, opacity, layout). El modal de día sigue mostrando el detalle completo.
 

@@ -3,6 +3,7 @@ import { resolveEffectiveContract } from './contract-resolver.ts';
 import { computeCarry } from './carry-engine.ts';
 import { buildDailyBreakdown } from './daily-breakdown.ts';
 import { applyRegimeToSegment } from './regime-policy.ts';
+import { roundMarbellaHours } from './marbella-round.ts';
 import type {
   DailyBreakdown,
   LiquidationInput,
@@ -17,17 +18,25 @@ function emptyDailyBreakdown(weekStart: string): DailyBreakdown {
   return buildDailyBreakdown(weekStart, {}, []);
 }
 
+/**
+ * Coherencia diarias ↔ semanales. Compara en escala Marbella (.0/.5)
+ * para no tumbar la UI por ruido float (0.619999… vs 0.62).
+ */
 function assertDailyCoherent(
   overtimeHours: number,
   ordinaryHours: number,
   daily: DailyBreakdown,
 ): void {
-  if (Math.abs(daily.overtimeHoursTotal - overtimeHours) > EPS) {
+  const dOt = roundMarbellaHours(daily.overtimeHoursTotal);
+  const wOt = roundMarbellaHours(overtimeHours);
+  if (Math.abs(dOt - wOt) > EPS) {
     throw new Error(
       `Invariante roto: Σ extras diarias (${daily.overtimeHoursTotal}) ≠ extras semanales (${overtimeHours})`,
     );
   }
-  if (Math.abs(daily.ordinaryHoursTotal - ordinaryHours) > EPS) {
+  const dOrd = roundMarbellaHours(daily.ordinaryHoursTotal);
+  const wOrd = roundMarbellaHours(ordinaryHours);
+  if (Math.abs(dOrd - wOrd) > EPS) {
     throw new Error(
       `Invariante roto: Σ ordinarias diarias (${daily.ordinaryHoursTotal}) ≠ ordinarias semanales (${ordinaryHours})`,
     );
