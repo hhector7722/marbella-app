@@ -24,7 +24,6 @@ import {
     endOfMonth,
     eachDayOfInterval,
     isSameDay,
-    addDays,
 } from 'date-fns';
 import { formatMadridHmFromIso, formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
@@ -57,6 +56,10 @@ import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
+import {
+    buildEmployeeWeeksFromTimeLogs,
+    buildEmployeeWeeksInRange,
+} from '@/lib/staff/build-employee-weeks-from-logs';
 
 /** Línea roja fina con gradiente y difuminado en los extremos; forma parte del borde visual entre semanas (sin añadir espacio). */
 function WeekSeparator() {
@@ -73,20 +76,6 @@ function WeekSeparator() {
 }
 
 // --- TIPOS ---
-interface DayData {
-    date: string;
-    dayName: string;
-    dayNumber: number;
-    hasLog: boolean;
-    clockIn: string | null;
-    clockOut: string | null;
-    clock_out_show_no_registrada?: boolean;
-    totalHours: number;
-    extraHours: number;
-    eventType: string;
-    isToday: boolean;
-}
-
 interface WeekSummary {
     totalHours: number;
     startBalance: number;
@@ -102,6 +91,7 @@ interface WeekSummary {
 
 interface WeekData extends TimesheetWeekData {
     days: (TimesheetWeekData['days'][number] & { clock_out_show_no_registrada?: boolean })[];
+    summary: WeekSummary;
 }
 
 // --- CONSTANTES ---
@@ -125,13 +115,6 @@ function buildSimulationPeriodLabel(
 }
 
 type Employee = { id: string; first_name: string; last_name: string; avatar_url?: string | null };
-
-type MonthlyTimesheetRpcDay = Omit<DayData, 'eventType' | 'clock_out_show_no_registrada'> & {
-    eventType?: string;
-    event_type?: string;
-    clock_out_show_no_registrada?: boolean;
-};
-type MonthlyTimesheetRpcWeek = Omit<WeekData, 'days'> & { days: MonthlyTimesheetRpcDay[] };
 
 export default function HistoryPage() {
     const supabase = createClient();
@@ -265,15 +248,10 @@ export default function HistoryPage() {
                 timelineStart && timelineStart < rangeStartYmd ? timelineStart : rangeStartYmd;
             const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, rangeEndYmd);
 
-            const [rpcResult, logsResult, snapsResult] = await Promise.all([
-                supabase.rpc('get_monthly_timesheet', {
-                    p_user_id: targetUserId,
-                    p_year: filterYear,
-                    p_month: filterMonth + 1,
-                }),
+            const [logsResult, snapsResult] = await Promise.all([
                 supabase
                     .from('time_logs')
-                    .select('clock_in, clock_out, total_hours, clock_out_show_no_registrada')
+                    .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
                     .eq('user_id', targetUserId)
                     .gte('clock_in', startIso)
                     .lte('clock_in', endIso),
@@ -294,29 +272,19 @@ export default function HistoryPage() {
                       }),
             ]);
 
-            const { data, error } = rpcResult;
-            if (error) {
-                console.error('Error fetching calendar:', error);
+            if (logsResult.error) {
+                console.error('Error fetching time_logs:', logsResult.error);
+                toast.error('No se pudieron cargar los fichajes del empleado.');
                 setWeeksData([]);
                 return;
-            }
-
-            if (logsResult.error) {
-                console.error('Error fetching clock_out_show_no_registrada:', logsResult.error);
-                toast.warning('No se pudieron cargar los indicadores de salida no registrada.');
             }
             if (snapsResult.error) {
                 console.error('Error fetching weekly_snapshots for carry:', snapsResult.error);
                 toast.warning('No se pudo cargar el sello Pagada previo; el arrastre puede ser incompleto.');
             }
 
-            const noRegistradaByDate: Record<string, boolean> = {};
-            (logsResult.data || []).forEach((log: { clock_in: string; clock_out_show_no_registrada?: boolean }) => {
-                const dateKey = formatYmdInMadrid(log.clock_in) ?? format(new Date(log.clock_in), 'yyyy-MM-dd');
-                if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
-            });
-
-            const engineLogs = (logsResult.data || []).map((l: {
+            const logsRaw = logsResult.data || [];
+            const engineLogs = logsRaw.map((l: {
                 clock_in: string;
                 clock_out?: string | null;
                 total_hours?: number | null;
@@ -326,24 +294,17 @@ export default function HistoryPage() {
                 totalHours: l.total_hours,
             }));
 
-            const mappedWeeks = (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => {
-                const startDateKey = typeof (week as any).startDate === 'string'
-                    ? (week as any).startDate.split('T')[0]
-                    : String((week as any).startDate);
-                return {
-                    ...week,
-                    startDate: startDateKey,
-                    summary: {
-                        ...week.summary,
-                        isPaid: week.summary?.isPaid ?? false,
-                    },
-                    days: week.days.map((day) => ({
-                        ...day,
-                        eventType: day.eventType ?? day.event_type ?? 'regular',
-                        clock_out_show_no_registrada: noRegistradaByDate[day.date] === true,
-                    })),
-                };
-            });
+            const isPaidFromSnaps = isPaidLookupFromRows(snapsResult.data ?? []);
+            const bagModeFromSnaps = bagModeOverrideLookupFromRows(snapsResult.data ?? []);
+
+            // Misma fuente de relojes que la plantilla (time_logs + Madrid), sin RPC.
+            const mappedWeeks = buildEmployeeWeeksFromTimeLogs({
+                filterYear,
+                filterMonth,
+                logs: logsRaw,
+                isPaidByWeek: isPaidFromSnaps,
+                bagModeOverrideByWeek: bagModeFromSnaps,
+            }) as WeekData[];
 
             if (mappedWeeks.length === 0) {
                 setWeeksData([]);
@@ -354,24 +315,16 @@ export default function HistoryPage() {
                 .map((w) => w.startDate)
                 .sort()[0]!;
 
-            const isPaidFromSnaps = isPaidLookupFromRows(snapsResult.data ?? []);
-            const bagModeFromSnaps = bagModeOverrideLookupFromRows(snapsResult.data ?? []);
-            const isPaidByWeek = (weekStart: string) => {
-                const inMonth = mappedWeeks.find((w) => w.startDate === weekStart);
-                if (inMonth) return inMonth.summary?.isPaid === true;
-                return isPaidFromSnaps(weekStart);
-            };
-
             const openingCarryIn = resolveOpeningCarryIn({
                 employee: employeeFacts,
                 chainStart,
                 logs: engineLogs,
-                isPaidByWeek,
+                isPaidByWeek: isPaidFromSnaps,
                 bagModeOverrideByWeek: bagModeFromSnaps,
             });
 
             const formattedWeeks = patchWeeksFromLiquidation<WeekData>(
-                mappedWeeks as WeekData[],
+                mappedWeeks,
                 employeeFacts,
                 engineLogs,
                 { openingCarryIn, bagModeOverrideByWeek: bagModeFromSnaps },
@@ -380,6 +333,8 @@ export default function HistoryPage() {
             setWeeksData(formattedWeeks);
         } catch (err) {
             console.error('fetchCalendar error:', err);
+            toast.error('Error al cargar el historial del empleado.');
+            setWeeksData([]);
         } finally {
             setLoading(false);
         }
@@ -585,9 +540,6 @@ export default function HistoryPage() {
     }
 
     async function fetchWeeksYearToDate(userId: string, year: number): Promise<WeekData[]> {
-        const lastMonth = new Date().getMonth() + 1;
-        const allWeeks: WeekData[] = [];
-
         const employeeFacts = await loadEmployeeBoundaryFacts(supabase, userId);
         const timelineStart = employeeTimelineStartWeek(employeeFacts);
 
@@ -596,10 +548,10 @@ export default function HistoryPage() {
             : `${year}-01-01`;
         const yearEnd = format(new Date(), 'yyyy-MM-dd');
         const { startIso, endIso } = madridRangeUtcIso(yearStart, yearEnd);
-        const [{ data: yearLogs }, { data: yearSnaps }] = await Promise.all([
+        const [{ data: yearLogs, error: yearLogsError }, { data: yearSnaps }] = await Promise.all([
             supabase
                 .from('time_logs')
-                .select('clock_in, clock_out, total_hours')
+                .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
                 .eq('user_id', userId)
                 .gte('clock_in', startIso)
                 .lte('clock_in', endIso),
@@ -619,65 +571,40 @@ export default function HistoryPage() {
                   }),
         ]);
 
+        if (yearLogsError) {
+            console.error('fetchWeeksYearToDate time_logs:', yearLogsError);
+            throw yearLogsError;
+        }
+
         const engineLogs = (yearLogs ?? []).map((l) => ({
             clockInIso: l.clock_in,
             clockOutIso: l.clock_out,
             totalHours: l.total_hours,
         }));
 
-        for (let month = 1; month <= lastMonth; month++) {
-            const { data, error } = await supabase.rpc('get_monthly_timesheet', {
-                p_user_id: userId,
-                p_year: year,
-                p_month: month,
-            });
-            if (error || !data) continue;
-
-            allWeeks.push(
-                ...((data as unknown) as MonthlyTimesheetRpcWeek[]).map((week) => ({
-                    ...week,
-                    startDate: typeof week.startDate === 'string'
-                        ? week.startDate.split('T')[0]
-                        : String(week.startDate),
-                    summary: {
-                        ...week.summary,
-                        isPaid: week.summary?.isPaid ?? false,
-                    },
-                    days: week.days.map((day) => ({
-                        ...day,
-                        eventType: day.eventType ?? day.event_type ?? 'regular',
-                    })),
-                })),
-            );
-        }
-
-        const byStart = new Map<string, WeekData>();
-        for (const week of allWeeks) {
-            byStart.set(week.startDate, week);
-        }
-        const uniqueWeeks = [...byStart.values()].sort((a, b) =>
-            a.startDate.localeCompare(b.startDate),
-        );
-
-        if (uniqueWeeks.length === 0) return [];
-
         const isPaidFromSnaps = isPaidLookupFromRows(yearSnaps ?? []);
         const bagModeFromSnaps = bagModeOverrideLookupFromRows(yearSnaps ?? []);
-        const isPaidByWeek = (weekStart: string) => {
-            const inList = byStart.get(weekStart);
-            if (inList) return inList.summary?.isPaid === true;
-            return isPaidFromSnaps(weekStart);
-        };
+
+        const rangeStart = startOfWeek(new Date(year, 0, 1), { weekStartsOn: 1 });
+        const rangeEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+        const uniqueWeeks = buildEmployeeWeeksInRange({
+            rangeStart,
+            rangeEnd,
+            logs: yearLogs ?? [],
+            isPaidByWeek: isPaidFromSnaps,
+            bagModeOverrideByWeek: bagModeFromSnaps,
+        }) as WeekData[];
+
+        if (uniqueWeeks.length === 0) return [];
 
         const openingCarryIn = resolveOpeningCarryIn({
             employee: employeeFacts,
             chainStart: uniqueWeeks[0]!.startDate,
             logs: engineLogs,
-            isPaidByWeek,
+            isPaidByWeek: isPaidFromSnaps,
             bagModeOverrideByWeek: bagModeFromSnaps,
         });
 
-        // TWeek se infiere como WeekLike si no se fija; preservar WeekData del historial.
         return patchWeeksFromLiquidation<WeekData>(
             uniqueWeeks,
             employeeFacts,
@@ -875,20 +802,32 @@ export default function HistoryPage() {
                 const allWeeks: WeekData[] = [];
 
                 for (const m of months) {
-                    const { data, error } = await supabase.rpc('get_monthly_timesheet', {
-                        p_user_id: id,
-                        p_year: m.year,
-                        p_month: m.month + 1,
-                    });
-                    if (error || !data) continue;
+                    const monthStart = new Date(m.year, m.month, 1);
+                    const monthEnd = endOfMonth(monthStart);
+                    const rangeStart = startOfWeek(startOfMonth(monthStart), { weekStartsOn: 1 });
+                    const rangeEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+                    const rangeStartYmd = format(rangeStart, 'yyyy-MM-dd');
+                    const rangeEndYmd = format(rangeEnd, 'yyyy-MM-dd');
+                    const { startIso, endIso } = madridRangeUtcIso(rangeStartYmd, rangeEndYmd);
 
-                    const weeks = ((data as unknown) as MonthlyTimesheetRpcWeek[] || []).map((week) => ({
-                        ...week,
-                        days: week.days.map((day) => ({
-                            ...day,
-                            eventType: day.eventType ?? day.event_type ?? 'regular',
-                        })),
-                    }));
+                    const { data: monthLogs, error: monthLogsError } = await supabase
+                        .from('time_logs')
+                        .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
+                        .eq('user_id', id)
+                        .gte('clock_in', startIso)
+                        .lte('clock_in', endIso);
+
+                    if (monthLogsError) {
+                        console.error('Multi export time_logs:', monthLogsError);
+                        continue;
+                    }
+
+                    const weeks = buildEmployeeWeeksFromTimeLogs({
+                        filterYear: m.year,
+                        filterMonth: m.month,
+                        logs: monthLogs ?? [],
+                        isPaidByWeek: () => false,
+                    }) as WeekData[];
                     allWeeks.push(...weeks);
                 }
 

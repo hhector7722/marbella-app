@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Fix invariante extras diarias ≠ semanales)
+**Última actualización:** 2026-07-21 (Historial filtrado = mismos time_logs que plantilla)
+
+- [x] **Historial filtrado alineado a plantilla (2026-07-21)**: En `/staff/history`, la vista empleado ya no usa `get_monthly_timesheet` para relojes. Semanas desde `time_logs` + TZ Madrid (`buildEmployeeWeeksFromTimeLogs`), igual que plantilla. Footer sigue con hours-engine. Export multi + simulación YTD mismo criterio. Tests: `build-employee-weeks-from-logs.test.ts` (4).
+
+**Última actualización anterior:** 2026-07-21 (Fix invariante extras diarias ≠ semanales)
 
 - [x] **Fix invariante Σ extras diarias (2026-07-21)**: Redondear OT/ordinarias en `regime-policy` rompía la coherencia con `daily-breakdown` (ej. `0.619999… ≠ 0.5`) y tumba el modal «Historial semanal» (`No data found` + toast). OT/ordinarias vuelven sin redondear ahí; el banco sigue en `.0/.5` vía carry. Assert compara en escala Marbella. Suite **122/122**.
 
