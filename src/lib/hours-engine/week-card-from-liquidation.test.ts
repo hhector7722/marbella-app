@@ -55,8 +55,11 @@ function assertCardCoherent(
   const sumDays = daysExtra.reduce((a, b) => a + b, 0);
   assert.ok(Math.abs(sumDays - result.overtimeHours) < 1e-9);
   assert.ok(Math.abs(sumDays - result.dailyBreakdown.overtimeHoursTotal) < 1e-9);
-  // Footer EXTRAS (pago) puede ser < OT bruto si hay deuda o absorción.
-  if (summary.preferStock) {
+  // Footer EXTRAS: con deuda residual (carryOut < 0) siempre 0 (pago y bolsa).
+  // Sin deuda, en bolsa = OT bruto; en pago ≤ OT.
+  if (result.carryOut < -1e-9) {
+    assert.equal(summary.weeklyBalance, 0);
+  } else if (summary.preferStock) {
     assert.ok(Math.abs(summary.weeklyBalance - result.overtimeHours) < 1e-9);
   } else {
     assert.ok(summary.weeklyBalance <= result.overtimeHours + 1e-9);
@@ -239,6 +242,31 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.equal(summary.startBalance, -13);
     assert.ok(result.carryOut < 0);
     // Deuda no cubierta → no se cobra ni se muestran extras a cobro
+    assert.equal(summary.weeklyBalance, 0);
+    assert.equal(summary.estimatedValue, 0);
+  });
+
+  it('bolsa + deuda residual: EXTRAS footer = 0 (no tumba filtro)', () => {
+    // Caso Pere jul-2026: bolsa, OT > 0 pero carryOut sigue negativo.
+    const employee = emp([
+      term('2026-01-01', null, 28, { bagMode: true, overtimeRatePerHour: 10 }),
+    ]);
+    const logs = [
+      dayLog('2026-07-13', 8),
+      dayLog('2026-07-14', 8),
+      dayLog('2026-07-15', 8),
+      dayLog('2026-07-16', 8),
+      dayLog('2026-07-17', 8),
+    ];
+    const { summary, result } = liquidateWeekForCard({
+      carryIn: -56,
+      employee,
+      weekStart: '2026-07-13',
+      logs,
+    });
+    assert.ok(result.overtimeHours > 0);
+    assert.ok(result.carryOut < 0);
+    assert.equal(summary.preferStock, true);
     assert.equal(summary.weeklyBalance, 0);
     assert.equal(summary.estimatedValue, 0);
   });

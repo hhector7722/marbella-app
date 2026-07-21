@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Historial filtrado = mismos time_logs que plantilla)
+**Última actualización:** 2026-07-21 (Fix filtro: bolsa + deuda no tumba historial)
+
+- [x] **Fix filtro empleado bolsa+deuda (2026-07-21)**: Pere (y similares) fallaban al filtrar en `/staff/history` — assert `EXTRAS > 0 con carryOut negativo` en modo bolsa. Footer EXTRAS = 0 si queda deuda (igual que pago). Toast con detalle del error. Tests week-card **19/19**; plantilla julio OK todos.
+
+**Última actualización anterior:** 2026-07-21 (Historial filtrado = mismos time_logs que plantilla)
 
 - [x] **Historial filtrado alineado a plantilla (2026-07-21)**: En `/staff/history`, la vista empleado ya no usa `get_monthly_timesheet` para relojes. Semanas desde `time_logs` + TZ Madrid (`buildEmployeeWeeksFromTimeLogs`), igual que plantilla. Footer sigue con hours-engine. Export multi + simulación YTD mismo criterio. Tests: `build-employee-weeks-from-logs.test.ts` (4).
 

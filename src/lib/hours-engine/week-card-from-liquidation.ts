@@ -34,8 +34,8 @@ export type WeekCardSummaryFromEngine = {
   startBalance: number;
   /**
    * EXTRAS (modo pago) = horas de esta semana que realmente se liquidan a cobro.
+   * EXTRAS (modo bolsa) = overtimeHours si carryOut ≥ 0; si queda deuda → 0.
    * Nunca > 0 si la semana deja deuda (carryOut < 0).
-   * EXTRAS (modo bolsa) = overtimeHours (acumulan; importe 0).
    */
   weeklyBalance: number;
   finalBalance: number;
@@ -122,11 +122,15 @@ export function weekCardSummaryFromLiquidation(
 
   const netPayable = netPayableHoursFromLiquidation(result, bagModeOverride);
 
-  // En pago: extras = horas de ESTA semana que se cobran (no el crédito previo).
-  // Si la semana deja deuda, netPayable=0 → extras=0 (no se puede cobrar con pendiente).
-  const extrasFooter = preferStock
-    ? roundMarbellaHours(result.overtimeHours)
-    : roundMarbellaHours(Math.max(0, netPayable - Math.max(0, result.carryIn)));
+  // En pago: extras = horas de ESTA semana que se liquidan a cobro.
+  // En bolsa: extras = OT de la semana que acumula en banco.
+  // Ambos: si queda deuda (carryOut < 0), el OT se absorbió → EXTRAS footer = 0.
+  const extrasFooter =
+    result.carryOut < 0
+      ? 0
+      : preferStock
+        ? roundMarbellaHours(result.overtimeHours)
+        : roundMarbellaHours(Math.max(0, netPayable - Math.max(0, result.carryIn)));
 
   return {
     totalHours: result.hoursWorked,

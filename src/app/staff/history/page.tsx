@@ -333,7 +333,12 @@ export default function HistoryPage() {
             setWeeksData(formattedWeeks);
         } catch (err) {
             console.error('fetchCalendar error:', err);
-            toast.error('Error al cargar el historial del empleado.');
+            const detail = err instanceof Error && err.message ? err.message : '';
+            toast.error(
+                detail
+                    ? `Error al cargar el historial: ${detail}`
+                    : 'Error al cargar el historial del empleado.',
+            );
             setWeeksData([]);
         } finally {
             setLoading(false);
