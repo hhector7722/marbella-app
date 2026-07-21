@@ -214,6 +214,101 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assertCardCoherent(summary, result, Object.values(extrasByDay));
   });
 
+  it('deuda total absorbe extras: importe = 0', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: false, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+    ];
+    // 24h trabajadas − 16h contrato = 8h extras, carryIn = −13.3
+    const { summary } = liquidateWeekForCard({
+      carryIn: -13.3,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+    });
+    assert.equal(summary.weeklyBalance, 8);
+    assert.equal(summary.startBalance, -13.3);
+    // Deuda 13.3 > extras 8 → todo absorbido, importe = 0
+    assert.equal(summary.estimatedValue, 0);
+  });
+
+  it('deuda parcial: paga solo el excedente', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: false, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+      dayLog('2026-03-05', 8),
+    ];
+    // 32h − 16h = 16h extras, carryIn = −5
+    const { summary } = liquidateWeekForCard({
+      carryIn: -5,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+    });
+    assert.equal(summary.weeklyBalance, 16);
+    assert.equal(summary.startBalance, -5);
+    // 16 extras − 5 deuda = 11 pagables × 10€ = 110€
+    assert.equal(summary.estimatedValue, 110);
+  });
+
+  it('sin deuda: extras se pagan completas', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: false, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+    ];
+    // 24h − 16h = 8h extras, carryIn = 0
+    const { summary } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+    });
+    assert.equal(summary.weeklyBalance, 8);
+    assert.equal(summary.estimatedValue, 80);
+  });
+
+  it('crédito positivo + extras se liquidan en pago', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: false, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+    ];
+    // 8h extras, carryIn = +5 (crédito acumulado)
+    const { summary } = liquidateWeekForCard({
+      carryIn: 5,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+    });
+    assert.equal(summary.weeklyBalance, 8);
+    // Modo pago: liquida 5 + 8 = 13h × 10€ = 130€
+    assert.equal(summary.estimatedValue, 130);
+  });
+
+  it('bolsa: crédito positivo no genera importe', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: true, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+    ];
+    const { summary } = liquidateWeekForCard({
+      carryIn: 5,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+    });
+    assert.equal(summary.estimatedValue, 0);
+    assert.equal(summary.preferStock, true);
+  });
+
   it('fijo: jornada 0, extras = trabajado', () => {
     const employee = emp([
       term('2026-01-01', null, 0, { regime: 'fixed', bagMode: false }),

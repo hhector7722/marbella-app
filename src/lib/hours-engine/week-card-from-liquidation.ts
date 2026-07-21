@@ -72,7 +72,10 @@ export function overtimeRateForWeek(
 /**
  * Proyecta LiquidationResult → footer de tarjeta.
  * EXTRAS = overtimeHours (garantiza igualdad con dailyBreakdown).
- * IMPORTE = extras de tramos en modo pago × tarifa (bolsa → 0).
+ * IMPORTE (modo pago): liquida pendientes + extras pagables de la semana.
+ *   netPayable = max(0, carryIn + payableOvertime)
+ *   Deuda negativa se descuenta de extras; crédito positivo se suma.
+ * IMPORTE (modo bolsa): 0 — todo acumula en pendientes.
  */
 export function weekCardSummaryFromLiquidation(
   result: LiquidationResult,
@@ -85,12 +88,18 @@ export function weekCardSummaryFromLiquidation(
   const preferStock =
     result.segments.length > 0 && result.segments.every((s) => s.bagMode);
 
+  // Modo pago: liquida banco entrante + extras de tramos en pago.
+  // Modo bolsa: no genera importe (acumula).
+  const netPayable = preferStock
+    ? 0
+    : Math.max(0, result.carryIn + payableOvertime);
+
   return {
     totalHours: result.hoursWorked,
     startBalance: result.carryIn,
     weeklyBalance: result.overtimeHours,
     finalBalance: result.balanceFinal,
-    estimatedValue: Math.max(0, payableOvertime) * overtimeRatePerHour,
+    estimatedValue: netPayable * overtimeRatePerHour,
     isPaid: result.isPaid,
     preferStock,
     limitHours: result.contractedHoursEffective,

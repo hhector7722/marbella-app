@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-20 (Historial: editar efectivo/desglose en cierre)
+**Última actualización:** 2026-07-21 (IMPORTE descuenta deuda pendiente)
+
+- [x] **IMPORTE liquida pendientes + extras en modo pago (2026-07-21)**: `netPayable = max(0, carryIn + payableOvertime)`. Deuda se descuenta de extras; crédito positivo se suma (ej. +5 + 8 extras = 13h). Bolsa → importe 0. Tests actualizados.
+
+**Última actualización anterior:** 2026-07-21 (Albaranes: OCR en segundo plano)
+
+- [x] **OCR albaranes en segundo plano (2026-07-21)**: En escáner `/dashboard/scanner` (y hoja extra en `/dashboard/albaranes`), **Guardar** sube imagen + crea `purchase_invoices` con `status=processing` al instante; Gemini corre en `after()`. Fallo → `ocr_failed` + `ocr_error`, UI con **Reintentar lectura** / **Sustituir foto**. Migración [`20260721120000_purchase_invoices_ocr_background.sql`](supabase/migrations/20260721120000_purchase_invoices_ocr_background.sql) **aplicada** (`ocr_error`, adjuntos `ocr_status`/`ocr_error`, `sync_purchase_invoice_status` respeta processing/ocr_failed).
+
+**Última actualización anterior:** 2026-07-20 (Historial: editar efectivo/desglose en cierre)
 
 - [x] **Editar Efectivo en modal de cierre (2026-07-20)**: En `/dashboard/history`, al editar un cierre, **Efectivo** es editable: abre el desglose guardado (`cash_closings.breakdown`) con controles +/− táctiles. Al «Guardar desglose» se persiste `breakdown`/`cash_counted`/`cash_withdrawn` y el trigger `trg_cash_closing_to_treasury_v2` actualiza el `CLOSE_ENTRY` en `treasury_log` (importe + desglose + inventario/saldo) visible en `/dashboard/movements`.
 
