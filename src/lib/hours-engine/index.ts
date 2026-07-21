@@ -21,6 +21,7 @@ export {
 export {
   assertCardMatchesLiquidation,
   liquidateWeekForCard,
+  netPayableHoursFromLiquidation,
   overtimeRateForWeek,
   patchWeeksFromLiquidation,
   weekCardSummaryFromLiquidation,

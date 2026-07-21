@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { resolveEffectiveContract } from './contract-resolver.ts';
 import { liquidateWeek } from './liquidation-engine.ts';
+import { roundMarbellaHours } from './marbella-round.ts';
 import {
   appendContractTerm,
   employeeFactsFromContractTerms,
@@ -15,6 +16,10 @@ import type {
 } from './types.ts';
 
 const EPS = 1e-9;
+
+function expectedContract(parts: readonly [days: number, weekly: number][]): number {
+  return parts.reduce((acc, [d, w]) => acc + roundMarbellaHours((d / 7) * w), 0);
+}
 
 function term(
   from: string,
@@ -82,9 +87,12 @@ describe('Contract terms versionados — histórico', () => {
     assert.ok(Math.abs(before.contractedHoursEffective - 16) < EPS);
     assert.equal(before.overtimeHours, 8);
 
-    // Semana del cambio (lun 2 mar): 2 días×16/7 + 5×40/7
+    // Semana del cambio (lun 2 mar): 2 días×16/7 + 5×40/7 (redondeo Marbella)
     const mid = resolveEffectiveContract(emp, '2026-03-02');
-    const expectedMid = (2 / 7) * 16 + (5 / 7) * 40;
+    const expectedMid = expectedContract([
+      [2, 16],
+      [5, 40],
+    ]);
     assert.ok(Math.abs(mid.contractedHoursEffective - expectedMid) < EPS);
 
     // Semana después (23 mar): solo 28h

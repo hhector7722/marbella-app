@@ -1,8 +1,13 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (IMPORTE descuenta deuda pendiente)
+**Última actualización:** 2026-07-21 (Horas contrato enteras/medias + no cobrar con deuda)
 
-- [x] **IMPORTE liquida pendientes + extras en modo pago (2026-07-21)**: `netPayable = max(0, carryIn + payableOvertime)`. Deuda se descuenta de extras; crédito positivo se suma (ej. +5 + 8 extras = 13h). Bolsa → importe 0. Tests actualizados.
+- [x] **Horas contrato enteras/medias + no cobrar con deuda (2026-07-21)**:
+  1. `computeCarry` netea la semana antes de liquidar → imposible cobrar extras y arrastrar deuda.
+  2. Footer: si `carryOut < 0` → EXTRAS=0 e IMPORTE=0.
+  3. `resolveEffectiveContract` redondea cada tramo con `roundMarbellaHours` (solo enteros o medias). Caso Alba S18: CONTRATO **26** (no 26,285), 24h baja → deuda **−2**, sin 6,9 extras ni 69€.
+
+**Última actualización anterior:** 2026-07-21 (Nunca cobrar extras si queda deuda)
 
 **Última actualización anterior:** 2026-07-21 (Albaranes: OCR en segundo plano)
 

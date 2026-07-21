@@ -3,7 +3,13 @@ import { describe, it } from 'node:test';
 import { computeCarry } from './carry-engine.ts';
 import { resolveEffectiveContract } from './contract-resolver.ts';
 import { liquidateWeek } from './liquidation-engine.ts';
+import { roundMarbellaHours } from './marbella-round.ts';
 import type { EmployeeBoundaryFacts, LiquidationInput } from './types.ts';
+
+/** Contrato efectivo = Σ roundMarbella(días/7 × jornada) por tramo. */
+function expectedContract(parts: readonly [days: number, weekly: number][]): number {
+  return parts.reduce((acc, [d, w]) => acc + roundMarbellaHours((d / 7) * w), 0);
+}
 
 const employeeBase = (
   overrides: Partial<EmployeeBoundaryFacts> = {},
@@ -55,10 +61,13 @@ describe('Contract Resolver', () => {
     });
     // Lunes 2 marzo 2026
     const resolved = resolveEffectiveContract(emp, '2026-03-02');
-    // 2-3 (2 días) ×16/7 + 4-8 (5 días) ×40/7
-    const expected = (2 / 7) * 16 + (5 / 7) * 40;
+    // 2-3 (2 días) ×16/7 + 4-8 (5 días) ×40/7 → redondeo Marbella por tramo
+    const expected = expectedContract([
+      [2, 16],
+      [5, 40],
+    ]);
     assert.equal(resolved.segments.length, 2);
-    assert.ok(Math.abs(resolved.contractedHoursEffective - expected) < 1e-9);
+    assert.equal(resolved.contractedHoursEffective, expected);
   });
 
   it('excluye post-baja y no crea tramo pre-alta sin días', () => {
@@ -82,7 +91,7 @@ describe('Contract Resolver', () => {
     assert.deepEqual([...resolved.segments[0]!.days], ['2026-03-02', '2026-03-03']);
     assert.equal(resolved.segments[1]!.kind, 'term');
     assert.deepEqual([...resolved.segments[1]!.days], ['2026-03-04', '2026-03-05', '2026-03-06']);
-    assert.ok(Math.abs(resolved.contractedHoursEffective - (3 / 7) * 40) < 1e-9);
+    assert.equal(resolved.contractedHoursEffective, expectedContract([[3, 40]]));
   });
 });
 
@@ -182,8 +191,8 @@ describe('Liquidation Engine', () => {
         ],
       }),
     );
-    const contract = (5 / 7) * 40;
-    assert.ok(Math.abs(r.contractedHoursEffective - contract) < 1e-9);
+    const contract = expectedContract([[5, 40]]);
+    assert.equal(r.contractedHoursEffective, contract);
     // pre_alta +10; staff 30 − contract (días 4–8)
     const expectedWeekly = 10 + (30 - contract);
     assert.ok(Math.abs(r.weeklyBalance - expectedWeekly) < 1e-9);

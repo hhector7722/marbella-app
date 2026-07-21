@@ -51,10 +51,16 @@ function assertCardCoherent(
   daysExtra: ReadonlyArray<number>,
 ) {
   assertCardMatchesLiquidation(summary, result);
+  // Σ Ex. diarias = overtimeHours del motor (desglose operativo).
   const sumDays = daysExtra.reduce((a, b) => a + b, 0);
-  assert.ok(Math.abs(sumDays - summary.weeklyBalance) < 1e-9);
   assert.ok(Math.abs(sumDays - result.overtimeHours) < 1e-9);
   assert.ok(Math.abs(sumDays - result.dailyBreakdown.overtimeHoursTotal) < 1e-9);
+  // Footer EXTRAS (pago) puede ser < OT bruto si hay deuda o absorción.
+  if (summary.preferStock) {
+    assert.ok(Math.abs(summary.weeklyBalance - result.overtimeHours) < 1e-9);
+  } else {
+    assert.ok(summary.weeklyBalance <= result.overtimeHours + 1e-9);
+  }
 }
 
 describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
@@ -114,7 +120,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assertCardCoherent(summary, result, Object.values(extrasByDay));
   });
 
-  it('contrato 16→40 mid-week: footer = Σ diarias del mismo resultado', () => {
+  it('contrato 16→40 mid-week: footer coherente con liquidación', () => {
     const employee = emp([
       term('2026-01-01', '2026-03-04', 16),
       term('2026-03-05', null, 40),
@@ -133,7 +139,8 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       logs,
     });
     assertCardCoherent(summary, result, Object.values(extrasByDay));
-    assert.equal(summary.weeklyBalance, result.overtimeHours);
+    // Footer EXTRAS ≤ OT bruto; si hay cobro, coincide con netPayable.
+    assert.ok(summary.weeklyBalance <= result.overtimeHours + 1e-9);
   });
 
   it('bolsa: extras en footer, importe 0', () => {
@@ -222,15 +229,17 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-03-04', 8),
     ];
     // 24h trabajadas − 16h contrato = 8h extras, carryIn = −13.3
-    const { summary } = liquidateWeekForCard({
+    const { summary, result } = liquidateWeekForCard({
       carryIn: -13.3,
       employee,
       weekStart: '2026-03-02',
       logs,
     });
-    assert.equal(summary.weeklyBalance, 8);
+    assert.equal(result.overtimeHours, 8);
     assert.equal(summary.startBalance, -13.3);
-    // Deuda 13.3 > extras 8 → todo absorbido, importe = 0
+    assert.ok(result.carryOut < 0);
+    // Deuda no cubierta → no se cobra ni se muestran extras a cobro
+    assert.equal(summary.weeklyBalance, 0);
     assert.equal(summary.estimatedValue, 0);
   });
 
@@ -249,9 +258,9 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       weekStart: '2026-03-02',
       logs,
     });
-    assert.equal(summary.weeklyBalance, 16);
     assert.equal(summary.startBalance, -5);
-    // 16 extras − 5 deuda = 11 pagables × 10€ = 110€
+    // 16 extras − 5 deuda = 11 pagables × 10€ = 110€; EXTRAS footer = 11
+    assert.equal(summary.weeklyBalance, 11);
     assert.equal(summary.estimatedValue, 110);
   });
 
@@ -287,8 +296,8 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       weekStart: '2026-03-02',
       logs,
     });
+    // EXTRAS footer = solo las de esta semana (8); IMPORTE liquida 5+8=13h
     assert.equal(summary.weeklyBalance, 8);
-    // Modo pago: liquida 5 + 8 = 13h × 10€ = 130€
     assert.equal(summary.estimatedValue, 130);
   });
 
@@ -307,6 +316,32 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     });
     assert.equal(summary.estimatedValue, 0);
     assert.equal(summary.preferStock, true);
+  });
+
+  it('cambio 16→40 + baja solo en tramo 40: NO cobra si queda deuda', () => {
+    // Caso Alba S18: lun–jue bajo 16 (0h), vie–dom bajo 40 con 24h baja.
+    // OT bruto del 2º tramo ≈6.9 pero la semana queda en −2.3 → extras=0, importe=0.
+    const employee = emp([
+      term('2026-01-01', '2026-04-30', 16, { bagMode: false, overtimeRatePerHour: 10 }),
+      term('2026-05-01', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
+    ]);
+    const logs = [
+      dayLog('2026-05-01', 8),
+      dayLog('2026-05-02', 8),
+      dayLog('2026-05-03', 8),
+    ];
+    const { summary, result } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-04-27',
+      logs,
+    });
+    assert.equal(summary.totalHours, 24);
+    assert.ok(result.overtimeHours > 6); // OT bruto del tramo 40 existe
+    assert.ok(result.carryOut <= -2); // arrastra deuda (~2h; contrato redondeado a 26)
+    assert.equal(summary.weeklyBalance, 0); // no se muestran extras a cobro
+    assert.equal(summary.estimatedValue, 0); // no se cobra
+    assert.equal(result.contractedHoursEffective, 26); // enteros/medias, no 26.285
   });
 
   it('fijo: jornada 0, extras = trabajado', () => {

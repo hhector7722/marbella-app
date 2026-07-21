@@ -32,8 +32,9 @@ export type WeekCardSummaryFromEngine = {
   /** PENDIENTES = carryIn de la liquidación. */
   startBalance: number;
   /**
-   * EXTRAS = overtimeHours (misma cifra que Σ Ex. diarias).
-   * No usar weeklyBalance del carry para este label.
+   * EXTRAS (modo pago) = horas de esta semana que realmente se liquidan a cobro.
+   * Nunca > 0 si la semana deja deuda (carryOut < 0).
+   * EXTRAS (modo bolsa) = overtimeHours (acumulan; importe 0).
    */
   weeklyBalance: number;
   finalBalance: number;
@@ -43,6 +44,19 @@ export type WeekCardSummaryFromEngine = {
   limitHours: number;
   hourlyRate: number;
 };
+
+/**
+ * Horas que el waterfall de carry extrae a cobro en modo pago.
+ * Invariante: si carryOut < 0 (queda deuda), netPayable = 0.
+ * Bolsa: 0 (todo permanece en banco).
+ */
+export function netPayableHoursFromLiquidation(result: LiquidationResult): number {
+  const preferStock =
+    result.segments.length > 0 && result.segments.every((s) => s.bagMode);
+  if (preferStock) return 0;
+  // Crédito extraído = lo que no se queda en el banco.
+  return Math.max(0, result.balanceFinal - Math.max(0, result.carryOut));
+}
 
 export type WeekAdminFlags = {
   /** Solo sello administrativo Pagada (hecho de proceso, no resultado de liquidación). */
@@ -71,33 +85,33 @@ export function overtimeRateForWeek(
 
 /**
  * Proyecta LiquidationResult → footer de tarjeta.
- * EXTRAS = overtimeHours (garantiza igualdad con dailyBreakdown).
- * IMPORTE (modo pago): liquida pendientes + extras pagables de la semana.
- *   netPayable = max(0, carryIn + payableOvertime)
- *   Deuda negativa se descuenta de extras; crédito positivo se suma.
- * IMPORTE (modo bolsa): 0 — todo acumula en pendientes.
+ *
+ * IMPORTE = horas realmente extraídas a cobro × tarifa (waterfall carry).
+ * Nunca se cobra si queda deuda (carryOut < 0).
+ *
+ * EXTRAS (pago) = parte de esa liquidación que viene de la semana
+ *   (netPayable − max(0, carryIn)); no el OT bruto de un tramo.
+ * EXTRAS (bolsa) = overtimeHours (acumula; importe 0).
  */
 export function weekCardSummaryFromLiquidation(
   result: LiquidationResult,
   overtimeRatePerHour: number,
 ): WeekCardSummaryFromEngine {
-  const payableOvertime = result.segments
-    .filter((s) => !s.bagMode)
-    .reduce((acc, s) => acc + s.overtimeHours, 0);
-
   const preferStock =
     result.segments.length > 0 && result.segments.every((s) => s.bagMode);
 
-  // Modo pago: liquida banco entrante + extras de tramos en pago.
-  // Modo bolsa: no genera importe (acumula).
-  const netPayable = preferStock
-    ? 0
-    : Math.max(0, result.carryIn + payableOvertime);
+  const netPayable = netPayableHoursFromLiquidation(result);
+
+  // En pago: extras = horas de ESTA semana que se cobran (no el crédito previo).
+  // Si la semana deja deuda, netPayable=0 → extras=0 (no se puede cobrar con pendiente).
+  const extrasFooter = preferStock
+    ? result.overtimeHours
+    : Math.max(0, netPayable - Math.max(0, result.carryIn));
 
   return {
     totalHours: result.hoursWorked,
     startBalance: result.carryIn,
-    weeklyBalance: result.overtimeHours,
+    weeklyBalance: extrasFooter,
     finalBalance: result.balanceFinal,
     estimatedValue: netPayable * overtimeRatePerHour,
     isPaid: result.isPaid,
@@ -112,18 +126,22 @@ export function assertCardMatchesLiquidation(
   result: LiquidationResult,
 ): void {
   const eps = 1e-9;
-  const sumDailyOt = result.dailyBreakdown.days.reduce((a, d) => a + d.overtimeHours, 0);
-  if (Math.abs(summary.weeklyBalance - result.overtimeHours) > eps) {
-    throw new Error('Footer EXTRAS ≠ LiquidationResult.overtimeHours');
-  }
-  if (Math.abs(summary.weeklyBalance - sumDailyOt) > eps) {
-    throw new Error('Footer EXTRAS ≠ Σ Ex. diarias');
-  }
   if (Math.abs(summary.totalHours - result.hoursWorked) > eps) {
     throw new Error('Footer HORAS ≠ hoursWorked');
   }
   if (Math.abs(summary.startBalance - result.carryIn) > eps) {
     throw new Error('Footer PENDIENTES ≠ carryIn');
+  }
+  const netPayable = netPayableHoursFromLiquidation(result);
+  if (Math.abs(summary.estimatedValue - netPayable * summary.hourlyRate) > eps) {
+    throw new Error('Footer IMPORTE ≠ netPayable × tarifa');
+  }
+  // Nunca cobrar si queda deuda pendiente.
+  if (result.carryOut < -eps && summary.estimatedValue > eps) {
+    throw new Error('IMPORTE > 0 con carryOut negativo (deuda)');
+  }
+  if (result.carryOut < -eps && summary.weeklyBalance > eps) {
+    throw new Error('EXTRAS > 0 con carryOut negativo (deuda)');
   }
 }
 

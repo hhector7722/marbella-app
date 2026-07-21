@@ -5,6 +5,7 @@ import type {
   EffectiveContractWeek,
   EmployeeBoundaryFacts,
 } from './types.ts';
+import { roundMarbellaHours } from './marbella-round.ts';
 import {
   compareCivilDate,
   isCivilDateInRange,
@@ -53,8 +54,8 @@ function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta'): s
 
 /**
  * Único punto autorizado a resolver el contrato efectivo semanal.
- * Compone por tramo: días/7 × jornada. Pre-alta = sin tramo (contrato 0).
- * Post-baja = días excluidos.
+ * Compone por tramo: días/7 × jornada, redondeado Marbella (enteros o medias).
+ * Pre-alta = sin tramo (contrato 0). Post-baja = días excluidos.
  */
 export function resolveEffectiveContract(
   employee: EmployeeBoundaryFacts,
@@ -126,7 +127,10 @@ export function resolveEffectiveContract(
       };
     }
     const term = g.term!;
-    const contractedHours = (g.days.length / 7) * term.weeklyHours;
+    // Prorrateo días/7 × jornada → solo enteros o medias (regla Marbella).
+    const contractedHours = roundMarbellaHours(
+      (g.days.length / 7) * term.weeklyHours,
+    );
     return {
       days: g.days,
       weeklyHoursOfTerm: term.weeklyHours,

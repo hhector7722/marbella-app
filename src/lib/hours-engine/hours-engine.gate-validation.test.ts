@@ -9,11 +9,16 @@ import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { resolveEffectiveContract } from './contract-resolver.ts';
 import { liquidateWeek } from './liquidation-engine.ts';
+import { roundMarbellaHours } from './marbella-round.ts';
 import type {
   EmployeeBoundaryFacts,
   LiquidationInput,
   LiquidationResult,
 } from './types.ts';
+
+function expectedContract(parts: readonly [days: number, weekly: number][]): number {
+  return parts.reduce((acc, [d, w]) => acc + roundMarbellaHours((d / 7) * w), 0);
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = __dirname;
@@ -118,7 +123,7 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
         ],
       }),
     );
-    const contract = (5 / 7) * 40;
+    const contract = expectedContract([[5, 40]]);
     assertClose(r.contractedHoursEffective, contract, 'contrato');
     assertClose(r.weeklyBalance, 8 + (20 - contract), 'weekly');
   });
@@ -147,8 +152,9 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
       }),
     );
     assert.equal(r.hoursWorked, 10);
-    assertClose(r.contractedHoursEffective, (3 / 7) * 40, 'contrato baja');
-    assertClose(r.weeklyBalance, 10 - (3 / 7) * 40, 'weekly baja');
+    const contract = expectedContract([[3, 40]]);
+    assertClose(r.contractedHoursEffective, contract, 'contrato baja');
+    assertClose(r.weeklyBalance, 10 - contract, 'weekly baja');
   });
 
   it('GT-05 Contrato 16→40 (caso real Alba) — semana bajo 40 no usa 16', () => {
@@ -192,9 +198,16 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
     assert.equal(under40.contractedHoursEffective, 40);
     assert.equal(under40.weeklyBalance, -20);
 
-    // Semana 23 feb–1 mar: cruza el cambio → composición /7 (no un solo valor 16)
+    // Semana 23 feb–1 mar: cruza el cambio → composición /7 redondeada por tramo
     const crossing = resolveEffectiveContract(employee, '2026-02-23');
-    assertClose(crossing.contractedHoursEffective, (6 / 7) * 16 + (1 / 7) * 40, 'cruzada');
+    assertClose(
+      crossing.contractedHoursEffective,
+      expectedContract([
+        [6, 16],
+        [1, 40],
+      ]),
+      'cruzada',
+    );
   });
 
   it('GT-06 Contrato 40→16 — tramo nuevo; semana usa 16', () => {
@@ -246,9 +259,12 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
         },
       ],
     });
-    const expectedContract = (2 / 7) * 16 + (5 / 7) * 40;
+    const expectedContractHours = expectedContract([
+      [2, 16],
+      [5, 40],
+    ]);
     const resolved = resolveEffectiveContract(employee, '2026-03-02');
-    assertClose(resolved.contractedHoursEffective, expectedContract, 'resolver');
+    assertClose(resolved.contractedHoursEffective, expectedContractHours, 'resolver');
 
     const r = liquidateWeek(
       liq({
@@ -260,9 +276,11 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
         ],
       }),
     );
-    assertClose(r.contractedHoursEffective, expectedContract, 'liq contract');
-    const bal0 = 8 - (2 / 7) * 16;
-    const bal1 = 30 - (5 / 7) * 40;
+    assertClose(r.contractedHoursEffective, expectedContractHours, 'liq contract');
+    const c0 = roundMarbellaHours((2 / 7) * 16);
+    const c1 = roundMarbellaHours((5 / 7) * 40);
+    const bal0 = 8 - c0;
+    const bal1 = 30 - c1;
     assertClose(r.weeklyBalance, bal0 + bal1, 'liq weekly');
   });
 
