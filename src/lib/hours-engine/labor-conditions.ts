@@ -20,6 +20,11 @@ export type LaborConditionsFormInput = {
   overtimeRatePerHour: number | null;
   /** YYYY-MM-DD; por defecto la action usa hoy Madrid si falta. */
   effectiveFrom?: string;
+  /**
+   * Si se edita un tramo existente: effectiveFrom original del tramo.
+   * Si difiere de effectiveFrom → se mueve el inicio y se recalcula el histórico.
+   */
+  originalEffectiveFrom?: string;
 };
 
 export type ProfileContractMirror = {

@@ -6,6 +6,7 @@ import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import {
   persistContractualChange,
+  persistTermReschedule,
   mapContractTermRows,
   type ContractTermRow,
 } from '@/lib/hours-engine';
@@ -149,6 +150,64 @@ export async function updateLaborConditions(
   if (loadErr) return { success: false, error: loadErr.message };
 
   const currentTerms = mapContractTermRows((termRows ?? []) as ContractTermRow[]);
+
+  const originalFromRaw =
+    form.originalEffectiveFrom != null && String(form.originalEffectiveFrom).trim() !== ''
+      ? parseCivilYmd(String(form.originalEffectiveFrom))
+      : null;
+
+  if (originalFromRaw && originalFromRaw !== effectiveFrom) {
+    // Moviendo fecha de inicio de un tramo existente → recalcular vecinos.
+    let plan: { kind: string; terms: readonly ContractTermFact[] };
+    try {
+      plan = await persistTermReschedule(
+        supabase,
+        id,
+        originalFromRaw,
+        effectiveFrom,
+        validated.snapshot,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al mover la fecha de inicio';
+      return { success: false, error: msg };
+    }
+
+    if (plan.kind === 'noop') {
+      return {
+        success: true,
+        kind: 'noop',
+        message: 'No hay cambios en este tramo',
+      };
+    }
+
+    const openSnap = openTermSnapshot(plan.terms) ?? validated.snapshot;
+    const mirror = snapshotToProfileMirror(openSnap, profile.role ?? 'staff');
+    const firstFrom = [...plan.terms]
+      .map((t) => t.effectiveFrom)
+      .sort()[0];
+    const profilePatch: Record<string, unknown> = { ...mirror };
+    if (firstFrom) {
+      profilePatch.joining_date = firstFrom;
+    }
+    const { error: updErr } = await supabase
+      .from('profiles')
+      .update(profilePatch)
+      .eq('id', id);
+    if (updErr) {
+      return {
+        success: false,
+        error: `Contrato versionado, pero falló al actualizar el perfil: ${updErr.message}`,
+      };
+    }
+
+    revalidatePath('/profile');
+    revalidatePath('/profile/contrato');
+    revalidatePath('/staff/history');
+    revalidatePath('/dashboard');
+
+    return { success: true, kind: plan.kind };
+  }
+
   if (laborChangeIsNoopAt(currentTerms, validated.snapshot, effectiveFrom)) {
     return {
       success: true,

@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   applyContractualChange,
   rewriteHistoricalTerm,
+  rescheduleTermStart,
   type ContractualSnapshot,
 } from './contract-terms-versioning.ts';
 import { mapContractTermRows, type ContractTermRow } from './ui-bridge.ts';
@@ -88,6 +89,25 @@ export async function persistHistoricalTermRewrite(
 ): Promise<{ kind: string; terms: readonly ContractTermFact[] }> {
   const current = await loadTerms(supabase, userId);
   const plan = rewriteHistoricalTerm(current, termEffectiveFrom, nextSnapshot);
+  if (plan.kind === 'noop') {
+    return plan;
+  }
+  await replaceAllTerms(supabase, userId, plan.terms);
+  return plan;
+}
+
+/**
+ * Mueve el inicio de un tramo (recalcula el anterior) y aplica condiciones.
+ */
+export async function persistTermReschedule(
+  supabase: SupabaseClient,
+  userId: string,
+  originalFrom: CivilDate,
+  newFrom: CivilDate,
+  nextSnapshot: ContractualSnapshot,
+): Promise<{ kind: string; terms: readonly ContractTermFact[] }> {
+  const current = await loadTerms(supabase, userId);
+  const plan = rescheduleTermStart(current, originalFrom, newFrom, nextSnapshot);
   if (plan.kind === 'noop') {
     return plan;
   }

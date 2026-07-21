@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Fix filtro: bolsa + deuda no tumba historial)
+**Última actualización:** 2026-07-21 (Condiciones laborales: fecha inicio editable)
+
+- [x] **Fecha de inicio editable en condiciones laborales (2026-07-21)**: En `/profile/contrato`, al editar un tramo del histórico la fecha de inicio es editable. `rescheduleTermStart` recalcula el tramo anterior (sin huecos) y, si es el primer tramo, sincroniza `profiles.joining_date`. Tests versionado + labor.
+
+**Última actualización anterior:** 2026-07-21 (Fix filtro: bolsa + deuda no tumba historial)
 
 - [x] **Fix filtro empleado bolsa+deuda (2026-07-21)**: Pere (y similares) fallaban al filtrar en `/staff/history` — assert `EXTRAS > 0 con carryOut negativo` en modo bolsa. Footer EXTRAS = 0 si queda deuda (igual que pago). Toast con detalle del error. Tests week-card **19/19**; plantilla julio OK todos.
 

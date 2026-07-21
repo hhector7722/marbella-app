@@ -53,7 +53,12 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('change');
+  /** Fin del tramo en reescritura (solo lectura en UI). */
   const [editingTermTo, setEditingTermTo] = useState<string | null>(null);
+  /** Inicio original del tramo (para detectar movimiento de fecha). */
+  const [editingTermOriginalFrom, setEditingTermOriginalFrom] = useState<string | null>(
+    null,
+  );
   const [employeeName, setEmployeeName] = useState('');
   const [terms, setTerms] = useState<LaborTermDto[]>([]);
   const [form, setForm] = useState<LaborConditionsFormInput>({
@@ -98,11 +103,13 @@ export default function LaborConditionsView({ employeeId }: Props) {
     setEditing(false);
     setEditMode('change');
     setEditingTermTo(null);
+    setEditingTermOriginalFrom(null);
   };
 
   const startChange = () => {
     setEditMode('change');
     setEditingTermTo(null);
+    setEditingTermOriginalFrom(null);
     if (vigente) {
       setForm({
         weeklyHours: vigente.weeklyHours,
@@ -117,10 +124,11 @@ export default function LaborConditionsView({ employeeId }: Props) {
     setEditing(true);
   };
 
-  /** Corrige un tramo ya registrado (mismas fechas Desde/Hasta; solo condiciones). */
+  /** Corrige un tramo ya registrado (fecha de inicio editable; recalcula vecinos). */
   const startRewriteTerm = (t: LaborTermDto) => {
     setEditMode('rewrite');
     setEditingTermTo(t.effectiveTo);
+    setEditingTermOriginalFrom(t.effectiveFrom);
     setForm({
       weeklyHours: t.weeklyHours,
       regime: t.regime as ContractRegime,
@@ -138,11 +146,9 @@ export default function LaborConditionsView({ employeeId }: Props) {
         ...form,
         weeklyHours:
           form.regime === 'manager' || form.regime === 'fixed' ? 0 : form.weeklyHours,
-        // En reescritura: anclar al inicio del tramo (no permite mover fechas)
-        effectiveFrom:
-          editMode === 'rewrite'
-            ? form.effectiveFrom
-            : form.effectiveFrom || todayMadridYmd(),
+        effectiveFrom: form.effectiveFrom || todayMadridYmd(),
+        originalEffectiveFrom:
+          editMode === 'rewrite' ? editingTermOriginalFrom ?? undefined : undefined,
       };
       const res = await updateLaborConditions(employeeId, payload);
       if (!res.success) {
@@ -161,7 +167,9 @@ export default function LaborConditionsView({ employeeId }: Props) {
       }
       toast.success(
         editMode === 'rewrite'
-          ? 'Tramo contractual actualizado'
+          ? res.kind === 'rescheduled'
+            ? 'Fecha de inicio y condiciones actualizadas'
+            : 'Tramo contractual actualizado'
           : 'Condiciones laborales actualizadas',
       );
       closeEditor();
@@ -211,13 +219,6 @@ export default function LaborConditionsView({ employeeId }: Props) {
       </div>
     </div>
   );
-
-  const periodLabel =
-    editMode === 'rewrite' && form.effectiveFrom
-      ? `${formatYmdEs(form.effectiveFrom)} → ${
-          editingTermTo ? formatYmdEs(editingTermTo) : 'Vigente'
-        }`
-      : null;
 
   return (
     <div className="min-h-screen pb-24 p-4">
@@ -289,8 +290,8 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 ) : (
                   <>
                     <p className="mb-3 text-xs text-zinc-500">
-                      Pulsa un tramo para corregir sus condiciones (horas, régimen, bolsa,
-                      tarifa). Las fechas del periodo no se editan aquí.
+                      Pulsa un tramo para corregir condiciones o su fecha de inicio. Al
+                      cambiar el inicio se recalcula el tramo anterior (sin huecos).
                     </p>
                     <div className="divide-y divide-zinc-100">
                       {[...terms]
@@ -347,40 +348,47 @@ export default function LaborConditionsView({ employeeId }: Props) {
             <div className="p-4">
               <p className="text-xs text-zinc-500">
                 {editMode === 'rewrite'
-                  ? 'Corrige las condiciones de este periodo. El resto del histórico no se mueve.'
+                  ? 'Puedes cambiar la fecha de inicio; el histórico se recalcula solo. El fin del periodo no se edita aquí.'
                   : 'Indica desde cuándo aplican. El histórico se reconstruye solo.'}
               </p>
 
               <div className="mt-4 space-y-4">
+                <label className="block">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    {editMode === 'rewrite' ? 'Fecha de inicio' : 'Fecha efectiva'}
+                  </span>
+                  <input
+                    type="date"
+                    value={form.effectiveFrom ?? ''}
+                    max={
+                      editMode === 'rewrite' && editingTermTo
+                        ? editingTermTo
+                        : undefined
+                    }
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        effectiveFrom: e.target.value,
+                      }))
+                    }
+                    className={cn(
+                      'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
+                      'text-sm font-bold text-zinc-800',
+                      'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
+                    )}
+                  />
+                </label>
+
                 {editMode === 'rewrite' ? (
                   <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                      Periodo
+                      Hasta
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-zinc-900">{periodLabel}</p>
+                    <p className="mt-1 text-sm font-semibold text-zinc-900">
+                      {editingTermTo ? formatYmdEs(editingTermTo) : 'Vigente'}
+                    </p>
                   </div>
-                ) : (
-                  <label className="block">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                      Fecha efectiva
-                    </span>
-                    <input
-                      type="date"
-                      value={form.effectiveFrom ?? ''}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          effectiveFrom: e.target.value,
-                        }))
-                      }
-                      className={cn(
-                        'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                        'text-sm font-bold text-zinc-800',
-                        'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                      )}
-                    />
-                  </label>
-                )}
+                ) : null}
 
                 <label className="block">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">

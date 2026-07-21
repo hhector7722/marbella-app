@@ -5,6 +5,7 @@ import {
   assertContractTermInvariants,
   coalesceIdenticalConsecutiveTerms,
   rewriteHistoricalTerm,
+  rescheduleTermStart,
   snapshotFromProfileFields,
   snapshotsEqual,
   termToSnapshot,
@@ -146,6 +147,57 @@ describe('contract-terms-versioning', () => {
     assert.equal(r.terms[0]!.weeklyHours, 20);
     assert.equal(r.terms[1]!.weeklyHours, 40);
     assert.equal(r.terms[2]!.weeklyHours, 28);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermStart: mueve inicio más tarde y alarga el anterior', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', null, 40),
+    ];
+    const r = rescheduleTermStart(
+      base,
+      '2026-03-01',
+      '2026-04-01',
+      { weeklyHours: 40, bagMode: true, regime: 'staff', overtimeRatePerHour: 10 },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms[0]!.effectiveFrom, '2026-01-01');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-03-31');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-04-01');
+    assert.equal(r.terms[1]!.effectiveTo, null);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermStart: mueve inicio más temprano y acorta el anterior', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', null, 40),
+    ];
+    const r = rescheduleTermStart(
+      base,
+      '2026-03-01',
+      '2026-02-15',
+      { weeklyHours: 32, bagMode: false, regime: 'staff', overtimeRatePerHour: 12 },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-14');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-02-15');
+    assert.equal(r.terms[1]!.weeklyHours, 32);
+    assert.equal(r.terms[1]!.bagMode, false);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermStart: primer tramo solo cambia su from', () => {
+    const base = [term('2026-03-01', null, 40)];
+    const r = rescheduleTermStart(
+      base,
+      '2026-03-01',
+      '2026-02-01',
+      { weeklyHours: 40, bagMode: true, regime: 'staff', overtimeRatePerHour: null },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms[0]!.effectiveFrom, '2026-02-01');
     assertContractTermInvariants(r.terms);
   });
 

@@ -40,12 +40,14 @@ export {
   coalesceIdenticalConsecutiveTerms,
   findTermContaining,
   rewriteHistoricalTerm,
+  rescheduleTermStart,
   snapshotFromProfileFields,
   snapshotsEqual,
 } from './contract-terms-versioning.ts';
 export {
   persistContractualChange,
   persistHistoricalTermRewrite,
+  persistTermReschedule,
 } from './persist-contract-terms.ts';
 
 export type {

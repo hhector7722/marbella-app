@@ -32,7 +32,9 @@ export type VersioningResult =
   | { kind: 'appended'; terms: readonly ContractTermFact[] }
   /** @deprecated Alias histórico de updated. */
   | { kind: 'updated_open'; terms: readonly ContractTermFact[] }
-  | { kind: 'rewritten'; terms: readonly ContractTermFact[] };
+  | { kind: 'rewritten'; terms: readonly ContractTermFact[] }
+  /** Mueve el inicio de un tramo y reajusta el anterior (sin huecos). */
+  | { kind: 'rescheduled'; terms: readonly ContractTermFact[] };
 
 function previousCivilDay(ymd: CivilDate): CivilDate {
   return addCivilDays(ymd, -1);
@@ -284,4 +286,64 @@ export function rewriteHistoricalTerm(
   }
   // Si por alguna razón no era el inicio, no debería ocurrir al pasar el from exacto
   return { kind: 'rewritten', terms: plan.terms };
+}
+
+/**
+ * Mueve la fecha de inicio de un tramo (por su effectiveFrom original) y
+ * recalcula el fin del tramo anterior para no dejar huecos.
+ * También aplica el snapshot de condiciones al tramo movido.
+ *
+ * - Misma fecha → rewrite in-place (condiciones).
+ * - Fecha posterior → el tramo anterior absorbe [oldFrom, newFrom-1].
+ * - Fecha anterior → el tramo anterior se acorta hasta newFrom-1.
+ */
+export function rescheduleTermStart(
+  terms: readonly ContractTermFact[],
+  originalFrom: CivilDate,
+  newFrom: CivilDate,
+  nextSnapshot: ContractualSnapshot,
+): VersioningResult {
+  const sorted = [...terms].sort((a, b) =>
+    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
+  );
+  const idx = sorted.findIndex(
+    (t) => compareCivilDate(t.effectiveFrom, originalFrom) === 0,
+  );
+  if (idx < 0) {
+    throw new Error(`No hay tramo que empiece el ${originalFrom}`);
+  }
+
+  if (compareCivilDate(newFrom, originalFrom) === 0) {
+    return rewriteHistoricalTerm(terms, originalFrom, nextSnapshot);
+  }
+
+  const target = sorted[idx]!;
+  if (
+    target.effectiveTo !== null &&
+    compareCivilDate(newFrom, target.effectiveTo) > 0
+  ) {
+    throw new Error(
+      `La fecha de inicio (${newFrom}) no puede ser posterior al fin del tramo (${target.effectiveTo})`,
+    );
+  }
+
+  const updated = sorted.map((t) => ({ ...t }));
+
+  if (idx === 0) {
+    updated[0] = snapshotToTerm(nextSnapshot, newFrom, target.effectiveTo);
+  } else {
+    const prev = updated[idx - 1]!;
+    if (compareCivilDate(newFrom, prev.effectiveFrom) <= 0) {
+      throw new Error(
+        `La fecha de inicio debe ser posterior al inicio del tramo anterior (${prev.effectiveFrom})`,
+      );
+    }
+    const dayBefore = previousCivilDay(newFrom);
+    updated[idx - 1] = { ...prev, effectiveTo: dayBefore };
+    updated[idx] = snapshotToTerm(nextSnapshot, newFrom, target.effectiveTo);
+  }
+
+  const coalesced = coalesceIdenticalConsecutiveTerms(updated);
+  assertContractTermInvariants(coalesced);
+  return { kind: 'rescheduled', terms: coalesced };
 }
