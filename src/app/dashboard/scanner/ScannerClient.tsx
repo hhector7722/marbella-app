@@ -222,8 +222,8 @@ export function ScannerClient({
       setMessageTone('success')
       setMessage(
         pendingBatch.items.length > 1
-          ? `OK. Albarán con ${pendingBatch.items.length} hojas registrado.`
-          : 'OK. Albarán recibido.'
+          ? `Albarán con ${pendingBatch.items.length} hojas recibido. Se está leyendo en segundo plano.`
+          : 'Albarán recibido. Se está leyendo en segundo plano.'
       )
       setPendingBatch(null)
       setSelectedSupplierId(null)
@@ -452,7 +452,7 @@ export function ScannerClient({
                 isProcessing && 'opacity-60 pointer-events-none'
               )}
             >
-              {isProcessing ? 'Guardando…' : 'Guardar'}
+              {isProcessing ? 'Subiendo…' : 'Guardar'}
             </button>
           </div>
         )}

@@ -199,6 +199,7 @@ export type PurchaseInvoiceListItem = {
   created_by: string | null
   source: string | null
   status: string | null
+  ocr_error: string | null
   supplier_id: number | null
   supplier_name: string | null
   supplier_image_url: string | null
@@ -233,6 +234,7 @@ export async function listPurchaseInvoicesAction(params?: {
       created_by,
       source,
       status,
+      ocr_error,
       supplier_id,
       invoice_number,
       invoice_date,
@@ -254,6 +256,7 @@ export async function listPurchaseInvoicesAction(params?: {
     created_by: r.created_by ?? null,
     source: r.source ?? null,
     status: r.status ?? null,
+    ocr_error: r.ocr_error ?? null,
     supplier_id: r.supplier_id ?? null,
     supplier_name: r.suppliers?.name ?? null,
     supplier_image_url: r.suppliers?.image_url ?? null,
@@ -308,6 +311,7 @@ async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true 
       created_by,
       source,
       status,
+      ocr_error,
       supplier_id,
       invoice_number,
       invoice_date,
@@ -329,6 +333,7 @@ async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true 
     created_by: r.created_by ?? null,
     source: r.source ?? null,
     status: r.status ?? null,
+    ocr_error: r.ocr_error ?? null,
     supplier_id: r.supplier_id ?? null,
     supplier_name: r.suppliers?.name ?? null,
     supplier_image_url: r.suppliers?.image_url ?? null,
@@ -463,6 +468,7 @@ export type PurchaseInvoiceDetail = {
   created_by: string | null
   source: string | null
   status: string | null
+  ocr_error: string | null
   supplier_id: number | null
   supplier_name: string | null
   supplier_image_url: string | null
@@ -504,6 +510,7 @@ export async function getPurchaseInvoiceDetailAction(
       created_by,
       source,
       status,
+      ocr_error,
       supplier_id,
       invoice_number,
       invoice_date,
@@ -633,6 +640,7 @@ export async function getPurchaseInvoiceDetailAction(
     created_by: (data as any).created_by ?? null,
     source: (data as any).source ?? null,
     status: (data as any).status ?? null,
+    ocr_error: (data as any).ocr_error ?? null,
     supplier_id: (data as any).supplier_id ?? null,
     supplier_name: (data as any).suppliers?.name ?? null,
     supplier_image_url: (data as any).suppliers?.image_url ?? null,

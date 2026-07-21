@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import {
   AlertCircle,
+  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -46,7 +47,7 @@ import type {
   PurchaseInvoiceListItem,
   SupplierListItem,
 } from './actions'
-import { appendScannerPageToInvoiceAction } from '../scanner/actions'
+import { appendScannerPageToInvoiceAction, replaceScannerImageAction, retryOcrInvoiceAction } from '../scanner/actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
   autoMapKnownLinesAction,
@@ -158,7 +159,9 @@ export default function AlbaranesHistoricoClient({
   const [deletingInvoice, setDeletingInvoice] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const appendSheetInputRef = useRef<HTMLInputElement>(null)
+  const replaceImageInputRef = useRef<HTMLInputElement>(null)
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
+  const [ocrActionBusy, setOcrActionBusy] = useState(false)
   const [appendSheetCapture, setAppendSheetCapture] = useState<'environment' | undefined>('environment')
   /** Visor carrusel (varias hojas), mismo patrón que el borrador del escáner. */
   const [invoiceImageViewerOpen, setInvoiceImageViewerOpen] = useState(false)
@@ -385,6 +388,98 @@ export default function AlbaranesHistoricoClient({
     })
   }
 
+  // Mientras haya albaranes en OCR, refrescar la lista cada pocos segundos.
+  const hasProcessingItems = useMemo(
+    () => items.some((it) => String(it.status ?? '').toLowerCase() === 'processing'),
+    [items]
+  )
+
+  useEffect(() => {
+    if (!hasProcessingItems) return
+    const t = window.setInterval(() => {
+      void (async () => {
+        const res = await listPurchaseInvoicesAction({ limit: 60 })
+        if (!res.success) return
+        setItems(res.items)
+        const sid = selectedId
+        if (!sid) return
+        const row = res.items.find((x) => x.id === sid)
+        if (!row) return
+        const st = String(row.status ?? '').toLowerCase()
+        if (st === 'processing') return
+        const detailRes = await getPurchaseInvoiceDetailAction(sid)
+        if (detailRes.success) {
+          setDetail(detailRes.detail)
+          const nextDraft: Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }> = {}
+          for (const l of detailRes.detail.lines) {
+            nextDraft[l.id] = {
+              original_name: l.original_name ?? '',
+              quantity: l.quantity == null ? '' : String(l.quantity),
+              unit_price: l.unit_price == null ? '' : String(l.unit_price),
+              total_price: l.total_price == null ? '' : String(l.total_price),
+            }
+          }
+          setDraftLines(nextDraft)
+        }
+      })()
+    }, 4000)
+    return () => window.clearInterval(t)
+  }, [hasProcessingItems, selectedId])
+
+  async function handleRetryOcr() {
+    if (!detail?.id) return
+    setOcrActionBusy(true)
+    try {
+      const res = await retryOcrInvoiceAction(detail.id)
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      toast.success('Reintentando lectura en segundo plano…')
+      const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
+      if (refreshed.success) setDetail(refreshed.detail)
+      refresh()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al reintentar')
+    } finally {
+      setOcrActionBusy(false)
+    }
+  }
+
+  async function handleReplaceImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (replaceImageInputRef.current) replaceImageInputRef.current.value = ''
+    if (!file || !detail?.id) return
+
+    setOcrActionBusy(true)
+    try {
+      const dataUri = await compressImageFileToDataUri(file)
+      const q = await assessScannerImageReadability(dataUri)
+      if (!q.ok) {
+        toast.error(q.message)
+        return
+      }
+      const fname = file.name.replace(/\.[^/.]+$/, '') + '.jpg'
+      const res = await replaceScannerImageAction({
+        invoiceId: detail.id,
+        base64DataUri: dataUri,
+        filename: fname,
+      })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      toast.success('Foto sustituida. Se está leyendo en segundo plano.')
+      const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
+      if (refreshed.success) setDetail(refreshed.detail)
+      refresh()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al sustituir la foto')
+    } finally {
+      setOcrActionBusy(false)
+    }
+  }
+
   async function openDetail(id: string) {
     const reqId = ++detailReqRef.current
     setSelectedId(id)
@@ -462,7 +557,7 @@ export default function AlbaranesHistoricoClient({
         toast.error(res.message)
         return
       }
-      toast.success('Hoja añadida al albarán.')
+      toast.success('Hoja añadida. Se está leyendo en segundo plano.')
       const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
       if (!refreshed.success) {
         toast.error(`Hoja guardada pero no se pudo recargar: ${refreshed.message}`)
@@ -1190,6 +1285,30 @@ export default function AlbaranesHistoricoClient({
                           <p className="text-sm font-black text-zinc-900">{formatMaybeMoney(it.total_amount)}</p>
                           {(() => {
                             const st = String(it.status ?? '').toLowerCase()
+                            if (st === 'processing') {
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-sky-800"
+                                  aria-label="Procesando OCR"
+                                  title="Leyendo albarán en segundo plano"
+                                >
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  Leyendo
+                                </span>
+                              )
+                            }
+                            if (st === 'ocr_failed') {
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-rose-800"
+                                  aria-label="Error de lectura"
+                                  title={it.ocr_error ?? 'No se pudo leer el albarán'}
+                                >
+                                  <AlertCircle className="h-3.5 w-3.5" />
+                                  Error
+                                </span>
+                              )
+                            }
                             const accountingReady = st === 'mapped' || st === 'completed'
                             return accountingReady ? (
                             <span
@@ -1227,6 +1346,14 @@ export default function AlbaranesHistoricoClient({
                   capture={appendSheetCapture}
                   className="hidden"
                   onChange={handleAppendSheetFileChange}
+                />
+                <input
+                  ref={replaceImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture={appendSheetCapture}
+                  className="hidden"
+                  onChange={handleReplaceImageFileChange}
                 />
                 <div className="bg-[#36606F] px-3 py-2.5 md:px-5 md:py-4 flex items-center justify-between gap-2 md:gap-3 text-white shrink-0">
                   {/* Cabecera: por debajo de md, nombre en línea propia + metadato debajo; iconos compactos.
@@ -1380,6 +1507,64 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   ) : null}
 
+                  {detail && !isLoadingDetail ? (
+                    (() => {
+                      const st = String(detail.status ?? '').toLowerCase()
+                      if (st === 'processing') {
+                        return (
+                          <div className="mb-3 flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3">
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-sky-700" />
+                            <p className="text-xs font-black text-sky-900 leading-snug">
+                              Leyendo el albarán en segundo plano. Las líneas aparecerán en unos segundos.
+                            </p>
+                          </div>
+                        )
+                      }
+                      if (st === 'ocr_failed') {
+                        return (
+                          <div className="mb-3 flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-5 w-5 shrink-0 text-rose-700 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-black text-rose-900">No se pudo leer el albarán</p>
+                                <p className="mt-1 text-xs font-medium text-rose-800">
+                                  {detail.ocr_error?.trim() || 'Error de OCR. Reintenta o sustituye la foto.'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                              <button
+                                type="button"
+                                onClick={() => void handleRetryOcr()}
+                                disabled={ocrActionBusy}
+                                className={cn(
+                                  'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 text-xs font-black uppercase tracking-wider text-white active:scale-[0.99] transition',
+                                  ocrActionBusy && 'opacity-60 pointer-events-none'
+                                )}
+                              >
+                                {ocrActionBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                                Reintentar lectura
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => replaceImageInputRef.current?.click()}
+                                disabled={ocrActionBusy}
+                                className={cn(
+                                  'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 text-xs font-black uppercase tracking-wider text-rose-900 active:scale-[0.99] transition',
+                                  ocrActionBusy && 'opacity-60 pointer-events-none'
+                                )}
+                              >
+                                <Camera className="h-4 w-4" />
+                                Sustituir foto
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      }
+                      return null
+                    })()
+                  ) : null}
+
                   {mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
                       <p className="text-xs font-black text-amber-900 leading-snug min-w-0 flex-1">
@@ -1416,7 +1601,13 @@ export default function AlbaranesHistoricoClient({
                     <div className="flex flex-col gap-4">
                       <div className="divide-y divide-zinc-100">
                           {detail.lines.length === 0 ? (
-                            <div className="p-3 text-sm font-bold text-zinc-500">No hay líneas guardadas.</div>
+                            <div className="p-3 text-sm font-bold text-zinc-500">
+                              {String(detail.status ?? '').toLowerCase() === 'processing'
+                                ? 'Esperando lectura OCR…'
+                                : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
+                                  ? 'Sin líneas: corrige la foto o reintenta la lectura.'
+                                  : 'No hay líneas guardadas.'}
+                            </div>
                           ) : (
                             detail.lines.map((l) => {
                               const stock = stockStatusByLineId[l.id]
