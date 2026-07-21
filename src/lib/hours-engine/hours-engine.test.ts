@@ -138,7 +138,7 @@ describe('Carry Engine', () => {
 });
 
 describe('Liquidation Engine', () => {
-  it('semana sin fichajes → balance semanal 0', () => {
+  it('semana sin fichajes → consume contrato (−jornada)', () => {
     const r = liquidateWeek(
       input({
         weekStart: '2026-03-02',
@@ -147,9 +147,23 @@ describe('Liquidation Engine', () => {
       }),
     );
     assert.equal(r.hoursWorked, 0);
-    assert.equal(r.weeklyBalance, 0);
-    assert.equal(r.balanceFinal, -3);
-    assert.equal(r.carryOut, -3);
+    assert.equal(r.weeklyBalance, -40);
+    assert.equal(r.balanceFinal, -43);
+    assert.equal(r.carryOut, -43);
+  });
+
+  it('semana sin fichajes con crédito positivo → resta del banco', () => {
+    const r = liquidateWeek(
+      input({
+        weekStart: '2026-03-02',
+        carryIn: 83.7,
+        logs: [],
+      }),
+    );
+    assert.equal(r.hoursWorked, 0);
+    assert.equal(r.weeklyBalance, -40);
+    assert.ok(Math.abs(r.balanceFinal - 43.7) < 1e-9);
+    assert.ok(Math.abs(r.carryOut - 43.7) < 1e-9); // bolsa: crédito restante arrastra
   });
 
   it('staff: balance = horas − contrato efectivo', () => {

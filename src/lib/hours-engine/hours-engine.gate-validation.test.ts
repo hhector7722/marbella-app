@@ -86,7 +86,7 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
     assert.equal(r.overtimeHours, 5);
   });
 
-  it('GT-02 Semana sin fichajes — horas 0, balance semanal 0 (no −contrato)', () => {
+  it('GT-02 Semana sin fichajes — consume contrato (resta pendientes)', () => {
     const r = liquidateWeek(
       liq({
         weekStart: '2026-03-02',
@@ -95,9 +95,10 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
       }),
     );
     assert.equal(r.hoursWorked, 0);
-    assert.equal(r.weeklyBalance, 0);
-    assert.equal(r.balanceFinal, -2);
-    assert.equal(r.carryOut, -2);
+    assert.equal(r.contractedHoursEffective, 40);
+    assert.equal(r.weeklyBalance, -40);
+    assert.equal(r.balanceFinal, -42);
+    assert.equal(r.carryOut, -42);
   });
 
   it('GT-03 Alta mid-week — pre-alta = extra; contrato = días desde alta /7 × jornada', () => {

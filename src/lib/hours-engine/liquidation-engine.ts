@@ -49,40 +49,9 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
   const attendance = aggregateWeekAttendance(employee, weekStart, logs);
   const contract = resolveEffectiveContract(employee, weekStart);
 
-  // Semana sin fichajes → balance semanal 0 (regla v1.0).
-  // Si hay override Bolsa/Pago, un tramo 0h marca el modo para el waterfall.
-  if (attendance.totalHours === 0) {
-    const parts =
-      bagModeOverride === true || bagModeOverride === false
-        ? [{ weeklyBalancePart: 0, bagMode: bagModeOverride }]
-        : [];
-    const carry = computeCarry({
-      carryIn,
-      parts,
-      isPaid,
-    });
-    const dailyBreakdown = emptyDailyBreakdown(weekStart);
-
-    return {
-      employeeId: employee.employeeId,
-      weekStart,
-      weekEnd,
-      hoursWorked: 0,
-      contractedHoursEffective: contract.contractedHoursEffective,
-      weeklyBalance: 0,
-      carryIn: carry.carryIn,
-      balanceFinal: carry.balanceFinal,
-      carryOut: carry.carryOut,
-      isPaid,
-      ordinaryHours: 0,
-      overtimeHours: 0,
-      segments: [],
-      dailyBreakdown,
-    };
-  }
-
   // Pre-alta: el resolver ya emite segmentos pre_alta para días < alta.
   // Horas en días sin segmento (empleado sin tramo) se agrupan al final como staff 0-contrato.
+  // Semana sin fichajes: también pasa por aquí → consume contrato (resta pendientes).
   const covered = new Set<string>();
   for (const seg of contract.segments) {
     for (const d of seg.days) covered.add(d);
@@ -112,6 +81,36 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
         ]
       : []),
   ];
+
+  // Sin tramos (p.ej. post-baja toda la semana): no hay contrato que consumir.
+  if (segmentInputs.length === 0) {
+    const carry = computeCarry({
+      carryIn,
+      parts:
+        bagModeOverride === true || bagModeOverride === false
+          ? [{ weeklyBalancePart: 0, bagMode: bagModeOverride }]
+          : [],
+      isPaid,
+    });
+    const dailyBreakdown = emptyDailyBreakdown(weekStart);
+
+    return {
+      employeeId: employee.employeeId,
+      weekStart,
+      weekEnd,
+      hoursWorked: 0,
+      contractedHoursEffective: contract.contractedHoursEffective,
+      weeklyBalance: 0,
+      carryIn: carry.carryIn,
+      balanceFinal: carry.balanceFinal,
+      carryOut: carry.carryOut,
+      isPaid,
+      ordinaryHours: 0,
+      overtimeHours: 0,
+      segments: [],
+      dailyBreakdown,
+    };
+  }
 
   const segments: SegmentLiquidation[] = segmentInputs.map((seg) =>
     applyRegimeToSegment({

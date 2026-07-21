@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Fix selección Pago/Bolsa semanal)
+**Última actualización:** 2026-07-21 (Semana 0h consume contrato / resta pendientes)
+
+- [x] **Semana sin fichajes consume contrato (2026-07-21)**: Eliminado el early-return de `liquidateWeek` que forzaba `weeklyBalance = 0` sin fichajes. Staff con jornada: semana vacía → `weeklyBalance = −contrato` y baja el banco (crédito positivo o más deuda). Solo sin tramos (post-baja) queda balance 0. Caso UI: 83,7 → ~43,7 tras una semana 40h vacía; semanas 23–25 ya no congelan PENDIENTES. Suite hours-engine **122/122**.
+
+**Última actualización anterior:** 2026-07-21 (Fix selección Pago/Bolsa semanal)
 
 - [x] **Fix selección Pago/Bolsa semanal (2026-07-21)**: El motor ignoraba `weekly_snapshots.prefer_stock_hours_override` y repintaba siempre el `bagMode` del contrato. Ahora `liquidateWeek` acepta `bagModeOverride`; historial/modal/home leen el override y lo aplican en liquidación + carry. Aplicar Bolsa/Pago en WeekCard vuelve a persistir y verse.
 

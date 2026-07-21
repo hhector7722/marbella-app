@@ -87,7 +87,7 @@ describe('opening-carry — cadena continua', () => {
   });
 
   it('continuidad mismo mes: W2 recibe carryOut de W1', () => {
-    const employee = emp([term('2026-05-01', null, 40)], '2026-05-01');
+    const employee = emp([term('2026-05-04', null, 40)], '2026-05-04');
     const w1 = '2026-05-04';
     const w2 = '2026-05-11';
     const logs = [...week35(w1), ...week40(w2)];
@@ -110,7 +110,7 @@ describe('opening-carry — cadena continua', () => {
   });
 
   it('continuidad mayo → junio (límite de mes)', () => {
-    const employee = emp([term('2026-05-01', null, 40)], '2026-05-01');
+    const employee = emp([term('2026-05-25', null, 40)], '2026-05-25');
     const w22 = '2026-05-25';
     const w23 = '2026-06-01';
     const logs = [...week35(w22), ...week40(w23)];
@@ -151,7 +151,7 @@ describe('opening-carry — cadena continua', () => {
   });
 
   it('continuidad diciembre → enero (cambio de año)', () => {
-    const employee = emp([term('2025-12-01', null, 40)], '2025-12-01');
+    const employee = emp([term('2025-12-29', null, 40)], '2025-12-29');
     const wDec = '2025-12-29';
     const wJan = '2026-01-05';
     const logs = [...week35(wDec), ...week40(wJan)];
@@ -174,7 +174,7 @@ describe('opening-carry — cadena continua', () => {
   });
 
   it('apertura directa en junio (mes intermedio) sin cargar mayo en la UI', () => {
-    const employee = emp([term('2026-05-01', null, 40)], '2026-05-01');
+    const employee = emp([term('2026-05-25', null, 40)], '2026-05-25');
     const wMay = '2026-05-25';
     const wJun = '2026-06-01';
     const logs = [...week35(wMay), ...week40(wJun)];
@@ -198,8 +198,8 @@ describe('opening-carry — cadena continua', () => {
   });
 
   it('cambio de empleado: timeline y carry independientes', () => {
-    const alba = emp([term('2026-05-01', null, 40)], '2026-05-01', 'alba');
-    const pere = emp([term('2026-05-01', null, 40)], '2026-05-01', 'pere');
+    const alba = emp([term('2026-05-25', null, 40)], '2026-05-25', 'alba');
+    const pere = emp([term('2026-05-25', null, 40)], '2026-05-25', 'pere');
     const w1 = '2026-05-25';
     const w2 = '2026-06-01';
     const logsAlba = [...week35(w1), ...week40(w2)];
@@ -222,7 +222,7 @@ describe('opening-carry — cadena continua', () => {
   });
 
   it('modal y pantalla principal: mismo carryIn para la misma semana', () => {
-    const employee = emp([term('2026-05-01', null, 40)], '2026-05-01');
+    const employee = emp([term('2026-05-25', null, 40)], '2026-05-25');
     const wMay = '2026-05-25';
     const wJun = '2026-06-01';
     const logs = [...week35(wMay), ...week40(wJun)];
@@ -260,6 +260,34 @@ describe('opening-carry — cadena continua', () => {
     assert.equal(historyOpening, modalOpening);
     assert.equal(history[0]!.summary!.startBalance, modal.summary.startBalance);
     assert.equal(history[0]!.summary!.finalBalance, modal.summary.finalBalance);
+  });
+
+  it('semanas vacías consumen contrato y bajan pendientes positivas', () => {
+    const employee = emp([term('2026-06-01', null, 40)], '2026-06-01');
+    const w23 = '2026-06-01';
+    const w24 = '2026-06-08';
+    const w25 = '2026-06-15';
+    // Solo crédito entrante simulado vía semana previa con extras en bolsa:
+    // usamos carryIn artificial en resolve: timeline = w23, chainStart = w25
+    // W23 y W24 vacías → cada una −40.
+    const openingW25 = resolveOpeningCarryIn({
+      employee,
+      chainStart: w25,
+      logs: [],
+      isPaidByWeek: unpaid,
+    });
+    // Dos semanas vacías × −40 = −80 (sin crédito previo)
+    assert.equal(openingW25, -80);
+
+    const { summary: s24 } = liquidateWeekForCard({
+      employee,
+      weekStart: w24,
+      logs: [],
+      carryIn: 83.7,
+    });
+    // 83.7 − 40 = 43.7 pendientes salientes
+    assert.ok(Math.abs(s24.finalBalance - 43.7) < 1e-9);
+    assert.equal(s24.startBalance, 83.7);
   });
 
   it('sin ancla de timeline → opening 0', () => {
