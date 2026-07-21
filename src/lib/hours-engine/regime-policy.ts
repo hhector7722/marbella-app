@@ -4,6 +4,7 @@ import type {
   SegmentLiquidation,
   SegmentRegime,
 } from './types.ts';
+import { roundMarbellaHours, roundMarbellaSigned } from './marbella-round.ts';
 import { isAugustCivilDate } from './week-dates.ts';
 
 export type RegimeSegmentInput = {
@@ -120,13 +121,13 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
 
   return {
     days,
-    hoursWorked,
-    contractedHours: contractedHoursOut,
+    hoursWorked: roundMarbellaHours(hoursWorked),
+    contractedHours: roundMarbellaHours(contractedHoursOut),
     bagMode,
     regimeApplied,
-    weeklyBalancePart,
-    ordinaryHours,
-    overtimeHours,
+    weeklyBalancePart: roundMarbellaSigned(weeklyBalancePart),
+    ordinaryHours: roundMarbellaHours(ordinaryHours),
+    overtimeHours: roundMarbellaHours(overtimeHours),
     kind,
   };
 }

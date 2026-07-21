@@ -8,6 +8,7 @@
 
 import { liquidateWeek } from './liquidation-engine.ts';
 import { resolveEffectiveContract } from './contract-resolver.ts';
+import { roundMarbellaHours, roundMarbellaSigned } from './marbella-round.ts';
 import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
 import type {
   CivilDate,
@@ -62,7 +63,9 @@ export function netPayableHoursFromLiquidation(
         : result.segments.length > 0 && result.segments.every((s) => s.bagMode);
   if (preferStock) return 0;
   // Crédito extraído = lo que no se queda en el banco.
-  return Math.max(0, result.balanceFinal - Math.max(0, result.carryOut));
+  return roundMarbellaHours(
+    Math.max(0, result.balanceFinal - Math.max(0, result.carryOut)),
+  );
 }
 
 export type WeekAdminFlags = {
@@ -122,18 +125,18 @@ export function weekCardSummaryFromLiquidation(
   // En pago: extras = horas de ESTA semana que se cobran (no el crédito previo).
   // Si la semana deja deuda, netPayable=0 → extras=0 (no se puede cobrar con pendiente).
   const extrasFooter = preferStock
-    ? result.overtimeHours
-    : Math.max(0, netPayable - Math.max(0, result.carryIn));
+    ? roundMarbellaHours(result.overtimeHours)
+    : roundMarbellaHours(Math.max(0, netPayable - Math.max(0, result.carryIn)));
 
   return {
-    totalHours: result.hoursWorked,
-    startBalance: result.carryIn,
+    totalHours: roundMarbellaHours(result.hoursWorked),
+    startBalance: roundMarbellaSigned(result.carryIn),
     weeklyBalance: extrasFooter,
-    finalBalance: result.balanceFinal,
+    finalBalance: roundMarbellaSigned(result.balanceFinal),
     estimatedValue: netPayable * overtimeRatePerHour,
     isPaid: result.isPaid,
     preferStock,
-    limitHours: result.contractedHoursEffective,
+    limitHours: roundMarbellaHours(result.contractedHoursEffective),
     hourlyRate: overtimeRatePerHour,
   };
 }

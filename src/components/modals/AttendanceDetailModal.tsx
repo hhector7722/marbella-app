@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 import { updateWeeklyWorkerConfig, createManagerFichaje, deleteManagerDayLogs } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn } from '@/lib/utils';
+import { cn, calculateRoundedHours } from '@/lib/utils';
 import { formatMadridHmFromIso, madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -30,6 +30,13 @@ const EVENT_TYPES = [
     { value: 'personal', label: 'Personal', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
     { value: 'no_registered', label: 'No registrado', color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50', showCross: true },
 ];
+
+/** Solo enteros o .5 (regla Marbella). */
+function fmtMarbellaHours(hours: number): string {
+    const r = calculateRoundedHours(Math.abs(hours));
+    const s = r % 1 === 0 ? String(r) : r.toFixed(1);
+    return hours < 0 ? `-${s}` : s;
+}
 
 interface EditWeekModalProps {
     isOpen: boolean;
@@ -561,7 +568,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                     className="text-[12px] font-black text-zinc-800 bg-transparent border-none p-0 focus:ring-0 w-full"
                                                 />
                                             ) : (
-                                                <span className="text-[12px] font-black text-zinc-800 block">{workedHours > 0 ? workedHours.toFixed(1).replace('.0', '') : ' '}</span>
+                                                <span className="text-[12px] font-black text-zinc-800 block">{workedHours > 0 ? fmtMarbellaHours(workedHours) : ' '}</span>
                                             )}
                                         </div>
                                         <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100">
@@ -576,7 +583,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                     className="text-[12px] font-black text-red-600 bg-transparent border-none p-0 focus:ring-0 w-full"
                                                 />
                                             ) : (
-                                                <span className="text-[12px] font-black text-red-600 block">{workedHours > 8 ? (workedHours - 8).toFixed(1).replace('.0', '') : ' '}</span>
+                                                <span className="text-[12px] font-black text-red-600 block">{workedHours > 8 ? fmtMarbellaHours(workedHours - 8) : ' '}</span>
                                             )}
                                         </div>
                                     </div>

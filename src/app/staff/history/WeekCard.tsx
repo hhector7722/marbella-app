@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X, Coins, Landmark, Save } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, calculateRoundedHours } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -17,9 +17,10 @@ const EVENT_TYPES = [
     { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
 ];
 
+/** Horas Marbella: solo enteros o .5 */
 const fmtHours = (val: number): string => {
     if (!val || Math.abs(val) < 0.05) return '';
-    const rounded = Math.round(val * 2) / 2;
+    const rounded = calculateRoundedHours(Math.abs(val));
     const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
     return val < 0 ? `-${str}` : str;
 };
@@ -30,10 +31,7 @@ const fmtMoney = (val: number): string => {
     return val < 0 ? `-${str}€` : `${str}€`;
 };
 
-const fmtDecimal = (val: number): string => {
-    const s = val.toFixed(1);
-    return s.endsWith('.0') ? s.slice(0, -2) : s;
-};
+const fmtDecimal = (val: number): string => fmtHours(val);
 
 interface DayData {
     date: string;

@@ -445,8 +445,6 @@ export const StaffScheduleModal = ({
                             <div className="grid grid-cols-7 gap-y-0.5">
                                 {calendarDays.map((day, i) => {
                                     if (!day) return <div key={`e-${i}`} className="aspect-square" />;
-                                    const today = new Date(); today.setHours(0, 0, 0, 0);
-                                    const isPast = day < today;
                                     const isToday = isSameDay(day, new Date());
                                     const hasShift = shifts.some(s => isSameDay(s.date, day));
                                     return (
@@ -458,9 +456,7 @@ export const StaffScheduleModal = ({
                                                     ? 'bg-emerald-500 text-white'
                                                     : isToday
                                                         ? 'text-blue-600'
-                                                        : isPast
-                                                            ? 'text-gray-300 font-medium'
-                                                            : 'text-gray-900 font-medium'
+                                                        : 'text-gray-900 font-medium'
                                                 }
                                             `}>
                                                 {day.getDate()}

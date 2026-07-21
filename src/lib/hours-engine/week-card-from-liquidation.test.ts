@@ -228,7 +228,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       dayLog('2026-03-03', 8),
       dayLog('2026-03-04', 8),
     ];
-    // 24h trabajadas − 16h contrato = 8h extras, carryIn = −13.3
+    // 24h trabajadas − 16h contrato = 8h extras; −13.3 → Marbella −13
     const { summary, result } = liquidateWeekForCard({
       carryIn: -13.3,
       employee,
@@ -236,7 +236,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       logs,
     });
     assert.equal(result.overtimeHours, 8);
-    assert.equal(summary.startBalance, -13.3);
+    assert.equal(summary.startBalance, -13);
     assert.ok(result.carryOut < 0);
     // Deuda no cubierta → no se cobra ni se muestran extras a cobro
     assert.equal(summary.weeklyBalance, 0);

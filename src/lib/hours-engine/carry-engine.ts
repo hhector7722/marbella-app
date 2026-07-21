@@ -10,7 +10,10 @@
  * - Bolsa pura: todo crédito permanece.
  * - Mixto: solo el crédito de tramos bolsa (+ crédito previo) permanece.
  * - Si Pagada: cualquier crédito residual se sella (carryOut no positivo).
+ * - Todos los saldos pasan por redondeo Marbella (solo .0 / .5).
  */
+
+import { roundMarbellaSigned } from './marbella-round.ts';
 
 export type CarrySegmentPart = {
   /** Balance parcial del tramo/segmento (puede ser +/−). */
@@ -33,15 +36,25 @@ export type CarryResult = {
 };
 
 export function computeCarry(input: CarryInput): CarryResult {
-  const weeklyBalance = input.parts.reduce((acc, p) => acc + p.weeklyBalancePart, 0);
-  const balanceFinal = input.carryIn + weeklyBalance;
+  const carryIn = roundMarbellaSigned(input.carryIn);
+  const parts = input.parts.map((p) => ({
+    ...p,
+    weeklyBalancePart: roundMarbellaSigned(p.weeklyBalancePart),
+  }));
 
-  const bagPositive = input.parts
-    .filter((p) => p.bagMode)
-    .reduce((acc, p) => acc + Math.max(0, p.weeklyBalancePart), 0);
+  const weeklyBalance = roundMarbellaSigned(
+    parts.reduce((acc, p) => acc + p.weeklyBalancePart, 0),
+  );
+  const balanceFinal = roundMarbellaSigned(carryIn + weeklyBalance);
 
-  const allBag = input.parts.length > 0 && input.parts.every((p) => p.bagMode);
-  const allPay = input.parts.length > 0 && input.parts.every((p) => !p.bagMode);
+  const bagPositive = roundMarbellaSigned(
+    parts
+      .filter((p) => p.bagMode)
+      .reduce((acc, p) => acc + Math.max(0, p.weeklyBalancePart), 0),
+  );
+
+  const allBag = parts.length > 0 && parts.every((p) => p.bagMode);
+  const allPay = parts.length > 0 && parts.every((p) => !p.bagMode);
 
   let carryOut: number;
 
@@ -50,8 +63,8 @@ export function computeCarry(input: CarryInput): CarryResult {
   } else if (balanceFinal <= 0) {
     // Deuda o cero: arrastra; nada cobrable.
     carryOut = balanceFinal;
-  } else if (input.parts.length === 0) {
-    // Semana sin tramos/fichajes: no liquidar crédito entrante.
+  } else if (parts.length === 0) {
+    // Semana sin tramos: no liquidar crédito entrante.
     carryOut = balanceFinal;
   } else if (allPay) {
     // Pago: liquida TODO el crédito (carryIn positivo + extras de la semana).
@@ -61,14 +74,14 @@ export function computeCarry(input: CarryInput): CarryResult {
     carryOut = balanceFinal;
   } else {
     // Mixto bolsa/pago: solo permanece crédito bolsa (+ crédito previo de bolsa).
-    const priorCredit = Math.max(0, input.carryIn);
+    const priorCredit = Math.max(0, carryIn);
     carryOut = Math.min(balanceFinal, priorCredit + bagPositive);
   }
 
   return {
-    carryIn: input.carryIn,
+    carryIn,
     weeklyBalance,
     balanceFinal,
-    carryOut,
+    carryOut: roundMarbellaSigned(carryOut),
   };
 }

@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { differenceInMinutes, startOfWeek, addDays, format, isSameDay } from 'date-fns';
 import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, calculateRoundedHours } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
@@ -215,9 +215,12 @@ export default function StaffDashboardView() {
 
 
 
+    /** Horas Marbella: solo enteros o .5 */
     const formatNumber = (val: number) => {
         if (Math.abs(val) < 0.1) return " ";
-        return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
+        const rounded = calculateRoundedHours(Math.abs(val));
+        const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+        return val < 0 ? `-${str}` : str;
     };
 
     const formatWorked = (val: number) => formatNumber(Math.abs(val));
@@ -991,14 +994,13 @@ export default function StaffDashboardView() {
                                             const day = new Date(new Date().getFullYear(), new Date().getMonth(), d);
                                             const today = new Date(); today.setHours(0, 0, 0, 0);
                                             const isToday = d === new Date().getDate() && day.getMonth() === today.getMonth();
-                                            const isPast = day < today;
                                             const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
 
                                             return (
                                                 <div key={d} className="flex items-center justify-center py-[1px] md:py-0.5">
                                                     <span className={`
                                                             w-3.5 h-3.5 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[9px] leading-none transition-colors
-                                                            ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : (isPast ? 'text-gray-300' : 'text-gray-900'))}
+                                                            ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : 'text-gray-900')}
                                                         `}>
                                                         {d}
                                                     </span>

@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
 import { format, isSameDay, addDays, parseISO, startOfWeek, getISOWeek } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, calculateRoundedHours } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -52,10 +52,13 @@ interface WorkerWeeklyHistoryModalProps {
     weekStart: string; // ISO Date string (yyyy-MM-dd) of the Monday
 }
 
-// --- VISUAL HELPERS (idénticos a StaffDashboardView.tsx) ---
+// --- VISUAL HELPERS (idénticos a WeekCard / StaffDashboardView) ---
+/** Horas Marbella: solo enteros o .5 */
 const fmtDecimal = (val: number): string => {
-    const s = val.toFixed(1);
-    return s.endsWith('.0') ? s.slice(0, -2) : s;
+    if (!val || Math.abs(val) < 0.05) return ' ';
+    const rounded = calculateRoundedHours(Math.abs(val));
+    const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    return val < 0 ? `-${str}` : str;
 };
 
 const fmtMoney = (val: number): string => {

@@ -156,14 +156,15 @@ describe('Liquidation Engine', () => {
     const r = liquidateWeek(
       input({
         weekStart: '2026-03-02',
-        carryIn: 83.7,
+        carryIn: 83.7, // se normaliza a 83.5 (Marbella)
         logs: [],
       }),
     );
     assert.equal(r.hoursWorked, 0);
     assert.equal(r.weeklyBalance, -40);
-    assert.ok(Math.abs(r.balanceFinal - 43.7) < 1e-9);
-    assert.ok(Math.abs(r.carryOut - 43.7) < 1e-9); // bolsa: crédito restante arrastra
+    assert.equal(r.carryIn, 83.5);
+    assert.equal(r.balanceFinal, 43.5);
+    assert.equal(r.carryOut, 43.5); // bolsa: crédito restante arrastra
   });
 
   it('staff: balance = horas − contrato efectivo', () => {

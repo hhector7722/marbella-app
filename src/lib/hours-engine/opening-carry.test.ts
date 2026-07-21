@@ -285,9 +285,9 @@ describe('opening-carry — cadena continua', () => {
       logs: [],
       carryIn: 83.7,
     });
-    // 83.7 − 40 = 43.7 pendientes salientes
-    assert.ok(Math.abs(s24.finalBalance - 43.7) < 1e-9);
-    assert.equal(s24.startBalance, 83.7);
+    // 83.7 → Marbella 83.5; 83.5 − 40 = 43.5 pendientes salientes
+    assert.equal(s24.finalBalance, 43.5);
+    assert.equal(s24.startBalance, 83.5);
   });
 
   it('sin ancla de timeline → opening 0', () => {

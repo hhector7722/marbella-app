@@ -1,8 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Semana 0h consume contrato / resta pendientes)
+**Última actualización:** 2026-07-21 (Horas solo .0/.5 + color días pasados Horarios)
 
-- [x] **Semana sin fichajes consume contrato (2026-07-21)**: Eliminado el early-return de `liquidateWeek` que forzaba `weeklyBalance = 0` sin fichajes. Staff con jornada: semana vacía → `weeklyBalance = −contrato` y baja el banco (crédito positivo o más deuda). Solo sin tramos (post-baja) queda balance 0. Caso UI: 83,7 → ~43,7 tras una semana 40h vacía; semanas 23–25 ya no congelan PENDIENTES. Suite hours-engine **122/122**.
+- [x] **Horas solo enteros o media + color Horarios (2026-07-21)**: Banco/carry y footers pasan por `roundMarbellaSigned` (nada tipo 83,7). UI (`WeekCard`, home, modal historial) formatea con `calculateRoundedHours`. Mini-calendario Horarios: revertido gris `text-gray-300` en días pasados → `text-gray-900` (igual que futuros).
+
+**Última actualización anterior:** 2026-07-21 (Semana 0h consume contrato / resta pendientes)
+
+- [x] **Semana sin fichajes consume contrato (2026-07-21)**: Eliminado el early-return de `liquidateWeek` que forzaba `weeklyBalance = 0` sin fichajes. Staff con jornada: semana vacía → `weeklyBalance = −contrato` y baja el banco. Solo sin tramos (post-baja) queda balance 0. Suite hours-engine **122/122**.
 
 **Última actualización anterior:** 2026-07-21 (Fix selección Pago/Bolsa semanal)
 
