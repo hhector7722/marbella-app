@@ -64,6 +64,11 @@ export type LiquidationInput = {
   isPaid: boolean;
   /** Arrastre saliente de W-1 (o 0). */
   carryIn: number;
+  /**
+   * Override semanal Bolsa/Pago (`weekly_snapshots.prefer_stock_hours_override`).
+   * `true`/`false` fuerza todos los tramos; `null`/`undefined` → bagMode del contrato.
+   */
+  bagModeOverride?: boolean | null;
 };
 
 export type ContractSegment = {

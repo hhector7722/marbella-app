@@ -30,6 +30,7 @@ export type { WeekCardSummaryFromEngine } from './week-card-from-liquidation.ts'
 export {
   employeeTimelineStartWeek,
   isPaidLookupFromRows,
+  bagModeOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from './opening-carry.ts';
 export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';

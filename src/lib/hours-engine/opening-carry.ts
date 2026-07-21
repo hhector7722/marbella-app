@@ -64,6 +64,8 @@ export function resolveOpeningCarryIn(input: {
   logs: readonly TimeLogFact[];
   /** Hecho Pagada por weekStart; ausente → false. */
   isPaidByWeek: (weekStart: CivilDate) => boolean;
+  /** Override Bolsa/Pago; ausente → null (contrato). */
+  bagModeOverrideByWeek?: (weekStart: CivilDate) => boolean | null;
 }): number {
   assertMonday(input.chainStart);
 
@@ -85,6 +87,7 @@ export function resolveOpeningCarryIn(input: {
       logs: logsInWeek(input.logs, weekStart),
       isPaid: input.isPaidByWeek(weekStart),
       carryIn,
+      bagModeOverride: input.bagModeOverrideByWeek?.(weekStart) ?? null,
     });
     carryIn = result.carryOut;
   }
@@ -103,4 +106,26 @@ export function isPaidLookupFromRows(
     map.set(key, r.is_paid === true);
   }
   return (weekStart) => map.get(weekStart) === true;
+}
+
+/**
+ * Lookup override Bolsa/Pago desde weekly_snapshots.prefer_stock_hours_override.
+ * Solo `true`/`false` explícitos; `null` → usar bagMode del contrato.
+ */
+export function bagModeOverrideLookupFromRows(
+  rows: readonly {
+    week_start: string;
+    prefer_stock_hours_override?: boolean | null;
+  }[],
+): (weekStart: CivilDate) => boolean | null {
+  const map = new Map<string, boolean>();
+  for (const r of rows) {
+    if (r.prefer_stock_hours_override !== true && r.prefer_stock_hours_override !== false) {
+      continue;
+    }
+    const key =
+      typeof r.week_start === 'string' ? r.week_start.split('T')[0]! : String(r.week_start);
+    map.set(key, r.prefer_stock_hours_override);
+  }
+  return (weekStart) => map.get(weekStart) ?? null;
 }

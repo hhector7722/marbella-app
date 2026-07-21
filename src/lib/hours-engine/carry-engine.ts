@@ -41,7 +41,7 @@ export function computeCarry(input: CarryInput): CarryResult {
     .reduce((acc, p) => acc + Math.max(0, p.weeklyBalancePart), 0);
 
   const allBag = input.parts.length > 0 && input.parts.every((p) => p.bagMode);
-  const allPay = input.parts.every((p) => !p.bagMode);
+  const allPay = input.parts.length > 0 && input.parts.every((p) => !p.bagMode);
 
   let carryOut: number;
 
@@ -49,6 +49,9 @@ export function computeCarry(input: CarryInput): CarryResult {
     carryOut = Math.min(0, balanceFinal);
   } else if (balanceFinal <= 0) {
     // Deuda o cero: arrastra; nada cobrable.
+    carryOut = balanceFinal;
+  } else if (input.parts.length === 0) {
+    // Semana sin tramos/fichajes: no liquidar crédito entrante.
     carryOut = balanceFinal;
   } else if (allPay) {
     // Pago: liquida TODO el crédito (carryIn positivo + extras de la semana).

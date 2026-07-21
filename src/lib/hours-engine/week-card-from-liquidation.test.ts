@@ -344,6 +344,46 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.equal(result.contractedHoursEffective, 26); // enteros/medias, no 26.285
   });
 
+  it('override semanal BOLSA: no cobra e importa preferStock', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: false, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+    ];
+    // Contrato en PAGO, pero override semanal → BOLSA
+    const { summary, result } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+      bagModeOverride: true,
+    });
+    assert.equal(summary.preferStock, true);
+    assert.equal(summary.estimatedValue, 0);
+    assert.ok(summary.weeklyBalance > 0);
+    assert.ok(result.carryOut > 0); // crédito arrastra en bolsa
+  });
+
+  it('override semanal PAGO: fuerza liquidación aunque el contrato sea bolsa', () => {
+    const employee = emp([term('2026-01-01', null, 16, { bagMode: true, overtimeRatePerHour: 10 })]);
+    const logs = [
+      dayLog('2026-03-02', 8),
+      dayLog('2026-03-03', 8),
+      dayLog('2026-03-04', 8),
+    ];
+    const { summary, result } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-03-02',
+      logs,
+      bagModeOverride: false,
+    });
+    assert.equal(summary.preferStock, false);
+    assert.equal(summary.estimatedValue, 80);
+    assert.equal(result.carryOut, 0);
+  });
+
   it('fijo: jornada 0, extras = trabajado', () => {
     const employee = emp([
       term('2026-01-01', null, 0, { regime: 'fixed', bagMode: false }),

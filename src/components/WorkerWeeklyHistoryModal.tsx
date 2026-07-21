@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
-import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows } from '@/lib/hours-engine';
 import { madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 
 // --- TYPES ---
@@ -137,7 +137,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 }),
                 supabase
                     .from('weekly_snapshots')
-                    .select('week_start, is_paid')
+                    .select('week_start, is_paid, prefer_stock_hours_override')
                     .eq('user_id', workerId)
                     .gte('week_start', logsFromYmd)
                     .lte('week_start', mondayISO),
@@ -160,12 +160,15 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             }));
 
             const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
+            const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
             const isPaid = isPaidByWeek(mondayISO);
+            const bagModeOverride = bagModeOverrideByWeek(mondayISO);
             const carryIn = resolveOpeningCarryIn({
                 employee: employeeFacts,
                 chainStart: mondayISO,
                 logs: engineLogs,
                 isPaidByWeek,
+                bagModeOverrideByWeek,
             });
 
             const { extrasByDay, summary } = liquidateWeekForCard({
@@ -174,6 +177,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 logs: engineLogs,
                 isPaid,
                 carryIn,
+                bagModeOverride,
             });
 
             const rawDays = (gridDays || []) as Array<{

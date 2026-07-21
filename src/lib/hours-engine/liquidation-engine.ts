@@ -40,17 +40,25 @@ function assertDailyCoherent(
  * No escribe hechos, no marca Pagada, no habla con UI.
  */
 export function liquidateWeek(input: LiquidationInput): LiquidationResult {
-  const { employee, weekStart, logs, isPaid, carryIn } = input;
+  const { employee, weekStart, logs, isPaid, carryIn, bagModeOverride } = input;
   const { weekEnd } = weekBounds(weekStart);
+
+  const resolveBag = (bagMode: boolean) =>
+    bagModeOverride === true || bagModeOverride === false ? bagModeOverride : bagMode;
 
   const attendance = aggregateWeekAttendance(employee, weekStart, logs);
   const contract = resolveEffectiveContract(employee, weekStart);
 
   // Semana sin fichajes → balance semanal 0 (regla v1.0).
+  // Si hay override Bolsa/Pago, un tramo 0h marca el modo para el waterfall.
   if (attendance.totalHours === 0) {
+    const parts =
+      bagModeOverride === true || bagModeOverride === false
+        ? [{ weeklyBalancePart: 0, bagMode: bagModeOverride }]
+        : [];
     const carry = computeCarry({
       carryIn,
-      parts: [],
+      parts,
       isPaid,
     });
     const dailyBreakdown = emptyDailyBreakdown(weekStart);
@@ -85,14 +93,17 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
     .map((d) => d.day);
 
   const segmentInputs = [
-    ...contract.segments,
+    ...contract.segments.map((seg) => ({
+      ...seg,
+      bagMode: resolveBag(seg.bagMode),
+    })),
     ...(orphanDays.length > 0
       ? [
           {
             days: orphanDays,
             weeklyHoursOfTerm: 0,
             contractedHours: 0,
-            bagMode: false,
+            bagMode: resolveBag(false),
             termRegime: 'staff' as const,
             kind: 'pre_alta' as const,
             effectiveFrom: null,

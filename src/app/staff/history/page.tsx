@@ -51,6 +51,7 @@ import {
     resolveOpeningCarryIn,
     employeeTimelineStartWeek,
     isPaidLookupFromRows,
+    bagModeOverrideLookupFromRows,
 } from '@/lib/hours-engine';
 import {
     filterVisiblePlantillaEmployees,
@@ -94,6 +95,7 @@ interface WeekSummary {
     estimatedValue: number;
     isPaid: boolean;
     preferStock?: boolean;
+    bagModeOverride?: boolean | null;
     hourlyRate?: number;
     limitHours?: number;
 }
@@ -278,11 +280,18 @@ export default function HistoryPage() {
                 timelineStart
                     ? supabase
                           .from('weekly_snapshots')
-                          .select('week_start, is_paid')
+                          .select('week_start, is_paid, prefer_stock_hours_override')
                           .eq('user_id', targetUserId)
                           .gte('week_start', timelineStart)
                           .lte('week_start', rangeEndYmd)
-                    : Promise.resolve({ data: [] as { week_start: string; is_paid: boolean | null }[], error: null }),
+                    : Promise.resolve({
+                        data: [] as {
+                          week_start: string;
+                          is_paid: boolean | null;
+                          prefer_stock_hours_override?: boolean | null;
+                        }[],
+                        error: null,
+                      }),
             ]);
 
             const { data, error } = rpcResult;
@@ -346,6 +355,7 @@ export default function HistoryPage() {
                 .sort()[0]!;
 
             const isPaidFromSnaps = isPaidLookupFromRows(snapsResult.data ?? []);
+            const bagModeFromSnaps = bagModeOverrideLookupFromRows(snapsResult.data ?? []);
             const isPaidByWeek = (weekStart: string) => {
                 const inMonth = mappedWeeks.find((w) => w.startDate === weekStart);
                 if (inMonth) return inMonth.summary?.isPaid === true;
@@ -357,13 +367,14 @@ export default function HistoryPage() {
                 chainStart,
                 logs: engineLogs,
                 isPaidByWeek,
+                bagModeOverrideByWeek: bagModeFromSnaps,
             });
 
             const formattedWeeks = patchWeeksFromLiquidation<WeekData>(
                 mappedWeeks as WeekData[],
                 employeeFacts,
                 engineLogs,
-                { openingCarryIn },
+                { openingCarryIn, bagModeOverrideByWeek: bagModeFromSnaps },
             );
 
             setWeeksData(formattedWeeks);
@@ -595,11 +606,17 @@ export default function HistoryPage() {
             timelineStart
                 ? supabase
                       .from('weekly_snapshots')
-                      .select('week_start, is_paid')
+                      .select('week_start, is_paid, prefer_stock_hours_override')
                       .eq('user_id', userId)
                       .gte('week_start', timelineStart)
                       .lte('week_start', yearEnd)
-                : Promise.resolve({ data: [] as { week_start: string; is_paid: boolean | null }[] }),
+                : Promise.resolve({
+                    data: [] as {
+                      week_start: string;
+                      is_paid: boolean | null;
+                      prefer_stock_hours_override?: boolean | null;
+                    }[],
+                  }),
         ]);
 
         const engineLogs = (yearLogs ?? []).map((l) => ({
@@ -645,6 +662,7 @@ export default function HistoryPage() {
         if (uniqueWeeks.length === 0) return [];
 
         const isPaidFromSnaps = isPaidLookupFromRows(yearSnaps ?? []);
+        const bagModeFromSnaps = bagModeOverrideLookupFromRows(yearSnaps ?? []);
         const isPaidByWeek = (weekStart: string) => {
             const inList = byStart.get(weekStart);
             if (inList) return inList.summary?.isPaid === true;
@@ -656,6 +674,7 @@ export default function HistoryPage() {
             chainStart: uniqueWeeks[0]!.startDate,
             logs: engineLogs,
             isPaidByWeek,
+            bagModeOverrideByWeek: bagModeFromSnaps,
         });
 
         // TWeek se infiere como WeekLike si no se fija; preservar WeekData del historial.
@@ -663,7 +682,7 @@ export default function HistoryPage() {
             uniqueWeeks,
             employeeFacts,
             engineLogs,
-            { openingCarryIn },
+            { openingCarryIn, bagModeOverrideByWeek: bagModeFromSnaps },
         );
     }
 

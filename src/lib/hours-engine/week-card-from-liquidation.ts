@@ -50,9 +50,16 @@ export type WeekCardSummaryFromEngine = {
  * Invariante: si carryOut < 0 (queda deuda), netPayable = 0.
  * Bolsa: 0 (todo permanece en banco).
  */
-export function netPayableHoursFromLiquidation(result: LiquidationResult): number {
+export function netPayableHoursFromLiquidation(
+  result: LiquidationResult,
+  bagModeOverride?: boolean | null,
+): number {
   const preferStock =
-    result.segments.length > 0 && result.segments.every((s) => s.bagMode);
+    bagModeOverride === true
+      ? true
+      : bagModeOverride === false
+        ? false
+        : result.segments.length > 0 && result.segments.every((s) => s.bagMode);
   if (preferStock) return 0;
   // Crédito extraído = lo que no se queda en el banco.
   return Math.max(0, result.balanceFinal - Math.max(0, result.carryOut));
@@ -61,6 +68,11 @@ export function netPayableHoursFromLiquidation(result: LiquidationResult): numbe
 export type WeekAdminFlags = {
   /** Solo sello administrativo Pagada (hecho de proceso, no resultado de liquidación). */
   isPaid?: boolean;
+  /**
+   * Override semanal Bolsa/Pago (`prefer_stock_hours_override`).
+   * `true`/`false` fuerza; `null`/`undefined` → bagMode del contrato.
+   */
+  bagModeOverride?: boolean | null;
 };
 
 function weekStartKey(week: { startDate: string }): CivilDate {
@@ -96,11 +108,16 @@ export function overtimeRateForWeek(
 export function weekCardSummaryFromLiquidation(
   result: LiquidationResult,
   overtimeRatePerHour: number,
+  bagModeOverride?: boolean | null,
 ): WeekCardSummaryFromEngine {
   const preferStock =
-    result.segments.length > 0 && result.segments.every((s) => s.bagMode);
+    bagModeOverride === true
+      ? true
+      : bagModeOverride === false
+        ? false
+        : result.segments.length > 0 && result.segments.every((s) => s.bagMode);
 
-  const netPayable = netPayableHoursFromLiquidation(result);
+  const netPayable = netPayableHoursFromLiquidation(result, bagModeOverride);
 
   // En pago: extras = horas de ESTA semana que se cobran (no el crédito previo).
   // Si la semana deja deuda, netPayable=0 → extras=0 (no se puede cobrar con pendiente).
@@ -124,6 +141,7 @@ export function weekCardSummaryFromLiquidation(
 export function assertCardMatchesLiquidation(
   summary: WeekCardSummaryFromEngine,
   result: LiquidationResult,
+  bagModeOverride?: boolean | null,
 ): void {
   const eps = 1e-9;
   if (Math.abs(summary.totalHours - result.hoursWorked) > eps) {
@@ -132,7 +150,7 @@ export function assertCardMatchesLiquidation(
   if (Math.abs(summary.startBalance - result.carryIn) > eps) {
     throw new Error('Footer PENDIENTES ≠ carryIn');
   }
-  const netPayable = netPayableHoursFromLiquidation(result);
+  const netPayable = netPayableHoursFromLiquidation(result, bagModeOverride);
   if (Math.abs(summary.estimatedValue - netPayable * summary.hourlyRate) > eps) {
     throw new Error('Footer IMPORTE ≠ netPayable × tarifa');
   }
@@ -155,6 +173,8 @@ export function liquidateWeekForCard(input: {
   logs: readonly TimeLogFact[];
   isPaid?: boolean;
   carryIn: number;
+  /** Override semanal Bolsa/Pago; null → contrato. */
+  bagModeOverride?: boolean | null;
 }): {
   result: LiquidationResult;
   extrasByDay: Readonly<Record<CivilDate, number>>;
@@ -166,10 +186,15 @@ export function liquidateWeekForCard(input: {
     logs: input.logs,
     isPaid: input.isPaid ?? false,
     carryIn: input.carryIn,
+    bagModeOverride: input.bagModeOverride,
   });
   const rate = overtimeRateForWeek(input.employee, input.weekStart);
-  const summary = weekCardSummaryFromLiquidation(result, rate);
-  assertCardMatchesLiquidation(summary, result);
+  const summary = weekCardSummaryFromLiquidation(
+    result,
+    rate,
+    input.bagModeOverride,
+  );
+  assertCardMatchesLiquidation(summary, result, input.bagModeOverride);
   return {
     result,
     extrasByDay: extrasByDayFromResult(result),
@@ -180,7 +205,7 @@ export function liquidateWeekForCard(input: {
 type WeekLike = {
   startDate: string;
   days: ReadonlyArray<{ date: string; extraHours: number }>;
-  /** Solo se lee `isPaid`; el resto del summary se preserva al parchear. */
+  /** Solo se lee `isPaid` y override de bolsa; el resto se regenera. */
   summary?: WeekAdminFlags;
 };
 
@@ -193,7 +218,11 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
   weeks: readonly TWeek[],
   employee: EmployeeBoundaryFacts,
   logs: readonly TimeLogFact[],
-  options: { openingCarryIn: number },
+  options: {
+    openingCarryIn: number;
+    /** Override Bolsa/Pago por weekStart; ausente → null (contrato). */
+    bagModeOverrideByWeek?: (weekStart: CivilDate) => boolean | null;
+  },
 ): TWeek[] {
   const indexed = weeks.map((week, index) => ({ week, index }));
   indexed.sort((a, b) =>
@@ -217,12 +246,18 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
     });
 
     const isPaid = week.summary?.isPaid === true;
+    const bagModeOverride =
+      week.summary?.bagModeOverride ??
+      options.bagModeOverrideByWeek?.(weekStart) ??
+      null;
+
     const { result, extrasByDay, summary } = liquidateWeekForCard({
       employee,
       weekStart,
       logs: weekLogs,
       isPaid,
       carryIn,
+      bagModeOverride,
     });
 
     carryIn = result.carryOut;
@@ -233,6 +268,7 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
         ...(week.summary ?? {}),
         ...summary,
         isPaid,
+        bagModeOverride,
       },
       days: week.days.map((day) => {
         const key =

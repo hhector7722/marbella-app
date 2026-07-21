@@ -35,7 +35,7 @@ import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows } from '@/lib/hours-engine';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -310,7 +310,7 @@ export default function StaffDashboardView() {
                 }),
                 supabase
                     .from('weekly_snapshots')
-                    .select('week_start, is_paid')
+                    .select('week_start, is_paid, prefer_stock_hours_override')
                     .eq('user_id', user.id)
                     .gte('week_start', logsFromYmd)
                     .lte('week_start', weekStartYmd),
@@ -336,12 +336,15 @@ export default function StaffDashboardView() {
             }));
 
             const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
+            const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
             const isPaid = isPaidByWeek(weekStartYmd);
+            const bagModeOverride = bagModeOverrideByWeek(weekStartYmd);
             const carryIn = resolveOpeningCarryIn({
                 employee: employeeFacts,
                 chainStart: weekStartYmd,
                 logs: engineLogs,
                 isPaidByWeek,
+                bagModeOverrideByWeek,
             });
 
             // Misma liquidación que historial: PENDIENTES = carryIn; EXTRAS/IMPORTE desde el motor.
@@ -351,6 +354,7 @@ export default function StaffDashboardView() {
                 logs: engineLogs,
                 isPaid,
                 carryIn,
+                bagModeOverride,
             });
 
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
@@ -388,6 +392,7 @@ export default function StaffDashboardView() {
                 status: 'pending',
                 startBalance: summary.startBalance,
             });
+            setPreferStock(summary.preferStock);
 
             // Cargar cajas de forma más robusta (Consolidación de Tesorería)
             const { data: allBoxes, error: boxError } = await supabase.from('cash_boxes').select('*').order('name');

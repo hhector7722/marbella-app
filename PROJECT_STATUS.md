@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Horas contrato enteras/medias + no cobrar con deuda)
+**Última actualización:** 2026-07-21 (Fix selección Pago/Bolsa semanal)
+
+- [x] **Fix selección Pago/Bolsa semanal (2026-07-21)**: El motor ignoraba `weekly_snapshots.prefer_stock_hours_override` y repintaba siempre el `bagMode` del contrato. Ahora `liquidateWeek` acepta `bagModeOverride`; historial/modal/home leen el override y lo aplican en liquidación + carry. Aplicar Bolsa/Pago en WeekCard vuelve a persistir y verse.
+
+**Última actualización anterior:** 2026-07-21 (Horas contrato enteras/medias + no cobrar con deuda)
 
 - [x] **Horas contrato enteras/medias + no cobrar con deuda (2026-07-21)**:
   1. `computeCarry` netea la semana antes de liquidar → imposible cobrar extras y arrastrar deuda.
