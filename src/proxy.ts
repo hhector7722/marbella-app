@@ -73,6 +73,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Propuestas comerciales estáticas (sin login)
+  if (path === "/propuestas" || path.startsWith("/propuestas/")) {
+    return NextResponse.next();
+  }
+
   if (path === "/staff") {
     return NextResponse.redirect(new URL("/staff/dashboard", request.url));
   }

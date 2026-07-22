@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Propuestas · Bar La Marbella</title>
+  <style>
+    :root {
+      --petroleo: #36606F;
+      --petroleo-dark: #2A4C58;
+      --ink: #1a1a1a;
+      --muted: #5c5c5c;
+      --line: #e8e8e8;
+      --bg: #f7f8f8;
+      --white: #fff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.35;
+      -webkit-font-smoothing: antialiased;
+    }
+    .sheet {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 0.35rem 0 0.15rem;
+    }
+    .logo-wrap img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+    .nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .nav button {
+      min-height: 48px;
+      border-radius: 0.75rem;
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--petroleo-dark);
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .nav button[aria-selected="true"] {
+      background: var(--petroleo);
+      border-color: var(--petroleo);
+      color: var(--white);
+    }
+    .nav button:focus-visible {
+      outline: 2px solid var(--petroleo);
+      outline-offset: 2px;
+    }
+    .panel {
+      display: none;
+    }
+    .panel.is-active {
+      display: block;
+    }
+    .card {
+      background: var(--white);
+      border: 2px solid var(--petroleo);
+      border-radius: 1rem;
+      padding: 1.15rem 1.15rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      box-shadow: 0 4px 16px rgba(54,96,111,0.12);
+    }
+    .card h2 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--petroleo);
+    }
+    .price {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+    }
+    .price .big {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .price .unit {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .totals {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+    }
+    .tot {
+      background: var(--bg);
+      border-radius: 0.65rem;
+      padding: 0.55rem 0.55rem;
+      text-align: center;
+    }
+    .tot .n {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--petroleo);
+    }
+    .tot .l {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    ul.items {
+      list-style: none;
+      display: grid;
+      gap: 0.45rem;
+    }
+    ul.items li {
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      gap: 0.45rem;
+      align-items: start;
+      font-size: 0.95rem;
+    }
+    ul.items .qty {
+      font-weight: 800;
+      color: var(--petroleo);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    ul.items .txt { color: var(--ink); }
+    @media (max-width: 480px) {
+      .logo-wrap img { height: 44px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .sheet { padding: 0; max-width: none; }
+      .nav { display: none; }
+      .panel { display: block !important; page-break-after: always; }
+      .card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="logo-wrap">
+      <img src="/icons/logo-share.png" alt="Bar La Marbella" width="393" height="212" />
+    </div>
+
+    <nav class="nav" role="tablist" aria-label="Opciones">
+      <button type="button" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="false" data-pack="a">A</button>
+      <button type="button" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" data-pack="b">B</button>
+      <button type="button" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="true" data-pack="c">C</button>
+    </nav>
+
+    <div id="panel-a" class="panel" role="tabpanel" aria-labelledby="tab-a" hidden>
+      <article class="card">
+        <h2>A</h2>
+        <div class="price">
+          <span class="big">12 €</span>
+          <span class="unit">/ persona</span>
+        </div>
+        <div class="totals">
+          <div class="tot"><div class="n">300 €</div><div class="l">25 personas</div></div>
+          <div class="tot"><div class="n">360 €</div><div class="l">30 personas</div></div>
+        </div>
+        <ul class="items">
+          <li><span class="qty">3</span><span class="txt">Tortillas + pa amb tomàquet</span></li>
+          <li><span class="qty">4</span><span class="txt">Patates braves</span></li>
+          <li><span class="qty">2</span><span class="txt">Calamares</span></li>
+          <li><span class="qty">1</span><span class="txt">Croqueta de cocido / persona</span></li>
+          <li><span class="qty">12</span><span class="txt">Bocadillos en montaditos</span></li>
+          <li><span class="qty">2</span><span class="txt">Bebidas / persona</span></li>
+        </ul>
+      </article>
+    </div>
+
+    <div id="panel-b" class="panel" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <article class="card">
+        <h2>B</h2>
+        <div class="price">
+          <span class="big">15 €</span>
+          <span class="unit">/ persona</span>
+        </div>
+        <div class="totals">
+          <div class="tot"><div class="n">375 €</div><div class="l">25 personas</div></div>
+          <div class="tot"><div class="n">450 €</div><div class="l">30 personas</div></div>
+        </div>
+        <ul class="items">
+          <li><span class="qty">3</span><span class="txt">Tortillas + pa amb tomàquet</span></li>
+          <li><span class="qty">4</span><span class="txt">Patates braves</span></li>
+          <li><span class="qty">3</span><span class="txt">Calamares</span></li>
+          <li><span class="qty">2</span><span class="txt">Croquetas de cocido / persona</span></li>
+          <li><span class="qty">14</span><span class="txt">Bocadillos en montaditos</span></li>
+          <li><span class="qty">2</span><span class="txt">Bebidas / persona</span></li>
+        </ul>
+      </article>
+    </div>
+
+    <div id="panel-c" class="panel is-active" role="tabpanel" aria-labelledby="tab-c">
+      <article class="card">
+        <h2>C</h2>
+        <div class="price">
+          <span class="big">16 €</span>
+          <span class="unit">/ persona</span>
+        </div>
+        <div class="totals">
+          <div class="tot"><div class="n">400 €</div><div class="l">25 personas</div></div>
+          <div class="tot"><div class="n">480 €</div><div class="l">30 personas</div></div>
+        </div>
+        <ul class="items">
+          <li><span class="qty">3</span><span class="txt">Tortillas + pa amb tomàquet</span></li>
+          <li><span class="qty">4</span><span class="txt">Patates braves</span></li>
+          <li><span class="qty">4</span><span class="txt">Calamares</span></li>
+          <li><span class="qty">2</span><span class="txt">Croquetas de cocido / persona</span></li>
+          <li><span class="qty">16</span><span class="txt">Bocadillos en montaditos</span></li>
+          <li><span class="qty">2</span><span class="txt">Bebidas / persona</span></li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var tabs = document.querySelectorAll('.nav button[data-pack]');
+      var panels = {
+        a: document.getElementById('panel-a'),
+        b: document.getElementById('panel-b'),
+        c: document.getElementById('panel-c')
+      };
+
+      function show(pack) {
+        Object.keys(panels).forEach(function (key) {
+          var panel = panels[key];
+          var on = key === pack;
+          panel.classList.toggle('is-active', on);
+          if (on) panel.removeAttribute('hidden');
+          else panel.setAttribute('hidden', '');
+        });
+        tabs.forEach(function (btn) {
+          var on = btn.getAttribute('data-pack') === pack;
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      }
+
+      tabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          show(btn.getAttribute('data-pack'));
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

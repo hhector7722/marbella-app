@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [{ source: "/propuestas", destination: "/propuestas/index.html" }];
+  },
   webpack: (config) => {
     config.resolve.alias.canvas = false;
 
