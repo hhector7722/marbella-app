@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-21 (Condiciones laborales: fecha inicio editable)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-22 (Condiciones laborales: fecha fin editable)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Fecha de finalización editable en condiciones laborales (2026-07-22)**: En `/profile/contrato`, al editar un tramo el campo «Hasta» deja de ser solo lectura («Vigente»). `rescheduleTermEnd` / `rescheduleTermBounds` recalculan el siguiente tramo (sin huecos); vacío = vigente (solo último). Si cambia el fin del último tramo, sincroniza `profiles.end_date`. Tests versionado + labor.
 - **Fecha de inicio editable en condiciones laborales (2026-07-21)**: En `/profile/contrato`, al editar un tramo del histórico la fecha de inicio es editable. `rescheduleTermStart` recalcula el tramo anterior (sin huecos) y, si es el primer tramo, sincroniza `profiles.joining_date`. Tests versionado + labor.
 - **Fix filtro empleado bolsa+deuda (2026-07-21)**: Pere (y similares) fallaban al filtrar en `/staff/history` — assert `EXTRAS > 0 con carryOut negativo` en modo bolsa. Footer EXTRAS = 0 si queda deuda (igual que pago). Toast con detalle del error. Tests week-card **19/19**; plantilla julio OK todos.
 - **Historial filtrado alineado a plantilla (2026-07-21)**: En `/staff/history`, la vista empleado ya no usa `get_monthly_timesheet` para relojes. Semanas desde `time_logs` + TZ Madrid (`buildEmployeeWeeksFromTimeLogs`), igual que plantilla. Footer sigue con hours-engine. Export multi + simulación YTD mismo criterio. Tests: `build-employee-weeks-from-logs.test.ts` (4).
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Aviso visual pedido cliente (2026-07-16)**: Al «Enviar pedido», RPC inserta `user_notifications` (`client_order_submitted`) para alba/hernan/pere/hector — aparece en campana. Deep link `/staff/reservas?eventId=`. Badge rojo discreto sobre el punto verde/naranja/azul del calendario mientras la notificación esté sin leer; se quita al abrir el pedido. Sin tablas nuevas ni cambio de colores/leyenda. Migración [`20260716180000_notify_client_order_submitted.sql`](supabase/migrations/20260716180000_notify_client_order_submitted.sql) **aplicada**.
 - **UX pedido por enlace (2026-07-16)**: Bienvenida antes de la carta (`PedidoBienvenidaView` → «Empezar pedido»). Carta sin cambios. Confirmación post-envío rediseñada (`PedidoEnviadoView` + WhatsApp al 932 254 427 / `NEXT_PUBLIC_MARBELLA_WHATSAPP`). Mensaje WhatsApp staff más cuidado (fecha/hora/personas + URL). Sin cambios de modelo, permisos ni lógica de pedidos.
 - **Calendarios mensuales: filas iguales y menos agobio en escritorio (2026-07-16)**: Fix CSS `month-cal-*` — celdas `height:100%` + `min-height:0` (el contenido ya no estira filas); semanas `flex:1` iguales; chips densos (`month-cal-chips`). Historial calendario: oculta gráfico en `lg`, KPIs compactos, calendario `flex-1` con filas uniformes. Smartphone/tablet sin cambios.
-- **Fase 2 Invalidation Orchestrator (2026-07-16)**: Módulo [`src/lib/hours-engine/orchestrator/`](src/lib/hours-engine/orchestrator/) — impacto → confirmación → reapertura Pagada → `liquidateWeek` → propagación por `carryOut` → persistencia de `LiquidationResult`. Núcleo Fase 1 **sin cambios**. Stores en memoria (`MemoryFactStore` / `MemoryResultStore`) como puertos. Tests: `npm run test:hours-engine:orchestrator` (20) + suite completa **58/58**. Sin UI, sin migración legacy, sin Cost Engine.
 
 <!-- sync:project-status:end -->

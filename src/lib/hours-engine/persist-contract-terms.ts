@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   applyContractualChange,
   rewriteHistoricalTerm,
+  rescheduleTermBounds,
   rescheduleTermStart,
   type ContractualSnapshot,
 } from './contract-terms-versioning.ts';
@@ -108,6 +109,32 @@ export async function persistTermReschedule(
 ): Promise<{ kind: string; terms: readonly ContractTermFact[] }> {
   const current = await loadTerms(supabase, userId);
   const plan = rescheduleTermStart(current, originalFrom, newFrom, nextSnapshot);
+  if (plan.kind === 'noop') {
+    return plan;
+  }
+  await replaceAllTerms(supabase, userId, plan.terms);
+  return plan;
+}
+
+/**
+ * Mueve inicio y/o fin de un tramo (recalcula vecinos) y aplica condiciones.
+ */
+export async function persistTermBoundsReschedule(
+  supabase: SupabaseClient,
+  userId: string,
+  originalFrom: CivilDate,
+  newFrom: CivilDate,
+  newTo: CivilDate | null,
+  nextSnapshot: ContractualSnapshot,
+): Promise<{ kind: string; terms: readonly ContractTermFact[] }> {
+  const current = await loadTerms(supabase, userId);
+  const plan = rescheduleTermBounds(
+    current,
+    originalFrom,
+    newFrom,
+    newTo,
+    nextSnapshot,
+  );
   if (plan.kind === 'noop') {
     return plan;
   }

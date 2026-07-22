@@ -313,35 +313,128 @@ export function rescheduleTermStart(
     throw new Error(`No hay tramo que empiece el ${originalFrom}`);
   }
 
-  if (compareCivilDate(newFrom, originalFrom) === 0) {
-    return rewriteHistoricalTerm(terms, originalFrom, nextSnapshot);
+  const target = sorted[idx]!;
+  return rescheduleTermBounds(
+    terms,
+    originalFrom,
+    newFrom,
+    target.effectiveTo,
+    nextSnapshot,
+  );
+}
+
+/**
+ * Mueve la fecha de fin de un tramo y recalcula el inicio del siguiente
+ * (sin huecos). null = vigente (solo permitido en el último tramo).
+ */
+export function rescheduleTermEnd(
+  terms: readonly ContractTermFact[],
+  originalFrom: CivilDate,
+  newTo: CivilDate | null,
+  nextSnapshot: ContractualSnapshot,
+): VersioningResult {
+  const sorted = [...terms].sort((a, b) =>
+    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
+  );
+  const idx = sorted.findIndex(
+    (t) => compareCivilDate(t.effectiveFrom, originalFrom) === 0,
+  );
+  if (idx < 0) {
+    throw new Error(`No hay tramo que empiece el ${originalFrom}`);
+  }
+  const target = sorted[idx]!;
+  return rescheduleTermBounds(
+    terms,
+    originalFrom,
+    target.effectiveFrom,
+    newTo,
+    nextSnapshot,
+  );
+}
+
+/**
+ * Mueve inicio y/o fin de un tramo (identificado por effectiveFrom original).
+ * Recalcula vecinos para no dejar huecos. Aplica el snapshot al tramo.
+ */
+export function rescheduleTermBounds(
+  terms: readonly ContractTermFact[],
+  originalFrom: CivilDate,
+  newFrom: CivilDate,
+  newTo: CivilDate | null,
+  nextSnapshot: ContractualSnapshot,
+): VersioningResult {
+  const sorted = [...terms].sort((a, b) =>
+    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
+  );
+  const idx = sorted.findIndex(
+    (t) => compareCivilDate(t.effectiveFrom, originalFrom) === 0,
+  );
+  if (idx < 0) {
+    throw new Error(`No hay tramo que empiece el ${originalFrom}`);
   }
 
   const target = sorted[idx]!;
-  if (
-    target.effectiveTo !== null &&
-    compareCivilDate(newFrom, target.effectiveTo) > 0
-  ) {
+  const fromUnchanged = compareCivilDate(newFrom, originalFrom) === 0;
+  const toUnchanged =
+    (newTo === null && target.effectiveTo === null) ||
+    (newTo !== null &&
+      target.effectiveTo !== null &&
+      compareCivilDate(newTo, target.effectiveTo) === 0);
+
+  if (fromUnchanged && toUnchanged) {
+    return rewriteHistoricalTerm(terms, originalFrom, nextSnapshot);
+  }
+
+  if (newTo !== null && compareCivilDate(newFrom, newTo) > 0) {
     throw new Error(
-      `La fecha de inicio (${newFrom}) no puede ser posterior al fin del tramo (${target.effectiveTo})`,
+      `La fecha de inicio (${newFrom}) no puede ser posterior al fin (${newTo})`,
+    );
+  }
+
+  if (newTo === null && idx < sorted.length - 1) {
+    throw new Error(
+      'Solo el último tramo puede quedar vigente (sin fecha de fin)',
     );
   }
 
   const updated = sorted.map((t) => ({ ...t }));
 
-  if (idx === 0) {
-    updated[0] = snapshotToTerm(nextSnapshot, newFrom, target.effectiveTo);
-  } else {
-    const prev = updated[idx - 1]!;
-    if (compareCivilDate(newFrom, prev.effectiveFrom) <= 0) {
+  // Ajustar tramo anterior si se mueve el inicio
+  if (!fromUnchanged) {
+    if (idx === 0) {
+      // Solo cambia el from del primero
+    } else {
+      const prev = updated[idx - 1]!;
+      if (compareCivilDate(newFrom, prev.effectiveFrom) <= 0) {
+        throw new Error(
+          `La fecha de inicio debe ser posterior al inicio del tramo anterior (${prev.effectiveFrom})`,
+        );
+      }
+      updated[idx - 1] = { ...prev, effectiveTo: previousCivilDay(newFrom) };
+    }
+  }
+
+  // Ajustar tramo siguiente si se mueve el fin
+  if (!toUnchanged && idx < updated.length - 1) {
+    if (newTo === null) {
       throw new Error(
-        `La fecha de inicio debe ser posterior al inicio del tramo anterior (${prev.effectiveFrom})`,
+        'Solo el último tramo puede quedar vigente (sin fecha de fin)',
       );
     }
-    const dayBefore = previousCivilDay(newFrom);
-    updated[idx - 1] = { ...prev, effectiveTo: dayBefore };
-    updated[idx] = snapshotToTerm(nextSnapshot, newFrom, target.effectiveTo);
+    const next = updated[idx + 1]!;
+    const nextFrom = nextCivilDay(newTo);
+    if (
+      next.effectiveTo !== null &&
+      compareCivilDate(nextFrom, next.effectiveTo) > 0
+    ) {
+      throw new Error(
+        `La fecha de fin (${newTo}) deja sin días el tramo siguiente (fin ${next.effectiveTo})`,
+      );
+    }
+    updated[idx + 1] = { ...next, effectiveFrom: nextFrom };
   }
+
+  updated[idx] = snapshotToTerm(nextSnapshot, newFrom, newTo);
 
   const coalesced = coalesceIdenticalConsecutiveTerms(updated);
   assertContractTermInvariants(coalesced);

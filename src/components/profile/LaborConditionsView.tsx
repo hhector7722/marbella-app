@@ -53,12 +53,12 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('change');
-  /** Fin del tramo en reescritura (solo lectura en UI). */
-  const [editingTermTo, setEditingTermTo] = useState<string | null>(null);
   /** Inicio original del tramo (para detectar movimiento de fecha). */
   const [editingTermOriginalFrom, setEditingTermOriginalFrom] = useState<string | null>(
     null,
   );
+  /** Fin original del tramo (null = vigente). */
+  const [editingTermOriginalTo, setEditingTermOriginalTo] = useState<string | null>(null);
   const [employeeName, setEmployeeName] = useState('');
   const [terms, setTerms] = useState<LaborTermDto[]>([]);
   const [form, setForm] = useState<LaborConditionsFormInput>({
@@ -67,6 +67,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
     bagMode: false,
     overtimeRatePerHour: null,
     effectiveFrom: todayMadridYmd(),
+    effectiveTo: null,
   });
 
   const load = useCallback(async () => {
@@ -102,14 +103,14 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const closeEditor = () => {
     setEditing(false);
     setEditMode('change');
-    setEditingTermTo(null);
     setEditingTermOriginalFrom(null);
+    setEditingTermOriginalTo(null);
   };
 
   const startChange = () => {
     setEditMode('change');
-    setEditingTermTo(null);
     setEditingTermOriginalFrom(null);
+    setEditingTermOriginalTo(null);
     if (vigente) {
       setForm({
         weeklyHours: vigente.weeklyHours,
@@ -117,24 +118,30 @@ export default function LaborConditionsView({ employeeId }: Props) {
         bagMode: vigente.bagMode,
         overtimeRatePerHour: vigente.overtimeRatePerHour,
         effectiveFrom: todayMadridYmd(),
+        effectiveTo: null,
       });
     } else {
-      setForm((f) => ({ ...f, effectiveFrom: todayMadridYmd() }));
+      setForm((f) => ({
+        ...f,
+        effectiveFrom: todayMadridYmd(),
+        effectiveTo: null,
+      }));
     }
     setEditing(true);
   };
 
-  /** Corrige un tramo ya registrado (fecha de inicio editable; recalcula vecinos). */
+  /** Corrige un tramo ya registrado (inicio y fin editables; recalcula vecinos). */
   const startRewriteTerm = (t: LaborTermDto) => {
     setEditMode('rewrite');
-    setEditingTermTo(t.effectiveTo);
     setEditingTermOriginalFrom(t.effectiveFrom);
+    setEditingTermOriginalTo(t.effectiveTo);
     setForm({
       weeklyHours: t.weeklyHours,
       regime: t.regime as ContractRegime,
       bagMode: t.bagMode,
       overtimeRatePerHour: t.overtimeRatePerHour,
       effectiveFrom: t.effectiveFrom,
+      effectiveTo: t.effectiveTo,
     });
     setEditing(true);
   };
@@ -147,8 +154,16 @@ export default function LaborConditionsView({ employeeId }: Props) {
         weeklyHours:
           form.regime === 'manager' || form.regime === 'fixed' ? 0 : form.weeklyHours,
         effectiveFrom: form.effectiveFrom || todayMadridYmd(),
+        effectiveTo:
+          editMode === 'rewrite'
+            ? form.effectiveTo == null || String(form.effectiveTo).trim() === ''
+              ? null
+              : form.effectiveTo
+            : undefined,
         originalEffectiveFrom:
           editMode === 'rewrite' ? editingTermOriginalFrom ?? undefined : undefined,
+        originalEffectiveTo:
+          editMode === 'rewrite' ? editingTermOriginalTo : undefined,
       };
       const res = await updateLaborConditions(employeeId, payload);
       if (!res.success) {
@@ -168,7 +183,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
       toast.success(
         editMode === 'rewrite'
           ? res.kind === 'rescheduled'
-            ? 'Fecha de inicio y condiciones actualizadas'
+            ? 'Fechas y condiciones actualizadas'
             : 'Tramo contractual actualizado'
           : 'Condiciones laborales actualizadas',
       );
@@ -290,8 +305,9 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 ) : (
                   <>
                     <p className="mb-3 text-xs text-zinc-500">
-                      Pulsa un tramo para corregir condiciones o su fecha de inicio. Al
-                      cambiar el inicio se recalcula el tramo anterior (sin huecos).
+                      Pulsa un tramo para corregir condiciones, inicio o fin. Al cambiar
+                      fechas se recalculan los vecinos (sin huecos). Vacío en fin =
+                      vigente.
                     </p>
                     <div className="divide-y divide-zinc-100">
                       {[...terms]
@@ -348,7 +364,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
             <div className="p-4">
               <p className="text-xs text-zinc-500">
                 {editMode === 'rewrite'
-                  ? 'Puedes cambiar la fecha de inicio; el histórico se recalcula solo. El fin del periodo no se edita aquí.'
+                  ? 'Puedes cambiar inicio y fin; el histórico se recalcula solo. Deja fin vacío para «Vigente» (solo el último tramo).'
                   : 'Indica desde cuándo aplican. El histórico se reconstruye solo.'}
               </p>
 
@@ -361,8 +377,8 @@ export default function LaborConditionsView({ employeeId }: Props) {
                     type="date"
                     value={form.effectiveFrom ?? ''}
                     max={
-                      editMode === 'rewrite' && editingTermTo
-                        ? editingTermTo
+                      editMode === 'rewrite' && form.effectiveTo
+                        ? form.effectiveTo
                         : undefined
                     }
                     onChange={(e) =>
@@ -380,13 +396,48 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 </label>
 
                 {editMode === 'rewrite' ? (
-                  <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                      Hasta
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-zinc-900">
-                      {editingTermTo ? formatYmdEs(editingTermTo) : 'Vigente'}
-                    </p>
+                  <div>
+                    <label className="block">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        Fecha de finalización
+                      </span>
+                      <input
+                        type="date"
+                        value={form.effectiveTo ?? ''}
+                        min={form.effectiveFrom || undefined}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            effectiveTo: e.target.value === '' ? null : e.target.value,
+                          }))
+                        }
+                        className={cn(
+                          'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
+                          'text-sm font-bold text-zinc-800',
+                          'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
+                        )}
+                      />
+                    </label>
+                    <div className="mt-2 flex min-h-12 shrink-0 items-center justify-between gap-2">
+                      <p className="text-xs text-zinc-500">
+                        {form.effectiveTo
+                          ? `Hasta ${formatYmdEs(form.effectiveTo)}`
+                          : 'Vigente (sin fecha de fin)'}
+                      </p>
+                      {form.effectiveTo ? (
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, effectiveTo: null }))}
+                          className={cn(
+                            'shrink-0 min-h-12 rounded-xl border border-zinc-200 px-3',
+                            'text-[10px] font-black uppercase tracking-widest text-zinc-700',
+                            'active:scale-[0.98]',
+                          )}
+                        >
+                          Vigente
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
 

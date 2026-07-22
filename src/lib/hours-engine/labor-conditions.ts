@@ -21,12 +21,21 @@ export type LaborConditionsFormInput = {
   /** YYYY-MM-DD; por defecto la action usa hoy Madrid si falta. */
   effectiveFrom?: string;
   /**
+   * Fin del tramo al editar histórico. null / '' = vigente (abierto).
+   * Solo se interpreta en reescritura (con originalEffectiveFrom).
+   */
+  effectiveTo?: string | null;
+  /**
    * Si se edita un tramo existente: effectiveFrom original del tramo.
    * Si difiere de effectiveFrom → se mueve el inicio y se recalcula el histórico.
    */
   originalEffectiveFrom?: string;
+  /**
+   * Fin original del tramo (null = vigente). Si difiere de effectiveTo →
+   * se mueve el fin y se recalcula el siguiente.
+   */
+  originalEffectiveTo?: string | null;
 };
-
 export type ProfileContractMirror = {
   contracted_hours_weekly: number;
   prefer_stock_hours: boolean;

@@ -5,6 +5,8 @@ import {
   assertContractTermInvariants,
   coalesceIdenticalConsecutiveTerms,
   rewriteHistoricalTerm,
+  rescheduleTermBounds,
+  rescheduleTermEnd,
   rescheduleTermStart,
   snapshotFromProfileFields,
   snapshotsEqual,
@@ -198,6 +200,95 @@ describe('contract-terms-versioning', () => {
     );
     assert.equal(r.kind, 'rescheduled');
     assert.equal(r.terms[0]!.effectiveFrom, '2026-02-01');
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermEnd: cierra el vigente y sincroniza frontera', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', null, 40),
+    ];
+    const r = rescheduleTermEnd(
+      base,
+      '2026-03-01',
+      '2026-06-30',
+      { weeklyHours: 40, bagMode: true, regime: 'staff', overtimeRatePerHour: 10 },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms.length, 2);
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-03-01');
+    assert.equal(r.terms[1]!.effectiveTo, '2026-06-30');
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermEnd: mueve fin y recalcula inicio del siguiente', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', null, 40),
+    ];
+    const r = rescheduleTermEnd(
+      base,
+      '2026-01-01',
+      '2026-03-15',
+      { weeklyHours: 16, bagMode: false, regime: 'staff', overtimeRatePerHour: 10 },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-03-15');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-03-16');
+    assert.equal(r.terms[1]!.effectiveTo, null);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermEnd: reabre el último (fin vacío → vigente)', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', '2026-06-30', 40),
+    ];
+    const r = rescheduleTermEnd(
+      base,
+      '2026-03-01',
+      null,
+      { weeklyHours: 40, bagMode: true, regime: 'staff', overtimeRatePerHour: 10 },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms[1]!.effectiveTo, null);
+    assertContractTermInvariants(r.terms);
+  });
+
+  it('rescheduleTermEnd: aborta vigente en tramo intermedio', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', null, 40),
+    ];
+    assert.throws(() =>
+      rescheduleTermEnd(
+        base,
+        '2026-01-01',
+        null,
+        { weeklyHours: 16, bagMode: false, regime: 'staff', overtimeRatePerHour: 10 },
+      ),
+    );
+  });
+
+  it('rescheduleTermBounds: mueve inicio y fin a la vez', () => {
+    const base = [
+      term('2026-01-01', '2026-02-28', 16),
+      term('2026-03-01', '2026-05-31', 32),
+      term('2026-06-01', null, 40),
+    ];
+    const r = rescheduleTermBounds(
+      base,
+      '2026-03-01',
+      '2026-02-15',
+      '2026-04-30',
+      { weeklyHours: 24, bagMode: false, regime: 'staff', overtimeRatePerHour: 12 },
+    );
+    assert.equal(r.kind, 'rescheduled');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-14');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-02-15');
+    assert.equal(r.terms[1]!.effectiveTo, '2026-04-30');
+    assert.equal(r.terms[1]!.weeklyHours, 24);
+    assert.equal(r.terms[2]!.effectiveFrom, '2026-05-01');
     assertContractTermInvariants(r.terms);
   });
 

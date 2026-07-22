@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-21 (Condiciones laborales: fecha inicio editable)
+**Última actualización:** 2026-07-22 (Condiciones laborales: fecha fin editable)
+
+- [x] **Fecha de finalización editable en condiciones laborales (2026-07-22)**: En `/profile/contrato`, al editar un tramo el campo «Hasta» deja de ser solo lectura («Vigente»). `rescheduleTermEnd` / `rescheduleTermBounds` recalculan el siguiente tramo (sin huecos); vacío = vigente (solo último). Si cambia el fin del último tramo, sincroniza `profiles.end_date`. Tests versionado + labor.
+
+**Última actualización anterior:** 2026-07-21 (Condiciones laborales: fecha inicio editable)
 
 - [x] **Fecha de inicio editable en condiciones laborales (2026-07-21)**: En `/profile/contrato`, al editar un tramo del histórico la fecha de inicio es editable. `rescheduleTermStart` recalcula el tramo anterior (sin huecos) y, si es el primer tramo, sincroniza `profiles.joining_date`. Tests versionado + labor.
 

@@ -40,6 +40,8 @@ export {
   coalesceIdenticalConsecutiveTerms,
   findTermContaining,
   rewriteHistoricalTerm,
+  rescheduleTermBounds,
+  rescheduleTermEnd,
   rescheduleTermStart,
   snapshotFromProfileFields,
   snapshotsEqual,
@@ -47,6 +49,7 @@ export {
 export {
   persistContractualChange,
   persistHistoricalTermRewrite,
+  persistTermBoundsReschedule,
   persistTermReschedule,
 } from './persist-contract-terms.ts';
 
