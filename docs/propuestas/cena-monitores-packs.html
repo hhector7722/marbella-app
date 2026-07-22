@@ -11,13 +11,13 @@
     :root {
       --petroleo: #36606F;
       --petroleo-deep: #243f48;
-      --card: #2d505c;
-      --card-hi: #335864;
-      --ink: #f4f7f8;
-      --muted: #a8bdc4;
-      --line: rgba(255, 255, 255, 0.1);
-      --accent: #7ec8d8;
-      --accent-strong: #5eb4c8;
+      --card: #ffffff;
+      --ink: #1c2428;
+      --muted: #6a787e;
+      --line: rgba(54, 96, 111, 0.14);
+      --soft: #eef3f4;
+      --accent: #5eb4c8;
+      --accent-strong: #36606F;
       --white: #ffffff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,10 +75,11 @@
       flex-direction: column;
       gap: 0.35rem;
       overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
     }
     .card.featured {
-      background: var(--card-hi);
-      border: 2px solid var(--accent);
+      background: var(--card);
+      border: 2px solid var(--petroleo);
       padding-top: 0.85rem;
     }
     .badge {
@@ -86,8 +87,8 @@
       top: 0;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: var(--accent-strong);
-      color: var(--petroleo-deep);
+      background: var(--petroleo);
+      color: var(--white);
       font-size: 0.58rem;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -103,7 +104,7 @@
       font-size: clamp(1.45rem, 5.8vw, 1.85rem);
       font-weight: 700;
       letter-spacing: -0.03em;
-      color: var(--white);
+      color: var(--petroleo-deep);
       line-height: 1;
     }
     .price-block .unit {
@@ -118,7 +119,7 @@
       gap: 0.3rem;
     }
     .tot {
-      background: rgba(0, 0, 0, 0.18);
+      background: var(--soft);
       border: 1px solid var(--line);
       border-radius: 0.55rem;
       padding: 0.28rem 0.45rem;
@@ -130,7 +131,7 @@
     .tot .n {
       font-size: clamp(0.9rem, 3.4vw, 1.05rem);
       font-weight: 700;
-      color: var(--accent);
+      color: var(--petroleo);
       line-height: 1;
     }
     .tot .l {
@@ -146,8 +147,8 @@
       min-height: 40px;
       border: none;
       border-radius: 0.65rem;
-      background: var(--accent-strong);
-      color: var(--petroleo-deep);
+      background: var(--petroleo);
+      color: var(--white);
       font-family: inherit;
       font-size: 0.88rem;
       font-weight: 700;
@@ -156,7 +157,7 @@
       width: 100%;
     }
     .card.featured .cta {
-      background: var(--accent);
+      background: var(--petroleo-deep);
     }
     ul.items {
       list-style: none;
@@ -173,7 +174,7 @@
       gap: 0.4rem;
       font-size: clamp(0.72rem, 2.9vw, 0.82rem);
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
     }
     ul.items .ico {
       flex: 0 0 auto;
@@ -187,7 +188,7 @@
       min-width: 0;
     }
     ul.items strong {
-      color: var(--white);
+      color: var(--petroleo-deep);
       font-weight: 700;
     }
     @media print {
