@@ -4,15 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Propuestas · Bar La Marbella</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --petroleo: #36606F;
       --petroleo-dark: #2A4C58;
-      --ink: #1a1a1a;
-      --muted: #5c5c5c;
-      --line: #e4e8ea;
-      --soft: #f0f3f4;
-      --white: #fff;
+      --ink: #1c2428;
+      --muted: #6a787e;
+      --line: rgba(54, 96, 111, 0.12);
+      --soft: #eef3f4;
+      --white: #fffcf9;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -21,10 +24,10 @@
       overflow: hidden;
     }
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Outfit", system-ui, sans-serif;
       color: var(--ink);
       background: var(--petroleo);
-      line-height: 1.25;
+      line-height: 1.3;
       -webkit-font-smoothing: antialiased;
     }
     .sheet {
@@ -32,7 +35,7 @@
       margin: 0 auto;
       height: 100%;
       height: 100dvh;
-      padding: 0.45rem 0.55rem calc(0.45rem + env(safe-area-inset-bottom));
+      padding: 0.4rem 0.55rem calc(0.4rem + env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
@@ -43,11 +46,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0.1rem 0;
     }
     .logo-wrap img {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       object-fit: contain;
       display: block;
     }
@@ -56,98 +58,118 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.4rem;
     }
     .card {
       flex: 1 1 0;
       min-height: 0;
       background: var(--white);
-      border-radius: 0.75rem;
-      padding: 0.45rem 0.6rem 0.5rem;
+      border-radius: 1rem;
+      padding: 0.55rem 0.7rem 0.55rem;
       display: flex;
       flex-direction: column;
-      gap: 0.3rem;
-      overflow: hidden;
-    }
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       gap: 0.4rem;
-      flex: 0 0 auto;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
-    .price {
+    .head {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .price-row {
       display: flex;
       align-items: baseline;
-      gap: 0.2rem;
-      flex-shrink: 0;
+      gap: 0.35rem;
     }
-    .price .big {
-      font-size: clamp(1.35rem, 5.5vw, 1.75rem);
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      color: var(--ink);
-      line-height: 1;
-    }
-    .price .unit {
-      font-size: 0.7rem;
+    .price-row .big {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.55rem, 6vw, 1.95rem);
       font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--petroleo-dark);
+      line-height: 1;
+      font-variation-settings: "opsz" 72;
+    }
+    .price-row .unit {
+      font-size: 0.72rem;
+      font-weight: 500;
       color: var(--muted);
+      letter-spacing: 0.01em;
     }
     .totals {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.25rem;
-      flex: 1;
-      min-width: 0;
+      gap: 0.3rem;
     }
     .tot {
       background: var(--soft);
-      border-radius: 0.45rem;
-      padding: 0.25rem 0.3rem;
-      text-align: center;
+      border-radius: 0.55rem;
+      padding: 0.28rem 0.4rem;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.25rem;
     }
     .tot .n {
-      font-size: clamp(0.8rem, 3.2vw, 0.95rem);
-      font-weight: 800;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+      font-weight: 700;
       color: var(--petroleo);
-      line-height: 1.1;
+      line-height: 1;
     }
     .tot .l {
-      font-size: 0.55rem;
-      font-weight: 700;
+      font-size: 0.62rem;
+      font-weight: 600;
       color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
     }
     ul.items {
       list-style: none;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.12rem 0.45rem;
       flex: 1 1 auto;
       min-height: 0;
-      align-content: start;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
     }
     ul.items li {
-      display: grid;
-      grid-template-columns: 1.35rem 1fr;
-      gap: 0.25rem;
-      align-items: baseline;
-      font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 0;
     }
     ul.items .qty {
-      font-weight: 800;
-      color: var(--petroleo);
-      text-align: right;
+      flex: 0 0 auto;
+      min-width: 1.55rem;
+      height: 1.55rem;
+      padding: 0 0.3rem;
+      border-radius: 999px;
+      background: var(--petroleo);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
     }
-    ul.items .txt { color: var(--ink); }
+    ul.items .txt {
+      flex: 1;
+      font-size: clamp(0.78rem, 3.1vw, 0.88rem);
+      font-weight: 500;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
     @media print {
       html, body { height: auto; overflow: visible; }
       body { background: var(--petroleo); }
       .sheet { height: auto; }
-      .card { flex: none; break-inside: avoid; }
+      .card { flex: none; break-inside: avoid; box-shadow: none; }
     }
   </style>
 </head>
@@ -159,64 +181,64 @@
 
     <div class="stack">
       <article class="card">
-        <div class="top">
-          <div class="price">
+        <header class="head">
+          <div class="price-row">
             <span class="big">12 €</span>
-            <span class="unit">/ pers.</span>
+            <span class="unit">por persona</span>
           </div>
           <div class="totals">
-            <div class="tot"><div class="n">300 €</div><div class="l">25 pers.</div></div>
-            <div class="tot"><div class="n">360 €</div><div class="l">30 pers.</div></div>
+            <div class="tot"><span class="n">300 €</span><span class="l">25 pers.</span></div>
+            <div class="tot"><span class="n">360 €</span><span class="l">30 pers.</span></div>
           </div>
-        </div>
+        </header>
         <ul class="items">
-          <li><span class="qty">3</span><span class="txt">Tortillas + pa tomàquet</span></li>
+          <li><span class="qty">3</span><span class="txt">Tortillas + pa amb tomàquet</span></li>
           <li><span class="qty">4</span><span class="txt">Patates braves</span></li>
           <li><span class="qty">2</span><span class="txt">Calamares</span></li>
-          <li><span class="qty">1</span><span class="txt">Croqueta cocido / pers.</span></li>
-          <li><span class="qty">12</span><span class="txt">Bocadillos montaditos</span></li>
+          <li><span class="qty">1</span><span class="txt">Croqueta de cocido / persona</span></li>
+          <li><span class="qty">12</span><span class="txt">Bocadillos en montaditos</span></li>
           <li><span class="qty">2</span><span class="txt">Bebidas / persona</span></li>
         </ul>
       </article>
 
       <article class="card">
-        <div class="top">
-          <div class="price">
+        <header class="head">
+          <div class="price-row">
             <span class="big">15 €</span>
-            <span class="unit">/ pers.</span>
+            <span class="unit">por persona</span>
           </div>
           <div class="totals">
-            <div class="tot"><div class="n">375 €</div><div class="l">25 pers.</div></div>
-            <div class="tot"><div class="n">450 €</div><div class="l">30 pers.</div></div>
+            <div class="tot"><span class="n">375 €</span><span class="l">25 pers.</span></div>
+            <div class="tot"><span class="n">450 €</span><span class="l">30 pers.</span></div>
           </div>
-        </div>
+        </header>
         <ul class="items">
-          <li><span class="qty">3</span><span class="txt">Tortillas + pa tomàquet</span></li>
+          <li><span class="qty">3</span><span class="txt">Tortillas + pa amb tomàquet</span></li>
           <li><span class="qty">4</span><span class="txt">Patates braves</span></li>
           <li><span class="qty">3</span><span class="txt">Calamares</span></li>
-          <li><span class="qty">2</span><span class="txt">Croquetas cocido / pers.</span></li>
-          <li><span class="qty">14</span><span class="txt">Bocadillos montaditos</span></li>
+          <li><span class="qty">2</span><span class="txt">Croquetas de cocido / persona</span></li>
+          <li><span class="qty">14</span><span class="txt">Bocadillos en montaditos</span></li>
           <li><span class="qty">2</span><span class="txt">Bebidas / persona</span></li>
         </ul>
       </article>
 
       <article class="card">
-        <div class="top">
-          <div class="price">
+        <header class="head">
+          <div class="price-row">
             <span class="big">16 €</span>
-            <span class="unit">/ pers.</span>
+            <span class="unit">por persona</span>
           </div>
           <div class="totals">
-            <div class="tot"><div class="n">400 €</div><div class="l">25 pers.</div></div>
-            <div class="tot"><div class="n">480 €</div><div class="l">30 pers.</div></div>
+            <div class="tot"><span class="n">400 €</span><span class="l">25 pers.</span></div>
+            <div class="tot"><span class="n">480 €</span><span class="l">30 pers.</span></div>
           </div>
-        </div>
+        </header>
         <ul class="items">
-          <li><span class="qty">3</span><span class="txt">Tortillas + pa tomàquet</span></li>
+          <li><span class="qty">3</span><span class="txt">Tortillas + pa amb tomàquet</span></li>
           <li><span class="qty">4</span><span class="txt">Patates braves</span></li>
           <li><span class="qty">4</span><span class="txt">Calamares</span></li>
-          <li><span class="qty">2</span><span class="txt">Croquetas cocido / pers.</span></li>
-          <li><span class="qty">16</span><span class="txt">Bocadillos montaditos</span></li>
+          <li><span class="qty">2</span><span class="txt">Croquetas de cocido / persona</span></li>
+          <li><span class="qty">16</span><span class="txt">Bocadillos en montaditos</span></li>
           <li><span class="qty">2</span><span class="txt">Bebidas / persona</span></li>
         </ul>
       </article>
