@@ -59,18 +59,13 @@ describe('aggregateLogsForDay', () => {
             {
                 clock_in: '2026-07-07T08:00:00.000Z',
                 clock_out: '2026-07-07T14:00:00.000Z',
-                total_hours: 6,
+                total_hours: 7,
+                justified_hours: 1,
                 event_type: 'regular',
-            },
-            {
-                // Reloj sintético — no debe robar entrada/salida de la jornada real
-                clock_in: '2026-07-06T22:00:00.000Z',
-                clock_out: '2026-07-06T23:00:00.000Z',
-                total_hours: 1,
-                event_type: 'personal',
             },
         ]);
         assert.equal(d.totalHours, 7);
+        assert.equal(d.justifiedHours, 1);
         assert.equal(d.eventType, 'personal');
         assert.equal(d.clockIn, '10:00');
         assert.equal(d.clockOut, '16:00');

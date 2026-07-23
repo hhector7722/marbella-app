@@ -251,7 +251,7 @@ export default function HistoryPage() {
             const [logsResult, snapsResult] = await Promise.all([
                 supabase
                     .from('time_logs')
-                    .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
+                    .select('clock_in, clock_out, total_hours, justified_hours, event_type, clock_out_show_no_registrada')
                     .eq('user_id', targetUserId)
                     .gte('clock_in', startIso)
                     .lte('clock_in', endIso),
@@ -556,7 +556,7 @@ export default function HistoryPage() {
         const [{ data: yearLogs, error: yearLogsError }, { data: yearSnaps }] = await Promise.all([
             supabase
                 .from('time_logs')
-                .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
+                .select('clock_in, clock_out, total_hours, justified_hours, event_type, clock_out_show_no_registrada')
                 .eq('user_id', userId)
                 .gte('clock_in', startIso)
                 .lte('clock_in', endIso),
@@ -817,7 +817,7 @@ export default function HistoryPage() {
 
                     const { data: monthLogs, error: monthLogsError } = await supabase
                         .from('time_logs')
-                        .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
+                        .select('clock_in, clock_out, total_hours, justified_hours, event_type, clock_out_show_no_registrada')
                         .eq('user_id', id)
                         .gte('clock_in', startIso)
                         .lte('clock_in', endIso);

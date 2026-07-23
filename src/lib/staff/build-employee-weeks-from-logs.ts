@@ -21,12 +21,14 @@ export type RawTimeLogForWeek = {
     clock_in: string;
     clock_out?: string | null;
     total_hours?: number | null;
+    justified_hours?: number | null;
     event_type?: string | null;
     clock_out_show_no_registrada?: boolean | null;
 };
 
 export type BuiltEmployeeDay = TimesheetDayData & {
     clock_out_show_no_registrada?: boolean;
+    justifiedHours?: number;
 };
 
 export type BuiltEmployeeWeek = Omit<TimesheetWeekData, 'days' | 'summary'> & {
@@ -39,6 +41,7 @@ type DayAgg = {
     clockIn: string | null;
     clockOut: string | null;
     totalHours: number;
+    justifiedHours: number;
     eventType: string;
     clock_out_show_no_registrada: boolean;
 };
@@ -48,6 +51,7 @@ const EMPTY_DAY: DayAgg = {
     clockIn: null,
     clockOut: null,
     totalHours: 0,
+    justifiedHours: 0,
     eventType: 'regular',
     clock_out_show_no_registrada: false,
 };
@@ -55,7 +59,7 @@ const EMPTY_DAY: DayAgg = {
 /** Varios fichajes el mismo día → entrada más temprana, salida más tardía, suma de horas.
  * Relojes SOLO desde jornada real (regular / no_registered).
  * Día solo especial (F/E/B/P): clockIn/Out = null (la UI muestra la letra).
- * Día mixto (fichaje + justificadas): relojes del regular + horas sumadas + eventType especial. */
+ * Día mixto: relojes + total_hours (incluye justified_hours) + badge P si justifiedHours > 0. */
 export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg {
     if (logs.length === 0) return EMPTY_DAY;
 
@@ -80,8 +84,10 @@ export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg 
     }
 
     let totalHours = 0;
+    let justifiedHours = 0;
     for (const log of sorted) {
         totalHours += Number(log.total_hours ?? 0);
+        justifiedHours += Math.max(0, Number(log.justified_hours ?? 0));
     }
 
     const special = sorted.find(
@@ -91,8 +97,10 @@ export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg 
             l.event_type !== 'no_registered' &&
             l.event_type !== '',
     );
+    // Badge P en día mixto: hay justificadas sobre fichaje real
     const eventType =
         special?.event_type ??
+        (justifiedHours > 0.05 && clockIn ? 'personal' : null) ??
         (clockLogs[0]?.event_type || sorted[0]?.event_type || 'regular');
 
     return {
@@ -100,6 +108,7 @@ export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg 
         clockIn,
         clockOut,
         totalHours,
+        justifiedHours,
         eventType: eventType || 'regular',
         clock_out_show_no_registrada: sorted.some((l) => l.clock_out_show_no_registrada === true),
     };
@@ -198,6 +207,7 @@ export function buildEmployeeWeeksInRange(input: {
                 eventType: agg.eventType,
                 isToday: isSameDay(day, today),
                 clock_out_show_no_registrada: agg.clock_out_show_no_registrada,
+                justifiedHours: agg.justifiedHours,
             };
         });
 

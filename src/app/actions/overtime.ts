@@ -360,6 +360,8 @@ export async function updateWeeklyWorkerConfig(
                     totalHours = marbellaHoursBetweenClockIso(clockInStr, clockOutStr);
                 }
 
+                const justifiedHours = Math.max(0, Number(log.justified_hours) || 0);
+
                 if (!clockInStr) {
                     throw new Error('Falta hora de entrada en un registro de asistencia');
                 }
@@ -369,6 +371,7 @@ export async function updateWeeklyWorkerConfig(
                     clock_in: clockInStr,
                     clock_out: clockOutStr,
                     total_hours: Number.isFinite(totalHours) ? totalHours : null,
+                    justified_hours: justifiedHours,
                     event_type: log.event_type || 'regular',
                     clock_out_show_no_registrada: log.clock_out_show_no_registrada === true,
                 };

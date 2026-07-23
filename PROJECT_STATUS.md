@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-23 (Fix: guardar horas justificadas)
+**Última actualización:** 2026-07-23 (Fix: justified_hours en el mismo fichaje)
+
+- [x] **Fix horas justificadas vs `idx_one_shift_per_day` (2026-07-23)**: La BD solo permite **un** `time_logs` por empleado/día. Columna `justified_hours` (migración aplicada). El modal suma el permiso en el mismo fichaje (`total_hours = trabajadas + justificadas`). Badge **P** si `justified_hours > 0`.
+
+**Última actualización anterior:** 2026-07-23 (Fix: guardar horas justificadas)
 
 - [x] **Fix guardar horas justificadas (2026-07-23)**: El upsert de `time_logs` enviaba `id: null` en registros nuevos → `NOT NULL` y no persistían. Separados update (con id) e insert (sin id, usa `gen_random_uuid()`). Reloj sintético de justificadas a las 20:00 Madrid vía `fromZonedTime`.
 

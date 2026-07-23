@@ -42,8 +42,10 @@ type DayLogDraft = {
     event_type: string;
     is_deleted: boolean;
     clock_out_show_no_registrada?: boolean;
-    /** Fuente de verdad de horas al guardar (override / BD). */
+    /** Horas trabajadas (reloj o override manual). No incluye justificadas. */
     total_hours_override?: number | null;
+    /** Horas acreditadas (examen/permiso) en el MISMO fichaje — idx_one_shift_per_day. */
+    justified_hours?: number;
     /** Clave local para logs nuevos sin id. */
     _localKey?: string;
 };
@@ -78,25 +80,39 @@ function calculateLogHours(inStr: string, outStr: string) {
     return hours + fraction;
 }
 
-function resolveDraftHours(log: DayLogDraft): number {
+function resolveWorkedHours(log: DayLogDraft): number {
     if (log.total_hours_override !== undefined && log.total_hours_override !== null) {
         return Number(log.total_hours_override) || 0;
     }
     return calculateLogHours(log.in_time || '', log.out_time || '');
 }
 
-/** Reloj sintético para horas justificadas (solo persistencia; no es jornada real).
- * Usa franja tarde (20:00+) para no chocar con fichajes reales ni caer en día Madrid previo. */
+function resolveJustifiedHours(log: DayLogDraft): number {
+    return Math.max(0, Number(log.justified_hours) || 0);
+}
+
+/** Total que computa: trabajadas + justificadas (mismo registro). */
+function resolveDraftHours(log: DayLogDraft): number {
+    if (isJustifiedEvent(log.event_type)) {
+        // Día completo F/E/B/P: el total del evento es lo que computa
+        if (log.total_hours_override !== undefined && log.total_hours_override !== null) {
+            return Number(log.total_hours_override) || 0;
+        }
+        return calculateLogHours(log.in_time || '', log.out_time || '');
+    }
+    return resolveWorkedHours(log) + resolveJustifiedHours(log);
+}
+
+/** Reloj sintético para días solo-especiales (F/E/B/P sin fichaje real). */
 function syntheticTimesForHours(hours: number): { in_time: string; out_time: string } {
     const safe = Math.max(0.5, calculateRoundedHours(hours) || 0.5);
     const totalMin = Math.round(safe * 60);
-    const startH = 20;
-    const startM = 0;
-    const endTotal = startH * 60 + startM + totalMin;
+    const startH = 9;
+    const endTotal = startH * 60 + totalMin;
     const outH = Math.floor(endTotal / 60) % 24;
     const outM = endTotal % 60;
     return {
-        in_time: `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`,
+        in_time: `${String(startH).padStart(2, '0')}:00`,
         out_time: `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`,
     };
 }
@@ -319,16 +335,30 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
 
             if (error) throw error;
 
-            const rawLogs: DayLogDraft[] = data?.map((l) => ({
-                id: l.id,
-                in_time: formatMadridHmFromIso(l.clock_in) ?? '',
-                out_time: l.clock_out ? (formatMadridHmFromIso(l.clock_out) ?? '') : '',
-                event_type: l.event_type || 'regular',
-                is_deleted: false,
-                clock_out_show_no_registrada: l.clock_out_show_no_registrada === true,
-                // Siempre cargar total_hours de BD: en eventos especiales el reloj es sintético.
-                total_hours_override: l.total_hours != null ? Number(l.total_hours) : null,
-            })) || [];
+            const rawLogs: DayLogDraft[] = data?.map((l) => {
+                const justified = Math.max(0, Number((l as { justified_hours?: number }).justified_hours) || 0);
+                const total = l.total_hours != null ? Number(l.total_hours) : 0;
+                const clockWorked = calculateLogHours(
+                    formatMadridHmFromIso(l.clock_in) ?? '',
+                    l.clock_out ? (formatMadridHmFromIso(l.clock_out) ?? '') : '',
+                );
+                const eventType = l.event_type || 'regular';
+                // Trabajadas = total − justificadas (o reloj si aún no hay desglose)
+                const worked = isJustifiedEvent(eventType)
+                    ? total
+                    : (clockWorked > 0 ? clockWorked : Math.max(0, total - justified));
+
+                return {
+                    id: l.id,
+                    in_time: formatMadridHmFromIso(l.clock_in) ?? '',
+                    out_time: l.clock_out ? (formatMadridHmFromIso(l.clock_out) ?? '') : '',
+                    event_type: eventType,
+                    is_deleted: false,
+                    clock_out_show_no_registrada: l.clock_out_show_no_registrada === true,
+                    total_hours_override: worked,
+                    justified_hours: isJustifiedEvent(eventType) ? 0 : justified,
+                };
+            }) || [];
 
             setLogs(rawLogs);
             setShowCreateFichaje(false);
@@ -369,26 +399,59 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                 const times = syntheticTimesForHours(rounded || 0.5);
                 current.in_time = times.in_time;
                 current.out_time = times.out_time;
+                current.justified_hours = 0;
             }
             next[index] = current;
             return next;
         });
     };
 
+    const setJustifiedHours = (index: number, hours: number) => {
+        const rounded = calculateRoundedHours(Math.max(0, hours));
+        setLogs((prev) => {
+            const next = [...prev];
+            const current = { ...next[index]! };
+            current.justified_hours = rounded;
+            next[index] = current;
+            return next;
+        });
+    };
+
+    /**
+     * Añade 1h justificada al fichaje del día (mismo registro: idx_one_shift_per_day).
+     * Si no hay fichaje, crea un día Personal con 1h.
+     */
     const addJustifiedHours = () => {
-        const times = syntheticTimesForHours(1);
-        setLogs((prev) => [
-            ...prev,
-            {
-                _localKey: `justified-${Date.now()}`,
-                in_time: times.in_time,
-                out_time: times.out_time,
-                event_type: 'personal',
-                is_deleted: false,
-                total_hours_override: 1,
-                clock_out_show_no_registrada: false,
-            },
-        ]);
+        setLogs((prev) => {
+            const next = [...prev];
+            const idx = next.findIndex((l) => !l.is_deleted && !isJustifiedEvent(l.event_type));
+            if (idx >= 0) {
+                const current = { ...next[idx]! };
+                current.justified_hours = calculateRoundedHours(
+                    (Number(current.justified_hours) || 0) + 1,
+                );
+                next[idx] = current;
+                return next;
+            }
+            const anyIdx = next.findIndex((l) => !l.is_deleted);
+            if (anyIdx >= 0) {
+                toast.error('Cambia el evento a Regular para añadir permiso parcial, o edita las horas del día especial.');
+                return prev;
+            }
+            const times = syntheticTimesForHours(1);
+            return [
+                {
+                    _localKey: `justified-${Date.now()}`,
+                    in_time: times.in_time,
+                    out_time: times.out_time,
+                    event_type: 'personal',
+                    is_deleted: false,
+                    total_hours_override: 1,
+                    justified_hours: 0,
+                    clock_out_show_no_registrada: false,
+                },
+            ];
+        });
     };
 
     const markLogDeleted = (index: number) => {
@@ -445,6 +508,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                 }
 
                 const hours = resolveDraftHours(l);
+                const justified = isJustifiedEvent(l.event_type) ? 0 : resolveJustifiedHours(l);
 
                 return {
                     ...(l.id ? { id: l.id } : {}),
@@ -456,6 +520,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                     event_type: l.event_type,
                     is_deleted: l.is_deleted,
                     total_hours_override: hours,
+                    justified_hours: justified,
                     clock_out_show_no_registrada: l.clock_out_show_no_registrada === true,
                 };
             });
@@ -629,8 +694,10 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                         <div className="flex flex-col gap-2">
                             {logs.map((log, index) => {
                                 if (log.is_deleted) return null;
-                                const workedHours = resolveDraftHours(log);
-                                const justified = isJustifiedEvent(log.event_type);
+                                const specialDay = isJustifiedEvent(log.event_type);
+                                const workedHours = specialDay ? resolveDraftHours(log) : resolveWorkedHours(log);
+                                const justifiedAmt = resolveJustifiedHours(log);
+                                const dayTotal = resolveDraftHours(log);
                                 const eventLabel = EVENT_TYPES.find((t) => t.value === log.event_type)?.label ?? log.event_type;
 
                                 return (
@@ -638,13 +705,13 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         key={log.id ?? log._localKey ?? `log-${index}`}
                                         className={cn(
                                             'rounded-xl border p-2',
-                                            justified ? 'border-blue-100 bg-blue-50/40' : 'border-zinc-100 bg-white',
+                                            specialDay ? 'border-blue-100 bg-blue-50/40' : 'border-zinc-100 bg-white',
                                         )}
                                     >
-                                        {justified ? (
+                                        {specialDay ? (
                                             <div className="flex items-center justify-between gap-2 mb-1.5">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-blue-700">
-                                                    Justificadas · {eventLabel}
+                                                    Día {eventLabel}
                                                 </span>
                                                 {isManager && (
                                                     <button
@@ -659,7 +726,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             </div>
                                         ) : null}
 
-                                        {!justified && (
+                                        {!specialDay && (
                                             <div className="grid grid-cols-2 gap-1.5">
                                                 <div className="bg-zinc-50 rounded-xl py-1.5 pl-2 pr-1 border border-zinc-100 relative overflow-hidden">
                                                     <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500" />
@@ -692,7 +759,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             </div>
                                         )}
 
-                                        {isManager && !justified && log.event_type === 'regular' && log.out_time ? (
+                                        {isManager && !specialDay && log.event_type === 'regular' && log.out_time ? (
                                             <label className="flex items-center gap-2 mt-1.5 py-1.5 px-2 rounded-xl bg-zinc-50 border border-zinc-100 cursor-pointer">
                                                 <input
                                                     type="checkbox"
@@ -704,10 +771,10 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             </label>
                                         ) : null}
 
-                                        <div className={cn('grid gap-1.5', justified ? 'grid-cols-1' : 'grid-cols-2', !justified && 'mt-1.5')}>
+                                        <div className={cn('grid gap-1.5', specialDay ? 'grid-cols-1' : 'grid-cols-2', !specialDay && 'mt-1.5')}>
                                             <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100">
                                                 <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">
-                                                    {justified ? 'Horas que computan' : 'Horas'}
+                                                    {specialDay ? 'Horas que computan' : 'Horas'}
                                                 </span>
                                                 {isManager ? (
                                                     <input
@@ -725,7 +792,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                     </span>
                                                 )}
                                             </div>
-                                            {!justified && (
+                                            {!specialDay && (
                                                 <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100">
                                                     <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">H Extras</span>
                                                     {isManager ? (
@@ -745,6 +812,34 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                 </div>
                                             )}
                                         </div>
+
+                                        {!specialDay && (
+                                            <div className="mt-1.5 bg-blue-50 rounded-xl py-1.5 px-2 border border-blue-100">
+                                                <span className="text-[6px] font-black text-blue-600 uppercase tracking-widest block">
+                                                    Horas justificadas (computan)
+                                                </span>
+                                                {isManager ? (
+                                                    <input
+                                                        type="number"
+                                                        step="0.5"
+                                                        min={0}
+                                                        value={justifiedAmt > 0 ? justifiedAmt : ''}
+                                                        placeholder="0"
+                                                        onChange={(e) => setJustifiedHours(index, parseFloat(e.target.value) || 0)}
+                                                        className="text-[12px] font-black text-blue-800 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-[12px] font-black text-blue-800 block">
+                                                        {justifiedAmt > 0 ? fmtMarbellaHours(justifiedAmt) : ' '}
+                                                    </span>
+                                                )}
+                                                {dayTotal > 0 && justifiedAmt > 0 ? (
+                                                    <span className="text-[7px] font-bold text-blue-500 mt-0.5 block">
+                                                        Total día: {fmtMarbellaHours(dayTotal)}
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                        )}
 
                                         {isManager && (
                                             <div className="mt-1.5 bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
