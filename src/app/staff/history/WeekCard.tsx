@@ -45,6 +45,8 @@ interface DayData {
     extraHours: number;
     eventType: string;
     isToday: boolean;
+    /** Horas personales acreditadas (examen/permiso) en el mismo fichaje. */
+    justifiedHours?: number;
 }
 
 interface WeekSummary {
@@ -150,15 +152,20 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 {week.days.map((day, di) => {
                     const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
                     const isSpecial = day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' && eventConfig;
-                    // Día completo F/E/B/P: solo letra. Mixto (fichaje + permiso parcial): relojes + H + P pequeña.
-                    const isMixedJustified = Boolean(isSpecial && day.clockIn);
+                    // Día completo F/E/B/P (sin reloj real): nombre completo centrado.
                     const isSpecialOnly = Boolean(isSpecial && !day.clockIn);
+                    const justifiedHours = Number(day.justifiedHours) || 0;
+                    const hasPersonalAdd = justifiedHours > 0.05 && Boolean(day.clockIn);
+                    const workedHours = hasPersonalAdd
+                        ? Math.max(0, day.totalHours - justifiedHours)
+                        : day.totalHours;
                     const isOtherMonth = day.date ? (() => {
                         const y = parseInt(day.date.slice(0, 4), 10);
                         const m = parseInt(day.date.slice(5, 7), 10) - 1;
                         return m !== filterMonth || y !== filterYear;
                     })() : false;
-                    const hFormatted = fmtHours(day.totalHours);
+                    const hWorkedFmt = fmtHours(workedHours);
+                    const hJustFmt = fmtHours(justifiedHours);
                     const exFormatted = fmtHours(day.extraHours);
 
                     // TEMP DEBUG Ex. — no cambia lógica; solo traza lo que se pinta
@@ -187,32 +194,20 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             <span className={cn("absolute top-1 right-1 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
                                 {day.dayNumber}
                             </span>
-                            {isMixedJustified && eventConfig && (
-                                <span
-                                    title={`Incluye ${eventConfig.label.toLowerCase()} (horas que computan)`}
-                                    className={cn(
-                                        'absolute top-1 left-1 text-[10px] font-black leading-none',
-                                        eventConfig.text,
-                                        isOtherMonth && 'opacity-60',
-                                    )}
-                                >
-                                    {eventConfig.initial}
-                                </span>
-                            )}
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
                                 {isSpecialOnly ? (
-                                    <div className="flex-1 flex items-center justify-center min-h-[52px]">
+                                    <div className="flex-1 flex items-center justify-center min-h-[52px] px-0.5">
                                         {eventConfig!.showCross ? (
                                             <X size={22} strokeWidth={2.5} className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')} />
                                         ) : (
                                             <span
                                                 className={cn(
-                                                    'text-[28px] font-black uppercase leading-none tracking-tight',
+                                                    'w-full text-center text-[7px] font-black leading-tight tracking-tight px-0.5',
                                                     eventConfig!.text,
                                                     isOtherMonth && 'opacity-60',
                                                 )}
                                             >
-                                                {eventConfig!.initial}
+                                                {eventConfig!.label}
                                             </span>
                                         )}
                                     </div>
@@ -264,10 +259,17 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             </div>
                             {!isSpecialOnly && (
                                 <div className={cn("w-full space-y-0 mt-0.5 min-h-[20px]", isOtherMonth && "opacity-45")}>
-                                    {day.hasLog && day.clockIn && hFormatted ? (
-                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                            <span className="ml-0.5">H</span>
-                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{hFormatted}</span>
+                                    {day.hasLog && day.clockIn && (hWorkedFmt || hJustFmt) ? (
+                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3 min-w-0 gap-0.5">
+                                            <span className="ml-0.5 shrink-0">H</span>
+                                            <span className={cn("font-bold pr-0.5 truncate text-right", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
+                                                {hWorkedFmt || ' '}
+                                                {hasPersonalAdd && hJustFmt ? (
+                                                    <span className={cn('font-black', isOtherMonth ? 'text-gray-400' : 'text-blue-500')}>
+                                                        {' '}+{hJustFmt}
+                                                    </span>
+                                                ) : null}
+                                            </span>
                                         </div>
                                     ) : <div className="h-3" />}
                                     {exFormatted ? (

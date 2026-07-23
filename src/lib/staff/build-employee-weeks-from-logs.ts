@@ -58,8 +58,8 @@ const EMPTY_DAY: DayAgg = {
 
 /** Varios fichajes el mismo día → entrada más temprana, salida más tardía, suma de horas.
  * Relojes SOLO desde jornada real (regular / no_registered).
- * Día solo especial (F/E/B/P): clockIn/Out = null (la UI muestra la letra).
- * Día mixto: relojes + total_hours (incluye justified_hours) + badge P si justifiedHours > 0. */
+ * Día solo especial (F/E/B/P): clockIn/Out = null (la UI muestra el nombre completo).
+ * Día mixto: relojes + total_hours; justifiedHours aparte para pintar «H n +j» en azul. */
 export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg {
     if (logs.length === 0) return EMPTY_DAY;
 
@@ -97,10 +97,9 @@ export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg 
             l.event_type !== 'no_registered' &&
             l.event_type !== '',
     );
-    // Badge P en día mixto: hay justificadas sobre fichaje real
+    // No forzar eventType=personal por justified_hours: el día sigue siendo regular + H n +j
     const eventType =
         special?.event_type ??
-        (justifiedHours > 0.05 && clockIn ? 'personal' : null) ??
         (clockLogs[0]?.event_type || sorted[0]?.event_type || 'regular');
 
     return {

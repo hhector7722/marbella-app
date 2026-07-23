@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-23 (Fix: justified_hours en el mismo fichaje)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Asistencia UI: nombre completo + H n +j)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Asistencia celda: nombre completo y H+personal (2026-07-24)**: Día solo F/E/B/P → etiqueta completa centrada (`Festivo`, `Enfermedad`, …) sin círculo/letra. Día con fichaje + `justified_hours` → sin **P** esquina; fila `H 6 +1` con el `+1` en azul personal. Regular / no registrado sin cambio.
 - **Fix horas justificadas vs `idx_one_shift_per_day` (2026-07-23)**: La BD solo permite **un** `time_logs` por empleado/día. Columna `justified_hours` (migración aplicada). El modal suma el permiso en el mismo fichaje (`total_hours = trabajadas + justificadas`). Badge **P** si `justified_hours > 0`.
 - **Fix guardar horas justificadas (2026-07-23)**: El upsert de `time_logs` enviaba `id: null` en registros nuevos → `NOT NULL` y no persistían. Separados update (con id) e insert (sin id, usa `gen_random_uuid()`). Reloj sintético de justificadas a las 20:00 Madrid vía `fromZonedTime`.
 - **Asistencia: día completo vs permiso parcial (2026-07-23)**: En `WeekCard`, día solo F/E/B/P = **letra grande centrada** (sin círculo, sin relojes, sin H). Día mixto (fichaje real + horas justificadas/examen) = relojes + **H** suma + **P** pequeña arriba-izquierda (sin círculo). `aggregateLogsForDay` ya no usa relojes sintéticos de eventos especiales para `clockIn`/`clockOut`.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Pedido ración medio = mismo artículo TPV (2026-07-16)**: Como en TPV (opción ración), Entero/Medio sobre el mismo `articulo_id` + `override_precio_medio`. Carrito: claves `id` / `id:medio`. Resumen cliente: 2 líneas (`ENT…` y `1/2 · ENT…`). Comanda staff: mismo product_id, `notes: 1/2`, precio medio. RPC `fn_event_order_apply_racion` + `save_client` / staff create/update.
 - **Ex. diarias migradas al motor (2026-07-16)**: `LiquidationResult.dailyBreakdown` (regla running = misma funcional). UI (`StaffDashboardView`, `WorkerWeeklyHistoryModal`, `/staff/history`) pinta Ex. desde `liquidateWeek` / `patchWeeksDailyExtrasFromEngine`. RPCs `get_worker_weekly_log_grid` y `get_monthly_timesheet` ya **no calculan** `extraHours` (siempre 0). Migración [`20260716193000_daily_extras_from_hours_engine.sql`](supabase/migrations/20260716193000_daily_extras_from_hours_engine.sql) **aplicada**. Tests: `npm run test:hours-engine:daily` + suite **68/68**. Invariante runtime: Σ extras diarias = extras semanales.
 - **Pedido cliente UX pie + confirmación + WhatsApp (2026-07-16)**: Pie compacto «Ver pedido» + «Enviar pedido» (desglose en modal, no fijo). Confirmación obligatoria antes de enviar. WhatsApp post-envío = `profiles.phone` de `hhector7722@gmail.com` vía RPC `get_pedido_contact_whatsapp_phone` ([`20260716190000`](supabase/migrations/20260716190000_get_pedido_contact_whatsapp_phone.sql)).
-- **Pedido carta: elegir Entero o 1/2 bocadillo (2026-07-16)**: El merge entero/medio guarda `medio_articulo_id`. En pedido (cliente/staff sobre carta) aparecen botones Entero/Medio; el resumen y el envío usan el `product_id` del TPV medio. Si hay lista blanca de productos, se incluye el medio emparejado.
 
 <!-- sync:project-status:end -->

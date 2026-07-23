@@ -54,7 +54,7 @@ describe('aggregateLogsForDay', () => {
         assert.equal(d.totalHours, 8);
     });
 
-    it('trabajadas + justificadas (personal) → suma horas y marca evento especial', () => {
+    it('trabajadas + justificadas → relojes regulares + justifiedHours (sin forzar event personal)', () => {
         const d = aggregateLogsForDay([
             {
                 clock_in: '2026-07-07T08:00:00.000Z',
@@ -66,7 +66,7 @@ describe('aggregateLogsForDay', () => {
         ]);
         assert.equal(d.totalHours, 7);
         assert.equal(d.justifiedHours, 1);
-        assert.equal(d.eventType, 'personal');
+        assert.equal(d.eventType, 'regular');
         assert.equal(d.clockIn, '10:00');
         assert.equal(d.clockOut, '16:00');
     });
