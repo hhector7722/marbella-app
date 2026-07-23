@@ -45,14 +45,37 @@
     .logo-wrap {
       flex: 0 0 auto;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      gap: 0.35rem;
     }
     .logo-wrap img {
       width: 28px;
       height: 28px;
       object-fit: contain;
       display: block;
+    }
+    .dl-vales {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.55rem 1.1rem;
+      border-radius: 999px;
+      background: var(--petroleo-deep);
+      color: var(--white);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    .dl-vales:active {
+      opacity: 0.9;
+    }
+    .dl-vales[hidden] {
+      display: none !important;
     }
     .stack {
       flex: 1 1 auto;
@@ -153,19 +176,26 @@
   <div class="sheet">
     <div class="logo-wrap">
       <img src="/icons/logo-white.png" alt="Bar La Marbella" width="595" height="613" />
+      <a
+        id="dl-vales"
+        class="dl-vales"
+        href="/api/propuestas/vales-bebida"
+        download="vales-bebida-cena-monitores.pdf"
+        hidden
+      >Descargar vales bebida (PDF)</a>
     </div>
 
     <div class="stack">
       <article class="card">
         <header class="card-head">
           <div class="price">14 € <span>/ persona</span></div>
-          <div class="meta">420 € · 30 pers.</div>
+          <div class="meta">364 € · 26 pers.</div>
         </header>
         <div class="card-body">
           <div class="grid">
             <div class="cell">
               <div class="label"><span class="ico" aria-hidden="true">🥖</span> Bocadillos</div>
-              <div class="value">15</div>
+              <div class="value">12</div>
             </div>
             <div class="cell">
               <div class="label"><span class="ico" aria-hidden="true">🥔</span> Braves</div>
@@ -186,13 +216,13 @@
       <article class="card">
         <header class="card-head">
           <div class="price">15 € <span>/ persona</span></div>
-          <div class="meta">450 € · 30 pers.</div>
+          <div class="meta">390 € · 26 pers.</div>
         </header>
         <div class="card-body">
           <div class="grid">
             <div class="cell">
               <div class="label"><span class="ico" aria-hidden="true">🥖</span> Bocadillos</div>
-              <div class="value">22</div>
+              <div class="value">18</div>
             </div>
             <div class="cell">
               <div class="label"><span class="ico" aria-hidden="true">🥔</span> Braves</div>
@@ -213,13 +243,13 @@
       <article class="card">
         <header class="card-head">
           <div class="price">16 € <span>/ persona</span></div>
-          <div class="meta">480 € · 30 pers.</div>
+          <div class="meta">416 € · 26 pers.</div>
         </header>
         <div class="card-body">
           <div class="grid">
             <div class="cell">
               <div class="label"><span class="ico" aria-hidden="true">🥖</span> Bocadillos</div>
-              <div class="value">28</div>
+              <div class="value">24</div>
             </div>
             <div class="cell">
               <div class="label"><span class="ico" aria-hidden="true">🥔</span> Braves</div>
@@ -238,5 +268,19 @@
       </article>
     </div>
   </div>
+  <script>
+    (function () {
+      var link = document.getElementById("dl-vales");
+      if (!link) return;
+      fetch("/api/propuestas/vales-access", { credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.canDownload) {
+            link.hidden = false;
+          }
+        })
+        .catch(function () { /* sin sesión / error → oculto */ });
+    })();
+  </script>
 </body>
 </html>

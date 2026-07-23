@@ -78,6 +78,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // API vales: access check público (devuelve false si no hay sesión);
+  // la descarga valida email en el handler.
+  if (path.startsWith("/api/propuestas/")) {
+    return NextResponse.next();
+  }
+
   if (path === "/staff") {
     return NextResponse.redirect(new URL("/staff/dashboard", request.url));
   }
