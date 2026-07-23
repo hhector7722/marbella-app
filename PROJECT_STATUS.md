@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-23 (Asistencia: letra día completo vs permiso parcial)
+**Última actualización:** 2026-07-23 (Fix: guardar horas justificadas)
+
+- [x] **Fix guardar horas justificadas (2026-07-23)**: El upsert de `time_logs` enviaba `id: null` en registros nuevos → `NOT NULL` y no persistían. Separados update (con id) e insert (sin id, usa `gen_random_uuid()`). Reloj sintético de justificadas a las 20:00 Madrid vía `fromZonedTime`.
+
+**Última actualización anterior:** 2026-07-23 (Asistencia: letra día completo vs permiso parcial)
 
 - [x] **Asistencia: día completo vs permiso parcial (2026-07-23)**: En `WeekCard`, día solo F/E/B/P = **letra grande centrada** (sin círculo, sin relojes, sin H). Día mixto (fichaje real + horas justificadas/examen) = relojes + **H** suma + **P** pequeña arriba-izquierda (sin círculo). `aggregateLogsForDay` ya no usa relojes sintéticos de eventos especiales para `clockIn`/`clockOut`.
 

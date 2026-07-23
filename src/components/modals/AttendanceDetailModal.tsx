@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { fromZonedTime } from 'date-fns-tz';
 import { updateWeeklyWorkerConfig, createManagerFichaje, deleteManagerDayLogs } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -84,14 +85,18 @@ function resolveDraftHours(log: DayLogDraft): number {
     return calculateLogHours(log.in_time || '', log.out_time || '');
 }
 
-/** Reloj sintético para horas justificadas (solo persistencia; no es jornada real). */
+/** Reloj sintético para horas justificadas (solo persistencia; no es jornada real).
+ * Usa franja tarde (20:00+) para no chocar con fichajes reales ni caer en día Madrid previo. */
 function syntheticTimesForHours(hours: number): { in_time: string; out_time: string } {
     const safe = Math.max(0.5, calculateRoundedHours(hours) || 0.5);
     const totalMin = Math.round(safe * 60);
-    const outH = Math.floor(totalMin / 60);
-    const outM = totalMin % 60;
+    const startH = 20;
+    const startM = 0;
+    const endTotal = startH * 60 + startM + totalMin;
+    const outH = Math.floor(endTotal / 60) % 24;
+    const outM = endTotal % 60;
     return {
-        in_time: '00:00',
+        in_time: `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`,
         out_time: `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`,
     };
 }
@@ -412,32 +417,38 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             const weekStartStr = format(monday, 'yyyy-MM-dd');
 
             const logsToUpdate = logs.map((l) => {
+                const dateStr = format(date, 'yyyy-MM-dd');
                 let inTimeIso = '';
                 let outTimeIso = '';
 
                 if (l.in_time) {
                     const [h, m] = l.in_time.split(':').map(Number);
-                    const d = new Date(date);
-                    d.setHours(h, m, 0, 0);
-                    inTimeIso = d.toISOString();
+                    const hh = String(h).padStart(2, '0');
+                    const mm = String(m).padStart(2, '0');
+                    inTimeIso = fromZonedTime(`${dateStr}T${hh}:${mm}:00`, 'Europe/Madrid').toISOString();
                 }
 
                 if (l.out_time) {
+                    let outDateStr = dateStr;
                     const [h, m] = l.out_time.split(':').map(Number);
-                    const d = new Date(date);
-                    d.setHours(h, m, 0, 0);
                     if (l.in_time) {
                         const [inH] = l.in_time.split(':').map(Number);
-                        if (h < inH) d.setDate(d.getDate() + 1);
+                        if (h < inH) {
+                            const next = new Date(date);
+                            next.setDate(next.getDate() + 1);
+                            outDateStr = format(next, 'yyyy-MM-dd');
+                        }
                     }
-                    outTimeIso = d.toISOString();
+                    const hh = String(h).padStart(2, '0');
+                    const mm = String(m).padStart(2, '0');
+                    outTimeIso = fromZonedTime(`${outDateStr}T${hh}:${mm}:00`, 'Europe/Madrid').toISOString();
                 }
 
                 const hours = resolveDraftHours(l);
 
                 return {
-                    id: l.id,
-                    date: format(date, 'yyyy-MM-dd'),
+                    ...(l.id ? { id: l.id } : {}),
+                    date: dateStr,
                     in_time: l.in_time,
                     out_time: l.out_time,
                     inTimeIso,

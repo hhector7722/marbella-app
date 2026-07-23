@@ -344,37 +344,52 @@ export async function updateWeeklyWorkerConfig(
                 if (delErr) throw delErr;
             }
 
-            // 3b. Construir payloads para upsert masivo (excluir eliminados)
-            const payloads = logs
-                .filter((log) => !log.is_deleted)
-                .map((log) => {
-                    const clockInStr = resolveClockInIso(log);
-                    const clockOutStr = resolveClockOutIso(log, clockInStr);
+            // 3b. Separar updates (con id) e inserts (sin id → DEFAULT gen_random_uuid()).
+            // Upsert con id:null viola NOT NULL y anula el default de la columna.
+            const toUpdate: Record<string, unknown>[] = [];
+            const toInsert: Record<string, unknown>[] = [];
 
-                    let totalHours = 0;
-                    if (log.total_hours_override !== undefined && log.total_hours_override !== null) {
-                        totalHours = log.total_hours_override;
-                    } else if (clockInStr && clockOutStr) {
-                        totalHours = marbellaHoursBetweenClockIso(clockInStr, clockOutStr);
-                    }
+            for (const log of logs.filter((l) => !l.is_deleted)) {
+                const clockInStr = resolveClockInIso(log);
+                const clockOutStr = resolveClockOutIso(log, clockInStr);
 
-                    const payload: Record<string, unknown> = {
-                        user_id: userId,
-                        clock_in: clockInStr,
-                        clock_out: clockOutStr,
-                        total_hours: totalHours || null,
-                        event_type: log.event_type,
-                        clock_out_show_no_registrada: log.clock_out_show_no_registrada === true
-                    };
-                    if (log.id) payload.id = log.id;
-                    return payload;
-                });
+                let totalHours = 0;
+                if (log.total_hours_override !== undefined && log.total_hours_override !== null) {
+                    totalHours = Number(log.total_hours_override);
+                } else if (clockInStr && clockOutStr) {
+                    totalHours = marbellaHoursBetweenClockIso(clockInStr, clockOutStr);
+                }
 
-            if (payloads.length > 0) {
+                if (!clockInStr) {
+                    throw new Error('Falta hora de entrada en un registro de asistencia');
+                }
+
+                const payload: Record<string, unknown> = {
+                    user_id: userId,
+                    clock_in: clockInStr,
+                    clock_out: clockOutStr,
+                    total_hours: Number.isFinite(totalHours) ? totalHours : null,
+                    event_type: log.event_type || 'regular',
+                    clock_out_show_no_registrada: log.clock_out_show_no_registrada === true,
+                };
+
+                if (typeof log.id === 'string' && log.id.length > 0) {
+                    payload.id = log.id;
+                    toUpdate.push(payload);
+                } else {
+                    toInsert.push(payload);
+                }
+            }
+
+            if (toUpdate.length > 0) {
                 const { error: upsertErr } = await supabase
                     .from('time_logs')
-                    .upsert(payloads, { onConflict: 'id' });
+                    .upsert(toUpdate, { onConflict: 'id' });
                 if (upsertErr) throw upsertErr;
+            }
+            if (toInsert.length > 0) {
+                const { error: insertErr } = await supabase.from('time_logs').insert(toInsert);
+                if (insertErr) throw insertErr;
             }
         }
 
