@@ -10,12 +10,12 @@
   <style>
     :root {
       --petroleo: #36606F;
+      --petroleo-bg: #4a7584;
       --petroleo-deep: #243f48;
       --petroleo-soft: #4a7a8a;
       --card: #ffffff;
       --ink: #1c2428;
       --muted: #8a969b;
-      --line: rgba(54, 96, 111, 0.12);
       --white: #ffffff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,7 +27,7 @@
     body {
       font-family: "DM Sans", system-ui, sans-serif;
       color: var(--ink);
-      background: var(--petroleo);
+      background: var(--petroleo-bg);
       line-height: 1.3;
       -webkit-font-smoothing: antialiased;
     }
@@ -72,7 +72,7 @@
     .card-head {
       background: var(--petroleo-deep);
       color: var(--white);
-      padding: 0.55rem 0.85rem 0.5rem;
+      padding: 0.75rem 0.9rem 0.7rem;
       display: flex;
       align-items: baseline;
       justify-content: space-between;
@@ -99,30 +99,19 @@
     }
     .card-body {
       background: var(--card);
-      padding: 0.55rem 0.35rem 0.6rem;
+      padding: 0.75rem 0.4rem 0.85rem;
     }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0;
+      gap: 0.55rem 0;
     }
     .cell {
-      padding: 0.35rem 0.65rem;
+      padding: 0.4rem 0.7rem;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.12rem;
-    }
-    .cell:nth-child(odd) {
-      border-right: 1px solid var(--line);
-    }
-    .cell:nth-child(-n+2) {
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 0.45rem;
-      margin-bottom: 0.1rem;
-    }
-    .cell:nth-child(n+3) {
-      padding-top: 0.45rem;
+      gap: 0.18rem;
     }
     .cell .label {
       display: flex;
