@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Asistencia UI: nombre completo + H n +j)
+**Última actualización:** 2026-07-24 (Asistencia UI: fuente dinámica F/E/B/P)
+
+- [x] **Asistencia celda: fuente dinámica etiqueta especial (2026-07-24)**: Día solo F/E/B/P → nombre completo centrado con tamaño Tailwind adaptativo (12→7px) según ancho de celda (`ResizeObserver`), para que «Baja»/«Festivo» lean más grandes y «Enfermedad» no se corte.
 
 - [x] **Asistencia celda: nombre completo y H+personal (2026-07-24)**: Día solo F/E/B/P → etiqueta completa centrada (`Festivo`, `Enfermedad`, …) sin círculo/letra. Día con fichaje + `justified_hours` → sin **P** esquina; fila `H 6 +1` con el `+1` en azul personal. Regular / no registrado sin cambio.
 

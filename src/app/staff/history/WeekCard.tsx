@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { X, Coins, Landmark, Save } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
 import { cn, calculateRoundedHours } from '@/lib/utils';
@@ -16,6 +16,68 @@ const EVENT_TYPES = [
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', text: 'text-blue-500', border: 'border-blue-200 bg-blue-50' },
     { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', text: 'text-red-600', border: 'border-red-200 bg-red-50' },
 ];
+
+/** Pasos Tailwind (grandes → pequeños) para encajar el nombre completo en la celda. */
+const SPECIAL_LABEL_SIZE_STEPS = [
+    'text-[12px]',
+    'text-[11px]',
+    'text-[10px]',
+    'text-[9px]',
+    'text-[8px]',
+    'text-[7px]',
+] as const;
+
+/** Etiqueta F/E/B/P centrada: elige el mayor text-* que quepa en el ancho disponible. */
+function SpecialDayLabel({ label, className }: { label: string; className?: string }) {
+    const boxRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLSpanElement>(null);
+    const [sizeClass, setSizeClass] = useState<string>(SPECIAL_LABEL_SIZE_STEPS[2]);
+
+    useLayoutEffect(() => {
+        const box = boxRef.current;
+        const text = textRef.current;
+        if (!box || !text) return;
+
+        const fit = () => {
+            const cs = getComputedStyle(box);
+            const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+            const maxW = box.clientWidth - padX;
+            if (maxW <= 0) return;
+            for (const step of SPECIAL_LABEL_SIZE_STEPS) {
+                text.className = cn(
+                    'block max-w-full whitespace-nowrap text-center font-black leading-none tracking-tight',
+                    step,
+                    className,
+                );
+                if (text.scrollWidth <= maxW) {
+                    setSizeClass(step);
+                    return;
+                }
+            }
+            setSizeClass(SPECIAL_LABEL_SIZE_STEPS[SPECIAL_LABEL_SIZE_STEPS.length - 1]);
+        };
+
+        fit();
+        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+        ro?.observe(box);
+        return () => ro?.disconnect();
+    }, [label, className]);
+
+    return (
+        <div ref={boxRef} className="flex w-full min-w-0 flex-1 items-center justify-center px-1">
+            <span
+                ref={textRef}
+                className={cn(
+                    'block max-w-full whitespace-nowrap text-center font-black leading-none tracking-tight',
+                    sizeClass,
+                    className,
+                )}
+            >
+                {label}
+            </span>
+        </div>
+    );
+}
 
 /** Horas Marbella: solo enteros o .5 */
 const fmtHours = (val: number): string => {
@@ -196,19 +258,14 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
                                 {isSpecialOnly ? (
-                                    <div className="flex-1 flex items-center justify-center min-h-[52px] px-0.5">
+                                    <div className="flex min-h-[52px] w-full min-w-0 flex-1 items-center justify-center">
                                         {eventConfig!.showCross ? (
                                             <X size={22} strokeWidth={2.5} className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')} />
                                         ) : (
-                                            <span
-                                                className={cn(
-                                                    'w-full text-center text-[7px] font-black leading-tight tracking-tight px-0.5',
-                                                    eventConfig!.text,
-                                                    isOtherMonth && 'opacity-60',
-                                                )}
-                                            >
-                                                {eventConfig!.label}
-                                            </span>
+                                            <SpecialDayLabel
+                                                label={eventConfig!.label}
+                                                className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')}
+                                            />
                                         )}
                                     </div>
                                 ) : (
