@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-23 (Asistencia: letra día completo vs permiso parcial)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-23 (Fix: guardar horas justificadas)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Fix guardar horas justificadas (2026-07-23)**: El upsert de `time_logs` enviaba `id: null` en registros nuevos → `NOT NULL` y no persistían. Separados update (con id) e insert (sin id, usa `gen_random_uuid()`). Reloj sintético de justificadas a las 20:00 Madrid vía `fromZonedTime`.
 - **Asistencia: día completo vs permiso parcial (2026-07-23)**: En `WeekCard`, día solo F/E/B/P = **letra grande centrada** (sin círculo, sin relojes, sin H). Día mixto (fichaje real + horas justificadas/examen) = relojes + **H** suma + **P** pequeña arriba-izquierda (sin círculo). `aggregateLogsForDay` ya no usa relojes sintéticos de eventos especiales para `clockIn`/`clockOut`.
 - **Horas justificadas en asistencia (2026-07-23)**: En el modal de día (`AttendanceDetailModal`), managers pueden añadir **horas que computan** (contrato/banco) sin ser jornada trabajada — caso típico: salida anticipada por examen. Crea un segundo `time_logs` con evento `personal` (o Festivo/Enfermedad/Baja), editable en horas; se suman al total del día. No cuentan en propinas (mismo filtro tip-pool de eventos no-regular). El modal lista todos los fichajes del día (antes solo el primero). En `WeekCard` (`/staff/history`): día mixto muestra relojes reales + **H** total + badge **P** (o F/E/B); día solo justificado sigue mostrando solo la letra.
 - **Fecha de finalización editable en condiciones laborales (2026-07-22)**: En `/profile/contrato`, al editar un tramo el campo «Hasta» deja de ser solo lectura («Vigente»). `rescheduleTermEnd` / `rescheduleTermBounds` recalculan el siguiente tramo (sin huecos); vacío = vigente (solo último). Si cambia el fin del último tramo, sincroniza `profiles.end_date`. Tests versionado + labor.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Pedido cliente UX pie + confirmación + WhatsApp (2026-07-16)**: Pie compacto «Ver pedido» + «Enviar pedido» (desglose en modal, no fijo). Confirmación obligatoria antes de enviar. WhatsApp post-envío = `profiles.phone` de `hhector7722@gmail.com` vía RPC `get_pedido_contact_whatsapp_phone` ([`20260716190000`](supabase/migrations/20260716190000_get_pedido_contact_whatsapp_phone.sql)).
 - **Pedido carta: elegir Entero o 1/2 bocadillo (2026-07-16)**: El merge entero/medio guarda `medio_articulo_id`. En pedido (cliente/staff sobre carta) aparecen botones Entero/Medio; el resumen y el envío usan el `product_id` del TPV medio. Si hay lista blanca de productos, se incluye el medio emparejado.
 - **Pedido `/pedido/[token]` sin Navbar ni barra inferior (2026-07-16)**: Ruta añadida a `isFullscreenCartaPath` (como `/eventos` y `/carta`). El cliente solo ve la bienvenida/carta, no el shell interno de la app.
-- **Aviso visual pedido cliente (2026-07-16)**: Al «Enviar pedido», RPC inserta `user_notifications` (`client_order_submitted`) para alba/hernan/pere/hector — aparece en campana. Deep link `/staff/reservas?eventId=`. Badge rojo discreto sobre el punto verde/naranja/azul del calendario mientras la notificación esté sin leer; se quita al abrir el pedido. Sin tablas nuevas ni cambio de colores/leyenda. Migración [`20260716180000_notify_client_order_submitted.sql`](supabase/migrations/20260716180000_notify_client_order_submitted.sql) **aplicada**.
 
 <!-- sync:project-status:end -->
