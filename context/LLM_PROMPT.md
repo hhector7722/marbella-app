@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-22 (Condiciones laborales: fecha fin editable)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-23 (Asistencia: horas justificadas)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Horas justificadas en asistencia (2026-07-23)**: En el modal de día (`AttendanceDetailModal`), managers pueden añadir **horas que computan** (contrato/banco) sin ser jornada trabajada — caso típico: salida anticipada por examen. Crea un segundo `time_logs` con evento `personal` (o Festivo/Enfermedad/Baja), editable en horas; se suman al total del día. No cuentan en propinas (mismo filtro tip-pool de eventos no-regular). El modal lista todos los fichajes del día (antes solo el primero). En `WeekCard` (`/staff/history`): día mixto muestra relojes reales + **H** total + badge **P** (o F/E/B); día solo justificado sigue mostrando solo la letra.
 - **Fecha de finalización editable en condiciones laborales (2026-07-22)**: En `/profile/contrato`, al editar un tramo el campo «Hasta» deja de ser solo lectura («Vigente»). `rescheduleTermEnd` / `rescheduleTermBounds` recalculan el siguiente tramo (sin huecos); vacío = vigente (solo último). Si cambia el fin del último tramo, sincroniza `profiles.end_date`. Tests versionado + labor.
 - **Fecha de inicio editable en condiciones laborales (2026-07-21)**: En `/profile/contrato`, al editar un tramo del histórico la fecha de inicio es editable. `rescheduleTermStart` recalcula el tramo anterior (sin huecos) y, si es el primer tramo, sincroniza `profiles.joining_date`. Tests versionado + labor.
 - **Fix filtro empleado bolsa+deuda (2026-07-21)**: Pere (y similares) fallaban al filtrar en `/staff/history` — assert `EXTRAS > 0 con carryOut negativo` en modo bolsa. Footer EXTRAS = 0 si queda deuda (igual que pago). Toast con detalle del error. Tests week-card **19/19**; plantilla julio OK todos.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Pedido `/pedido/[token]` sin Navbar ni barra inferior (2026-07-16)**: Ruta añadida a `isFullscreenCartaPath` (como `/eventos` y `/carta`). El cliente solo ve la bienvenida/carta, no el shell interno de la app.
 - **Aviso visual pedido cliente (2026-07-16)**: Al «Enviar pedido», RPC inserta `user_notifications` (`client_order_submitted`) para alba/hernan/pere/hector — aparece en campana. Deep link `/staff/reservas?eventId=`. Badge rojo discreto sobre el punto verde/naranja/azul del calendario mientras la notificación esté sin leer; se quita al abrir el pedido. Sin tablas nuevas ni cambio de colores/leyenda. Migración [`20260716180000_notify_client_order_submitted.sql`](supabase/migrations/20260716180000_notify_client_order_submitted.sql) **aplicada**.
 - **UX pedido por enlace (2026-07-16)**: Bienvenida antes de la carta (`PedidoBienvenidaView` → «Empezar pedido»). Carta sin cambios. Confirmación post-envío rediseñada (`PedidoEnviadoView` + WhatsApp al 932 254 427 / `NEXT_PUBLIC_MARBELLA_WHATSAPP`). Mensaje WhatsApp staff más cuidado (fecha/hora/personas + URL). Sin cambios de modelo, permisos ni lógica de pedidos.
-- **Calendarios mensuales: filas iguales y menos agobio en escritorio (2026-07-16)**: Fix CSS `month-cal-*` — celdas `height:100%` + `min-height:0` (el contenido ya no estira filas); semanas `flex:1` iguales; chips densos (`month-cal-chips`). Historial calendario: oculta gráfico en `lg`, KPIs compactos, calendario `flex-1` con filas uniformes. Smartphone/tablet sin cambios.
 
 <!-- sync:project-status:end -->

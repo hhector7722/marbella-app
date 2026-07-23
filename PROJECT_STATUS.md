@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-22 (Condiciones laborales: fecha fin editable)
+**Última actualización:** 2026-07-23 (Asistencia: horas justificadas)
+
+- [x] **Horas justificadas en asistencia (2026-07-23)**: En el modal de día (`AttendanceDetailModal`), managers pueden añadir **horas que computan** (contrato/banco) sin ser jornada trabajada — caso típico: salida anticipada por examen. Crea un segundo `time_logs` con evento `personal` (o Festivo/Enfermedad/Baja), editable en horas; se suman al total del día. No cuentan en propinas (mismo filtro tip-pool de eventos no-regular). El modal lista todos los fichajes del día (antes solo el primero). En `WeekCard` (`/staff/history`): día mixto muestra relojes reales + **H** total + badge **P** (o F/E/B); día solo justificado sigue mostrando solo la letra.
+
+**Última actualización anterior:** 2026-07-22 (Condiciones laborales: fecha fin editable)
 
 - [x] **Fecha de finalización editable en condiciones laborales (2026-07-22)**: En `/profile/contrato`, al editar un tramo el campo «Hasta» deja de ser solo lectura («Vigente»). `rescheduleTermEnd` / `rescheduleTermBounds` recalculan el siguiente tramo (sin huecos); vacío = vigente (solo último). Si cambia el fin del último tramo, sincroniza `profiles.end_date`. Tests versionado + labor.
 

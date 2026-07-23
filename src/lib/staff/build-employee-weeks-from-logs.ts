@@ -52,15 +52,26 @@ const EMPTY_DAY: DayAgg = {
     clock_out_show_no_registrada: false,
 };
 
-/** Varios fichajes el mismo día → entrada más temprana, salida más tardía, suma de horas. */
+/** Varios fichajes el mismo día → entrada más temprana, salida más tardía, suma de horas.
+ * Relojes solo desde jornada real (regular / no_registered); eventos especiales
+ * (Personal/Festivo/…) aportan horas al total pero no mueven entrada/salida. */
 export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg {
     if (logs.length === 0) return EMPTY_DAY;
 
     const sorted = [...logs].sort((a, b) => a.clock_in.localeCompare(b.clock_in));
-    const clockIn = formatMadridHmFromIso(sorted[0]!.clock_in) ?? null;
+
+    const isClockSource = (l: RawTimeLogForWeek) => {
+        const t = l.event_type || 'regular';
+        return t === 'regular' || t === 'no_registered' || t === '';
+    };
+
+    const clockLogs = sorted.filter(isClockSource);
+    const clockSource = clockLogs.length > 0 ? clockLogs : sorted;
+
+    const clockIn = formatMadridHmFromIso(clockSource[0]!.clock_in) ?? null;
 
     let clockOut: string | null = null;
-    for (const log of sorted) {
+    for (const log of clockSource) {
         if (log.clock_out) {
             clockOut = formatMadridHmFromIso(log.clock_out) ?? clockOut;
         }

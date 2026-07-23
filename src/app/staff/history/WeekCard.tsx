@@ -150,6 +150,9 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 {week.days.map((day, di) => {
                     const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
                     const isSpecial = day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' && eventConfig;
+                    // Día mixto: fichaje real + horas justificadas → mostrar relojes/H y badge P/F/E/B
+                    const isMixedJustified = Boolean(isSpecial && day.clockIn);
+                    const isSpecialOnly = Boolean(isSpecial && !day.clockIn);
                     const isOtherMonth = day.date ? (() => {
                         const y = parseInt(day.date.slice(0, 4), 10);
                         const m = parseInt(day.date.slice(5, 7), 10) - 1;
@@ -184,8 +187,20 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             <span className={cn("absolute top-1 right-1 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
                                 {day.dayNumber}
                             </span>
+                            {isMixedJustified && eventConfig && (
+                                <span
+                                    title={`Incluye horas ${eventConfig.label.toLowerCase()}`}
+                                    className={cn(
+                                        'absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black shadow-sm',
+                                        eventConfig.color,
+                                        isOtherMonth && 'opacity-60',
+                                    )}
+                                >
+                                    {eventConfig.initial}
+                                </span>
+                            )}
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
-                                {isSpecial ? (
+                                {isSpecialOnly ? (
                                     <>
                                         <div className="h-5 flex items-center justify-center shrink-0">
                                             <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig!.color, isOtherMonth && "opacity-60")}>
@@ -244,7 +259,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                     </>
                                 )}
                             </div>
-                            {!isSpecial && (
+                            {!isSpecialOnly && (
                                 <div className={cn("w-full space-y-0 mt-0.5 min-h-[20px]", isOtherMonth && "opacity-45")}>
                                     {day.hasLog && hFormatted ? (
                                         <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
