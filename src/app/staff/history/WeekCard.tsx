@@ -10,11 +10,11 @@ const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
-    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
-    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
-    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
-    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
-    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', text: 'text-red-500', border: 'border-red-200 bg-red-50' },
+    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', text: 'text-yellow-500', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', text: 'text-orange-500', border: 'border-orange-200 bg-orange-50' },
+    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', text: 'text-blue-500', border: 'border-blue-200 bg-blue-50' },
+    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', text: 'text-red-600', border: 'border-red-200 bg-red-50' },
 ];
 
 /** Horas Marbella: solo enteros o .5 */
@@ -150,7 +150,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 {week.days.map((day, di) => {
                     const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
                     const isSpecial = day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' && eventConfig;
-                    // Día mixto: fichaje real + horas justificadas → mostrar relojes/H y badge P/F/E/B
+                    // Día completo F/E/B/P: solo letra. Mixto (fichaje + permiso parcial): relojes + H + P pequeña.
                     const isMixedJustified = Boolean(isSpecial && day.clockIn);
                     const isSpecialOnly = Boolean(isSpecial && !day.clockIn);
                     const isOtherMonth = day.date ? (() => {
@@ -189,10 +189,10 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             </span>
                             {isMixedJustified && eventConfig && (
                                 <span
-                                    title={`Incluye horas ${eventConfig.label.toLowerCase()}`}
+                                    title={`Incluye ${eventConfig.label.toLowerCase()} (horas que computan)`}
                                     className={cn(
-                                        'absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black shadow-sm',
-                                        eventConfig.color,
+                                        'absolute top-1 left-1 text-[10px] font-black leading-none',
+                                        eventConfig.text,
                                         isOtherMonth && 'opacity-60',
                                     )}
                                 >
@@ -201,22 +201,25 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             )}
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
                                 {isSpecialOnly ? (
-                                    <>
-                                        <div className="h-5 flex items-center justify-center shrink-0">
-                                            <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig!.color, isOtherMonth && "opacity-60")}>
-                                                {eventConfig!.showCross ? (
-                                                    <X size={14} strokeWidth={2.5} className="text-white" />
-                                                ) : (
-                                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig!.initial}</span>
+                                    <div className="flex-1 flex items-center justify-center min-h-[52px]">
+                                        {eventConfig!.showCross ? (
+                                            <X size={22} strokeWidth={2.5} className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')} />
+                                        ) : (
+                                            <span
+                                                className={cn(
+                                                    'text-[28px] font-black uppercase leading-none tracking-tight',
+                                                    eventConfig!.text,
+                                                    isOtherMonth && 'opacity-60',
                                                 )}
-                                            </div>
-                                        </div>
-                                        <div className="h-5 shrink-0" aria-hidden />
-                                    </>
+                                            >
+                                                {eventConfig!.initial}
+                                            </span>
+                                        )}
+                                    </div>
                                 ) : (
                                     <>
                                         <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                            {day.hasLog ? (
+                                            {day.hasLog && day.clockIn ? (
                                                 <>
                                                     <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
                                                     <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
@@ -261,7 +264,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             </div>
                             {!isSpecialOnly && (
                                 <div className={cn("w-full space-y-0 mt-0.5 min-h-[20px]", isOtherMonth && "opacity-45")}>
-                                    {day.hasLog && hFormatted ? (
+                                    {day.hasLog && day.clockIn && hFormatted ? (
                                         <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                             <span className="ml-0.5">H</span>
                                             <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{hFormatted}</span>

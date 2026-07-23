@@ -53,8 +53,9 @@ const EMPTY_DAY: DayAgg = {
 };
 
 /** Varios fichajes el mismo día → entrada más temprana, salida más tardía, suma de horas.
- * Relojes solo desde jornada real (regular / no_registered); eventos especiales
- * (Personal/Festivo/…) aportan horas al total pero no mueven entrada/salida. */
+ * Relojes SOLO desde jornada real (regular / no_registered).
+ * Día solo especial (F/E/B/P): clockIn/Out = null (la UI muestra la letra).
+ * Día mixto (fichaje + justificadas): relojes del regular + horas sumadas + eventType especial. */
 export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg {
     if (logs.length === 0) return EMPTY_DAY;
 
@@ -66,14 +67,15 @@ export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg 
     };
 
     const clockLogs = sorted.filter(isClockSource);
-    const clockSource = clockLogs.length > 0 ? clockLogs : sorted;
 
-    const clockIn = formatMadridHmFromIso(clockSource[0]!.clock_in) ?? null;
-
+    let clockIn: string | null = null;
     let clockOut: string | null = null;
-    for (const log of clockSource) {
-        if (log.clock_out) {
-            clockOut = formatMadridHmFromIso(log.clock_out) ?? clockOut;
+    if (clockLogs.length > 0) {
+        clockIn = formatMadridHmFromIso(clockLogs[0]!.clock_in) ?? null;
+        for (const log of clockLogs) {
+            if (log.clock_out) {
+                clockOut = formatMadridHmFromIso(log.clock_out) ?? clockOut;
+            }
         }
     }
 
@@ -83,9 +85,15 @@ export function aggregateLogsForDay(logs: readonly RawTimeLogForWeek[]): DayAgg 
     }
 
     const special = sorted.find(
-        (l) => l.event_type && l.event_type !== 'regular' && l.event_type !== '',
+        (l) =>
+            l.event_type &&
+            l.event_type !== 'regular' &&
+            l.event_type !== 'no_registered' &&
+            l.event_type !== '',
     );
-    const eventType = special?.event_type ?? sorted[0]?.event_type ?? 'regular';
+    const eventType =
+        special?.event_type ??
+        (clockLogs[0]?.event_type || sorted[0]?.event_type || 'regular');
 
     return {
         hasLog: true,

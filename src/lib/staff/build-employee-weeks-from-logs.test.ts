@@ -63,7 +63,7 @@ describe('aggregateLogsForDay', () => {
                 event_type: 'regular',
             },
             {
-                // Reloj sintético 00:00 — no debe robar entrada/salida de la jornada real
+                // Reloj sintético — no debe robar entrada/salida de la jornada real
                 clock_in: '2026-07-06T22:00:00.000Z',
                 clock_out: '2026-07-06T23:00:00.000Z',
                 total_hours: 1,
@@ -74,6 +74,22 @@ describe('aggregateLogsForDay', () => {
         assert.equal(d.eventType, 'personal');
         assert.equal(d.clockIn, '10:00');
         assert.equal(d.clockOut, '16:00');
+    });
+
+    it('día solo especial (baja/festivo) → sin relojes (UI = letra centrada)', () => {
+        const d = aggregateLogsForDay([
+            {
+                clock_in: '2026-07-07T07:00:00.000Z',
+                clock_out: '2026-07-07T15:00:00.000Z',
+                total_hours: 8,
+                event_type: 'adjustment',
+            },
+        ]);
+        assert.equal(d.hasLog, true);
+        assert.equal(d.eventType, 'adjustment');
+        assert.equal(d.clockIn, null);
+        assert.equal(d.clockOut, null);
+        assert.equal(d.totalHours, 8);
     });
 });
 
