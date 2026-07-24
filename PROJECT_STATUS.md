@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Shadow Mode Commit 8A: CLI + loaders reales)
+**Última actualización:** 2026-07-24 (Zoom browser temporal Héctor)
+
+- [x] **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
+
+**Última actualización anterior:** 2026-07-24 (Shadow Convergence Iteración A)
+
+- [x] **Shadow Convergence Iteración A (2026-07-24)**: Única causa — SQL no persistía `ordinary_hours`/`extra_hours`. Fix en `fn_recalc_and_propagate_snapshots` + backfill. Shadow run `3ade336a-…` semana 2026-07-20: EMR **35,29% → 52,94%**, CDR **64,71% → 47,06%**, D006 fuera del top. Migración `20260724080000_shadow_iter_a_ordinary_extra_hours.sql`. **Sin B/C/D/E ni 8B.**
+
+- [x] **Shadow Validation Report (2026-07-24)**: Auditoría del run `7e73bfc9-…` (EMR 35,29%). Causas raíz agrupadas A–F (≥90% explicado). **8B bloqueado** hasta corregir A+B (ordinary/extra SQL + `end_date`). Doc: [`SHADOW_VALIDATION_REPORT.md`](SHADOW_VALIDATION_REPORT.md).
 
 - [x] **Shadow Mode Commit 8A — CLI ops + loaders reales (2026-07-24)**: `npm run shadow` → loaders Supabase (subjects/facts) → `executeAndPersistShadowRun` → resumen consola. Dominio sin CLI/Supabase. Fallos por sujeto no abortan. Primer run real semana `2026-07-20`: EMR 35.29%, persistido `7e73bfc9-…`. **8B NO** (cron/flags/dashboard/alertas).
 

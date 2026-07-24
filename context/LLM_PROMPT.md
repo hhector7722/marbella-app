@@ -479,10 +479,13 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Shadow Mode Commit 8A: CLI + loaders reales)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Zoom browser temporal Héctor)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
+- **Shadow Convergence Iteración A (2026-07-24)**: Única causa — SQL no persistía `ordinary_hours`/`extra_hours`. Fix en `fn_recalc_and_propagate_snapshots` + backfill. Shadow run `3ade336a-…` semana 2026-07-20: EMR **35,29% → 52,94%**, CDR **64,71% → 47,06%**, D006 fuera del top. Migración `20260724080000_shadow_iter_a_ordinary_extra_hours.sql`. **Sin B/C/D/E ni 8B.**
+- **Shadow Validation Report (2026-07-24)**: Auditoría del run `7e73bfc9-…` (EMR 35,29%). Causas raíz agrupadas A–F (≥90% explicado). **8B bloqueado** hasta corregir A+B (ordinary/extra SQL + `end_date`). Doc: [`SHADOW_VALIDATION_REPORT.md`](SHADOW_VALIDATION_REPORT.md).
 - **Shadow Mode Commit 8A — CLI ops + loaders reales (2026-07-24)**: `npm run shadow` → loaders Supabase (subjects/facts) → `executeAndPersistShadowRun` → resumen consola. Dominio sin CLI/Supabase. Fallos por sujeto no abortan. Primer run real semana `2026-07-20`: EMR 35.29%, persistido `7e73bfc9-…`. **8B NO** (cron/flags/dashboard/alertas).
 - **Shadow Mode Commit 7 — Persistencia desacoplada (2026-07-24)**: Puertos `Shadow*Store` en dominio; `persistShadowRunResult`; in-memory + infra Supabase (`src/infrastructure/shadow`). Migración `20260724060000_shadow_parity_persistence.sql` (RLS manager) **aplicada**. Runner sin Supabase; persistencia opcional.
 - **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos.
@@ -525,8 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Tarjeta semanal: footer → motor (2026-07-16)**: HORAS / PENDIENTES / EXTRAS / IMPORTE salen de `LiquidationResult` vía [`week-card-from-liquidation.ts`](src/lib/hours-engine/week-card-from-liquidation.ts) + `patchWeeksFromLiquidation`. Misma fuente que Ex. diarias → imposible discrepancia. `/staff/history` + `WorkerWeeklyHistoryModal`. RPC solo clocks/`isPaid`. Tests: `npm run test:hours-engine:week-card` (10) + suite **104/104**. Sin orquestador, sin borrar snapshots.
 - **Ración medio en comanda sin «1/2» duplicado (2026-07-16)**: Producto = `1/2 ENT. LLOM PLANXA` (cantidad aparte). Ya no se muestra `1/2` otra vez en notas. RPC `fn_event_order_apply_racion` + UI/print. Migración [`20260716230000_half_ration_name_no_dup.sql`](supabase/migrations/20260716230000_half_ration_name_no_dup.sql) **aplicada**.
 - **Icono calendario = avisos reservas + pedido (2026-07-16)**: `ReservationsBell` muestra `reservation_new` y `client_order_submitted` (badge + panel). La campana general los excluye. Destinatarios sin cambio (alba/hernan/pere/hector).
-- **Fix ver pedido cliente en staff (2026-07-16)**: Al abrir el modal de encargo (o deep-link `?eventId=`), se refetch de `events` + `event_orders` — ya no se muestra el shell vacío en caché.
-- **Pedido cliente: campana + push como reservas (2026-07-16)**: Al «Enviar pedido», mismos destinatarios que reservas (alba/hernan/pere/hector). In-app en campana (`client_order_submitted`) y **push** vía pg_net → `/api/webhooks/reservations-push`. También `reservation_new` vuelve a mostrarse en la campana (mismo centro). Migración [`20260716210000_client_order_push_and_notify.sql`](supabase/migrations/20260716210000_client_order_push_and_notify.sql) **aplicada**.
-- **Pedido carta fotocopia + picker Entero/Medio (2026-07-16)**: Misma UI de precios que la carta (`CartaDualRacionPrices`). Tap en producto → suma al carrito (no lightbox). Si hay precio medio (bocadillo/ración TPV), tap abre modal Entero/Medio.
 
 <!-- sync:project-status:end -->
