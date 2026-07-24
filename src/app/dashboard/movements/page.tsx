@@ -811,82 +811,94 @@ export default function MovementsPage() {
                 {/* TARJETA GLOBAL INTEGRADA (TODO EN UN BLOQUE) */}
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
-                    {/* CABECERA OSCURA INTEGRADA (TÍTULO + ACCIONES + FILTROS) */}
-                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
-                        <div className="flex items-center justify-between gap-2 md:gap-4">
-                            <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Caja Inicial</h1>
-                            </div>
-
-                            <div className="flex items-center justify-end gap-1 md:gap-4 shrink-0">
+                    {/* CABECERA COMPACTA (misma altura que /dashboard/history) */}
+                    <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative shrink-0">
+                        <div className="relative flex items-center justify-between gap-1 min-w-0">
+                            {/* ACCIONES CAJA (izquierda) */}
+                            <div className="flex items-center gap-0.5 shrink-0 z-10">
                                 <button
+                                    type="button"
                                     onClick={() => setCashModalMode('in')}
-                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
+                                    aria-label="Entrada"
+                                    title="Entrada"
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
                                 >
-                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Plus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
+                                    <div className="w-6 h-6 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
+                                        <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">ENTRADA</span>
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={openOut}
-                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
+                                    aria-label="Salida"
+                                    title="Salida"
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
                                 >
-                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Minus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
+                                    <div className="w-6 h-6 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
+                                        <Minus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">SALIDA</span>
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={openAudit}
-                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
+                                    aria-label="Arqueo"
+                                    title="Arqueo"
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
                                 >
-                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <RefreshCw className="w-3 h-3 md:w-4 md:h-4 text-white" strokeWidth={4} />
+                                    <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
+                                        <RefreshCw className="w-3 h-3 text-white" strokeWidth={4} />
                                     </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">ARQUEO</span>
                                 </button>
                             </div>
-                        </div>
 
-                        {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 pb-2 w-full">
-                            <div aria-hidden className="min-w-0" />
-                            {/* NAVEGADOR MENSUAL PRINCIPAL */}
-                            <div className="flex items-center justify-center gap-0.5 md:gap-1 min-w-0">
-                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
+                            {/* NAVEGADOR MENSUAL (centrado) */}
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 sm:gap-1 max-w-[min(100%,14rem)] sm:max-w-none px-1">
+                                <button
+                                    type="button"
+                                    onClick={handlePrevMonth}
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    aria-label="Mes anterior"
+                                >
                                     <ChevronLeft size={18} />
                                 </button>
-                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-1 truncate hover:text-white/80 transition-colors"
+                                >
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'SELECCIONAR MES'}
+                                        : 'Seleccionar mes'}
                                 </button>
-                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={handleNextMonth}
+                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    aria-label="Mes siguiente"
+                                >
                                     <ChevronRight size={18} />
                                 </button>
                             </div>
 
-                            {/* FILTRO + COMPARTIR (alineados a la derecha) */}
-                            <div className="flex items-center justify-end gap-1 md:gap-1.5 shrink-0 text-white min-w-0" data-movements-share-root="true">
+                            {/* COMPARTIR + FILTRO (derecha) */}
+                            <div className="flex items-center gap-1 shrink-0 text-white ml-auto z-10" data-movements-share-root="true">
                                 <div className="relative shrink-0" data-movements-share-root="true">
                                     <button
                                         type="button"
                                         onClick={() => setShareMenuOpen(v => !v)}
                                         aria-label="Compartir"
+                                        title="Compartir"
                                         className={cn(
-                                            "min-h-12 min-w-12",
-                                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                                            "text-white/90 hover:text-white",
-                                            "inline-flex items-center justify-center transition-all active:scale-95",
-                                            shareBusy ? "opacity-60 pointer-events-none" : ""
+                                            'p-2 rounded-xl text-white/90 hover:bg-white/10 hover:text-white transition-colors outline-none',
+                                            'min-h-[40px] min-w-[40px] flex items-center justify-center',
+                                            shareBusy ? 'opacity-60 pointer-events-none' : ''
                                         )}
                                     >
-                                        <Share className="w-[18px] h-[18px] md:w-[18px] md:h-[18px]" strokeWidth={2.5} />
+                                        <Share size={16} />
                                     </button>
 
-                                    {shareMenuOpen && (
-                                        <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden">
+                                    {shareMenuOpen ? (
+                                        <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
                                             <button
                                                 type="button"
                                                 onClick={exportFilteredTableToExcel}
@@ -905,7 +917,7 @@ export default function MovementsPage() {
                                                 <Printer className="w-4 h-4 text-zinc-500" />
                                             </button>
                                         </div>
-                                    )}
+                                    ) : null}
                                 </div>
 
                                 <TimeFilterButton
