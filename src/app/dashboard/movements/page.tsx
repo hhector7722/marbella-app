@@ -821,33 +821,36 @@ export default function MovementsPage() {
                                     onClick={() => setCashModalMode('in')}
                                     aria-label="Entrada"
                                     title="Entrada"
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
+                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-center gap-0.5 active:scale-95"
                                 >
-                                    <div className="w-6 h-6 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
-                                        <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                                    <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
+                                        <Plus className="w-3 h-3 text-white" strokeWidth={3} />
                                     </div>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Entrada</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openOut}
                                     aria-label="Salida"
                                     title="Salida"
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
+                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-center gap-0.5 active:scale-95"
                                 >
-                                    <div className="w-6 h-6 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
-                                        <Minus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                                    <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
+                                        <Minus className="w-3 h-3 text-white" strokeWidth={3} />
                                     </div>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Salida</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openAudit}
                                     aria-label="Arqueo"
                                     title="Arqueo"
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
+                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-center gap-0.5 active:scale-95"
                                 >
-                                    <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
-                                        <RefreshCw className="w-3 h-3 text-white" strokeWidth={4} />
+                                    <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
+                                        <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
                                     </div>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Arqueo</span>
                                 </button>
                             </div>
 
