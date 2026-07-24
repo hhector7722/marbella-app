@@ -1,7 +1,13 @@
-/**
- * Persistence ports — runs, comparisons, discrepancies (Commit 3 / 7).
- * @internal scaffolding
- */
+export {
+  createInMemoryDiscrepancyStore,
+  upsertObservedDiscrepancy,
+  type DiscrepancyStore,
+  type UpsertObservedDiscrepancyResult,
+} from './discrepancy-store.ts';
+
+/** @deprecated scaffolding */
 export function shadowPersistenceNotImplemented(): never {
-  throw new Error('shadow/persistence: no implementado (Commit 3/7)');
+  throw new Error(
+    'shadow/persistence: usar createInMemoryDiscrepancyStore (Supabase en Commit 7)',
+  );
 }

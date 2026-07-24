@@ -13,5 +13,15 @@
 
 export * from './types/index.ts';
 export * from './adapters/index.ts';
-
-export { canTransitionDiscrepancyStatus } from './resolver/index.ts';
+export * from './discrepancy/index.ts';
+export {
+  canTransitionDiscrepancyStatus,
+  InvalidDiscrepancyTransitionError,
+  transitionDiscrepancy,
+} from './resolver/index.ts';
+export {
+  createInMemoryDiscrepancyStore,
+  upsertObservedDiscrepancy,
+  type DiscrepancyStore,
+  type UpsertObservedDiscrepancyResult,
+} from './persistence/index.ts';

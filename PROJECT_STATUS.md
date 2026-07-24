@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Shadow Mode: HE/SQL adapters → Canonical Vector)
+**Última actualización:** 2026-07-24 (Shadow Mode: entidad Discrepancy + lifecycle)
+
+- [x] **Shadow Mode Commit 3 — Discrepancy + lifecycle (2026-07-24)**: Entidad con fingerprint, occurrences, estados NEW→…→CLOSED, store en memoria y upsert anti-duplicado/regresión. Persistencia Supabase en Commit 7.
 
 - [x] **Shadow Mode Commit 2 — Canonical adapters (2026-07-24)**: `heLiquidationToCanonical` / `sqlSnapshotToCanonical` proyectan a `CanonicalComparisonVector`. Hours Engine y SQL no se modifican. Tests: `npm run test:shadow` (9).
 

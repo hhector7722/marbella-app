@@ -1,17 +1,12 @@
-import type { DiscrepancyStatus } from '../types/discrepancy.ts';
-import { DISCREPANCY_TRANSITIONS } from '../types/discrepancy.ts';
+export {
+  canTransitionDiscrepancyStatus,
+  InvalidDiscrepancyTransitionError,
+  transitionDiscrepancy,
+} from './lifecycle.ts';
 
-/**
- * Resolver de ciclo de vida de ShadowDiscrepancy (Commit 3+).
- * Scaffolding: solo validación de transiciones.
- */
-export function canTransitionDiscrepancyStatus(
-  from: DiscrepancyStatus,
-  to: DiscrepancyStatus,
-): boolean {
-  return DISCREPANCY_TRANSITIONS[from].includes(to);
-}
-
+/** @deprecated scaffolding — usar transitionDiscrepancy */
 export function resolveDiscrepancyNotImplemented(): never {
-  throw new Error('shadow/resolver: persistencia de ciclo de vida (Commit 3)');
+  throw new Error(
+    'shadow/resolver: usar transitionDiscrepancy + DiscrepancyStore',
+  );
 }
